@@ -608,6 +608,10 @@
     "track": {
       "path": "{nucleo}/animals-nature/{nucleo_simple}_paw",
       "rmFill": true
+    },
+    "onoff": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-power",
+      "rmFill": true
     }
   }
 }

@@ -128,7 +128,10 @@ ComponentStack:
   }
 
   private setHeaderRef = ref => {
-    this.headerRef = ref;
+    if (this.headerRef !== ref) {
+      this.headerRef = ref;
+      this.forceUpdate();
+    }
   }
 }
 

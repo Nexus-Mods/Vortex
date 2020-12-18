@@ -4,10 +4,12 @@ import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
+import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
-import { IAttachment } from '../../../types/api';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IAttachment } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -76,10 +78,19 @@ interface IComponentState {
 
 const nop = () => null;
 
+function MountTrigger(props: { cb: () => void }) {
+  React.useCallback(() => {
+    props.cb();
+  }, []);
+  return null;
+}
+
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
   private actions: ITableRowAction[];
   private mColumns: Array<ITableAttribute<IDownload>>;
+  private mTableActions: IActionDefinition[];
+  private mHeaderRendered: boolean = false;
 
   constructor(props: IDownloadViewProps) {
     super(props);
@@ -153,9 +164,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         singleRowAction: true,
       },
     ];
+
+    this.mTableActions = [];
   }
 
   public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
+    if (!this.mHeaderRendered) {
+      // bit of a hack. The toolbar doesn't get rendered until the reference for the
+      // portal target is initialized, until then we can't make the update dependent on just
+      // the props
+      return true;
+    }
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
@@ -240,11 +259,24 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     return (
       <MainPage>
+        <MainPage.Header>
+          {this.mHeaderRendered ? null : <MountTrigger cb={this.wasRendered}/>}
+          <IconBar
+            group='download-actions'
+            staticElements={this.mTableActions}
+            className='menubar'
+            t={t}
+          />
+        </MainPage.Header>
         <MainPage.Body>
           {content}
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private wasRendered = () => {
+    this.mHeaderRendered = true;
   }
 
   private renderDropzone(): JSX.Element {

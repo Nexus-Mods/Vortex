@@ -33,6 +33,7 @@ import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
+import ShutdownButton from './views/ShutdownButton';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
@@ -44,6 +45,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import winapi from 'winapi-bindings';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -518,6 +520,48 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   return Promise.resolve(result);
 }
 
+let shutdownPending: boolean = false;
+let shutdownInitiated: boolean = false;
+
+function updateShutdown(downloads: { [key: string]: IDownload }) {
+  if (shutdownInitiated
+      && ((Object.keys(downloads).length > 0)
+          || !shutdownPending)) {
+    // cancel shutdown if the conditions for it are no longer met
+    winapi.AbortSystemShutdown();
+    shutdownInitiated = false;
+  }
+
+  if (!shutdownInitiated
+      && shutdownPending
+      && (Object.keys(downloads).length > 0)) {
+    // schedule shutdown if conditions are met
+    winapi.InitiateSystemShutdown('Vortex downloads finished', 30, false, false);
+    shutdownInitiated = true;
+  }
+}
+
+function toggleShutdown(api: IExtensionApi) {
+  if (shutdownPending) {
+    shutdownPending = false;
+    updateShutdown(selectors.activeDownloads(api.getState()));
+  } else {
+    api.showDialog('question', 'Confirm Shutdown', {
+      text: 'Your computer will be shut down 30 seconds after the last download finished. '
+        + 'Please make sure you\'ve saved all your work in all running applications.\n'
+        + 'You can cancel this at any time by pressing the button again.',
+    }, [
+      { label: 'Cancel' },
+      {
+        label: 'Schedule Shutdown', action: () => {
+          shutdownPending = true;
+          updateShutdown(selectors.activeDownloads(api.getState()));
+        }
+      },
+    ]);
+  }
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -578,6 +622,13 @@ function init(context: IExtensionContextExt): boolean {
     return undefined;
   });
 
+  context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
+    t: context.api.translate,
+    shutdownPending,
+    activeDownloads: selectors.activeDownloads(context.api.getState()),
+    toggleShutdown: () => toggleShutdown(context.api),
+    }), () => process.platform === 'win32');
+
   context.registerTest('verify-downloads-transfers', 'gamemode-activated',
     () => checkPendingTransfer(context.api));
 
@@ -632,6 +683,8 @@ function init(context: IExtensionContextExt): boolean {
         dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
 
       const state: IState = context.api.store.getState();
+
+      updateShutdown(selectors.activeDownloads(state));
 
       Promise.map(filtered, dlId => {
         const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
