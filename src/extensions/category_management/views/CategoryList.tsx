@@ -449,6 +449,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private removeCategory = (id: string) => {
     const { categories, gameMode, onRemoveCategory } = this.props;
+    let userConfirmed = false;
     id = Array.isArray(id) ? id[0] : id;
     const catKeys = Object.keys(categories);
     const childrenIds = catKeys.filter(key => categories[key].parentCategory === id);
@@ -456,6 +457,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       childrenIds.forEach(iterId => this.removeCategory(iterId));
       onRemoveCategory(gameMode, id);
     };
+    if (userConfirmed) {
+      removeCat();
+    }
     if (childrenIds.length > 0) {
       this.context.api.showDialog('question', 'Remove Category', {
         text: 'You\'re attempting to remove a category with one or more nested categories. '
@@ -465,6 +469,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         { label: 'Remove Category' }
       ]).then((res) => {
         if (res.action !== 'Cancel') {
+          userConfirmed = true;
           removeCat();
         }
       })
