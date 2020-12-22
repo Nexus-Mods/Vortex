@@ -462,8 +462,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
     if (childrenIds.length > 0) {
       this.context.api.showDialog('question', 'Remove Category', {
-        text: 'You\'re attempting to remove a category with one or more nested categories. '
-          + 'Are you sure you wish to proceed ?',
+        text: 'You\'re attempting to remove a category with one or more nested categories '
+          + 'Which may in turn, also contain their own sub-categories. Are you sure you wish to proceed ?',
       }, [
         { label: 'Cancel', default: true },
         { label: 'Remove Category' }
