@@ -449,10 +449,28 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private removeCategory = (id: string) => {
     const { categories, gameMode, onRemoveCategory } = this.props;
-    Object.keys(categories)
-      .filter(iterId => categories[iterId].parentCategory === id)
-      .forEach(iterId => this.removeCategory(iterId));
-    onRemoveCategory(gameMode, id);
+    id = Array.isArray(id) ? id[0] : id;
+    const catKeys = Object.keys(categories);
+    const childrenIds = catKeys.filter(key => categories[key].parentCategory === id);
+    const removeCat = () => {
+      childrenIds.forEach(iterId => this.removeCategory(iterId));
+      onRemoveCategory(gameMode, id);
+    };
+    if (childrenIds.length > 0) {
+      this.context.api.showDialog('question', 'Remove Category', {
+        text: 'You\'re attempting to remove a category with one or more nested categories. '
+          + 'Are you sure you wish to proceed ?',
+      }, [
+        { label: 'Cancel', default: true },
+        { label: 'Remove Category' }
+      ]).then((res) => {
+        if (res.action !== 'Cancel') {
+          removeCat();
+        }
+      })
+    } else {
+      onRemoveCategory(gameMode, id);
+    }
   }
 
   private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData) => {
