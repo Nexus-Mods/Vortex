@@ -7,6 +7,8 @@ import * as React from 'react';
 import { IState } from '../../../types/IState';
 import { DownloadState, IDownload } from '../types/IDownload';
 
+import { setAttributeFilter } from '../../../actions/tables'
+
 export interface IBaseProps {
   slim: boolean;
 }
@@ -50,11 +52,18 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
         <div className='active-downloads-container'>
           <span>{t('Active Downloads')}</span>
           {activeDownloads.slice(0, 2).map(this.renderDownload)}
-          {(activeDownloads.length > 2) ? t('More...') : null}
+          {(activeDownloads.length > 2)
+            ? <a onClick={this.openDownloads}>{t('More...')}</a>
+            : null}
           <span><Icon name='download-speed' />{' '}{bytesToString(speed)}/s</span>
         </div>
       );
     }
+  }
+
+  private openDownloads = () => {
+    this.context.api.events.emit('show-main-page', 'Downloads');
+    this.context.api.store.dispatch(setAttributeFilter('downloads', 'progress', 'In Progress'));
   }
 
   private renderDownload = (download: IDownload) => {
