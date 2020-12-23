@@ -917,16 +917,18 @@ export function ensureDirWritableAsync(dirPath: string,
                       && allowRecurse) {
                     return ensureAndAllow(parentPath, true)
                       .then(() => ensureAndAllow(targetPath, false));
+                  } else if (elevatedErr.code === 'EEXIST') {
+                    // Directory already exists - that's fine.
+                    //  Theoretically fs.ensureDir shouldn't be throwing EEXIST
+                    //  errors, but we've seen this happen on multiple occassions.
+                    return Promise.resolve();
                   } else {
                     return Promise.reject(elevatedErr);
                   }
                 })
                 .then(() => allowDir(targetPath));
               };
-              return (err.code !== 'EEXIST')
-                ? ensureAndAllow(dirPath, true)
-                // Directory exists - lets make sure it's writable.
-                : allowDir(dirPath);
+              return ensureAndAllow(dirPath, true);
             }, { dirPath, userId })
             // if elevation fails, rethrow the original error, not the failure to elevate
             .catch(elevatedErr => {
