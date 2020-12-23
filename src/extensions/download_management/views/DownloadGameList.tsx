@@ -143,17 +143,17 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
         })
         : Promise.resolve(undefined);
       prom.then((newName: string) => {
+        const newGames = currentGames.slice(0);
+        newGames.splice(idx, 1);
+        onSetCompatibleGames(newGames);
         if (newName !== undefined) {
-          const newGames = currentGames.slice(0);
-          newGames.splice(idx, 1);
-          onSetCompatibleGames(newGames);
           onSetDownloadName(id, path.basename(newName));
         }
       })
       .catch(err => this.context.api.showErrorNotification(
         `Unable to remove game ${gameId}`,
         err,
-        { allowReport: ['EPERM', 'ENOSPC', 'EEXIST'].indexOf(err.code) === -1 }));
+        { allowReport: !['EPERM', 'ENOSPC', 'EEXIST'].includes(err.code) }));
     }
   }
 }
