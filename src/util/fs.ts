@@ -825,7 +825,11 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
       conn
         .on('message', data => {
           if (data.error !== undefined) {
-            log('error', 'elevated process failed', data.error);
+            if (data.error.startsWith('InvalidScriptError')) {
+              reject(new Error(data.error));
+            } else {
+              log('error', 'elevated process failed', data.error);
+            }
           } else {
           log('warn', 'got unexpected ipc message', JSON.stringify(data));
           }
@@ -912,11 +916,6 @@ export function ensureDirWritableAsync(dirPath: string,
                       && allowRecurse) {
                     return ensureAndAllow(parentPath, true)
                       .then(() => ensureAndAllow(targetPath, false));
-                  } else if (elevatedErr.code === 'EEXIST') {
-                    // Directory already exists - that's fine.
-                    //  Theoretically fs.ensureDir shouldn't be throwing EEXIST
-                    //  errors, but we've seen this happen on multiple occassions.
-                    return Promise.resolve();
                   } else {
                     return Promise.reject(elevatedErr);
                   }
