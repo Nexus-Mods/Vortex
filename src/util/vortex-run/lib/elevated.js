@@ -19,7 +19,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     let client;
     const syntaxErrors = ['ReferenceError'];
     const handleError = (error) => {
-      const isScriptInvalid = () => {
+      const testIfScriptInvalid  = () => {
         syntaxErrors.forEach(errType => {
           if (error.stack.startsWith(errType)) {
             error = 'InvalidScriptError: ' + error.stack;
@@ -30,7 +30,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
       // tslint:disable-next-line:no-console
       console.error('Elevated code failed', error.stack);
       if (client !== undefined) {
-        isScriptInvalid();
+        testIfScriptInvalid ();
       }
     };
     process.on('uncaughtException', handleError);
