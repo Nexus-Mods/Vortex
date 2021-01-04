@@ -199,6 +199,7 @@ export interface ISettingsDownloads {
   minChunkSize: number;
   maxChunks: number;
   maxParallelDownloads: number;
+  maxBandwidth: number;
   path: string;
   showDropzone: boolean;
   showGraph: boolean;

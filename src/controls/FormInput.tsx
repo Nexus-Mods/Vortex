@@ -14,6 +14,7 @@ export interface IProps {
   onFocus?: (focused: boolean) => void;
   id?: string;
   label?: string;
+  type?: string;
   readOnly?: boolean;
   placeholder?: string;
   validate?: (value: any) => ValidationState;
@@ -62,13 +63,13 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { className, clearable, id, label, placeholder, readOnly, validate } = this.props;
+    const { className, clearable, id, label, placeholder, readOnly, type, validate } = this.props;
     const { cachedValue } = this.state;
     const content = (
       <div className={className}>
         <input
           className={'form-control'}
-          type='text'
+          type={type ?? 'text'}
           title={label}
           value={cachedValue}
           id={id}

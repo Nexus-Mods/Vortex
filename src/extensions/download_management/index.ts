@@ -556,7 +556,7 @@ function toggleShutdown(api: IExtensionApi) {
         label: 'Schedule Shutdown', action: () => {
           shutdownPending = true;
           updateShutdown(selectors.activeDownloads(api.getState()));
-        }
+        },
       },
     ]);
   }
@@ -779,7 +779,8 @@ function init(context: IExtensionContextExt): boolean {
               }
               powerTimer = setTimeout(stopTimer, 60000);
             }
-          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
+          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers,
+          () => context.api.getState().settings.downloads.maxBandwidth * 8);
       manager.setFileExistsCB(fileName => {
         return context.api.showDialog('question', 'File already exists', {
           text: 'You\'ve already downloaded the file "{{fileName}}", do you want to '

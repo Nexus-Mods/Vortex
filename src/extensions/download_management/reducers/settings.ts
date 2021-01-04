@@ -21,11 +21,14 @@ export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
       setSafe(state, ['showGraph'], payload),
     [actions.setCopyOnIFF as any]: (state, payload) =>
       setSafe(state, ['copyOnIFF'], payload),
+    [actions.setMaxBandwidth as any]: (state, payload) =>
+      setSafe(state, ['maxBandwidth'], payload),
   },
   defaults: {
     minChunkSize: 1024 * 1024,
     maxChunks: 4,
     maxParallelDownloads: 1,
+    maxBandwidth: 0,
     path: path.join('{USERDATA}', 'downloads'),
     showDropzone: true,
     showGraph: true,

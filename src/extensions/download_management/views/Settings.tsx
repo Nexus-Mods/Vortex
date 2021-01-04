@@ -22,7 +22,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
-import { setCopyOnIFF, setDownloadPath, setMaxDownloads } from '../actions/settings';
+import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from '../util/downloadDirectory';
@@ -39,6 +39,7 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import FormInput from '../../../controls/FormInput';
 
 const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
 
@@ -50,6 +51,7 @@ interface IConnectedProps {
   downloads: { [downloadId: string]: IDownload };
   instanceId: string;
   copyOnIFF: boolean;
+  maxBandwidth: number;
 }
 
 interface IActionProps {
@@ -61,6 +63,7 @@ interface IActionProps {
   onShowError: (message: string, details: string | Error,
                 allowReport: boolean, isBBCode?: boolean) => void;
   onSetCopyOnIFF: (enabled: boolean) => void;
+  onSetMaxBandwidth: (bps: number) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -94,7 +97,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, copyOnIFF, downloads, isPremium, parallelDownloads } = this.props;
+    const { t, copyOnIFF, downloads, isPremium, maxBandwidth, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
     const pathPreview = getDownloadPath(downloadPath);
@@ -203,6 +206,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </div>
         </FormGroup>
         <FormGroup>
+          <ControlLabel>
+            {t('Limit Bandwidth')}
+          </ControlLabel>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <FormInput
+              value={maxBandwidth > 0 ? (maxBandwidth / 1024).toString() : undefined}
+              placeholder={t('Unlimited')}
+              onChange={this.changeMaxBandwidth}
+              type='number'
+            />
+            KB/s
+          </div>
+        </FormGroup>
+        <FormGroup>
           <Toggle
             checked={copyOnIFF}
             onToggle={this.toggleCopyOnIFF}
@@ -212,6 +229,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FormGroup>
       </form>
     );
+  }
+
+  private changeMaxBandwidth = (input: string) => {
+    if (input.length === 0) {
+      this.props.onSetMaxBandwidth(0);
+    } else {
+      this.props.onSetMaxBandwidth(parseInt(input, 10) * 1024);
+    }
   }
 
   private toggleCopyOnIFF = (newValue: boolean) => {
@@ -681,6 +706,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     modsInstallPath,
     instanceId: state.app.instanceId,
     copyOnIFF: state.settings.downloads.copyOnIFF,
+    maxBandwidth: state.settings.downloads.maxBandwidth,
   };
 }
 
@@ -695,6 +721,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
                   allowReport: boolean, isBBCode?: boolean): void =>
       showError(dispatch, message, details, { allowReport, isBBCode }),
     onSetCopyOnIFF: (enabled: boolean) => dispatch(setCopyOnIFF(enabled)),
+    onSetMaxBandwidth: (bps: number) => dispatch(setMaxBandwidth(bps)),
   };
 }
 

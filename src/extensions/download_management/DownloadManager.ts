@@ -8,6 +8,8 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 
+import makeThrottle from './util/throttle';
+
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
@@ -125,17 +127,20 @@ class DownloadWorker {
   private mWriting: boolean = false;
   private mRedirected: boolean = false;
   private mRedirectsFollowed: number = 0;
+  private mThrottle: () => stream.Transform;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
               finishCB: FinishCallback,
               headersCB: (headers: any) => void,
-              userAgent: string) {
+              userAgent: string,
+              throttle: () => stream.Transform) {
     this.mProgressCB = progressCB;
     this.mFinishCB = finishCB;
     this.mHeadersCB = headersCB;
     this.mJob = job;
     this.mUserAgent = userAgent;
+    this.mThrottle = throttle;
     job.url()
       .then(jobUrl => {
         this.assignJob(job, jobUrl);
@@ -235,6 +240,9 @@ class DownloadWorker {
         this.mResponse = res;
         this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
         let str: stream.Readable = res;
+
+        str = str.pipe(this.mThrottle());
+
         switch (res.headers['content-encoding']) {
           case 'gzip':
             str = str.pipe(zlib.createGunzip());
@@ -243,6 +251,7 @@ class DownloadWorker {
             str = str.pipe(zlib.createInflate());
             break;
         }
+
         str
           .on('data', (data: Buffer) => {
             this.handleData(data);
@@ -527,6 +536,7 @@ class DownloadManager {
   private mProtocolHandlers: IProtocolHandlers;
   private mResolveCache: { [url: string]: { time: number, urls: string[] } } = {};
   private mFileExistsCB: (fileName: string) => Promise<boolean>;
+  private mThrottle: () => stream.Transform;
 
   /**
    * Creates an instance of DownloadManager.
@@ -541,7 +551,8 @@ class DownloadManager {
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string,
-              protocolHandlers: IProtocolHandlers) {
+              protocolHandlers: IProtocolHandlers,
+              maxBandwidth: () => number) {
     // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 20 * 1024 * 1024;
     this.mDownloadPath = downloadPath;
@@ -550,6 +561,7 @@ class DownloadManager {
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
     this.mProtocolHandlers = protocolHandlers;
+    this.mThrottle = () => makeThrottle(maxBandwidth);
   }
 
   public setFileExistsCB(cb: (fileName: string) => Promise<boolean>) {
@@ -902,7 +914,8 @@ class DownloadManager {
       this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
         (pause) => this.finishChunk(download, job, pause),
         (headers) => download.headers = headers,
-        this.mUserAgent);
+        this.mUserAgent,
+        this.mThrottle);
     })
     .catch({ code: 'EBUSY' }, () => Promise.reject(new ProcessCanceled('output file is locked')));
   }
