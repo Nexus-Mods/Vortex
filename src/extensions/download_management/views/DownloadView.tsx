@@ -473,7 +473,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       api.events.emit('start-install-download', dlId, undefined, (err: Error, id: string) => {
         if (err instanceof UserCanceled) {
           // nop
-        } else {
+        } else if (err !== null) {
           api.showErrorNotification('Failed to install', err, {
             allowReport: !((err instanceof ProcessCanceled)
                         || (err instanceof ServiceTemporarilyUnavailable)),
