@@ -6,7 +6,7 @@ import { DataInvalid } from './CustomErrors';
 import { getVisibleWindow, terminate } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
-import { checksum, writeFileAtomic } from './fsAtomic';
+import { writeFileAtomic } from './fsAtomic';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
@@ -22,6 +22,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
+import { checksum } from './checksum';
 
 let basePersistor: ReduxPersistor<IState>;
 

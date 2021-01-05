@@ -195,14 +195,14 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    const extraInfo = this.getExtraDlOptions(modInfo, redownload);
+    const downloadOptions = this.getExtraDlOptions(modInfo, redownload);
 
     const urlIn = urls[0].split('<')[0];
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
         .then(() => this.mManager.enqueue(id, urls, fileName, processCB,
-                                          downloadPath, extraInfo, redownload))
+                                          downloadPath, downloadOptions))
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { id, file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -318,7 +318,7 @@ export class DownloadObserver {
               cb(err);
             } else {
               showError(this.mApi.store.dispatch, 'Failed to remove file', err, {
-                allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1
+                allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1,
               });
             }
           });
@@ -340,7 +340,7 @@ export class DownloadObserver {
     }
 
     if (['init', 'started'].includes(download.state)) {
-      log('debug', 'pausing download', { id: download.id, oldState: download.state });
+      log('debug', 'pausing download', { id: downloadId, oldState: download.state });
       const unfinishedChunks = this.mManager.pause(downloadId);
       this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
       if (callback !== undefined) {

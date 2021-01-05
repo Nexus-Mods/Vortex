@@ -66,11 +66,6 @@ export interface ITableAttribute<T = any> {
    */
   description?: string | ITString;
   /**
-   * position of the attribute within the table (at some point we may allow users to override
-   * this at which point this will be the default)
-   */
-  position?: number;
-  /**
    * If set, determins the order in which attributes are displayed (the order of columns if
    * placement is 'table' or vertical order in details).
    * Lower number means further left/further up respectively.
@@ -107,8 +102,8 @@ export interface ITableAttribute<T = any> {
    */
   isGroupable?: boolean | ((object: T, t: TFunction) => string);
   /**
-   * if set, the group name is going to be translated using this function before being displayed to the user
-   * (this affects only the group headers, not filters)
+   * if set, the group name is going to be translated using this function before being displayed to
+   * the user (this affects only the group headers, not filters)
    * You probably want to use this if you have a customRenderer on a column that is groupable
    */
   groupName?: (id: string) => string;

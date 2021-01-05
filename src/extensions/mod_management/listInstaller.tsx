@@ -5,7 +5,7 @@ import { ISupportedInstaller } from './types/IModInstaller';
 import { ProgressDelegate } from './types/InstallFunc';
 import { ISupportedResult } from './types/TestSupported';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 function testSupported(): Promise<ISupportedResult> {
@@ -24,6 +24,7 @@ function makeListInstaller(extractList: IFileListItem[],
                            : Promise<ISupportedInstaller> {
   return Promise.resolve({
     installer: {
+      id: 'list-installer',
       priority: 0,
       testSupported,
       install: (files: string[], destinationPath: string, gameId: string,

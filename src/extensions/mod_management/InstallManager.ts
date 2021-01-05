@@ -1410,7 +1410,7 @@ class InstallManager {
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
           if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
-            return;
+            return Promise.resolve(undefined);
           }
           api.showErrorNotification('Failed to install dependency',
             '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
@@ -1422,11 +1422,13 @@ class InstallManager {
               errorMessage: err.message,
             },
           });
+          return Promise.resolve(undefined);
         })
         .catch(NotFound, err => {
           api.showErrorNotification('Failed to install dependency', err, {
             allowReport: false,
           });
+          return Promise.resolve(undefined);
         })
         .catch(err => {
           if (err instanceof UserCanceled) {
@@ -1435,6 +1437,7 @@ class InstallManager {
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
           });
+          return Promise.resolve(undefined);
         })
         .then((updatedDependency: IDependency) => {
           log('debug', 'done installing dependency', {

@@ -91,9 +91,9 @@ import crashDumpT from 'crash-dump';
 import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
+import { checksum } from './util/checksum';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
-import { checksum } from './util/fsAtomic';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
@@ -161,16 +161,7 @@ remote.app.setPath('temp', tempPath);
 
 let deinitCrashDump: () => void;
 
-if (process.env.CRASH_REPORTING === 'electron') {
-  // tslint:disable-next-line:no-var-requires
-  const crashReporter: typeof crashReporterT = require('electron').crashReporter;
-  crashReporter.start({
-    productName: 'Vortex',
-    companyName: 'Black Tree Gaming Ltd.',
-    uploadToServer: false,
-    submitURL: '',
-  });
-} else if (process.env.CRASH_REPORTING === 'vortex') {
+if (process.env.CRASH_REPORTING === 'vortex') {
   // tslint:disable-next-line:no-var-requires
   const crashDump: typeof crashDumpT = require('crash-dump').default;
   deinitCrashDump =

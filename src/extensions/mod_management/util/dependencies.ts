@@ -72,7 +72,7 @@ function browseForDownload(api: IExtensionApi,
     };
 
     return resolve({
-      url: () => doLookup().then(out => out?.url),
+      url: () => doLookup().then(out => Promise.resolve(out?.url)),
       referer: () => doLookup().then(out => out?.referer),
     });
   });
