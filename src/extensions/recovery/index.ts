@@ -116,10 +116,13 @@ function init(context: IExtensionContext): boolean {
                   filters: [{ extensions: ['json'], name: 'State backup' }],
                   title: 'Select file location',
                 })
-                  .then(filePath => {
-                    if (filePath !== undefined) {
-                      return fs.copyAsync(backupPath, filePath);
-                    }
+                  .then(filePath => (filePath !== undefined)
+                    ? fs.copyAsync(backupPath, filePath)
+                    : Promise.resolve())
+                  .catch(err => {
+                    context.api.showErrorNotification('Failed to copy state backup', err, {
+                      allowReport: false,
+                    });
                   });
               },
             },
