@@ -1,7 +1,9 @@
 /**
- * wrapper for the fs / fs-extra-promise module
- * this allows us to customise the behaviour of fs function across the application.
- * The api should remain compatible with fs-extra-promise, but extensions can be made
+ * wrapper for the fs / fs-extra module
+ * this allows us to customise the behaviour of fs function across the application,
+ * In particular it handles certain user-interactions (file busy, permissions, ...) in a uniform
+ * way.
+ * The api should remain compatible with fs-extra, but extensions can be made
  * Notable behaviour changes:
  * - common async functions now retrieve a backtrace before calling, so that on error
  *   they can provide a useful backtrace to where the function was called
@@ -376,14 +378,24 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
   } else if (['EBADF', 'EIO'].includes(error.code)) {
     return ioQuery();
   } else if (error.code === 'EPERM') {
-    return unlockConfirm(filePath)
+    let unlockPath = filePath;
+    return PromiseBB.resolve(fs.stat(unlockPath))
+      .catch(statErr => {
+        if (statErr.code === 'ENOENT') {
+          unlockPath = path.dirname(filePath);
+          return PromiseBB.resolve();
+        } else {
+          return PromiseBB.reject(statErr);
+        }
+      })
+      .then(() => unlockConfirm(unlockPath))
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
           return elevated((ipcPath, req: NodeRequire) => {
             const { allow }: { allow: typeof allowT } = req('permissions');
-            return allow(filePath, userId as any, 'rwx');
-          }, { filePath, userId })
+            return allow(unlockPath, userId as any, 'rwx');
+          }, { unlockPath, userId })
             .then(() => true)
             .catch(elevatedErr => {
               if ((elevatedErr instanceof UserCanceled)
