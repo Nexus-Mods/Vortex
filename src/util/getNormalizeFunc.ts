@@ -1,6 +1,7 @@
-import * as fs from './fs';
-
 import Promise from 'bluebird';
+// we don't want errors from this function to be reported to the user, there is
+// sensible fallbacks for if fs calls fail
+import * as fsOrig from 'fs-extra';
 import * as path from 'path';
 
 export type Normalize = (input: string) => string;
@@ -45,7 +46,7 @@ function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolea
 }
 
 function isCaseSensitive(testPath: string): Promise<boolean> {
-  return fs.readdirAsync(testPath)
+  return Promise.resolve(fsOrig.readdir(testPath))
     .then(files => {
       // we need a filename that contains letters with case variants, otherwise we can't
       // determine case sensitivity
@@ -59,9 +60,9 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
       // if they are all the same file, it's case insensitive
       return Promise.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()],
-        file => fs.statAsync(path.join(testPath, file)).reflect());
+        file => Promise.resolve(fsOrig.stat(path.join(testPath, file))).reflect());
     })
-    .then((stats: Array<Promise.Inspection<fs.Stats>>) => {
+    .then((stats: Array<Promise.Inspection<fsOrig.Stats>>) => {
       if (stats === null) {
         return isCaseSensitiveFailed(testPath, 'Not found');
       }

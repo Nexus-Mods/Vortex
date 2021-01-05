@@ -10,6 +10,8 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers, IResolvedURL, IResolvedURLs } from './types/ProtocolHandlers';
 
+import makeThrottle from './util/throttle';
+
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
@@ -21,7 +23,9 @@ import * as http from 'http';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as stream from 'stream';
 import * as url from 'url';
+import * as zlib from 'zlib';
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -31,7 +35,7 @@ const MAX_REDIRECT_FOLLOW = 2;
 const STALL_TIMEOUT = 15 * 1000;
 const MAX_STALL_RESETS = 2;
 
-export type RedownloadMode = 'always' | 'never' | 'ask';
+export type RedownloadMode = 'always' | 'never' | 'ask' | 'replace';
 
 export class AlreadyDownloaded extends Error {
   private mFileName: string;
@@ -131,17 +135,20 @@ class DownloadWorker {
   private mStallTimer: NodeJS.Timer;
   private mStallResets: number = MAX_STALL_RESETS;
   private mRedirectsFollowed: number = 0;
+  private mThrottle: () => stream.Transform;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
               finishCB: FinishCallback,
               headersCB: (headers: any) => void,
-              userAgent: string) {
+              userAgent: string,
+              throttle: () => stream.Transform) {
     this.mProgressCB = progressCB;
     this.mFinishCB = finishCB;
     this.mHeadersCB = headersCB;
     this.mJob = job;
     this.mUserAgent = userAgent;
+    this.mThrottle = throttle;
     job.url()
       .then(jobUrl => {
         this.mUrl = jobUrl;
@@ -203,7 +210,12 @@ class DownloadWorker {
     let referer: string;
     try {
       const [urlIn, refererIn] = jobUrl.split('<');
-      parsed = url.parse(decodeURI(urlIn));
+      // at some point in the past we'd encode the uri here which apparently led to double-encoded
+      // uris. Then we'd decode it which led to the request failing if there were characters in
+      // the url that required encoding.
+      // Since all that was tested at some point I'm getting the feeling it's inconsistent in
+      // the callers whether the url is encoded or not
+      parsed = url.parse(urlIn);
       referer = refererIn;
       jobUrl = urlIn;
     } catch (err) {
@@ -212,16 +224,6 @@ class DownloadWorker {
     }
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
-
-    const headers = {
-      Range: `bytes=${job.offset}-${job.offset + job.size}`,
-      'User-Agent': this.mUserAgent,
-      'Accept-Encoding': 'gzip, deflate',
-      Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-    };
-    if (job.options.referer !== undefined) {
-      headers['Referer'] = job.options.referer;
-    }
 
     try {
       const headers = {
@@ -247,7 +249,20 @@ class DownloadWorker {
         this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
         this.mResponse = res;
         this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
-        res
+        let str: stream.Readable = res;
+
+        str = str.pipe(this.mThrottle());
+
+        switch (res.headers['content-encoding']) {
+          case 'gzip':
+            str = str.pipe(zlib.createGunzip());
+            break;
+          case 'deflate':
+            str = str.pipe(zlib.createInflate());
+            break;
+        }
+
+        str
           .on('data', (data: Buffer) => {
             clearTimeout(this.mStallTimer);
             this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
@@ -391,7 +406,12 @@ class DownloadWorker {
           this.mRedirected = false;
           // any data we may have gotten with the old reply is useless
           this.mJob.size += this.mJob.received;
-          this.mJob.received = this.mJob.offset = 0;
+          this.mJob.confirmedSize = this.mJob.size;
+          this.mJob.received
+            = this.mJob.offset
+            = this.mJob.confirmedReceived
+            = this.mJob.confirmedOffset
+            = 0;
           this.mJob.state = 'running';
           this.mEnded = false;
           this.assignJob(this.mJob, newUrl);
@@ -414,7 +434,10 @@ class DownloadWorker {
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
-      let size: number = parseInt(response.headers['content-length'] as string, 10);
+      let size: number = response.headers['content-length'] !== undefined
+        ? parseInt(response.headers['content-length'] as string, 10)
+        : -1;
+
       if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
@@ -428,7 +451,9 @@ class DownloadWorker {
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
         // the file is smaller than the minimum size for chunking. offset should always be 0 here
-        this.mJob.size = size - this.mJob.offset;
+        this.mJob.size = (size !== -1)
+          ? size - this.mJob.offset
+          : - 1;
       }
 
       let fileName;
@@ -479,8 +504,13 @@ class DownloadWorker {
     } catch (err) {
       return Promise.reject(err);
     }
+
     const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(() => null);
+      .then(() => {
+        this.mJob.confirmedReceived += merged.length;
+        this.mJob.confirmedOffset += merged.length;
+        this.mJob.confirmedSize -= merged.length;
+      });
 
     // need to update immediately, otherwise chunks might overwrite each other
     this.mJob.received += merged.length;
@@ -550,6 +580,7 @@ class DownloadManager {
   private mProtocolHandlers: IProtocolHandlers;
   private mResolveCache: { [url: string]: { time: number, urls: string[], meta: any } } = {};
   private mFileExistsCB: (fileName: string) => Promise<boolean>;
+  private mThrottle: () => stream.Transform;
 
   /**
    * Creates an instance of DownloadManager.
@@ -564,7 +595,8 @@ class DownloadManager {
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string,
-              protocolHandlers: IProtocolHandlers) {
+              protocolHandlers: IProtocolHandlers,
+              maxBandwidth: () => number) {
     // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 20 * 1024 * 1024;
     this.mDownloadPath = downloadPath;
@@ -573,6 +605,7 @@ class DownloadManager {
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
     this.mProtocolHandlers = protocolHandlers;
+    this.mThrottle = () => makeThrottle(maxBandwidth);
   }
 
   public setFileExistsCB(cb: (fileName: string) => Promise<boolean>) {
@@ -662,7 +695,7 @@ class DownloadManager {
     return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
-        origName: filePath,
+        origName: path.basename(filePath),
         tempName: filePath,
         error: false,
         urls,
@@ -711,7 +744,7 @@ class DownloadManager {
     }
     log('info', 'stopping download', { id });
 
-    // first, make sure not-yet-started chungs are paused, otherwise
+    // first, make sure not-yet-started chunks are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
     download.chunks.forEach((chunk: IDownloadJob) => {
@@ -736,6 +769,8 @@ class DownloadManager {
     const download: IRunningDownload = this.mQueue.find(
       (value: IRunningDownload) => value.id === id);
     if (download === undefined) {
+      // this indicates the download isn't queued, so effectively it's already
+      // paused
       log('warn', 'failed to pause download, not found', { id });
       return undefined;
     }
@@ -754,11 +789,11 @@ class DownloadManager {
 
     // stop running workers
     download.chunks.forEach((chunk: IDownloadJob) => {
-      if ((chunk.state === 'running') && (chunk.size > 0)) {
+      if (['running', 'paused'].includes(chunk.state) && (chunk.size > 0)) {
         unfinishedChunks.push({
-          received: chunk.received,
-          offset: chunk.offset,
-          size: chunk.size,
+          received: chunk.confirmedReceived,
+          offset: chunk.confirmedOffset,
+          size: chunk.confirmedSize,
           url: chunk.url,
         });
         if (this.mBusyWorkers[chunk.workerId] !== undefined) {
@@ -834,6 +869,9 @@ class DownloadManager {
           }
           return resolved.urls[0];
         }),
+      confirmedOffset: 0,
+      confirmedSize: this.mMinChunkSize,
+      confirmedReceived: 0,
       offset: 0,
       state: 'init',
       received: 0,
@@ -930,7 +968,8 @@ class DownloadManager {
       this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
         (pause) => this.finishChunk(download, job, pause),
         (headers) => download.headers = headers,
-        this.mUserAgent);
+        this.mUserAgent,
+        this.mThrottle);
     })
     .catch({ code: 'EBUSY' }, () => Promise.reject(new ProcessCanceled('output file is locked')));
   }
@@ -991,8 +1030,21 @@ class DownloadManager {
       download.finalName = newName;
       newName.then(resolvedName => {
         if (!download.assembler.isClosed()) {
+          const oldTempName = download.tempName;
           download.tempName = resolvedName;
-          download.assembler.rename(resolvedName);
+          return download.assembler.rename(resolvedName)
+            .then(() => {
+              download.finalName = newName;
+            })
+            .catch(err => {
+              // if we failed to rename we will try to continue writing to the original file
+              // so reset to the original name and remove the temporary one that got reserved
+              // for the rename
+              download.tempName = oldTempName;
+              return fs.removeAsync(resolvedName)
+                .catch(() => null)
+                .then(() => Promise.reject(err));
+            });
         }
       })
       .catch(err => {
@@ -1022,10 +1074,14 @@ class DownloadManager {
 
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
+        const minSize = Math.min(chunkSize, size - offset);
         download.chunks.push({
+          confirmedReceived: 0,
+          confirmedOffset: offset,
+          confirmedSize: minSize,
           received: 0,
           offset,
-          size: Math.min(chunkSize, size - offset),
+          size: minSize,
           state: 'init',
           options: download.options,
           url: () => download.resolvedUrls().then(resolved => resolved.urls[0]),
@@ -1044,9 +1100,9 @@ class DownloadManager {
   private toStoredChunk = (job: IDownloadJob): IChunk => {
     return {
       url: job.url,
-      size: job.size,
-      offset: job.offset,
-      received: job.received,
+      size: job.confirmedSize,
+      offset: job.confirmedOffset,
+      received: job.confirmedReceived,
     };
   }
 
@@ -1060,6 +1116,9 @@ class DownloadManager {
 
         return resolved.urls[0];
       }),
+      confirmedOffset: chunk.offset,
+      confirmedSize: chunk.size,
+      confirmedReceived: chunk.received,
       offset: chunk.offset,
       state: 'init',
       size: chunk.size,
@@ -1178,7 +1237,14 @@ class DownloadManager {
         fs.openAsync(fullPath, 'wx')
           .then((newFd) => {
             fd = newFd;
-            return fs.closeAsync(newFd);
+            return fs.closeAsync(newFd)
+              .catch((err) => {
+                // EBADF may be a non-issue. If it isn't we will notice when
+                // we try to write to the file
+                if (err.code !== 'EBADF') {
+                  return Promise.reject(err);
+                }
+              });
           }).then(() => {
             resolve(fullPath);
           }).catch((err) => {
@@ -1192,7 +1258,9 @@ class DownloadManager {
                   loop();
                 } else if (redownload === 'never') {
                   return reject(new AlreadyDownloaded(fileName));
-                } else { // redownload is "ask" or undefined
+                } else if (redownload === 'replace') {
+                  return resolve(fullPath);
+                } else {
                   this.mFileExistsCB(fileName)
                     .then((cont: boolean) => {
                       if (cont) {

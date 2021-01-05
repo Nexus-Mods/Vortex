@@ -4,13 +4,18 @@ import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
+import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IAttachment } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import getVortexPath from '../../../util/getVortexPath';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
@@ -22,6 +27,7 @@ import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
+import getDownloadGames from '../util/getDownloadGames';
 
 import createColumns from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
@@ -57,7 +63,8 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
-                notificationId?: string, allowReport?: boolean) => void;
+                notificationId?: string, allowReport?: boolean,
+                attachments?: IAttachment[]) => void;
   onShowDropzone: (show: boolean) => void;
   onShowGraph: (show: boolean) => void;
 }
@@ -71,10 +78,19 @@ interface IComponentState {
 
 const nop = () => null;
 
+function MountTrigger(props: { cb: () => void }) {
+  React.useCallback(() => {
+    props.cb();
+  }, []);
+  return null;
+}
+
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
   private actions: ITableRowAction[];
   private mColumns: Array<ITableAttribute<IDownload>>;
+  private mTableActions: IActionDefinition[];
+  private mHeaderRendered: boolean = false;
 
   constructor(props: IDownloadViewProps) {
     super(props);
@@ -122,6 +138,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         condition: this.resumable,
       },
       {
+        icon: 'resume',
+        title: 'Retry',
+        action: this.resume,
+        condition: this.retryable,
+      },
+      {
         icon: 'delete',
         title: 'Delete',
         action: this.remove,
@@ -142,9 +164,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         singleRowAction: true,
       },
     ];
+
+    this.mTableActions = [];
   }
 
   public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
+    if (!this.mHeaderRendered) {
+      // bit of a hack. The toolbar doesn't get rendered until the reference for the
+      // portal target is initialized, until then we can't make the update dependent on just
+      // the props
+      return true;
+    }
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
@@ -166,33 +196,24 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     let content = null;
 
-    if (gameMode === undefined) {
-      content = (
-        <Panel className='placeholder-container'>
-          <Panel.Body>
-            <EmptyPlaceholder
-              icon='folder-download'
-              text={t('Please select a game to manage first')}
-              fill={true}
-            />
-          </Panel.Body>
-        </Panel>
-      );
-    } else if (Object.keys(this.props.downloads).length === 0) {
+    let filteredIds = Object.keys(downloads);
+    // TODO: proposed but ultimately rejected, that may change in the future
+    // .filter(dlId => downloads[dlId].modInfo?.internal !== true);
+
+    if ((filteredIds.length === 0) && (gameMode !== undefined)) {
       content = this.renderDropzone();
     } else {
-      const filtered = viewAll
-        ? downloads
-        : Object.keys(downloads)
-            .filter(dlId => downloads[dlId].installed === undefined)
-            .reduce((prev, dlId) => {
-              prev[dlId] = downloads[dlId];
-              return prev;
-            }, {});
+      if (!viewAll) {
+        filteredIds = filteredIds.filter(dlId => downloads[dlId].installed === undefined);
+      }
+      const filtered = filteredIds.reduce((prev, dlId) => {
+        prev[dlId] = downloads[dlId];
+        return prev;
+      }, {});
       content = (
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
-          <FlexLayout.Flex>
+          <FlexLayout.Flex className='download-list-container'>
             <Panel className='download-panel' >
               {secondary ? null : (
                 <Panel
@@ -229,8 +250,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               </Panel.Body>
             </Panel>
           </FlexLayout.Flex>
-          <FlexLayout.Fixed>
-            {secondary ? null : this.renderDropzone()}
+          <FlexLayout.Fixed className='download-drop-container'>
+            {secondary || (gameMode === undefined) ? null : this.renderDropzone()}
           </FlexLayout.Fixed>
         </FlexLayout>
       );
@@ -238,11 +259,24 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     return (
       <MainPage>
+        <MainPage.Header>
+          {this.mHeaderRendered ? null : <MountTrigger cb={this.wasRendered}/>}
+          <IconBar
+            group='download-actions'
+            staticElements={this.mTableActions}
+            className='menubar'
+            t={t}
+          />
+        </MainPage.Header>
         <MainPage.Body>
           {content}
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private wasRendered = () => {
+    this.mHeaderRendered = true;
   }
 
   private renderDropzone(): JSX.Element {
@@ -302,50 +336,80 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     )) !== undefined;
   }
 
+  private reportDownloadError(err: any, resume: boolean) {
+    if (err === null) {
+      return;
+    }
+    const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
+    const title = resume ? 'Failed to resume download' : 'Failed to start download';
+    if (err instanceof ProcessCanceled) {
+      this.props.onShowError(title, err, undefined, false);
+    } else if (err instanceof UserCanceled) {
+      // nop
+    } else if (err instanceof DownloadIsHTML) {
+      if (resume) {
+        this.props.onShowError(title,
+          'Sorry, the download link is no longer valid. '
+          + 'Please restart the download.',
+          undefined, false);
+      } // else nop
+    } else if ((err.HTTPStatus !== undefined)
+      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
+      this.props.onShowError(title,
+        'Sorry, the download link is no longer valid. '
+        + 'Please restart the download.',
+        undefined, false);
+    } else if (err instanceof TemporaryError) {
+      this.props.onShowError(title,
+        'Downloading failed due to an I/O error (either '
+        + 'network or disk access). This is very likely a '
+        + 'temporary problem, please try resuming at a later time.',
+        undefined, false);
+    } else if (err.message.match(/Protocol .* not supported/) !== null) {
+      this.context.api.showErrorNotification(title,
+        err.message, {
+        allowReport: false,
+      });
+    } else if (err['code'] === 'ERR_UNESCAPED_CHARACTERS') {
+      this.context.api.showErrorNotification(title,
+        err.message, {
+        allowReport: false,
+        message: 'Invalid URL',
+      });
+    } else if (err.code === 'ECONNRESET') {
+      this.props.onShowError(title,
+        'Server closed the connection, please '
+        + 'check your internet connection',
+        undefined, false);
+    } else if (err.code === 'ETIMEDOUT') {
+      this.props.onShowError(title,
+        'Connection timed out, please check '
+        + 'your internet connection',
+        undefined, false);
+    } else if (err.code === 'ENOSPC') {
+      this.props.onShowError(title, 'The disk is full', undefined, false);
+    } else if (err.code === 'EBADF') {
+      this.props.onShowError(title,
+        'Failed to write to disk. If you use a removable media or '
+        + 'a network drive, the connection may be unstable. '
+        + 'Please try resuming once you checked.',
+        undefined, false);
+    } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
+      this.props.onShowError(title,
+        'Network communication error (SSL payload corrupted). '
+        + 'This is likely a temporary issue, please try again later.',
+        undefined, false);
+    } else {
+      err['attachLogOnReport'] = true;
+      this.props.onShowError(title, err);
+    }
+  }
+
   private resume = (downloadIds: string[]) => {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
-          const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
-          if (err instanceof ProcessCanceled) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, this download is missing info necessary to resume. '
-                                   + 'Please try restarting it.',
-                                   undefined, false);
-          } else if (err instanceof UserCanceled) {
-            // nop
-          } else if (err instanceof DownloadIsHTML) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, the download link is no longer valid. '
-                                   + 'Please restart the download.',
-              undefined, false);
-          } else if ((err.HTTPStatus !== undefined)
-                     && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, the download link is no longer valid. '
-                                   + 'Please restart the download.',
-              undefined, false);
-          } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to resume download',
-                                   'Server closed the connection, please '
-                                   + 'check your internet connection',
-              undefined, false);
-          } else if (err.code === 'ETIMEDOUT') {
-            this.props.onShowError('Failed to resume download',
-                                   'Connection timed out, please check '
-                                   + 'your internet connection',
-              undefined, false);
-          } else if (err.code === 'ENOSPC') {
-            this.props.onShowError('Failed to resume download', 'The disk is full',
-              undefined, false);
-          } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
-            this.props.onShowError('Failed to resume download',
-                                   'Network communication error (SSL payload corrupted). '
-                                   + 'This is likely a temporary issue, please try again later.',
-                                   undefined, false);
-          } else {
-            this.props.onShowError('Failed to resume download', err);
-          }
+          this.reportDownloadError(err, true);
         }
       });
     });
@@ -354,6 +418,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private resumable = (downloadIds: string[]) => {
     return downloadIds.find((downloadId: string) => (
       this.getDownload(downloadId).state === 'paused'
+    )) !== undefined;
+  }
+
+  private retryable = (downloadIds: string[]) => {
+    return downloadIds.find((downloadId: string) => (
+      this.getDownload(downloadId).state === 'failed'
     )) !== undefined;
   }
 
@@ -370,33 +440,46 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.getDownload(downloadId).localPath
     ));
 
-    onShowDialog('question', 'Confirm Removal', {
+    onShowDialog('question', 'Confirm Deletion', {
       text: t('Do you really want to delete this archive?',
         { count: downloadIds.length, replace: { count: downloadIds.length } }),
       message: downloadNames.join('\n'),
+      options: {
+        translated: true,
+      },
     }, [
         { label: 'Cancel' },
-        { label: 'Remove', action: () => downloadIds.forEach(removeId) },
+        { label: 'Delete', action: () => downloadIds.forEach(removeId) },
     ]);
   }
 
   private removable = (downloadIds: string[]) => {
     const match = ['finished', 'failed', undefined];
     return downloadIds.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
+      match.includes(this.getDownload(downloadId).state)
     )) !== undefined;
   }
 
   private cancelable = (downloadIds: string[]) => {
     const match = ['init', 'started', 'paused', 'redirect'];
     return downloadIds.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
+      match.includes(this.getDownload(downloadId).state)
     )) !== undefined;
   }
 
   private install = (downloadIds: string[]) => {
-    downloadIds.forEach((downloadId: string) => {
-      this.context.api.events.emit('start-install-download', downloadId);
+    const { api } = this.context;
+    downloadIds.forEach((dlId: string) => {
+      api.events.emit('start-install-download', dlId, undefined, (err: Error, id: string) => {
+        if (err instanceof UserCanceled) {
+          // nop
+        } else if (err !== null) {
+          api.showErrorNotification('Failed to install', err, {
+            allowReport: !((err instanceof ProcessCanceled)
+                        || (err instanceof ServiceTemporarilyUnavailable)),
+          });
+        }
+      });
     });
   }
 
@@ -414,11 +497,30 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private open = (downloadId: string) => {
     const { downloadPathForGame, downloads } = this.props;
     const download: IDownload = downloads[downloadId];
-    if ((download !== undefined) && (download.localPath !== undefined)) {
-      const downloadGame = Array.isArray(download.game)
-        ? download.game[0]
-        : download.game;
-      opn(path.join(downloadPathForGame(downloadGame), download.localPath))
+    if (download?.localPath !== undefined) {
+      const downloadGame = getDownloadGames(download);
+
+      if (downloadPathForGame(downloadGame[0]) === undefined) {
+        // Not sure under what circumstances we would fail to retrieve a game's
+        //  download path. https://github.com/Nexus-Mods/Vortex/issues/7372
+        const downloadData = JSON.stringify(download, undefined, 2);
+        log('error', 'Failed to open archive', downloadData);
+        const attachments: IAttachment[] = [
+          {
+            id: 'logfile',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          },
+        ];
+        const err = new Error(`Cannot find download path for ${downloadGame[0]}`);
+        err['download'] = download;
+        this.props.onShowError('Failed to open archive', err,
+          undefined, true, attachments);
+        return;
+      }
+
+      opn(path.join(downloadPathForGame(downloadGame[0]), download.localPath))
         .catch(err => {
           this.props.onShowError('Failed to open archive', err, undefined, false);
         });
@@ -465,33 +567,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private inspectable = (downloadId: string) => {
     const download = this.getDownload(downloadId);
-    return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
+    return ['failed', 'redirect'].includes(download.state);
   }
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
-        (error: Error) => {
-        if ((error !== null)
-            && !(error instanceof DownloadIsHTML)
-            && !(error instanceof UserCanceled)) {
-          if (error instanceof ProcessCanceled) {
-            this.context.api.showErrorNotification('Failed to start download',
-              error.message, {
-              allowReport: false,
-            });
-          } else if (error.message.match(/Protocol .* not supported/) !== null) {
-            this.context.api.showErrorNotification('Failed to start download',
-              error.message, {
-              allowReport: false,
-            });
-          } else {
-            this.context.api.showErrorNotification('Failed to start download', error, {
-              allowReport: false,
-            });
-          }
-        }
-      }));
+        (err: Error) => {
+          this.reportDownloadError(err, false);
+        }));
     } else {
       this.context.api.events.emit('import-downloads', dlPaths);
     }

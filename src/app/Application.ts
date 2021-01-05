@@ -22,7 +22,7 @@ import { allHives, createFullStateBackup, createVortexStore, currentStatePath, e
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
+import { isMajorDowngrade, replaceRecursive, spawnSelf, timeout, truthy } from '../util/util';
 
 import { addNotification, setCommandLine } from '../actions';
 
@@ -32,7 +32,7 @@ import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
 import crashDumpT from 'crash-dump';
-import {app, crashReporter as crashReporterT, dialog, ipcMain, shell} from 'electron';
+import {app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
@@ -70,7 +70,7 @@ class Application {
   constructor(args: IParameters) {
     this.mArgs = args;
 
-    ipcMain.on('show-window', () => this.showMainWindow());
+    ipcMain.on('show-window', () => this.showMainWindow(args?.startMinimized));
 
     process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 1.5).toString();
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
@@ -97,8 +97,8 @@ class Application {
         companyName: 'Black Tree Gaming Ltd.',
         uploadToServer: false,
         submitURL: '',
-        crashesDirectory: path.join(tempPath, 'dumps'),
       });
+      app.setPath('crashDumps', path.join(tempPath, 'dumps'));
     } else if (process.env.CRASH_REPORTING === 'vortex') {
       const crashDump: typeof crashDumpT = require('crash-dump').default;
       this.mDeinitCrashDump =
@@ -111,7 +111,7 @@ class Application {
 
   private startUi(): Promise<void> {
     const MainWindow = require('./MainWindow').default;
-    this.mMainWindow = new MainWindow(this.mStore);
+    this.mMainWindow = new MainWindow(this.mStore, this.mArgs.inspector);
     log('debug', 'creating main window');
     return this.mMainWindow.create(this.mStore).then(webContents => {
       log('debug', 'window created');
@@ -128,7 +128,7 @@ class Application {
   private startSplash(): Promise<SplashScreenT> {
     const SplashScreen = require('./SplashScreen').default;
     const splash: SplashScreenT = new SplashScreen();
-    return splash.create()
+    return splash.create(this.mArgs.disableGPU)
       .then(() => {
         setWindow(splash.getHandle());
         return splash;
@@ -169,12 +169,32 @@ class Application {
     });
 
     app.on('ready', () => {
+      const vortexPath = process.env.NODE_ENV === 'development'
+          ? 'vortex_devel'
+          : 'vortex';
+
+      // if userData specified, use it
+      let userData = args.userData
+          // (only on windows) use ProgramData from environtment
+          ?? ((args.shared && process.platform === 'win32')
+            ? path.join(process.env.ProgramData, 'vortex')
+            // this allows the development build to access data from the
+            // production version and vice versa
+            : path.resolve(app.getPath('userData'), '..', vortexPath));
+      userData = path.join(userData, currentStatePath);
+
+      // handle nxm:// internally
+      protocol.registerHttpProtocol('nxm', (request, callback) => {
+        const cfgFile: IParameters = {download: request.url};
+        this.applyArguments(cfgFile);
+      });
+
       if (args.get) {
-        this.handleGet(args.get, args.shared);
+        this.handleGet(args.get, userData);
       } else if (args.set) {
-        this.handleSet(args.set, args.shared);
+        this.handleSet(args.set, userData);
       } else if (args.del) {
-        this.handleDel(args.del, args.shared);
+        this.handleDel(args.del, userData);
       } else {
         this.regularStart(args);
       }
@@ -231,7 +251,6 @@ class Application {
 
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
-
     return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
         .catch(() => null)
         .tap(() => {
@@ -241,9 +260,13 @@ class Application {
         })
         .then(() => this.testUserEnvironment())
         .then(() => this.validateFiles())
-        .then(() => this.startSplash())
+        .then(() => (args?.startMinimized === true)
+          ? Promise.resolve(undefined)
+          : this.startSplash())
         // start initialization
-        .tap(() => log('debug', 'showing splash screen'))
+        .tap(splashIn => (splashIn !== undefined)
+          ? log('debug', 'showing splash screen')
+          : log('debug', 'starting without splash screen'))
         .then(splashIn => {
           splash = splashIn;
           return this.createStore(args.restore)
@@ -284,16 +307,22 @@ class Application {
         .then(() => {
           this.mStore.dispatch(setCommandLine(args));
         })
-        // .then(() => this.initDevel())
+        .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
         .then(() => this.startUi())
         .tap(() => log('debug', 'setting up tray icon'))
         .then(() => this.createTray())
         // end initialization
-        .tap(() => log('debug', 'removing splash screen'))
+        .tap(() => {
+          if (splash !== undefined) {
+            log('debug', 'removing splash screen');
+          }
+        })
         .then(() => {
           this.connectTrayAndWindow();
-          return splash.fadeOut();
+          return (splash !== undefined)
+            ? splash.fadeOut()
+            : Promise.resolve();
         })
         .tapCatch((err) => log('debug', 'quitting with exception', err.message))
         .catch(UserCanceled, () => app.exit())
@@ -333,9 +362,11 @@ class Application {
           try {
             if (err instanceof Error) {
               const pretty = prettifyNodeErrorMessage(err);
+              const details = pretty.message
+                .replace(/{{ *([a-zA-Z]+) *}}/g, (m, key) => pretty.replace?.[key] || key);
               terminate({
                 message: 'Startup failed',
-                details: pretty.message,
+                details,
                 stack: err.stack,
               }, this.mStore !== undefined ? this.mStore.getState() : {},
                 pretty.allowReport);
@@ -358,23 +389,36 @@ class Application {
       return Promise.resolve(true);
     }
 
-    return new Promise((resolve) => {
+    const getSystemPolicyValue = (key: string) => {
       try {
         const res = RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
-          'ConsentPromptBehaviorAdmin');
-        log('debug', 'UAC settings found', JSON.stringify(res, undefined, 2));
-        return ((res.type === 'REG_DWORD') && (res.value === 0))
-          ? resolve(false)
-          : resolve(true);
+          key);
+        return Promise.resolve({ key, type: res.type, value: res.value});
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
         //  as the user might have a version of Windows that does not use
         //  the key we're looking for.
-        log('warn', 'failed to check UAC settings', err);
-        return resolve(true);
+        log('debug', 'failed to check UAC settings', err);
+        return Promise.resolve(undefined);
       }
-    });
+    };
+
+    return Promise.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
+                        getSystemPolicyValue('ConsentPromptBehaviorUser')])
+      .then(res => {
+        res.forEach(value => {
+          if (value !== undefined) {
+            log('debug', 'UAC settings found', `${value.key}: ${value.value}`);
+          }
+        });
+        const adminConsent = res[0];
+        return ((adminConsent.type === 'REG_DWORD') && (adminConsent.value === 0))
+          ? Promise.resolve(false)
+          : Promise.resolve(true);
+      })
+      // Perfectly ok not to have the registry keys.
+      .catch(err => Promise.resolve(true));
   }
 
   private warnAdmin(): Promise<void> {
@@ -479,20 +523,13 @@ class Application {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/g, '$1'));
   }
 
-  private handleGet(getPath: string | boolean, shared: boolean): Promise<void> {
+  private handleGet(getPath: string | boolean, dbpath: string): Promise<void> {
     if (typeof(getPath) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development'
-        ? 'vortex_devel'
-        : 'vortex';
-
-    const dbpath = shared
-      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
-      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
@@ -514,20 +551,13 @@ class Application {
       });
   }
 
-  private handleSet(setParameters: string[], shared: boolean): Promise<void> {
+  private handleSet(setParameters: string[], dbpath: string): Promise<void> {
     if (setParameters.length !== 2) {
       process.stdout.write('Usage: vortex --set <path>=<value>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development'
-        ? 'vortex_devel'
-        : 'vortex';
-
-    const dbpath = shared
-      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
-      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(setParameters[0]);
 
     let persist: LevelPersist;
@@ -555,14 +585,7 @@ class Application {
       });
   }
 
-  private handleDel(delPath: string, shared: boolean): Promise<void> {
-    const vortexPath = process.env.NODE_ENV === 'development'
-        ? 'vortex_devel'
-        : 'vortex';
-
-    const dbpath = shared
-      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
-      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+  private handleDel(delPath: string, dbpath: string): Promise<void> {
     const pathArray = this.splitPath(delPath);
 
     let persist: LevelPersist;
@@ -634,7 +657,11 @@ class Application {
       .then(() => fs.readdirAsync(backupPath))
       .filter((fileName: string) =>
         fileName.startsWith('backup') && path.extname(fileName) === '.json')
-      .then(backupsIn => { backups = backupsIn; });
+      .then(backupsIn => { backups = backupsIn; })
+      .catch(err => {
+        log('error', 'failed to read backups', err.message);
+        backups = [];
+      });
 
     const deleteBackups = () => Promise.map(backups, backupName =>
           fs.removeAsync(path.join(backupPath, backupName))
@@ -658,10 +685,13 @@ class Application {
           .then(() => Promise.reject(err));
       })
       .then(() => {
-        const multiUser = newStore.getState().user.multiUser;
-        const dataPath = multiUser
-          ? this.multiUserPath()
-          : app.getPath('userData');
+        let dataPath = app.getPath('userData');
+        const { multiUser } = newStore.getState().user;
+        if (this.mArgs.userData !== undefined) {
+          dataPath = this.mArgs.userData;
+        } else if (multiUser) {
+          dataPath = this.multiUserPath();
+        }
         app.setPath('userData', dataPath);
         this.mBasePath = dataPath;
         let created = false;
@@ -737,7 +767,7 @@ class Application {
           return fs.readFileAsync(restoreBackup, { encoding: 'utf-8' })
             .then(backupState => {
               newStore.dispatch({
-                type: '__hydrate',
+                type: '__hydrate_replace',
                 payload: JSON.parse(backupState),
               });
             })
@@ -752,9 +782,8 @@ class Application {
                 details: (err.code !== 'ENOENT')
                   ? err.message
                   : 'Specified backup file doesn\'t exist',
-                stack: err.stack,
                 path: restoreBackup,
-              }, {}, err.code !== 'ENOENT');
+              }, {}, false);
             });
         } else {
           return Promise.resolve();
@@ -768,7 +797,7 @@ class Application {
         (global as any).getReduxStateMsgpack = (idx: number) => {
           const msgpack: typeof msgpackT = require('msgpack');
           if ((sendState === undefined) || (idx === 0)) {
-            sendState = msgpack.pack(this.mStore.getState());
+            sendState = msgpack.pack(replaceRecursive(this.mStore.getState(), undefined, '__UNDEFINED__'));
           }
           const res = sendState.slice(idx * STATE_CHUNK_SIZE, (idx + 1) * STATE_CHUNK_SIZE);
           return res.toString('base64');
@@ -798,7 +827,9 @@ class Application {
           }));
         } else if (!repair) {
           // we started without any problems, save this application state
-          return createFullStateBackup('startup', this.mStore);
+          return createFullStateBackup('startup', this.mStore)
+            .then(() => Promise.resolve())
+            .catch(err => log('error', 'Failed to create startup state backup', err.message));
         }
         return Promise.resolve();
       })
@@ -819,7 +850,7 @@ class Application {
     }
   }
 
-  private showMainWindow() {
+  private showMainWindow(startMinimized: boolean) {
     if (this.mMainWindow === null) {
       // ??? renderer has signaled it's done loading before we even started it?
       // that can't be right...
@@ -828,7 +859,7 @@ class Application {
     }
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
-    this.mMainWindow.show(maximized);
+    this.mMainWindow.show(maximized, startMinimized);
     setWindow(this.mMainWindow.getHandle());
   }
 
@@ -853,7 +884,6 @@ class Application {
   }
 
   private validateFiles(): Promise<void> {
-    disableErrorReport();
     return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
       .then(validation => {
         if ((validation.changed.length > 0)
@@ -902,6 +932,14 @@ class Application {
             'Vortex appears to be frozen, please close Vortex and try again');
         }
       });
+    } else {
+      if (this.mMainWindow !== undefined) {
+        // Vortex's executable has been run without download/install arguments;
+        //  this is potentially down to the user not realizing that Vortex is minimized
+        //  leading him to try to start up Vortex again - we just display the main
+        //  window in this case.
+        this.showMainWindow(args?.startMinimized);
+      }
     }
   }
 }

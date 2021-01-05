@@ -3,20 +3,21 @@ import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
 import { DataInvalid } from './CustomErrors';
-import { getVisibleWindow } from './errorHandling';
+import { getVisibleWindow, terminate } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
-import { writeFileAtomic } from './fsAtomic';
+import { checksum, writeFileAtomic } from './fsAtomic';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import Promise from 'bluebird';
-import { app as appIn, dialog, remote } from 'electron';
+import { app as appIn, dialog, ipcMain, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
 import * as leveldown from 'leveldown';
 import * as levelup from 'levelup';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -56,7 +57,30 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
 
   const store = createStore<IState, Redux.Action, any, any>(reducer([], querySanitize), enhancer);
   basePersistor = new ReduxPersistor(store);
-  replayActionMain(store);
+  // replayActionMain(store);
+  global['getReduxState'] = () => {
+    return JSON.stringify(store.getState());
+  };
+
+  ipcMain.on('redux-action', (event, payload) => {
+    try {
+      store.dispatch(JSON.parse(payload));
+    } catch (err) {
+      log('error', 'failed to forward redux action', payload);
+      terminate({
+        message: 'Failed to store state change',
+        details: err.message,
+        allowReport: true,
+        attachLog: true,
+      }, store.getState(), true);
+    }
+  });
+
+  ipcMain.on('get-redux-state', (evt: Electron.IpcMainEvent) => {
+    const dat = JSON.stringify(store.getState());
+    const md5 = checksum(Buffer.from(dat));
+    evt.returnValue = md5 + dat;
+  });
   return store;
 }
 
@@ -156,9 +180,12 @@ export function importState(basePath: string): Promise<any> {
     : Promise.resolve();
 }
 
-export function createFullStateBackup(backupName: string, store: Redux.Store<any>): Promise<void> {
+export function createFullStateBackup(backupName: string,
+                                      store: Redux.Store<any>)
+                                      : Promise<string> {
   const before = Date.now();
-  const state = store.getState();
+  // not backing up confidential, session or extension persistors
+  const state = _.pick(store.getState(), ['settings', 'persistent', 'app', 'user']);
   let serialized;
   try {
     serialized = JSON.stringify(state, undefined, 2);
@@ -169,10 +196,13 @@ export function createFullStateBackup(backupName: string, store: Redux.Store<any
 
   const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
 
+  const backupFilePath = path.join(basePath, backupName + '.json');
+
   return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
-    .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),
+    .then(() => writeFileAtomic(backupFilePath,
       serialized))
     .then(() => {
-      log('info', 'state backup created', { ms: Date.now() - before });
+      log('info', 'state backup created', { ms: Date.now() - before, size: serialized.length });
+      return backupFilePath;
     });
 }

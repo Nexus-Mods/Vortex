@@ -29,6 +29,7 @@
       }
     ],
     "forceCodeSigning": true,
+    "rfc3161TimeStampServer": "http://rfc3161timestamp.globalsign.com/advanced",
     "publisherName": "Black Tree Gaming Limited",
     "extraFiles": [
       {

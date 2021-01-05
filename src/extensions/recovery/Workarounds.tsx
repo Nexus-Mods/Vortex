@@ -83,7 +83,11 @@ class Settings extends ComponentEx<IProps, {}> {
     const basePath = path.join(getVortexPath('temp'), FULL_BACKUP_PATH);
     const locale = this.context.api.locale();
 
-    const choices: ICheckbox[] = [];
+    const choices: ICheckbox[] = [{
+      id: 'from_file',
+      text: t('From file (DANGEROUS!)...'),
+      value: false,
+    }];
     try {
       const files: string[] = await fs.readdirAsync(basePath);
       await Promise.all(files.map(async name => {
@@ -124,10 +128,22 @@ class Settings extends ComponentEx<IProps, {}> {
       }
 
       const selected = Object.keys(choice.input).find(key => choice.input[key] === true);
-      if (selected !== undefined) {
-        const fileName = selected + '.json';
-        const stats: fs.Stats = await fs.statAsync(path.join(basePath, fileName));
-        const paragraph = (text: string) => `${text}<br/><br/>`;
+      const paragraph = (text: string) => `${text}<br/><br/>`;
+
+      let filePath: string;
+
+      if (selected === 'from_file') {
+        filePath = await this.context.api.selectFile({
+          create: false,
+          filters: [{ extensions: ['json'], name: 'State backup' }],
+          title: 'Select file location',
+        });
+      } else if (selected !== undefined) {
+        filePath = path.join(basePath, selected + '.json');
+      }
+      if (filePath !== undefined) {
+        const fileName = path.basename(filePath);
+        const stats: fs.Stats = await fs.statAsync(filePath);
         const confirm = await onShowDialog('question', 'Confirm', {
           bbcode:
             paragraph('This will reset Vortex settings and persistent data '
@@ -151,7 +167,7 @@ class Settings extends ComponentEx<IProps, {}> {
           { label: 'Confirm' },
         ]);
         if (confirm.action === 'Confirm') {
-          spawnSelf(['--restore', path.join(basePath, selected + '.json')]);
+          spawnSelf(['--restore', filePath]);
           remote.app.exit();
         }
       }

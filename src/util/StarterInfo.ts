@@ -22,6 +22,7 @@ import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GameEntryNotFound } from '../types/IGameStore';
+import { GameNotFound } from './Steam';
 
 export interface IStarterInfo {
   id: string;
@@ -106,6 +107,10 @@ class StarterInfo implements IStarterInfo {
             } else if (info.onStart === 'close') {
               remote.app.quit();
             }
+          })
+          .catch(GameNotFound, () => {
+            onShowError('Failed to start game through launcher',
+              'Please check whether the game is set up correctly.', false);
           })
           .catch(UserCanceled, () => null)
           .catch(GameEntryNotFound, err => {

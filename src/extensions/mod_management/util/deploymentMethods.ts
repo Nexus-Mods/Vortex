@@ -61,11 +61,16 @@ export function getCurrentActivator(state: IState,
 
   const gameDiscovery =
     getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+  if (gameDiscovery?.path === undefined) {
     // activator for a game that's not discovered doesn't really make sense
     return undefined;
   }
   const game = getGame(gameId);
+  if (game?.getModPaths === undefined) {
+    // Game is discovered but the gameModeManager isn't aware of it ?
+    //  fantastic. https://github.com/Nexus-Mods/Vortex/issues/7079
+    return undefined;
+  }
   const modPaths = game.getModPaths(gameDiscovery.path);
   const types = Object.keys(modPaths)
     .filter(typeId => truthy(modPaths[typeId]));

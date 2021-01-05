@@ -6,19 +6,22 @@ import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { CleanupFailedException, InsufficientDiskSpace, NotFound, TemporaryError,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc from '../../../util/getNormalizeFunc';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath, isPathValid } from '../../../util/util';
+import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
+import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -33,6 +36,7 @@ import { NoDeployment } from '../util/exceptions';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 
 import { modPathsForGame } from '../selectors';
+import { STAGING_DIR_TAG } from '../stagingDirectory';
 import getText from '../texts';
 
 import Promise from 'bluebird';
@@ -56,9 +60,11 @@ interface IConnectedProps {
   discovery: IDiscoveryResult;
   gameMode: string;
   installPath: string;
+  downloadsPath: string;
   currentActivator: string;
   modActivity: string[];
   modPaths: { [modType: string]: string };
+  instanceId: string;
 }
 
 interface IActionProps {
@@ -203,7 +209,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private pathsChanged() {
-    return this.props.installPath !== this.state.installPath;
+    const { gameMode } = this.props;
+    return !ciEqual(getInstallPath(this.props.installPath, gameMode),
+                    getInstallPath(this.state.installPath, gameMode));
   }
 
   private transferPath() {
@@ -270,7 +278,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }));
   }
 
-  private applyPaths = () => {
+  private applyPaths = (normalize: (input: string) => string) => {
     const { t, discovery, gameMode, onSetInstallPath,
             onShowDialog, onShowError, onSetTransfer } = this.props;
 
@@ -285,9 +293,30 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
 
-    const vortexPath = getVortexPath('base');
+    const vortexPath = getVortexPath('application');
 
-    if (isChildPath(newInstallPath, vortexPath)) {
+    try {
+      const statNew = fs.statSync(newInstallPath, { bigint: true });
+      const statOld = fs.statSync(oldInstallPath, { bigint: true });
+      if (statNew.ino === statOld.ino) {
+        return onShowDialog('error', 'Invalid path selected', {
+          text: 'The path you selected refers to the same directory on disk as the existing one.',
+        }, [ { label: 'Close' } ]);
+      }
+    } catch (err) {
+      // new directory doesn't exist. good
+    }
+
+    if (isReservedDirectory(newInstallPath)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You have selected an invalid location for your staging folder '
+                  + 'It would become impossible for Vortex to move your staging folder '
+                  + 'anywhere else without attempting to move the entire contents of the '
+                  + 'selected directory alongside it.',
+      }, [ { label: 'Close' } ]);
+    }
+
+    if (isChildPath(newInstallPath, vortexPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
@@ -295,7 +324,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(newInstallPath, discovery.path)) {
+    if (isChildPath(newInstallPath, discovery.path, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the game directory. '
                   + 'This directory is under the control of the game '
@@ -307,7 +336,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(oldInstallPath, newInstallPath)) {
+    if (isChildPath(oldInstallPath, newInstallPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can\'t change the staging folder to be the parent of the old folder. '
                     + 'This is because the new staging folder has to be empty and it isn\'t '
@@ -339,31 +368,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.nextState.busy = t('Calculating required disk space');
     let deleteOldDestination = true;
     return testPathTransfer(oldInstallPath, newInstallPath)
+      .then(() => fs.ensureDirAsync(newInstallPath))
+      .then(() => this.checkTargetEmpty(oldInstallPath, newInstallPath))
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
         return doPurge();
-      })
-      .then(() => fs.ensureDirAsync(newInstallPath))
-      .then(() => {
-        let queue = Promise.resolve();
-        let fileCount = 0;
-        if (oldInstallPath !== newInstallPath) {
-          queue = queue
-            .then(() => fs.readdirAsync(newInstallPath))
-            .then(files => {
-              fileCount += files.length;
-            });
-        }
-        // ensure the destination directories are empty
-        return queue.then(() => new Promise((resolve, reject) => {
-         if (fileCount > 0) {
-            this.props.onShowDialog('info', 'Invalid Destination', {
-              text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
-          } else {
-            resolve();
-          }
-        }));
       })
       .then(() => {
         if (oldInstallPath !== newInstallPath) {
@@ -389,7 +398,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
             + 'your chosen destination!<br />'
             + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
-            + `Old staging folder: [url]{{thePath}}[/url]`,
+            + 'Old staging folder: [url]{{thePath}}[/url]',
             { replace: { thePath: oldInstallPath } }),
         }, [ { label: 'Close', action: () => Promise.resolve() } ]);
 
@@ -432,8 +441,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + '4. A faulty HDD/Removable drive.<br /><br />'
             + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
             false, true);
+          } else if ((err.code === 'UNKNOWN') && (err?.['nativeCode'] === 1392)) {
+            // The file or directory is corrupted and unreadable.
+            onShowError('Failed to move directories',
+              t('Vortex has encountered a corrupted and unreadable file/directory '
+              + 'and is unable to complete the transfer. Vortex was attempting '
+              + 'to move the following file/directory: "{{culprit}}" when your operating system '
+              + 'raised the error. Please test your environment and try again once you\'ve confirmed it\'s fixed.',
+            { replace: { culprit: err.path } }), false);
           } else {
-            onShowError('Failed to move directories', err, true);
+            onShowError('Failed to move directories', err, !(err instanceof ProcessCanceled));
           }
         }
       })
@@ -445,8 +462,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
         if ((getSafe(state, pendingTransfer, undefined) !== undefined)
-        && deleteOldDestination) {
-          return fs.removeAsync(newInstallPath)
+            && deleteOldDestination) {
+          return cleanFailedTransfer(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
               this.nextState.busy = undefined;
@@ -470,6 +487,63 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           this.nextState.busy = undefined;
         }
       });
+  }
+
+  private checkTargetEmpty(oldInstallPath: string, newInstallPath: string) {
+    let queue = Promise.resolve();
+    let fileCount = 0;
+    let hasStagingTag: boolean = false;
+    let tagInstance: string;
+    if (oldInstallPath !== newInstallPath) {
+      queue = queue
+        .then(() => fs.readdirAsync(newInstallPath))
+        .then(files => {
+          fileCount += files.length;
+          if (!hasStagingTag && files.includes(STAGING_DIR_TAG)) {
+            hasStagingTag = true;
+          }
+        })
+        .then(() => {
+          if (hasStagingTag) {
+            const stagingTagPath = path.join(newInstallPath, STAGING_DIR_TAG);
+            return fs.readFileAsync(stagingTagPath)
+              .then(tagData => {
+                try {
+                  tagInstance = JSON.parse(tagData).instance;
+                } catch (err) {
+                  log('warn', 'failed to parse staging tag file',
+                      { stagingTagPath, error: err.message });
+                }
+              });
+          }
+        })
+        ;
+    }
+    // ensure the destination directories are empty
+    return queue.then(() => new Promise((resolve, reject) => {
+      if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
+        if (tagInstance !== undefined) {
+          return this.props.onShowDialog('question', 'Confirm', {
+            text: 'This is an existing staging folder for a different Vortex '
+                + 'instance. If you\'re using Vortex in "shared" and "regular" mode, do not use '
+                + 'the same staging folder for both!\n'
+                + 'If you continue, your current mods will be merged into that staging folder and '
+                + 'this Vortex instance will take over the staging folder.\n'
+                + 'There is no "undo" for this! '
+                + 'Please continue only if you\'re absolutely certain.',
+          }, [
+            { label: 'Cancel', action: () => reject(new UserCanceled()), default: true },
+            { label: 'Continue', action: () => resolve() },
+          ]);
+        } else {
+          this.props.onShowDialog('info', 'Invalid Destination', {
+            text: 'The destination folder has to be empty',
+          }, [{ label: 'Ok', action: () => reject(new UserCanceled()), default: true }]);
+        }
+      } else {
+        resolve();
+      }
+    }));
   }
 
   private purgeActivation(): Promise<void> {
@@ -566,12 +640,32 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
+    const { downloadsPath } = this.props;
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
+    if (downloadsPath !== undefined) {
+      const downPath = path.dirname(downloadsPath);
+      const normalizedDownloadsPath = path.normalize(downPath.toLowerCase());
+      const normalizedInput = path.normalize(input.toLowerCase());
+      if ((normalizedInput === normalizedDownloadsPath) || isChildPath(input, downPath)) {
+        return {
+          state: 'error',
+          reason: 'Staging folder can\'t be a subdirectory of the Vortex downloads folder.',
+        };
+      }
+    }
+
+    if (isReservedDirectory(input)) {
+      return {
+        state: 'error',
+        reason: 'Invalid staging folder, please choose a different directory',
+      };
+    }
+
     if (isChildPath(input, vortexPath)) {
       return {
         state: 'error',
@@ -664,7 +758,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Button>
               <BSButton
                 disabled={applyDisabled}
-                onClick={this.applyPaths}
+                onClick={this.onApply}
               >
                 {hasModActivity ? <Spinner /> : t('Apply')}
               </BSButton>
@@ -680,8 +774,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private keyPressEvt = (evt) => {
     if (evt.which === 13) {
       evt.preventDefault();
-      this.applyPaths();
+      this.onApply();
     }
+  }
+
+  private onApply = () => {
+    getNormalizeFunc(getInstallPath(this.state.installPath, this.props.gameMode))
+      .then(normalize => this.applyPaths(normalize));
   }
 
   private suggestPath = () => {
@@ -801,20 +900,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
 const emptyArray = [];
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const discovery = currentGameDiscovery(state);
   const game = currentGame(state);
 
   const gameMode = getSafe(discovery, ['id'], getSafe(game, ['id'], undefined));
+  const downloadsPath = selectors.downloadPath(state);
 
   return {
     discovery,
     game,
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
+    downloadsPath,
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
     modPaths: modPathsForGame(state, gameMode),
+    instanceId: state.app.instanceId,
   };
 }
 

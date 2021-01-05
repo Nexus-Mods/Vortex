@@ -177,11 +177,12 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderItem = (dash: IDashletProps) => {
-    const { dashletSettings } = this.props;
+    const { t, dashletSettings } = this.props;
     const { counter } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
       <PackeryItem
+        t={t}
         id={dash.title}
         key={dash.title}
         width={getSafe(dashletSettings, [dash.title, 'width'], dash.width)}

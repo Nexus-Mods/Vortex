@@ -96,7 +96,7 @@ class EpicGamesLauncher implements IGameStore {
    * @param name
    */
   public findByName(name: string): Promise<IGameStoreEntry> {
-    const re = new RegExp(name);
+    const re = new RegExp('^' + name + '$');
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => (entry === undefined)
@@ -109,6 +109,13 @@ class EpicGamesLauncher implements IGameStore {
       this.mCache = this.parseManifests();
     }
     return this.mCache;
+  }
+
+  public reloadGames(): Promise<void> {
+    return new Promise((resolve) => {
+      this.mCache = this.parseManifests();
+      return resolve();
+    });
   }
 
   public getGameStorePath(): Promise<string> {

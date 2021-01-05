@@ -1,6 +1,6 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import { withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
@@ -13,6 +13,7 @@ import { showURL } from '../browser/actions';
 
 import {
   downloadProgress,
+  finalizingDownload,
   finishDownload,
   initDownload,
   mergeDownloadModInfo,
@@ -25,9 +26,10 @@ import {IChunk} from './types/IChunk';
 import {IDownload, IDownloadOptions} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 
-import DownloadManager, { DownloadIsHTML, RedownloadMode, AlreadyDownloaded } from './DownloadManager';
+import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
 import Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
@@ -43,6 +45,9 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
     return;
   }
   if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
+    if (received < 0)  {
+      log('warn', 'invalid download progress', { received, total });
+    }
     store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) &&
@@ -83,6 +88,67 @@ export class DownloadObserver {
     const details = renderError(err);
     return `${t(details.text, {replace: details.parameters})}\n\n`
          + `${t(details.message, { replace: details.parameters })}`;
+  }
+
+  private handleDownloadError(err: Error, id: string, downloadPath: string,
+                              callback?: (err: Error, id: string) => void) {
+    if (err instanceof DownloadIsHTML) {
+      const innerState: IState = this.mApi.store.getState();
+      const filePath: string =
+        getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
+
+      this.mApi.store.dispatch(removeDownload(id));
+      this.mApi.store.dispatch(showURL(err.url));
+      if (callback !== undefined) {
+        callback(err, id);
+      }
+      if (filePath !== undefined) {
+        fs.removeAsync(path.join(downloadPath, filePath))
+          .catch(innerErr => {
+            this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
+          });
+      }
+    } else if (err instanceof UserCanceled) {
+      this.mApi.store.dispatch(removeDownload(id));
+      if (callback !== undefined) {
+        callback(err, id);
+      }
+    } else if (err instanceof ProcessCanceled) {
+      const innerState: IState = this.mApi.store.getState();
+      const filePath: string =
+        getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
+      const prom: Promise<void> = (filePath !== undefined)
+        ? fs.removeAsync(path.join(downloadPath, filePath))
+          // this is a cleanup step. If the file doesn' exist that's fine with me
+          .catch({ code: 'ENOENT' }, () => Promise.resolve())
+        : Promise.resolve();
+
+      prom
+        .catch(innerErr => {
+          this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
+        })
+        .then(() => {
+          this.mApi.store.dispatch(removeDownload(id));
+          if (callback !== undefined) {
+            callback(err, id);
+          } else {
+            showError(this.mApi.store.dispatch, 'Download failed', err.message, {
+              allowReport: false,
+            });
+          }
+        });
+    } else if (err instanceof AlreadyDownloaded) {
+      const stateNow = this.mApi.getState();
+      const downloads = stateNow.persistent.downloads.files;
+      const dlId = Object.keys(downloads)
+        .find(iter => downloads[iter].localPath === err.fileName);
+      if (dlId !== undefined) {
+        err.downloadId = dlId;
+      }
+      this.handleUnknownDownloadError(err, id, callback);
+    } else {
+      this.handleUnknownDownloadError(err, id, callback);
+    }
   }
 
   private handleStartDownload(urls: string[],
@@ -133,74 +199,15 @@ export class DownloadObserver {
 
     const urlIn = urls[0].split('<')[0];
 
-    return withContext(`Downloading "${fileName || urlIn}"`, urlIn,
-                       () => this.mManager.enqueue(id, urls, fileName,
-                                                   processCB, downloadPath, extraInfo)
+    return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
+      ensureDownloadsDirectory(this.mApi)
+        .then(() => this.mManager.enqueue(id, urls, fileName, processCB,
+                                          downloadPath, extraInfo, redownload))
         .then((res: IDownloadResult) => {
-          log('debug', 'download finished', { file: res.filePath });
+          log('debug', 'download finished', { id, file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
         })
-        .catch(DownloadIsHTML, err => {
-          const innerState: IState = this.mApi.store.getState();
-          const filePath: string =
-            getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
-
-          this.mApi.store.dispatch(removeDownload(id));
-          this.mApi.store.dispatch(showURL(err.url));
-          if (callback !== undefined) {
-            callback(err, id);
-          }
-          if (filePath !== undefined) {
-            fs.removeAsync(path.join(downloadPath, filePath))
-              .catch(innerErr => {
-                this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
-              });
-          }
-        })
-        .catch(UserCanceled, err => {
-          this.mApi.store.dispatch(removeDownload(id));
-          if (callback !== undefined) {
-            callback(err, id);
-          }
-        })
-        .catch(ProcessCanceled, err => {
-          const innerState: IState = this.mApi.store.getState();
-          const filePath: string =
-            getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
-          const prom: Promise<void> = (filePath !== undefined)
-            ? fs.removeAsync(path.join(downloadPath, filePath))
-              // this is a cleanup step. If the file doesn' exist that's fine with me
-              .catch({ code: 'ENOENT' }, () => Promise.resolve())
-            : Promise.resolve();
-
-          prom
-            .catch(innerErr => {
-              this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
-            })
-            .then(() => {
-              this.mApi.store.dispatch(removeDownload(id));
-              if (callback !== undefined) {
-                callback(err, id);
-              } else {
-                showError(this.mApi.store.dispatch, 'Download failed', err.message, {
-                  allowReport: false,
-                });
-              }
-            });
-        })
-        .catch(AlreadyDownloaded, err => {
-          const stateNow = this.mApi.getState();
-          const downloads = stateNow.persistent.downloads.files;
-          const dlId = Object.keys(downloads)
-            .find(iter => downloads[iter].localPath === err.fileName);
-          if (dlId !== undefined) {
-            err.downloadId = dlId;
-          }
-          this.handleDownloadError(err, id, callback);
-        })
-        .catch((err: any) => {
-          this.handleDownloadError(err, id, callback);
-        }));
+        .catch(err => this.handleDownloadError(err, id, downloadPath, callback)));
   }
 
   private handleDownloadFinished(id: string,
@@ -224,6 +231,7 @@ export class DownloadObserver {
         callback(new Error('html result'), id);
       }
     } else {
+      this.mApi.store.dispatch(finalizingDownload(id));
       const {genHash} = require('modmeta-db');
       genHash(res.filePath)
           .then((md5Hash: IHashResult) => {
@@ -245,6 +253,10 @@ export class DownloadObserver {
             }
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
             this.mApi.events.emit('did-finish-download', id, 'finished');
+            const state = this.mApi.getState();
+            if (state.settings.automation?.install) {
+              this.mApi.events.emit('start-install-download', id);
+            }
           });
     }
   }
@@ -279,15 +291,22 @@ export class DownloadObserver {
       if (cb !== undefined) {
         cb(err);
       }
-    }
+    };
 
-    if (['init', 'started'].indexOf(download.state) >= 0) {
+    if (['init', 'started'].includes(download.state)) {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(),
-                                                   getDownloadGames(download)[0]);
+      // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.35 in particular)
+      // would put manually added downloads into the download root if no game was being managed.
+      // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+      // clean up these broken downloads
+      const gameId = getDownloadGames(download)[0];
+      const dlPath = truthy(gameId)
+        ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+        : selectors.downloadPath(this.mApi.store.getState());
+
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => {
             this.mApi.store.dispatch(removeDownload(downloadId));
@@ -319,11 +338,11 @@ export class DownloadObserver {
       }
       return;
     }
-    if (['init', 'started'].indexOf(download.state) >= 0) {
-      if (this.mManager.pause(downloadId) === undefined) {
-        // this indicates the download isn't actually running
-        this.mApi.store.dispatch(pauseDownload(downloadId, true, download.chunks));
-      }
+
+    if (['init', 'started'].includes(download.state)) {
+      log('debug', 'pausing download', { id: download.id, oldState: download.state });
+      const unfinishedChunks = this.mManager.pause(downloadId);
+      this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
       if (callback !== undefined) {
         callback(null);
       }
@@ -339,7 +358,16 @@ export class DownloadObserver {
         log('warn', 'failed to resume download: unknown', { downloadId });
         return;
       }
-      if (download.state === 'paused') {
+
+      if (download.localPath === undefined) {
+        this.mApi.sendNotification({
+          type: 'warning',
+          message: 'This download can\'t be resumed',
+        });
+        return;
+      }
+
+      if (['paused', 'failed'].includes(download.state)) {
         const gameMode = getDownloadGames(download)[0];
         const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
 
@@ -348,21 +376,25 @@ export class DownloadObserver {
 
         const extraInfo = this.getExtraDlOptions(download.modInfo, 'always');
 
-        withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
-          this.mManager.resume(downloadId, fullPath, download.urls,
-            download.received, download.size, download.startTime, download.chunks,
-            this.genProgressCB(downloadId), extraInfo)
-            .then(res => {
-              log('debug', 'download finished (resumed)', { file: res.filePath });
-              this.handleDownloadFinished(downloadId, callback, res);
-            })
-            .catch(UserCanceled, err => {
-              this.mApi.store.dispatch(removeDownload(downloadId));
-              if (callback !== undefined) {
-                callback(err, downloadId);
-              }
-            })
-            .catch(err => this.handleDownloadError(err, downloadId, callback)));
+        withContext(`Resuming "${download.localPath}"`, download.urls[0], () => {
+          if (download.state === 'failed') {
+            return ensureDownloadsDirectory(this.mApi)
+              .then(() => this.mManager.enqueue(downloadId, download.urls,
+                                         path.basename(fullPath), this.genProgressCB(downloadId),
+                                         undefined, { redownload: 'replace' }))
+              .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
+          } else {
+            return ensureDownloadsDirectory(this.mApi)
+              .then(() => this.mManager.resume(downloadId, fullPath, download.urls,
+                download.received, download.size, download.startTime, download.chunks,
+                this.genProgressCB(downloadId), extraInfo))
+              .then(res => {
+                log('debug', 'download finished (resumed)', { file: res.filePath });
+                this.handleDownloadFinished(downloadId, callback, res);
+              })
+              .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
+          }
+        });
       }
     } catch (err) {
       if (callback !== undefined) {
@@ -371,14 +403,20 @@ export class DownloadObserver {
     }
   }
 
-  private handleDownloadError(err: any,
-                              downloadId: string,
-                              callback?: (err: Error, id?: string) => void) {
-    if (['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1) {
+  private handleUnknownDownloadError(err: any,
+                                     downloadId: string,
+                                     callback?: (err: Error, id?: string) => void) {
+    if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF'].includes(err.code)) {
       // may be resumable
-      // this.mManager.pause(downloadId);
+      this.handlePauseDownload(downloadId);
       if (callback !== undefined) {
-        callback(null, downloadId);
+        callback(new TemporaryError('I/O Error'), downloadId);
+      } else {
+        showError(this.mApi.store.dispatch, 'Download failed',
+          'The download failed due to an I/O error (network or writing to disk). '
+          + 'This is likely a temporary issue, please try resuming later.', {
+          allowReport: false,
+        });
       }
     } else {
       const message = this.translateError(err);

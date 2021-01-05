@@ -20,7 +20,15 @@ class GameStoreHelper {
 
   // Search for a specific game store.
   public getGameStore(storeId: string): IGameStore {
-    return this.getstores().find(store => store.id === storeId);
+    const gameStores = this.getstores();
+    const gameStore = gameStores.find(store => store.id === storeId);
+    if ((gameStores.length) > 0 && (gameStore === undefined)) {
+      // The game stores are guaranteed to have loaded at this point,
+      //  yet the store Id we're looking for is not in the store array.
+      throw new GameStoreNotFound(storeId);
+    }
+
+    return gameStore;
   }
 
   // Returns the id of the first game store that has
@@ -34,7 +42,7 @@ class GameStoreHelper {
     return ((storeId !== undefined)
       ? this.findGameEntry('id', id, storeId)
       : this.findGameEntry('id', id))
-      .then(entry => entry.gameStoreId)
+      .then(entry => Promise.resolve(entry?.gameStoreId))
       .catch(err => Promise.resolve(undefined));
   }
 
@@ -109,6 +117,24 @@ class GameStoreHelper {
     return startStore();
   }
 
+  public reloadGames(): Promise<void> {
+    const stores = this.getstores().filter(store => !!store);
+    log('info', 'reloading game store games', stores.map(store => store.id)
+                                                    .join(', '));
+    return Promise.each(stores, (store: IGameStore) =>
+      (store?.reloadGames !== undefined)
+        ? store.reloadGames()
+            .catch(err => {
+              // Game store was unable to reload its games
+              //  we log this and jump to the next store.
+              err['gameStore'] = store.id;
+              log('error', 'gamestore failed to reload its games', err);
+              return Promise.resolve();
+            })
+        : Promise.resolve())
+      .then(() => Promise.resolve());
+  }
+
   private isStoreRunning(storeExecPath: string) {
     const runningProcesses = winapi.GetProcessList();
     const exeId = makeExeId(storeExecPath);
@@ -143,12 +169,27 @@ class GameStoreHelper {
     const entryInfo = (entry: IGameStoreEntry): string =>
       (searchType === 'id') ? entry.appid : entry.name;
 
+    const wrapNamePattern = (gameName) => {
+      if (searchType !== 'name') {
+        // Not a name searchType.
+        return gameName;
+      }
+      // We need to match the game name _exactly_ otherwise
+      //  false positives could occur, for example:
+      //  The Elder Scrolls V: Skyrim could potentially match
+      //  The Elder Scrolls V: Skyrim Special Edition, in which
+      //  case the game extension will look for TESV.exe and be unable
+      //  to find it, failing discovery completely even though the user
+      //  has Oldrim installed in a different location.
+      return '^' + gameName + '$';
+    };
+
     // For obvious reasons, this should only be used for
     //  name searchTypes; using this for id's would potentially
     // cause false positives.
     const rgxMatcher = (Array.isArray(pattern))
-      ? new RegExp(pattern.join('|'))
-      : new RegExp(pattern);
+      ? new RegExp(pattern.map(wrapNamePattern).join('|'))
+      : new RegExp(wrapNamePattern(pattern));
 
     const matcher = Array.isArray(pattern)
       ? entry => pattern.indexOf(entryInfo(entry)) !== -1
@@ -159,25 +200,28 @@ class GameStoreHelper {
       : this.getstores()).filter(store => !!store);
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
-      const errMsg = (!!storeId) ? storeId : 'Gamestores unavailable';
-      return Promise.reject(new GameStoreNotFound(errMsg));
+      const stores = (gameStores !== undefined)
+        ? gameStores.map(store => store.id).join(', ')
+        : '';
+      log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
+      return Promise.reject(new GameEntryNotFound(name, stores));
     }
 
     return Promise.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
       store.allGames()
-      .then(entries => {
-        const entry = (searchType === 'id')
-          ? entries.find(matcher)
-          : entries.find(ent => rgxMatcher.test(ent.name));
+        .then(entries => {
+          const entry = (searchType === 'id')
+            ? entries.find(matcher)
+            : entries.find(ent => rgxMatcher.test(ent.name));
 
-        if (!!entry) {
-          accum.push(entry);
-        }
+          if (!!entry) {
+            accum.push(entry);
+          }
 
-        return Promise.resolve(accum);
-      })
-      .catch(GameEntryNotFound, () => Promise.resolve([]))
-      .catch(GameNotFound, () => Promise.resolve([])), [])
+          return Promise.resolve(accum);
+        })
+        .catch(GameEntryNotFound, () => Promise.resolve([]))
+        .catch(GameNotFound, () => Promise.resolve([])), [])
       .then(foundEntries => {
         // TODO: A cool future feature here would be to allow the user to select
         //  the gamestore he wants to use. But for now, we just return the
@@ -190,6 +234,7 @@ class GameStoreHelper {
             : pattern;
 
           const stores = this.mStores.map(store => store.id).join(', ');
+          log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
           return Promise.reject(new GameEntryNotFound(name, stores));
         }
       });

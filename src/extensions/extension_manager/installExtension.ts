@@ -50,8 +50,6 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   const context = new Proxy({}, handler);
 
   try {
-    // TODO: this breaks if the extension is already loaded if the extension creates any actions
-    //   because redux-act throws on duplicate action names
     const extension = dynreq(path.join(extPath, 'index.js'));
     extension.default(context);
 
@@ -69,13 +67,24 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
     })
     .then(() => null);
   } catch (err) {
+    // TODO: can't check for dependencies if the extension is already loaded
+    //   and registers actions
+    if ((err.name === 'TypeError')
+        && (err.message.startsWith('Duplicate action type'))) {
+      return Promise.resolve();
+    }
     return Promise.reject(err);
   }
 }
 
 function sanitize(input: string): string {
   const temp = input.replace(INVALID_FILENAME_RE, '_');
-  return path.basename(temp, path.extname(temp));
+  const ext = path.extname(temp);
+  if (['.7z', '.zip', '.rar'].includes(ext.toLowerCase())) {
+    return path.basename(temp, path.extname(temp));
+  } else {
+    return path.basename(temp);
+  }
 }
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
@@ -153,7 +162,8 @@ function validateTranslation(extPath: string): Promise<void> {
       // iso on everything. Was it always like that or was that changed in a recent
       // node release?
       const [language, country] = dirNames[0].split('-');
-      if (!languageExists(language) || !countryExists(country)) {
+      if (!languageExists(language)
+          || (country !== undefined) && !countryExists(country)) {
         return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
       }
       return fs.readdirAsync(path.join(extPath, dirNames[0]))
@@ -237,6 +247,7 @@ function installExtension(api: IExtensionApi,
 
   let type: ExtensionType;
 
+  let extName: string;
   return extractor.extractFull(archivePath, tempPath, {ssc: false},
                                () => undefined, () => undefined)
       .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
@@ -257,7 +268,10 @@ function installExtension(api: IExtensionApi,
         return res;
       })
       .catch({ code: 'ENOENT' }, () => (info !== undefined)
-        ? Promise.resolve({ id: path.basename(tempPath, '.installing'), info })
+        ? Promise.resolve({
+            id: path.basename(archivePath, path.extname(archivePath)),
+            info,
+          })
         : Promise.reject(new Error('not an extension, info.json missing')))
       .then(manifestInfo =>
         // update the manifest on disc, in case we had new info from the caller
@@ -265,6 +279,8 @@ function installExtension(api: IExtensionApi,
                           JSON.stringify(manifestInfo.info, undefined, 2))
           .then(() => manifestInfo))
       .then((manifestInfo: { id: string, info: IExtension }) => {
+        extName = manifestInfo.id;
+
         const dirName = sanitize(manifestInfo.id);
         destPath = path.join(extensionsPath, dirName);
         if (manifestInfo.info.type !== undefined) {
@@ -286,7 +302,7 @@ function installExtension(api: IExtensionApi,
         } else {
           // don't install dependencies for extensions that are already loaded because
           // doing so could cause an exception
-          if (api.getLoadedExtensions().find(ext => ext.name === fullInfo.id) === undefined) {
+          if (api.getLoadedExtensions().find(ext => ext.name === extName) === undefined) {
             return installExtensionDependencies(api, destPath);
           } else {
             return Promise.resolve();

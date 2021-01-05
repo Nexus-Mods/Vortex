@@ -1,5 +1,6 @@
 export interface IProfileMod {
   enabled: boolean;
+  enabledTime: number;
 }
 
 export interface IProfile {

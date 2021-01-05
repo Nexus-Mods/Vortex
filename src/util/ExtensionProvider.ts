@@ -3,7 +3,6 @@ import ExtensionManager from './ExtensionManager';
 import { IExtendedProps, IExtensibleProps } from '../types/IExtensionProvider';
 
 import * as _ from 'lodash';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -22,7 +21,7 @@ export interface IExtensionProps {
  * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
  * @returns {React.ComponentClass<P>} the wrapper component
  */
-export function extend(registerFunc: (...args) => void, groupProp?: string):
+export function extend(registerFunc: (...args) => void, groupProp?: string, addExtInfo?: boolean):
     <P extends IExtendedProps>(component: React.ComponentType<P>) =>
       React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
@@ -31,12 +30,12 @@ export function extend(registerFunc: (...args) => void, groupProp?: string):
 
   const updateExtensions = (props: any, context: any) => {
     extensions[props[groupProp]] = [];
-    context.apply(registerFunc.name, (...args) => {
-      const res = registerFunc(props[groupProp], ...args);
+    context.apply(registerFunc.name, (extInfo, ...args) => {
+      const res = registerFunc(props[groupProp], extInfo, ...args);
       if (res !== undefined) {
         extensions[props[groupProp]].push(res);
       }
-    });
+    }, addExtInfo);
   };
 
   return <P extends IExtendedProps, S>(ComponentToWrap: React.ComponentType<P>)

@@ -22,6 +22,7 @@ import {
   IRunParameters,
   StateChangeCallback,
   ThunkStore,
+  ToolParameterCB,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
@@ -30,14 +31,15 @@ import { Archive } from './archives';
 import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
-        ProcessCanceled, TimeoutError, UserCanceled } from './CustomErrors';
-import { isOutdated } from './errorHandling';
+        ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
+import { getVisibleWindow, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
-import { i18n } from './i18n';
+import { i18n, TString } from './i18n';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { registerSanityCheck, SanityCheck } from './reduxSanity';
+import ReduxWatcher from './ReduxWatcher';
 import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
@@ -50,7 +52,6 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptio
          remote, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
-import I18next from 'i18next';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -59,13 +60,10 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
-import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
+import stringFormat from 'string-template';
 import { dynreq, runElevated } from 'vortex-run';
-
-// tslint:disable-next-line:no-var-requires
-const ReduxWatcher = require('redux-watcher');
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
@@ -79,9 +77,10 @@ if (remote !== undefined) {
 
 export interface IRegisteredExtension {
   name: string;
+  namespace: string;
   path: string;
   dynamic: boolean;
-  initFunc: ExtensionInit;
+  initFunc: () => ExtensionInit;
   info?: IExtension;
 }
 
@@ -102,6 +101,10 @@ interface IApiAddition {
   callback: (...args: any[]) => void;
 }
 
+function applyVariables(arg: string, variables: { [key: string]: string }) {
+  return stringFormat(arg, variables);
+}
+
 class APIProxyHandler implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
   private mEnabled: boolean;
@@ -118,9 +121,12 @@ class APIProxyHandler implements ProxyHandler<any> {
   public get(target, key: PropertyKey): any {
     if (key === 'extension') {
       return this.mExtension;
-    }
-    if (key === 'translate') {
+    } else if (key === 'translate') {
       return target[key];
+    } else if (key === 'laterT') {
+      return (input, options?) => new TString(input, options, this.mExtension.namespace);
+    } else if (key === 'NAMESPACE') {
+      return this.mExtension.namespace;
     }
     if (!this.mEnabled) {
       throw new Error('extension uses api in init function');
@@ -211,10 +217,13 @@ class ContextProxyHandler implements ProxyHandler<any> {
       call.key === name);
   }
 
-  public invokeAdditions() {
+  public invokeAdditions(extensions: IRegisteredExtension[]) {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
       this.getCalls(addition.key).forEach(call => {
-        addition.callback(...call.arguments, call.extensionPath);
+        const ext = extensions.find(iter => iter.name === call.extension);
+        const extInfo = _.pick(ext, ['name', 'namespace', 'path']);
+
+        addition.callback(...call.arguments, call.extensionPath, extInfo);
       });
     });
   }
@@ -223,7 +232,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * remove all init calls from incompatible extensions
    */
   public unloadIncompatible(furtherAPIs: Set<string>,
-                            allExtensions: string[]): { [extId: string]: IExtensionLoadFailure[] } {
+                            allExtensions: IRegisteredExtension[])
+                            : { [extId: string]: IExtensionLoadFailure[] } {
     const addAPIs: string[] =
         this.mApiAdditions.map((addition: IApiAddition) => addition.key);
     const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
@@ -238,10 +248,20 @@ class ContextProxyHandler implements ProxyHandler<any> {
         .push({ id: 'unsupported-api' });
     });
 
-    const testValid = (extId: string, requiredId?: string) => {
-      if (allExtensions.indexOf(requiredId) === -1) {
+    const findExt = (id: string) => {
+      return allExtensions.find(ext => (ext.info?.name === id)
+                                    || (ext.info?.id === id)
+                                    || (ext.name === id));
+    };
+
+    const testValid = (extId: string, requiredId?: string, version?: string) => {
+      const req = findExt(requiredId);
+      if (req === undefined) {
         setdefault(incompatibleExtensions, extId, []).push(
           { id: 'dependency', args: { dependencyId: requiredId } });
+      } else if ((version !== undefined) && !semver.satisfies(req.info?.version, version)) {
+        setdefault(incompatibleExtensions, extId, []).push(
+          { id: 'dependency', args: { dependencyId: requiredId, version } });
       }
     };
 
@@ -350,6 +370,11 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerInterpreter: undefined,
       registerStartHook: undefined,
       registerMigration: undefined,
+      registerToolVariables: undefined,
+      registerLoadOrderPage: undefined,
+      registerLoadOrder: undefined,
+      registerHistoryStack: undefined,
+      registerAPI: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -462,12 +487,12 @@ class ExtensionManager {
     ExtensionManager.sUIAPIs.add(name);
   }
 
-  public static getExtensionPaths(): string[] {
+  public static getExtensionPaths(): Array<{ path: string, bundled: boolean }> {
     // only the first extension with a specific name is loaded, so
     // load the bundled ones last so a user can replace them
     return [
-      path.join(app.getPath('userData'), 'plugins'),
-      getVortexPath('bundledPlugins'),
+      { path: path.join(app.getPath('userData'), 'plugins'), bundled: false },
+      { path: getVortexPath('bundledPlugins'), bundled: true },
     ];
   }
 
@@ -478,7 +503,7 @@ class ExtensionManager {
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mStyleManager: StyleManager;
-  private mReduxWatcher: any;
+  private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
   private mRepositoryLookup: { [repository: string]: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> } } = {};
@@ -493,12 +518,14 @@ class ExtensionManager {
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: IStartHook[];
+  private mToolParameterCBs: ToolParameterCB[];
   private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
   private mOutdated: string[] = [];
+  private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
   // or coffescript directly but that would require us shipping the corresponding compilers
   private mExtensionFormats: string[] = ['index.js'];
@@ -515,6 +542,7 @@ class ExtensionManager {
 
     this.mInterpreters = {};
     this.mStartHooks = [];
+    this.mToolParameterCBs = [];
     this.mApi = {
       showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
@@ -524,6 +552,7 @@ class ExtensionManager {
       translate: (input, options?) => this.mTranslator !== undefined
           ? this.mTranslator.t(input, options)
           : (Array.isArray(input) ? input[0].toString() : input.toString()) as any,
+      laterT: (input, options?) => new TString(input, options, 'common'),
       locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,
@@ -546,6 +575,8 @@ class ExtensionManager {
       getLoadedExtensions: () => this.extensions,
       awaitUI: () => this.mUIStartedPromise,
       getState: () => undefined,
+      ext: {},
+      NAMESPACE: 'common',
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -587,13 +618,15 @@ class ExtensionManager {
     if (remote !== undefined) {
       this.mStyleManager = new StyleManager(this.mApi);
     }
-    this.mExtensions = this.loadExtensions();
+    this.mExtensions = this.prepareExtensions();
 
     if (this.mOutdated.length > 0) {
       this.mOutdated.forEach(ext => {
         log('info', 'extension older than bundled version, will be removed',
           { name: ext });
-        initStore.dispatch(removeExtension(ext));
+        // if we get here in the renderer process, initStore is not defined.
+        // This should happen in the main process only
+        initStore?.dispatch(removeExtension(ext));
       });
 
       relaunch();
@@ -619,7 +652,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setStore<S extends IState>(store: ThunkStore<S>) {
-    this.mReduxWatcher = new ReduxWatcher(store);
+    this.mReduxWatcher = new ReduxWatcher(store, this.watcherError);
 
     this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});
 
@@ -764,6 +797,9 @@ class ExtensionManager {
                                      hook: (input: IRunParameters) => Promise<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
+    this.apply('registerToolVariables', (func: ToolParameterCB) => {
+      this.mToolParameterCBs.push(func);
+    });
 
     this.mStartHooks.sort((lhs, rhs) => lhs.priority - rhs.priority);
 
@@ -776,7 +812,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public applyExtensionsOfExtensions() {
-    this.mContextProxyHandler.invokeAdditions();
+    this.mContextProxyHandler.invokeAdditions(this.mExtensions);
   }
 
   /**
@@ -788,10 +824,18 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public apply(funcName: string, func: (...args: any[]) => void) {
+  public apply(funcName: keyof IExtensionContext,
+               func: (...args: any[]) => void,
+               addExtInfo?: boolean) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
       try {
-        func(...call.arguments);
+        if (addExtInfo === true) {
+          const ext = this.mExtensions.find(iter => iter.name === call.extension);
+          const extInfo = _.pick(ext, ['name', 'namespace', 'path']);
+          func(extInfo, ...call.arguments);
+        } else {
+          func(...call.arguments);
+        }
       } catch (err) {
         this.mApi.showErrorNotification(
           'Extension failed to initialize. If this isn\'t an official extension, ' +
@@ -812,27 +856,39 @@ class ExtensionManager {
   public doOnce(): Promise<void> {
     const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
 
-    const reportError = (err: Error, call: IInitCall) => {
+    const reportError = (err: Error, call: IInitCall, allowReport: boolean = true) => {
       log('warn', 'failed to call once',
         { err: err.message, stack: err.stack });
       err['extension'] = call.extension;
       this.mApi.showErrorNotification(
         'Extension failed to initialize. If this isn\'t an official extension, ' +
         'please report the error to the respective author.',
-        err);
+        err, { allowReport });
     };
 
-    return Promise.each(calls, (call, idx) => {
+    return Promise.mapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
+      const ext = this.mExtensions.find(iter => iter.name === call.extension);
+      this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         this.mLoadingCallbacks.forEach(cb => {
           cb(call.extension, idx);
         });
         const prom = call.arguments[0]() || Promise.resolve();
 
-        return timeout(prom, 10000, { throw: true })
+        const start = Date.now();
+        return timeout(prom, 30000, {
+          throw: true,
+          queryContinue: () => this.queryLoadTimeout(call.extension),
+        })
+          .then(() => {
+            const elapsed = Date.now() - start;
+            if (elapsed > 1000) {
+              log('debug', 'slow initialization', { extension: call.extension, elapsed });
+            }
+          })
           .catch(TimeoutError, () => {
-            reportError(new Error('Initialization didn\'t finish in time.'), call);
+            reportError(new Error('Initialization didn\'t finish in time.'), call, false);
           })
           .catch(err => {
             reportError(err, call);
@@ -870,6 +926,29 @@ class ExtensionManager {
   public setUIReady() {
     this.mOnUIStarted();
     ipcRenderer.send('__ui_is_ready');
+  }
+
+  private watcherError = (err: Error, selector: string[]) => {
+    const id = selector.join('.');
+    if (!this.mFailedWatchers.has(id)) {
+      log('warn', 'Failed to trigger state listener', {
+        error: err.message,
+        selector: JSON.stringify(selector),
+      });
+      this.mFailedWatchers.add(id);
+    }
+  }
+
+  private queryLoadTimeout(extension: string): Promise<boolean> {
+    return Promise.resolve(dialog.showMessageBox(getVisibleWindow(), {
+      type: 'warning',
+      title: 'Extension slow',
+      message: `An extension (${extension}) is taking unusually long to load. `
+        + 'This is very likely a bug. Do you want to continue to wait for it?',
+      noLink: true,
+      buttons: [ 'Cancel', 'Wait' ],
+    }))
+    .then(result => result.response === 1);
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
@@ -966,8 +1045,10 @@ class ExtensionManager {
 
     const key = watchPath.join('.');
 
-    const changeHandler = ({cbStore, selector, prevState, currentState,
-                            prevValue, currentValue}) => {
+    // TODO: this code makes using the ReduxWatcher pointless and looking at the
+    //   code I would now disagree with the assessment that it may retrigger
+    //   without an actual change. otoh I didn't add this for no reason...
+    const changeHandler = ({prevValue, currentValue}) => {
       // redux-watch may trigger even if no change occurred so we have to
       // do our own check, otherwise we could end up in an endless loop
       // if the callback causes redux-watch to trigger again without change
@@ -990,7 +1071,7 @@ class ExtensionManager {
 
     if (this.mWatches[key] === undefined) {
       this.mWatches[key] = [];
-      this.mReduxWatcher.watch(watchPath, changeHandler);
+      this.mReduxWatcher.on<any>(watchPath, changeHandler);
     }
     this.mWatches[key].push(callback);
   }
@@ -1016,13 +1097,13 @@ class ExtensionManager {
     this.mExtensions.forEach(ext => {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
-        log('info', 'init extension', {name: ext.name});
+        log('info', 'init extension', {name: ext.name, path: ext.path});
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         const apiProxy = new APIProxyCreator(ext);
         const extProxy = new Proxy(contextProxy, apiProxy);
-        ext.initFunc(extProxy as IExtensionContext);
+        ext.initFunc()(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
@@ -1035,20 +1116,15 @@ class ExtensionManager {
     this.mLoadFailures = {
       ...this.mLoadFailures,
       ...this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs, this.mExtensions.reduce((prev, ext) => {
-          if (ext.info !== undefined) {
-            if (ext.info.name !== undefined) {
-              prev.push(ext.info.name);
-            }
-
-            if (ext.info.id !== undefined) {
-              prev.push(ext.info.id);
-            }
-          }
-          prev.push(ext.name);
-          return prev;
-        }, [])),
+        ExtensionManager.sUIAPIs, this.mExtensions),
     };
+
+    // apply api extensions immediately after all extensions are loaded so they
+    // become available asap
+    this.apply('registerAPI',
+               (key: string, func: (...args: any[]) => any, options: IApiAddition) => {
+      this.mApi.ext[key] = func;
+    });
 
     if (remote !== undefined) {
       // renderer process
@@ -1090,7 +1166,8 @@ class ExtensionManager {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
                     allowReport: ext.info.author === COMPANY_ID,
                   });
-                });
+                })
+                .then(() => null);
             }
           }
         } catch (err) {
@@ -1449,6 +1526,14 @@ class ExtensionManager {
             detached: options.detach !== undefined ? options.detach : true,
             shell: options.shell,
           };
+
+          const runParams = { executable, args, options: { ...options, env } };
+          const vars = this.mToolParameterCBs.reduce((prev, cb) => {
+            return { ...prev, ...cb(runParams) };
+          }, {});
+
+          args = args.map(arg => applyVariables(arg, vars));
+
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
           if (truthy(child['exitCode'])) {
@@ -1483,12 +1568,14 @@ class ExtensionManager {
                 log('warn', '.Net error', { stdOut, errOut });
                 if (game === 'stardewvalley') {
                   // In the case of SDV the interesting information seems to get printed to stdout
-                  return reject(new Error(stdOut || errOut));
+                  return reject(new ThirdPartyError(stdOut || errOut));
                 } else if (errOut) {
-                  return reject(new Error(errOut));
+                  return reject(new ThirdPartyError(errOut));
                 } else {
                   return reject(new ProcessCanceled('.Net error'));
                 }
+              } else if (code === 0xC000026B) {
+                return reject(new ProcessCanceled('Windows shutting down'));
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
@@ -1747,8 +1834,21 @@ class ExtensionManager {
     .listen(path.join('\\\\?\\pipe', ipcPath));
   }
 
+  private idify(name: string, pathName: string) {
+    const transform = (input: string) =>
+      input.toLowerCase().replace(/[:']/g, '').replace(/[ _]/g, '-').trim();
+    if (name !== undefined) {
+      return transform(name);
+    } else {
+      // assuming the path is based on a nexus archive name, there should be a
+      // -<modid>- tag after the actual mod name
+      return pathName.split(/-\w+-/)[0];
+    }
+  }
+
   private loadDynamicExtension(extensionPath: string,
-                               alreadyLoaded: IRegisteredExtension[])
+                               alreadyLoaded: IRegisteredExtension[],
+                               bundled: boolean)
                                : IRegisteredExtension {
     const indexPath = this.mExtensionFormats
       .map(format => path.join(extensionPath, format))
@@ -1765,7 +1865,11 @@ class ExtensionManager {
         log('warn', errMessage, { extensionPath, error: error.message });
       }
 
-      const name = info.id || path.basename(extensionPath);
+      const pathName = path.basename(extensionPath);
+      const name = info.id || pathName;
+      const namespace = info.namespace ?? info.id ?? (bundled
+            ? pathName
+            : this.idify(info.name, pathName));
 
       const existing = alreadyLoaded.find(reg => reg.name === name);
 
@@ -1779,10 +1883,14 @@ class ExtensionManager {
 
       return {
         name,
-        initFunc: dynreq(indexPath).default,
+        namespace,
+        initFunc: () => dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
-        info,
+        info: {
+          ...info,
+          bundled,
+        },
       };
     } else {
       // this is not necessarily a problem, translation extensions for example
@@ -1792,26 +1900,26 @@ class ExtensionManager {
     }
   }
 
-  private loadDynamicExtensions(extensionsPath: string,
+  private loadDynamicExtensions(extension: { path: string, bundled: boolean },
                                 loadedExtensions: Set<string>,
                                 alreadyLoaded: IRegisteredExtension[]): IRegisteredExtension[] {
-    if (!fs.existsSync(extensionsPath)) {
-      log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
+    if (!fs.existsSync(extension.path)) {
+      log('info', 'failed to load dynamic extensions, path doesn\'t exist', extension.path);
       try {
-        fs.mkdirSync(extensionsPath);
+        fs.mkdirSync(extension.path);
       } catch (err) {
         log('warn', 'extension path missing and can\'t be created',
-            { path: extensionsPath, error: err.message});
+            { path: extension.path, error: err.message});
       }
       return [];
     }
 
-    const res = fs.readdirSync(extensionsPath)
-      .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
-      .map(name => {
+    const res = fs.readdirSync(extension.path)
+      .filter(name => fs.statSync(path.join(extension.path, name)).isDirectory())
+      .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
           log('debug', 'extension disabled', { name });
-          return undefined;
+          return prev;
         }
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
@@ -1819,21 +1927,42 @@ class ExtensionManager {
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           const before = Date.now();
-          const ext = this.loadDynamicExtension(path.join(extensionsPath, name), alreadyLoaded);
+          const ext = this.loadDynamicExtension(
+            path.join(extension.path, name), alreadyLoaded, extension.bundled);
           if (ext !== undefined) {
             loadedExtensions.add(ext.name);
             const loadTime = Date.now() - before;
-            log('debug', 'loaded extension', { name, loadTime, location: extensionsPath });
+            log('debug', 'loaded extension', { name, loadTime, location: extension.path });
+            if (prev[ext.name] !== undefined) {
+              // loadDynamicExtension already handles the case where the same extension was found
+              // in a different directory, but if the same directory contains multiple copies
+              // of the same extension, we have to deal with that slightly differently
+              log('warn', 'multiple copies of the same extension installed',
+                  { first: ext.path, second: prev[ext.name].path });
+
+              if ((ext.info === undefined)
+                  || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
+                // the copy we loaded previously is newer so mark this one for removal and not
+                // load it
+                this.mOutdated.push(path.basename(ext.path));
+              } else {
+                // this copy is actually the newer one so replace the one previously found and
+                // mark that for deletion
+                this.mOutdated.push(path.basename(prev[ext.name].path));
+                prev[ext.name] = ext;
+              }
+            } else {
+              prev[ext.name] = ext;
+            }
           }
-          return ext;
         } catch (err) {
           log('warn', 'failed to load dynamic extension',
               { name, error: err.message, stack: err.stack });
           this.mLoadFailures[name] = [{ id: 'exception', args: { message: err.message } }];
-          return undefined;
         }
-      });
-    return res.filter((reg: IRegisteredExtension) => reg !== undefined);
+        return prev;
+      }, {});
+    return Object.values(res);
   }
 
   /**
@@ -1843,7 +1972,7 @@ class ExtensionManager {
    *
    * @returns {ExtensionInit[]}
    */
-  private loadExtensions(): IRegisteredExtension[] {
+  private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
       'settings_interface',
       'settings_application',
@@ -1853,6 +1982,7 @@ class ExtensionManager {
       'starter_dashlet',
       'firststeps_dashlet',
       'mod_load_order',
+      'file_based_loadorder',
       'mod_management',
       'category_management',
       'profile_management',
@@ -1864,9 +1994,11 @@ class ExtensionManager {
       'symlink_activator_elevate',
       'hardlink_activator',
       'move_activator',
+      'null_activator',
       'updater',
       'installer_fomod',
       'installer_nested_fomod',
+      'harmony_injector',
       'settings_metaserver',
       'test_runner',
       'extension_manager',
@@ -1876,9 +2008,11 @@ class ExtensionManager {
       'browser',
       'recovery',
       'file_preview',
+      'tool_variables_base',
+      'history_management',
     ];
 
-    require('./extensionRequire').default();
+    require('./extensionRequire').default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
@@ -1887,12 +2021,14 @@ class ExtensionManager {
       .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
           name,
-          path: path.join(extensionPaths[0], name),
-          initFunc: require(`../extensions/${name}/index`).default,
+          namespace: name,
+          path: path.resolve(__dirname, '..', 'extensions', name),
+          initFunc: () => require(`../extensions/${name}/index`).default,
           dynamic: false,
         }))
-      .concat(...extensionPaths.map(ext => {
-        const newExtensions = this.loadDynamicExtensions(ext, loadedExtensions, dynamicallyLoaded);
+      .concat(...extensionPaths.map(extSpec => {
+        const newExtensions =
+          this.loadDynamicExtensions(extSpec, loadedExtensions, dynamicallyLoaded);
         dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
         return newExtensions;
       }));

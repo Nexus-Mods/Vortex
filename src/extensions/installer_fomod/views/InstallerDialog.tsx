@@ -24,6 +24,7 @@ import {
 
 interface IGroupProps {
   t: TFunction;
+  disabled: boolean;
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
@@ -32,6 +33,12 @@ interface IGroupProps {
 
 interface IGroupState {
   selectedPlugins: number[];
+  // localUpdate stores when the last local update has been made. This is used
+  // to prevent top-down updates from undoing them if the remote process takes
+  // long to reply
+  localUpdate: number;
+  sentUpdate: number;
+  confirmedUpdate: number;
 }
 
 const nop = () => undefined;
@@ -42,21 +49,43 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     super(props);
     this.state = {
       selectedPlugins: this.getSelectedPlugins(props),
+      localUpdate: 0,
+      sentUpdate: 0,
+      confirmedUpdate: 1,
     };
   }
 
   public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
     const {group, onSelect} = this.props;
-    const {selectedPlugins} = this.state;
+    const {confirmedUpdate, localUpdate, sentUpdate, selectedPlugins} = this.state;
     const valid: string = this.validateFunc(group.type)(selectedPlugins);
-    if (selectedPlugins !== oldState.selectedPlugins) {
+    if ((selectedPlugins !== oldState.selectedPlugins)
+        && (localUpdate > sentUpdate)
+        // if the confirmation is still pending, don't send now
+        && (confirmedUpdate > sentUpdate)) {
       onSelect(group.id, selectedPlugins, valid === undefined);
+      this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
     }
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IGroupProps) {
     if (!_.isEqual(this.props.group, newProps.group)) {
-      this.setState({ selectedPlugins: this.getSelectedPlugins(newProps) });
+      // based on the rules of the fomod, us selecting an option may make other options
+      // unavailable. However, for usability reasons, we don't undo user selections if the user
+      // has made further changes since last sending an update
+      if (this.state.sentUpdate >= this.state.localUpdate) {
+        this.setState(update(this.state, {
+          selectedPlugins: { $set: this.getSelectedPlugins(newProps) },
+          confirmedUpdate: { $set: Date.now() },
+        }));
+      } else if (this.state.localUpdate > this.state.sentUpdate) {
+        // while confirmation was pending, the user made further changes, validate them now
+        const { group, onSelect } = newProps;
+        const { selectedPlugins } = this.state;
+        const valid: string = this.validateFunc(group.type)(selectedPlugins);
+        onSelect(group.id, selectedPlugins, valid === undefined);
+        this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
+      }
       this.mValidate = this.validateFunc(newProps.group.type);
     }
   }
@@ -71,14 +100,14 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   public render(): JSX.Element {
-    const {group} = this.props;
+    const {disabled, group} = this.props;
     const {selectedPlugins} = this.state;
 
     const validationMessage = this.mValidate(selectedPlugins);
     const validationState = validationMessage === undefined ? null : 'error';
 
     return (
-      <FormGroup validationState={validationState}>
+      <FormGroup disabled={disabled} validationState={validationState}>
         <ControlLabel>
           {group.name}
           {' '}
@@ -110,7 +139,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private renderNoneOption = (): JSX.Element => {
-    const {t, group, stepId} = this.props;
+    const {t, disabled, group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
     if (group.type !== 'SelectAtMostOne') {
@@ -122,6 +151,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       <Radio
         id={`radio-${stepId}-${group.id}-none`}
         key='none'
+        disabled={disabled}
         name={group.id.toString()}
         data-value='none'
         checked={isSelected}
@@ -132,7 +162,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
-    const {t, group, stepId} = this.props;
+    const {t, disabled, group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
@@ -160,7 +190,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             name={group.id.toString()}
             checked={isSelected}
             onChange={readOnly ? nop : this.select}
-            disabled={plugin.type === 'NotUsable'}
+            disabled={disabled || (plugin.type === 'NotUsable')}
             title={plugin.conditionMsg}
           >
             {content}
@@ -185,7 +215,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             key={plugin.id}
             data-value={plugin.id}
             checked={isSelected}
-            disabled={plugin.type === 'NotUsable'}
+            disabled={disabled || (plugin.type === 'NotUsable')}
             onChange={readOnly ? nop : this.select}
             title={plugin.conditionMsg}
           >
@@ -209,7 +239,10 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
     const value = evt.currentTarget.getAttribute('data-value');
     if (value === 'none') {
-      this.setState({ selectedPlugins: [] });
+      this.setState(update(this.state, {
+        selectedPlugins: { $set: [] },
+        localUpdate: { $set: Date.now() },
+      }));
       onShowDescription(undefined, undefined);
       return;
     }
@@ -219,11 +252,20 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     this.showDescription(evt);
 
     if (['SelectExactlyOne', 'SelectAtMostOne'].indexOf(group.type) !== -1) {
-      this.setState({ selectedPlugins: [pluginId] });
+      this.setState(update(this.state, {
+        selectedPlugins: { $set: [pluginId] },
+        localUpdate: { $set: Date.now() },
+      }));
     } else if (this.state.selectedPlugins.indexOf(pluginId) === -1) {
-      this.setState(pushSafe(this.state, ['selectedPlugins'], pluginId));
+      this.setState(update(this.state, {
+        selectedPlugins: { $set: [].concat(this.state.selectedPlugins, [pluginId]) },
+        localUpdate: { $set: Date.now() },
+      }));
     } else {
-      this.setState(removeValue(this.state, ['selectedPlugins'], pluginId));
+      this.setState(update(this.state, {
+        selectedPlugins: { $set: this.state.selectedPlugins.filter(iter => iter !== pluginId) },
+        localUpdate: { $set: Date.now() },
+      }));
     }
   }
 }
@@ -241,6 +283,7 @@ interface IStepProps {
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
+  disabled: boolean;
 }
 
 function Step(props: IStepProps) {
@@ -256,10 +299,11 @@ function Step(props: IStepProps) {
   }
 
   return (
-    <Form id='fomod-installer-form'>
+    <Form disabled={props.disabled} id='fomod-installer-form'>
       {groupsSorted.map((group: IGroup) => (
         <Group
           t={props.t}
+          disabled={props.disabled}
           key={`${props.step.id}-${group.id}`}
           stepId={props.step.id}
           group={group}
@@ -301,10 +345,13 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (
+      // when initiating the dialog
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
+      // and any time we change to a different page (forward or backwards)
       || ((this.props.installerState !== undefined)
           && ((this.props.installerInfo !== nextProps.installerInfo)
             || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
+      // fully update the description
       this.setState(this.initDescription(nextProps));
     }
   }
@@ -351,6 +398,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                 step={steps[idx]}
                 onSelect={this.select}
                 onShowDescription={this.showDescription}
+                disabled={waiting}
               />
             </FlexLayout.Flex>
             <FlexLayout.Fixed style={{ maxWidth: '60%', minWidth: '40%', overflowY: 'auto' }}>
@@ -400,13 +448,15 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   private select = (groupId: number, plugins: number[], valid: boolean) => {
     const {events} = this.context.api;
     const {installerState} = this.props;
+    let newState = this.state;
     if (valid) {
-      this.setState(removeValue(this.state, ['invalidGroups'], groupId));
+      newState = removeValue(newState, ['invalidGroups'], groupId);
       events.emit('fomod-installer-select',
         installerState.installSteps[installerState.currentStep].id, groupId, plugins);
     } else {
-      this.setState(pushSafe(this.state, ['invalidGroups'], groupId));
+      newState = pushSafe(newState, ['invalidGroups'], groupId);
     }
+    this.setState(newState);
   }
 
   private renderImage = () => {

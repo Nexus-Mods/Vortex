@@ -20,6 +20,7 @@ export class DatabaseLocked extends Error {
 
 function repairDB(dbPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    log('warn', 'repairing database', dbPath);
     leveldown.repair(dbPath, (err: Error) => {
       if (err !== null) {
         reject(err);

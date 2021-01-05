@@ -26,9 +26,13 @@
     // use up remaining space
     width: 100%;
   }
+  .cell-tracked {
+    display: flex;
+    justify-content: center;
+  }
 }
 
-.mod-drop-panel {
+.mod-drop-container {
   margin-top: $half-gutter;
 }
 
@@ -95,5 +99,11 @@
   border: 2px solid $brand-primary;
   svg {
     margin-right: 0.5em;
+  }
+}
+
+#popover-changelog {
+  .mod-changelog {
+    white-space: pre;
   }
 }

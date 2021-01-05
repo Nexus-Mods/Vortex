@@ -57,7 +57,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = (game.extensionPath !== undefined)
+    const logoPath: string = ((game.extensionPath !== undefined)
+                           && (game.logo !== undefined))
       ? path.join(game.extensionPath, game.logo)
       : game.imageURL;
 

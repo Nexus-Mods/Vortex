@@ -3,7 +3,7 @@ import safeCreateAction from './safeCreateAction';
 /**
  * generic action to store load orders for games. How it is to be interpreted
  * is up to the corresponding game support code.
- * the id has could be the profile id for which the load order is to be stored, the items
+ * the id will usually be the profile id for which the load order is to be stored, the items
  * in the order could be the ids of mods/plugins - in the order they should be loaded.
  *
  * With most games we don't store the load order this way but instead directly synchronise

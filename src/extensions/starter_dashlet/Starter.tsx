@@ -311,6 +311,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     // finally, add those tools that were added manually
     Object.keys(discoveredTools)
       .filter(toolId => !preConfTools.has(toolId))
+      .sort((lhs, rhs) => {
+        const tlhs = discoveredTools[lhs]?.timestamp || 0;
+        const trhs = discoveredTools[rhs]?.timestamp || 0;
+        return tlhs - trhs;
+      })
       .forEach(toolId => {
         try {
           starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
@@ -359,7 +364,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
   private startTool = (info: StarterInfo) => {
     const { onShowError } = this.props;
-    if (info === undefined) {
+    if (info?.exePath === undefined) {
+      onShowError('Tool missing/misconfigured',
+        'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     StarterInfo.run(info, this.context.api, onShowError);

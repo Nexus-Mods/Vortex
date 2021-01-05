@@ -44,11 +44,16 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
     return sortModsCache.sorted;
   }
 
+  const startTime = Date.now();
+  log('info', 'sorting mods', { modCount: mods.length });
+
   // if the graphlib library throws a custom exception it may not contain a stack trace, so prepare
   // one we can use
   const stackErr = new Error();
 
   const dependencies = new Graph();
+  // counting only effective rules, for mods that are actually installed
+  let numRules: number = 0;
 
   const modMapper = (mod: IMod) => {
     let downloadGame = getSafe(mod.attributes, ['downloadGame'], gameId);
@@ -75,6 +80,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
           rules.forEach((rule: IRule) => {
             const ref = findByRef(mods, rule.reference);
             if (ref !== undefined) {
+              ++numRules;
               if (rule.type === 'before') {
                 dependencies.setEdge(mod.id, ref.id);
               } else if (rule.type === 'after') {
@@ -101,6 +107,8 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
           prev[mod.id] = mod;
           return prev;
         }, {});
+        const elapsed = Math.floor((Date.now() - startTime) / 100) / 10;
+        log('info', 'done sorting mods', { elapsed, numRules });
         return Promise.resolve(res.map(id => lookup[id]));
       } catch (err) {
         // exception type not included in typings

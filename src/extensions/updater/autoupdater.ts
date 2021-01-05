@@ -1,18 +1,19 @@
 import { showDialog } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { UserCanceled } from '../../util/api';
+import { getVisibleWindow, UserCanceled } from '../../util/api';
 import { log } from '../../util/log';
 import opn from '../../util/opn';
 import { truthy } from '../../util/util';
 
-import {app as appIn, ipcMain, remote} from 'electron';
+import {app as appIn, dialog as dialogIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
 import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
 
 const app = remote !== undefined ? remote.app : appIn;
+const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 const appName = 'com.nexusmods.vortex';
 const ELECTRON_BUILDER_NS_UUID = '50e065bc-3134-11e6-9bab-38c9862bdaf3';
@@ -40,6 +41,18 @@ function openStable() {
 
 function openTesting() {
   opn('https://www.github.com/Nexus-Mods/Vortex#release').catch(() => null);
+}
+
+function updateWarning() {
+  dialog.showMessageBoxSync(getVisibleWindow(), {
+    type: 'info',
+    title: 'Vortex update',
+    message: 'Vortex will be updated after closing. '
+      + 'Please do not turn off your computer until it\'s done. '
+      + 'If you interrupt the installation process Vortex may stop working.',
+    buttons: ['Continue'],
+    noLink: true,
+  });
 }
 
 function setupAutoUpdate(api: IExtensionApi) {
@@ -174,6 +187,9 @@ function setupAutoUpdate(api: IExtensionApi) {
   autoUpdater.on('update-downloaded',
     (info: UpdateInfo) => {
       log('info', 'update installed');
+
+      app.on('before-quit', updateWarning);
+
       api.sendNotification({
         id: 'vortex-update-notification',
         type: 'success',
@@ -192,6 +208,7 @@ function setupAutoUpdate(api: IExtensionApi) {
           {
             title: 'Restart & Install',
             action: () => {
+              app.removeListener('before-quit', updateWarning);
               autoUpdater.quitAndInstall();
             },
           },

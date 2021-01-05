@@ -407,6 +407,14 @@
       "path": "{nucleo}/design-development/{nucleo_simple}_palette",
       "rmFill": true
     },
+    "highlight-tool": {
+      "path": "{nucleo}/user interface/32px_configuration-tool",
+      "rmFill": true
+    },
+    "highlight-ui": {
+      "path": "{nucleo}/technology/{nucleo_simple}_desktop-screen",
+      "rmFill": true
+    },
     "transfer": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_replace",
       "rmFill": true
@@ -579,6 +587,30 @@
     },
     "report": {
       "path": "{nucleo}/design-development/{nucleo_simple}_todo",
+      "rmFill": true
+    },
+    "history": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_timeline",
+      "rmFill": true
+    },
+    "merge": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_merge",
+      "rmFill": true
+    },
+    "tags": {
+      "path": "{nucleo}/shopping/{nucleo_simple}_tags-stack",
+      "rmFill": true
+    },
+    "ghost": {
+      "path": "{nucleo}/holidays/{nucleo_simple}_ghost-2",
+      "rmFill": true
+    },
+    "track": {
+      "path": "{nucleo}/animals-nature/{nucleo_simple}_paw",
+      "rmFill": true
+    },
+    "onoff": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-power",
       "rmFill": true
     }
   }

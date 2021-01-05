@@ -1,6 +1,7 @@
 import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog } from '../actions/notifications';
 import Collapse from '../controls/Collapse';
+import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
@@ -78,6 +79,8 @@ interface IComponentState {
 type IProps = IDialogConnectedProps & IDialogActionProps;
 
 class Dialog extends ComponentEx<IProps, IComponentState> {
+  public static contextType = ErrorContext;
+
   constructor(props: IProps) {
     super(props);
 
@@ -147,7 +150,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {this.renderContent(dialogState)}
+          <ErrorBoundary visible={true}>
+            {this.renderContent(dialogState)}
+          </ErrorBoundary>
         </Modal.Body>
         <Modal.Footer>
           {
@@ -162,7 +167,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private translateParts(message: string, t: TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
-    return message
+    return (message || '')
       .split('\n')
       .map((line: string) => line
         .split('\t')
@@ -224,37 +229,33 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.htmlFile !== undefined) {
       controls.push((
-        <div key='dialog-content-html'>
+        <div key='dialog-content-html-file'>
           <Webview src={`file://${content.htmlFile}`} />
         </div>
       ));
-    } else if (content.htmlText !== undefined) {
+    }
+
+    if (content.htmlText !== undefined) {
       controls.push((
         <div
-          key='dialog-content-html'
+          key='dialog-content-html-text'
           className='dialog-content-html'
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
       ));
     }
 
-    if (content.input !== undefined) {
-      controls.push((
-      <div key='dialog-form-content'>
-        {content.input.map(this.renderInput)}
-      </div>
-      ));
-    }
-
     if (content.checkboxes !== undefined) {
       controls.push((
-        <div key='dialog-content-choices' className='dialog-content-choices'>
+        <div key='dialog-content-checkboxes' className='dialog-content-choices'>
           <div>
             {content.checkboxes.map(this.renderCheckbox)}
           </div>
         </div>
       ));
-    } else if (content.choices !== undefined) {
+    }
+
+    if (content.choices !== undefined) {
       controls.push((
         <div key='dialog-content-choices' className='dialog-content-choices'>
           <div>
@@ -269,6 +270,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <div key='dialog-form-links'>
           {content.links.map(this.renderLink)}
         </div>
+      ));
+    }
+
+    if (content.input !== undefined) {
+      controls.push((
+      <div key='dialog-form-content'>
+        {content.input.map(this.renderInput)}
+      </div>
       ));
     }
 
@@ -365,6 +374,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         key={checkbox.id}
         checked={checkbox.value}
         onChange={this.toggleCheckbox}
+        disabled={checkbox.disabled}
       >
         {t(checkbox.text)}
       </Checkbox>
@@ -380,6 +390,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         name='dialog-radio'
         checked={checkbox.value}
         onChange={this.toggleRadio}
+        disabled={checkbox.disabled}
       >
         {t(checkbox.text)}
       </Radio>

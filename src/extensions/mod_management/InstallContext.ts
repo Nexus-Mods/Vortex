@@ -4,6 +4,7 @@ import { startActivity, stopActivity } from '../../actions/session';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
 import { IState } from '../../types/IState';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
@@ -68,7 +69,14 @@ class InstallContext implements IInstallContext {
     this.mStartActivity = (activity: string) => dispatch(startActivity('mods', 'installing'));
     this.mStopActivity = (activity: string) => dispatch(stopActivity('mods', 'installing'));
     this.mShowError = (message, details?, allowReport?, replace?) =>
-      showError(dispatch, message, details, { allowReport, replace });
+      showError(dispatch, message, details, { allowReport, replace, attachments: [
+        {
+          id: 'log',
+          type: 'file',
+          data: path.join(getVortexPath('userData'), 'vortex.log'),
+          description: 'Vortex Log',
+        },
+      ] });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {

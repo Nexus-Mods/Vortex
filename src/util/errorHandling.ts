@@ -26,6 +26,8 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
+import getVortexPath from './getVortexPath';
+import { bundleAttachment } from './message';
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -156,7 +158,7 @@ export function setOutdated(api: IExtensionApi) {
   const state = api.store.getState();
   const app = appIn || remote.app;
   const version = app.getVersion();
-  if (state.persistent.nexus.newestVersion !== undefined) {
+  if (state.persistent.nexus?.newestVersion !== undefined) {
     try {
       outdated = semver.lt(version, state.persistent.nexus.newestVersion);
     } catch (err) {
@@ -178,23 +180,40 @@ export function didIgnoreError(): boolean {
 }
 
 export function disableErrorReport() {
+  log('info', 'user ignored error, disabling reporting');
   errorIgnored = true;
 }
 
 if (ipcRenderer !== undefined) {
   ipcRenderer.on('did-ignore-error', () => {
+    log('info', 'user ignored error, disabling reporting');
     errorIgnored = true;
   });
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
+  let reportInfo: any;
   return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
-      const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
-        JSON.parse(reportData.toString());
+      reportInfo = JSON.parse(reportData.toString());
+      if (reportInfo.error.attachLog) {
+        return bundleAttachment({
+          attachments: [{
+            id: 'logfile',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          }],
+        });
+      } else {
+        return undefined;
+      }
+    })
+    .then(attachment => {
+      const { type, error, labels, reporterId, reportProcess, sourceProcess, context } = reportInfo;
       return sendReport(type, error, context, labels, reporterId,
-                        reportProcess, sourceProcess, undefined);
-  });
+        reportProcess, sourceProcess, attachment);
+    });
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,
@@ -209,6 +228,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       : error.message;
     dialog.showErrorBox(fullMessage, JSON.stringify({
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
+      attachment,
     }, undefined, 2));
     return Promise.resolve(undefined);
   } else {
@@ -252,6 +272,10 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
   if (truthy(win) && (win.isDestroyed() || !win.isVisible())) {
     win = null;
+  }
+
+  if ((allowReport === undefined) && (error.allowReport === false)) {
+    allowReport = false;
   }
 
   if ((allowReport === undefined) && (error.extension !== undefined)) {
@@ -301,6 +325,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         noLink: true,
       });
       if (action === 1) {
+        log('info', 'user ignored error, disabling reporting');
         errorIgnored = true;
         return;
       }
@@ -364,7 +389,11 @@ export function toError(input: any, title?: string,
       title,
       subtitle: (options || {}).message,
       stack,
-      details: Object.keys(flatErr).map(key => `${key}: ${flatErr[key]}`).join('\n'),
+      allowReport: input['allowReport'],
+      details: Object.keys(flatErr)
+        .filter(key => key !== 'allowReport')
+        .map(key => `${key}: ${flatErr[key]}`)
+        .join('\n'),
     };
   }
 

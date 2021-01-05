@@ -7,10 +7,24 @@ import * as winapi from 'winapi-bindings';
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequire) =>
                         void | Promise<void> | Bluebird<void>) {
+  let client;
+  const syntaxErrors = ['ReferenceError'];
   const handleError = (error: any) => {
+    const testIfScriptInvalid = () => {
+      syntaxErrors.forEach(errType => {
+        if (error.stack.startsWith(errType)) {
+          error = 'InvalidScriptError: ' + error.stack;
+          client.sendEndError(error);
+        }
+      });
+    };
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
+    if (client !== undefined) {
+      testIfScriptInvalid();
+    }
   };
+
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
   // tslint:disable-next-line:no-shadowed-variable
@@ -21,7 +35,7 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   // tslint:disable-next-line:no-shadowed-variable
   const path = require('path');
 
-  const client = new JsonSocket(new net.Socket());
+  client = new JsonSocket(new net.Socket());
   client.connect(path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {

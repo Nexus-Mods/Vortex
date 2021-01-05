@@ -72,7 +72,7 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
           />
 
           <Icon name={expanded ? 'showhide-down' : 'showhide-right'} />
-          {groupName || t(EMPTY_ID)} ({count})
+          {t(groupName) || t(EMPTY_ID)} ({count})
         </TD>
       </TR>
     );

@@ -37,9 +37,9 @@ export interface IBaseProps {
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
 
-function genTooltip(t: TFunction, show: boolean | string): string {
+function genTooltip(t: TFunction, show: boolean | string, ns?: string): string {
   return typeof (show) === 'string'
-    ? t(show)
+    ? t(show, { ns })
     : undefined;
 }
 
@@ -58,10 +58,10 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
         eventKey={id}
         onSelect={this.trigger}
         disabled={action.show !== true}
-        title={genTooltip(t, action.show)}
+        title={genTooltip(t, action.show, action.options?.namespace)}
       >
         <Icon name={action.icon} />
-        <div className='button-text'>{t(action.title)}</div>
+        <div className='button-text'>{t(action.title, { ns: action.options?.namespace })}</div>
       </MenuItem>
     );
   }
@@ -203,7 +203,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     if ((icon.icon === null) && (icon.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {t(icon.title)}
+          {t(icon.title, { ns: icon.options?.namespace })}
         </MenuItem>
       );
     }
@@ -253,6 +253,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     return (
       <ToolbarDropdown
+        t={t}
         key={id}
         id={id}
         instanceId={instanceIds}
@@ -290,11 +291,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           className={actionId}
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
-          text={hasText ? t(icon.title) : undefined}
-          tooltip={t(icon.title)}
+          text={hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined}
+          tooltip={t(icon.title, { ns: icon.options?.namespace })}
           onClick={icon.action}
           placement={tooltipPlacement}
           disabled={(icon.show !== true) && (icon.show !== undefined)}
+          stroke={icon.options?.hollowIcon === true}
+          hollow={icon.options?.hollowIcon === true}
         />
       );
     } else {

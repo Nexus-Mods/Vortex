@@ -3,7 +3,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 
-function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
+export function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     api.events.emit('remove-mod', gameId, modId, err => {
       if (err) {
@@ -16,8 +16,7 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<v
 }
 
 export function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise<void> {
-  const state: IState = api.store.getState();
-
+  const mods = api.getState().persistent.mods[gameId];
   if (modIds.length === 0) {
     return Promise.resolve();
   }
@@ -33,8 +32,6 @@ export function removeMods(api: IExtensionApi, gameId: string, modIds: string[])
     progress: 0,
   });
 
-  const mods = state.persistent.mods[gameId];
-
   return Promise
     .mapSeries(modIds, (modId: string, idx: number, length: number) => {
       api.sendNotification({
@@ -42,8 +39,8 @@ export function removeMods(api: IExtensionApi, gameId: string, modIds: string[])
         message: modId,
         progress: (idx * 100) / length,
       });
-      if ((mods[modId] !== undefined)
-        && (mods[modId].state === 'installed')) {
+
+      if (mods[modId]?.state === 'installed') {
         return removeMod(api, gameId, modId);
       } else {
         return Promise.resolve();

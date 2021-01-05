@@ -137,6 +137,12 @@ export interface IDeploymentMethod {
   readonly priority: number;
 
   /**
+   * if true, no redundancy check is made for this deployment.
+   * For cases where the redundancy check wouldn't work correctly
+   */
+  readonly noRedundancy?: boolean;
+
+  /**
    * returns more extensive description/explanation of the activator.
    *
    * @type {string}
@@ -223,12 +229,12 @@ export interface IDeploymentMethod {
    * @param {string} sourcePath source where the mod is installed
    * @param {string} sourceName name to be stored as the source of files. usually the path of the
    *                            mod subdirectory
-   * @param {string} dataPath relative path within the data path where mods are installed to
+   * @param {string} deployPath relative path within the data path where mods are installed to
    * @param {Set<string>} blacklist list of files to skip
    *
    * @memberOf IDeploymentMethod
    */
-  activate: (sourcePath: string, sourceName: string, dataPath: string,
+  activate: (sourcePath: string, sourceName: string, deployPath: string,
              blackList: Set<string>) => Promise<void>;
 
   /**

@@ -1,7 +1,9 @@
 /**
- * wrapper for the fs / fs-extra-promise module
- * this allows us to customise the behaviour of fs function across the application.
- * The api should remain compatible with fs-extra-promise, but extensions can be made
+ * wrapper for the fs / fs-extra module
+ * this allows us to customise the behaviour of fs function across the application,
+ * In particular it handles certain user-interactions (file busy, permissions, ...) in a uniform
+ * way.
+ * The api should remain compatible with fs-extra, but extensions can be made
  * Notable behaviour changes:
  * - common async functions now retrieve a backtrace before calling, so that on error
  *   they can provide a useful backtrace to where the function was called
@@ -21,11 +23,13 @@ import PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra';
 import JsonSocket from 'json-socket';
+import * as _ from 'lodash';
 import * as net from 'net';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
 import rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
+import * as tmp from 'tmp';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';
 
@@ -41,6 +45,7 @@ export {
   createWriteStream,
   linkSync,
   openSync,
+  readdirSync,
   readFileSync,
   statSync,
   symlinkSync,
@@ -103,6 +108,28 @@ function nospcQuery(): PromiseBB<boolean> {
     : PromiseBB.resolve(true);
 }
 
+function ioQuery(): PromiseBB<boolean> {
+  if (dialog === undefined) {
+    return PromiseBB.resolve(false);
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'I/O Error',
+    message: 'Disk access failed repeatedly. '
+           + 'If this is a removable disk (like a network or external drive), please ensure '
+           + 'it\'s connected. Otherwise this may indicate filesystem corruption, you may '
+           + 'want to run chkdsk or similar software to scan for problems.',
+    buttons: ['Cancel', 'Retry'],
+    type: 'warning',
+    noLink: true,
+  };
+
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
+  return (choice === 0)
+    ? PromiseBB.reject(new UserCanceled())
+    : PromiseBB.resolve(true);
+}
+
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
   if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
@@ -150,8 +177,13 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 }
 
 function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): PromiseBB<boolean> {
-  if ((dialog === undefined) || !truthy(filePath)) {
+  if (dialog === undefined) {
     return PromiseBB.resolve(false);
+  }
+
+  if (filePath === undefined) {
+    // unfortunately these error message don't necessarily contain the filename
+    filePath = '<filename unknown>';
   }
 
   const options: Electron.MessageBoxOptions = {
@@ -193,7 +225,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'you may want to run chkdsk or similar software to check for problems. '
                       + 'It may also help to reinstall the software that this file belongs to.';
       rethrowAs = 'EIO';
-    } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 388, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
@@ -276,15 +308,21 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     case 'Retry': return PromiseBB.resolve(true);
     case 'Ignore': {
       err['code'] = rethrowAs;
+      err['allowReport'] = false;
       return PromiseBB.reject(err);
     }
-    case 'Cancel': PromiseBB.reject(new UserCanceled());
   }
+
+  return PromiseBB.reject(new UserCanceled());
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if ((dialog === undefined) || !truthy(filePath)) {
+  if (dialog === undefined) {
     return PromiseBB.resolve(false);
+  }
+
+  if (filePath === undefined) {
+    filePath = '<filename unknown>';
   }
 
   let processes = [];
@@ -299,8 +337,10 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     title: 'File busy',
     message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
       + 'Please close the file in all other applications and then retry.',
-    detail: 'Please close the following applications and retry:\n'
-          + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
+    detail: (processes.length > 0)
+      ? 'Please close the following applications and retry:\n'
+          + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n')
+      : undefined,
     buttons: [
       'Cancel',
       'Retry',
@@ -316,28 +356,46 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 }
 
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
-                     stackErr: Error, showDialogCallback?: () => boolean): PromiseBB<boolean> {
-  if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
+                     stackErr: Error, showDialogCallback?: () => boolean,
+                     options?: IErrorHandlerOptions): PromiseBB<boolean> {
+  if ((retries > 0)
+      && (RETRY_ERRORS.has(error.code)
+          || ((options?.extraRetryErrors || []).includes(error.code)))) {
     // retry these errors without query for a few times
-    return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
+    return PromiseBB.delay(retries === 1 ? 1000 : 100)
+      .then(() => PromiseBB.resolve(true));
   }
   if ((showDialogCallback !== undefined) && !showDialogCallback()) {
     return PromiseBB.resolve(false);
   }
   // system error code 1224 means there is a user-mapped section open in the file
-  if ((error.code === 'EBUSY') || (error['nativeCode'] === 1224)) {
+  if ((error.code === 'EBUSY')
+      || (error['nativeCode'] === 1224)
+      || ((error.code ===  'ENOTEMPTY') && options?.enotempty)) {
     return busyRetry(filePath);
   } else if (error.code === 'ENOSPC') {
     return nospcQuery();
+  } else if (['EBADF', 'EIO'].includes(error.code)) {
+    return ioQuery();
   } else if (error.code === 'EPERM') {
-    return unlockConfirm(filePath)
+    let unlockPath = filePath;
+    return PromiseBB.resolve(fs.stat(unlockPath))
+      .catch(statErr => {
+        if (statErr.code === 'ENOENT') {
+          unlockPath = path.dirname(filePath);
+          return PromiseBB.resolve();
+        } else {
+          return PromiseBB.reject(statErr);
+        }
+      })
+      .then(() => unlockConfirm(unlockPath))
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
           return elevated((ipcPath, req: NodeRequire) => {
             const { allow }: { allow: typeof allowT } = req('permissions');
-            return allow(filePath, userId as any, 'rwx');
-          }, { filePath, userId })
+            return allow(unlockPath, userId as any, 'rwx');
+          }, { unlockPath, userId })
             .then(() => true)
             .catch(elevatedErr => {
               if ((elevatedErr instanceof UserCanceled)
@@ -373,18 +431,41 @@ function restackErr(error: Error, stackErr: Error): Error {
   return error;
 }
 
+interface IErrorHandlerOptions {
+  enotempty?: boolean;
+  extraRetryErrors?: string[];
+}
+
+function augmentError(error: NodeJS.ErrnoException) {
+  if (error.message === 'dest already exists.') {
+    error.code = 'EEXIST';
+  }
+}
+
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
-                      showDialogCallback?: () => boolean): PromiseBB<void> {
-  return errorRepeat(error, (error as any).dest || error.path, tries,
-                     stackErr, showDialogCallback)
+                      showDialogCallback?: () => boolean,
+                      options?: IErrorHandlerOptions): PromiseBB<void> {
+  augmentError(error);
+  const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
+                     stackErr, showDialogCallback, options);
+
+  // trying to narrow down #6404
+  if (repProm === undefined) {
+    const err = new Error(
+      `Failed to handle filesystem error "${error.code}": ${error.message}.`);
+    err.stack = error.stack;
+    throw PromiseBB.reject(err);
+  }
+
+  return repProm
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
-function genWrapperAsync<T extends (...args) => any>(func: T): T {
+export function genFSWrapperAsync<T extends (...args) => any>(func: T) {
   const wrapper = (stackErr: Error, tries: number, ...args) =>
     simfail(() => PromiseBB.resolve(func(...args)))
       .catch(err => errorHandler(err, stackErr, tries)
@@ -393,31 +474,29 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
     return wrapper(new Error(), NUM_RETRIES, ...args);
   };
-  return res as T;
+  return res;
 }
 
-const fsBB: any = PromiseBB.promisifyAll(fs);
-
 // tslint:disable:max-line-length
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genWrapperAsync(fsBB.chmodAsync);
-const closeAsync: (fd: number) => PromiseBB<void> = genWrapperAsync(fsBB.closeAsync);
-const fsyncAsync: (fd: number) => PromiseBB<void> = genWrapperAsync(fsBB.fsyncAsync);
-const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.lstatAsync);
-const mkdirAsync: (path: string) => PromiseBB<void> = genWrapperAsync(fsBB.mkdirAsync);
-const mkdirsAsync: (path: string) => PromiseBB<void> = genWrapperAsync(fsBB.mkdirsAsync);
-const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genWrapperAsync(fsBB.moveAsync);
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genWrapperAsync(fsBB.openAsync);
-const readdirAsync: (path: string) => PromiseBB<string[]> = genWrapperAsync(fsBB.readdirAsync);
-const readFileAsync: (...args: any[]) => PromiseBB<any> = genWrapperAsync(fsBB.readFileAsync);
-const statAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.statAsync);
-const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => fsBB.statAsync(statPath);
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genWrapperAsync(fsBB.symlinkAsync);
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
+const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genFSWrapperAsync(fs.chmod);
+const closeAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.close);
+const fsyncAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.fsync);
+const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.lstat);
+const mkdirAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdir);
+const mkdirsAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdirs);
+const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genFSWrapperAsync(fs.move);
+const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fs.open);
+const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fs.readdir);
+const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fs.readFile);
+const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.stat);
+const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => PromiseBB.resolve(fs.stat(statPath));
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fs.symlink);
+const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genFSWrapperAsync(fs.utimes);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
-const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genWrapperAsync(fs.write) as any;
-const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genWrapperAsync(fs.read) as any;
-const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genWrapperAsync(fsBB.writeFileAsync);
+const writeAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesWritten: number, buffer: BufferT }> = genFSWrapperAsync(fs.write) as any;
+const readAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesRead: number, buffer: BufferT }> = genFSWrapperAsync(fs.read) as any;
+const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.writeFile);
 // tslint:enable:max-line-length
 
 export {
@@ -455,8 +534,10 @@ export function ensureDirSync(dirPath: string) {
 
 export function ensureFileAsync(filePath: string): PromiseBB<void> {
   const stackErr = new Error();
-  return (fs as any).ensureFileAsync(filePath)
-    .catch(err => restackErr(err, stackErr));
+  return PromiseBB.resolve(fs.ensureFile(filePath))
+    .catch(err => {
+      throw restackErr(err, stackErr);
+    });
 }
 
 export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
@@ -471,14 +552,14 @@ export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
     : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }
 
-function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
-  return fsBB.ensureDirAsync(dirPath)
+function ensureDirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
+  return PromiseBB.resolve(fs.ensureDir(dirPath))
     .catch(err => {
       // ensureDir isn't supposed to cause EEXIST errors as far as I understood
       // it but on windows, when targeting a OneDrive path (and similar?)
       // it apparently still does
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve(null);
+        return PromiseBB.resolve();
       }
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
@@ -489,7 +570,7 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
   // Please note, onDirCreatedCB will be called for _each_ directory
   //  we create.
   const created: string[] = [];
-  const mkdirRecursive = (dir: string) => fsBB.mkdirAsync(dir)
+  const mkdirRecursive = (dir: string) => PromiseBB.resolve(fs.mkdir(dir))
     .then(() => {
       created.push(dir);
       return onDirCreatedCB(dir);
@@ -500,7 +581,7 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
       } else {
         return (['ENOENT'].indexOf(err.code) !== -1)
           ? mkdirRecursive(path.dirname(dir))
-              .then(() => fsBB.mkdirAsync(dir))
+              .then(() => PromiseBB.resolve(fs.mkdir(dir)))
               .then(() => {
                 created.push(dir);
                 return onDirCreatedCB(dir);
@@ -519,12 +600,35 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 }
 
 function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.join(fsBB.statAsync(src), fsBB.statAsync(dest)
-                .catch({ code: 'ENOENT' }, err => PromiseBB.resolve({})))
-    .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
+  return PromiseBB.all([(fs.stat as any)(src, { bigint: true }),
+                        (fs.stat as any)(dest, { bigint: true })
+    .catch(err => {
+      return err.code === 'ENOENT'
+        ? Promise.resolve({})
+        : Promise.reject(err);
+    }),
+  ])
+    .then((stats: fs.BigIntStats[]) => (stats[0].ino === stats[1].ino)
         ? PromiseBB.reject(new Error(
           `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
         : PromiseBB.resolve());
+}
+
+function nextName(input: string): string {
+  const ext = path.extname(input);
+  const base = path.basename(input, ext);
+  const count = parseInt(path.extname(base).slice(1), 10) || 1;
+  return path.join(path.dirname(input), `${base}.${count}${ext}`);
+}
+
+/**
+ * move a file. If the destination exists, will generate a new name with an
+ * increasing counter until an unused name is found
+ */
+export function moveRenameAsync(src: string, dest: string): PromiseBB<string> {
+  return moveAsync(src, dest, { overwrite: false })
+    .then(() => dest)
+    .catch({ code: 'EEXIST' }, () => moveRenameAsync(src, nextName(dest)));
 }
 
 /**
@@ -532,8 +636,8 @@ function selfCopyCheck(src: string, dest: string) {
  * The copy function from fs-extra doesn't (at the time of writing) correctly check that a file
  * isn't copied onto itself (it fails for links or potentially on case insensitive disks),
  * so this makes a check based on the ino number.
- * Unfortunately a bug in node.js (https://github.com/nodejs/node/issues/12115) prevents this
- * check from working reliably so it can currently be disabled.
+ * A bug in older versions of node.js made it necessary this check be optional but that is
+ * resolved now so the check should always be enabled.
  * @param src file to copy
  * @param dest destination path
  * @param options copy options (see documentation for fs)
@@ -552,16 +656,21 @@ export function copyAsync(src: string, dest: string,
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
+type CopyOptionsEx = fs.CopyOptions & {
+  noSelfCopy?: boolean,
+  showDialogCallback?: () => boolean,
+};
+
 function copyInt(
-    src: string, dest: string,
-    options: fs.CopyOptions & { noSelfCopy?: boolean,
-                                showDialogCallback?: () => boolean },
+    src: string,
+    dest: string,
+    options: CopyOptionsEx,
     stackErr: Error,
     tries: number) {
-  return simfail(() => fsBB.copyAsync(src, dest, options))
+  return simfail(() => PromiseBB.resolve(fs.copy(src, dest, options)))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries,
-                  (options !== undefined) ? options.showDialogCallback : undefined)
+      errorHandler(err, stackErr, tries, options?.showDialogCallback,
+                   { extraRetryErrors: ['EEXIST'] })
         .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 
@@ -577,7 +686,7 @@ function linkInt(
     src: string, dest: string,
     stackErr: Error, tries: number,
     options?: ILinkFileOptions): PromiseBB<void> {
-  return simfail(() => fsBB.linkAsync(src, dest))
+  return simfail(() => PromiseBB.resolve(fs.link(src, dest)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries,
                   (options !== undefined) ? options.showDialogCallback : undefined)
@@ -594,7 +703,7 @@ export function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Pro
 
 function unlinkInt(filePath: string, stackErr: Error, tries: number,
                    options: IRemoveFileOptions): PromiseBB<void> {
-  return simfail(() => fsBB.unlinkAsync(filePath))
+  return simfail(() => PromiseBB.resolve(fs.unlink(filePath)))
     .catch((err: NodeJS.ErrnoException) => {
       const handle = () => errorHandler(err, stackErr, tries, options.showDialogCallback)
           .then(() => unlinkInt(filePath, stackErr, tries - 1, options));
@@ -605,7 +714,7 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number,
       } else if (err.code === 'EPERM') {
         // this could be caused by the path actually pointing to a directory,
         // unlink can only handle files
-        return fsBB.statAsync(filePath)
+        return PromiseBB.resolve(fs.stat(filePath))
           .then((stats) => {
             if (stats.isDirectory()) {
               err.code = 'EISDIR';
@@ -671,7 +780,8 @@ export function removeAsync(remPath: string, options?: IRemoveFileOptions): Prom
 function removeInt(remPath: string, stackErr: Error, tries: number,
                    options: IRemoveFileOptions): PromiseBB<void> {
   return simfail(() => rimrafAsync(remPath))
-    .catch(err => errorHandler(err, stackErr, tries, options.showDialogCallback)
+    .catch(err => errorHandler(err, stackErr, tries, options.showDialogCallback,
+                               { enotempty: true })
       .then(() => removeInt(remPath, stackErr, tries - 1, options)));
 }
 
@@ -732,7 +842,11 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
       conn
         .on('message', data => {
           if (data.error !== undefined) {
-            log('error', 'elevated process failed', data.error);
+            if (data.error.startsWith('InvalidScriptError')) {
+              reject(new Error(data.error));
+            } else {
+              log('error', 'elevated process failed', data.error);
+            }
           } else {
           log('warn', 'got unexpected ipc message', JSON.stringify(data));
           }
@@ -787,7 +901,11 @@ export function ensureDirWritableAsync(dirPath: string,
       // weirdly we get EBADF from ensureFile sometimes when the
       // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
       // only on startup.
-      if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
+      // Additionally, users may occasionally get EEXIST (OneDrive specific?)
+      //  as far as I understand fs-extra that is not supposed to happen! but I suppose
+      //  it doesn't hurt to add some code to handle that use case.
+      //  https://github.com/Nexus-Mods/Vortex/issues/6856
+      if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST'].indexOf(err.code) !== -1) {
         return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
@@ -797,6 +915,14 @@ export function ensureDirWritableAsync(dirPath: string,
               // tslint:disable-next-line:no-shadowed-variable
               const path = req('path');
               const { allow } = req('permissions');
+              const allowDir = (targetPath) => {
+                try {
+                  allow(targetPath, userId, 'rwx');
+                  return Promise.resolve();
+                } catch (err) {
+                  return Promise.reject(err);
+                }
+              };
               // recurse upwards in the directory tree if necessary
               const ensureAndAllow = (targetPath, allowRecurse) => {
                 return fs.ensureDir(targetPath)
@@ -807,18 +933,16 @@ export function ensureDirWritableAsync(dirPath: string,
                       && allowRecurse) {
                     return ensureAndAllow(parentPath, true)
                       .then(() => ensureAndAllow(targetPath, false));
+                  } else if (elevatedErr.code === 'EEXIST') {
+                    // Directory already exists - that's fine.
+                    //  Theoretically fs.ensureDir shouldn't be throwing EEXIST
+                    //  errors, but we've seen this happen on multiple occassions.
+                    return Promise.resolve();
                   } else {
                     return Promise.reject(elevatedErr);
                   }
                 })
-                .then(() => {
-                  try {
-                    allow(targetPath, userId, 'rwx');
-                    return Promise.resolve();
-                  } catch (err) {
-                    return Promise.reject(err);
-                  }
-                });
+                .then(() => allowDir(targetPath));
               };
               return ensureAndAllow(dirPath, true);
             }, { dirPath, userId })
@@ -981,3 +1105,65 @@ export function forcePerm<T>(t: TFunction,
       }
     });
 }
+
+export function withTmpDirImpl<T>(cb: (tmpPath: string) => PromiseBB<T>): PromiseBB<T> {
+  return new PromiseBB<T>((resolve, reject) => {
+    tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(tmpPath)
+          .then((out: T) => {
+            resolve(out);
+          })
+          .catch(tmpErr => {
+            reject(tmpErr);
+          })
+          .finally(() => {
+            try {
+              cleanup();
+            } catch (err) {
+              // cleanup failed
+              log('warn', 'Failed to clean up temporary directory', { tmpPath });
+            }
+          });
+      }
+    });
+  });
+}
+
+export interface ITmpOptions {
+  cleanup?: boolean;
+}
+
+function withTmpFileImpl<T>(cb: (fd: number, name: string) => PromiseBB<T>,
+                            options?: ITmpOptions & tmp.FileOptions): PromiseBB<T> {
+  return new PromiseBB<T>((resolve, reject) => {
+    tmp.file(_.omit(options ?? {}, ['cleanup']), (err, name, fd, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(fd, name)
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            if (options?.cleanup !== false) {
+              try {
+                cleanup();
+              } catch (err) {
+                log('warn', 'Failed to clean up temporary file', { name });
+              }
+            }
+          });
+      }
+    });
+  });
+}
+
+const withTmpDir = genFSWrapperAsync(withTmpDirImpl);
+const withTmpFile = genFSWrapperAsync(withTmpFileImpl);
+
+export {
+  withTmpDir,
+  withTmpFile,
+};

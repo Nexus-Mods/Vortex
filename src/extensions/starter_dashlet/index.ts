@@ -1,4 +1,6 @@
 import Promise from 'bluebird';
+import path from 'path';
+import { fs } from '../..';
 
 import { IExtensionApi, IExtensionContext, ITestResult } from '../../types/api';
 import { activeGameId } from '../../util/selectors';
@@ -11,6 +13,22 @@ import Starter from './Starter';
 
 function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
+  const notifyInvalid = () => {
+    api.sendNotification({
+      id: 'invalid-primary-tool',
+      type: 'warning',
+      message: 'Invalid primary tool',
+      actions: [
+        { title: 'More', action: (dismiss) =>
+          api.showDialog('info', 'Invalid primary tool', {
+            text: api.translate('The primary tool for {{game}} is no longer available.'
+                              + ' Quick launch has reverted to the game\'s executable.',
+                                  { replace: { game: gameMode } }),
+          }, [ { label: 'Close', action: () => dismiss() } ]),
+        },
+      ],
+    });
+  };
 
   const gameMode = activeGameId(state);
   if (gameMode === undefined) {
@@ -24,21 +42,22 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
     const primaryTool = getSafe(state,
       [ 'settings', 'gameMode', 'discovered', gameMode, 'tools', primaryToolId ], undefined);
     if ((primaryTool === undefined) || (!truthy(primaryTool.path))) {
-      api.sendNotification({
-        id: 'invalid-primary-tool',
-        type: 'warning',
-        message: 'Invalid primary tool',
-        actions: [
-          { title: 'More', action: (dismiss) =>
-            api.showDialog('info', 'Invalid primary tool', {
-              text: api.translate('The primary tool for {{game}} is no longer available.'
-                                + ' Quick launch has reverted to the game\'s executable.',
-                                    { replace: { game: gameMode } }),
-            }, [ { label: 'Close', action: () => dismiss() } ]),
-          },
-        ],
-      });
+      notifyInvalid();
       api.store.dispatch(setPrimaryTool(gameMode, undefined));
+    } else {
+      const workingDir = (primaryTool.workingDirectory !== undefined)
+        ? primaryTool.workingDirectory
+        : path.dirname(primaryTool.path);
+
+      // Make sure all the required files are still present.
+      const requiredFiles = primaryTool.requiredFiles.map(file => path.join(workingDir, file));
+      return Promise.each(requiredFiles, (file: string) => fs.statAsync(file))
+        .then(() => Promise.resolve(undefined))
+        .catch(err => {
+          notifyInvalid();
+          api.store.dispatch(setPrimaryTool(gameMode, undefined));
+          return Promise.resolve(undefined);
+        });
     }
   }
 

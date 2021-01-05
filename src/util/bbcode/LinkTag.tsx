@@ -1,3 +1,4 @@
+import { ErrorContext } from '../../controls/ErrorBoundary';
 import opn from '../opn';
 
 import { Tag } from 'bbcode-to-react';
@@ -35,27 +36,42 @@ class LinkTag extends Tag {
       linkUrl = `mailto:${linkUrl}`;
     }
 
-    const {callbacks} = this.renderer.options;
+    const {callbacks, allowLocal} = this.renderer.options;
     return (
-      <a
-        href={linkUrl}
-        // tslint:disable-next-line:jsx-no-lambda
-        onClick={(evt) => this.clicked(evt, callbacks)}
-        title={linkUrl}
-      >
-        {this.getComponents()}
-      </a>
+      <ErrorContext.Consumer>
+        {
+          (context) => (
+            <a
+              href={linkUrl}
+              // tslint:disable-next-line:jsx-no-lambda
+              onClick={context.safeCB((evt) => this.clicked(evt, callbacks, allowLocal),
+                                      [this.renderer.options])}
+              title={linkUrl}
+            >
+              {this.getComponents()}
+            </a>
+          )
+        }
+      </ErrorContext.Consumer>
     );
   }
 
-  private clicked = (evt: React.MouseEvent<any>, callbacks) => {
+  private clicked = (evt: React.MouseEvent<any>, callbacks, allowLocal: boolean) => {
     evt.preventDefault();
     const uri = evt.currentTarget.href;
     const parsed = url.parse(uri);
+    const protocols = allowLocal
+      ? ['http:', 'https:', 'file:']
+      : ['http:', 'https:'];
+
     if ((parsed.protocol === 'cb:') && (callbacks?.[parsed.host] !== undefined)) {
-      const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
-      callbacks[parsed.host](...args);
-    } else if (['http:', 'https:'].includes(parsed.protocol)) {
+      try {
+        const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
+        callbacks[parsed.host](...args);
+      } catch (err) {
+        throw new Error(`invalid callback url "${uri}"`);
+      }
+    } else if (protocols.includes(parsed.protocol)) {
       opn(uri).catch(err => undefined);
     }
   }

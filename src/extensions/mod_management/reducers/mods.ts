@@ -144,6 +144,7 @@ export const modsReducer: IReducerSpec = {
               description: () => 'Mod with invalid attribute will be reset.',
               noUndefined: true,
               noNull: true,
+              noEmpty: true,
               required: true,
               deleteBroken: 'parent',
             },

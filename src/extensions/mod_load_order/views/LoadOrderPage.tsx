@@ -12,8 +12,10 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
-import { IGameLoadOrderEntry, ILoadOrder,
-  ILoadOrderDisplayItem, SortType } from '../types/types';
+import { setGameLoadOrderRendererOptions } from '../actions/settings';
+
+import { IGameLoadOrderEntry, IItemRendererOptions, ILoadOrder,
+  ILoadOrderDisplayItem, SortType, UpdateType } from '../types/types';
 
 import DraggableList from './DraggableList';
 
@@ -27,6 +29,7 @@ const NAMESPACE: string = 'generic-load-order-extension';
 interface IBaseState {
   i18nNamespace: string;
   loading: boolean;
+  updating: boolean;
   sortType: SortType;
   itemRenderer: React.ComponentClass<{
     className?: string,
@@ -51,9 +54,13 @@ interface IConnectedProps {
 
   // Does the user need to deploy ?
   needToDeploy: boolean;
+
+  // ItemRenderer options.
+  itemRendererOptions: IItemRendererOptions;
 }
 
 interface IActionProps {
+  onSetLoadOrderRendererOptions: (gameId: string, options: IItemRendererOptions) => void;
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onSetOrder: (profileId: string, loadOrder: ILoadOrder) => void;
 }
@@ -76,20 +83,22 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.initState({
       enabled: [],
       sortType: 'ascending',
-      loading: false,
+      loading: true,
+      updating: false,
       itemRenderer: undefined,
       i18nNamespace: undefined,
     });
 
     this.mUpdateDebouncer = new util.Debouncer(() => {
       const { enabled } = this.state;
-      this.setLoadOrder(enabled);
-      this.mCallbackDebouncer.schedule();
-
+      const updateType: UpdateType = 'refresh';
+      this.setLoadOrder(enabled, updateType);
+      this.mCallbackDebouncer.schedule(undefined, updateType);
+      this.nextState.updating = false;
       return null;
     }, 500);
 
-    this.mCallbackDebouncer = new util.Debouncer(() => {
+    this.mCallbackDebouncer = new util.Debouncer((updateType: UpdateType) => {
       const { loadOrder, profile, getGameEntry } = this.props;
       if (profile === undefined) {
         return null;
@@ -97,14 +106,15 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
       const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
       if (!!activeGameEntry.callback) {
-        activeGameEntry.callback(loadOrder);
+        activeGameEntry.callback(loadOrder, updateType);
       }
 
       return null;
     }, 500);
 
     this.mForceUpdateDebouncer = new util.Debouncer(() => {
-      this.updateState(this.props);
+      this.nextState.updating = true;
+      this.updateState(this.props, true, 'refresh');
       return null;
     }, 200, false, true);
 
@@ -121,8 +131,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
           };
         },
-      },
-      {
+      }, {
         component: ToolbarIcon,
         props: () => {
           return {
@@ -138,11 +147,42 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             },
           };
         },
+      }, {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-select-list-view',
+            key: 'btn-select-list-view',
+            icon: 'layout-list',
+            text: (this.props.itemRendererOptions.listViewType === 'full') ? 'Compact View' : 'Full View',
+            className: 'load-order-list-view',
+            onClick: this.onChangeViewType,
+          };
+        },
+        condition: () => {
+          return this.state.itemRenderer === DefaultItemRenderer;
+        },
+      }, {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-refresh-list',
+            key: 'btn-refresh-list',
+            icon: this.state.updating ? 'spinner' : 'refresh',
+            text: 'Refresh List',
+            className: 'load-order-refresh-list',
+            onClick: this.onRefreshList,
+          };
+        },
       },
     ];
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
+    if (this.state.updating === true) {
+      return;
+    }
+
     if ((this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder))
         || (this.stringified(this.props.mods) !== this.stringified(newProps.mods))
         || (this.stringified(this.props.profile) !== this.stringified(newProps.profile))) {
@@ -153,7 +193,13 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
+    const renderer = this.getItemRenderer();
+    if (renderer !== this.state.itemRenderer) {
+      this.nextState.itemRenderer = renderer;
+    }
+
     this.updateState(this.props);
+    this.nextState.loading = false;
   }
 
   public componentWillUnmount() {
@@ -167,20 +213,21 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       : this.renderLoadOrderPage();
   }
 
-  private stringified(obj: object) {
-    return JSON.stringify(obj);
+  private stringified(obj: any) {
+    return (!!obj) ? JSON.stringify(obj) : obj;
   }
 
   private resetState() {
     this.nextState.loading = true;
+    this.nextState.updating = false;
     this.nextState.itemRenderer = undefined;
     this.nextState.i18nNamespace = undefined;
     this.nextState.enabled = [];
   }
 
-  private setLoadOrder(list: ILoadOrderDisplayItem[]) {
-    const { loadOrder,
-            onSetOrder, profile, getGameEntry } = this.props;
+  private setLoadOrder(list: ILoadOrderDisplayItem[], update: UpdateType) {
+    this.nextState.updating = true;
+    const { loadOrder, onSetOrder, profile, getGameEntry } = this.props;
     const loKeys = Object.keys(loadOrder);
 
     const hasLOEntry = (modId) => loKeys.includes(modId);
@@ -193,6 +240,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             pos: idx,
             enabled: true,
             locked: false,
+            prefix: entry.prefix,
+            data: entry.data,
           };
           return accum;
         }
@@ -201,6 +250,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             pos: loadOrder[entry.id].pos,
             enabled: loadOrder[entry.id].enabled,
             locked: true,
+            prefix: entry.prefix,
+            data: entry.data,
           };
         } else {
           const existing = Object.keys(accum);
@@ -215,6 +266,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                   pos: previousPos + 1,
                   enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
                   locked: false,
+                  prefix: entry.prefix,
+                  data: entry.data,
                 };
                 return accum;
               }
@@ -225,18 +278,29 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
               pos: previousPos + 1,
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
+              prefix: entry.prefix,
+              data: entry.data,
             };
           } else {
             accum[entry.id] = {
               pos: wantedPos,
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
+              prefix: entry.prefix,
+              data: entry.data,
             };
           }
         }
 
         return accum;
       }, {});
+
+      const sortedList = newList.sort((a, b) => newOrder[a.id].pos - newOrder[b.id].pos);
+      if (JSON.stringify(sortedList) !== JSON.stringify(this.state.enabled)) {
+        // Just in case the component's state is out of sync for some
+        //  reason - this will trigger a re-render unfortunately.
+        this.nextState.enabled = sortedList;
+      }
 
       if (JSON.stringify(newOrder) === JSON.stringify(loadOrder)) {
         // Nothing changed, go home load order page, you're drunk.
@@ -248,7 +312,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
     if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(list, this.state.sortType).then(newList =>
+      activeGameEntry.preSort(list, this.state.sortType, update).then(newList =>
         !!newList ? setNewOrder(newList) : setNewOrder(list));
     } else {
       setNewOrder(list);
@@ -258,20 +322,36 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   // If the itemRenderer hasn't been assigned yet or is different than the
   //  one that the game extension provided - assign the default item renderer.
   private getItemRenderer() {
-    const { getGameEntry, profile } = this.props;
+    const { getGameEntry, profile, onSetLoadOrderRendererOptions,
+            itemRendererOptions } = this.props;
     const { itemRenderer } = this.state;
 
     if (profile === undefined) {
       return undefined;
     }
 
-    const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
-    if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
+    const useDefault = (gameEntry: IGameLoadOrderEntry) => {
+      onSetLoadOrderRendererOptions(profile.gameId, {
+        displayCheckboxes: (gameEntry?.displayCheckboxes === false) ? false : true,
+        listViewType: (!!itemRendererOptions?.listViewType)
+          ? itemRendererOptions.listViewType
+          : 'full',
+      });
       return DefaultItemRenderer;
+    };
+
+    const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
+    if (activeGameEntry === undefined) {
+      // There's no game entry for this game; that's expected for games
+      //  which do not use the LO page.
+      return undefined;
+    }
+    if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
+      return useDefault(activeGameEntry);
     }
 
     return (!!activeGameEntry.itemRenderer)
-      ? activeGameEntry.itemRenderer : DefaultItemRenderer;
+      ? activeGameEntry.itemRenderer : useDefault(activeGameEntry);
   }
 
   private renderLoadOrderPage(): JSX.Element {
@@ -341,8 +421,25 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private onApply = (ordered: ILoadOrderDisplayItem[]) => {
-    this.setLoadOrder(ordered);
-    this.mCallbackDebouncer.schedule();
+    const updateType: UpdateType = 'drag-n-drop';
+    this.setLoadOrder(ordered, updateType);
+    this.mCallbackDebouncer.schedule(undefined, updateType);
+    this.nextState.updating = false;
+  }
+
+  private onChangeViewType = () => {
+    const { onSetLoadOrderRendererOptions, profile, itemRendererOptions } = this.props;
+    const newOpts: IItemRendererOptions = {
+      displayCheckboxes: itemRendererOptions.displayCheckboxes,
+      listViewType: (itemRendererOptions.listViewType === 'full')
+        ? 'compact' : 'full',
+    };
+
+    onSetLoadOrderRendererOptions(profile.gameId, newOpts);
+  }
+
+  private onRefreshList = () => {
+    this.mForceUpdateDebouncer.schedule();
   }
 
   private renderWait() {
@@ -356,7 +453,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private updateState(props: IProps, updateLO: boolean = false) {
+  private updateState(props: IProps,
+                      updateLO: boolean = false,
+                      updateType: UpdateType = null) {
     const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
     if (activeGameEntry === undefined) {
@@ -366,15 +465,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    const renderer = this.getItemRenderer();
-    if (renderer !== this.state.itemRenderer) {
-      this.nextState.itemRenderer = renderer;
-    }
-
     const mapToDisplay = (mod: types.IMod): ILoadOrderDisplayItem => ({
       id: mod.id,
-      name: !!mod.attributes ? util.renderModName(mod) : mod.id,
-      imgUrl: (!!mod.attributes.pictureUrl)
+      name: (mod?.attributes !== undefined) ? util.renderModName(mod) : mod.id,
+      imgUrl: (mod?.attributes?.pictureUrl !== undefined)
         ? mod.attributes.pictureUrl
         : activeGameEntry.gameArtURL,
     });
@@ -394,33 +488,44 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const spread = [ ...en, ...difference ];
 
-    const update = () => {
-      if (updateLO || (this.stringified(spread) !== this.stringified(this.nextState.enabled))) {
-        this.setLoadOrder(this.nextState.enabled);
-        this.mCallbackDebouncer.schedule();
+    updateType = (updateType !== null) ? updateType : 'props-update';
+    const update = (newDisplayItems: ILoadOrderDisplayItem[]) => {
+      if (updateLO || (this.stringified(spread) !== this.stringified(newDisplayItems))) {
+        this.setLoadOrder(newDisplayItems, updateType);
+        this.mCallbackDebouncer.schedule(undefined, updateType);
+        this.nextState.updating = false;
       }
     };
 
     if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(spread, this.state.sortType)
+      activeGameEntry.preSort(spread, this.state.sortType, updateType)
         .then(newList => {
-          this.nextState.enabled = (!!newList) ? newList : spread;
-          update();
+          const wantedList = (!!newList) ? newList : spread;
+          this.nextState.enabled = wantedList;
+          update(wantedList);
         });
     } else {
       this.nextState.enabled = spread;
-      update();
+      update(spread);
     }
   }
 }
 
+const empty = {};
+const defaultOpts: IItemRendererOptions = { listViewType: 'full', displayCheckboxes: true };
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  const loadOrder = (!!profile)
-    ? util.getSafe(state, ['persistent', 'loadOrder', profile.id], {})
-    : {};
+  let loadOrder: ILoadOrder = {};
+
+  let itemRendererOptions: IItemRendererOptions = defaultOpts;
+  if (!!profile?.gameId) {
+    loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], empty);
+    itemRendererOptions = util.getSafe(state,
+      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultOpts);
+  }
 
   return {
+    itemRendererOptions,
     loadOrder,
     mods: util.getSafe(state, ['persistent', 'mods', profile.gameId], []),
     profile,
@@ -430,6 +535,8 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
+    onSetLoadOrderRendererOptions: (gameId, options) =>
+      dispatch(setGameLoadOrderRendererOptions(gameId, options)),
     onSetDeploymentNecessary: (gameId, necessary) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
     onSetOrder: (profileId, loadOrder) => {

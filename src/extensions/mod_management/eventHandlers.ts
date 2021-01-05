@@ -21,149 +21,30 @@ import {setActivator} from './actions/settings';
 import { IDeploymentManifest } from './types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {fallbackPurge, getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
+import {getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
+import getDownloadGames from '../download_management/util/getDownloadGames';
 import {getGame} from '../gamemode_management/util/getGame';
+import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
 import { IInstallOptions } from './types/IInstallOptions';
 import allTypesSupported from './util/allTypesSupported';
-import { genSubDirFunc, loadAllManifests } from './util/deploy';
+import { genSubDirFunc } from './util/deploy';
 import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
 import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
+import { ensureStagingDirectory } from './stagingDirectory';
 
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import { generate as shortid } from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
-
-export const STAGING_DIR_TAG = '__vortex_staging_folder';
-
-function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
-  const state: IState = api.store.getState();
-  const data = {
-    instance: state.app.instanceId,
-    game: gameId,
-  };
-  return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
-}
-
-function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
-  return fs.readFileAsync(tagPath, { encoding: 'utf8' })
-    .then(data => {
-      const state: IState = api.store.getState();
-      const tag = JSON.parse(data);
-      if (tag.instance !== state.app.instanceId) {
-        return api.showDialog('question', 'Confirm', {
-          text: 'This is a staging folder but it appears to belong to a different Vortex '
-              + 'instance. If you\'re using Vortex in shared and "regular" mode, do not use '
-              + 'the same staging folder for both!',
-        }, [
-          { label: 'Cancel' },
-          { label: 'Continue' },
-        ])
-        .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
-      }
-      return Promise.resolve();
-    })
-    .catch(err => {
-      if (err instanceof UserCanceled) {
-        return Promise.reject(err);
-      }
-      return api.showDialog('question', 'Confirm', {
-        text: 'This directory is not marked as a staging folder. '
-            + 'Are you *sure* it\'s the right directory?',
-      }, [
-        { label: 'Cancel' },
-        { label: 'I\'m sure' },
-      ])
-      .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
-    });
-}
-
-function ensureStagingDirectory(api: IExtensionApi,
-                                instPath: string,
-                                gameId: string)
-                                : Promise<string> {
-  return fs.statAsync(instPath)
-    .catch(err =>
-      api.showDialog('error', 'Mod Staging Folder missing!', {
-        text: 'Your mod staging folder (see below) is missing. This might happen because you '
-          + 'deleted it or - if you have it on a removable drive - it is not currently '
-          + 'connected.\nIf you continue now, a new staging folder will be created but all '
-          + 'your previously managed mods will be lost.\n\n'
-          + 'If you have moved the folder or the drive letter changed, you can browse '
-          + 'for the new location manually, but please be extra careful to select the right '
-          + 'folder!',
-        message: instPath,
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ])
-        .then(dialogResult => {
-          if (dialogResult.action === 'Quit Vortex') {
-            app.exit(0);
-            return Promise.reject(new UserCanceled());
-          } else if (dialogResult.action === 'Reinitialize') {
-            const id = shortid();
-            api.sendNotification({
-              id,
-              type: 'activity',
-              message: 'Purging mods',
-            });
-            return fallbackPurge(api)
-              .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-              .catch(purgeErr => {
-                if (purgeErr instanceof ProcessCanceled) {
-                  log('warn', 'Mods not purged', purgeErr.message);
-                } else {
-                  api.showDialog('error', 'Mod Staging Folder missing!', {
-                    bbcode: 'The staging folder could not be created. '
-                      + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
-                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
-                      + 'or you will get further error messages.',
-                  }, [
-                    { label: 'Close' },
-                  ]);
-                }
-                return Promise.reject(new ProcessCanceled('not purged'));
-              })
-              .finally(() => {
-                api.dismissNotification(id);
-              });
-          } else { // Browse...
-            return api.selectDir({
-              defaultPath: instPath,
-              title: api.translate('Select staging folder'),
-            })
-              .then((selectedPath) => {
-                if (!truthy(selectedPath)) {
-                  return Promise.reject(new UserCanceled());
-                }
-                return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
-                  .then(() => {
-                    instPath = selectedPath;
-                    api.store.dispatch(setInstallPath(gameId, instPath));
-                  });
-              })
-              .catch(() => ensureStagingDirectory(api, instPath, gameId));
-          }
-        }))
-    .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId))
-    .then(() => instPath);
-}
 
 // check staging folder against deployment manifest
 function checkStagingFolder(api: IExtensionApi, gameId: string,
@@ -171,7 +52,10 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
                             : Promise<boolean> {
   const t = api.translate;
 
-  return getNormalizeFunc(manifestPath)
+  // manifestPath can be undefined if the manifest is older
+  return ((manifestPath !== undefined)
+          ? getNormalizeFunc(manifestPath)
+          : Promise.resolve(undefined))
     .then(normalize => {
       if ((manifestPath !== undefined)
           && (normalize(manifestPath) !== normalize(configuredPath))) {
@@ -341,7 +225,7 @@ export function onGameModeActivated(
       }
     }
 
-    log('info', 'change activator', { changeActivator, oldActivator: oldActivator.id });
+    log('info', 'change activator', { changeActivator, oldActivator: oldActivator?.id });
 
     if (changeActivator) {
       if (oldActivator !== undefined) {
@@ -476,7 +360,7 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
 
   const rulesOrOverridesChanged = modId =>
     (getSafe(previous, [gameMode, modId], undefined) !== undefined)
-    && (changed(modId, 'rules') || changed(modId, 'fileOverrides'));
+    && (changed(modId, 'rules') || changed(modId, 'fileOverrides') || changed(modId, 'type'));
 
   if ((previous[gameMode] !== current[gameMode])
       && !state.persistent.deployment.needToDeploy[gameMode]) {
@@ -519,7 +403,7 @@ function undeploy(api: IExtensionApi,
 
   const stagingPath = installPathForGame(state, gameMode);
 
-  const subdir = genSubDirFunc(game);
+  const subdir = genSubDirFunc(game, getModType(mod.type));
   const deployPath = modPaths[mod.type || ''];
   if (deployPath === undefined) {
     return Promise.resolve();
@@ -645,7 +529,8 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modId}`));
 
-  undeployMod()
+  api.emitAndAwait('will-remove-mod', gameMode, mod.id)
+  .then(() => undeployMod())
   .then(() => {
     if (truthy(mod) && truthy(mod.installationPath)) {
       const fullModPath = path.join(installationPath, mod.installationPath);
@@ -662,6 +547,7 @@ export function onRemoveMod(api: IExtensionApi,
     if (callback !== undefined) {
       callback(null);
     }
+    return api.emitAndAwait('did-remove-mod', gameMode, mod.id);
   })
   .catch(TemporaryError, (err) => {
     if (callback !== undefined) {
@@ -742,18 +628,19 @@ export function onStartInstallDownload(api: IExtensionApi,
         return Promise.resolve();
       }
 
-      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
-      const downloadPath: string = downloadPathForGame(state, downloadGame);
+      const downloadGame: string[] = getDownloadGames(download);
+      const downloadPath: string = downloadPathForGame(state, downloadGame[0]);
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
-          'Failed to determine installation directory. This shouldn\'t have happened', {
+          'Failed to determine download directory. This shouldn\'t have happened', {
+            message: downloadGame[0],
             allowReport: true,
           });
         return;
       }
       const fullPath: string = path.join(downloadPath, download.localPath);
       const { enable } = state.settings.automation;
-      installManager.install(downloadId, fullPath, download.game, api,
+      installManager.install(downloadId, fullPath, downloadGame, api,
         { download, choices: options.choices }, true, enable && (options.allowAutoEnable !== false),
         callback, gameId, options.fileList, options.unattended, options.forceInstaller);
     })

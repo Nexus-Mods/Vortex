@@ -12,7 +12,7 @@ import Debouncer from '../util/Debouncer';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
-import {sanitizeCSSId, truthy, makeUnique} from '../util/util';
+import {makeUnique, sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
 import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
@@ -29,7 +29,6 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import { CSSTransition } from 'react-transition-group';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
 
@@ -138,6 +137,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
   private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
+  private mDefaultFilterRef: HTMLElement = null;
 
   constructor(props: IProps) {
     super(props);
@@ -514,7 +514,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }, [])).sort((lhs: string, rhs: string) => {
         if ((sortAttribute !== undefined)
           && (sortAttribute.id === groupAttribute.id)
-          && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
+          && (attributeState[sortAttribute.id]?.sortDirection === 'desc')) {
           return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
         } else {
           return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
@@ -588,30 +588,40 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const blacklist: Set<string> = new Set(columnBlacklist || []);
 
-    const { columns, inlines } = objects.reduce((prev, attr) => {
+    const { columns, inlines, disabled } = objects.reduce((prev, attr) => {
       if (attr.isToggleable && !blacklist.has(attr.id)) {
+        const visible = attr.condition?.() ?? true;
         const attributeState = this.getAttributeState(attr, props.attributeState);
-        prev[attr.placement === 'inline' ? 'inlines' : 'columns'].push({
+        prev[attr.placement === 'inline' ? 'inlines' : visible ? 'columns' : 'disabled'].push({
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
         });
       }
       return prev;
-    }, { columns: [], inlines: [] });
+    }, { columns: [], inlines: [], disabled: [] });
 
     if (columns.length > 0) {
       result.push({
         icon: null,
-        title: t('Toggle Columns'),
+        title: 'Toggle Columns',
       }, ...columns);
     }
     if (inlines.length > 0) {
       result.push({
         icon: null,
-        title: t('Toggle Inlines'),
+        title: 'Toggle Inlines',
       }, ...inlines);
     }
+    /* currently not showing disabled columns at all, that's probably the more
+       intuitive solution
+    if (disabled.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Disabled Columns'),
+      }, ...disabled);
+    }
+    */
 
     return result.map((res, idx) => ({ ...res, position: idx }));
   }
@@ -727,6 +737,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             <attribute.filter.component
               filter={filt}
               attributeId={attribute.id}
+              domRef={attribute.isDefaultFilter ? this.setDefaultFilterRef : undefined}
               t={t}
               onSetFilter={this.setFilter}
             />
@@ -736,6 +747,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     } else {
       return null;
     }
+  }
+
+  private setDefaultFilterRef = (ref: HTMLElement)  => {
+    this.mDefaultFilterRef = ref;
   }
 
   private setHeaderCellRef = (ref: HeaderCell) => {
@@ -754,8 +769,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
+      if ((evt.key === 'f') && evt.ctrlKey) {
+        if (this.mDefaultFilterRef !== null) {
+          this.mDefaultFilterRef.focus();
+        }
+        return;
+      }
+
       if (this.useMultiSelect()) {
-        if ((evt.keyCode === 65) && evt.ctrlKey) {
+        if ((evt.key === 'a') && evt.ctrlKey) {
           this.selectAll();
           return;
         }
@@ -1292,7 +1314,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const valFunc = (rowId: string) => typeof(groupAttribute.isGroupable) === 'function'
             ? groupAttribute.isGroupable(data[rowId], t)
-            : calculatedValues[rowId][groupAttribute.id];
+            : calculatedValues[rowId]?.[groupAttribute.id] || '';
 
     const groupOptions = this.getGroupOptions(this.props, sortedRows, sortAttribute,
                                               groupAttribute, valFunc);
@@ -1519,9 +1541,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                             : { table: ITableAttribute[],
                                 detail: ITableAttribute[],
                                 inline: ITableAttribute[] } {
-    const filtered = attributes.filter(attribute =>
-      ((attribute.condition === undefined) || attribute.condition())
-      && !(this.props.columnBlacklist || []).includes(attribute.id));
+    const filtered = attributes
+      .filter(attribute => ((attribute.condition === undefined) || attribute.condition())
+                        && !(this.props.columnBlacklist || []).includes(attribute.id))
+      .sort((lhs, rhs) => ((lhs.position ?? 100) - (rhs.position ?? 100)))
+      ;
 
     const enabled = filtered.filter(attribute =>
       this.getAttributeState(attribute, attributeStates).enabled);
@@ -1580,6 +1604,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
+    this.deselectAll();
   }
 
   private clearFilters = () => {

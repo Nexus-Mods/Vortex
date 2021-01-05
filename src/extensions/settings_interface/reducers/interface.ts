@@ -23,6 +23,8 @@ const settingsReducer: IReducerSpec = {
       update(state, { usage: { [payload.usageId]: { $set: payload.show } } }),
     [actions.setRelativeTimes as any]: (state, payload) =>
       update(state, { relativeTimes: { $set: payload } }),
+    [actions.setForegroundDL as any]: (state, payload) =>
+      update(state, { foregroundDL: { $set: payload } }),
   },
   defaults: {
     language: 'en',
@@ -31,6 +33,7 @@ const settingsReducer: IReducerSpec = {
     desktopNotifications: true,
     hideTopLevelCategory: false,
     relativeTimes: true,
+    foregroundDL: false,
     usage: {},
   },
 };

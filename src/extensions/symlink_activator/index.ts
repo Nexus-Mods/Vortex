@@ -25,6 +25,8 @@ class DeploymendMethod extends LinkingDeployment {
 
   public priority: number = 10;
 
+  private mDidLogElevation: boolean = false;
+
   constructor(api: IExtensionApi) {
     super(
         'symlink_activator', 'Symlink Deployment',
@@ -56,6 +58,7 @@ class DeploymendMethod extends LinkingDeployment {
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
+
     if (this.isGamebryoGame(gameId) || this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
       return {
@@ -76,7 +79,8 @@ class DeploymendMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
-    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+    if ((game.details?.supportsSymlinks === false)
+        || (game.compatible?.symlinks === false)) {
       return { description: t => t('Game doesn\'t support symlinks') };
     }
 
@@ -139,23 +143,12 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
-    return fs.ensureDirAsync(path.dirname(linkPath))
-        .then((created: any) => {
-          let tagDir: Promise<void>;
-          if ((dirTags !== false) && (created !== null)) {
-            const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-            tagDir = Promise.resolve(fs.writeFileAsync(tagPath,
-                'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty'));
-          } else {
-            tagDir = Promise.resolve();
-          }
-          return tagDir.then(() => fs.symlinkAsync(sourcePath, linkPath))
+    return this.ensureDir(path.dirname(linkPath), dirTags)
+        .then(() => fs.symlinkAsync(sourcePath, linkPath)
             .catch(err => (err.code !== 'EEXIST')
                 ? Promise.reject(err)
                 : fs.removeAsync(linkPath)
-                  .then(() => fs.symlinkAsync(sourcePath, linkPath)));
-        });
+                  .then(() => fs.symlinkAsync(sourcePath, linkPath))));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
@@ -202,8 +195,9 @@ class DeploymendMethod extends LinkingDeployment {
     })
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(
-            new Error('Some files could not be purged, please check the log file'));
+          const err = new Error('Some files could not be purged, please check the log file');
+          err['attachLogOnReport'] = true;
+          return Promise.reject(err);
         } else {
           return Promise.resolve();
         }
@@ -237,7 +231,10 @@ class DeploymendMethod extends LinkingDeployment {
       fs.removeSync(destFile);
       return true;
     } catch (err) {
-      log('debug', 'assuming user needs elevation to create symlinks', { error: err.message });
+      if (!this.mDidLogElevation) {
+        log('debug', 'assuming user needs elevation to create symlinks', { error: err.message });
+        this.mDidLogElevation = true;
+      }
       return false;
     }
   }

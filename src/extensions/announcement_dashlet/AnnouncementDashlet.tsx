@@ -1,10 +1,10 @@
 import { remote } from 'electron';
 import { TFunction } from 'i18next';
-import minimatch from 'minimatch';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import * as semver from 'semver';
+
+import { matchesGameMode, matchesVersion } from './util';
 
 import Dashlet from '../../controls/Dashlet';
 import { Icon, IconButton } from '../../controls/TooltipControls';
@@ -20,10 +20,7 @@ interface IConnectedProps {
   announcements: IAnnouncement[];
 }
 
-interface IActionProps {
-}
-
-type IProps = WithTranslation & IConnectedProps & IActionProps;
+type IProps = WithTranslation & IConnectedProps;
 
 class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
@@ -33,12 +30,14 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, announcements } = this.props;
+    const { t, announcements, gameMode } = this.props;
 
     // Filter announcements by gamemode and version.
-    const filtered = announcements.filter(announce => this.matchesGameMode(announce)
-                                                   && this.matchesVersion(announce));
-
+    const filtered = announcements
+      .filter(announce => matchesGameMode(announce, gameMode)
+                       && matchesVersion(announce, this.mAppVersion))
+      .sort((lhs, rhs) => new Date(rhs.date).getTime()
+                        - new Date(lhs.date).getTime());
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
         <div className='list-announcements-container'>
@@ -46,34 +45,6 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
         </div>
       </Dashlet>
     );
-  }
-
-  private matchesGameMode(announcement: IAnnouncement): boolean {
-    const { gameMode } = this.props;
-    if ((gameMode === undefined)
-      && ((announcement.gamemode === undefined) || (announcement.gamemode === '*'))) {
-      // Display non-game specific announcements even when no gameMode is active.
-      return true;
-    }
-
-    return ((announcement.gamemode !== undefined) && (gameMode !== undefined))
-    // Only compare gameModes when the announcement is game specific and
-    //  we have an active game mode; otherwise, we hide the announcement.
-      ? minimatch(gameMode, announcement.gamemode)
-      : false;
-  }
-
-  private matchesVersion(announcement: IAnnouncement): boolean {
-    if (this.mAppVersion === undefined) {
-      // TODO: should never happen. This check was added when mAppVersion was assigned during
-      // componentDidMount and this got called before that. Now it's only here because
-      // I'm too scared to remove it.
-      return false;
-    }
-
-    return (announcement.version !== undefined)
-      ? semver.satisfies(this.mAppVersion, announcement.version)
-      : true;
   }
 
   private renderPlaceholder(): JSX.Element {
@@ -184,6 +155,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   }
 }
 
+const empty = {};
 function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode: selectors.activeGameId(state) || undefined,
@@ -192,6 +164,6 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default
-  connect(mapStateToProps)(
+connect(mapStateToProps)(
     translate(['common'])(
       AnnouncementDashlet));

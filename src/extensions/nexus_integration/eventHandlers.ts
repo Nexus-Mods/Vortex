@@ -7,7 +7,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise } from '../../util/util';
 
@@ -144,7 +144,10 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 export function onOpenModPage(api: IExtensionApi) {
-  return (gameId: string, modId: string) => {
+  return (gameId: string, modId: string, source: string) => {
+    if (source !== 'nexus') {
+      return;
+    }
     const game = gameById(api.store.getState(), gameId);
     opn(['https://www.nexusmods.com',
       nexusGameId(game) || gameId, 'mods', modId,
@@ -205,19 +208,29 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       (downloads[downloadId]?.game || []).includes(gameId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.modId === modId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.fileId === fileId));
-    log('debug', 'found an existing matching download',
-      { id: existingId, data: JSON.stringify(downloads[existingId]) });
     if (existingId !== undefined) {
+      log('debug', 'found an existing matching download',
+        { id: existingId, data: JSON.stringify(downloads[existingId]) });
       return Promise.resolve(existingId);
     } else {
       // startDownload will report network errors and only reject on usage error
-      return startDownload(api, nexus, url);
+      return startDownload(api, nexus, url, 'never');
     }
 }
 
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
-  return (gameId, modId, fileId) => {
-    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+  return (gameId: string, modId, fileId, source: string) => {
+    let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+
+    if (game === undefined) {
+      log('warn', 'mod update requested for unknown game id', gameId);
+      game = currentGame(api.getState());
+    }
+
+    if (source !== 'nexus') {
+      // not a mod from nexus mods
+      return;
+    }
 
     downloadFile(api, nexus, game, modId, fileId)
       .then(downloadId => {
@@ -466,7 +479,7 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 }
 
 export function onCheckModsVersion(api: IExtensionApi,
-                                   nexus: Nexus): (...args: any[]) => Promise<void> {
+                                   nexus: Nexus): (...args: any[]) => Promise<string[]> {
   return (gameId, mods, forceFull) => {
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'],
@@ -475,38 +488,50 @@ export function onCheckModsVersion(api: IExtensionApi,
       api.showErrorNotification('An error occurred checking for mod updates',
                                 'You are not logged in to Nexus Mods!',
                                 { allowReport: false });
-      return Promise.resolve();
+      return Promise.resolve([]);
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
       return checkModVersionsImpl(api.store, nexus, gameId, mods, forceFull)
-        .then((errorMessages: string[]) => {
-          if (errorMessages.length !== 0) {
+        .then(({ errors, modIds }) => {
+          if (errors.length !== 0) {
             showError(api.store.dispatch,
                       'Some mods could not be checked for updates',
-                      errorMessages.join('[br][/br]'),
+                      errors.join('[br][/br]'),
                       { allowReport: false, isBBCode: true });
           }
+          return Promise.resolve(modIds);
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(TimeoutError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(RateLimitError, err => {
           showError(api.store.dispatch, 'Rate limit exceeded, please try again later', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
+        })
+        .catch(ProcessCanceled, err => {
+          showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
+          return Promise.resolve([]);
         })
         .catch(err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err);
+          return Promise.resolve([]);
         })
-        .then(() => Promise.delay(2000 - (Date.now() - start)))
+        .then((modIds: string[]) => Promise.delay(2000 - (Date.now() - start))
+          .then(() => modIds))
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));
         });

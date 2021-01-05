@@ -6,11 +6,11 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import {truthy} from '../../util/util';
+import {delayed, toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -31,17 +31,19 @@ import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import { createIPC } from 'fomod-installer';
+import * as net from 'net';
 import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
-import { Pair } from 'zeromq';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
 function transformError(err: any): Error {
   let result: Error;
-  if (typeof(err) === 'string') {
+  if (err === undefined) {
+    result = new Error('unknown error');
+  } else if (typeof(err) === 'string') {
     // I hope these errors aren't localised or something...
     result = ((err === 'The operation was cancelled.')
               || (err === 'A task was canceled'))
@@ -69,9 +71,17 @@ function transformError(err: any): Error {
                                   + 'was externally modified between extraction and now. '
                                   + `"${err.Message}"`);
   } else if (err.name === 'System.IO.FileLoadException') {
-    if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
-      const fileName = err.FileName.replace(/^file:\/*/, '');
-      result = new SetupError(`Windows prevented Vortex from loading "${fileName}". `
+    if (err?.FileName) {
+      if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
+        const fileName = err.FileName.replace(/^file:\/*/, '');
+        result = new SetupError(`Windows prevented Vortex from loading "${fileName}". `
+          + 'This is usually caused if you don\'t install Vortex but only extracted it because '
+          + 'Windows will then block all executable files. '
+          + 'Please install Vortex or unblock all .dll and .exe files manually.');
+      }
+    } else {
+      result = new SetupError('Windows prevented Vortex from loading the files necessary '
+        + 'to complete installation operations. '
         + 'This is usually caused if you don\'t install Vortex but only extracted it because '
         + 'Windows will then block all executable files. '
         + 'Please install Vortex or unblock all .dll and .exe files manually.');
@@ -86,17 +96,19 @@ function transformError(err: any): Error {
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '
                           + 'some will be inaccessible, just ignore those.');
-  } else if ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
+  } else if ((err.stack !== null)
+             && ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
-             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
+             || (err.stack.indexOf('XmlTextReaderImpl.ParseDocumentContent') !== -1)
+             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1))
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.Xml.XmlException')
              && ((err.stack.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
                  || (err.message.indexOf('does not match the end tag') !== -1))) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
-  } else if (err.name === 'System.AggregateException') {
+  } else if ((err.name === 'System.AggregateException') && (err.InnerException !== undefined)) {
     return transformError(err.InnerException);
   } else if (err.Message === 'task timeout') {
     result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
@@ -106,17 +118,17 @@ function transformError(err: any): Error {
   }
 
   if (result === undefined) {
-    result = new Error(
-      (err.Message !== undefined)
-        ? err.Message
-        : 'unknown error: ' + util.inspect(err));
+    result = new Error(err.name ?? err.Message ?? 'unknown error: ' + util.inspect(err));
   }
   [
     { in: 'StackTrace', out: 'stack' },
+    { in: 'stack', out: 'stack' },
     { in: 'FileName', out: 'path' },
+    { in: 'message', out: 'message' },
     { in: 'HResult', out: 'code' },
     { in: 'name', out: 'Name' },
     { in: 'Source', out: 'Module' },
+    { in: 'data', out: 'data' },
   ].forEach(transform => {
     if (err[transform.in] !== undefined) {
       result[transform.out] = err[transform.in];
@@ -220,39 +232,144 @@ function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => strin
   };
 }
 
+interface ICreateSocketOptions {
+  // if true, use a pipe. windows only
+  pipe: boolean;
+  // if true, use a fixed id/port for the connection
+  debug: boolean;
+}
+
+/**
+ * create a socket that will be used to communicate with the installer process
+ * @param options options that control how the socket is created
+ */
+function createSocket(options: ICreateSocketOptions)
+    : Promise<{ ipcId: string, server: net.Server }> {
+  return new Promise((resolve, reject) => {
+    try {
+      const server = new net.Server();
+      server.on('error', err => {
+        reject(err);
+      });
+      if (options.pipe && !options.debug) {
+        // on windows, using a socket is a pita because firewalls and AVs...
+        const ipcId = options.debug ? 'debug' : shortid();
+        server.listen(`\\\\?\\pipe\\${ipcId}`, () => {
+          resolve({ ipcId, server });
+        });
+      } else {
+        const port = options.debug ? 12345 : 0;
+        server.listen(port, 'localhost', () => {
+          const ipcId = (server.address() as net.AddressInfo).port.toString();
+          resolve({ ipcId, server });
+        });
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function createConnection(ipcPath: string, tries: number = 5): Promise<net.Socket> {
+  return new Promise((resolve, reject) => {
+    const errCB = err => {
+      if ((err['code'] === 'ENOENT') && (tries > 0)) {
+        delayed(1000)
+          .then(() => createConnection(ipcPath, tries - 1))
+          .then(resolve)
+          .catch(reject);
+      } else {
+        err.message = err.message.replace(ipcPath, '<ipc path>');
+        reject(err);
+      }
+    };
+
+    const sock = net.createConnection(ipcPath, () => {
+      sock.off('error', errCB);
+      resolve(sock);
+    });
+    sock.on('error', errCB);
+  });
+}
+
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
-    const socket = new Pair();
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
-    const connectedPromise = new Promise((resolve, reject) => {
+    const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;
       onReject = reject;
     });
     let wasConnected = false;
+    let servSocket: net.Socket;
+    let cliSocket: net.Socket;
 
-    socket.events.on('accept', () => {
+    const pipe = process.platform === 'win32';
+    const debug = false;
+
+    if (ConnectionIPC.sListen === undefined) {
+      // only set up the listening server once, otherwise we might end
+      // up creating orphaned connections if a connection later dies
+      ConnectionIPC.sListen = await createSocket({
+        pipe,
+        debug,
+      });
+    } else {
+      ConnectionIPC.sListen.server.removeAllListeners('connection');
+    }
+
+    const { server, ipcId } = ConnectionIPC.sListen;
+
+    log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
+
+    server.on('connection', sock => {
+      log('debug', '[installer] peer connected');
+      sock.setEncoding('utf8');
       if (!wasConnected) {
-        onResolve();
         wasConnected = true;
+        servSocket = sock;
+        if (pipe && !debug) {
+          log('debug', '[installer] connecting to reply pipe');
+          createConnection(`\\\\?\\pipe\\${ipcId}_reply`)
+          .then(sockIn => {
+            log('debug', '[installer] reply pipe connected');
+            sockIn.setEncoding('utf-8');
+            sockIn.on('error', err => {
+              log('error', '[installer] socket error', err.message);
+            });
+            cliSocket = sockIn;
+            onResolve();
+          })
+          .catch(err => {
+            onReject(err);
+          });
+        } else {
+          cliSocket = servSocket;
+          onResolve();
+        }
       }
     });
 
-    if (false) {
+    if (!debug) {
       // for debugging purposes, the user has to run the installer manually
-      await socket.bind('tcp://127.0.0.1:12345');
-    } else {
-      // connect to random free port
-      await socket.bind('tcp://127.0.0.1:*');
-      // invoke the c# installer, passing the port
-      proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+      // invoke the c# installer, passing the id/port
+      try {
+        proc = await createIPC(pipe, ipcId);
+      } catch (err) {
+        return Promise.reject(new ProcessCanceled(err.message));
+      }
+      proc.stdout.on('data', (dat: Buffer) => {
+        log('debug', 'from installer:', dat.toString().trim());
+      });
       proc.stderr.on('data', (dat: Buffer) => {
-        const errorMessage = dat.toString();
-        log('error', 'from installer: ', errorMessage);
-        if (!wasConnected) {
-          onReject(new Error(errorMessage));
-          wasConnected = true;
+        const errorMessage = dat.toString().trim();
+        if (errorMessage.length > 0) {
+          log('error', 'from installer:', errorMessage);
+          if (!wasConnected) {
+            onReject(new Error(errorMessage));
+            wasConnected = true;
+          }
         }
       });
     }
@@ -261,24 +378,30 @@ class ConnectionIPC {
     // probably means it's not going to happen...
     await connectedPromise;
 
-    return new ConnectionIPC(socket, proc);
+    return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
   }
 
-  private mSocket: Pair;
+  private static sListen: { ipcId: string, server: net.Server };
+
+  private mSocket: { in: net.Socket, out: net.Socket };
   private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
+  private mReceivedBuffer: string;
+  private mActionLog: string[];
+  private mOnDrained: Array<() => void> = [];
 
-  constructor(socket: Pair, proc: ChildProcess) {
+  constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
+    this.mActionLog = [];
 
     if (proc !== null) {
       proc.on('exit', async (code, signal) => {
         log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
         try {
-          await socket.unbind(socket.lastEndpoint);
+          await toPromise(cb => socket.out.end(cb));
           this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
         } catch (err) {
           log('warn', 'failed to close connection to fomod installer process', err.message);
@@ -286,12 +409,18 @@ class ConnectionIPC {
       });
     }
 
-    socket.events.on('disconnect', async () => {
+    socket.out.on('drain', (hadError) => {
+      this.mOnDrained.forEach(cb => cb());
+      this.mOnDrained = [];
+    });
+
+    socket.in.on('close', async () => {
+      socket.out.destroy();
       log('info', 'remote was disconnected');
       try {
         // just making sure, the remote is probably closing anyway
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        this.mProcess.kill();
+        this.mProcess?.kill();
         this.interrupt(new Error(`Installer process disconnected unexpectedly`));
       } catch (err) {
         // nop
@@ -300,7 +429,27 @@ class ConnectionIPC {
   }
 
   public handleMessages() {
-    this.receiveNext();
+    this.mSocket.in.on('data', (data: string) => {
+      this.logAction(`receiving ${data.length} bytes`);
+      if (data.length > 0) {
+        this.mReceivedBuffer = (this.mReceivedBuffer === undefined)
+          ? data
+          : this.mReceivedBuffer + data;
+        if (this.mReceivedBuffer.endsWith('\uffff')) {
+          this.logAction(`processing ${this.mReceivedBuffer.length} bytes`);
+          try {
+            this.processData(this.mReceivedBuffer);
+            this.mReceivedBuffer = undefined;
+          } catch (err) {
+            log('error', 'failed to parse data from remote process', err.message);
+            this.mReceivedBuffer = undefined;
+          }
+        }
+      }
+    })
+    .on('error', (err) => {
+      log('error', 'ipc socket error', err.message);
+    });
   }
 
   public isActive(): boolean {
@@ -310,10 +459,16 @@ class ConnectionIPC {
   }
 
   public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
+    // reset action log because we're starting a new exchange
+    this.mActionLog = [];
     return Promise.race([
       this.interruptible(),
       this.sendMessageInner(command, data, delegate),
     ]);
+  }
+
+  private logAction(message: string) {
+    this.mActionLog.push(message);
   }
 
   private async interruptible() {
@@ -332,13 +487,23 @@ class ConnectionIPC {
       }
     });
 
-    this.mSocket.send(JSON.stringify({
+    this.logAction(`sending cmd ${command}: ${JSON.stringify(data)}`);
+
+    const outData = JSON.stringify({
       id,
       payload: {
         ...data,
         command,
       },
-    }, jsonReplace));
+    }, jsonReplace);
+
+    const written = this.mSocket.out.write(outData + '\uFFFF');
+    if (!written) {
+      await new Promise<void>(resolve => {
+        this.mOnDrained.push(resolve);
+      });
+    }
+
     return res;
   }
 
@@ -353,10 +518,36 @@ class ConnectionIPC {
     };
   }
 
-  private processData(msg: Buffer) {
-    const data = JSON.parse(msg.toString(), makeJsonRevive((payload) =>
+  private processData(data: string) {
+    // there may be multiple messages sent at once
+    const messages = data.split('\uFFFF');
+    messages.forEach(msg => {
+      if (msg.length > 0) {
+        try {
+          this.logAction(`processing message "${this.mReceivedBuffer}"`);
+          this.processDataImpl(msg);
+        } catch (err) {
+          log('error', 'failed to parse', { input: msg, error: err.message });
+        }
+      }
+    });
+  }
+
+  private processDataImpl(msg: string) {
+    const data: any = JSON.parse(msg, makeJsonRevive((payload) =>
       this.sendMessageInner('Invoke', payload), () => data.id));
-    if ((data.callback !== null)
+
+    if (data.id === 'parseerror') {
+      const err = new Error(data.error.message);
+      err.stack = data.error.stack;
+      if (truthy(data.error.name)) {
+        err.name = data.error.name;
+      }
+      Object.keys(this.mAwaitedReplies).forEach(replyId => {
+        this.mAwaitedReplies[replyId].reject(err);
+        delete this.mAwaitedReplies[replyId];
+      });
+    } else if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
@@ -372,6 +563,9 @@ class ConnectionIPC {
         if (truthy(data.error.name)) {
           err.name = data.error.name;
         }
+        if (truthy(data.error.data)) {
+          err['data'] = data.error.data;
+        }
         this.mAwaitedReplies[data.id].reject(err);
       } else {
         this.mAwaitedReplies[data.id].resolve(data.data);
@@ -381,16 +575,16 @@ class ConnectionIPC {
   }
 
   private interrupt(err: Error) {
+    if (this.mSocket?.out !== this.mSocket?.in) {
+      this.mSocket?.out?.end();
+    }
+    this.mSocket?.in?.end();
+
+    log('warn', 'interrupted, recent actions', JSON.stringify(this.mActionLog, undefined, 2));
     if (this.mOnInterrupted !== undefined) {
       this.mOnInterrupted(err);
       this.mOnInterrupted = undefined;
     }
-  }
-
-  private async receiveNext(): Promise<void> {
-    const data = await this.mSocket.receive();
-    data.forEach(dat => this.processData(dat));
-    return this.receiveNext();
   }
 }
 
@@ -399,6 +593,7 @@ const ensureConnected = (() => {
   return async (): Promise<ConnectionIPC> => {
     if ((conn === undefined) || !conn.isActive()) {
       conn = await ConnectionIPC.bind();
+      log('debug', '[installer] connection bound');
       conn.handleMessages();
     }
     return Promise.resolve(conn);
@@ -409,8 +604,11 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
   const connection = await ensureConnected();
 
   try {
-    return await connection.sendMessage('TestSupported',
+    log('debug', '[installer] test supported');
+    const res = await connection.sendMessage('TestSupported',
       { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+    log('debug', '[installer] test supported result', JSON.stringify(res));
+    return res;
   } catch (err) {
     throw transformError(err);
   }

@@ -40,26 +40,19 @@ fs.ensureDirSync(cachePath);
 // whitelist of native libraries that we know should load correctly.
 // If one of these doesn't load correctly, rebuild it
 const nativeLibs = [
-  'ExeVersion',
   'crash-dump',
   'diskusage',
   'drivelist',
-  'exe-version',
   'leveldown',
   'libxmljs',
   'msgpack',
   'native-errors',
-  'nbind',
-  'node-sass',
   'permissions',
-  'turbowalk',
-  'wholocks',
-  'winapi',
-  'winapi-bindings',
   'windump',
 ];
 
-const headerURL = 'https://atom.io/download/electron';
+// const headerURL = 'https://atom.io/download/electron';
+const headerURL = 'https://www.electronjs.org/headers';
 
 // based on https://github.com/juliangruber/require-rebuild
 function makeRebuildFunc(orig) {

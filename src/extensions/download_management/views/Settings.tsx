@@ -3,6 +3,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
+import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IDownload, IState } from '../../../types/IState';
@@ -12,19 +13,21 @@ import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOpe
          UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc from '../../../util/getNormalizeFunc';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath, isPathValid } from '../../../util/util';
-import { setDownloadPath, setMaxDownloads } from '../actions/settings';
+import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
+import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
+import getTextMod from '../../mod_management/texts';
+import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
+import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from '../util/downloadDirectory';
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
-import writeDownloadsTag from '../util/writeDownloadsTag';
 
-import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
 import Promise from 'bluebird';
@@ -36,6 +39,7 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import FormInput from '../../../controls/FormInput';
 
 const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
 
@@ -43,7 +47,11 @@ interface IConnectedProps {
   parallelDownloads: number;
   isPremium: boolean;
   downloadPath: string;
+  modsInstallPath: string;
   downloads: { [downloadId: string]: IDownload };
+  instanceId: string;
+  copyOnIFF: boolean;
+  maxBandwidth: number;
 }
 
 interface IActionProps {
@@ -54,6 +62,8 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details: string | Error,
                 allowReport: boolean, isBBCode?: boolean) => void;
+  onSetCopyOnIFF: (enabled: boolean) => void;
+  onSetMaxBandwidth: (bps: number) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -87,11 +97,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, isPremium, parallelDownloads } = this.props;
+    const { t, copyOnIFF, downloads, isPremium, maxBandwidth, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
-    const changed = this.props.downloadPath !== downloadPath;
-    const pathPreview = getDownloadPath(downloadPath, undefined);
+    const pathPreview = getDownloadPath(downloadPath);
+    const changed = !ciEqual(getDownloadPath(this.props.downloadPath), pathPreview);
     const validationState = this.validateDownloadPath(pathPreview);
 
     const pathValid = validationState.state !== 'error';
@@ -134,7 +144,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 <InputGroup.Button>
                   <BSButton
                     disabled={!changed || (validationState.state === 'error') || hasActivity}
-                    onClick={this.apply}
+                    onClick={this.onApply}
                   >
                     {hasActivity ? <Spinner /> : t('Apply')}
                   </BSButton>
@@ -195,8 +205,42 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             }
           </div>
         </FormGroup>
+        <FormGroup>
+          <ControlLabel>
+            {t('Limit Bandwidth')}
+          </ControlLabel>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <FormInput
+              value={maxBandwidth > 0 ? (maxBandwidth / 1024).toString() : undefined}
+              placeholder={t('Unlimited')}
+              onChange={this.changeMaxBandwidth}
+              type='number'
+            />
+            KB/s
+          </div>
+        </FormGroup>
+        <FormGroup>
+          <Toggle
+            checked={copyOnIFF}
+            onToggle={this.toggleCopyOnIFF}
+          >
+            {t('Copy files when using "Install From File"')}
+          </Toggle>
+        </FormGroup>
       </form>
     );
+  }
+
+  private changeMaxBandwidth = (input: string) => {
+    if (input.length === 0) {
+      this.props.onSetMaxBandwidth(0);
+    } else {
+      this.props.onSetMaxBandwidth(parseInt(input, 10) * 1024);
+    }
+  }
+
+  private toggleCopyOnIFF = (newValue: boolean) => {
+    this.props.onSetCopyOnIFF(newValue);
   }
 
   private isPathSensible(input: string): boolean {
@@ -219,11 +263,31 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
+    const { modsInstallPath } = this.props;
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
+    }
+
+    if (modsInstallPath !== undefined) {
+      const normalizedInstallPath = path.normalize(modsInstallPath.toLowerCase());
+      const normalizedInput = path.normalize(input.toLowerCase());
+      if ((normalizedInstallPath === normalizedInput)
+        || isChildPath(input, modsInstallPath)) {
+        return {
+          state: 'error',
+          reason: 'Download folder can\'t be a subdirectory of the mods staging folder',
+        };
+      }
+    }
+
+    if (isReservedDirectory(input)) {
+      return {
+        state: 'error',
+        reason: 'Invalid downloads folder, please choose a different directory',
+      };
     }
 
     if (isChildPath(input, vortexPath)) {
@@ -273,8 +337,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private keyPressEvt = (evt) => {
     if (evt.which === 13) {
       evt.preventDefault();
-      this.apply();
+      this.onApply();
     }
+  }
+
+  private onApply = () => {
+    getNormalizeFunc(getDownloadPath(this.state.downloadPath))
+      .then(normalize => this.apply(normalize));
   }
 
   private openUrl = (evt) => {
@@ -308,7 +377,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     onSetMaxDownloads(evt.currentTarget.value);
   }
 
-  private apply = () => {
+  private apply = (normalize: (input: string) => string) => {
     const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } = this.props;
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
@@ -320,16 +389,37 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
 
+    try {
+      const statNew = fs.statSync(newPath, { bigint: true });
+      const statOld = fs.statSync(oldPath, { bigint: true });
+      if (statNew.ino === statOld.ino) {
+        return onShowDialog('error', 'Invalid path selected', {
+          text: 'The path you selected refers to the same directory on disk as the existing one.',
+        }, [ { label: 'Close' } ]);
+      }
+    } catch (err) {
+      // new directory doesn't exist. good
+    }
+
+    if (isReservedDirectory(newPath)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You have selected an invalid path for your downloads folder. '
+                  + 'It would become impossible for Vortex to move your downloads folder '
+                  + 'anywhere else without attempting to move the entire contents of the '
+                  + 'selected directory alongside it.',
+      }, [ { label: 'Close' } ]);
+    }
+
     if (!path.isAbsolute(newPath)
-        || isChildPath(newPath, vortexPath)) {
-      return onShowDialog('error', 'Invalid paths selected', {
-                  text: 'You can not put mods into the vortex application directory. '
+        || isChildPath(newPath, vortexPath, normalize)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You can not put downloads into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(oldPath, newPath)) {
+    if (isChildPath(oldPath, newPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can\'t change the download folder to be the parent of the old folder. '
                     + 'This is because the new download folder has to be empty and it isn\'t '
@@ -351,25 +441,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return withContext('Transferring Downloads', `from ${oldPath} to ${newPath}`,
       () => testPathTransfer(oldPath, newPath)
       .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))
-      .then(() => {
-        let queue = Promise.resolve();
-        let fileCount = 0;
-        if (oldPath !== newPath) {
-          queue = queue
-            .then(() => fs.readdirAsync(newPath))
-            .then(files => { fileCount += files.length; });
-        }
-        // ensure the destination directories are empty
-        return queue.then(() => new Promise((resolve, reject) => {
-          if (fileCount > 0) {
-            this.props.onShowDialog('info', 'Invalid Destination', {
-              text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
-          } else {
-            resolve();
-          }
-        }));
-      })
+      .then(() => this.checkTargetEmpty(oldPath, newPath))
       .then(() => {
         if (oldPath !== newPath) {
           this.nextState.busy = t('Moving download folder');
@@ -434,6 +506,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + '4. A faulty HDD/Removable drive.<br /><br />'
             + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
             false, true);
+          } else if ((err.code === 'UNKNOWN') && (err?.['nativeCode'] === 1392)) {
+            // The file or directory is corrupted and unreadable.
+            onShowError('Failed to move directories',
+              t('Vortex has encountered a corrupted and unreadable file/directory '
+              + 'and is unable to complete the transfer. Vortex was attempting '
+              + 'to move the following file/directory: "{{culprit}}" when your operating system '
+              + 'raised the error. Please test your environment and try again once you\'ve confirmed it\'s fixed.',
+            { replace: { culprit: err.path } }), false);
           } else {
             onShowError('Failed to move directories', err, true);
           }
@@ -448,7 +528,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
         if ((getSafe(state, pendingTransfer, undefined) !== undefined)
           && deleteOldDestination) {
-          return fs.removeAsync(newPath)
+          return cleanFailedTransfer(newPath)
             .then(() => {
               onSetTransfer(undefined);
               this.nextState.busy = undefined;
@@ -487,6 +567,63 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     .then(result => (result.action === 'Cancel')
       ? Promise.reject(new UserCanceled())
       : Promise.resolve());
+  }
+
+  private checkTargetEmpty(oldDownloadPath: string, newDownloadPath: string) {
+    let queue = Promise.resolve();
+    let fileCount = 0;
+    let hasDownloadTag: boolean = false;
+    let tagInstance: string;
+    if (oldDownloadPath !== newDownloadPath) {
+      queue = queue
+        .then(() => fs.readdirAsync(newDownloadPath))
+        .then(files => {
+          fileCount += files.length;
+          if (!hasDownloadTag && files.includes(DOWNLOADS_DIR_TAG)) {
+            hasDownloadTag = true;
+          }
+        })
+        .then(() => {
+          if (hasDownloadTag) {
+            const downloadTagPath = path.join(newDownloadPath, DOWNLOADS_DIR_TAG);
+            return fs.readFileAsync(downloadTagPath)
+              .then(tagData => {
+                try {
+                  tagInstance = JSON.parse(tagData).instance;
+                } catch (err) {
+                  log('warn', 'failed to parse download tag file',
+                      { downloadTagPath, error: err.message });
+                }
+              });
+          }
+        })
+        ;
+    }
+    // ensure the destination directories are empty
+    return queue.then(() => new Promise((resolve, reject) => {
+      if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
+        if (tagInstance !== undefined) {
+          return this.props.onShowDialog('question', 'Confirm', {
+            text: 'This is an existing download folder for a different Vortex '
+                + 'instance. If you\'re using Vortex in "shared" and "regular" mode, do not use '
+                + 'the same download folder for both!\n'
+                + 'If you continue, your current downloads will be merged into that folder and '
+                + 'this Vortex instance will take over the download folder.\n'
+                + 'There is no "undo" for this! '
+                + 'Please continue only if you\'re absolutely certain.',
+          }, [
+            { label: 'Cancel', action: () => reject(new UserCanceled()), default: true },
+            { label: 'Continue', action: () => resolve() },
+          ]);
+        } else {
+          this.props.onShowDialog('info', 'Invalid Destination', {
+            text: 'The destination folder has to be empty',
+          }, [{ label: 'Ok', action: () => reject(new UserCanceled()), default: true }]);
+        }
+      } else {
+        resolve();
+      }
+    }));
   }
 
   private transferPath() {
@@ -559,12 +696,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
+  const modsInstallPath = selectors.installPath(state);
   return {
     parallelDownloads: state.settings.downloads.maxParallelDownloads,
     // TODO: this breaks encapsulation
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     downloadPath: state.settings.downloads.path,
     downloads: state.persistent.downloads.files,
+    modsInstallPath,
+    instanceId: state.app.instanceId,
+    copyOnIFF: state.settings.downloads.copyOnIFF,
+    maxBandwidth: state.settings.downloads.maxBandwidth,
   };
 }
 
@@ -578,6 +720,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onShowError: (message: string, details: string | Error,
                   allowReport: boolean, isBBCode?: boolean): void =>
       showError(dispatch, message, details, { allowReport, isBBCode }),
+    onSetCopyOnIFF: (enabled: boolean) => dispatch(setCopyOnIFF(enabled)),
+    onSetMaxBandwidth: (bps: number) => dispatch(setMaxBandwidth(bps)),
   };
 }
 

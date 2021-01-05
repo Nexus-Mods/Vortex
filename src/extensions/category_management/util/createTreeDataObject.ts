@@ -52,7 +52,8 @@ function searchChildren(t: TFunction,
 
 function createTreeDataObject(t: TFunction,
                               categories: { [categoryId: string]: ICategory },
-                              mods: {[modId: string]: IMod}): ICategoriesTree[] {
+                              mods: {[modId: string]: IMod},
+                              customSort?: (lhs: string, rhs: string) => number): ICategoriesTree[] {
   const categoryList: ICategoriesTree[] = [];
 
   const modsByCategory = Object.keys(mods || {}).reduce(
@@ -65,15 +66,19 @@ function createTreeDataObject(t: TFunction,
       },
       {});
 
+  const sortFunc = (lhs, rhs) => (customSort !== undefined)
+      ? customSort(lhs, rhs)
+      : (categories[lhs].order - categories[rhs].order);
+
   const roots = Object.keys(categories)
-          .filter((id: string) => (categories[id].parentCategory === undefined))
-          .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
+    .filter((id: string) => (categories[id].parentCategory === undefined))
+    .sort((lhs, rhs) => sortFunc(lhs, rhs));
 
   roots.forEach(rootElement => {
     let childCategoryModCount = 0;
     const children = Object.keys(categories)
-    .filter((id: string) => (rootElement === categories[id].parentCategory))
-    .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
+      .filter((id: string) => (rootElement === categories[id].parentCategory))
+      .sort((lhs, rhs) => sortFunc(lhs, rhs));
 
     const childrenList = [];
 

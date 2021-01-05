@@ -66,14 +66,23 @@ class ConcurrencyLimiter {
   private enqueue<T>(cb: () => Promise<T>, tries: number): Promise<T> {
     return new Promise((outerResolve, outerReject) => {
       this.mEndOfQueue = this.mEndOfQueue
-        .then(() => new Promise((resolve) => {
-          // this pauses the queue until someone calls mNext
-          this.mNext = resolve;
+        .then(() => new Promise<boolean>((resolve) => {
+          // if the caller calls "do" in parallel, by the time we get here
+          // tasks may already be fulfilled. More they might all have been fulfilled already
+          // in which case no one is going to call mNext.
+          if (this.mLimit > 0) {
+            resolve(false);
+          } else {
+            // this pauses the queue until someone calls mNext
+            this.mNext = () => resolve(true);
+          }
         })
-        .then(() => {
+        .then((queued: boolean) => {
           // once the queue is ticked, reset mNext in case there
           // is nothing else queued, then process the actual promise
-          this.mNext = undefined;
+          if (queued) {
+            this.mNext = undefined;
+          }
           this.process(cb, tries)
             .then(outerResolve)
             .catch(outerReject);

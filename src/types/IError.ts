@@ -6,4 +6,6 @@ export interface IError {
   stack?: string;
   extension?: string;
   path?: string;
+  allowReport?: boolean;
+  attachLog?: boolean;
 }

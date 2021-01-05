@@ -8,6 +8,7 @@ import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
 import { activeProfile, discoveryByGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -41,7 +42,7 @@ class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
   private mKnownGameStores: IGameStore[];
-  private mActiveSearch: Promise<any[]>;
+  private mActiveSearch: Promise<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
@@ -182,8 +183,10 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    return quickDiscovery(this.mKnownGames, this.mStore.getState().settings.gameMode.discovered,
-                          this.onDiscoveredGame, this.onDiscoveredTool);
+    return this.reloadStoreGames()
+      .then(() => quickDiscovery(this.mKnownGames,
+        this.mStore.getState().settings.gameMode.discovered,
+        this.onDiscoveredGame, this.onDiscoveredTool));
   }
 
   public isSearching(): boolean {
@@ -195,12 +198,11 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startSearchDiscovery(): void {
+  public startSearchDiscovery(searchPaths: string[]): void {
     const progressCallback = (idx: number, percent: number, label: string) =>
-            this.mStore.dispatch(discoveryProgress(idx, percent, label));
+            this.mStore.dispatch(discoveryProgress(idx, percent || 0, label));
 
     const state: IState = this.mStore.getState();
-    const { searchPaths } = state.settings.gameMode;
 
     if (!Array.isArray(searchPaths)) {
       throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));
@@ -213,14 +215,36 @@ class GameModeManager {
 
     this.mStore.dispatch(setPhaseCount(searchPaths.length));
 
+    let numDiscovered = 0;
+    const onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
+      ++numDiscovered;
+      this.onDiscoveredGame(gameId, result);
+    };
+
+    const { discovered } = state.settings.gameMode;
+
     this.mActiveSearch = searchDiscovery(
       this.mKnownGames,
-      state.settings.gameMode.discovered,
+      discovered,
       searchPaths.slice().sort(),
-      this.onDiscoveredGame,
+      onDiscoveredGame,
       this.onDiscoveredTool,
       this.onError,
       progressCallback)
+    .then((directoriesRead: number) => {
+      this.mStore.dispatch(addNotification({
+        type: 'success',
+        title: 'Search finished',
+        message: '{{searched}} directories were searched, {{numTotal}} games found ({{numDiscovered}} new)',
+        replace: {
+          searched: directoriesRead,
+          numDiscovered,
+          numTotal: Object.values(discovered).filter(iter => iter.path !== undefined).length,
+        },
+        displayMS: 10000,
+      }));
+
+    })
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
       this.mActiveSearch = null;
@@ -251,6 +275,10 @@ class GameModeManager {
         { label: 'Allow access', action: () => resolve() },
       ]));
     }));
+  }
+
+  private reloadStoreGames() {
+    return GameStoreHelper.reloadGames();
   }
 
   private storeGame = (game: IGame): IGameStored => {

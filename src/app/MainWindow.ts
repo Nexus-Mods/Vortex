@@ -58,8 +58,10 @@ class MainWindow {
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
+  private mInspector: boolean;
 
-  constructor(store: Redux.Store<IState>) {
+  constructor(store: Redux.Store<IState>, inspector: boolean) {
+    this.mInspector = inspector === true;
     this.mResizeDebouncer = new Debouncer(() => {
       if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
@@ -93,8 +95,10 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    // this.mWindow.webContents.openDevTools();
-    this.mWindow.webContents.on('console-message' as any,
+    if (this.mInspector) {
+      this.mWindow.webContents.openDevTools();
+    }
+    this.mWindow.webContents.on('console-message',
       (evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
@@ -122,15 +126,15 @@ class MainWindow {
           type: 'error',
           message: 'Vortex restarted after a crash, sorry about that.',
         }));
-        if (this.mWindow !== null) {
-          // workaround for electron issue #19887
-          setImmediate(() => {
-            process.env.CRASH_REPORTING = Math.random() ? 'vortex' : 'electron';
+        // workaround for electron issue #19887
+        setImmediate(() => {
+          process.env.CRASH_REPORTING = Math.random() ? 'vortex' : 'electron';
+          if (this.mWindow !== null) {
             this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
-          });
-        } else {
-          process.exit();
-        }
+          } else {
+            process.exit();
+          }
+        });
       }
     });
 
@@ -187,12 +191,22 @@ class MainWindow {
     tray.setMainWindow(this.mWindow);
   }
 
-  public show(maximized: boolean) {
+  public show(maximized: boolean, startMinimized: boolean) {
     this.mShown = true;
     if (truthy(this.mWindow)) {
       this.mWindow.show();
       if (maximized) {
         this.mWindow.maximize();
+      }
+
+      if (startMinimized === true) {
+        // Technically the window could be displayed for a split second
+        //  before we manage to hide it but then the only alternative would
+        //  be to pass this function as a functor to the tray so it can
+        //  run the bounds check and maximize (if needed) on its own.
+        //  (which we may have to do if people start complaining about
+        //  flickering - cross that bridge when we get to it)
+        this.mWindow.hide();
       }
 
       let overlap = 0;
@@ -246,10 +260,13 @@ class MainWindow {
       frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',
+      titleBarStyle: windowMetrics?.customTitlebar === true ? 'hidden' : 'default',
       webPreferences: {
         nodeIntegration: true,
         nodeIntegrationInWorker: true,
         webviewTag: true,
+        enableWebSQL: false,
+        enableRemoteModule: true,
       },
     };
   }

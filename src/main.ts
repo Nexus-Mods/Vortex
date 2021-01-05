@@ -82,7 +82,14 @@ const handleError = (error: any) => {
   if (['net::ERR_CONNECTION_RESET',
        'net::ERR_ABORTED',
        'net::ERR_CONTENT_LENGTH_MISMATCH',
+       'net::ERR_SSL_PROTOCOL_ERROR',
        'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
+    return;
+  }
+
+  // this error message appears to happen as the result of some other problem crashing the
+  // renderer process, so all this may do is obfuscate what's actually going on.
+  if (error.message.includes('Error processing argument at index 0, conversion failure from')) {
     return;
   }
 

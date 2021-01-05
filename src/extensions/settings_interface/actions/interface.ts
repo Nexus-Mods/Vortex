@@ -27,3 +27,6 @@ export const showUsageInstruction = safeCreateAction('SHOW_USAGE_INSTRUCTION',
 
 export const setRelativeTimes = safeCreateAction('SET_RELATIVE_TIMES',
   (enabled: boolean) => enabled);
+
+export const setForegroundDL = safeCreateAction('SET_FOREGROUND_DL',
+  (enabled: boolean) => enabled);

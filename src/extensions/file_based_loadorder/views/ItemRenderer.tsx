@@ -1,0 +1,136 @@
+import * as React from 'react';
+import { Checkbox, ListGroupItem } from 'react-bootstrap';
+import { withTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
+import { ComponentEx } from '../../../util/ComponentEx';
+
+import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
+
+import { Icon } from '../../../controls/api';
+import { IProfile, IState } from '../../../types/api';
+
+import * as selectors from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
+
+import { setLoadOrderEntry } from '../actions/loadOrder';
+
+interface IConnectedProps {
+  modState: any;
+  loadOrder: LoadOrder;
+  profile: IProfile;
+}
+
+interface IActionProps {
+  onSetLoadOrderEntry: (profileId: string, entry: ILoadOrderEntry) => void;
+}
+
+interface IBaseProps {
+  className?: string;
+  item: IItemRendererProps;
+}
+
+type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+class ItemRenderer extends ComponentEx<IProps, {}> {
+  public render() {
+    const item = this.props.item.loEntry;
+    const displayCheckboxes = this.props.item.displayCheckboxes;
+    return (!this.isLocked(item))
+      ? this.renderDraggable(item, displayCheckboxes)
+      : null;
+  }
+
+  private renderExternalBanner(): JSX.Element {
+    const { t } = this.props;
+    return (
+    <div className='load-order-unmanaged-banner'>
+      <span>{t('Not managed by Vortex')}</span>
+      <Icon className='external-caution-logo' name='dialog-info'/>
+    </div>
+    );
+  }
+
+  private renderDraggable(item: ILoadOrderEntry, displayCheckboxes: boolean): JSX.Element {
+    const { loadOrder, className } = this.props;
+    const key = !!item.name ? `${item.name}` : `${item.id}`;
+
+    const position = loadOrder.findIndex(entry => entry.id === item.id) + 1;
+
+    let classes = ['load-order-entry'];
+    if (className !== undefined) {
+      classes = classes.concat(className.split(' '));
+    }
+
+    const checkBox = () => (displayCheckboxes)
+      ? (
+        <Checkbox
+          className='entry-checkbox'
+          checked={item.enabled}
+          disabled={this.isLocked(item)}
+          onChange={this.onStatusChange}
+        />
+      )
+      : null;
+
+    const lock = () => (this.isLocked(item))
+      ? (
+        <Icon className='locked-entry-logo' name='locked'/>
+      ) : null;
+
+    return (
+      <ListGroupItem
+        key={key}
+        className={classes.join(' ')}
+        ref={this.props.item.setRef}
+      >
+        <p className='load-order-index'>{position}</p>
+        {this.isExternal(item) && this.renderExternalBanner()}
+        <p>{key}</p>
+        {checkBox()}
+        {lock()}
+      </ListGroupItem>
+    );
+  }
+
+  private isLocked(item: ILoadOrderEntry): boolean {
+    return ['true', 'always'].includes(item.locked);
+  }
+
+  private isExternal(item: ILoadOrderEntry): boolean {
+    return (item.modId !== undefined) ? false : true;
+  }
+
+  private onStatusChange = (evt: any) => {
+    const { item, onSetLoadOrderEntry, profile } = this.props;
+    const entry = {
+      ...item.loEntry,
+      enabled: evt.target.checked,
+    };
+
+    onSetLoadOrderEntry(profile.id, entry);
+  }
+}
+
+const empty = {};
+function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
+  const profile: IProfile = selectors.activeProfile(state);
+  return {
+    profile,
+    loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], []),
+    modState: getSafe(profile, ['modState'], empty),
+  };
+}
+
+function mapDispatchToProps(dispatch: any): IActionProps {
+  return {
+    onSetLoadOrderEntry: (profileId, entry) =>
+      dispatch(setLoadOrderEntry(profileId, entry)),
+  };
+}
+
+export default withTranslation(['common'])(
+  connect(mapStateToProps, mapDispatchToProps)(
+    ItemRenderer) as any) as React.ComponentClass<{
+      className?: string,
+      item: IItemRendererProps,
+    }>;

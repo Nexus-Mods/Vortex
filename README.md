@@ -19,15 +19,21 @@ Manual:
   - git
     * download installer (64-bit) from https://git-scm.com and run
     * default settings are fine
-  - python 2.7
-    * download installer (2.7.*, 64-bit) from https://www.python.org/downloads/ and run
-    * defaults are fine, you can disable samples and documentation if you want
+  - python
+    * This has been tested with python 3.8 but any version since 2.7 should work. Newer versions may be supported with a delay,
+      if in doubt, please check the compatibility table of node-gyp
+    * download installer (64-bit) from https://www.python.org/downloads/ and run
+    * make sure to have it added to PATH, otherwise defaults are fine. You can disable samples and documentation if you want
   - c++ build tools 2017
-    * download "Build Tools für Visual Studio 2017" from https://visualstudio.microsoft.com/de/downloads/ and run
-    * default settings are fine
+    * You may have to google around for this as Microsoft tends to change their site and url schemas all the bloody time
+    * They also change the directory layout of their tools all the time, which is why we actually need the 2017 tools here, the
+      2019 ones are not compatible (although it will probably not be a problem if you have them installed as well)
+    * download "Build Tools für Visual Studio 2017" and run
+    * In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers,
+      everything else is optional
   - Call _"yarn config set msvs_version 2017 --global"_
-    * This sets up yarn to use the c++ build tools we just installed
-    * If you downloaded a newer version, change the version accordingly
+    * This sets up yarn to use the c++ build tools we just installed, you probably only need to do this
+      if you've also installed other versions of Visual Studio. Can't hurt though
 - Check out the repository
   * create and _cd_ to an appropriate directory (i.e. c:\projects)
   * _git clone https://github.com/Nexus-Mods/Vortex.git vortex_
@@ -39,20 +45,23 @@ Manual:
   * _"yarn install"_ followed by _"yarn run build"_ to build
   * _"yarn run start"_ to run
 - For production
+  * The scripts  (electron-builder-oneclick.json and electron-builder-advanced.json) are set up to require code signing with
+    a certificate you don't have so change that
   * _"yarn dist"_ to build (this will take a while)
   * Find the installer and an alread unpacked version in dist
 
 ### If something goes wrong:
 
-The build tools are unfortunately not particularly stable or robust, so the build may break for various reasons (i.e. network problems, dependencies that changed remotely, ...) and leave the checkout in an inconsistent state.
+The build tools are unfortunately not particularly robust, so the build may break for various reasons (i.e. network problems, dependencies that changed remotely, ...) and leave the checkout in an inconsistent state.
 In that case you will have to see if the error is something that needs to be fixed, then restart from the last step that failed.
 
 The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
 
 # Further Information
 
-- see structure.md for an overview of how the project is organized
-- see the wiki for a description of the extension api
+- see [structure.md](structure.md) for an overview of how the project is organized
+- see [https://nexus-mods.github.io/vortex-api](https://nexus-mods.github.io/vortex-api/) for a description of the extension api
+- see [https://wiki.nexusmods.com/index.php/Vortex](https://wiki.nexusmods.com/index.php/Vortex) for usage information
 - run "yarn run doc" the create an html page from code documentation
 
 # Reporting bugs

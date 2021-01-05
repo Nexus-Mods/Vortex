@@ -7,6 +7,11 @@ function getText(id: string, t: TFunction) {
           'When you install a mod through Vortex it is stored in a separate directory and has ' +
           'no immediate effect on the game. We call the process of actually placing the ' +
           'files into the game directory "deployment".\n\n' +
+          'There are different methods available in Vortex to do this Deployment, the best ' +
+          'one will usually get picked automatically, based on which game you\'re modding ' +
+          'and your system configuration.\n' +
+          'All methods have in common that deployment is way quicker than copying files and ' +
+          'consumes no or very little additional disk space.\n\n' +
           'By default, deployment happens automatically after you enable/disable a mod.\n' +
           'If you want more control you can disable this automation and will then have ' +
           'to manually click a button to start the deployment.\n\n' +

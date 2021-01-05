@@ -44,18 +44,19 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
       return (
         <ToolbarDropdown
+          t={t}
           key={id}
           id={id}
           instanceId={[]}
           icons={[
             {
               icon: 'refresh',
-              title: t('Check for Updates (Optimized)'),
+              title: 'Check for Updates (Optimized)',
               action: this.checkModsVersion,
               default: true,
             }, {
               icon: 'refresh',
-              title: t('Check for Updates (Full)'),
+              title: 'Check for Updates (Full)',
               action: this.checkForUpdateForce,
             },
           ]}
@@ -69,10 +70,17 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     const { gameMode, mods } = this.props;
 
     this.context.api.emitAndAwait('check-mods-version', gameMode, mods)
-      .then(() => {
+      .then((modIdsResults: string[][]) => {
+        const modIds = modIdsResults
+          .filter(iter => iter !== undefined)
+          .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
+
         this.context.api.sendNotification({
           type: 'success',
-          message: 'Check for mod updates complete',
+          message: 'Check for mod updates complete ({{count}} update found)',
+          replace: {
+            count: modIds.length,
+          },
           displayMS: 5000,
         });
       });

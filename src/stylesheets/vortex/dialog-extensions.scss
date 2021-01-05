@@ -65,20 +65,29 @@
     overflow: hidden;
     flex: 1 1 0;
 
-    .extension-name {
-      @extend .extension-text;
-      font-weight: bolder;
-    }
+    .extension-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 1em;
 
-    .extension-version {
-      opacity: 0.9;
-      font-size: small;
-      padding-left: 6px;
+      .extension-name {
+        @extend .extension-text;
+        font-weight: bolder;
+      }
+
+      .extension-version {
+        opacity: 0.9;
+        font-size: small;
+        padding-left: 6px;
+      }
     }
   
     .extension-stats {
       display: flex;
       font-size: smaller;
+      > div {
+        white-space: nowrap;
+      }
       .extension-endorsements {
         margin-left: 1em;
       }
@@ -140,6 +149,13 @@
     font-weight: bold;
     font-style: italic;
     margin-left: 1em;
+  }
+
+  .description-stats {
+    display: flex;
+    > div {
+      margin-right: 1em;
+    }
   }
 }
 

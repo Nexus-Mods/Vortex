@@ -6,9 +6,20 @@ import Icon from './Icon';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
+import * as _ from 'lodash';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
+
+export type CBFunction = (...args: any[]) => void;
+
+export interface IErrorContext {
+  safeCB: (cb: CBFunction, dependencyList?: any[]) => CBFunction;
+}
+
+export const ErrorContext = React.createContext<IErrorContext>({
+  safeCB: cb => cb,
+});
 
 export interface IErrorBoundaryProps extends WithTranslation {
   visible?: boolean;
@@ -18,16 +29,29 @@ export interface IErrorBoundaryProps extends WithTranslation {
 
 interface IErrorBoundaryState {
   error: Error;
-  errorInfo: React.ErrorInfo;
+  errorInfo?: React.ErrorInfo;
 }
 
 class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState> {
+  private mErrContext: IErrorContext;
   constructor(props: IErrorBoundaryProps) {
     super(props);
 
     this.state = {
       error: undefined,
       errorInfo: undefined,
+    };
+
+    this.mErrContext = {
+      safeCB: (cb: CBFunction): CBFunction => {
+        return (...args) => {
+          try {
+            cb(...args);
+          } catch (err) {
+            this.setState({ error: err });
+          }
+        };
+      },
     };
   }
 
@@ -40,7 +64,11 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     const { error } = this.state;
 
     if (error === undefined) {
-      return React.Children.only(this.props.children);
+      return (
+        <ErrorContext.Provider value={this.mErrContext}>
+          {React.Children.only(this.props.children)}
+        </ErrorContext.Provider>
+      );
     }
 
     const classes = (className || '').split(' ');
@@ -79,21 +107,54 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     if (onHide !== undefined) {
       onHide();
     }
-    events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
+    let errMessage = 'Component rendering error\n\n'
+                   + `Vortex Version: ${remote.app.getVersion()}\n\n`
+                   + `${error.stack}`;
 
-Vortex Version: ${remote.app.getVersion()},
+    if (errorInfo !== undefined) {
+      errMessage += '\n\nComponentStack:'
+                  + errorInfo.componentStack + '\n';
+    }
 
-${error.stack}
-
-ComponentStack:
-  ${errorInfo.componentStack}
-`, [], genHash(error));
+    events.emit('report-feedback', error.stack.split('\n')[0], errMessage,
+                [], genHash(error));
   }
 
   private retryRender = () => {
     this.setState({ error: undefined, errorInfo: undefined });
   }
-
 }
 
 export default translate(['common'])(ErrorBoundary);
+
+/**
+ * Higher-Order-Component that provides the component with a safeCB callback wrapper
+ * which will get all exceptions from the callback forwarded to the nearest ErrorBoundary
+ * so that they get reported properly instead of remaining unhandled.
+ */
+export function safeCallbacks<T, S>(
+  ComponentToWrap: React.ComponentType<React.PropsWithChildren<T>>,
+): React.ComponentType<Omit<T, keyof IErrorContext>> {
+  // tslint:disable-next-line:class-name
+  // return class __SafeCallbackComponent extends React.Component<T, S> {
+  const cache: { [key: string]: { cb: CBFunction, depList: any[] } } = {};
+
+  return (props: React.PropsWithChildren<T>) => {
+    const context = React.useContext(ErrorContext);
+
+    const cachingSafeCB = React.useCallback((cb: (...args: any[]) => void, depList?: any[]) => {
+      const id = cb.toString();
+      if ((cache[id] === undefined)
+          || (depList !== undefined) && !_.isEqual(depList, cache[id].depList)) {
+        cache[id] = { cb: context.safeCB(cb, []), depList };
+      }
+      return cache[id].cb;
+    }, [context]);
+
+    return React.createElement(ComponentToWrap, {
+      ...props,
+      safeCB: cachingSafeCB,
+    },
+    props.children);
+  };
+}

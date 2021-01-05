@@ -14,6 +14,7 @@ class NXMUrl {
   private mKey: string;
   private mExpires: number;
   private mUserId: number;
+  private mView: boolean;
 
   constructor(input: string) {
     let parsed: URL;
@@ -52,6 +53,10 @@ class NXMUrl {
     this.mExpires = exp !== undefined ? parseInt(exp, 10) : undefined;
     const userId = parsed.searchParams.get('user_id') || undefined;
     this.mUserId = userId !== undefined ? parseInt(userId, 10) : undefined;
+    const view = parsed.searchParams.get('view') ?? '0';
+    this.mView = (view !== undefined)
+      ? ((view.toLowerCase() === 'true') || (parseInt(view, 10) > 0))
+      : undefined;
   }
 
   public get type(): 'mod' | 'collection' {
@@ -97,6 +102,10 @@ class NXMUrl {
    */
   public get userId(): number {
     return this.mUserId;
+  }
+
+  public get view(): boolean {
+    return this.mView;
   }
 }
 

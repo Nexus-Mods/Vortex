@@ -67,20 +67,14 @@ export const settingsReducer: IReducerSpec = {
         : merge(state, ['discovered', payload.gameId], payload.parameters),
     [actions.setGameHidden as any]: (state, payload) =>
       setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden),
-    [actions.addSearchPath as any]: (state, payload) =>
-      ((state.searchPaths !== undefined) && (state.searchPaths.indexOf(payload) !== -1))
-        ? state
-        : pushSafe(state, ['searchPaths'], payload),
-    [actions.clearSearchPaths as any]: (state, payload) =>
-      setSafe(state, ['searchPaths'], []),
-    [actions.removeSearchPath as any]: (state, payload) =>
-      removeValue(state, ['searchPaths'], payload),
+    [actions.setGameSearchPaths as any]: (state, payload) =>
+      setSafe(state, ['searchPaths'], payload),
     [actions.setPickerLayout as any]: (state, payload) =>
       setSafe(state, ['pickerLayout'], payload.layout),
   },
   defaults: {
-    searchPaths: undefined,
     discovered: {},
+    searchPaths: [],
     pickerLayout: 'small',
   },
 };

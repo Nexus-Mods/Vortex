@@ -35,7 +35,6 @@ export class FileFound extends Error {
 class DeploymentMethod extends LinkingDeployment {
   public priority: number = 50;
 
-  private mDirCache: Set<string>;
   private mLnkExpression = new RegExp(LNK_EXT + '$');
 
   constructor(api: IExtensionApi) {
@@ -151,8 +150,6 @@ class DeploymentMethod extends LinkingDeployment {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    this.mDirCache = new Set<string>();
-
     const deployment: IDeployment = this.context.newDeployment;
     const lnkExtUpper = LNK_EXT.toUpperCase();
     const extLen = LNK_EXT.length;
@@ -168,11 +165,7 @@ class DeploymentMethod extends LinkingDeployment {
         return prev;
       }, {});
 
-    return super.finalize(gameId, dataPath, installationPath, progressCB)
-    .then(files => {
-      this.mDirCache = undefined;
-      return files;
-    });
+    return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
   public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
@@ -222,19 +215,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
     const basePath = path.dirname(linkPath);
     return this.ensureDir(basePath)
-        .then((created: any) => {
-          let tagDir;
-          if ((dirTags !== false) && (created !== null)) {
-            const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-            tagDir = fs.writeFileAsync(tagPath,
-                'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty');
-          } else {
-            tagDir = Promise.resolve();
-          }
-
-          return tagDir.then(() => this.createLink(sourcePath, linkPath));
-        });
+        .then(() => this.createLink(sourcePath, linkPath));
   }
 
   protected unlinkFile(linkPath: string, sourcePath: string): Promise<void> {
@@ -323,6 +304,11 @@ class DeploymentMethod extends LinkingDeployment {
             .catch(err => (err.code === 'ENOENT')
               // file was deleted. Well, the user is the boss...
               ? Promise.resolve()
+              // how did we successfully deploy if this is on a different drive?
+              // if the game was moved the links shouldn't point to a valid location,
+              // if the staging folder was moved we should have purged
+              : (err.code === 'EXDEV')
+              ? fs.moveAsync(dat.target, outPath)
               : Promise.reject(err))
             .then(() => fs.removeAsync(linkPath));
         } catch (err) {
@@ -333,12 +319,6 @@ class DeploymentMethod extends LinkingDeployment {
           return Promise.reject(error);
         }
       });
-  }
-
-  private ensureDir(dirPath: string): Promise<void> {
-    return (this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
-      ? fs.ensureDirAsync(dirPath).then(created => { this.mDirCache.add(dirPath); return created; })
-      : Promise.resolve(null);
   }
 }
 

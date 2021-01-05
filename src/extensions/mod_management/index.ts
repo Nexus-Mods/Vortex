@@ -17,6 +17,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
+import { laterT } from '../../util/i18n';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -61,12 +62,13 @@ import { fallbackPurge, loadActivation,
         saveActivation, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
-import { purgeMods, purgeModsInPath } from './util/deploy';
+import { genSubDirFunc, purgeMods, purgeModsInPath } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
 import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
+import ModHistory from './util/ModHistory';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
@@ -77,6 +79,7 @@ import {} from './views/ModList';
 import {} from './views/Settings';
 import Workarounds from './views/Workarounds';
 
+import { DEPLOY_BLACKLIST } from './constants';
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
@@ -86,6 +89,7 @@ import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 
 import Promise from 'bluebird';
+import minimatch from 'minimatch';
 import * as path from 'path';
 import * as Redux from 'redux';
 import shortid = require('shortid');
@@ -105,6 +109,19 @@ const modSources: IModSource[] = [];
 
 const mergers: IFileMerge[] = [];
 
+class BlacklistSet extends Set<string> {
+  private mPatterns: string[];
+  constructor(blacklist: string[], game: IGame, normalize: Normalize) {
+    super(blacklist.map(iter => normalize(iter)));
+    this.mPatterns = [].concat(DEPLOY_BLACKLIST, game.details?.ignoreDeploy ?? []);
+  }
+
+  public has(value: string): boolean {
+    return super.has(value)
+      || (this.mPatterns.find(pat => minimatch(value, pat, { nocase: true })) !== undefined);
+  }
+}
+
 function registerInstaller(id: string, priority: number,
                            testSupported: TestSupported, install: InstallFunc) {
   installers.push({ id, priority, testSupported, install });
@@ -123,20 +140,6 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
 
 function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod[]) {
   return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
-}
-
-function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
-  const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
-    ? modType.options.mergeMods
-    : game.mergeMods;
-
-  if (typeof(mergeModsOpt) === 'boolean') {
-    return mergeModsOpt
-      ? () => ''
-      : (mod: IMod) => mod.id;
-  } else {
-    return mergeModsOpt;
-  }
 }
 
 function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
@@ -165,25 +168,37 @@ function deployModType(api: IExtensionApi,
                        stagingPath: string,
                        targetPath: string,
                        overwritten: IMod[],
-                       mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
+                       mergeResult: { [modType: string]: IMergeResultByType },
                        lastDeployment: IDeployedFile[],
                        onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
   log('debug', 'Deploying mod type',
     { typeId, path: targetPath, count: lastDeployment.length });
-  return deployMods(api,
-                    game.id,
-                    stagingPath, targetPath,
-                    filteredModList,
-                    activator, lastDeployment,
-                    typeId, new Set(Object.keys(mergedFileMap[typeId] || {})),
-                    genSubDirFunc(game, getModType(typeId)),
-                    onProgress)
+  let normalize: Normalize;
+
+  return getNormalizeFunc(targetPath)
+    .then(normalizeIn => {
+      normalize = normalizeIn;
+      return deployMods(api,
+                        game.id,
+                        stagingPath, targetPath,
+                        filteredModList,
+                        activator, lastDeployment,
+                        typeId,
+                        new BlacklistSet(mergeResult[typeId]?.usedInMerge ?? [], game, normalize),
+                        genSubDirFunc(game, getModType(typeId)),
+                        onProgress);
+      })
     .then((newActivation: IDeployedFile[]) => {
-      const mergedMap = mergedFileMap[typeId] || {};
-      newActivation.forEach(act => {
-        act.merged = mergedMap[act.relPath];
-      });
+      const mergedMap = mergeResult[typeId]?.mergeInfluences;
+      if (!!mergedMap && (Object.keys(mergedMap).length > 0)) {
+        newActivation.forEach(act => {
+          const merged = Array.from(new Set(mergedMap[normalize(act.relPath)]));
+          if (merged.length > 0) {
+            act.merged = merged;
+          }
+        });
+      }
       overwritten.push(...filteredModList.filter(mod =>
         newActivation.find(entry =>
           (entry.source === mod.installationPath)
@@ -206,7 +221,7 @@ function deployAllModTypes(api: IExtensionApi,
                            profile: IProfile,
                            sortedModList: IMod[],
                            stagingPath: string,
-                           mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
+                           mergeResult: { [modType: string]: IMergeResultByType },
                            modPaths: { [typeId: string]: string },
                            lastDeployment: { [typeId: string]: IDeployedFile[] },
                            newDeployment: { [typeId: string]: IDeployedFile[] },
@@ -218,10 +233,16 @@ function deployAllModTypes(api: IExtensionApi,
 
   return Promise.each(deployableModTypes(modPaths),
     typeId => deployModType(api, activator, game, sortedModList, typeId,
-      stagingPath, modPaths[typeId], overwritten, mergedFileMap,
+      stagingPath, modPaths[typeId], overwritten, mergeResult,
       lastDeployment[typeId], onProgress)
       .then(deployment => newDeployment[typeId] = deployment))
-    .then(() => reportRedundant(api, profile.id, overwritten));
+    .then(() => {
+      if (activator.noRedundancy !== true) {
+        return reportRedundant(api, profile.id, overwritten);
+      } else {
+        return Promise.resolve();
+      }
+    });
 }
 
 function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
@@ -256,6 +277,11 @@ function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: strin
                           + err.message)));
 }
 
+interface IMergeResultByType {
+  usedInMerge: string[];
+  mergeInfluences: { [outPath: string]: string[] };
+}
+
 function doMergeMods(api: IExtensionApi,
                      game: IGame,
                      gameDiscovery: IDiscoveryResult,
@@ -263,7 +289,7 @@ function doMergeMods(api: IExtensionApi,
                      sortedModList: IMod[],
                      modPaths: { [typeId: string]: string },
                      lastDeployment: { [typeId: string]: IDeployedFile[] }):
-    Promise<{ [typeId: string]: { [relPath: string]: string[] } }> {
+    Promise<{ [typeId: string]: IMergeResultByType }> {
 
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
@@ -277,7 +303,11 @@ function doMergeMods(api: IExtensionApi,
   const mergeModTypes = Object.keys(modPaths)
     .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-  const result: { [typeId: string]: { [relPath: string]: string[] } } = {};
+  const result: { [typeId: string]: IMergeResultByType } = Object.keys(modPaths)
+    .reduce((prev, modType) => {
+      prev[modType] = { usedInMerge: [], mergeInfluences: {} };
+      return prev;
+    }, {});
 
   // clean up merged mods
   return Promise.mapSeries(mergeModTypes, typeId => {
@@ -291,9 +321,27 @@ function doMergeMods(api: IExtensionApi,
       typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
         sortedModList.filter(mod => (mod.type || '') === typeId),
         lastDeployment[typeId],
-        fileMergers)
-        .then(mergedFiles => {
-          result[typeId] = mergedFiles;
+        fileMergers.filter(merger => merger.modType === typeId))
+        .then(mergeResult => {
+          // some transformation required because in a merge we may use files from one modtype
+          // to generate a file for another. usedInMerge is used to skip files already applied to
+          // a merge so we need that information when processing the mod type where the merge source
+          // came from.
+          // However the list of sources used to generate a merge we need in the modtype used to
+          // deploy the merge
+
+          const { usedInMerge, mergeInfluences } = mergeResult;
+          result[typeId].usedInMerge = usedInMerge;
+          Object.keys(mergeInfluences)
+            .forEach(outPath => {
+              if (result[mergeInfluences[outPath].modType] === undefined) {
+                result[mergeInfluences[outPath].modType] = { usedInMerge: [], mergeInfluences: {} };
+              }
+              result[mergeInfluences[outPath].modType].mergeInfluences[outPath] = [
+                ...(result[mergeInfluences[outPath].modType].mergeInfluences[outPath] ?? []),
+                ...mergeInfluences[outPath].sources,
+              ];
+            });
         })))
     .then(() => result);
 }
@@ -392,7 +440,9 @@ function genUpdateModDeployment() {
     if ((game === undefined)
         || (gameDiscovery === undefined)
         || (gameDiscovery.path === undefined)) {
-      return Promise.reject(new Error('Game no longer available'));
+      const err = new Error('Game no longer available');
+      err['attachLogOnReport'] = true;
+      return Promise.reject(err);
     }
     const stagingPath = installPathForGame(state, gameId);
 
@@ -459,7 +509,7 @@ function genUpdateModDeployment() {
           method: activator.name,
         });
 
-        let mergedFileMap: { [modType: string]: { [relPath: string]: string[] } };
+        let mergeResult: { [modType: string]: IMergeResultByType };
         const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
         const mods = state.persistent.mods[profile.gameId] || {};
         notification.message = t('Deploying mods');
@@ -495,7 +545,7 @@ function genUpdateModDeployment() {
           .tap(() => progress(t('Merging mods'), 35))
           .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList,
                                   modPaths, lastDeployment)
-            .then(mergedFileMapIn => mergedFileMap = mergedFileMapIn))
+            .then(mergeResultIn => mergeResult = mergeResultIn))
           .tap(() => progress(t('Starting deployment'), 35))
           .then(() => {
             const deployProgress = (name, percent) =>
@@ -505,7 +555,7 @@ function genUpdateModDeployment() {
               .filter(typeId => !truthy(modPaths[typeId]));
             return validateDeploymentTarget(api, undiscovered)
               .then(() => deployAllModTypes(api, activator, profile, sortedModList,
-                                            stagingPath, mergedFileMap,
+                                            stagingPath, mergeResult,
                                             modPaths, lastDeployment,
                                             newDeployment, deployProgress));
           });
@@ -598,7 +648,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   return {
     id: 'modSource',
     name: 'Source',
-    help: getText('source', api.translate),
+    help: getText('source', laterT),
     description: 'Source the mod was downloaded from',
     icon: 'database',
     placement: 'both',
@@ -817,7 +867,8 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
         ? (enable !== false)
-          ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
+          ? activator.activate(modPath, mod.installationPath, subdir(mod),
+                               new BlacklistSet([], game, normalize))
           : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
@@ -828,9 +879,18 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => activator.finalize(gameId, dataPath, stagingPath))
       .then(newActivation =>
         doSaveActivation(api, mod.type, dataPath, stagingPath, newActivation, activator.id))
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'warning',
+          title: 'Deployment interrupted',
+          message: err.message,
+        });
+      })
       .catch(err => {
+        const userCanceled = err instanceof UserCanceled;
         api.showErrorNotification('Failed to deploy mod', err, {
           message: modId,
+          allowReport: !userCanceled,
         });
       })).then(() => null);
   };
@@ -898,6 +958,11 @@ function once(api: IExtensionApi) {
   api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
     return purgeModsInPath(api, gameId, modType, modPath)
       .catch(UserCanceled, () => Promise.resolve())
+      .catch(NoDeployment, () => {
+        api.showErrorNotification('Failed to purge mods',
+          'No deployment method currently available',
+          { allowReport: false });
+      })
       .catch(ProcessCanceled, err =>
         api.showErrorNotification('Failed to purge mods', err, { allowReport: false }))
       .catch(err => api.showErrorNotification('Failed to purge mods', err));
@@ -1068,20 +1133,24 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
 
   const gameMode = activeGameId(state);
+
+  log('debug', '[checking staging folder]', { gameMode });
   if (gameMode === undefined) {
     return Promise.resolve(result);
   }
 
   const discovery = currentGameDiscovery(state);
   const instPath = installPath(state);
-  const basePath = getVortexPath('base');
+  const basePath = getVortexPath('application');
+  log('debug', '[checking staging folder]',
+    { stagingPath: instPath, vortexPath: basePath, gamePath: discovery?.path });
   if (isChildPath(instPath, basePath)) {
     result = {
       severity: 'warning',
       description: {
         short: 'Invalid staging folder',
         long: 'Your mod staging folder is inside the Vortex application directory. '
-          + 'This is a very bad idea beckaue that folder gets removed during updates so you would '
+          + 'This is a very bad idea because that folder gets removed during updates so you would '
           + 'lose all your files on the next update.',
       },
     };
@@ -1140,6 +1209,14 @@ function init(context: IExtensionContext): boolean {
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
 
+  context.registerActionCheck('SET_MOD_INSTALLATION_PATH', (state, action: any) => {
+    if (!truthy(action.payload.installPath)) {
+      return `Attempt to set an invalid mod installation path`;
+    }
+
+    return undefined;
+  });
+
   context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
@@ -1175,6 +1252,24 @@ function init(context: IExtensionContext): boolean {
   context.registerModSource = registerModSource;
   context.registerMerge = registerMerge;
 
+  context.registerActionCheck('ADD_MOD', (state, action: any) => {
+    const { mod }: { mod: IMod } = action.payload;
+    if (!truthy(mod.installationPath)) {
+      return 'Can\'t create mod without installation path';
+    }
+
+    return undefined;
+  });
+
+  context.registerActionCheck('ADD_MODS', (state, action: any) => {
+    const { mods }: { mods: IMod[] } = action.payload;
+    if (mods.find(iter => !truthy(iter.installationPath)) !== undefined) {
+      return 'Can\'t create mod without installation path';
+    }
+
+    return undefined;
+  });
+
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
 
@@ -1183,7 +1278,18 @@ function init(context: IExtensionContext): boolean {
   context.registerStartHook(100, 'check-deployment',
                             input => preStartDeployHook(context.api, input));
 
-  context.once(() => once(context.api));
+  const history = new ModHistory(context.api);
+
+  context.registerHistoryStack('mods', history);
+  context.registerAction('mod-icons', 200, 'history', {}, 'History', () => {
+    context.api.ext.showHistory?.('mods');
+  });
+
+  context.once(() => {
+    once(context.api);
+
+    history.init();
+  });
 
   return true;
 }

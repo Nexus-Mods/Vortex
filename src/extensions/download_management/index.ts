@@ -1,4 +1,4 @@
-import { setDownloadPath } from '../../actions';
+import { IDialogResult, setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
@@ -29,10 +29,11 @@ import { stateReducer } from './reducers/state';
 import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers, IResolvedURL } from './types/ProtocolHandlers';
+import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
-import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from './util/writeDownloadsTag';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
+import ShutdownButton from './views/ShutdownButton';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
@@ -44,6 +45,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import winapi from 'winapi-bindings';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -56,42 +58,10 @@ const protocolHandlers: IProtocolHandlers = {};
 const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
   '.xz', '.z',
-  '.fomod',
+  '.fomod', '.dazip',
 ]);
 
-function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
-  return fs.readFileAsync(tagPath, { encoding: 'utf8' })
-    .then(data => {
-      const state: IState = api.store.getState();
-      const tag = JSON.parse(data);
-      if (tag.instance !== state.app.instanceId) {
-        return api.showDialog('question', 'Confirm', {
-          text: 'This is a downloads folder but it appears to belong to a different Vortex '
-              + 'instance. If you\'re using Vortex in shared and "regular" mode, do not use '
-              + 'the same downloads folder for both!',
-        }, [
-          { label: 'Cancel' },
-          { label: 'Continue' },
-        ])
-        .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
-      }
-      return Promise.resolve();
-    })
-    .catch(() => {
-      return api.showDialog('question', 'Confirm', {
-        text: 'This directory is not marked as a downloads folder. '
-            + 'Are you *sure* it\'s the right directory?',
-      }, [
-        { label: 'Cancel' },
-        { label: 'I\'m sure' },
-      ])
-      .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
-    });
-}
+const addLocalInProgress = new Set<string>();
 
 function knownArchiveExt(filePath: string): boolean {
   if (!truthy(filePath)) {
@@ -192,6 +162,9 @@ function genDownloadChangeHandler(api: IExtensionApi,
         }, 5000);
       }
     } else if (evt === 'rename') {
+      if (addLocalInProgress.has(fileName)) {
+        return;
+      }
       // this delay is intended to prevent this from picking up files that Vortex added itself.
       // It is not enough however to prevent this from getting the wrong file size if the file
       // copy/write takes more than this one second.
@@ -201,16 +174,24 @@ function genDownloadChangeHandler(api: IExtensionApi,
           let dlId = findDownload(fileName);
           if (dlId === undefined) {
             dlId = shortid();
+            log('debug', 'file added to download directory at runtime', fileName);
             store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
             api.events.emit('did-import-downloads', [dlId]);
           }
           nameIdMap[normalize(fileName)] = dlId;
         })
         .catch(err => {
-          if ((err.code === 'ENOENT') && (nameIdMap[normalize(fileName)] !== undefined)) {
+          const normName = normalize(fileName);
+          // in the past we used the nameIdMap to resolve the download id but that is
+          // probably an unnecessary optimization that may just lead to errors
+          if (err.code === 'ENOENT') {
             // if the file was deleted, remove it from state. This does nothing if
             // the download was already removed so that's fine
-            store.dispatch(removeDownload(nameIdMap[normalize(fileName)]));
+            const dlId = findDownload(fileName);
+            if (dlId !== undefined) {
+              store.dispatch(removeDownload(dlId));
+            }
+            delete nameIdMap[normName];
           }
         });
     }
@@ -290,6 +271,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
             fs.statAsync(path.join(currentDownloadPath, fileName))
               .then((stats: fs.Stats) => {
                 const dlId = shortid();
+                log('debug', 'registering previously unknown archive', fileName);
                 store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
                 nameIdMap[normalize(fileName)] = dlId;
               }),
@@ -326,107 +308,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
     });
 }
 
-function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
-  const state: IState = api.store.getState();
-  const downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
-  return Promise.each(Object.keys(downloads), dlId => {
-    api.store.dispatch(removeDownload(dlId));
-    return Promise.resolve();
-  }).then(() => Promise.resolve());
-}
-
 function testDownloadPath(api: IExtensionApi): Promise<void> {
-  const state: IState = api.store.getState();
-  const gameId = selectors.activeGameId(state);
-  const isNewInstallation = (currentState: IState) => {
-    // We don't want to run this check if the user has just
-    //  installed a fresh copy of Vortex as the downloads folder
-    //  has probably not been created yet.
-    // It is safe to assume that this is a new installation if
-    //  our state holds no mods (for any game) and no download files.
-    const gameModes = getSafe(currentState, ['persistent', 'mods'], undefined);
-    const gamesWithActiveMods = (gameModes !== undefined)
-      ? Object.keys(gameModes).length
-      : 0;
-
-    const downloads = getSafe(currentState,
-      ['persistent', 'downloads', 'files'], undefined);
-    const totalDown = (downloads !== undefined)
-      ? Object.keys(downloads).length
-      : 0;
-
-    return ((gamesWithActiveMods === 0) && (totalDown === 0));
-  };
-
-  if ((gameId === undefined) || isNewInstallation(state)) {
-    return Promise.resolve();
-  }
-
-  let currentDownloadPath = selectors.downloadPathForGame(state, gameId).replace(gameId, '');
-  const ensureDownloadsDirectory = (): Promise<void> => fs.statAsync(currentDownloadPath)
-    .catch(err =>
-      api.showDialog('error', ' Downloads Folder missing!', {
-        text: 'Your downloads folder (see below) is missing. This might happen because you '
-            + 'deleted it or - if you have it on a removable drive - it is not currently '
-            + 'connected.\nIf you continue now, a new downloads folder will be created but all '
-            + 'your previous mod archives will be lost.\n\n'
-            + 'If you have moved the folder or the drive letter changed, you can browse '
-            + 'for the new location manually, but please be extra careful to select the right '
-            + 'folder!',
-        message: currentDownloadPath,
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ]).then(result => {
-        if (result.action === 'Quit Vortex') {
-          app.exit(0);
-          return Promise.reject(new UserCanceled());
-        } else if (result.action === 'Reinitialize') {
-          const id = shortid();
-          api.sendNotification({
-            id,
-            type: 'activity',
-            message: 'Cleaning downloads metadata',
-          });
-          return removeDownloadsMetadata(api)
-            .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve()))
-            .catch(() => {
-              api.showDialog('error', 'Downloads Folder missing!', {
-                bbcode: 'The downloads folder could not be created. '
-                      + 'You [b][color=red]have[/color][/b] to go to settings->downloads and '
-                      + 'change it to a valid directory [b][color=red]before doing anything '
-                      + 'else[/color][/b] or you will get further error messages.',
-              }, [
-                { label: 'Close' },
-              ]);
-              return Promise.reject(new ProcessCanceled(
-                'Failed to reinitialize download directory'));
-            })
-            .finally(() => {
-              api.dismissNotification(id);
-            });
-        } else { // Browse...
-          return api.selectDir({
-            defaultPath: currentDownloadPath,
-            title: api.translate('Select downloads folder'),
-          }).then((selectedPath) => {
-            if (!truthy(selectedPath)) {
-              return Promise.reject(new UserCanceled());
-            }
-            return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
-              .then(() => {
-                currentDownloadPath = selectedPath;
-                api.store.dispatch(setDownloadPath(currentDownloadPath));
-                return Promise.resolve();
-              });
-          })
-          .catch(() => ensureDownloadsDirectory());
-        }
-      }))
-      .then(() => writeDownloadsTag(api, currentDownloadPath));
-
-  return ensureDownloadsDirectory()
+  return ensureDownloadsDirectory(api)
     .catch(ProcessCanceled, () => Promise.resolve())
     .catch(UserCanceled, () => Promise.resolve())
     .catch(err => {
@@ -478,9 +361,13 @@ function queryReplace(api: IExtensionApi, destination: string) {
     : removeArchive(api.store, destination));
 }
 
-function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
+function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
+
+  if (gameMode === undefined) {
+    return Promise.reject(new Error('can\'t import archives when no game is active'));
+  }
 
   const notiId = api.sendNotification({
     type: 'activity',
@@ -488,31 +375,54 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     message: path.basename(destination),
   });
   const dlId = shortid();
+  let fileSize: number;
+  const fileName = path.basename(destination);
+  addLocalInProgress.add(fileName);
   return fs.statAsync(destination)
     .catch(() => undefined)
-    .then(stats => stats !== undefined ? queryReplace(api, destination) : null)
+    .then((stats: fs.Stats) => {
+      if (stats !== undefined) {
+        fileSize = stats.size;
+      }
+      return stats !== undefined ? queryReplace(api, destination) : null;
+    })
     .then(() => fs.copyAsync(source, destination))
     .then(() => {
+      log('debug', 'import local download', destination);
       // do this after copy is completed, otherwise code watching for the event may be
       // trying to access the file already
-      store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
+      store.dispatch(addLocalDownload(dlId, gameMode, fileName, fileSize));
     })
     .then(() => fs.statAsync(destination))
     .then(stats => {
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-download', [dlId]);
+      return dlId;
     })
     .catch(err => {
       api.dismissNotification(notiId);
       store.dispatch(removeDownload(dlId));
       log('info', 'failed to copy', {error: err.message});
+      return undefined;
+    })
+    .finally(() => {
+      addLocalInProgress.delete(fileName);
     });
 }
 
 function genImportDownloadsHandler(api: IExtensionApi) {
-  return (downloadPaths: string[]) => {
-    const downloadPath = selectors.downloadPath(api.store.getState());
+  return (downloadPaths: string[], cb?: (dlIds: string[]) => void) => {
+    const state = api.getState();
+    const gameMode = selectors.activeGameId(state);
+
+    if (gameMode === undefined) {
+      log('warn', 'can\'t import download(s) when no game is active', downloadPaths);
+      return;
+    }
+
+    log('debug', 'importing download(s)', downloadPaths);
+    const downloadPath = selectors.downloadPathForGame(state, gameMode);
     let hadDirs = false;
     Promise.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
@@ -521,12 +431,12 @@ function genImportDownloadsHandler(api: IExtensionApi) {
         .then(stats => {
           if (stats.isDirectory()) {
             hadDirs = true;
-            return Promise.resolve();
+            return Promise.resolve(undefined);
           } else {
             return move(api, dlPath, destination);
           }
         })
-        .then(() => {
+        .tap((dlId: string) => {
           if (hadDirs) {
             api.sendNotification({
               type: 'warning',
@@ -536,6 +446,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             });
           }
           log('info', 'imported archives', { count: downloadPaths.length });
+          return dlId;
         })
         .catch(err => {
           api.sendNotification({
@@ -544,6 +455,8 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             message: dlPath,
           });
         });
+    }).then((dlIds: string[]) => {
+      cb?.(dlIds.filter(id => id !== undefined));
     });
   };
 }
@@ -571,6 +484,15 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
           + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
     automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+      api.sendNotification({
+        id: 'transfer-cleanup',
+        message: 'Cleaning up interrupted transfer',
+        type: 'activity',
+      });
+      // the transfer works by either copying the files or creating hard links
+      // and only deleting the source when everything is transferred successfully,
+      // so in case of an interrupted transfer we can always just delete the
+      // incomplete target because the source is still there
       return fs.removeAsync(transferDestination)
         .then(() => {
           api.store.dispatch(setTransferDownloads(undefined));
@@ -584,19 +506,65 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
           } else {
             fixReject();
           }
-        });
+        })
+        .finally(() => {
+          api.dismissNotification('transfer-cleanup');
+        })
+        ;
     }),
   };
 
   return Promise.resolve(result);
 }
 
+let shutdownPending: boolean = false;
+let shutdownInitiated: boolean = false;
+
+function updateShutdown(downloads: { [key: string]: IDownload }) {
+  if (shutdownInitiated
+      && ((Object.keys(downloads).length > 0)
+          || !shutdownPending)) {
+    // cancel shutdown if the conditions for it are no longer met
+    winapi.AbortSystemShutdown();
+    shutdownInitiated = false;
+  }
+
+  if (!shutdownInitiated
+      && shutdownPending
+      && (Object.keys(downloads).length > 0)) {
+    // schedule shutdown if conditions are met
+    winapi.InitiateSystemShutdown('Vortex downloads finished', 30, false, false);
+    shutdownInitiated = true;
+  }
+}
+
+function toggleShutdown(api: IExtensionApi) {
+  if (shutdownPending) {
+    shutdownPending = false;
+    updateShutdown(selectors.activeDownloads(api.getState()));
+  } else {
+    api.showDialog('question', 'Confirm Shutdown', {
+      text: 'Your computer will be shut down 30 seconds after the last download finished. '
+        + 'Please make sure you\'ve saved all your work in all running applications.\n'
+        + 'You can cancel this at any time by pressing the button again.',
+    }, [
+      { label: 'Cancel' },
+      {
+        label: 'Schedule Shutdown', action: () => {
+          shutdownPending = true;
+          updateShutdown(selectors.activeDownloads(api.getState()));
+        },
+      },
+    ]);
+  }
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
     ], (downloads: { [dlId: string]: IDownload }) => {
-      const count = Object.keys(downloads).filter(
-        id => ['init', 'started', 'paused'].indexOf(downloads[id].state) !== -1).length;
+      const count = Object.keys(downloads ?? {}).filter(
+        id => ['init', 'started', 'paused'].includes(downloads[id].state)).length;
       return count > 0 ? count : undefined;
     });
 
@@ -627,6 +595,37 @@ function init(context: IExtensionContextExt): boolean {
     return undefined;
   });
 
+  context.registerActionCheck('INIT_DOWNLOAD', (state: IState, action: any) => {
+    const { game } = action.payload;
+    if (!truthy(game) || (typeof(game) !== 'string')) {
+      return 'No game associated with download';
+    }
+    return undefined;
+  });
+
+  context.registerActionCheck('ADD_LOCAL_DOWNLOAD', (state: IState, action: any) => {
+    const { game } = action.payload;
+    if (!truthy(game) || (typeof(game) !== 'string')) {
+      return 'No game associated with download';
+    }
+    return undefined;
+  });
+
+  context.registerActionCheck('SET_COMPATIBLE_GAMES', (state, action: any) => {
+    const { games } = action.payload;
+    if (!truthy(games) || !Array.isArray(games) || (games.length === 0)) {
+      return 'Invalid set of compatible games';
+    }
+    return undefined;
+  });
+
+  context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
+    t: context.api.translate,
+    shutdownPending,
+    activeDownloads: selectors.activeDownloads(context.api.getState()),
+    toggleShutdown: () => toggleShutdown(context.api),
+    }), () => process.platform === 'win32');
+
   context.registerTest('verify-downloads-transfers', 'gamemode-activated',
     () => checkPendingTransfer(context.api));
 
@@ -635,6 +634,8 @@ function init(context: IExtensionContextExt): boolean {
     const observeImpl: typeof observe = require('./DownloadObserver').default;
 
     const store = context.api.store;
+
+    testDownloadPath(context.api);
 
     // undo an earlier bug where vortex registered itself as the default http/https handler
     // (fortunately few applications actually rely on that setting, unfortunately this meant
@@ -680,8 +681,16 @@ function init(context: IExtensionContextExt): boolean {
 
       const state: IState = context.api.store.getState();
 
+      updateShutdown(selectors.activeDownloads(state));
+
       Promise.map(filtered, dlId => {
         const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+        if (cur[dlId].localPath === undefined) {
+          // No point looking up metadata if we don't know the file's name.
+          //  https://github.com/Nexus-Mods/Vortex/issues/7362
+          log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
+          return Promise.resolve();
+        }
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
             if (result.length > 0) {
@@ -767,7 +776,8 @@ function init(context: IExtensionContextExt): boolean {
               }
               powerTimer = setTimeout(stopTimer, 60000);
             }
-          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
+          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers,
+          () => context.api.getState().settings.downloads.maxBandwidth * 8);
       manager.setFileExistsCB(fileName => {
         return context.api.showDialog('question', 'File already exists', {
           text: 'You\'ve already downloaded the file "{{fileName}}", do you want to '
@@ -784,9 +794,11 @@ function init(context: IExtensionContextExt): boolean {
       observer =
           observeImpl(context.api, manager);
 
-      const downloads = (store.getState() as IState).persistent.downloads.files;
+      const downloads = getSafe((store.getState() as IState),
+        ['persistent', 'downloads', 'files'], {});
+
       const interruptedDownloads = Object.keys(downloads)
-        .filter(id => ['init', 'started', 'pending'].indexOf(downloads[id].state) !== -1);
+        .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
       interruptedDownloads.forEach(id => {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled

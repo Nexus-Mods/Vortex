@@ -1,3 +1,4 @@
+import TableTextFilter from '../../controls/table/TextFilter';
 import { IExtensionLoadFailure } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { getSafe } from '../../util/storeHelper';
@@ -22,7 +23,9 @@ function renderLoadFailure(t: TFunction, fail: IExtensionLoadFailure) {
   const pattern = getSafe({
     'unsupported-version': 'Not compatible with this version of Vortex',
     'unsupported-api': 'Unsupported API',
-    dependency: 'Depends on {{dependencyId}}',
+    dependency: (fail.args?.['version'] !== undefined)
+      ? 'Depends on "{{dependencyId}}" version "{{version}}"'
+      : 'Depends on "{{dependencyId}}"',
     exception: 'Failed to load: {{message}}',
   }, [ fail.id ], 'Unknown error');
   return t(pattern, { replace: fail.args });
@@ -48,7 +51,7 @@ function getTableAttributes(context: IAttributesContext):
   return [{
       id: 'enabled',
       name: 'Status',
-      description: 'Is mod enabled in current profile',
+      description: 'Is the extension enabled',
       icon: 'check-o',
       calc: extension => {
         switch (extension.enabled) {
@@ -83,6 +86,7 @@ function getTableAttributes(context: IAttributesContext):
       isToggleable: false,
       edit: {},
       isSortable: true,
+      filter: new TableTextFilter(true),
     }, {
       id: 'endorsed',
       name: 'Endorsed',
@@ -141,6 +145,13 @@ function getTableAttributes(context: IAttributesContext):
       placement: 'detail',
       calc: (extension, t) =>
         extension.loadFailures.map(fail => renderLoadFailure(t, fail)).join('\n'),
+      customRenderer: (extension: IExtensionWithState, detailCell: boolean, t: TFunction) => (
+        <textarea
+          className='textarea-details'
+          value={extension.loadFailures.map(fail => renderLoadFailure(t, fail)).join('\n')}
+          readOnly={true}
+        />
+      ),
       edit: {},
     },
   ];

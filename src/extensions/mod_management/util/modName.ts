@@ -3,7 +3,8 @@ import {getSafe} from '../../../util/storeHelper';
 import {IMod, IModReference} from '../types/IMod';
 
 export interface INameOptions {
-  version: boolean;
+  version?: boolean;
+  variant?: boolean;
 }
 
 export function modNameFromAttributes(mod: { [key: string]: any }, options?: INameOptions): string {
@@ -14,8 +15,12 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
     || getSafe(mod, ['fileName'], '')
     || getSafe(mod, ['name'], ''));
 
-  if (options !== undefined && options.version) {
+  if (options?.version) {
     fields.push(`(v${getSafe(mod, ['version'], '?')})`);
+  }
+
+  if (options?.variant && (mod.variant !== undefined)) {
+    fields.push(`(${mod.variant})`);
   }
 
   return fields.join(' ');

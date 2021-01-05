@@ -1,5 +1,7 @@
 import { setModAttribute } from '../../actions';
+import { IconButton } from '../../controls/TooltipControls';
 import { IExtensionApi, IMod, ITableAttribute } from '../../types/api';
+import { laterT } from '../../util/i18n';
 import { activeGameId, currentGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { IModWithState } from '../mod_management/types/IModProps';
@@ -9,6 +11,7 @@ import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
 
+import Nexus from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -40,6 +43,7 @@ function renderNexusModIdDetail(
 }
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
+export type TrackMod = (gameId: string, modId: string, track: boolean) => void;
 
 function createEndorsedIcon(store: Redux.Store<any>,
                             mod: IMod,
@@ -97,8 +101,8 @@ export function genEndorsedAttribute(api: IExtensionApi,
                                      onEndorseMod: EndorseMod): ITableAttribute {
   return {
     id: 'endorsed',
-    name: 'Endorsed',
-    description: 'Endorsement state on Nexus',
+    name: laterT('Endorsed'),
+    description: laterT('Endorsement state on Nexus'),
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: TFunction) =>
       getSafe(mod.attributes, ['source'], undefined) === 'nexus'
@@ -119,8 +123,8 @@ export function genEndorsedAttribute(api: IExtensionApi,
 export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   return {
     id: 'nexusModId',
-    name: 'Nexus Mod ID',
-    description: 'Internal ID used by www.nexusmods.com',
+    name: laterT('Nexus Mod ID'),
+    description: laterT('Internal ID used by www.nexusmods.com'),
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
       const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
@@ -144,8 +148,8 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
 export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   return {
     id: 'downloadGame',
-    name: 'Game Section',
-    description: 'NexusMods Game Section',
+    name: laterT('Game Section'),
+    description: laterT('NexusMods Game Section'),
     calc: mod => {
       if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
         return undefined;
@@ -164,7 +168,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
         : nexusId;
     },
     placement: 'detail',
-    help: api.translate(
+    help: api.laterT(
       'If you\'ve downloaded this mod from a different game section than you\'re managing, '
       + 'set this to the game the mod was intended for.\n\n'
       + 'So if you manually downloaded this mod from the Skyrim section and installed it for '

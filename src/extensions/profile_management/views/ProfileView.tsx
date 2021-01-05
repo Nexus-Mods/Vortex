@@ -19,7 +19,7 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
-import { remote } from 'electron';
+import { remote, shell } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -98,7 +98,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
     const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
 
-    const isDeploying = activity.indexOf('deployment') !== -1;
+    const isDeploying = activity.includes('deployment') || activity.includes('purging');
 
     // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
@@ -180,6 +180,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         onStartEditing={this.editExistingProfile}
         highlightGameId={this.state.highlightGameId}
         onSetHighlightGameId={this.setHighlightGameId}
+        onCreateShortcut={this.setShortcut}
       />
     );
   }
@@ -194,6 +195,29 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     this.setState(update(this.state, {
       highlightGameId: { $set: gameId },
     }));
+  }
+
+  private setShortcut = (profileId: string) => {
+    const { t, profiles } = this.props;
+    const profile = profiles[profileId];
+    const appDir = (process.env.NODE_ENV !== 'development')
+      ? path.dirname(remote.app.getPath('exe'))
+      : 'C:/Program Files/Black Tree Gaming Ltd/Vortex';
+
+    const desktopLocation = remote.app.getPath('desktop');
+    const shortcutPath = path.join(desktopLocation, `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`);
+    const created = shell.writeShortcutLink(shortcutPath, 'create', {
+      target: path.join(appDir, 'Vortex.exe'),
+      args: `--profile ${profileId}`,
+    });
+
+    const displayMS = 5000;
+    const message = created
+      ? t('Vortex profile shortcut saved to desktop')
+      : t('Failed to save profile shortcut to desktop');
+
+    const type = created ? 'info' : 'error';
+    this.context.api.sendNotification({ message, type, displayMS });
   }
 
   private renderAddOrEdit(editId: string) {
@@ -291,7 +315,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
+    const { activity, currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
             onShowDialog, profiles } = this.props;
     const confirmText = (profileId === currentProfile)
       ? 'You are trying to remove your currently active profile, "{{profileName}}". '
@@ -307,6 +331,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
           label: 'Remove', action:
             () => {
               log('info', 'user removing profile', { id: profileId });
+              if (activity.includes('deployment')) {
+                log('info', 'refusing to remove profile during deployment');
+                return;
+              }
+
               onWillRemoveProfile(profileId);
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);

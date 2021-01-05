@@ -5,7 +5,9 @@ import { bytesToString } from '../../../util/util';
 
 import * as React from 'react';
 import { IState } from '../../../types/IState';
-import { IDownload } from '../types/IDownload';
+import { DownloadState, IDownload } from '../types/IDownload';
+
+import { setAttributeFilter } from '../../../actions/tables'
 
 export interface IBaseProps {
   slim: boolean;
@@ -18,13 +20,22 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps;
 
+const STATES: DownloadState[] = ['finalizing', 'started', 'paused'];
+
 class SpeedOMeter extends PureComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, downloads, slim, speed } = this.props;
 
-    const activeDownloads = Object.keys(downloads)
-      .filter(id => downloads[id].state === 'started' || downloads[id].state === 'paused')
-      .map(id => downloads[id]);
+    const activeDownloads = Object.keys(downloads ?? {})
+      .filter(id => STATES.includes(downloads[id].state))
+      .map(id => downloads[id])
+      .sort((lhs, rhs) => {
+        if (lhs.state !== rhs.state) {
+          return STATES.indexOf(lhs.state) - STATES.indexOf(rhs.state);
+        } else {
+          return lhs.startTime - rhs.startTime;
+        }
+      });
 
     if (activeDownloads.length === 0) {
       return null;
@@ -41,11 +52,18 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
         <div className='active-downloads-container'>
           <span>{t('Active Downloads')}</span>
           {activeDownloads.slice(0, 2).map(this.renderDownload)}
-          {(activeDownloads.length > 2) ? t('More...') : null}
+          {(activeDownloads.length > 2)
+            ? <a onClick={this.openDownloads}>{t('More...')}</a>
+            : null}
           <span><Icon name='download-speed' />{' '}{bytesToString(speed)}/s</span>
         </div>
       );
     }
+  }
+
+  private openDownloads = () => {
+    this.context.api.events.emit('show-main-page', 'Downloads');
+    this.context.api.store.dispatch(setAttributeFilter('downloads', 'progress', 'In Progress'));
   }
 
   private renderDownload = (download: IDownload) => {

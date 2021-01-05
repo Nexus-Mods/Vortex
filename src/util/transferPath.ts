@@ -1,3 +1,6 @@
+import { DOWNLOADS_DIR_TAG } from '../extensions/download_management/util/downloadDirectory';
+import { STAGING_DIR_TAG } from '../extensions/mod_management/stagingDirectory';
+
 import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled,
          UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
@@ -10,8 +13,6 @@ import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as winapi from 'winapi-bindings';
-import { DOWNLOADS_DIR_TAG } from '../extensions/download_management/util/writeDownloadsTag';
-import { STAGING_DIR_TAG } from '../extensions/mod_management/eventHandlers';
 
 const MIN_DISK_SPACE_OFFSET = 512 * 1024 * 1024;
 
@@ -128,6 +129,9 @@ export function transferPath(source: string,
   return getNormalizeFunc(dest)
     .then(norm => {
       normalize = norm;
+      if (norm(dest) === norm(source)) {
+        return Promise.reject(new ProcessCanceled('Source and Destination are the same'));
+      }
       moveDown = isChildPath(dest, source, norm);
     })
     .then(() => Promise.join(fs.statAsync(source), fs.statAsync(dest),
@@ -164,7 +168,9 @@ export function transferPath(source: string,
         const destPath = path.join(dest, path.relative(source, entry.filePath));
         return isCancelled
           ? Promise.reject(new UserCanceled())
-          : fs.mkdirsAsync(destPath);
+          : fs.mkdirsAsync(destPath).catch(err => (err.code === 'EEXIST')
+            ? Promise.resolve()
+            : Promise.reject(err));
       })
         .then(() => null))
         .then(() => Promise.map(files, entry => {
@@ -232,6 +238,29 @@ export function transferPath(source: string,
             return Promise.reject(new CleanupFailedException(err));
         });
     });
+}
+
+/**
+ * Will sort all detected file paths in respect to length (longest first)
+ *  and will remove every file and directory one at a time.
+ *  Yet again rimraf can't be trusted to deal with a basic piece of
+ *  functionality like deleting a directory recursively.
+ *  https://github.com/Nexus-Mods/Vortex/issues/6769
+ * @param dirPath
+ */
+export function cleanFailedTransfer(dirPath: string): Promise<void> {
+  let files: IEntry[] = [];
+  return turbowalk(dirPath, entries => {
+    files = files.concat(entries);
+  }, { skipHidden: false, skipLinks: false, recurse: true })
+  .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
+    ? Promise.resolve()
+    : Promise.reject(err))
+  .then(() => {
+    files = files.sort((lhs, rhs) => rhs.filePath.length - lhs.filePath.length);
+    return Promise.each(files, file => fs.removeAsync(file.filePath));
+  })
+  .then(() => fs.removeAsync(dirPath));
 }
 
 function removeFolderTags(sourceDir: string) {

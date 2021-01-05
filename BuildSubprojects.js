@@ -159,7 +159,7 @@ async function updateSourceMap(filePath) {
 
   const modPath = path.basename(path.dirname(filePath));
 
-  dat = dat.replace(/\/\/# sourceMappingURL=([a-z\-.]+\.js\.map)/,
+  dat = dat.replace(/\/\/# sourceMappingURL=([a-z\-.]+\.js\.map)$/,
     `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
 
   await fs.promises.writeFile(filePath, dat);

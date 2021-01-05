@@ -22,7 +22,7 @@ class Toggle extends React.PureComponent<IProps, {}> {
 
     return (
       <div>
-        <div className='toggle-container'>
+        <div className={classes.join(' ')}>
           <div
             className={`toggle toggle-${checked ? 'on' : 'off'}`}
             onClick={disabled === true ? undefined : this.onToggle}

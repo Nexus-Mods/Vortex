@@ -23,19 +23,24 @@ import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExten
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
-import { installPathForGame, needToDeployForGame } from '../../util/selectors';
+import { discoveryByGame, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
 import { IExtension } from '../extension_manager/types';
 import { readExtensions } from '../extension_manager/util';
 import { getGame } from '../gamemode_management/util/getGame';
+import { ensureStagingDirectory } from '../mod_management/stagingDirectory';
+import { purgeMods } from '../mod_management/util/deploy';
+import { NoDeployment } from '../mod_management/util/exceptions';
 
-import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
+import { forgetMod, removeProfile, setProfile, setProfileActivated, willRemoveProfile } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
@@ -60,14 +65,14 @@ const profileFiles: { [gameId: string]: string[] } = {};
 
 const profileFeatures: IProfileFeature[] = [];
 
-function profilePath(store: Redux.Store<any>, profile: IProfile): string {
+function profilePath(profile: IProfile): string {
   const app = appIn || remote.app;
 
-  return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
+  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promise<void> {
-  return fs.ensureDirAsync(profilePath(store, currentProfile));
+  return fs.ensureDirAsync(profilePath(currentProfile));
 }
 
 function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
@@ -93,7 +98,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
     return Promise.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
-      .then(() => profilePath(store, profile))
+      .then(() => profilePath(profile))
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
         // to the profile that was last active in Vortex. This could only be
@@ -167,7 +172,15 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
       });
   } else {
     log('info', 'using last active profile', { profileId });
-    store.dispatch(setNextProfile(profileId));
+    // actually, we have to verify that game is still discovered, otherwise we can't
+    // activate it
+    const fbProfile = state.persistent.profiles?.[profileId];
+    const discovery = state.settings.gameMode.discovered?.[fbProfile?.gameId];
+    if (discovery?.path !== undefined) {
+      store.dispatch(setNextProfile(profileId));
+    } else {
+      store.dispatch(setNextProfile(undefined));
+    }
   }
 }
 
@@ -198,12 +211,49 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   });
 }
 
+/* generates a profile change handler.
+ * that is: it reacts to the "next profile" being changed, which triggers the
+ * "active profile" being updated. "onFinishProfileSwitch" registers a callback
+ * which will signal when the active profile has been updated, only then will the
+ * next profile switch be allowed.
+ */
 function genOnProfileChange(api: IExtensionApi,
                             onFinishProfileSwitch: (callback: () => void) => void) {
   let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
   const { store } = api;
 
+  let cancelPromise: () => void;
+
+  const invokeCancel = () => {
+    if (cancelPromise !== undefined) {
+      onFinishProfileSwitch(undefined);
+      cancelPromise();
+      cancelPromise = undefined;
+    }
+  };
+
+  const cancelSwitch = () => {
+    invokeCancel();
+    store.dispatch(setCurrentProfile(undefined, undefined));
+    store.dispatch(setNextProfile(undefined));
+  };
+
+  const confirmProfile = (gameId: string, current: string) => {
+    store.dispatch(setCurrentProfile(gameId, current));
+    if (current !== undefined) {
+      store.dispatch(setProfileActivated(current));
+    }
+    const confirmPromise = cancelPromise;
+    setTimeout(() => {
+      if ((confirmPromise === cancelPromise) && (cancelPromise !== undefined)) {
+        log('warn', 'active profile switch didn\'t get confirmed?');
+        invokeCancel();
+      }
+    }, 2000);
+  };
+
   return (prev: string, current: string) => {
+    log('debug', 'profile change', { from: prev, to: current });
     finishProfileSwitchPromise.then(() => {
       const state: IState = store.getState();
       if (state.settings.profiles.nextProfileId !== current) {
@@ -215,13 +265,6 @@ function genOnProfileChange(api: IExtensionApi,
         // also do nothing if we're actually resetting the nextprofile
         return null;
       }
-
-      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
-        onFinishProfileSwitch(resolve);
-      }).catch(err => {
-        showError(store.dispatch, 'Profile switch failed', err);
-        return Promise.resolve();
-      });
 
       const profile = state.persistent.profiles[current];
       if ((profile === undefined) && (current !== undefined)) {
@@ -248,6 +291,23 @@ function genOnProfileChange(api: IExtensionApi,
         }
       }
 
+      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+        cancelPromise = resolve;
+        onFinishProfileSwitch(() => {
+          cancelPromise = undefined;
+          resolve();
+        });
+      }).catch(err => {
+        showError(store.dispatch, 'Profile switch failed', err);
+        return Promise.resolve();
+      })
+      ;
+
+      // IMPORTANT: After this point we expect an external signal to tell
+      //   us when the active profile has been updated, otherwise we will not
+      //   allow the next profile switch
+      //   any error handler *has* to cancel this confirmation!
+
       let queue: Promise<void> = Promise.resolve();
       // emit an event notifying about the impending profile change.
       // every listener can return a cb returning a promise which will be
@@ -256,7 +316,10 @@ function genOnProfileChange(api: IExtensionApi,
       // these promises is rejected but that would only work if we could roll back
       // changes that happened.
       const enqueue = (cb: () => Promise<void>) => {
-        queue = queue.then(cb).catch(err => Promise.resolve());
+        queue = queue.then(cb).catch(err => {
+          log('error', 'error in profile-will-change handler', err.message);
+          Promise.resolve();
+        });
       };
 
       // changes to profile files are only saved back to the profile at this point
@@ -267,42 +330,49 @@ function genOnProfileChange(api: IExtensionApi,
 
       if (current === undefined) {
         log('info', 'switched to no profile');
-        store.dispatch(setCurrentProfile(undefined, undefined));
+        confirmProfile(undefined, undefined);
         return queue;
       }
 
       sanitizeProfile(store, profile);
+
       return queue.then(() => refreshProfile(store, profile, 'export'))
         // ensure the old profile is synchronised before we switch, otherwise me might
         // revert some changes
+        .tap(() => log('info', 'will deploy previously active profile', prev))
         .then(() => deploy(api, prev))
+        .tap(() => log('info', 'will deploy next active profile', current))
         .then(() => deploy(api, current))
+        .tap(() => log('info', 'did deploy next active profile', current))
         .then(() => {
+          const prof = profileById(api.store.getState(), current);
+          if (prof === undefined) {
+            return Promise.reject(
+              new ProcessCanceled('Profile was deleted during deployment. '
+                                  + 'Why would you do something like that???'));
+          }
+
           api.store.dispatch(
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;
           log('info', 'switched to profile', { gameId, current });
-          store.dispatch(setCurrentProfile(gameId, current));
-          store.dispatch(setProfileActivated(current));
+          confirmProfile(gameId, current);
           return null;
         });
     })
+      .tapCatch(() => {
+        cancelSwitch();
+      })
       .catch(ProcessCanceled, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       })
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       })
       .catch(err => {
         showError(store.dispatch, 'Failed to set profile', err);
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       });
   };
 }
@@ -310,7 +380,12 @@ function genOnProfileChange(api: IExtensionApi,
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   const profileId = shortid();
   const instPath = installPathForGame(api.store.getState(), gameId);
-  fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+  // initialize the staging directory.
+  // It's not great that this is here, the code would better fit into mod_management
+  // but I'm not entirely sure what could happen if it's not initialized right away.
+  // Since the dir has to be tagged we can't just sprinkle "ensureDir" anywhere we want
+  // to access it.
+  return ensureStagingDirectory(api, instPath, gameId)
     .then(() => {
       log('info', 'user managing game for the first time', { gameId });
       api.store.dispatch(setProfile({
@@ -387,27 +462,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
         return Promise.resolve();
       }
 
-      const profileId = shortid();
-      const instPath = installPathForGame(state, gameId);
-      return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
-        .then(() => {
-          log('info', 'user managing game for the first time', { gameId });
-          api.store.dispatch(setProfile({
-            id: profileId,
-            gameId,
-            name: 'Default',
-            modState: {},
-          }));
-          api.store.dispatch(setNextProfile(profileId));
-        })
-        .catch(innerErr => {
-          api.showErrorNotification(
-            'The game location doesn\'t exist or isn\'t writeable',
-            innerErr, {
-            allowReport: false,
-            message: instPath,
-          });
-        });
+      return manageGameDiscovered(api, gameId);
     })
     .catch(err => {
       if (!(err instanceof UserCanceled)
@@ -434,6 +489,108 @@ function manageGame(api: IExtensionApi, gameId: string) {
   }
 }
 
+function removeProfileImpl(api: IExtensionApi, profileId: string) {
+  const { store } = api;
+  const state = api.getState();
+  const { profiles } = state.persistent;
+  log('info', 'user removing profile', { id: profileId });
+
+  const currentProfile = activeProfile(state);
+
+  store.dispatch(willRemoveProfile(profileId));
+  if (profileId === currentProfile.id) {
+    store.dispatch(setNextProfile(undefined));
+  }
+
+  return fs.removeAsync(profilePath(profiles[profileId]))
+    .catch(err => (err.code === 'ENOENT')
+      ? Promise.resolve()
+      : Promise.reject(err))
+    .then(() => store.dispatch(removeProfile(profileId)))
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to remove profile',
+        err, { allowReport: err.code !== 'EPERM' });
+    });
+}
+
+function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    api.events.emit('remove-mod', gameId, modId, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
+  const game = getGame(gameId);
+
+  const { mods, profiles } = state.persistent;
+  const profileIds = Object.keys(profiles)
+    .filter(profileId => profiles[profileId].gameId === gameId);
+
+  let message: string;
+
+  if ((profileIds.length > 1)
+      || (profiles[profileIds[0]].name !== 'Default')) {
+    message = profileIds.map(id => profiles[id].name).join('\n');
+  }
+
+  return api.showDialog('info', 'Confirm Removal', {
+    bbcode: 'This will uninstall all mods managed by vortex and delete all profiles '
+          + 'for "{{gameName}}", '
+          + 'potentially including associated savegames, ini files and everything else Vortex '
+          + 'stores per-profile.<br/>'
+          + '[color=red]This is irreversible and we will not warn again, continue only if '
+          + 'you\'re sure this is what you want![/color]',
+    message,
+    parameters: {
+      gameName: game.name,
+    },
+  }, [
+    { label: 'Cancel' },
+    { label: 'Delete profiles' },
+  ])
+  .then(result => {
+    if (result.action === 'Delete profiles') {
+      return Promise.map(Object.keys(mods[gameId] ?? {}), modId => removeMod(api, gameId, modId))
+        .then(() => purgeMods(api, gameId))
+        .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
+        .then(() => Promise.resolve())
+        .catch(NoDeployment, () => {
+          api.showDialog('error', 'Failed to purge', {
+            text: 'Failed to purge mods deployed for this game. To ensure there are no '
+                + 'leftovers before Vortex stops managing the game, please solve any '
+                + 'setup problems for the game first.',
+          }, [
+            { label: 'Close' },
+          ]);
+        })
+        .catch(err => {
+          api.showErrorNotification('Failed to stop managing game', err);
+        });
+    } else {
+      return Promise.resolve();
+    }
+  });
+}
+
+function addDescriptionFeature() {
+  profileFeatures.push({
+    id: 'profile-description',
+    type: 'text',
+    icon: 'edit',
+    label: 'Description',
+    description: 'Describe your profile',
+    supported: () => true,
+    namespace: 'default',
+  });
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
@@ -451,7 +608,16 @@ function init(context: IExtensionContext): boolean {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
-      manageGameDiscovered(context.api, instanceIds[0]);
+      const gameId = instanceIds[0];
+      const state = context.api.getState();
+
+      // double check, calling manageGameDiscovered for a game that isn't
+      // actually discovered would be invalid
+      if (state.settings.gameMode.discovered[gameId]?.path !== undefined) {
+        manageGameDiscovered(context.api, gameId);
+      } else {
+        manageGameUndiscovered(context.api, gameId);
+      }
   });
 
   context.registerAction('game-undiscovered-buttons', 50, 'activate', {
@@ -476,9 +642,13 @@ function init(context: IExtensionContext): boolean {
     profileFiles[gameId].push(filePath);
   };
 
+  context.registerAction('game-managed-buttons', 150, 'delete', {},
+    context.api.translate('Stop managing'),
+    (instanceIds: string[]) => { unmanageGame(context.api, instanceIds[0]); });
+
   context.registerProfileFeature =
       (featureId: string, type: string, icon: string, label: string, description: string,
-       supported: () => boolean) => {
+       supported: () => boolean, extPath?: string, extInfo?: Partial<IRegisteredExtension>) => {
         profileFeatures.push({
           id: featureId,
           type,
@@ -486,6 +656,7 @@ function init(context: IExtensionContext): boolean {
           label,
           description,
           supported,
+          namespace: extInfo?.namespace,
         });
       };
 
@@ -515,6 +686,8 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const store = context.api.store;
 
+    addDescriptionFeature();
+
     context.api.events.on('activate-game', (gameId: string) => {
       activateGame(store, gameId);
     });
@@ -529,8 +702,7 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
       (prev: string, current: string) => {
-        context.api.events.emit('profile-did-change',
-          current);
+        context.api.events.emit('profile-did-change', current);
         if (finishProfileSwitch !== undefined) {
           finishProfileSwitch();
         }
@@ -546,7 +718,17 @@ function init(context: IExtensionContext): boolean {
         first = false;
         const state: IState = store.getState();
         const { commandLine } = state.session.base;
-        if (commandLine.game !== undefined) {
+        if (commandLine.profile !== undefined) {
+          const profile: IProfile = getSafe(state,
+            ['persistent', 'profiles', commandLine.profile], undefined);
+
+          if (profile !== undefined) {
+            context.api.store.dispatch(setNextProfile(profile.id));
+          } else {
+            log('warn', 'profile cmdline argument detected - but profile is missing',
+              commandLine.profile);
+          }
+        } else if (commandLine.game !== undefined) {
           // the game specified on the command line may be a game id or an extension
           // name, because at the time we download an extension we don't actually know
           // the game id yet.
@@ -554,11 +736,11 @@ function init(context: IExtensionContext): boolean {
           readExtensions(false)
             .then((extensions: { [extId: string]: IExtension }) => {
               const extPathLookup = Object.values(extensions)
-                .reduce((prev, ext) => {
+                .reduce((prevExt, ext) => {
                   if (ext.path !== undefined) {
-                    prev[ext.path] = ext.name;
+                    prevExt[ext.path] = ext.name;
                   }
-                  return prev;
+                  return prevExt;
                 }, {});
 
               const game = current.find(iter =>
@@ -619,7 +801,21 @@ function init(context: IExtensionContext): boolean {
       const { activeProfileId, nextProfileId } = state.settings.profiles;
       if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');
-        store.dispatch(setNextProfile(activeProfileId || undefined));
+
+        // ensure the new profile is valid and the corresponding game is
+        // discovered
+        if (truthy(activeProfileId)
+          && (state.persistent.profiles[activeProfileId] !== undefined)) {
+          const profile = state.persistent.profiles[activeProfileId];
+          const discovery = discoveryByGame(state, profile.gameId);
+          if (discovery?.path !== undefined) {
+            store.dispatch(setNextProfile(activeProfileId));
+          } else {
+            store.dispatch(setNextProfile(undefined));
+          }
+        } else {
+          store.dispatch(setNextProfile(undefined));
+        }
       }
 
       // it's important we stop managing a game if it's no longer discovered

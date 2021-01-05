@@ -1,4 +1,5 @@
 import { IDashletOptions, IExtensionContext, PropsCallback } from '../../types/IExtensionContext';
+import { IRegisteredExtension } from '../../util/ExtensionManager';
 
 import { IDashletProps } from './types/IDashletProps';
 import Dashboard from './views/Dashboard';
@@ -13,12 +14,13 @@ function registerDashlet(title: string,
                          height: 1 | 2 | 3 | 4 | 5,
                          position: number,
                          component: React.ComponentClass<any>,
-                         isVisible?: (state) => boolean,
-                         props?: PropsCallback,
-                         options?: IDashletOptions) {
+                         isVisible: (state) => boolean,
+                         props: PropsCallback,
+                         options: IDashletOptions) {
   const fixed = options !== undefined ? options.fixed || false : false;
   const closable = options !== undefined ? options.closable : true;
-  dashlets.push({ title, position, width, height, component, isVisible, props, fixed, closable });
+  dashlets.push({ title, position, width, height, component, isVisible, props,
+                  fixed, closable });
 }
 
 function init(context: IExtensionContext): boolean {

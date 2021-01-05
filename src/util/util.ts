@@ -1,14 +1,15 @@
+import { TimeoutError } from './CustomErrors';
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { spawn } from 'child_process';
+import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
-import { TimeoutError } from './CustomErrors';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -126,29 +127,44 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   return res;
 }
 
+function restackErr(error: Error, stackErr: Error): Error {
+  const oldGetStack = error.stack;
+  // resolve the stack at the last possible moment because stack is actually a getter
+  // that will apply expensive source mapping when called
+  Object.defineProperty(error, 'stack', {
+    get: () => error.message + '\n' + oldGetStack + '\n' + stackErr.stack,
+    set: () => null,
+  });
+  return error;
+}
+
 /**
  * create a "queue".
  * Returns an enqueue function such that that the callback passed to it
  * will be called only after everything before it in the queue is finished
  * and with the promise that nothing else in the queue is run in parallel.
  */
-export function makeQueue() {
-  let queue = Promise.resolve();
+export function makeQueue<T>() {
+  let queue = Bluebird.resolve();
   let atEnd = true;
-  return (func: () => Promise<any>, tryOnly: boolean) =>
-    new Promise((resolve, reject) => {
+  return (func: () => Bluebird<T>, tryOnly: boolean) => {
+    const stackErr = new Error();
+    return new Bluebird<T>((resolve, reject) => {
       if (tryOnly && !atEnd) {
         return resolve();
       }
       queue = queue
         .then(() => {
           atEnd = false;
-          return func().then(resolve).catch(reject);
+          return func().then(resolve).catch(err => {
+            reject(restackErr(err, stackErr));
+          });
         })
         .finally(() => {
           atEnd = true;
         });
     });
+  };
 }
 
 /**
@@ -165,7 +181,7 @@ export function spawnSelf(args: string[]) {
   });
 }
 
-const labels = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
+const BYTE_LABELS = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;
@@ -174,7 +190,22 @@ export function bytesToString(bytes: number): string {
     bytes /= 1024;
   }
   try {
-    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
+    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + BYTE_LABELS[labelIdx];
+  } catch (err) {
+    return '???';
+  }
+}
+
+const NUM_LABELS = [ '', 'K', 'M' ];
+
+export function largeNumToString(num: number): string {
+  let labelIdx = 0;
+  while ((num >= 1000) && (labelIdx < (NUM_LABELS.length - 1))) {
+    ++labelIdx;
+    num /= 1000;
+  }
+  try {
+    return num.toFixed(Math.max(0, labelIdx - 1)) + ' ' + NUM_LABELS[labelIdx];
   } catch (err) {
     return '???';
   }
@@ -260,13 +291,13 @@ export function getAllPropertyNames(obj: object) {
 export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
     normalize = (input) => process.platform === 'win32'
-      ? path.normalize(input.toLowerCase())
+      ? path.normalize(input.toUpperCase())
       : path.normalize(input);
   }
 
   const childNorm = normalize(child);
   const parentNorm = normalize(parent);
-  if (child === parent) {
+  if (childNorm === parentNorm) {
     return false;
   }
 
@@ -274,6 +305,32 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
   const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
+}
+
+export function isReservedDirectory(dirPath: string, normalize?: Normalize): boolean {
+  if (normalize === undefined) {
+    normalize = (input) => process.platform === 'win32'
+      ? path.normalize(input.toUpperCase())
+      : path.normalize(input);
+  }
+
+  const normalized = normalize(dirPath);
+  const trimmed = normalized.endsWith(path.sep)
+    ? normalized.slice(0, -1)
+    : normalized;
+
+  const vortexAppData = remote.app.getPath('userData');
+  const invalidDirs = ['blob_storage', 'Cache', 'Code Cache', 'Dictionaries',
+    'extensions', 'GPUCache', 'metadb', 'Partitions', 'plugins', 'Session Storage',
+    'shared_proto_db', 'state.v2', 'temp', 'VideoDecodeStats']
+    .map(inv => normalize(path.join(vortexAppData, inv)));
+  invalidDirs.push(normalize(vortexAppData));
+
+  return (invalidDirs.includes(trimmed));
+}
+
+export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
+  return (lhs ?? '').localeCompare((rhs ?? ''), locale, { sensitivity: 'accent' }) === 0;
 }
 
 /**
@@ -301,6 +358,7 @@ export function escapeRE(input: string): string {
 export interface ITimeoutOptions {
   cancel?: boolean;
   throw?: boolean;
+  queryContinue?: () => Bluebird<boolean>;
 }
 
 /**
@@ -310,20 +368,44 @@ export interface ITimeoutOptions {
  * @param delayMS the time in milliseconds after which this should return
  * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Promise<T>,
+export function timeout<T>(prom: Bluebird<T>,
                            delayMS: number,
                            options?: ITimeoutOptions)
-                           : Promise<T> {
+                           : Bluebird<T> {
   let timedOut: boolean = false;
-  return Promise.race<T>([prom, Promise.delay(delayMS).then(() => {
+  let resolved: boolean = false;
+
+  const doTimeout = () => {
     timedOut = true;
     if (options?.throw === true) {
-      return Promise.reject(new TimeoutError());
+      return Bluebird.reject(new TimeoutError());
     } else {
       return undefined;
     }
-  })])
+  };
+
+  const onTimeExpired = () => {
+    if (resolved) {
+      return Bluebird.resolve();
+    }
+    if (options?.queryContinue !== undefined) {
+      return options?.queryContinue()
+        .then(requestContinue => {
+          if (requestContinue) {
+            delayMS *= 2;
+            return Bluebird.delay(delayMS).then(onTimeExpired);
+          } else {
+            return doTimeout();
+          }
+        });
+    } else {
+      return doTimeout();
+    }
+  };
+
+  return Bluebird.race<T>([prom, Bluebird.delay(delayMS).then(onTimeExpired)])
     .finally(() => {
+      resolved = true;
       if (timedOut && (options?.cancel === true)) {
         prom.cancel();
       }
@@ -334,8 +416,8 @@ export function timeout<T>(prom: Promise<T>,
  * wait for the specified number of milliseconds before resolving the promise.
  * Bluebird has this feature as Promise.delay but when using es6 default promises this can be used
  */
-export function delay(timeoutMS: number): Promise<void> {
-  return new Promise(resolve => {
+export function delay(timeoutMS: number): Bluebird<void> {
+  return new Bluebird(resolve => {
     setTimeout(resolve, timeoutMS);
   });
 }
@@ -475,10 +557,10 @@ function flattenInner(obj: any, key: string[],
   }, {});
 }
 
-export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
-  return new Promise((resolve, reject) => {
+export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
+  return new Bluebird((resolve, reject) => {
     const cb = (err: Error, res: ResT) => {
-      if (err !== null) {
+      if ((err !== null) && (err !== undefined)) {
         return reject(err);
       } else {
         return resolve(res);
@@ -528,4 +610,33 @@ export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
     keys.add(key);
     return [].concat(prev, iter);
   }, []);
+}
+
+export function delayed(delayMS: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayMS);
+  });
+}
+
+export function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
+  return (...args: any[]) => Bluebird.resolve(func(...args));
+}
+
+export function replaceRecursive(input: any, from: any, to: any) {
+  if ((input === undefined)
+      || (input === null)
+      || Array.isArray(input)) {
+    return input;
+  }
+  return Object.keys(input)
+    .reduce((prev: any, key: string) => {
+      if (input[key] === from) {
+        prev[key] = to;
+      } else if (typeof(input[key]) === 'object') {
+        prev[key] = replaceRecursive(input[key], from, to);
+      } else {
+        prev[key] = input[key];
+      }
+      return prev;
+    }, {});
 }

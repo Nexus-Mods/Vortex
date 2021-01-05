@@ -152,14 +152,7 @@ class DeploymentMethod extends LinkingDeployment {
   public initEvents(api: IExtensionApi) {
     if (api.events !== undefined) {
       api.events.on('force-unblock-elevating', () => {
-        try {
-          if (this.mIPCServer !== undefined) {
-            this.mIPCServer.close();
-            this.mIPCServer = undefined;
-          }
-        } catch (err) {
-          log('warn', 'Failed to close ipc server', err.message);
-        }
+        this.endIPC('user canceled block');
       });
     }
   }
@@ -206,7 +199,10 @@ class DeploymentMethod extends LinkingDeployment {
     this.mOpenRequests = {};
     return this.closeServer()
         .then(() => this.startElevated())
-        .tapCatch(() => this.context.onComplete())
+        .tapCatch((err) => {
+          log('info', 'elevated process failed', { error: err.message });
+          this.context.onComplete();
+        })
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -220,7 +216,9 @@ class DeploymentMethod extends LinkingDeployment {
     }
 
     const game: IGame = getGame(gameId);
-    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+
+    if ((game.details?.supportsSymlinks === false)
+        || (game.compatible?.symlinks === false)) {
       return { description: t => t('Game doesn\'t support symlinks') };
     }
 
@@ -249,19 +247,8 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
-    const onDirCreated = (created) => {
-      if ((dirTags !== false) && (created !== null)) {
-        log('debug', 'created directory', created);
-        return fs.writeFileAsync(
-          path.join(created, LinkingDeployment.NEW_TAG_NAME),
-            'This directory was created by Vortex deployment and will be removed ' +
-            'during purging if it\'s empty');
-      } else {
-        return Promise.resolve();
-      }
-    };
-    return fs.ensureDirAsync(dirName, onDirCreated)
-      .then(created => (created === null)
+    return this.ensureDir(dirName, dirTags)
+      .then(created => !created
         // if the directory did exist, there is a chance the destination file already
         // exists
         ? fs.removeAsync(linkPath)
@@ -305,8 +292,9 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => this.stopElevated())
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(
-            new Error('Some files could not be purged, please check the log file'));
+          const err = new Error('Some files could not be purged, please check the log file');
+          err['attachLogOnReport'] = true;
+          return Promise.reject(err);
         } else {
           return Promise.resolve();
         }
@@ -332,8 +320,9 @@ class DeploymentMethod extends LinkingDeployment {
       return Promise.resolve();
     }
     return new Promise((resolve,  reject) => {
-      this.mIPCServer.close((err: Error) => {
-        if ((err !== null) && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
+      this.mIPCServer.close((err?: Error) => {
+        // note: err may be undefined instead of null
+        if (!!err && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
           return reject(err);
         } else {
           this.mIPCServer = undefined;
@@ -368,15 +357,33 @@ class DeploymentMethod extends LinkingDeployment {
       this.mElevatedClient.sendMessage({message, payload});
     }
   }
-  private emitOperation(command: string, args: any): Promise<void> {
-    const requestNum = this.mCounter++;
+
+  private emitAsync(command: string, args: any, requestNum: number) {
     return new Promise<void>((resolve, reject) => {
       this.emit(command, { ...args, num: requestNum });
       this.mOpenRequests[requestNum] = { resolve, reject };
-    })
+    });
+  }
+
+  private emitOperation(command: string, args: any, tries: number = 3): Promise<void> {
+    const requestNum = this.mCounter++;
+    return this.emitAsync(command, args, requestNum)
     .timeout(5000)
-    .tapCatch(Promise.TimeoutError, () => {
+    .catch(Promise.TimeoutError, (err) => {
+      if (this.mOpenRequests[requestNum] === undefined) {
+        // this makes no sense, why would the timeout expire if the request
+        // was resolved?
+        log('warn', 'request timed out after being fulfilled?');
+        return Promise.resolve();
+      }
+
       delete this.mOpenRequests[requestNum];
+      if (tries > 0) {
+        log('debug', 'retrying fs op', { command, args, tries });
+        return this.emitOperation(command, args, tries - 1);
+      } else {
+        return Promise.reject(err);
+      }
     });
   }
 
@@ -391,16 +398,17 @@ class DeploymentMethod extends LinkingDeployment {
     const ipcPath: string = useTask
       ? IPC_ID
       : `${IPC_ID}vortex_elevate_symlink_${shortid()}`;
-    let pongTimer: NodeJS.Timer;
 
     return new Promise<void>((resolve, reject) => {
-      let connected: boolean = false;
-      let ponged: boolean = true;
+      let elevating = false;
+
       if (this.mQuitTimer !== undefined) {
+        log('debug', 'reusing symlink process');
         // if there is already an elevated process, just keep it around a bit longer
         clearTimeout(this.mQuitTimer);
         return resolve();
       }
+      log('debug', 'starting symlink process', ipcPath);
 
       this.mIPCServer = startIPCServer(ipcPath,
                                        (conn: JsonSocket, message: string, payload: any) => {
@@ -408,10 +416,7 @@ class DeploymentMethod extends LinkingDeployment {
           log('debug', 'ipc connected');
           this.mElevatedClient = conn;
           this.api.store.dispatch(clearUIBlocker('elevating'));
-          if (cancelConsentMonitor !== undefined) {
-            cancelConsentMonitor();
-          }
-          connected = true;
+          elevating = false;
           resolve();
         } else if (message === 'completed') {
           const { err, num } = payload;
@@ -423,6 +428,8 @@ class DeploymentMethod extends LinkingDeployment {
               task.resolve();
             }
             delete this.mOpenRequests[num];
+          } else {
+            log('debug', 'unexpected operation completed');
           }
           if ((Object.keys(this.mOpenRequests).length === 0)
             && (this.mDone !== null)) {
@@ -434,61 +441,36 @@ class DeploymentMethod extends LinkingDeployment {
           log(level, message, meta);
         } else if (message === 'report') {
           this.mOnReport(payload);
-        } else if (message === 'pong') {
-          ponged = true;
         } else {
           log('error', 'Got unexpected message', { message, payload });
         }
       });
 
-      pongTimer = setInterval(() => {
-        if (!ponged || !connected) {
-          try {
-            if (this.mIPCServer !== undefined) {
-              this.mIPCServer.close();
-              this.mIPCServer = undefined;
-            }
-          } catch (err) {
-            log('warn', 'Failed to close ipc server', err.message);
-          }
-          return reject(
-            new TemporaryError('deployment helper didn\'t respond, please check your log'));
-        }
-        ponged = false;
-        this.emit('ping', {});
-      }, 15000);
-
       if (!useTask) {
+        elevating = true;
         this.api.store.dispatch(setUIBlocker(
           'elevating', 'open-ext', 'Please confirm the "User Access Control" dialog', true));
+        monitorConsent(() => {
+          if (elevating) {
+            // this is called if consent.exe disappeared but none of our "regular" code paths ran
+            // which would have cancelled this timeout
+            this.api.store.dispatch(clearUIBlocker('elevating'));
+            this.endIPC('no init');
+            /*
+            this.api.showErrorNotification('Failed to run elevated process',
+              'Symlinks on your system can only be created by an elevated process and your system '
+              + 'just refused/failed to run the process elevated with no error message. '
+              + 'Please check your system settings regarding User Access Control or use a '
+              + 'different deployment method.', { allowReport: false });
+              */
+            reject(new ProcessCanceled(
+              'Symlinks on your system can only be created by an elevated process and your system '
+              + 'just refused/failed to run the process elevated with no error message. '
+              + 'Please check your system settings regarding User Access Control or use a '
+              + 'different deployment method.'));
+          }
+        });
       }
-
-      const cancelConsentMonitor = useTask ? undefined : monitorConsent(() => {
-        // this is called if consent.exe disappeared but none of our "regular" code paths ran
-        // which would have cancelled this timeout
-        this.api.store.dispatch(clearUIBlocker('elevating'));
-        try {
-          this.mIPCServer.close();
-          this.mIPCServer = undefined;
-        } catch (err) {
-          log('warn', 'Failed to close ipc server', err.message);
-        }
-        if (pongTimer !== undefined) {
-          clearInterval(pongTimer);
-        }
-        /*
-        this.api.showErrorNotification('Failed to run elevated process',
-          'Symlinks on your system can only be created by an elevated process and your system '
-          + 'just refused/failed to run the process elevated with no error message. '
-          + 'Please check your system settings regarding User Access Control or use a '
-          + 'different deployment method.', { allowReport: false });
-          */
-        reject(new ProcessCanceled(
-          'Symlinks on your system can only be created by an elevated process and your system '
-          + 'just refused/failed to run the process elevated with no error message. '
-          + 'Please check your system settings regarding User Access Control or use a '
-          + 'different deployment method.'));
-      });
 
       const remoteProm = useTask
         ? Promise.resolve()
@@ -499,20 +481,31 @@ class DeploymentMethod extends LinkingDeployment {
         })
         .tapCatch(() => {
           this.api.store.dispatch(clearUIBlocker('elevating'));
-          if (cancelConsentMonitor !== undefined) {
-            cancelConsentMonitor();
-          }
+          elevating = false;
           log('error', 'failed to run remote process');
-          try {
-            this.mIPCServer.close();
-            this.mIPCServer = undefined;
-          } catch (err) {
-            log('warn', 'Failed to close ipc server', err.message);
-          }
+          this.endIPC('starting remote process failed');
         });
 
       if (useTask) {
-        winapi.RunTask(TASK_NAME);
+        try {
+          winapi.RunTask(TASK_NAME);
+        } catch (err) {
+          this.api.showErrorNotification('Failed to deploy using symlinks',
+            'You have enabled the workaround for symlink deployment without elevation '
+            + '(see Settings->Workarounds) and for unknown reasons it doesn\'t work.\n'
+            + 'You may be able to fix this by disabling and re-enabling the feature '
+            + 'but if that doesn\'t help there is probably some Windows setting '
+            + 'in your system or external software interfering with it that we\'re not aware of, '
+            + 'you will have to disable the workaround.\n'
+            + 'Unless you have an idea why your system may prevent Vortex from creating or running '
+            + 'scheduler tasks, please don\'t report this. We are aware of the problem '
+            + 'but we have no lead to investigate.\n'
+            + 'The error message was: {{error}}', {
+              allowReport: false,
+              replace: { error: err.message },
+            });
+          return reject(new ProcessCanceled(err.message));
+        }
       }
 
       return remoteProm
@@ -525,12 +518,17 @@ class DeploymentMethod extends LinkingDeployment {
             ? reject(new UserCanceled())
             : reject(err))
         .catch(reject);
-    })
-    .finally(() => {
-      if (pongTimer !== undefined) {
-        clearInterval(pongTimer);
-      }
     });
+  }
+
+  private endIPC(reason: string) {
+    log('debug', 'terminating ipc connection', reason);
+    try {
+      this.mIPCServer?.close();
+      this.mIPCServer = undefined;
+    } catch (err) {
+      log('warn', 'Failed to close ipc server', { error: err.message, reason });
+    }
   }
 
   private stopElevated() {
@@ -545,22 +543,18 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private finish() {
+    log('debug', 'finished');
     if (this.mQuitTimer !== undefined) {
       clearTimeout(this.mQuitTimer);
     }
     this.mQuitTimer = setTimeout(() => {
-      try {
-        this.emit('quit', {});
-        this.mIPCServer.close();
-        this.mIPCServer = undefined;
-      } catch (err) {
-        // the most likely reason here is that it's already closed
-        // and cleaned up
-        log('warn', 'Failed to close ipc server', err.message);
-      }
+      log('debug', 'closing symlink process');
+      this.emit('quit', {});
+      this.endIPC('already closed');
+
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
-    }, 1000);
+    }, 5000);
 
     if (this.mTmpFilePath !== undefined) {
       try {
@@ -669,7 +663,59 @@ function makeScript(args: any): string {
   return prog;
 }
 
-function ensureTaskEnabled() {
+function installTask(scriptPath: string) {
+  const taskName = TASK_NAME;
+
+  const ipcPath = `ipc_${shortid()}`;
+
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === 'log') {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === 'quit') {
+      ipcServer.close();
+    }
+  });
+
+  const exePath = process.execPath;
+  const exeArgs = exePath.endsWith('electron.exe')
+    ? getVortexPath('package')
+    : '';
+
+  return runElevated(ipcPath, (ipc, req) => {
+    const winapiRemote: typeof winapi = req('winapi-bindings');
+    const osRemote: typeof os = req('os');
+    try {
+      winapiRemote.CreateTask(taskName, {
+        registrationInfo: {
+          Author: 'Vortex',
+          Description: 'This task is required for Vortex to create symlinks without elevation.'
+            + 'Do not change anything unless you really know what you\'re doing.',
+        },
+        user: `${osRemote.hostname()}\\${osRemote.userInfo().username}`,
+        taskSettings: { AllowDemandStart: true },
+        principal: { RunLevel: 'highest' } as any,
+        actions: [
+          {
+            Path: exePath,
+            Arguments: `${exeArgs} --run ${scriptPath}`,
+          },
+        ],
+      });
+    } catch (err) {
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'error', message: 'Failed to create task', meta: err,
+        },
+      });
+    }
+    ipc.sendMessage({ message: 'quit' });
+  }, { scriptPath, taskName, exePath, exeArgs })
+    .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
+}
+
+function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
   const scriptPath = path.join(app.getPath('userData'), SCRIPT_NAME);
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
@@ -681,49 +727,25 @@ function ensureTaskEnabled() {
         return Promise.resolve();
       }
 
-      const taskName = TASK_NAME;
-
-      const ipcPath = `ipc_${shortid()}`;
-
-      const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
-        if (message === 'log') {
-          log(payload.level, payload.message, payload.meta);
-        } else if (message === 'quit') {
-          ipcServer.close();
-        }
-      });
-
-      const exePath = process.execPath;
-      const exeArgs = exePath.endsWith('electron.exe')
-        ? getVortexPath('package')
-        : '';
-
-      return runElevated(ipcPath, (ipc, req) => {
-        const winapiRemote: typeof winapi = req('winapi-bindings');
-        const osRemote: typeof os = req('os');
-        try {
-          winapiRemote.CreateTask(taskName, {
-            registrationInfo: {
-              Author: 'Vortex',
-              Description: 'This task is required for Vortex to create symlinks without elevation.'
-                + 'Do not change anything unless you really know what you\'re doing.',
-            },
-            user: `${osRemote.hostname()}\\${osRemote.userInfo().username}`,
-            taskSettings: { AllowDemandStart: true },
-            principal: { RunLevel: 'highest' } as any,
-            actions: [
-              {
-                Path: exePath,
-                Arguments: `${exeArgs} --run ${scriptPath}`,
-              },
-            ],
-          });
-        } catch (err) {
-          ipc.sendMessage({ message: 'log', payload: {
-            level: 'error', message: 'Failed to create task', meta: err } });
-        }
-        ipc.sendMessage({ message: 'quit' });
-      }, { scriptPath, taskName, exePath, exeArgs });
+      if (delayed) {
+        api.sendNotification({
+          type: 'info',
+          message: 'Symlink elevation workaround disabled',
+          noDismiss: true,
+          actions: [
+            { title: 'Disable Workaround', action: dismiss => {
+              api.store.dispatch(enableUserSymlinks(false));
+              dismiss();
+            } },
+            { title: 'Repair', action: dismiss => {
+              installTask(scriptPath);
+              dismiss();
+            } },
+          ],
+        });
+      } else {
+        installTask(scriptPath);
+      }
     });
 }
 
@@ -749,11 +771,7 @@ function findTask() {
   }
 }
 
-function ensureTaskDeleted(): Promise<void> {
-  if (findTask() === undefined) {
-    return Promise.resolve();
-  }
-
+function removeTask(): Promise<void> {
   const ipcPath = `ipc_${shortid()}`;
   const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
     if (message === 'log') {
@@ -769,21 +787,57 @@ function ensureTaskDeleted(): Promise<void> {
     const winapiRemote: typeof winapi = req('winapi-bindings');
     winapiRemote.DeleteTask(taskName);
     ipc.sendMessage({ message: 'quit' });
-  }, { taskName });
+  }, { taskName })
+  .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
 }
 
-function ensureTask(api: IExtensionApi, enabled: boolean): void {
+function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> {
+  if (findTask() === undefined) {
+    return Promise.resolve();
+  }
+
+  if (delayed) {
+    api.sendNotification({
+      type: 'info',
+      message: 'Symlink elevation workaround not fully disabled',
+      noDismiss: true,
+      actions: [
+        {
+          title: 'Clean up', action: dismiss => {
+            removeTask()
+              .catch(err => {
+                api.showErrorNotification('Failed to disable task', err);
+              });
+            dismiss();
+          },
+        },
+      ],
+    });
+    // ensureTaskDeleted returns immediately even though nothing has been done yet
+    return Promise.resolve();
+  } else {
+    return removeTask();
+  }
+}
+
+function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Promise<void> {
   if (enabled) {
-    ensureTaskEnabled()
+    return ensureTaskEnabled(api, delayed)
       .catch(err => {
-        api.showErrorNotification('Failed to create task', err);
+        if (!(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to create task', err);
+        }
         api.store.dispatch(enableUserSymlinks(false));
       })
       .then(() => null);
   } else {
-    ensureTaskDeleted()
+    return ensureTaskDeleted(api, delayed)
       .catch(err => {
-        api.showErrorNotification('Failed to remove task', err);
+        if (!(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to remove task', err);
+        }
       })
       .then(() => null);
   }
@@ -823,11 +877,11 @@ function init(context: IExtensionContextEx): boolean {
     if (process.platform === 'win32') {
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
-        ensureTask(context.api, current);
+        ensureTask(context.api, current, false);
       });
       const state = context.api.store.getState();
       const userSymlinks = getSafe(state, userSymlinksPath, false);
-      ensureTask(context.api, userSymlinks);
+      return ensureTask(context.api, userSymlinks, true);
     }
   });
 

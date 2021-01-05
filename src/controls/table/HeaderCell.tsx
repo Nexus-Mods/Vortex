@@ -2,7 +2,7 @@ import { IAttributeState } from '../../types/IAttributeState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { SortDirection } from '../../types/SortDirection';
 import getAttr from '../../util/getAttr';
-import { TFunction } from '../../util/i18n';
+import { preT, TFunction } from '../../util/i18n';
 
 import { IconButton } from '../TooltipControls';
 
@@ -64,7 +64,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
             style={{ display: 'flex', flexDirection: 'row' }}
             onClick={this.cycleDirection}
           >
-            <p style={{ margin: 0 }}>{t(attribute.name)}</p>
+            <p style={{ margin: 0 }}>{preT(t, attribute.name)}</p>
             <div className='cell-controls'>
               {attribute.isSortable ? this.renderSortIndicator() : <div/>}
               {attribute.isGroupable ? this.renderGroupIndicator() : null}
@@ -96,6 +96,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
         onClick={this.setGroup}
         tooltip={t('Group the table by this attribute')}
         className={classes.join(' ')}
+        tabIndex={-1}
       />);
   }
 

@@ -324,9 +324,13 @@ div:hover > .hover-expand {
 .panel {
   border: $border-width solid $border-color;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   .panel-body {
     background-color: $brand-menu;
-    height: 100%;
+    flex: 1 1 0;
+    max-height: 100%;
   }
 }
 
@@ -460,6 +464,8 @@ div:hover > .hover-expand {
 @import "vortex/dialog-fix-deployment";
 @import "vortex/dialog-fomod";
 @import "vortex/dialog-login";
+@import "vortex/dialog-search-paths";
+@import "vortex/dialog-history";
 
 @import "vortex/window-controls";
 
@@ -707,7 +713,7 @@ $other: (
   .color {
     @each $id,
     $col in $colors {
-      .#{$id} {
+      .#{"" + $id} {
         color: $col;
       }
     }
@@ -720,12 +726,12 @@ $other: (
 :root {
   @each $id,
   $col in $colors {
-    --#{$id}: #{$col};
+    --#{"" + $id}: #{$col};
   }
 
   @each $id,
   $val in $other {
-    --#{$id}: #{$val};
+    --#{"" + $id}: #{$val};
   }
 }
 

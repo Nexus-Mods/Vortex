@@ -4,6 +4,7 @@ import { IDiscoveryResult, IState } from '../../types/IState';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { SITE_GAME_NAME } from '../constants';
 
 import * as React from 'react';
 import { connect } from 'react-redux';
@@ -30,13 +31,13 @@ function compare(lhs: IGameStored, rhs: IGameStored,
 
 export class GameFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
-    const { discovered, filter, games } = this.props;
+    const { t, discovered, filter, games } = this.props;
 
     const options = [{
-      label: '<Current Game>',
+      label: `<${t('Current Game')}>`,
       value: '$',
     }].concat(games.slice()
-      .concat({ id: SITE_ID, shortName: 'Tools & Extensions', name: 'Tools & Extensions',
+      .concat({ id: SITE_ID, shortName: t(SITE_GAME_NAME), name: t(SITE_GAME_NAME),
                 extensionPath: null, requiredFiles: null, executable: null })
       .sort((lhs, rhs) => compare(lhs, rhs, discovered))
       .map(game => ({

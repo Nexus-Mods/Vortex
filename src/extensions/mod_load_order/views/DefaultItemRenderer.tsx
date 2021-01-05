@@ -6,7 +6,8 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
-import {  ILoadOrder, ILoadOrderDisplayItem, ILoadOrderEntry } from '../types/types';
+import { IItemRendererOptions, ILoadOrder, ILoadOrderDisplayItem,
+  ILoadOrderEntry } from '../types/types';
 
 import { Icon } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
@@ -20,6 +21,7 @@ interface IConnectedProps {
   modState: any;
   loadOrder: ILoadOrder;
   profile: IProfile;
+  itemRendererOptions: IItemRendererOptions;
 }
 
 interface IActionProps {
@@ -30,6 +32,7 @@ interface IBaseProps {
   className?: string;
   item: ILoadOrderDisplayItem;
   onRef: (element: any) => any;
+  onContextMenu?: (evt: any) => any;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -47,6 +50,23 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       : this.renderDraggable(item);
   }
 
+  private renderModImg(): JSX.Element {
+    const { itemRendererOptions, item } = this.props;
+    return (itemRendererOptions.listViewType !== 'compact')
+      ? <img src={item.imgUrl} id='mod-img'/>
+      : null;
+  }
+
+  private renderExternalBanner(): JSX.Element {
+    const { t } = this.props;
+    return (
+    <div className='load-order-unmanaged-banner'>
+      <span>{t('Not managed by Vortex')}</span>
+      <Icon className='external-caution-logo' name='dialog-info'/>
+    </div>
+    );
+  }
+
   private renderLocked(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className } = this.props;
     const position = (item.prefix !== undefined)
@@ -59,18 +79,24 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
     if (className !== undefined) {
       classes = classes.concat(className.split(' '));
     }
+
     return (
-      <ListGroupItem key={key} className={classes.join(' ')}>
+      <ListGroupItem
+        key={key}
+        className={classes.join(' ')}
+        onContextMenu={this.props.onContextMenu}
+      >
         <p className='load-order-index'>{position}</p>
-        <img src={item.imgUrl} id='mod-img'/>
+        {this.renderModImg()}
         <p>{item.name}</p>
+        {(!!item?.external) && this.renderExternalBanner()}
         <Icon className='locked-entry-logo' name='locked'/>
       </ListGroupItem>
     );
   }
 
   private renderDraggable(item: ILoadOrderDisplayItem): JSX.Element {
-    const { loadOrder, className } = this.props;
+    const { loadOrder, className, itemRendererOptions } = this.props;
     const position = (item.prefix !== undefined)
       ? item.prefix
       : loadOrder[item.id].pos + 1;
@@ -82,29 +108,31 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       classes = classes.concat(className.split(' '));
     }
 
-    const unmanagedBanner = () => (!!item.external)
+    const checkBox = () => (!!itemRendererOptions?.displayCheckboxes)
       ? (
-          <div className='load-order-unmanaged-banner'>
-            <span>Not managed by Vortex</span>
-            <Icon className='external-caution-logo' name='dialog-info'/>
-          </div>
-        )
-      : null;
-
-    return (
-      <ListGroupItem ref={this.setRef} key={key} className={classes.join(' ')}>
-        <p className='load-order-index'>{position}</p>
-        <div>
-          {unmanagedBanner()}
-          <img src={item.imgUrl} id='mod-img'/>
-        </div>
-        <p>{item.name}</p>
         <Checkbox
           className='entry-checkbox'
           checked={loadOrder[item.id].enabled}
           disabled={item.locked}
           onChange={this.onStatusChange}
         />
+      )
+      : null;
+
+    return (
+      <ListGroupItem
+        ref={this.setRef}
+        key={key}
+        className={classes.join(' ')}
+        onContextMenu={this.props.onContextMenu}
+      >
+        <p className='load-order-index'>{position}</p>
+        <div>
+          {(!!item?.external) && this.renderExternalBanner()}
+          {this.renderModImg()}
+        </div>
+        <p>{item.name}</p>
+        {checkBox()}
       </ListGroupItem>
     );
   }
@@ -124,12 +152,16 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
   }
 }
 
+const empty = {};
+const defaultRendererOpts: IItemRendererOptions = { listViewType: 'full', displayCheckboxes: true };
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const profile: IProfile = selectors.activeProfile(state);
   return {
     profile,
-    loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], {}),
-    modState: getSafe(profile, ['modState'], {}),
+    loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], empty),
+    modState: getSafe(profile, ['modState'], empty),
+    itemRendererOptions: getSafe(state,
+      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultRendererOpts),
   };
 }
 
@@ -145,4 +177,5 @@ export default withTranslation(['common'])(
     DefaultItemRenderer) as any) as React.ComponentClass<{
       className?: string,
       item: ILoadOrderDisplayItem,
-      onRef: (ref: any) => any}>;
+      onRef: (ref: any) => any
+      onContextMenu?: (evt: any) => any }>;

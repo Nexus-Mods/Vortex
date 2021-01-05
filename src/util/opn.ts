@@ -1,16 +1,20 @@
 import { MissingInterpreter } from './CustomErrors';
+import { log } from './log';
 
 import Promise from 'bluebird';
-import opn = require('opn');
 import * as winapi from 'winapi-bindings';
 
-import {ipcMain, ipcRenderer} from 'electron';
+import {ipcMain, ipcRenderer, shell} from 'electron';
 
 // apparently the browser process is treated as the foreground process and only it
 // can bring a window to the foreground
 if (ipcMain !== undefined && (winapi?.ShellExecuteEx !== undefined)) {
   ipcMain.on('__opn_win32', (evt, target) => {
-    winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+    try {
+      winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+    } catch (err) {
+      log('warn', 'failed to run', { target, error: err.message });
+    }
   });
 }
 
@@ -20,10 +24,15 @@ function open(target: string, wait?: boolean): Promise<void> {
     try {
       if (ipcRenderer !== undefined) {
         ipcRenderer.send('__opn_win32', target);
+        return Promise.resolve();
       } else {
-        winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+        try {
+          winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
       }
-      return Promise.resolve();
     } catch (err) {
       if (err.errno === 1155) {
         return Promise.reject(
@@ -37,9 +46,12 @@ function open(target: string, wait?: boolean): Promise<void> {
       }
     }
   } else {
-    return Promise.resolve(opn(target, {
-      wait,
-    })).then(() => null);
+    if (wait) {
+      return Promise.resolve(shell.openExternal(target, { activate: true }));
+    } else {
+      shell.openExternal(target, { activate: true });
+      return Promise.resolve();
+    }
   }
 }
 

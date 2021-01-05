@@ -31,9 +31,9 @@ import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupporte
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
-import { getVisibleWindow, terminate } from './errorHandling';
+import { getVisibleWindow, terminate, withContext as withErrorContext } from './errorHandling';
 import { extend } from './ExtensionProvider';
-import { copyFileAtomic } from './fsAtomic';
+import { copyFileAtomic, writeFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import github from './github';
@@ -134,6 +134,8 @@ export {
   UserCanceled,
   userFriendlyTime,
   walk,
+  withErrorContext,
+  writeFileAtomic,
 };
 
 // getText functions are rolled up into one function

@@ -1,3 +1,4 @@
+import { SITE_GAME_NAME } from '../../../controls/constants';
 import FlexLayout from '../../../controls/FlexLayout';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IGameStored, IState } from '../../../types/IState';
@@ -5,8 +6,11 @@ import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import * as selectors from '../../../util/selectors';
+import { truthy } from '../../../util/util';
 
-import { setCompatibleGames } from '../actions/state';
+import { SITE_ID } from '../../gamemode_management/constants';
+
+import { setCompatibleGames, setDownloadFilePath } from '../actions/state';
 
 import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
@@ -27,6 +31,7 @@ export interface IBaseProps {
 
 interface IActionProps {
   onSetCompatibleGames: (games: string[]) => void;
+  onSetDownloadName: (id: string, name: string) => void;
 }
 
 type IProps = IBaseProps & IActionProps;
@@ -69,49 +74,60 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
 
   private renderSelectedGame = (gameId: string, idx: number) => {
     const { t } = this.props;
+    const gameName = gameId === SITE_ID
+      ? t(SITE_GAME_NAME)
+      : selectors.gameName(this.context.api.store.getState(), gameId);
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
-        {selectors.gameName(this.context.api.store.getState(), gameId)}
-        <IconButton icon='remove' tooltip={t('Remove')} className='btn-embed' data-gameid={gameId} onClick={this.removeGame} />
+        {gameName}
+        <IconButton
+          icon='remove'
+          tooltip={t('Remove')}
+          className='btn-embed'
+          data-gameid={gameId}
+          onClick={this.removeGame}
+        />
       </ListGroupItem>
     );
   }
 
   private addGame = (gameId: any) => {
-    const { currentGames, onSetCompatibleGames } = this.props;
-    onSetCompatibleGames([].concat(currentGames, [gameId]));
+    const { currentGames, onSetCompatibleGames, fileName } = this.props;
+    const validGameEntries = currentGames.filter(game => !!game);
+    if ((validGameEntries.length === 0)
+     || (currentGames[0] !== validGameEntries[0])) {
+      return this.moveDownload(gameId)
+        .tap(() =>
+          this.context.api.sendNotification({
+            type: 'success',
+            title: 'Download moved',
+            message: fileName,
+        }))
+        .then(() => onSetCompatibleGames([].concat(validGameEntries, [gameId])));
+    } else {
+      onSetCompatibleGames([].concat(validGameEntries, [gameId]));
+    }
   }
 
-  private moveDownload(gameId: string): Promise<void> {
+  private moveDownload(gameId: string): Promise<string> {
     const { currentGames, fileName } = this.props;
     if (fileName === undefined) {
       log('warn', 'Failed to move download, filename is undefined', { gameId });
-      return Promise.resolve();
+      return Promise.resolve(undefined);
     }
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
-    const oldPath = selectors.downloadPathForGame(state, currentGames[0]);
+    const oldPath = truthy(currentGames[0])
+      ? selectors.downloadPathForGame(state, currentGames[0])
+      : selectors.downloadPath(state);
     const newPath = selectors.downloadPathForGame(state, gameId);
     const source = path.join(oldPath, fileName);
     const dest = path.join(newPath, fileName);
-    return fs.moveAsync(source, dest)
-      .catch(err => {
-        if (err.code !== 'EEXIST') {
-          return Promise.reject(err);
-        } else {
-          // We can use the "modified time" to assert whether we're dealing with
-          //  identical files and remove the source if this is the case - if not - raise error.
-          return Promise.all([fs.statAsync(source), fs.statAsync(dest)]).then(res => 
-            res[0].mtimeMs === res[1].mtimeMs
-              ? fs.removeAsync(source)
-              : Promise.reject(err)
-          );
-        }
-      });
+    return fs.moveRenameAsync(source, dest);
   }
 
   private removeGame = (evt: React.MouseEvent<any>) => {
-    const { currentGames, onSetCompatibleGames, fileName } = this.props;
+    const { currentGames, id, onSetCompatibleGames, onSetDownloadName, fileName } = this.props;
     const gameId = evt.currentTarget.getAttribute('data-gameid');
     const idx = currentGames.indexOf(gameId);
     if ((idx !== -1) && (currentGames.length > 1)) {
@@ -125,12 +141,19 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
 
             return Promise.resolve();
         })
-        : Promise.resolve();
-      prom.then(() => {
-        let newGames = [].concat(currentGames);
+        : Promise.resolve(undefined);
+      prom.then((newName: string) => {
+        const newGames = currentGames.slice(0);
         newGames.splice(idx, 1);
         onSetCompatibleGames(newGames);
-      }).catch(err => this.context.api.showErrorNotification(`Unable to remove game ${gameId}`, err, { allowReport: ['EPERM','ENOSPC','EEXIST'].indexOf(err.code) === -1 }));
+        if (newName !== undefined) {
+          onSetDownloadName(id, path.basename(newName));
+        }
+      })
+      .catch(err => this.context.api.showErrorNotification(
+        `Unable to remove game ${gameId}`,
+        err,
+        { allowReport: !['EPERM', 'ENOSPC', 'EEXIST'].includes(err.code) }));
     }
   }
 }
@@ -139,9 +162,11 @@ function mapStateToProps(): {} {
   return {};
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>, ownProps: IBaseProps): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                            ownProps: IBaseProps): IActionProps {
   return {
     onSetCompatibleGames: (games: string[]) => dispatch(setCompatibleGames(ownProps.id, games)),
+    onSetDownloadName: (id: string, name: string) => dispatch(setDownloadFilePath(id, name)),
   };
 }
 

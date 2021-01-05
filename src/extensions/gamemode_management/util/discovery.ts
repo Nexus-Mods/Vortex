@@ -1,6 +1,7 @@
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
+import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import StarterInfo from '../../../util/StarterInfo';
@@ -41,42 +42,46 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
       continue;
     }
 
-    const toolPath = tool.queryPath();
-    if (typeof(toolPath) === 'string') {
-      if (toolPath) {
-        autoGenIcon(tool, toolPath, gameId)
-          .then(() => {
-            onDiscoveredTool(gameId, {
-              ...tool,
-              path: path.join(toolPath, tool.executable(toolPath)),
-              hidden: false,
-              parameters: tool.parameters || [],
-              custom: false,
+    try {
+      const toolPath = tool.queryPath();
+      if (typeof(toolPath) === 'string') {
+        if (toolPath) {
+          autoGenIcon(tool, toolPath, gameId)
+            .then(() => {
+              onDiscoveredTool(gameId, {
+                ...tool,
+                path: path.join(toolPath, tool.executable(toolPath)),
+                hidden: false,
+                parameters: tool.parameters || [],
+                custom: false,
+              });
             });
-          });
+        } else {
+          log('debug', 'tool not found', tool.id);
+        }
       } else {
-        log('debug', 'tool not found', tool.id);
-      }
-    } else {
-      (toolPath as Promise<string>)
-          .then((resolvedPath) => {
-            if (resolvedPath) {
-              autoGenIcon(tool, resolvedPath, gameId)
-                .then(() => {
-                  onDiscoveredTool(gameId, {
-                    ...tool,
-                    path: path.join(resolvedPath, tool.executable(resolvedPath)),
-                    hidden: false,
-                    parameters: tool.parameters || [],
-                    custom: false,
+        (toolPath as Promise<string>)
+            .then((resolvedPath) => {
+              if (resolvedPath) {
+                autoGenIcon(tool, resolvedPath, gameId)
+                  .then(() => {
+                    onDiscoveredTool(gameId, {
+                      ...tool,
+                      path: path.join(resolvedPath, tool.executable(resolvedPath)),
+                      hidden: false,
+                      parameters: tool.parameters || [],
+                      custom: false,
+                    });
                   });
-                });
-            }
-            return null;
-          })
-          .catch((err) => {
-            log('debug', 'tool not found', {id: tool.id, err: err.message});
-          });
+              }
+              return null;
+            })
+            .catch((err) => {
+              log('debug', 'tool not found', {id: tool.id, err: err.message});
+            });
+      }
+    } catch (err) {
+      log('error', 'failed to determine tool setup', err);
     }
   }
 }
@@ -132,7 +137,8 @@ export function quickDiscovery(knownGames: IGame[],
           resolve();
         });
     } catch (err) {
-      log('error', 'failed to use game support plugin', { id: game.id, err: err.message });
+      log('error', 'failed to use game support plugin',
+          { id: game.id, err: err.message, stack: err.stack });
       // don't escalate exception because a single game shouldn't break everything
       return resolve();
     }
@@ -153,13 +159,13 @@ export function quickDiscovery(knownGames: IGame[],
  *                    it will upper-case the input. the entries of
  *                    matchList and blackList will be normalized within
  *                    the same function.
- * @returns
+ * @returns number of directories read
  */
 function walk(searchPath: string,
               matchList: Set<string>,
               resultCB: (path: string) => void,
               progress: Progress,
-              normalize: Normalize): Promise<void> {
+              normalize: Normalize): Promise<number> {
   // we can't actually know the progress percentage because for
   // that we'd need to search the disk twice, first to know the number of directories
   // just so we can show progress for the second run.
@@ -180,10 +186,17 @@ function walk(searchPath: string,
             // 80% of previous estimate plus a bit more than 20% of new estimate.
             // this will estimate a bit more than it mathematically should,
             // so the progress doesn't hang at 100%
+            const estPerTL = seenDirectories / processedTL;
             estimatedDirectories = (
-              estimatedDirectories * 0.8 +
-              seenDirectories * (seenTL.size / processedTL) * 0.202
+              Math.max(estimatedDirectories, seenDirectories) * 0.8 +
+              estPerTL * seenTL.size * 0.202
             );
+            log('debug', 'updated estimate',
+                { searchPath, estimatedDirectories, seenDirectories,
+                  topLevelTotal: seenTL.size, processedTL });
+            if (progress) {
+              progress.setStepCount(estimatedDirectories);
+            }
           }
           ++doneCount;
           lastCompleted = entry.filePath;
@@ -206,10 +219,14 @@ function walk(searchPath: string,
       });
       if (progress) {
         // count number of directories to be used as the step counter in the progress bar
-        progress.setStepCount(estimatedDirectories);
+        if (estimatedDirectories < seenDirectories) {
+          estimatedDirectories = seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
+          progress.setStepCount(estimatedDirectories);
+        }
         progress.completed(lastCompleted, doneCount);
       }
-    }, { terminators: true });
+    }, { terminators: true })
+    .then(() => seenDirectories);
 }
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
@@ -278,7 +295,7 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
 
   const onFileCB =
     filePath => onFile(filePath, files, normalize, discoveredGames, nop, onDiscoveredTool);
-  return walk(gamePath, matchList, onFileCB, undefined, normalize);
+  return walk(gamePath, matchList, onFileCB, undefined, normalize).then(() =>  null);
 }
 
 function autoGenIcon(application: ITool, exePath: string, gameId: string): Promise<void> {
@@ -286,8 +303,7 @@ function autoGenIcon(application: ITool, exePath: string, gameId: string): Promi
   return (application.logo === 'auto')
     ? fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve())
         .then(() => fs.statAsync(iconPath).then(() => null))
-        .catch(() => app.getFileIcon(exePath, { size: 'normal' })
-          .then(icon => fs.writeFileAsync(iconPath, icon.toPNG())))
+        .catch(() => extractExeIcon(exePath, iconPath))
       .catch(err => log('warn', 'failed to fetch exe icon', err.message))
     : Promise.resolve();
 }
@@ -318,7 +334,6 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
             path: exePath,
             hidden: false,
             custom: false,
-            workingDirectory: testPath,
           });
         });
       }
@@ -384,6 +399,8 @@ export function searchDiscovery(
     onError: (title: string, message: string) => void,
     progressCB: (idx: number, percent: number, label: string) => void): Promise<any> {
 
+  let totalRead = 0;
+
   return Promise.map(
     // windows has separate cwds per drive. If we used c: as the search path it would not actually
     // search in the root of drive c but in whatever is currently the working directory on c, so
@@ -403,7 +420,7 @@ export function searchDiscovery(
           knownGames.forEach((knownGame: IGame) => {
             const discoveredGame = discoveredGames[knownGame.id];
             // the game itself
-            if (discoveredGame === undefined) {
+            if (discoveredGame?.path === undefined) {
               for (const required of knownGame.requiredFiles) {
                 files.push({
                   fileName: normalize(required),
@@ -422,7 +439,10 @@ export function searchDiscovery(
           const matchList: Set<string> = new Set(files.map(entry => path.basename(entry.fileName)));
           const onFileCB = (filePath: string) =>
             onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
-          return walk(searchPath, matchList, onFileCB, progressObj, normalize);
+          return walk(searchPath, matchList, onFileCB, progressObj, normalize)
+            .then(numRead => {
+              totalRead += numRead;
+            });
         })
         .then(() => {
           log('info', 'finished game search', { searchPath });
@@ -438,5 +458,6 @@ export function searchDiscovery(
           progressObj.completed(searchPath);
           return null;
         });
-    });
+    })
+    .then(() => totalRead);
 }

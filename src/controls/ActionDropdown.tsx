@@ -1,5 +1,6 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../types/IExtensionProvider';
+import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { truthy } from '../util/util';
 
@@ -15,6 +16,7 @@ import * as ReactDOM from 'react-dom';
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
 export interface IBaseProps {
+  t: TFunction;
   className?: string;
   group?: string;
   instanceId?: string | string[];
@@ -31,6 +33,7 @@ function genTooltip(show: boolean | string): string {
 }
 
 interface IMenuActionProps {
+  t: TFunction;
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
@@ -39,7 +42,7 @@ interface IMenuActionProps {
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
-    const { action, id } = this.props;
+    const { t, action, id } = this.props;
     return (
       <MenuItem
         eventKey={id}
@@ -48,7 +51,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
         title={genTooltip(action.show)}
       >
         <Icon name={action.icon} />
-        <div className='button-text'>{action.title}</div>
+        <div className='button-text'>{t(action.title)}</div>
       </MenuItem>
     );
   }
@@ -84,7 +87,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { actions, id, className } = this.props;
+    const { t, actions, id, className } = this.props;
 
     const classes: string[] = [];
     if (className) {
@@ -104,7 +107,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
         style={{ width: '100%', height: '100%' }}
       >
         <Icon name={actions[defaultIdx].icon} />
-        {actions[defaultIdx].title}
+        {t(actions[defaultIdx].title)}
       </div>
     );
 
@@ -148,20 +151,20 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
 
   private renderMenuItem =
     (action: IActionDefinition & { show: boolean | string }, index: number) => {
-    const { instanceId } = this.props;
+    const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
 
     if ((action.icon === null) && (action.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {action.title}
+          {t(action.title)}
         </MenuItem>
       );
     }
 
     if (action.icon !== undefined) {
-      return <MenuAction key={id} id={id} action={action} instanceId={instanceId} />;
+      return <MenuAction t={t} key={id} id={id} action={action} instanceId={instanceId} />;
     } else {
       return (
         <MenuItem

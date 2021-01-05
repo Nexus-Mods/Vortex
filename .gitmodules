@@ -1,7 +1,7 @@
 [submodule "extensions\\games"]
 	path = extensions/games
 	url = https://github.com/Nexus-Mods/vortex-games.git
-	branch = bugfix_0_17_7
+	branch = master
 [submodule "extensions\\gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
@@ -184,3 +184,11 @@
 	path = extensions/script-extender-installer
 	url = https://github.com/Pickysaurus/script-extender-installer
   branch = master
+[submodule "extensions/re-engine-wrapper"]
+	path = extensions/re-engine-wrapper
+	url = https://github.com/Nexus-Mods/extension-re-engine-wrapper.git
+  branch = master
+[submodule "extensions/gamebryo-archive-check"]
+	path = extensions/gamebryo-archive-check
+	url = https://github.com/Pickysaurus/bethesda-archive-check
+	branch = master

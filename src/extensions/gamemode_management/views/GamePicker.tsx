@@ -121,9 +121,20 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
     const installedNames = new Set(Object.values(extensionsInstalled).map(ext => ext.name));
 
-    const gameExts = extensions
+    // figuring out if a manually installed extension corresponds to a remotely available extension
+    // isn't trivial, because the unique id and the game name stored in the extension list are both
+    // assigned by us, when we compile it, there is no id in the original author-provided info.json
+    // because we can't rely on authors to be consistent here.
+    // Therefore we will also filter out based on game name, meaning there can only be one entry
+    // for each game name, the one installed locally taking precedence.
+    const installedGameNames = new Set(knownGames.map(game => game.name.replace(/\t/g, ' ')));
+
+    // contains the extensions we don't have installed locally
+    const extensionsUninstalled = extensions
       .filter(ext => ext.type === 'game')
-      .filter(ext => !installedExtIds.has(ext.modId) && !installedNames.has(ext.name));
+      .filter(ext => !installedExtIds.has(ext.modId)
+                  && !installedNames.has(ext.name)
+                  && !installedGameNames.has(ext.gameName));
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
@@ -151,7 +162,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    supportedGameList.push(...gameExts.map(ext => ({
+    supportedGameList.push(...extensionsUninstalled.map(ext => ({
       id: ext.name,
       name: ext.gameName || ext.name,
       extensionPath: undefined,
@@ -378,7 +389,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private startDiscovery = () => {
-    this.context.api.events.emit('start-discovery');
+    const { api } = this.context;
+    api.events.emit('start-discovery');
   }
 
   private stopDiscovery = () => {
@@ -446,7 +458,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           {games.map(game => (
             <GameThumbnail
               t={t}
-              key={game.id}
+              key={game.id + '_' + (game.contributed ?? 'official')}
               game={game}
               type={type}
               active={game.id === gameMode}

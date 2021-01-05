@@ -1,6 +1,8 @@
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { getVisibleWindow } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
+import { log } from '../../util/log';
+import { makeQueue } from '../../util/util';
 
 import Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -41,7 +43,7 @@ class FileAssembler {
   private mFD: number;
   private mFileName: string;
   private mTotalSize: number;
-  private mWork: Promise<any> = Promise.resolve();
+  private mQueue: (cb: () => Promise<any>, tryOnly: boolean) => Promise<any>;
   private mWritten: number = 0;
   private mLastFlushedTime: number = 0;
   private mLastFlushedSize: number = 0;
@@ -50,12 +52,14 @@ class FileAssembler {
     this.mFileName = fileName;
     this.mTotalSize = size;
     this.mFD = fd;
+    this.mQueue = makeQueue<void>();
   }
 
   public setTotalSize(size: number) {
-    this.mWork = this.mWork.then(() => {
+    this.mQueue(() => {
       this.mTotalSize = size;
-    });
+      return Promise.resolve();
+    }, false);
   }
 
   public isClosed() {
@@ -63,88 +67,115 @@ class FileAssembler {
   }
 
   public rename(newName: string | Promise<string>) {
+    const closeFD = () => this.isClosed()
+      ? Promise.reject(new ProcessCanceled('File is closed'))
+      : fs.closeAsync(this.mFD);
+
     let resolved: string;
-    this.mWork = this.mWork.then(() => Promise.resolve(newName))
-    .then(nameResolved => {
-      resolved = nameResolved;
-      return fs.closeAsync(this.mFD);
-    })
-    .then(() => fs.renameAsync(this.mFileName, resolved))
-    .then(() => {
-      this.mFileName = resolved;
-      return fs.openAsync(resolved, 'r+');
-    })
-    .then(fd => {
-      this.mFD = fd;
-    });
+    // to rename the file we have to close the file descriptor, rename,
+    // then open it again
+    return this.mQueue(() =>
+      closeFD()
+      .catch({ code: 'EBADF' }, () => null)
+      .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
+      .then(() => fs.renameAsync(this.mFileName, resolved))
+      .then(() => fs.openAsync(resolved, 'r+'))
+      .then(fd => {
+        this.mFD = fd;
+        this.mFileName = resolved;
+        return Promise.resolve();
+      })
+      .catch(err => {
+        if (err instanceof ProcessCanceled) {
+          // This would only happen if we have closed the
+          //  file in one of the queue's previous iterations.
+          log('warn', 'attempt to rename closed file', this.mFileName);
+          return Promise.reject(err);
+        }
+
+        // in case of error, re-open the original file name so we can continue writing,
+        // only  then rethrow the exception
+        return fs.openAsync(this.mFileName, 'r+')
+          .then(fd => {
+            this.mFD = fd;
+          })
+          .then(() => Promise.reject(err));
+      }),
+      false);
   }
 
   public addChunk(offset: number, data: Buffer): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      let synced = false;
-      this.mWork = this.mWork
-        .then(() => (this.mFD === undefined)
-            // file already closed, can't use new data
-            ? Promise.reject(new ProcessCanceled('file already closed'))
-            // writing at an offset beyond the file limit
-            // works on windows and linux.
-            // I'll assume it means it will work on MacOS too...
-            : this.writeAsync(data, offset))
-        .then(({ bytesWritten, buffer }) => {
-          this.mWritten += bytesWritten;
-          const now = Date.now();
-          if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
-              || (now - this.mLastFlushedTime > FileAssembler.MIN_FLUSH_TIME)) {
-            this.mLastFlushedSize = this.mWritten;
-            this.mLastFlushedTime = now;
-            synced = true;
-            return fs.fsyncAsync(this.mFD).then(() => bytesWritten);
-          } else {
-            return Promise.resolve(bytesWritten);
-          }
-        })
-        .then((bytesWritten: number) => (bytesWritten !== data.length)
-            ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
-            : resolve(synced))
-        .catch({ code: 'ENOSPC' }, () => {
-          (dialog.showMessageBoxSync(getVisibleWindow(), {
-            type: 'warning',
-            title: 'Disk is full',
-            message: 'Download can\'t continue because disk is full, '
-                   + 'please free some some space and retry.',
-            buttons: ['Cancel', 'Retry'],
-            defaultId: 1,
-            noLink: true,
-          }) === 1)
-            ? resolve(this.addChunk(offset, data))
-            : reject(new UserCanceled());
-        })
-        .catch(err => reject(err));
-      });
+    let synced = false;
+    return this.mQueue(() =>
+      ((this.mFD === undefined)
+        ? Promise.reject(new ProcessCanceled('file already closed'))
+        : this.writeAsync(data, offset))
+      .then(({ bytesWritten, buffer }) => {
+        this.mWritten += bytesWritten;
+        const now = Date.now();
+        if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
+            || (now - this.mLastFlushedTime > FileAssembler.MIN_FLUSH_TIME)) {
+          this.mLastFlushedSize = this.mWritten;
+          this.mLastFlushedTime = now;
+          synced = true;
+          return fs.fsyncAsync(this.mFD)
+            .catch({ code: 'EBADF' }, () => {
+              // if we log this we may be generating thousands of log messages
+            })
+            .then(() => bytesWritten);
+        } else {
+          return Promise.resolve(bytesWritten);
+        }
+      })
+      .then((bytesWritten: number) => (bytesWritten !== data.length)
+          ? Promise.reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
+          : Promise.resolve(synced))
+      .catch({ code: 'ENOSPC' }, () => {
+        (dialog.showMessageBoxSync(getVisibleWindow(), {
+          type: 'warning',
+          title: 'Disk is full',
+          message: 'Download can\'t continue because disk is full, '
+                  + 'please free some some space and retry.',
+          buttons: ['Cancel', 'Retry'],
+          defaultId: 1,
+          noLink: true,
+        }) === 1)
+          ? Promise.resolve(this.addChunk(offset, data))
+          : Promise.reject(new UserCanceled());
+      })
+      .catch(err => Promise.reject(err))
+    , false);
   }
 
   public close(): Promise<void> {
-    this.mWork =  this.mWork
-    .then(() => {
+    return this.mQueue(() => {
       if (this.mFD !== undefined) {
         const fd = this.mFD;
         this.mFD = undefined;
         return fs.fsyncAsync(fd)
-          .catch({ code: 'EBADF' }, () => Promise.resolve())
-          .catch({ code: 'ENOENT' }, () => Promise.resolve())
-          .then(() => fs.closeAsync(fd));
+          .then(() => fs.closeAsync(fd))
+          .catch({ code: 'EBADF' }, () => {
+            log('warn', 'failed to sync or close file', this.mFileName);
+            return Promise.resolve();
+          })
+          .catch({ code: 'ENOENT' }, () => Promise.resolve());
       } else {
         return Promise.resolve();
       }
-    });
-    return this.mWork;
+    }, false);
   }
 
   private writeAsync(data: Buffer, offset: number) {
     // try to write with the lower-overhead function first. If it fails, retry with
     // our own wrapper that will retry on some errors and provide better backtraces
-    return fsFast.write(this.mFD, data, 0, data.length, offset)
-      .catch(() => fs.writeAsync(this.mFD, data, 0, data.length, offset));
+    return Promise.resolve(fsFast.write(this.mFD, data, 0, data.length, offset))
+      .catch(() => fs.writeAsync(this.mFD, data, 0, data.length, offset))
+      .catch(err => {
+        if (err.code === 'EBADF') {
+          err.message += ` (fd: ${this.mFD ?? 'closed'})`;
+        }
+        return Promise.reject(err);
+      });
   }
 }
 

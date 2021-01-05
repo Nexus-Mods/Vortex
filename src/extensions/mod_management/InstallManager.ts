@@ -17,7 +17,9 @@ import { isPathValid, setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
+import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
 import getDownloadGames from '../download_management/util/getDownloadGames';
+
 import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
 import modName, { renderModReference } from '../mod_management/util/modName';
@@ -40,6 +42,7 @@ import { referenceEqual } from './util/testModReference';
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
+import { STAGING_DIR_TAG } from './stagingDirectory';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -51,6 +54,8 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 
 import * as modMetaT from 'modmeta-db';
+
+import { generate as shortid } from 'shortid';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -85,6 +90,7 @@ class InstructionGroups {
   public setmodtype: IInstruction[] = [];
   public error: IInstruction[] = [];
   public rule: IInstruction[] = [];
+  public enableallplugins: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -97,6 +103,11 @@ const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
   '.xz', '.z', '.lzh',
 ]);
+
+// file types supported by 7z but we don't want to extract
+// I was tempted to put .exe in here but there may actually be cases where the
+// exe is a self-extracting archive and we would be able to handle it
+const FILETYPES_AVOID = ['.dll'];
 
 /**
  * central class for the installation process
@@ -183,7 +194,7 @@ class InstallManager {
 
     api.dismissNotification(`ready-to-install-${archiveId}`);
 
-    const baseName = path.basename(archivePath, path.extname(archivePath));
+    const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const currentProfile = activeProfile(api.store.getState());
     let modId = baseName;
     let installGameId: string;
@@ -210,6 +221,11 @@ class InstallManager {
         if (installGameId === undefined) {
           return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
+        }
+        if (installGameId === 'site') {
+          // install an already-downloaded extension
+          return api.emitAndAwait('install-extension-from-download', archiveId)
+            .then(() => Promise.reject(new UserCanceled()));
         }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
@@ -328,8 +344,14 @@ class InstallManager {
       })
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
                                                installGameId, modId, result))
-      .finally(() => (tempPath !== undefined)
-        ? fs.removeAsync(tempPath) : Promise.resolve())
+      .finally(() => {
+        if (tempPath !== undefined) {
+          log('debug', 'removing temporary path', tempPath);
+          return fs.removeAsync(tempPath);
+        } else {
+          return Promise.resolve();
+        }
+      })
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
         const state = api.getState();
@@ -376,7 +398,7 @@ class InstallManager {
                          || (err instanceof ProcessCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')
-                         || ((err.stack !== undefined)
+                         || (truthy(err.stack)
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? fs.removeAsync(destinationPath)
@@ -462,15 +484,28 @@ class InstallManager {
                   });
               }
             });
+        } else if (err['code'] === 'MODULE_NOT_FOUND') {
+          const location = err['requireStack'] !== undefined
+            ? ` (at ${err['requireStack'][0]})`
+            : '';
+          installContext.reportError('Installation failed',
+            'Module failed to load:\n{{message}}{{location}}\n\n'
+            + 'This usually indicates that the Vortex installation has been '
+            + 'corrupted or an external application (like an Anti-Virus) has interfered with '
+            + 'the loading of the module. '
+            + 'Please check whether your AV reported something and try reinstalling Vortex.',
+            false, {
+              location,
+              message: err.message.split('\n')[0],
+            });
         } else {
           return prom
             .then(() => genHash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              let message = err;
               let replace = {};
               if (typeof err === 'string') {
-                message = 'The installer "{{ id }}" failed: {{ message }}';
+                err = 'The installer "{{ id }}" failed: {{ message }}';
                 replace = {
                       id,
                       message: err,
@@ -484,7 +519,7 @@ class InstallManager {
                   + 'To use Vortex, please uninstall "Browser Assistant".';
                 const errorMessage = (typeof err === 'string') ? err : err.message;
                 (!this.isBrowserAssistantError(errorMessage))
-                  ? installContext.reportError('Installation failed', message, undefined, replace)
+                  ? installContext.reportError('Installation failed', err, undefined, replace)
                   : installContext.reportError('Installation failed', browserAssistantMsg, false);
               }
               if (callback !== undefined) {
@@ -591,21 +626,27 @@ class InstallManager {
         installContext.setProgress(percent);
       }
     };
-    // process.noAsar = true;
     log('debug', 'extracting mod archive', { archivePath, tempPath });
-    return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
-                                  progress,
-                                  () => this.queryPassword(api.store) as any)
-        .catch((err: Error) => this.isCritical(err.message)
-          ? Promise.reject(new ArchiveBrokenError(err.message))
-          : Promise.reject(err))
+    let extractProm: Promise<any>;
+    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
+      extractProm = Promise.reject(new ArchiveBrokenError('file type on avoidlist'));
+    } else {
+      extractProm = this.mTask.extractFull(archivePath, tempPath, {ssc: false},
+                                    progress,
+                                    () => this.queryPassword(api.store) as any)
+          .catch((err: Error) => this.isCritical(err.message)
+            ? Promise.reject(new ArchiveBrokenError(err.message))
+            : Promise.reject(err));
+    }
+
+    return extractProm
         .then(({ code, errors }: {code: number, errors: string[] }) => {
-          log('debug', 'extraction completed', { code, errors });
+          log('debug', 'extraction completed');
           if (installContext !== undefined) {
             installContext.setProgress();
           }
           if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors });
+            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
             const critical = errors.find(this.isCritical);
             if (critical !== undefined) {
               return Promise.reject(new ArchiveBrokenError(critical));
@@ -617,7 +658,21 @@ class InstallManager {
         })
         .catch(ArchiveBrokenError, err => {
           if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
+            // hmm, it was supposed to support the file type though...
             return Promise.reject(err);
+          }
+
+          if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
+            // User just tried to install the staging/downloads folder tag file as a mod...
+            //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
+            return api.showDialog('question', 'Not a mod', {
+              text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
+                + 'This file is generated and used by Vortex internally and should not be installed '
+                + 'in this way.',
+              message: archivePath,
+            }, [
+                { label: 'Ok' },
+              ]).then(() => Promise.reject(new ProcessCanceled('Not a mod')));
           }
 
           // this is really a completely separate process from the "regular" mod installation
@@ -877,7 +932,8 @@ class InstallManager {
                            gameId: string, modId: string): Promise<void> {
     return Promise.each(submodule,
       mod => {
-        const tempPath = destinationPath + '.' + mod.key + '.installing';
+        const tempPath = destinationPath + '.' + shortid() + '.installing';
+        log('debug', 'install submodule', { modPath: mod.path, tempPath, destinationPath });
         return this.installInner(api, mod.path, tempPath, destinationPath,
                                  gameId, undefined, undefined)
           .then((resultInner) => this.processInstructions(
@@ -888,7 +944,10 @@ class InstallManager {
               api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
             }
           })
-          .finally(() => fs.removeAsync(tempPath));
+          .finally(() => {
+            log('debug', 'removing submodule', tempPath);
+            fs.removeAsync(tempPath);
+          });
       })
         .then(() => undefined);
   }
@@ -898,6 +957,14 @@ class InstallManager {
     attribute.forEach(attr => {
       api.store.dispatch(setModAttribute(gameId, modId, attr.key, attr.value));
     });
+    return Promise.resolve();
+  }
+
+  private processEnableAllPlugins(api: IExtensionApi, enableAll: IInstruction[],
+                                  gameId: string, modId: string): Promise<void> {
+    if (enableAll.length > 0) {
+      api.store.dispatch(setModAttribute(gameId, modId, 'enableallplugins', true));
+    }
     return Promise.resolve();
   }
 
@@ -972,7 +1039,10 @@ class InstallManager {
     const invalidInstructions = this.validateInstructions(result.instructions);
     if (invalidInstructions.length > 0) {
       const game = getGame(gameId);
-      const allowReport = (game.contributed === undefined);
+      // we can also get here with invalid instructions from scripted installers
+      // so even if the game is not contributed, this is still probably not a bug
+      // const allowReport = (game.contributed === undefined);
+      const allowReport = false;
       const error = (allowReport)
         ? 'Invalid installer instructions found for "{{ modId }}".'
         : 'Invalid installer instructions found for "{{ modId }}". Please inform '
@@ -1030,6 +1100,8 @@ class InstallManager {
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
                                         destinationPath, gameId, modId))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
+      .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
+                                               gameId, modId))
       .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
       .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
       ;
@@ -1085,6 +1157,22 @@ class InstallManager {
     return new Promise<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mod: IMod = state.persistent.mods[gameId][modId];
+      if (mod === undefined) {
+        // Technically for this to happen the timing must be *perfect*,
+        //  the replace query dialog will only show if we manage to confirm that
+        //  the modId is indeed stored persistently - but if somehow the user
+        //  was able to finish removing the mod right as the replace dialog
+        //  appears the mod could be potentially missing from the state.
+        // In this case we resolve using the existing modId.
+        // https://github.com/Nexus-Mods/Vortex/issues/7972
+        const currentProfile = activeProfile(api.store.getState());
+        return resolve({
+          id: modId,
+          variant: '',
+          enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
+          attributes: {},
+        });
+      }
       api.store
         .dispatch(showDialog(
           'question', modName(mod, { version: false }),
@@ -1113,7 +1201,7 @@ class InstallManager {
         .then((result: IDialogResult) => {
           const currentProfile = activeProfile(api.store.getState());
           const wasEnabled = () => {
-            return (currentProfile !== undefined) && (currentProfile.gameId === gameId)
+            return (currentProfile?.gameId === gameId)
               ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
               : false;
           };
@@ -1121,7 +1209,9 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === VARIANT_ACTION) {
-            api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
+            if (currentProfile !== undefined) {
+              api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
+            }
             resolve({
               id: modId + '+' + result.input.variant,
               variant: result.input.variant,
@@ -1154,13 +1244,18 @@ class InstallManager {
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
-    return this.mInstallers[offset].testSupported(fileList, gameId)
-      .then((testResult: ISupportedResult) => (testResult.supported === true)
-          ? Promise.resolve({
+    return Promise.resolve(this.mInstallers[offset].testSupported(fileList, gameId))
+      .then((testResult: ISupportedResult) => {
+          if (testResult === undefined) {
+            log('error', 'Buggy installer', this.mInstallers[offset].id);
+          }
+          return (testResult?.supported === true)
+            ? Promise.resolve({
               installer: this.mInstallers[offset],
               requiredFiles: testResult.requiredFiles,
             })
-          : this.getInstaller(fileList, gameId, offset + 1));
+            : this.getInstaller(fileList, gameId, offset + 1);
+      });
  }
 
   /**
@@ -1657,10 +1752,10 @@ class InstallManager {
       if (download === undefined) {
         return reject(new Error(`Invalid download id (${downloadId})`));
       }
-      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
+      const downloadGame: string[] = getDownloadGames(download);
       const fullPath: string =
-        path.join(downloadPathForGame(state, downloadGame), download.localPath);
-      this.install(downloadId, fullPath, getDownloadGames(download),
+        path.join(downloadPathForGame(state, downloadGame[0]), download.localPath);
+      this.install(downloadId, fullPath, downloadGame,
         api, { ...modInfo, download }, false, false, (error, id) => {
           if (error === null) {
             resolve(id);

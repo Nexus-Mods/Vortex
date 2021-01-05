@@ -66,7 +66,7 @@ class Steam implements IGameStore {
    * find the first game that matches the specified name pattern
    */
   public findByName(namePattern: string): Promise<ISteamEntry> {
-    const re = new RegExp(namePattern);
+    const re = new RegExp('^' + namePattern + '$');
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
@@ -173,6 +173,13 @@ class Steam implements IGameStore {
     return this.mBaseFolder.then(baseFolder => path.join(baseFolder, STEAM_EXEC));
   }
 
+  public reloadGames(): Promise<void> {
+    return new Promise((resolve) => {
+      this.mCache = this.parseManifests();
+      return resolve();
+    });
+  }
+
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
     if (typeof(object) !== 'object') {
       return false;
@@ -190,7 +197,17 @@ class Steam implements IGameStore {
           return Promise.resolve(undefined);
         }
         steamPaths.push(basePath);
-        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
+        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'))
+          .catch(err => {
+            // If we can't read the configuration file, we can't resolve
+            //  the location of the games. This might be a valid case
+            //  if Steam isn't installed but the registry still has
+            //  some entries for it.
+            log('warn', '[steam] failed to read steam config file', err);
+            return ['EPERM', 'ENOENT'].includes(err.code)
+              ? Promise.resolve(undefined)
+              : Promise.reject(err);
+          });
       })
       .then((data: Buffer) => {
         if (data === undefined) {

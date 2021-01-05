@@ -34,21 +34,16 @@ function writeFileAtomicImpl(filePath: string,
 
   const hash = checksum(buf);
   let fd = -1;
-  return new Promise<number>((resolve, reject) => {
-    file({ template: `${filePath}.XXXXXX.tmp` },
-      (err: any, genPath: string, fdIn: number, cleanupCB: () => void) => {
-        if (err) {
-          return reject(err);
-        }
-        cleanup = cleanupCB;
-        tmpPath = genPath;
-        fd = fdIn;
-        resolve();
-      });
-  })
-    .then(() => fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+  return fs.withTmpFile((fdIn: number, pathIn: string) => {
+    fd = fdIn;
+    tmpPath = pathIn;
+    return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve())))
+      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve()));
+  }, {
+    cleanup: false,
+    template: `${filePath}.XXXXXX.tmp`,
+  })
     .then(() => fs.readFileAsync(tmpPath))
     .catch({ code: 'EBADF' }, () => {
       log('warn', 'failed to access temporary file', {
@@ -72,7 +67,7 @@ function writeFileAtomicImpl(filePath: string,
       }
     })
     .catch(err => {
-      err.stack = err.message + '\n' + stackErr.stack;
+      err.stack = err.stack + '\n' + stackErr.stack;
       return Promise.reject(err);
     })
     .finally(() => {

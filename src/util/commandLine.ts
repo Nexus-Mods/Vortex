@@ -10,7 +10,9 @@ export interface IParameters {
   install?: string;
   report?: string;
   restore?: string;
+  startMinimized?: boolean;
   game?: string;
+  profile?: string;
   get?: string;
   set?: string[];
   del?: string;
@@ -18,6 +20,8 @@ export interface IParameters {
   shared?: boolean;
   maxMemory?: string;
   disableGPU?: boolean;
+  userData?: string;
+  inspector?: boolean;
 }
 
 function assign(input: string): string[] {
@@ -31,7 +35,9 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--start-minimized': 1,
   '--game': 1,
+  '--profile': 1,
   '--get': 1,
   '--set': 1,
   '--del': 1,
@@ -39,6 +45,7 @@ const ARG_COUNTS = {
   '--report': 1,
   '--restore': 1,
   '--max-memory': 1,
+  '--user-data': 1,
 };
 
 // Chrome rearranges the command line parameters it passes to processes it spawns internally
@@ -119,7 +126,10 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
-    .option('--game [game id]', 'Starts Vortex with a different enabled')
+    .option('--user-data [path]', 'Starts Vortex with a custom directory for the user data. '
+                                  + 'Only use if you know what you\'re doing.')
+    .option('--start-minimized', 'Starts Vortex in the task bar')
+    .option('--game [game id]', 'Starts Vortex with a different game enabled')
     .option('--del [path]', 'Remove a value in state')
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
@@ -128,6 +138,8 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                        + 'in the shared location instead of the per-user one')
     .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
                                        + '(defaults to 4096)')
+    .option('--inspector', 'Start Vortex with the chrome inspector opened')
+    .option('--profile [profile id]', 'Start Vortex with a specific profile active')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []).opts() as IParameters;
@@ -143,7 +155,9 @@ const SKIP_ARGS = {
   '-d': 1,
   '--download': 1,
   '-i': 1,
+  '--start-minimized': 1,
   '--game': 1,
+  '--profile': 1,
   '--install': 1,
   '--restore': 1,
 };

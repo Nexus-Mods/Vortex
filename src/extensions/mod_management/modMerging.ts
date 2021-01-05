@@ -2,6 +2,8 @@ import {IDeployedFile, IExtensionApi} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { log } from '../../util/log';
 import {setdefault, truthy} from '../../util/util';
 import walk from '../../util/walk';
 
@@ -18,7 +20,7 @@ export const MERGED_PATH = '__merged';
 
 type FileLists = Array<{modId: string, basePath: string, files: IFileEntry[]}>;
 
-function calcHash(filePath: string): Promise<string> {
+function calcHashImpl(filePath: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const hash = crypto.createHash('md5');
     const stream = fs.createReadStream(filePath);
@@ -31,6 +33,17 @@ function calcHash(filePath: string): Promise<string> {
     stream.on('end', () => resolve(hash.digest('hex')));
     stream.on('error', reject);
   });
+}
+
+function calcHash(filePath: string, tries: number = 3): Promise<string> {
+  return calcHashImpl(filePath)
+    .catch(err => {
+      if (['EMFILE', 'EBADF'].includes(err['code']) && (tries > 0)) {
+        return calcHash(filePath, tries - 1);
+      } else {
+        return Promise.reject(err);
+      }
+    });
 }
 
 function genArchiveMergeSet(
@@ -118,22 +131,36 @@ function mergeArchive(api: IExtensionApi,
       .then(() => fs.removeAsync(resultPath));
 }
 
+export interface IMergeResult {
+  // lists the files (paths relative to the mod base directory) used in merging.
+  // These files will not be deployed individually
+  usedInMerge: string[];
+  // this stores the mods that influenced the output of a merge
+  mergeInfluences: { [outPath: string]: {
+    modType: string,
+    sources: string[],
+   } };
+}
+
 function mergeMods(api: IExtensionApi,
                    game: IGame,
                    modBasePath: string,
                    destinationPath: string,
                    mods: IMod[],
                    deployedFiles: IDeployedFile[],
-                   mergers: IResolvedMerger[]): Promise<{ [relPath: string]: string[] }> {
+                   mergers: IResolvedMerger[]): Promise<IMergeResult> {
+  const res: IMergeResult = {
+    usedInMerge: [],
+    mergeInfluences: {},
+  };
+
   if ((mergers.length === 0) && (game.mergeArchive === undefined)) {
-    return Promise.resolve({});
+    return Promise.resolve(res);
   }
 
   const mergeDest = path.join(modBasePath, MERGED_PATH);
 
   const archiveMerges: { [relPath: string]: string[] } = {};
-  const mergedFiles: { [relPath: string]: string[] } = {}
-
   const fileExists = (file: string) => fs.statAsync(file)
     .then(() => Promise.resolve(true))
     .catch(() => Promise.resolve(false));
@@ -152,21 +179,30 @@ function mergeMods(api: IExtensionApi,
       Promise.mapSeries(fileList, fileEntry => {
         if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {
           const relPath = path.relative(modPath, fileEntry.filePath);
-          setdefault(mergedFiles, relPath, []).push(mod.id);
+          res.usedInMerge.push(relPath);
           setdefault(archiveMerges, relPath, []).push(modPath);
         } else {
+          // for every file merger (registerMerger) that applies to this file, initialize
+          // the merge if necessary
           const merger = mergers.find(iter => iter.match.filter(fileEntry.filePath));
           if (merger !== undefined) {
             const realDest = truthy(merger.modType)
               ? mergeDest + '.' + merger.modType
               : mergeDest;
             const relPath = path.relative(modPath, fileEntry.filePath);
-            setdefault(mergedFiles, relPath, []).push(mod.id);
-            return fs.ensureDirAsync(realDest)
-              .then(() => Promise.map(merger.match.baseFiles(deployedFiles), file => {
-                if (Object.keys(mergedFiles).length !== 1) {
-                  // We've already started merging at this point, no reason
-                  //  to continue through merge setup.
+            res.usedInMerge.push(relPath);
+            let normalize: Normalize;
+
+            return getNormalizeFunc(modPath)
+              .then(normalizeIn => { normalize = normalizeIn; })
+              .then(() => fs.ensureDirAsync(realDest))
+              .then(() => Promise.mapSeries(merger.match.baseFiles(deployedFiles), file => {
+                const norm = normalize(file.out);
+                setdefault(res.mergeInfluences, norm, { modType: merger.modType, sources: [] })
+                  .sources.push(mod.id);
+
+                if (res.mergeInfluences[norm].sources.length !== 1) {
+                  // This isn't the first merge for this file, don't re-initialize the merge
                   return Promise.resolve();
                 }
 
@@ -176,7 +212,7 @@ function mergeMods(api: IExtensionApi,
                 // In this case we need to use the backup as the input instead of the actual "in"
                 // path
                 return Promise.all([fileExists(file.in),
-                                    fileExists(file.in + BACKUP_TAG)]).then(res => {
+                                    fileExists(file.in + BACKUP_TAG)]).then(statRes => {
                   // res[0] indicates whether we were able to find the input file inside
                   //  the mods folder. Its existence can mean 2 things depending on circumstances:
                   //  1. The file is a symlink and has been deployed using Vortex. We can confirm
@@ -189,10 +225,10 @@ function mergeMods(api: IExtensionApi,
                   //  this is a clear indication that we have previously deployed mods for this
                   //  modType; to avoid losing default game generated data, we MUST use the backup
                   //  file as the base for the merge.
-                  if (res[1]) {
+                  if (statRes[1]) {
                     // We found a backup file, use this file as the base for the merge.
                     return fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
-                  } else if (res[0]) {
+                  } else if (statRes[0]) {
                     if (isDeployed(file.in)) {
                       // The input file has been previously deployed by Vortex but there is no
                       // backup.
@@ -203,7 +239,21 @@ function mergeMods(api: IExtensionApi,
                       // The input file exists and is not part of the deployment so it's an actual
                       // source file to build upon. This should be the default case for a first
                       // deployment.
-                      return fs.copyAsync(file.in, path.join(realDest, file.out));
+                      const outPath = path.join(realDest, file.out);
+                      return fs.removeAsync(outPath)
+                        .catch(() => null)
+                        .then(() => fs.ensureDirAsync(path.dirname(outPath)))
+                        .then(() => fs.copyAsync(file.in, outPath)
+                          .catch({ code: 'ENOENT' }, err => {
+                            // not entirely sure whether "ENOENT" refers to the source file
+                            // or the directory we're trying to copy into, the error object
+                            // contains only one of those paths
+                            log('error', 'file not found upon copying merge base file', {
+                              source: file.in,
+                              destination: outPath,
+                            });
+                            return Promise.reject(err);
+                          }));
                     }
                   }
                 });
@@ -217,7 +267,7 @@ function mergeMods(api: IExtensionApi,
     // merge archives
     .then(() => Promise.mapSeries(Object.keys(archiveMerges), relPath =>
       mergeArchive(api, game, relPath, destinationPath, archiveMerges[relPath], mergeDest)))
-    .then(() => mergedFiles);
+    .then(() => res);
 }
 
 export default mergeMods;

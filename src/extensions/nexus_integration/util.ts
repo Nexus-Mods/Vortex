@@ -10,7 +10,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -18,6 +18,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
+import { DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -33,7 +34,11 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string): Promise<string> {
+export function startDownload(api: IExtensionApi,
+                              nexus: Nexus,
+                              nxmurl: string,
+                              redownload?: RedownloadMode)
+                              : Promise<string> {
   let url: NXMUrl;
 
   try {
@@ -42,8 +47,13 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     return Promise.reject(err);
   }
 
+  if ((['vortex', 'site'].includes(url.gameId)) && url.view) {
+    api.events.emit('show-extension-page', url.modId);
+    return Promise.reject(new DownloadIsHTML(nxmurl));
+  }
+
   return (url.type === 'mod')
-    ? startDownloadMod(api, nexus, nxmurl, url)
+    ? startDownloadMod(api, nexus, nxmurl, url, redownload)
     : startDownloadCollection(api, nexus, nxmurl, url);
 }
 
@@ -90,7 +100,8 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
 function startDownloadMod(api: IExtensionApi,
                           nexus: Nexus,
                           urlStr: string,
-                          url: NXMUrl): Promise<string> {
+                          url: NXMUrl,
+                          redownload?: RedownloadMode): Promise<string> {
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
@@ -122,7 +133,8 @@ function startDownloadMod(api: IExtensionApi,
         fileInfo.file_name,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
-          : resolve(downloadId)));
+          : resolve(downloadId)),
+        redownload);
       });
     })
     .then(downloadId => {
@@ -132,7 +144,7 @@ function startDownloadMod(api: IExtensionApi,
       api.sendNotification({
         id: `ready-to-install-${downloadId}`,
         type: 'success',
-        title: api.translate('Download finished'),
+        title: 'Download finished',
         group: 'download-finished',
         message: nexusFileInfo.name,
         actions: [
@@ -199,7 +211,14 @@ function startDownloadMod(api: IExtensionApi,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
       } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
-              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)) {
+              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)
+              || (err.message.indexOf('BAD_SIGNATURE') !== -1)
+              || (err.message.indexOf('TLSV1_ALERT_ACCESS_DENIED') !== -1)) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
+      } else if (err instanceof TemporaryError) {
         api.showErrorNotification('Download failed', {
           error: err,
           message: 'This may be a temporary issue, please try again later',
@@ -302,7 +321,8 @@ function reportEndorseError(api: IExtensionApi, err: Error,
       message,
       displayMS: calcDuration(message.length),
     });
-  } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1) {
+  } else if ((['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1)
+      || (err instanceof ProcessCanceled)) {
     api.showErrorNotification('Endorsing mod failed, please try again later', err, {
       allowReport: false,
     });
@@ -492,7 +512,7 @@ export function checkModVersionsImpl(
   nexus: Nexus,
   gameId: string,
   mods: { [modId: string]: IMod },
-  forceFull: boolean): Promise<string[]> {
+  forceFull: boolean | 'silent'): Promise<{ errors: string[], modIds: string[] }> {
 
   const now = Date.now();
 
@@ -504,6 +524,8 @@ export function checkModVersionsImpl(
     ;
 
   log('info', '[update check] checking mods for update (nexus)', { count: modsList.length });
+
+  const updatedIds: string[] = [];
 
   return refreshEndorsements(store, nexus)
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
@@ -560,7 +582,8 @@ export function checkModVersionsImpl(
                              || (newestFileIdChanged && fileIdChanged);
 
             if (updateFound) {
-              if (forceFull && !filtered.has(mod.id)) {
+              updatedIds.push(mod.id);
+              if (truthy(forceFull) && !filtered.has(mod.id)) {
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
@@ -613,7 +636,8 @@ export function checkModVersionsImpl(
       .finally(() => {
         log('info', '[update check] done');
         tStore.dispatch(dismissNotification('check-update-progress'));
-        if (forceFull) {
+        // if forceFull is 'silent' we show no notifications
+        if (forceFull === true) {
           if (updatesMissed.length === 0) {
             tStore.dispatch(addNotification({
               id: 'check-update-progress',
@@ -635,7 +659,10 @@ export function checkModVersionsImpl(
         }
       });
     })
-    .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
+    .then((errorMessages: string[]): { errors: string[], modIds: string[] } => ({
+      errors: errorMessages.filter(msg => msg !== undefined),
+      modIds: updatedIds,
+    }));
 }
 
 function errorFromNexusError(err: NexusError): string {
@@ -728,14 +755,22 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
 
 let nexusGamesCache: IGameListEntry[] = [];
 
+let onCacheLoaded: () => void;
+const cachePromise = new Promise(resolve => onCacheLoaded = resolve);
+
 export function retrieveNexusGames(nexus: Nexus) {
   nexus.getGames()
     .then(games => {
       nexusGamesCache = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      onCacheLoaded();
     })
     .catch(err => null);
 }
 
 export function nexusGames(): IGameListEntry[] {
   return nexusGamesCache;
+}
+
+export function nexusGamesProm(): Promise<IGameListEntry[]> {
+  return cachePromise.then(() => nexusGamesCache);
 }

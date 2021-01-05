@@ -30,6 +30,7 @@ export interface IProps {
   onClone: (profileId: string) => void;
   onRemove: (profileId: string) => void;
   onStartEditing: (id: string) => void;
+  onCreateShortcut: (profileId: string) => void;
   onSetHighlightGameId: (gameId: string) => void;
 }
 
@@ -138,31 +139,30 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
             onClick={this.changeImage}
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
-          <Table className='profile-details'>
-            <TBody>
-              {this.renderFeatureWithValue({
-                id: profile.id + 'mods',
-                label: t('Mods Enabled'),
-                icon: 'mods',
-                type: 'number',
-                supported: () => true,
-                description: t('Number of Mods enabled'),
-              }, enabledMods)}
-              {this.renderFeatureWithValue({
-                id: profile.id + 'id',
-                label: t('ID'),
-                icon: '',
-                type: 'string',
-                supported: () => true,
-                description: t('Internal ID of this profile'),
-              }, profile.id)}
+          <div className='profile-details'>
+            {this.renderFeatureWithValue({
+              id: profile.id + 'mods',
+              label: 'Mods Enabled',
+              icon: 'mods',
+              type: 'number',
+              supported: () => true,
+              description: 'Number of Mods enabled',
+            }, enabledMods)}
+            {this.renderFeatureWithValue({
+              id: profile.id + 'id',
+              label: 'ID',
+              icon: '',
+              type: 'string',
+              supported: () => true,
+              description: 'Internal ID of this profile',
+            }, profile.id)}
 
-              {features.map(this.renderFeature)}
-            </TBody>
-          </Table>
+            {features.map(this.renderFeature)}
+          </div>
         </div>
         <div className='profile-actions'>
           <ActionDropdown
+            t={t}
             group='profile-actions'
             orientation='vertical'
             className='menubar'
@@ -186,13 +186,16 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
     const res: IActionDefinition[] = [];
     if (!active && available) {
-      res.push({ icon: 'activate', title: t('Enable'), action: this.activate });
+      res.push({ icon: 'activate', title: 'Enable', action: this.activate });
     }
     if (available) {
-      res.push({ icon: 'edit', title: t('Edit'), action: this.startEditing });
-      res.push({ icon: 'clone', title: t('Clone'), action: this.cloneProfile });
+      res.push({ icon: 'edit', title: 'Edit', action: this.startEditing });
+      res.push({ icon: 'clone', title: 'Clone', action: this.cloneProfile });
     }
-    res.push({ icon: 'remove', title: t('Remove'), action: this.removeProfile });
+    if (available && process.platform === 'win32') {
+      res.push({ icon: 'savegame', title: 'Add Shortcut', action: this.createShortcut });
+    }
+    res.push({ icon: 'remove', title: 'Remove', action: this.removeProfile });
     return res;
   }
 
@@ -203,17 +206,23 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderFeatureWithValue(feature: IProfileFeature, value: any): JSX.Element {
-    const { profile } = this.props;
+    const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
-      <TR key={id}>
-        <TD>
-          <a className='fake-link' title={feature.description} onClick={nop}>{feature.label}</a>
-        </TD>
-        <TD>
+      <>
+        <div className='profile-feature-name'>
+          <a
+            className='fake-link'
+            title={t(feature.description)}
+            onClick={nop}
+          >
+            {t(feature.label, { ns: feature.namespace })}
+          </a>
+        </div>
+        <div className='profile-feature-value'>
           {this.renderFeatureValue(feature.type, value)}
-        </TD>
-      </TR>
+        </div>
+      </>
     );
   }
 
@@ -222,7 +231,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     if (type === 'boolean') {
       return value === true ? t('yes') : t('no');
     } else {
-      return value;
+      return (value ?? '').toString();
     }
   }
 
@@ -276,6 +285,11 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private startEditing = () => {
     const { onStartEditing, profile } = this.props;
     onStartEditing(profile.id);
+  }
+
+  private createShortcut = () => {
+    const { onCreateShortcut, profile } = this.props;
+    onCreateShortcut(profile.id);
   }
 }
 

@@ -262,7 +262,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
                 position={context}
                 onHide={this.onHideContext}
                 actions={[
-                  { title: 'Paste', action: this.handlePaste, show: true },
+                  { title: t('Paste'), action: this.handlePaste, show: true },
                 ]}
               />
               <FormFeedback />

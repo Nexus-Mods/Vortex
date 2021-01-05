@@ -7,6 +7,7 @@ import { IDownload } from '../extensions/download_management/types/IDownload';
 import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IHistoryPersistent, IHistoryState } from '../extensions/history_management/reducers';
 import { IMod } from '../extensions/mod_management/types/IMod';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { IParameters } from '../util/commandLine';
@@ -169,13 +170,17 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   dashboardLayout: string[];
+  foregroundDL: boolean;
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
 }
 
 export interface ISettingsAutomation {
   deploy: boolean;
+  install: boolean;
   enable: boolean;
+  start: boolean;
+  minimized: boolean;
 }
 
 export interface ISettingsProfiles {
@@ -194,9 +199,11 @@ export interface ISettingsDownloads {
   minChunkSize: number;
   maxChunks: number;
   maxParallelDownloads: number;
+  maxBandwidth: number;
   path: string;
   showDropzone: boolean;
   showGraph: boolean;
+  copyOnIFF: boolean;
 }
 
 export interface IStatePaths {
@@ -296,6 +303,7 @@ export interface IState {
     discovery: IDiscoveryState,
     notifications: INotificationState;
     browser: IBrowserState;
+    history: IHistoryState;
     extensions: {
       available: IAvailableExtension[],
       installed: { [extId: string]: IExtension },
@@ -311,6 +319,7 @@ export interface IState {
     gameMode: IStateGameMode,
     deployment: { needToDeploy: { [gameId: string]: boolean } },
     transactions: IStateTransactions,
+    history: IHistoryPersistent;
   };
 }
 

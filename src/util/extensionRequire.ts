@@ -1,4 +1,4 @@
-import ExtensionManager from './ExtensionManager';
+import ExtensionManager, { IRegisteredExtension } from './ExtensionManager';
 
 import {} from 'module';
 import { dynreq } from 'vortex-run';
@@ -7,6 +7,26 @@ import { dynreq } from 'vortex-run';
 const Module = require('module');
 
 import * as api from '../index';
+import { LogLevel } from './log';
+
+class ExtProxyHandler implements ProxyHandler<typeof api> {
+  private mExt: IRegisteredExtension;
+  constructor(ext: IRegisteredExtension) {
+    this.mExt = ext;
+  }
+
+  public get(target: typeof api, p: PropertyKey, receiver: any): any {
+    if (p === 'log') {
+      return (level: LogLevel, message: string, metadata: any) => {
+        target.log(level, `[${this.mExt.namespace}] ${message}`, metadata);
+      };
+    } else {
+      return target[p];
+    }
+  }
+}
+
+const handlerMap: { [extId: string]: typeof api } = {};
 
 /**
  * require wrapper to allow extensions to load modules from
@@ -14,13 +34,23 @@ import * as api from '../index';
  * @param {any} orig
  * @returns
  */
-function extensionRequire(orig) {
+function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function(id) {
     if (id === 'vortex-api') {
-      return api;
+      const ext = getExtensions().find(iter => this.filename.startsWith(iter.path));
+      if (ext !== undefined) {
+        if (handlerMap[ext.name] === undefined) {
+          handlerMap[ext.name] = new Proxy(api, new ExtProxyHandler(ext));
+        }
+        return handlerMap[ext.name];
+      } else {
+        // this happens in harmony-patcher which is treated as a separate module
+        // but which is 100% dependent of vortex
+        return api;
+      }
     }
-    if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
+    if (extensionPaths.find(iter => this.filename.startsWith(iter.path)) !== undefined) {
       let res;
       try {
         res = dynreq(id);
@@ -37,7 +67,7 @@ function extensionRequire(orig) {
   };
 }
 
-export default function() {
+export default function(getExtensions: () => IRegisteredExtension[]) {
   const orig = (Module as any).prototype.require;
-  (Module as any).prototype.require = extensionRequire(orig);
+  (Module as any).prototype.require = extensionRequire(orig, getExtensions);
 }

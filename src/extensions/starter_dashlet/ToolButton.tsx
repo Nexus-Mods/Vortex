@@ -32,7 +32,7 @@ class ToolButton extends PureComponentEx<IProps, {}> {
 
     this.mStaticElements = [
       {
-        title: props.t('Run'),
+        title: 'Run',
         icon: 'launch-simple',
         action: () => this.props.onRun(this.props.starter),
         condition: () => truthy(this.props.starter.exePath),
@@ -41,19 +41,19 @@ class ToolButton extends PureComponentEx<IProps, {}> {
         },
       },
       {
-        title: props.t('Make primary'),
+        title: 'Make primary',
         icon: 'bookmark',
         action: this.setPrimaryTool,
         condition: () => truthy(this.props.starter.exePath)
           ? true : props.t('Not configured') as string,
       },
       {
-        title: props.t('Edit'),
+        title: 'Edit',
         icon: 'edit',
         action: this.edit,
       },
       {
-        title: props.t('Remove'),
+        title: 'Remove',
         icon: 'remove',
         action: this.remove,
         condition: () => !this.props.starter.isGame,

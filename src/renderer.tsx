@@ -93,15 +93,34 @@ import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
+import { checksum } from './util/fsAtomic';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
-import { bytesToString, getAllPropertyNames } from './util/util';
+import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
+function fetchReduxState(tries: number = 5) {
+  const msg: string = ipcRenderer.sendSync('get-redux-state');
+
+  const expectedMD5 = msg.slice(0, 32);
+  const dat = msg.slice(32);
+  const actualMD5 = checksum(Buffer.from(dat));
+  if (actualMD5 === expectedMD5) {
+    log('info', 'parsing state', dat.length);
+    return JSON.parse(dat.toString());
+  } else if (tries <= 0) {
+    throw new SyntaxError('failed to transfer state from main process');
+  } else {
+    log('warn', 'failed to transfer redux state',
+        { tries, expectedMD5, actualMD5, length: dat.length });
+    return fetchReduxState(tries - 1);
+  }
+}
+
 function initialState(): any {
   try {
-    return getInitialStateRenderer();
+    return fetchReduxState();
   } catch (err) {
     if (err instanceof SyntaxError) {
       const dumpPath = path.join(remote.app.getPath('temp'), 'invalid_state.json');
@@ -115,8 +134,8 @@ function initialState(): any {
       // NOTE: This uses msgpack for serialization to rule out json as the problem. However this
       //   msgpack library converts undefined to null whereas JSON encoding just drops all undefined
       //   values so going this route may cause new issues where code isn't capable of handling
-      //   null. This is only an issue for the "session" hive because everything that had been
-      //   serialized had the undefined values dropped anyway.
+      //   null. This is only an issue for the "session" hive or on the very first start because
+      //   everything that had been serialized had the undefined values dropped anyway.
       let stateSerialized: Buffer = Buffer.alloc(0);
 
       const getReduxStateMsgpack = remote.getGlobal('getReduxStateMsgpack');
@@ -132,7 +151,7 @@ function initialState(): any {
 
       const msgpack: typeof msgpackT = require('msgpack');
 
-      return msgpack.unpack(stateSerialized);
+      return replaceRecursive(msgpack.unpack(stateSerialized), '__UNDEFINED__', undefined);
     }
   }
 }
@@ -150,7 +169,6 @@ if (process.env.CRASH_REPORTING === 'electron') {
     companyName: 'Black Tree Gaming Ltd.',
     uploadToServer: false,
     submitURL: '',
-    crashesDirectory: path.join(tempPath, 'dumps'),
   });
 } else if (process.env.CRASH_REPORTING === 'vortex') {
   // tslint:disable-next-line:no-var-requires
@@ -164,7 +182,7 @@ if (process.platform === 'win32') {
   nativeErr.InitHook();
   const oldPrep = Error.prepareStackTrace;
   Error.prepareStackTrace = (error, stack) => {
-    if (error['code'] === 'UNKNOWN') {
+    if ((error['code'] === 'UNKNOWN') && (error['nativeCode'] === undefined)) {
       const native = nativeErr.GetLastError();
       error.message = `${native.message} (${native.code})`;
       error['nativeCode'] = native.code;
@@ -218,9 +236,24 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if ((typeof(error) === 'string') && (error === 'Script error.')) {
+    // this is bad. It happens within electron/chrome when an exception is thrown in javascript.
+    // unfortunately it's impossible based on this error to figure out what the cause was, though
+    // it's almost certainly some callback invoked from a native library
+    log('error', 'script error');
+    return;
+  }
+
+  if ((error.name === 'TypeError')
+      && (error.message === 'Cannot read property \'forEach\' of undefined')) {
+    // seems to be a completely electron-internal error where the webview receives an event
+    // that it's not equipped to handle.
+    return;
+  }
+
   if (error.name === 'Invariant Violation') {
     // these may not get caught, even when we have an ErrorBoundary, if the exception happens
-    // in some callback. Onfortunately this also makes these errors almost impossible to find,
+    // in some callback. Unfortunately this also makes these errors almost impossible to find,
     // the code-stack is pointless (it's only react interna) and the component-stack gets
     // stripped in production builds.
     log('error', 'react invariant violation', { error: error.message, stack: error.stack });
@@ -233,6 +266,26 @@ function errorHandler(evt: any) {
              + 'This only happens if both your physical and virtual memory have run out',
       stack: error.stack,
     }, false);
+    return;
+  }
+
+  if (error.message === 'Cannot read property \'0\' of null') {
+    // This is caused by cytoscape in their mouse-move/dragging handler if the user manages
+    // to get a mouse-down event in before the cytoscape graph is shown because then the initial
+    // location is unset.
+    // I don't see how we could do anything about that but it also shouldn't be a biggy if we
+    // ignore this
+    return;
+  }
+
+  if (error.message === 'Cannot read property \'focus\' of null') {
+    // Caused by the react-overlays Modal.restoreLastFocus function but it's unclear how this can
+    // happen because the function contains a check specifically to prevent this error.
+    return;
+  }
+
+  if (error.message === 'Cannot read property \'parentNode\' of undefined') {
+    // thrown by packery - seemingly at random
     return;
   }
 
@@ -280,7 +333,7 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 let enhancer = null;
 
-if (process.env.NODE_ENV === 'development' && false) {
+if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
@@ -489,7 +542,10 @@ function renderer() {
 
       const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
         .filter(ext => ext.dynamic)
-        .map(ext => ({ name: ext.name, path: ext.path }));
+        .map(ext => ({
+          name: ext.namespace,
+          path: ext.path,
+        }));
 
       return Promise.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');

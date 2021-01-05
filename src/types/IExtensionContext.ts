@@ -1,4 +1,8 @@
 import { IExtension } from '../extensions/extension_manager/types';
+import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
+import { IHistoryStack } from '../extensions/history_management/types';
+import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
+
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -18,6 +22,7 @@ import {
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
 import { Archive } from '../util/archives';
+import { IRegisteredExtension } from '../util/ExtensionManager';
 import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
@@ -28,6 +33,7 @@ import { IBannerOptions } from './IBannerOptions';
 import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { IGameStore } from './IGameStore';
+import { ILookupOptions, IModLookupResult } from './IModLookupResult';
 import { INotification } from './INotification';
 import { IDiscoveryResult, IMod, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
@@ -37,10 +43,8 @@ import Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ComplexActionCreator } from 'redux-act';
 import { ThunkDispatch } from 'redux-thunk';
-
-import { IRegisteredExtension } from '../util/ExtensionManager';
-import { ILookupOptions, IModLookupResult } from './IModLookupResult';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, InstructionType, IReference, InstallFunc,
@@ -73,7 +77,7 @@ export type RegisterSettings =
 export type RegisterAction =
   (group: string,
    position: number,
-   iconOrComponent: string | React.ComponentClass<any> | React.StatelessComponent<any>,
+   iconOrComponent: string | React.ComponentType<any>,
    options: IActionOptions,
    titleOrProps?: string | PropsCallback,
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
@@ -83,8 +87,7 @@ export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
 export type RegisterBanner =
-  (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
-   options: IBannerOptions) => void;
+  (group: string, component: React.ComponentType<any>, options: IBannerOptions) => void;
 
 export interface IModSourceOptions {
   /**
@@ -139,7 +142,7 @@ export type RegisterDashlet =
 
 export type RegisterDialog =
   (id: string,
-   element: React.ComponentClass<any> | React.StatelessComponent<any>,
+   element: React.ComponentType<any>,
    props?: PropsCallback) => void;
 
 export type ToDoType = 'settings' | 'search' | 'workaround' | 'more';
@@ -181,8 +184,8 @@ export interface IOpenOptions {
   create?: boolean;
 }
 
-export type StateChangeCallback =
-  (previous: any, current: any) => void;
+export type StateChangeCallback<T = any> =
+  (previous: T, current: T) => void;
 
 /**
  * additional detail to further narrow down which file is meant
@@ -317,7 +320,7 @@ export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMerge
 /**
  * callback to do the actual merging
  */
-export type MergeFunc = (filePath: string, mergeDir: string) => Promise<void>;
+export type MergeFunc = (filePath: string, mergePath: string) => Promise<void>;
 
 /**
  * options used when starting an external application through runExecutable
@@ -347,6 +350,11 @@ export interface IRunParameters {
   options: IRunOptions;
 }
 
+/**
+ * callback to be used to determine list of variables for the tool command line
+ */
+export type ToolParameterCB = (options: IRunParameters) => { [key: string]: string };
+
 export interface IPreviewFile {
   /**
    * label to display to the user if applicable
@@ -356,6 +364,13 @@ export interface IPreviewFile {
    * full path to the file to preview
    */
   filePath: string;
+}
+
+export interface IApiFuncOptions {
+  /**
+   * minimum number of arguments the caller has to pass to a api extension function
+   */
+  minArguments?: number;
 }
 
 /**
@@ -466,6 +481,11 @@ export interface IExtensionApi {
   translate: TFunction;
 
   /**
+   * prepare a string to be translated further down the line.
+   */
+  laterT: TFunction;
+
+  /**
    * active locale
    */
   locale: () => string;
@@ -498,12 +518,12 @@ export interface IExtensionApi {
    * register a callback for changes to the state
    *
    * @param {string[]} path path in the state-tree to watch for changes,
-   *                   i.e. [ 'settings', 'interface', 'language' ] would call the callback
+   *                   i.e. ['settings', 'interface', 'language'] would call the callback
    *                   for all changes to the interface language
    *
    * @memberOf IExtensionApi
    */
-  onStateChange?: (path: string[], callback: StateChangeCallback) => void;
+  onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
 
   /**
    * registers an uri protocol to be handled by this application. If the "def"ault parameter
@@ -616,6 +636,7 @@ export interface IExtensionApi {
   /**
    * emit an event and allow every receiver to return a Promise. This call will only return
    * after all these Promises are resolved.
+   * If the event handlers return a value, this returns an array of results
    */
   emitAndAwait: (eventName: string, ...args: any[]) => Promise<any>;
 
@@ -657,6 +678,15 @@ export interface IExtensionApi {
    * get a list of extensions currently loaded into Vortex
    */
   getLoadedExtensions: () => IRegisteredExtension[];
+
+  /**
+   * functions made available from extension to extension. Callers have to make
+   * sure they handle gracefully the case where a function doesn't exist
+   */
+  ext: { [key: string]: (...args: any[]) => any };
+
+  // namespace to be used for localization of this extension
+  NAMESPACE: string;
 }
 
 export interface IStateVerifier {
@@ -668,6 +698,8 @@ export interface IStateVerifier {
   noUndefined?: boolean;
   // if set, can't be null
   noNull?: boolean;
+  // if set, the array or object can't be empty - if it's a string, that can't be empty either
+  noEmpty?: boolean;
   // if set, look at the object elements inside
   elements?: { [key: string]: IStateVerifier };
   // if set, this entry has to exist
@@ -699,6 +731,15 @@ export class VerifierDropParent extends Error {
   }
 }
 
+export type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
+
+export function addReducer<ActionT, StateT>(
+    action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT) {
+  return {
+    [action as any]: handler,
+  };
+}
+
 /**
  * specification a reducer registration has to follow.
  * defaults must be an object with the same keys as
@@ -707,9 +748,9 @@ export class VerifierDropParent extends Error {
  * @export
  * @interface IReducerSpec
  */
-export interface IReducerSpec {
-  reducers: { [key: string]: (state: any, payload: any) => any };
-  defaults: { [key: string]: any };
+export interface IReducerSpec<T = { [key: string]: any }> {
+  reducers: { [key: string]: (state: T, payload: any) => T };
+  defaults: T;
   verifiers?: { [key: string]: IStateVerifier };
 }
 
@@ -744,7 +785,8 @@ export interface IModTypeOptions {
  *    An extension can add new register functions by simply assigning to the context object.
  *    There is one limitation though: Due to the way those functions are called you can't have
  *    optional parameters in register functions, the caller always have to provide the exact number
- *    of arguments to get the function to be called correctly.
+ *    of arguments to get the function to be called correctly. Vortex will pass additional
+ *    parameters to the function that help identify the extension that called the function.
  *    These functions are then available to all other extensions, the order in which extensions
  *    are loaded is irrelevant (and can't be controlled).
  *    If an extension uses a register function from another extension it becomes implicitly
@@ -915,7 +957,11 @@ export interface IExtensionContext {
   registerSettingsHive: (type: PersistingType, hive: string) => void;
 
   /**
-   * register a new persistor that will hook a data file into the application store.
+   * register a new persistor that will hook a data file into the application store,
+   * meaning any part of the application can access that data like any other data in the application
+   * state and the UI will automatically refresh if it's tied to that data.
+   * This way you can unify the access to foreign data files
+   *
    * @param {string} hive the top-level key inside the state that this persistor will add
    *                      it's data to. We can't add persistors inside an existing node (
    *                      technical reasons) but you can implement an aggregator-persistor
@@ -934,7 +980,9 @@ export interface IExtensionContext {
    * add an attribute to a table. An attribute can appear as a column inside the table or as a
    * detail field in the side panel.
    * The tableId identifies, obviously, the table to which the attribute should be added. Please
-   * find the right id in the documentation of the corresponding extension
+   * find the right id in the documentation of the corresponding extension.
+   * Please prefer specifying the attribute as a function returning the ITableAttribute instead of
+   * the attribute directly
    */
   registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
 
@@ -1035,6 +1083,15 @@ export interface IExtensionContext {
    * In extreme cases you could instead throw an exception from the check (which would bubble up
    * through the dispatch call) which will likely crash Vortex.
    * That might be preferrable to corrupting state
+   * Further: Most actions are processed twice, once in the UI process where they got triggered and
+   *   in the main process where they get persisted to disk. If you stop an action in the UI
+   *   process it will not get forwarded to the main process, so this check only runs once. If you
+   *   allow it through though, this check is done a second time in the main process and you *need*
+   *   to generate the same result, you can't allow an action in the UI process and then reject it
+   *   in the main process!
+   *   Due to checks being run twice, if you write a log message that also will happen twice. You
+   *   can check "process.type === 'browser') to log only in the main (aka browser) process but
+   *   again: The result of the check *has to has to has to* be the same between all processes.
    * @param {string} actionType type of the action (like STORE_WINDOW_SIZE)
    * @param {SanityCheck} check the check to run for the specified action
    */
@@ -1042,9 +1099,26 @@ export interface IExtensionContext {
 
   /**
    * register a file merge that needs to happen during deployment.
-   * modType is the type with which the merged file(s) should be deployed. This needs to be an
-   * existing mod type (see registerModType), otherwise the merged file won't be used. Use an empty
-   * string for the default mod type
+   * modType is the mod type this applies to, so only mods from this mod type are merged
+   * and the output merge is of that type as well.
+   *
+   * This api is - complex - as it tries to cover multiple related use cases. Please
+   * make sure you understand how it works becauses trial&error might drive you mad.
+   *
+   * The way this works is that as part of deployment the "in" files get copied to a working
+   * directory. It's ok for these files to be non-existent. It's ok for these files to be from one
+   * of the deployed mods (see below) or a file generated by or shipped with the game itself.
+   * Then the "merge" function is called on each matching file from each mod so you get an
+   * opportunity to incorporate the modded content into the file in the working directory
+   * Finally, the merged file from the working directory is deployed, just like every other file,
+   * based on which mod type you specified.
+   * If the "in" file was from mone of the mods, the merge function will be called with that
+   * file again, so it's your own responsibility to not duplicate the content from that file.
+   * If the "in" file did not exist, you get an empty file as the basis to merge into, that is not
+   * an error.
+   * The "out" path specified by the baseFiles is the relative path of the "temporary" file
+   * in the working directory. Together with the mod type, this will control what the final output
+   * path is.
    */
   registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
 
@@ -1151,6 +1225,42 @@ export interface IExtensionContext {
       => Promise<IPreviewFile>) => void;
 
   /**
+   * register a callback that will introduce additional variables that can be used as part of
+   * tool command lines. The callback you provide here gets called every time a tool gets started
+   * from vortex, the returned object gets merged with all other parameter object and then used
+   * when resolving the final command line.
+   * Please use keys that are all upper case and consist only of latin characters and underscores.
+   * While this is not necessary from a technical standpoint it's more consistent and predictable
+   * for users.
+   * Also make sure the keys you return are sufficiently unique to avoid collisions
+   * @param callback the function that gets called to generate variables. the argument
+   *                 passed to this contains details about the tool being started, usually
+   *                 you will probably not need this
+   */
+  registerToolVariables: (callback: ToolParameterCB) => void;
+
+  // Provides game extensions with an easy way to add a load order page
+  //  if they require it. (DEPRECATED - please use registerLoadOrder instead)
+  registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
+
+  /**
+   * Add file based load ordering functionality to the specified game.
+   *  Please use this instead of registerLoadOrderPage
+   */
+  registerLoadOrder: (gameInfo: ILoadOrderGameInfo) => void;
+
+  /**
+   * Sets up a stack for a history of events that can be presented to the user
+   */
+  registerHistoryStack: (id: string, options: IHistoryStack) => void;
+
+  /**
+   * add a function to the IExtensionApi object that is made available to all other extensions
+   * in the api.ext object.
+   */
+  registerAPI: (name: string, func: (...args: any[]) => any, options: IApiFuncOptions) => void;
+
+  /**
    * specify that a certain range of versions of vortex is required
    * (see https://www.npmjs.com/package/semver for syntax documentation).
    * If you call this multiple times, all ranges have to match so that makes little sense
@@ -1160,8 +1270,9 @@ export interface IExtensionContext {
   /**
    * register a dependency on a different extension
    * @param {string} extId id of the extension that this one depends on
+   * @param {string} version a semver version range that the mod is compatible with
    */
-  requireExtension: (extId: string) => void;
+  requireExtension: (extId: string, version?: string) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

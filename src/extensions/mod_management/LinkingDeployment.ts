@@ -62,6 +62,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
+  private mDirCache: Set<string>;
 
   constructor(id: string, name: string, description: string,
               fallbackPurgeSafe: boolean, api: IExtensionApi) {
@@ -135,6 +136,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     let contentChanged: string[];
 
     let errorCount: number = 0;
+
+    this.mDirCache = new Set<string>();
 
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
@@ -245,6 +248,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             : game.requiresCleanup;
           if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
             this.postLinkPurge(dataPath, false, false, directoryCleaning)
+              .catch(UserCanceled, () => null)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',
                   err, { message: dataPath });
@@ -258,10 +262,20 @@ abstract class LinkingActivator implements IDeploymentMethod {
               .map(key => context.previousDeployment[key]);
         })
         .tapCatch(() => {
-          const context = this.mContext;
-          this.mContext = undefined;
-          context.onComplete();
-        });
+          if (this.mContext !== undefined) {
+            // Not sure how we would manage to get here with an undefined
+            //  deployment context but it _can_ happen, and it is masking
+            //  the actual problem.
+            //  https://github.com/Nexus-Mods/Vortex/issues/7069
+            const context = this.mContext;
+            this.mContext = undefined;
+            context.onComplete();
+          }
+        })
+        .finally(() => {
+          this.mDirCache = undefined;
+        })
+        ;
   }
 
   public cancel(gameId: string, dataPath: string, installationPath: string) {
@@ -273,7 +287,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public activate(sourcePath: string, sourceName: string, dataPath: string,
+  public activate(sourcePath: string, sourceName: string, deployPath: string,
                   blackList: Set<string>): Promise<void> {
     return fs.statAsync(sourcePath)
       .then(() => turbowalk(sourcePath, entries => {
@@ -282,14 +296,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
         }
         entries.forEach(entry => {
           const relPath: string = path.relative(sourcePath, entry.filePath);
-          const relPathNorm = this.mNormalize(path.join(dataPath, relPath));
+          const relPathNorm = this.mNormalize(path.join(deployPath, relPath));
           if (!entry.isDirectory && !blackList.has(relPathNorm)) {
             // mods are activated in order of ascending priority so
             // overwriting is fine here
             this.mContext.newDeployment[relPathNorm] = {
               relPath,
               source: sourceName,
-              target: dataPath,
+              target: deployPath,
               time: entry.mtime * 1000,
             };
           }
@@ -322,6 +336,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string, gameId?: string): Promise<void> {
+    log('debug', 'purging', { installPath, dataPath });
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
@@ -377,8 +392,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
       return this.stat(fileModPath)
         .catch(err => {
-          // can't stat source, probably the file was deleted
-          sourceDeleted = true;
+          // can't stat source, probably the file was deleted.
+          // change: we no longer automatically assume the file is deleted because
+          // otherwise the dialog will offer the user to delete the file permanently
+          // which - if the user isn't careful - would break the mod.
+          // The problem is that we now likely can't determine if the link is intact so the
+          // entire process may fail but I assume that's still preferrable.
+          if (['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+            sourceDeleted = true;
+          } else {
+            log('info', 'source file can\'t be accessed', { fileModPath, error: err.message });
+          }
           return Promise.resolve(undefined);
         })
         .then(sourceStatsIn => {
@@ -388,9 +412,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return this.statLink(fileDataPath);
         })
-        .catch(() => {
+        .catch(err => {
           // can't stat destination, probably the file was deleted
-          destDeleted = true;
+          if (['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+            destDeleted = true;
+          } else {
+            log('info', 'link can\'t be accessed', { fileModPath, error: err.message });
+          }
           return Promise.resolve(undefined);
         })
         .then(destStats => {
@@ -476,11 +504,37 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath) as any;
+    return fs.statAsync(filePath);
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath) as any;
+    return fs.lstatAsync(filePath);
+  }
+
+  protected ensureDir(dirPath: string, dirTags?: boolean): Promise<boolean> {
+    let didCreate = false;
+    const onDirCreated = (createdPath: string) => {
+      didCreate = true;
+      if (dirTags !== false) {
+        log('debug', 'created directory', createdPath);
+        return fs.writeFileAsync(
+          path.join(createdPath, LinkingActivator.NEW_TAG_NAME),
+            'This directory was created by Vortex deployment and will be removed ' +
+            'during purging if it\'s empty');
+      } else {
+        return Promise.resolve();
+      }
+    };
+
+    return ((this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
+      ? fs.ensureDirAsync(dirPath, onDirCreated).then(() => {
+        if (this.mDirCache === undefined) {
+          this.mDirCache = new Set<string>();
+        }
+        this.mDirCache.add(dirPath);
+      })
+      : Promise.resolve())
+      .then(() => didCreate);
   }
 
   private removeDeployedFile(installationPath: string,

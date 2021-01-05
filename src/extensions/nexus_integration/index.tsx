@@ -37,6 +37,7 @@ import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { guessFromFileName } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
 import { getPageURL } from './util/sso';
+import Tracking from './util/tracking';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
@@ -48,7 +49,7 @@ import { NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, getInfo, nexusGames, processErrorMessage,
+import { endorseModImpl, getInfo, nexusGames, nexusGamesProm, processErrorMessage,
          startDownload, updateKey } from './util';
 
 import NexusT, { IDownloadURL, IFileInfo,
@@ -270,6 +271,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
                      + 'please try again later.',
               replace: { host: err.host || err.hostname },
             });
+            return;
           } else if (['ENOTFOUND', 'ENOENT'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
@@ -380,6 +382,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
       author: getSafe(nexusModInfo, ['author'], undefined),
       uploader: getSafe(nexusModInfo, ['uploaded_by'], undefined),
+      uploader_url: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'uploaded_users_profile_url'], undefined),
       category,
       pictureUrl: getSafe(nexusModInfo, ['picture_url'], undefined),
       description: getSafe(nexusModInfo, ['description'], undefined),
@@ -619,9 +622,20 @@ function makeNXMLinkCallback(api: IExtensionApi) {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
-      if ((nxmUrl.gameId === SITE_ID) && install) {
-        return api.emitAndAwait('install-extension',
-          { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+      if (nxmUrl.gameId === SITE_ID) {
+        if (install) {
+          return api.emitAndAwait('install-extension',
+            { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+        } else {
+          api.events.emit('show-extension-page', nxmUrl.modId);
+          bringToFront();
+          return Promise.resolve();
+        }
+      } else {
+        const { foregroundDL } = api.store.getState().settings.interface;
+        if (foregroundDL) {
+          bringToFront();
+        }
       }
     } catch (err) {
       api.showErrorNotification('Invalid URL', err, { allowReport: false });
@@ -733,7 +747,7 @@ function makeRepositoryLookup(nexusConn: NexusT) {
   };
 }
 
-function once(api: IExtensionApi) {
+function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
@@ -821,6 +835,8 @@ function once(api: IExtensionApi) {
       // typically just missing the api key or a downtime
       log('info', 'failed to determine newest Vortex version', { error: err.message });
     });
+
+  callbacks.forEach(cb => cb(nexus));
 }
 
 function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
@@ -1048,16 +1064,18 @@ function init(context: IExtensionContextExt): boolean {
     const gameMode = activeGameId(state);
     const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
     if (mod !== undefined) {
-      const gameId = mod.attributes.downloadGame !== undefined
-        ? mod.attributes.downloadGame
+      const gameId = mod.attributes?.downloadGame !== undefined
+        ? mod.attributes?.downloadGame
         : gameMode;
-      context.api.events.emit('open-mod-page', gameId, mod.attributes.modId);
+      context.api.events.emit('open-mod-page',
+                              gameId, mod.attributes?.modId, mod.attributes?.source);
     } else {
       const ids = getSafe(state.persistent.downloads,
                           ['files', instanceIds[0], 'modInfo', 'nexus', 'ids'],
                           undefined);
       if (ids !== undefined) {
-        context.api.events.emit('open-mod-page', ids.gameId || gameMode, ids.modId);
+        context.api.events.emit('open-mod-page',
+                                ids.gameId || gameMode, ids.modId, 'nexus');
       }
     }
   }, instanceIds => {
@@ -1076,10 +1094,20 @@ function init(context: IExtensionContextExt): boolean {
     return modSource === 'nexus';
   });
 
+  const tracking = new Tracking(context.api);
+
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Guess ID',
                          instanceIds => guessIds(context.api, instanceIds));
   context.registerAction('mods-multirow-actions', 300, 'smart', {}, 'Guess IDs',
                          instanceIds => guessIds(context.api, instanceIds));
+  context.registerAction('mods-multirow-actions', 250, 'track', {}, 'Track',
+    instanceIds => {
+      tracking.trackMods(instanceIds);
+    });
+  context.registerAction('mods-multirow-actions', 250, 'track', { hollowIcon: true }, 'Untrack',
+    instanceIds => {
+      tracking.untrackMods(instanceIds);
+    });
 
   const queryCondition = (instanceIds: string[]) => {
     const state: IState = context.api.store.getState();
@@ -1103,7 +1131,6 @@ function init(context: IExtensionContextExt): boolean {
     new Promise(resolve => {
       awaitedLinks.push({ gameId, modId, fileId, resolve });
     })));
-
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
@@ -1164,6 +1191,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
       endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
+  context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
@@ -1197,7 +1225,9 @@ function init(context: IExtensionContextExt): boolean {
                          context.api.translate('Open Nexus Page'),
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
-  context.once(() => once(context.api));
+  context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
+
+  context.once(() => once(context.api, [(nex: NexusT) => tracking.once(nex)]));
   context.onceMain(() => onceMain(context.api));
 
   return true;

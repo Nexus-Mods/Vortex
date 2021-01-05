@@ -91,21 +91,25 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
     this.mButtons = [
       {
-        title: t('Expand All'),
+        title: 'Expand All',
         icon: 'expand-all',
         action: this.expandAll,
       }, {
-        title: t('Collapse All'),
+        title: 'Collapse All',
         icon: 'collapse-all',
         action: this.collapseAll,
       }, {
-        title: t('Add Root'),
+        title: 'Add Root',
         icon: 'folder-add',
         action: this.addRootCategory,
       }, {
-        title: t('Show/Hide Empty'),
+        title: 'Show/Hide Empty',
         icon: 'hide',
         action: this.toggleShowEmpty,
+      }, {
+        title: 'Sort Alphabetically',
+        icon: 'loot-sort',
+        action: this.sortAlphabetically,
       },
     ];
   }
@@ -250,6 +254,25 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories',
                   err, { allowReport: false });
+    }
+  }
+
+  private sortAlphabetically = () => {
+    const { t, gameMode, categories, mods, onShowError, onSetCategoryOrder } = this.props;
+
+    try {
+      const newTree: ICategoriesTree[] = createTreeDataObject(t, categories, mods,
+        (a, b) => categories[a].name.localeCompare(categories[b].name));
+
+      const newOrder = (base: ICategoriesTree[]): string[] => {
+        return [].concat(...base.map(node =>
+          [node.categoryId, ...newOrder(node.children)]));
+      };
+
+      onSetCategoryOrder(gameMode, newOrder(newTree));
+
+    } catch (err) {
+      onShowError('Failed to sort categories', err, { allowReport: false });
     }
   }
 
@@ -426,10 +449,33 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private removeCategory = (id: string) => {
     const { categories, gameMode, onRemoveCategory } = this.props;
-    Object.keys(categories)
-      .filter(iterId => categories[iterId].parentCategory === id)
-      .forEach(iterId => this.removeCategory(iterId));
-    onRemoveCategory(gameMode, id);
+    let userConfirmed = false;
+    id = Array.isArray(id) ? id[0] : id;
+    const catKeys = Object.keys(categories);
+    const childrenIds = catKeys.filter(key => categories[key].parentCategory === id);
+    const removeCat = () => {
+      childrenIds.forEach(iterId => this.removeCategory(iterId));
+      onRemoveCategory(gameMode, id);
+    };
+    if (userConfirmed) {
+      removeCat();
+    }
+    if (childrenIds.length > 0) {
+      this.context.api.showDialog('question', 'Remove Category', {
+        text: 'You\'re attempting to remove a category with one or more nested categories '
+          + 'Which may in turn, also contain their own sub-categories. Are you sure you wish to proceed ?',
+      }, [
+        { label: 'Cancel', default: true },
+        { label: 'Remove Category' }
+      ]).then((res) => {
+        if (res.action !== 'Cancel') {
+          userConfirmed = true;
+          removeCat();
+        }
+      })
+    } else {
+      onRemoveCategory(gameMode, id);
+    }
   }
 
   private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData) => {
@@ -437,17 +483,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const actions: IActionDefinition[] = [
       {
         icon: 'edit',
-        title: t('Rename'),
+        title: 'Rename',
         action: this.renameCategory,
       },
       {
         icon: 'folder-add',
-        title: t('Add Child'),
+        title: 'Add Child',
         action: this.addCategory,
       },
       {
         icon: 'remove',
-        title: t('Remove'),
+        title: 'Remove',
         action: this.removeCategory,
       },
     ];
@@ -458,6 +504,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             className='category-buttons'
             group='category-icons'
             staticElements={actions}
+            t={t}
             instanceId={rowInfo.node.categoryId}
           />
         ),

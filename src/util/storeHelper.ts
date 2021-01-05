@@ -209,7 +209,7 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
   return result;
 }
 
-function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
+export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
   const firstElement = path[0];
   const copy = Array.isArray(state)
     ? state.slice()
@@ -313,9 +313,16 @@ export function merge<T extends object>(state: T, path: Array<(string | number)>
   return setSafe(state, path, newVal);
 }
 
-export function rehydrate<T extends object>(state: T, inbound: any, path: string[]): T {
+export function rehydrate<T extends object>(
+  state: T,
+  inbound: any,
+  path: string[],
+  replace: boolean,
+  ): T {
   const inState = getSafe(inbound, path, undefined);
-  return inState !== undefined
+  return replace
+    ? (inState ?? state)
+    : (inState !== undefined)
     ? merge(state, [], inState)
     : state;
 }

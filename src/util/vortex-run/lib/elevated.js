@@ -16,9 +16,22 @@ const path = __importStar(require("path"));
 const tmp = __importStar(require("tmp"));
 const winapi = __importStar(require("winapi-bindings"));
 function elevatedMain(moduleRoot, ipcPath, main) {
+    let client;
+    const syntaxErrors = ['ReferenceError'];
     const handleError = (error) => {
-        // tslint:disable-next-line:no-console
-        console.error('Elevated code failed', error.stack);
+      const testIfScriptInvalid  = () => {
+        syntaxErrors.forEach(errType => {
+          if (error.stack.startsWith(errType)) {
+            error = 'InvalidScriptError: ' + error.stack;
+            client.sendEndError(error);
+          }
+        });
+      };
+      // tslint:disable-next-line:no-console
+      console.error('Elevated code failed', error.stack);
+      if (client !== undefined) {
+        testIfScriptInvalid ();
+      }
     };
     process.on('uncaughtException', handleError);
     process.on('unhandledRejection', handleError);
@@ -29,7 +42,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     const JsonSocket = require('json-socket');
     // tslint:disable-next-line:no-shadowed-variable
     const path = require('path');
-    const client = new JsonSocket(new net.Socket());
+    client = new JsonSocket(new net.Socket());
     client.connect(path.join('\\\\?\\pipe', ipcPath));
     client.on('connect', () => {
         Promise.resolve(main(client, require))

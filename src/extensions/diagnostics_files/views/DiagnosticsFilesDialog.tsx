@@ -35,7 +35,7 @@ interface IComponentState {
   sessionIdx: number;
   show: {
     error: boolean;
-    warning: boolean;
+    warn: boolean;
     info: boolean;
     debug: boolean;
   };
@@ -55,7 +55,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       sessionIdx: -1,
       show: {
         error: true,
-        warning: true,
+        warn: true,
         info: true,
         debug: false,
       },
@@ -69,7 +69,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         sessionIdx: { $set: -1 },
         show: { $set: {
           error: true,
-          warning: true,
+          warn: true,
           info: true,
           debug: false,
         } },
@@ -195,7 +195,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <FlexLayout type='row'>
-        {['debug', 'info', 'warning', 'error'].map(type => (
+        {['debug', 'info', 'warn', 'error'].map(type => (
           <div key={type}>
             <Checkbox
               key={`checkbox-${type}`}

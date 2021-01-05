@@ -67,8 +67,6 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { t, game } = this.props;
-    const { loading } = this.state;
     const gameInfo = this.props.gameInfo || {};
 
     const keysToRender = Object.keys(gameInfo).filter(key => gameInfo[key].value !== null);
@@ -114,7 +112,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
 function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   return {
     discoveredGames: state.settings.gameMode.discovered,
-    gameInfo: state.persistent.gameMode.gameInfo[ownProps.game.id],
+    gameInfo: state.persistent.gameMode.gameInfo?.[ownProps.game.id],
     language: state.settings.interface.language,
   };
 }

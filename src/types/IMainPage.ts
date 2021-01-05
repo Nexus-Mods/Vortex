@@ -21,4 +21,5 @@ export interface IMainPage {
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
+  namespace?: string;
 }

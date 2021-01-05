@@ -1,4 +1,5 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
+import { IRegisteredExtension } from '../util/ExtensionManager';
 import { extend } from '../util/ExtensionProvider';
 
 import * as _ from 'lodash';
@@ -110,15 +111,17 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
  * @returns
  */
 function registerAction(instanceGroup: string,
+                        extInfo: Partial<IRegisteredExtension>,
                         group: string,
                         position: number,
                         iconOrComponent: string | React.ComponentClass<any>,
-                        options: IActionOptions,
+                        optionsIn: IActionOptions,
                         titleOrProps?: string | (() => any),
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
                         condition?: () => boolean | string,
                         ): any {
   if (instanceGroup === group) {
+    const options = { ...optionsIn, namespace: extInfo.namespace };
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
                position, action: actionOrCondition, options, condition };
@@ -132,4 +135,4 @@ function registerAction(instanceGroup: string,
 }
 
 export default
-  extend(registerAction, 'group')(ActionControl) as React.ComponentClass<IActionControlProps>;
+  extend(registerAction, 'group', true)(ActionControl) as React.ComponentClass<IActionControlProps>;

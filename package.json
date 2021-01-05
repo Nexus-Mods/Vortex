@@ -9,11 +9,11 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "8.3.1"
+    "electron": "11.0.4"
   },
   "scripts": {
-    "_assets_out": "node InstallAssets.js out && node-sass --output-style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
-    "_assets_app": "node InstallAssets.js app && node-sass --output-style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "_assets_app": "tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
@@ -33,8 +33,10 @@
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
-    "buildwatch": "yarn run build_rest && tsc -p . -w",
-    "storybook": "start-storybook"
+    "buildwatch": "yarn run build_rest && tsc -p . --watch",
+    "forge_package": "electron-forge package",
+    "forge_start": "electron-forge start",
+    "forge_make": "electron-forge make"
   },
   "jest": {
     "transform": {
@@ -85,12 +87,12 @@
     "@babel/preset-stage-0": "^7.0.0",
     "@babel/preset-typescript": "^7.7.2",
     "@babel/register": "7.7.4",
-    "@storybook/addon-a11y": "^5.2.8",
-    "@storybook/addon-docs": "^5.2.8",
-    "@storybook/addon-info": "^5.2.8",
-    "@storybook/addon-knobs": "^5.2.8",
-    "@storybook/addon-viewport": "^5.2.8",
-    "@storybook/react": "^5.2.8",
+    "@electron-forge/cli": "^6.0.0-beta.54",
+    "@electron-forge/maker-deb": "^6.0.0-beta.54",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.54",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
+    "@electron-forge/maker-wix": "^6.0.0-beta.54",
+    "@electron-forge/maker-zip": "^6.0.0-beta.54",
     "@types/babel-core": "^6.25.6",
     "@types/babel-template": "^6.25.2",
     "@types/babel-traverse": "^6.25.5",
@@ -105,7 +107,7 @@
     "@types/enzyme": "^3.10.3",
     "@types/ffi": "^0.2.2",
     "@types/form-data": "^2.5.0",
-    "@types/fs-extra": "5.0.2",
+    "@types/fs-extra": "^9.0.4",
     "@types/graphlib": "^2.1.5",
     "@types/immutability-helper": "^2.6.3",
     "@types/jest": "^24.0.23",
@@ -116,12 +118,11 @@
     "@types/msgpack": "^0.0.30",
     "@types/node": "12.12.35",
     "@types/node-uuid": "^0.0.28",
-    "@types/opn": "^5.5.0",
-    "@types/react": "^16.9.11",
+    "@types/react": "^16.9.43",
     "@types/react-bootstrap": "^0.32.20",
     "@types/react-datepicker": "^2.9.4",
     "@types/react-dom": "^16.9.4",
-    "@types/react-redux": "^7.1.5",
+    "@types/react-redux": "^7.1.9",
     "@types/react-router": "^5.1.3",
     "@types/react-sortable-tree": "^0.3.11",
     "@types/react-test-renderer": "^16.9.1",
@@ -146,6 +147,7 @@
     "@types/winston": "^2.4.4",
     "@types/write-file-atomic": "^2.1.2",
     "@types/ws": "^6.0.3",
+    "@types/xml2js": "^0.4.5",
     "@yarnpkg/lockfile": "*",
     "babel-core": "^6.26.3",
     "babel-jest": "^24.9.0",
@@ -154,12 +156,11 @@
     "babel-polyfill": "^6.26.0",
     "bootswatch": "^4.3.1",
     "concurrently": "^5.0.0",
-    "copyfiles": "^2.1.1",
+    "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
-    "electron": "~8.3.1",
-    "electron-builder": "20.15.0",
-    "electron-devtools-installer": "^2.2.4",
+    "electron": "^11.0.4",
+    "electron-devtools-installer": "^3.1.1",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.8.8",
     "enzyme": "^3.10.0",
@@ -174,7 +175,7 @@
     "react-docgen-typescript-loader": "^3.6.0",
     "react-shallow-testutils": "^3.0.1",
     "react-test-renderer": "^16.12.0",
-    "redux-devtools": "^3.5.0",
+    "redux-devtools": "^3.7.0",
     "redux-devtools-dispatch": "^2.2.1",
     "redux-devtools-log-monitor": "^1.4.0",
     "redux-freeze": "^0.1.7",
@@ -209,19 +210,20 @@
     "diskusage": "^1.1.3",
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
-    "drivelist": "TanninOne/drivelist",
+    "drivelist": "^9.1.0",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.9",
     "fomod-installer": "Nexus-Mods/fomod-installer",
-    "fs-extra": "^8.1.0",
+    "fs-extra": "^9.0.1",
     "fuzzball": "^1.3.0",
     "graphlib": "^2.1.7",
     "harmony-patcher": "Nexus-Mods/harmony-patcher",
     "i18next": "^19.0.1",
     "i18next-node-fs-backend": "^2.1.3",
+    "icon-extract": "Nexus-Mods/node-icon-extract",
     "iconv-lite": "^0.5.0",
     "immutability-helper": "^3.0.1",
     "is-admin": "^3.0.0",
@@ -237,15 +239,13 @@
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
-    "node-sass": "^4.13.0",
-    "opn": "TanninOne/opn",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
     "prop-types": "^15.7.2",
     "re-reselect": "^3.4.0",
     "react": "^16.12.0",
     "react-bootstrap": "^0.33.0",
-    "react-datepicker": "^2.10.0",
+    "react-datepicker": "^3.3.0",
     "react-dnd": "^10.0.2",
     "react-dnd-html5-backend": "^10.0.2",
     "react-dom": "^16.12.0",
@@ -261,11 +261,11 @@
     "redux": "^4.0.4",
     "redux-act": "^1.7.7",
     "redux-thunk": "^2.3.0",
-    "redux-watcher": "^1.0.1",
     "relaxed-json": "^1.0.3",
     "reselect": "^4.0.0",
     "resolve": "^1.12.0",
     "rimraf": "TanninOne/rimraf",
+    "sass": "^1.26.9",
     "semver": "^6.3.0",
     "shortid": "^2.2.15",
     "simple-vdf": "Nexus-Mods/vdf-parser",
@@ -282,7 +282,39 @@
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
     "ws": "^7.2.0",
-    "xml2js": "^0.4.23",
-    "zeromq": "^6.0.0-beta.6"
+    "xml2js": "^0.4.23"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "asar": true,
+        "ignore": [
+          "api",
+          "app",
+          "build",
+          "assets",
+          "coverage",
+          "extensions",
+          "tools",
+          "samples",
+          "sourcemaps",
+          ".*\\.xjs",
+          ".*\\.ps1",
+          ".*\\.txt",
+          "dist*",
+          "^\\..*",
+          "__.*"
+        ]
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-wix",
+          "config": {
+            "language": 1033,
+            "manufacturer": "Black Tree Gaming Ltd."
+          }
+        }
+      ]
+    }
   }
 }

@@ -1,4 +1,6 @@
+import { SITE_GAME_NAME } from '../../controls/constants';
 import ProgressBar from '../../controls/ProgressBar';
+import Spinner from '../../controls/Spinner';
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import GameFilter from '../../controls/table/GameFilter';
 import TextFilter from '../../controls/table/TextFilter';
@@ -10,6 +12,7 @@ import { getCurrentLanguage } from '../../util/i18n';
 import { getSafe } from '../../util/storeHelper';
 import { bytesToString, truthy } from '../../util/util';
 
+import { SITE_ID } from '../gamemode_management/constants';
 import { gameName } from '../gamemode_management/selectors';
 
 import { IDownload } from './types/IDownload';
@@ -34,6 +37,7 @@ function progress(props) {
     case 'init': return <span>{t('Pending')}</span>;
     case 'finished': return <span>{t('Finished')}</span>;
     case 'failed': return <span>{t('Failed')}</span>;
+    case 'finalizing': return <span><Spinner /> {t('Finalizing')}</span>;
     case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: return (
@@ -150,7 +154,9 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
           );
         } else {
           const games = getDownloadGames(download);
-          const name = gameName(store.getState(), games[0]);
+          const name = games[0] === SITE_ID
+            ? t(SITE_GAME_NAME)
+            : gameName(store.getState(), games[0]);
           const more = games.length > 1 ? '...' : '';
           return (
             <div>
@@ -242,7 +248,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       isToggleable: true,
       edit: {},
       isSortable: true,
-      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state)),
+      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state ?? 'init')),
       filter: new DownloadProgressFilter(),
     },
   ];

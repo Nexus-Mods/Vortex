@@ -117,7 +117,8 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
       && ((fileSize === undefined) || (fileSize === value.fileSizeBytes))
       && ((logicalFileName === undefined) || (logicalFileName === value.logicalFileName))
       && ((fileExpression === undefined) || minimatch(value.fileName, fileExpression))
-      && ((versionMatch === undefined) || semver.satisfies(value.fileVersion, versionMatch));
+      && ((versionMatch === undefined)
+          || semver.satisfies(semver.coerce(value.fileVersion), versionMatch));
 }
 
 function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
@@ -140,8 +141,8 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
         // within blocks of equal number of collaterals, consider the newer versions
         // before the ones with lower version
         return semver.compare(
-          rhs.dep.lookupResults[0].value.fileVersion,
-          lhs.dep.lookupResults[0].value.fileVersion,
+          semver.coerce(rhs.dep.lookupResults[0].value.fileVersion),
+          semver.coerce(lhs.dep.lookupResults[0].value.fileVersion),
         );
       }
     });

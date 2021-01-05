@@ -42,32 +42,6 @@ describe('setGameHidden', () => {
   });
 });
 
-describe('addSearchPath', () => {
-  it('adds a new drive to the SearchPath array', () => {
-    let input = { searchPaths: ['E:','C:'] };
-    let result = settingsReducer.reducers.ADD_SEARCH_PATH(input, 'F:');
-    expect(result).toEqual({ searchPaths: ['E:','C:', 'F:']   });
-  });
-   it('fails if the drive already exist', () => {
-    let input = { searchPaths: ['E:','C:'] };
-    let result = settingsReducer.reducers.ADD_SEARCH_PATH(input, 'C:');
-    expect(result).toEqual({ searchPaths: ['E:','C:']   });
-  });
-});
-
-describe('removeSearchPath', () => {
-  it('removes the drive to the SearchPath array', () => {
-    let input = { searchPaths: ['E:','C:','F:'] };
-    let result = settingsReducer.reducers.REMOVE_SEARCH_PATH(input, 'F:');
-    expect(result).toEqual({ searchPaths: ['E:','C:']   });
-  });
-   it('does nothing if the drive doesn\'t exist', () => {
-    let input = { searchPaths: ['E:','C:','F:'] };
-    let result = settingsReducer.reducers.REMOVE_SEARCH_PATH(input, 'H:');
-    expect(result).toEqual({ searchPaths: ['E:','C:', 'F:']   });
-  });
-});
-
 describe('setGameParameters', () => {
   it('sets the game parameters', () => {
     let input = { discovered: {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 

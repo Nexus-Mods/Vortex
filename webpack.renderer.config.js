@@ -6,8 +6,11 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const mode = 'production';
 
-const transpileOnly = (ForkTsCheckerWebpackPlugin !== undefined)
-                    || (process.env['BUILD_QUICK_AND_DIRTY'] !== undefined);
+// transpileOnly leads to type declarations not being removed from the js output
+// which for some reason currently leads to starup errors
+const transpileOnly = ((ForkTsCheckerWebpackPlugin !== undefined)
+                    || (process.env['BUILD_QUICK_AND_DIRTY'] !== undefined))
+                    && false;
 
 const plugins = [
   new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify('production') }),
@@ -19,13 +22,16 @@ if ((ForkTsCheckerWebpackPlugin !== undefined) && (process.env['BUILD_QUICK_AND_
 
 
 module.exports = {
-  entry: './src/renderer.tsx',
+  entry: {
+    renderer: './src/renderer.tsx',
+    splash: './src/splash.ts'
+  },
   target: 'electron-renderer',
   node: { __filename: false, __dirname: false },
   mode,
   output: {
     libraryTarget: 'commonjs2',
-    filename: '../app/renderer.js'
+    filename: '../app/[name].js'
   },
   module: {
     rules: [

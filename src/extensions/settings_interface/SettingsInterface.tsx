@@ -17,14 +17,14 @@ import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment, setAutoEnable } from './actions/automation';
-import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
+import { setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setStartMinimized } from './actions/automation';
+import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
+import { app, remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -49,7 +49,10 @@ interface IConnectedProps {
   currentLanguage: string;
   profilesVisible: boolean;
   autoDeployment: boolean;
+  autoInstall: boolean;
   autoEnable: boolean;
+  autoStart: boolean;
+  startMinimized: boolean;
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
@@ -58,12 +61,16 @@ interface IConnectedProps {
   relativeTimes: boolean;
   extensions: IAvailableExtension[];
   suppressedNotifications: { [id: string]: boolean };
+  foregroundDL: boolean;
 }
 
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
+  onSetAutoInstall: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
+  onSetAutoStart: (start: boolean) => void;
+  onSetStartMinimized: (minimized: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -73,6 +80,7 @@ interface IActionProps {
   onSetHideTopLevelCategory: (hide: boolean) => void;
   onSetRelativeTimes: (enabled: boolean) => void;
   onResetNotificationSuppression: () => void;
+  onSetForegroundDL: (enabled: boolean) => void;
 }
 
 interface IComponentState {
@@ -115,12 +123,21 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, advanced, autoDeployment, autoEnable, currentLanguage,
-            customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup,
+    const { t, autoDeployment, autoEnable, autoInstall, autoStart, currentLanguage,
+            customTitlebar, desktopNotifications, foregroundDL, profilesVisible,
+            hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
             suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
+
+    const startMinimizedToggle = (autoStart) ? (
+      <Toggle
+        checked={startMinimized}
+        onToggle={this.toggleMinimized}
+      >
+        {t('Start Vortex in the background (Minimized)')}
+      </Toggle>
+    ) : null;
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -194,6 +211,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               </Toggle>
             </div>
           </div>
+          <div>
+            <Toggle
+              checked={foregroundDL}
+              onToggle={onSetForegroundDL}
+            >
+              {t('Bring Vortex to foreground when starting downloads in browser')}
+            </Toggle>
+          </div>
         </FormGroup>
         <FormGroup controlId='advanced'>
           <ControlLabel>{t('Advanced')}</ControlLabel>
@@ -245,11 +270,24 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               </More>
             </Toggle>
             <Toggle
+              checked={autoInstall}
+              onToggle={this.toggleAutoInstall}
+            >
+              {t('Install Mods when downloaded')}
+            </Toggle>
+            <Toggle
               checked={autoEnable}
               onToggle={this.toggleAutoEnable}
             >
               {t('Enable Mods when installed (in current profile)')}
             </Toggle>
+            <Toggle
+              checked={autoStart}
+              onToggle={this.toggleAutoStart}
+            >
+              {t('Run Vortex when my computer starts')}
+            </Toggle>
+            {startMinimizedToggle}
           </div>
         </FormGroup>
         <FormGroup controlId='notifications'>
@@ -290,7 +328,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private selectLanguage = (evt) => {
     const { extensions } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    const extName: string = target.selectedOptions[0].getAttribute('data-ext');
+    const extName: string = target.selectedOptions[0]?.getAttribute('data-ext');
+    if (extName === undefined) {
+      // no language selected? How did this happen?
+      return;
+    }
     const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
@@ -334,9 +376,45 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetAutoDeployment(!autoDeployment);
   }
 
+  private toggleAutoInstall = () => {
+    const { autoInstall, onSetAutoInstall } = this.props;
+    onSetAutoInstall(!autoInstall);
+  }
+
   private toggleAutoEnable = () => {
     const { autoEnable, onSetAutoEnable } = this.props;
     onSetAutoEnable(!autoEnable);
+  }
+
+  private toggleAutoStart = () => {
+    const { autoStart, startMinimized, onSetAutoStart, onSetStartMinimized } = this.props;
+    const startOnBoot = ((!autoStart) === true);
+    onSetAutoStart(startOnBoot);
+    if (!startOnBoot) {
+      // We only want to allow the user to start Vortex minimized
+      //  if auto start is enabled - easier this way and less chances
+      //  for users to forget about this setting and start sending
+      //  bug reports.
+      onSetStartMinimized(false);
+    }
+    const uniApp = app || remote.app;
+    uniApp.setLoginItemSettings({
+      openAtLogin: startOnBoot,
+      path: process.execPath, // Yes this is currently needed - thanks Electron
+      args: (startOnBoot) ? (startMinimized) ? ['--start-minimized'] : [] : [],
+    });
+  }
+
+  private toggleMinimized = () => {
+    const { autoStart, startMinimized, onSetStartMinimized } = this.props;
+    const isMinimized = ((!startMinimized) === true);
+    onSetStartMinimized(isMinimized);
+    const uniApp = app || remote.app;
+    uniApp.setLoginItemSettings({
+      openAtLogin: autoStart,
+      path: process.execPath, // Yes this is currently needed - thanks Electron
+      args: (isMinimized) ? ['--start-minimized'] : [],
+    });
   }
 
   private resetSuppression = () => {
@@ -439,12 +517,16 @@ function mapStateToProps(state: IState): IConnectedProps {
     advanced: state.settings.interface.advanced,
     desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
+    autoInstall: state.settings.automation.install,
     autoEnable: state.settings.automation.enable,
+    autoStart: state.settings.automation.start,
+    startMinimized: state.settings.automation.minimized,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
     relativeTimes: state.settings.interface.relativeTimes,
     suppressedNotifications: state.settings.notifications.suppress,
+    foregroundDL: state.settings.interface.foregroundDL,
   };
 }
 
@@ -456,8 +538,17 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetAutoDeployment: (enabled: boolean) => {
       dispatch(setAutoDeployment(enabled));
     },
+    onSetAutoInstall: (enabled: boolean) => {
+      dispatch(setAutoInstall(enabled));
+    },
     onSetAutoEnable: (enabled: boolean) => {
       dispatch(setAutoEnable(enabled));
+    },
+    onSetAutoStart: (start: boolean) => {
+      dispatch(setAutoStart(start));
+    },
+    onSetStartMinimized: (minimized: boolean) => {
+      dispatch(setStartMinimized(minimized));
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));
@@ -481,6 +572,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onResetNotificationSuppression: () => {
       dispatch(resetSuppression(null));
     },
+    onSetForegroundDL: (enabled: boolean) => dispatch(setForegroundDL(enabled)),
   };
 }
 

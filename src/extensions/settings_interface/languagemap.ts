@@ -643,7 +643,7 @@ const languageMap = {
   },
   tl: {
     name: 'Tagalog',
-    nativeName: 'Wikang Tagalog, ᜏᜒᜃᜅ᜔ ᜆᜄᜎᜓᜄ᜔',
+    nativeName: 'Wikang Tagalog',
   },
   tn: {
     name: 'Tswana',

@@ -20,6 +20,8 @@ let currentLanguage = 'en';
 const fallbackTFunc: TFunction =
   str => (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
 
+let actualT: TFunction = fallbackTFunc;
+
 export { fallbackTFunc, i18n, TFunction };
 
 let missingKeys = { common: {} };
@@ -37,6 +39,7 @@ class MultiBackend {
   private mOptions: any;
   private mServices: any;
   private mCurrentBackend: FSBackend;
+  private mLastReadLanguage: string;
   private mBackendType: BackendType;
 
   constructor(services, options) {
@@ -50,9 +53,13 @@ class MultiBackend {
 
   public read(language: string, namespace: string, callback) {
     const {backendType, extPath} = this.backendType(language);
-    if (backendType !== this.mBackendType) {
+    if ((backendType !== this.mBackendType)
+        || ((backendType === 'extension')
+            && (language !== this.mLastReadLanguage))) {
       this.mCurrentBackend = this.initBackend(backendType, extPath);
     }
+
+    this.mLastReadLanguage = language;
     this.mCurrentBackend.read(language, namespace, callback);
   }
 
@@ -72,6 +79,8 @@ class MultiBackend {
       loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
       jsonIndent: 2,
     });
+
+    this.mBackendType = type;
 
     return res;
   }
@@ -106,6 +115,23 @@ class MultiBackend {
   }
 }
 
+class HighlightPP {
+  public name: string;
+  public type: 'postProcessor';
+
+  constructor() {
+    this.type = 'postProcessor';
+    this.name = 'HighlightPP';
+  }
+
+  public process(value: string, key, options, translator) {
+    if (value.startsWith('TT:')) {
+      console.trace('duplicate translation', key, value);
+    }
+    return 'TT:' + value.toUpperCase();
+  }
+}
+
 /**
  * initialize the internationalization library
  *
@@ -116,16 +142,20 @@ class MultiBackend {
 function init(language: string, translationExts: () => IExtension[]): Promise<IInitResult> {
   // reset to english if the language isn't valid
   try {
-    new Date().toLocaleString(language);
+    (new Date()).toLocaleString(language);
   } catch (err) {
     language = 'en';
   }
 
   currentLanguage = language;
 
-  const i18nObj = I18next
-    .use(MultiBackend as any)
-    .use(initReactI18next);
+  const i18nObj = I18next;
+  if (process.env.HIGHLIGHT_I18N === 'true') {
+    i18nObj.use(new HighlightPP());
+  }
+  i18nObj.use(MultiBackend as any)
+    .use(initReactI18next)
+    ;
 
   return Promise.resolve(i18nObj.init(
     {
@@ -140,6 +170,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
       keySeparator: '::',
 
       debug: false,
+      postProcess: (process.env.HIGHLIGHT_I18N === 'true') ? 'HighlightPP' : false,
 
       react: {
         // afaict this is simply broken at this time. With this enabled the React.Suspense will
@@ -170,6 +201,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
         translationExts,
       },
     }))
+    .tap(tFunc => { actualT = tFunc; })
     .then(tFunc => Promise.resolve({
       i18n: i18nObj,
       tFunc,
@@ -186,7 +218,7 @@ export function getCurrentLanguage() {
 }
 
 export function globalT(key: string | string[], options: TOptions) {
-  return fallbackTFunc(key, options);
+  return actualT(key, options);
 }
 
 export function debugTranslations(enable?: boolean) {
@@ -199,6 +231,78 @@ export function debugTranslations(enable?: boolean) {
 
 export function getMissingTranslations() {
   return missingKeys;
+}
+
+export interface ITString {
+  key: string;
+  options?: TOptions;
+  toString(): string;
+}
+
+export class TString implements ITString {
+  private mKey: string;
+  private mOptions: TOptions;
+
+  constructor(key: string, options: TOptions, namespace: string) {
+    this.mKey = key;
+    this.mOptions = options ?? {};
+    if (this.mOptions.ns === undefined) {
+      this.mOptions.ns = namespace;
+    }
+  }
+
+  public get key(): string {
+    return this.mKey;
+  }
+
+  public get options(): TOptions {
+    return this.mOptions;
+  }
+
+  public toString(): string {
+    return this.mKey;
+  }
+}
+
+export const laterT: TFunction =
+  (key: string, optionsOrDefault?: TOptions | string, options?: TOptions): ITString => {
+    if (typeof(optionsOrDefault) === 'string') {
+      return new TString(key, options, 'common');
+    } else {
+      return new TString(key, optionsOrDefault, 'common');
+    }
+  };
+
+/**
+ * translate an input string. If key is a string or string array, this just
+ * forwards the parameters to the t function.
+ * If it is an ITString object, will translate using with the parameters stored
+ * within
+ * @param t the actual translation function to invok
+ * @param key translation key, keys or ITString object
+ * @param options translations options. this will take precedence over those specified at
+ *                the time the ITString was created
+ * @param onlyTString if set to true and the key is a string, assume it's already the translated
+ *                    string and don't translate again. This is mostly for backwards compatibility
+ */
+export function preT(t: TFunction,
+                     key: string | string[] | ITString,
+                     options?: TOptions,
+                     onlyTString?: boolean) {
+  if ([undefined, null].includes(key)) {
+    return '';
+  }
+  if (typeof(key) === 'string') {
+    if (onlyTString === true) {
+      return key;
+    } else {
+      return t(key, options);
+    }
+  } else if (Array.isArray(key)) {
+    return t(key, options);
+  } else {
+    return t(key.key, { ...key.options, ...(options ?? {}) });
+  }
 }
 
 export default init;

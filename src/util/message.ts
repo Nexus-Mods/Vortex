@@ -8,21 +8,23 @@ import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
-import { HTTPError, StalledError } from './CustomErrors';
+import { HTTPError, StalledError, ThirdPartyError } from './CustomErrors';
 import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
 import { log } from './log';
-import { flatten, truthy } from './util';
+import { flatten, setdefault, truthy } from './util';
 
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import ZipT = require('node-7z');
+import * as path from 'path';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { file as tmpFile, tmpName } from 'tmp';
 
 import * as _ from 'lodash';
+import getVortexPath from './getVortexPath';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -142,6 +144,10 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
   if ((options !== undefined) && (options.allowReport !== undefined)) {
     return options.allowReport;
   }
+  if (err instanceof ThirdPartyError) {
+    return false;
+  }
+
   if ((err === undefined) || (err.code === undefined)) {
     return true;
   }
@@ -195,7 +201,7 @@ function serializeAttachments(input: IAttachment): Promise<string> {
   }
 }
 
-function bundleAttachment(options?: IErrorOptions): Promise<string> {
+export function bundleAttachment(options?: IErrorOptions): Promise<string> {
   if ((options === undefined)
       || (options.attachments === undefined)
       || (options.attachments.length === 0)) {
@@ -256,8 +262,19 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     },
   };
 
+  if ((details?.['attachLogOnReport'] === true)
+      && (((options.attachments ?? []).find(iter => iter.id === 'log') === undefined))) {
+    setdefault(options, 'attachments', []).push({
+      id: 'log',
+      type: 'file',
+      data: path.join(getVortexPath('userData'), 'vortex.log'),
+      description: 'Vortex Log',
+    });
+  }
+
   if ((options.attachments !== undefined)
-      && (options.attachments.length > 0)) {
+      && (options.attachments.length > 0)
+      && allowReport) {
     content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
       + 'Note: If you report this error, the following data will be added to the report:\n'
       + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
@@ -343,8 +360,13 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       },
       allowReport: false,
     };
+  } else if (err instanceof ThirdPartyError) {
+    return {
+      message: err.message,
+      allowReport: false,
+    };
   } else if (err.code === undefined) {
-    return { message: err.message, replace: {} };
+    return { message: err.message, replace: {}, allowReport: err['allowReport'] };
   } else if (err.syscall === 'getaddrinfo') {
     return {
       message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, '
@@ -447,13 +469,27 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'UNKNOWN') {
     if (truthy(err['nativeCode'])) {
-      return {
-        message: 'An unrecognized error occurred. The error may contain information '
-               + 'useful for handling it better in the future so please do report it (once): \n'
-               + `${err['nativeCode'].message} (${err['nativeCode'].code})`,
+      // the if block is the original code from when native error codes were introduced
+      // but nativeCode is supposed to be only the numerical code, not an object with both
+      // message and code.
+      // To be safe I'm keeping both variants but I'm fairly sure the first block is never hit
+      if (err['nativeCode'].code !== undefined) {
+        return {
+          message: 'An unrecognized error occurred. The error may contain information '
+                + 'useful for handling it better in the future so please do report it (once): \n'
+                + `${err['nativeCode'].message} (${err['nativeCode'].code})`,
 
-        allowReport: true,
-      };
+          allowReport: true,
+        };
+      } else {
+        return {
+          message: 'An unrecognized error occurred. The error may contain information '
+                + 'useful for handling it better in the future so please do report it (once): \n'
+                + `${err.message} (${err['nativeCode']})`,
+
+          allowReport: true,
+        };
+      }
     } else {
       return {
         message: 'An unknown error occurred. What this means is that Windows or the framework '
@@ -465,6 +501,7 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
 
   return {
     message: err.message,
+    allowReport: err['allowReport'],
   };
 }
 
@@ -548,7 +585,7 @@ function prettifyHTTPError(err: HTTPError) {
 }
 
 const HIDE_ATTRIBUTES = new Set(
-  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational']);
+  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport']);
 
 /**
  * render error message for display to the user
@@ -575,6 +612,7 @@ export function renderError(err: string | Error | any):
     const errMessage = prettifyNodeErrorMessage(err);
 
     const flatErr = flatten(err || {}, { maxLength: 5 });
+    delete flatErr['allowReport'];
 
     let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);

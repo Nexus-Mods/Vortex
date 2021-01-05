@@ -8,8 +8,8 @@ import { sanitizeCSSId } from './util';
 import Promise from 'bluebird';
 import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
 import * as _ from 'lodash';
-import {} from 'node-sass';
 import * as path from 'path';
+import * as sassT from 'sass';
 
 const app = appIn || remote.app;
 
@@ -22,22 +22,32 @@ function cachePath() {
 }
 
 if (ipcMain !== undefined) {
-  ipcMain.on('__renderSASS', (evt, stylesheets: string[]) => {
+  let initial = true;
+
+  const renderSASSCB = (evt, stylesheets: string[], requested: boolean) => {
     let cache: { stylesheets: string[], css: string };
-    try {
-      // TODO: evil sync read
-      cache = JSON.parse(fs.readFileSync(cachePath(), { encoding: 'utf8' }));
-      if (_.isEqual(cache.stylesheets, stylesheets)) {
-        evt.sender.send('__renderSASS_result', null, cache.css);
-        log('debug', 'using cached css', { cached: cache.stylesheets, stylesheets });
-        return;
+    if (requested) {
+      try {
+        // TODO: evil sync read
+        cache = JSON.parse(fs.readFileSync(cachePath(), { encoding: 'utf8' }));
+        if (_.isEqual(cache.stylesheets, stylesheets)) {
+          evt.sender.send('__renderSASS_result', null, cache.css);
+          log('debug', 'using cached css', { cached: cache.stylesheets, stylesheets });
+          if (requested && initial) {
+            initial = false;
+            renderSASSCB(evt, stylesheets, false);
+          }
+          return;
+        }
+        log('debug', 'updating css cache', {
+          cached: cache.stylesheets,
+          current: stylesheets,
+        });
+      } catch (err) {
+        log('debug', 'no css cache', { cachePath: cachePath() });
       }
-      log('debug', 'updating css cache', {
-        cached: cache.stylesheets,
-        current: stylesheets,
-      });
-    } catch (err) {
-      log('debug', 'no css cache', { cachePath: cachePath() });
+    } else {
+      log('debug', 'updating css cache, just to be sure');
     }
 
     const sassIndex: string =
@@ -63,34 +73,50 @@ if (ipcMain !== undefined) {
     const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
     const modulesPath = getVortexPath('modules_unpacked');
 
+    const replyEvent = requested
+      ? '__renderSASS_result'
+      : '__renderSASS_update';
+
+    /*
     process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
       `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
-    const sass = require('node-sass');
-    sass.render({
-      outFile: path.join(assetsPath, 'theme.css'),
-      includePaths: [assetsPath, modulesPath],
-      data: sassIndex,
-      outputStyle: isDevel ? 'expanded' : 'compressed',
-    },
-      (err, output) => {
-        if (err !== null) {
-          // the error has its own class and its message is missing relevant information
-          evt.sender.send('__renderSASS_result', new Error(err.formatted));
-        } else {
-          // remove utf8-bom if it's there
-          const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
-            ? output.css.slice(3)
-            : output.css;
-          evt.sender.send('__renderSASS_result', null, css.toString());
-          fs.writeFileAsync(cachePath(), JSON.stringify({
-            stylesheets,
-            css: css.toString(),
-          }), { encoding: 'utf8' })
-            .catch(() => null);
-        }
-      });
+    */
+    const sass: typeof sassT = require('sass');
 
-  });
+    setTimeout(() => {
+      const started = Date.now();
+      sass.render({
+        outFile: path.join(assetsPath, 'theme.css'),
+        includePaths: [assetsPath, modulesPath],
+        data: sassIndex,
+        outputStyle: isDevel ? 'expanded' : 'compressed',
+      },
+        (err, output) => {
+          log('info', 'sass compiled in', `${Date.now() - started}ms`);
+          if (evt.sender?.isDestroyed()) {
+            return;
+          }
+          if (err !== null) {
+            // the error has its own class and its message is missing relevant information
+            evt.sender.send(replyEvent, new Error(err.formatted));
+          } else {
+            // remove utf8-bom if it's there
+            const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
+              ? output.css.slice(3)
+              : output.css;
+            evt.sender.send(replyEvent, null, css.toString());
+            fs.writeFileAsync(cachePath(), JSON.stringify({
+              stylesheets,
+              css: css.toString(),
+            }), { encoding: 'utf8' })
+              .catch(() => null);
+          }
+        });
+    }, requested ? 0 : 2000);
+  };
+
+  ipcMain.on('__renderSASS', (evt, stylesheets: string[]) =>
+    renderSASSCB(evt, stylesheets, true));
 }
 
 class StyleManager {
@@ -124,6 +150,7 @@ class StyleManager {
     }, StyleManager.RENDER_DELAY, true);
 
     ipcRenderer.on('__renderSASS_result', (evt, err: Error, css: string) => {
+      log('info', 'css result', { err: err?.message });
       if (this.mExpectingResult === undefined) {
         log('warn', 'unexpected sass render result');
         return;
@@ -135,6 +162,17 @@ class StyleManager {
         this.mExpectingResult.resolve(css);
       }
       this.mExpectingResult = undefined;
+    });
+
+    ipcRenderer.on('__renderSASS_update', (evt, err: Error, css: string) => {
+      log('info', 'css updated', { err: err?.message });
+      if (err !== null) {
+        // logging as warning because we don't know if this will be a problem
+        // but it may lead to a messed up look
+        log('warn', 'css render failed', err.message);
+      } else {
+        this.applyCSS(css);
+      }
     });
   }
 
@@ -223,22 +261,26 @@ class StyleManager {
       ipcRenderer.send('__renderSASS', stylesheets);
     })
       .then((css: string) => {
-        const style = document.createElement('style');
-        style.id = 'theme';
-        style.type = 'text/css';
-        style.innerHTML = css;
-        const head = document.getElementsByTagName('head')[0];
-        let found = false;
-        for (let i = 0; i < head.children.length && !found; ++i) {
-          if (head.children.item(i).id === 'theme') {
-            head.replaceChild(style, head.children.item(i));
-            found = true;
-          }
-        }
-        if (!found) {
-          head.appendChild(style);
-        }
+        this.applyCSS(css);
       });
+  }
+
+  private applyCSS(css: string) {
+    const style = document.createElement('style');
+    style.id = 'theme';
+    style.type = 'text/css';
+    style.innerHTML = css;
+    const head = document.getElementsByTagName('head')[0];
+    let found = false;
+    for (let i = 0; i < head.children.length && !found; ++i) {
+      if (head.children.item(i).id === 'theme') {
+        head.replaceChild(style, head.children.item(i));
+        found = true;
+      }
+    }
+    if (!found) {
+      head.appendChild(style);
+    }
   }
 }
 

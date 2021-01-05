@@ -16,13 +16,16 @@ import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions }
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
+import { setDialogVisible } from '../../actions';
 
 interface ILocalState {
   reloadNecessary: boolean;
+  preselectModId: number;
 }
 
 const localState: ILocalState = makeReactive({
   reloadNecessary: false,
+  preselectModId: undefined,
 });
 
 function checkForUpdates(api: IExtensionApi) {
@@ -160,7 +163,7 @@ function checkMissingDependencies(api: IExtensionApi,
       api.sendNotification({
         type: 'warning',
         message: 'Some of the installed extensions couldn\'t be loaded because '
-               + 'they have missing dependencies.',
+               + 'they have missing or incompatible dependencies.',
         actions: [
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
             Promise.map(Object.keys(missingDependencies), depId =>
@@ -177,6 +180,17 @@ function checkMissingDependencies(api: IExtensionApi,
                       replace: { name: depId },
                     });
                   } else {
+                    api.sendNotification({
+                      type: 'success',
+                      message: 'Missing dependencies were installed - please restart Vortex',
+                      actions: [
+                        {
+                          title: 'Restart now', action: () => {
+                            relaunch();
+                          },
+                        },
+                      ],
+                    });
                     dismiss();
                   }
                 })
@@ -197,7 +211,21 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
       .then(ext => {
         const state: IState = api.store.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
-          localState.reloadNecessary = true;
+          if (!localState.reloadNecessary) {
+            localState.reloadNecessary = true;
+            api.sendNotification({
+              id: 'extension-updates',
+              type: 'success',
+              message: 'Extensions installed, please restart to use them',
+              actions: [
+                {
+                  title: 'Restart now', action: () => {
+                    relaunch();
+                  },
+                },
+              ],
+            });
+          }
         }
         api.store.dispatch(setInstalledExtensions(ext));
       })
@@ -234,6 +262,13 @@ function init(context: IExtensionContext) {
 
   context.registerReducer(['session', 'extensions'], sessionReducer);
 
+  context.registerActionCheck('SET_EXTENSION_ENABLED', (state, action: any) => {
+    if (process.type === 'browser') {
+      log('info', 'changing extension enabled', action.payload);
+    }
+    return undefined;
+  });
+
   context.registerInstaller('site-installer', 0,
     (files: string[], gameId: string) => Promise.resolve({
       supported: gameId === 'site',
@@ -256,6 +291,27 @@ function init(context: IExtensionContext) {
             updateExtensions(false);
           }
         }));
+
+    context.api.onAsync('install-extension-from-download', (archiveId: string) => {
+      const state = context.api.getState();
+      const { modId } = state.persistent.downloads.files[archiveId].modInfo.nexus.ids;
+      const ext = state.session.extensions.available.find(iter => iter.modId === modId);
+      if ((modId !== undefined) && (ext !== undefined)) {
+        return downloadAndInstallExtension(context.api, ext)
+          .tap(success => {
+            if (success) {
+              updateExtensions(false);
+            }
+          });
+      } else {
+        return Promise.reject(new ProcessCanceled('not recognized as a Vortex extension'));
+      }
+    });
+
+    context.api.events.on('show-extension-page', (modId: number) => {
+      localState.preselectModId = modId;
+      context.api.store.dispatch(setDialogVisible('browse-extensions'));
+    });
 
     context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
       checkMissingDependencies(context.api, current);

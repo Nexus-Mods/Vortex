@@ -157,7 +157,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOption = (gameId: string) => {
-    const { discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
+    const { t, discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
     const { gameIconCache } = this.state;
 
     if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
@@ -168,14 +168,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const discovered = discoveredGames[gameId];
 
     const iconPath = (gameIconCache[gameId].icon !== undefined)
-      ? gameIconCache[gameId].icon.replace(/\\/g, '/')
+      ? gameIconCache[gameId].icon.replace(/\\/g, '/').replace(/'/, '%27')
       : undefined;
     const game = gameIconCache[gameId].game;
 
     const profile = profiles[lastActiveProfile[gameId]];
-    if (profile === undefined) {
-      return null;
-    }
 
     let displayName =
       getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
@@ -191,11 +188,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         style={{ background: `url('${iconPath}')` }}
       >
         <div className='quicklaunch-item'>
-          <div className='quicklaunch-name'>{displayName}</div>
+          <div className='quicklaunch-name'>{t(displayName)}</div>
           {profilesVisible
             ? (
               <div className='quicklaunch-profile'>
-                Profile: {profile.name}
+                {t('Profile')} : {profile?.name ?? t('<None>')}
               </div>
             ) : null}
         </div>
@@ -234,7 +231,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   private start = () => {
     const { onShowError } = this.props;
     const { starter } = this.state;
-    if (starter === undefined) {
+    if (starter?.exePath === undefined) {
+      onShowError('Tool missing/misconfigured',
+        'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     StarterInfo.run(starter, this.context.api, onShowError);
