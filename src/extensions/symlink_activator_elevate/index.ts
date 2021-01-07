@@ -808,7 +808,9 @@ function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> 
           title: 'Clean up', action: dismiss => {
             removeTask()
               .catch(err => {
-                api.showErrorNotification('Failed to disable task', err);
+                api.showErrorNotification('Failed to disable task', err, {
+                  allowReport: !(err instanceof UserCanceled),
+                });
               });
             dismiss();
           },
