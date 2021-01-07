@@ -342,7 +342,9 @@ export function onPathsChanged(api: IExtensionApi,
       })
       .then(() => null)
       .catch((err: Error) => {
-        showError(store.dispatch, 'Failed to refresh mods', err);
+        showError(store.dispatch, 'Failed to refresh mods', err, {
+          allowReport: !(err instanceof UserCanceled),
+        });
       });
   }
 }
