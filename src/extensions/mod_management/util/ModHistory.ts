@@ -5,6 +5,7 @@ import { IHistoryEvent, IHistoryStack, Revertability } from '../../history_manag
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfile } from '../../profile_management/types/IProfile';
 import { setDeploymentNecessary } from '../actions/deployment';
+import { setModAttribute } from '../actions/mods';
 import modName from './modName';
 
 export type EventTypes = 'mod-enabled' | 'mod-disabled' | 'mod-installed' | 'mod-installed'
@@ -18,6 +19,10 @@ interface IEventType {
     do: (evt: IHistoryEvent) => Promise<void>;
   };
 }
+
+// some attributes we don't want to show because they are used internally as caches or something
+// and shouldn't be controlled by the user
+const HIDDEN_ATTRIBUTES = ['noContent', 'installTime', 'content'];
 
 class ModHistory implements IHistoryStack {
   private mApi: IExtensionApi;
@@ -84,6 +89,22 @@ class ModHistory implements IHistoryStack {
           do: evt => this.removeMod(evt.gameId, evt.data.id),
         },
       },
+      'mod-attribute-changed': {
+        describe: evt =>
+          api.translate('Mod "{{ name }}" attribute "{{ attribute }}" set: {{ to }}', {
+            replace: evt.data,
+          }),
+        revert: {
+          describe: evt => api.translate('Revert to {{ from }}', { replace: evt.data }),
+          possible: evt => {
+            const state = api.getState();
+            const { attribute, id, to } = evt.data;
+            return state.persistent.mods[evt.gameId]?.[id]?.attributes?.[attribute] === to;
+          },
+          do: evt =>
+            this.setModAttribute(evt.gameId, evt.data.id, evt.data.attribute, evt.data.from),
+        },
+      },
       'will-deploy': {
         describe: evt => api.translate('Deployment started'),
       },
@@ -110,23 +131,68 @@ class ModHistory implements IHistoryStack {
 
     this.mApi.onStateChange<typeof state.persistent.mods>(['persistent', 'mods'],
       (prev, current) => {
+        if (addToHistory === undefined) {
+          return;
+        }
+
         Object.keys(current).forEach(gameId => {
           if (prev[gameId] !== current[gameId]) {
             Object.keys(current[gameId]).forEach(modId => {
-              if (prev[gameId]?.[modId] === undefined) {
-                addToHistory?.('mods', {
+              const prevMod = prev[gameId]?.[modId];
+              const currentMod = current[gameId]?.[modId];
+              if (prevMod === currentMod) {
+                return;
+              }
+
+              if ((prevMod?.state !== currentMod?.state) && (currentMod?.state === 'installed')) {
+                addToHistory('mods', {
                   type: 'mod-installed',
                   gameId,
                   data: {
                     id: modId,
-                    name: modName(current[gameId][modId]),
+                    name: modName(currentMod),
                   },
                 });
               }
+
+              if ((prevMod?.state === currentMod?.state) && (currentMod?.state === 'installed')) {
+                // only tracking attribute changes for installed mods, not
+                // for the ones set during installation
+                const prevAttributes = prevMod?.attributes;
+                const currentAttributes = currentMod?.attributes;
+
+                if (prevAttributes !== currentAttributes) {
+                  Object.keys(currentAttributes)
+                    .forEach(attr => {
+                      if (HIDDEN_ATTRIBUTES.includes(attr)) {
+                        return;
+                      }
+                      // only track attribute _changes_, not initialization, if there was nothing
+                      // set before
+                      if ((prevAttributes[attr] !== undefined)
+                          && (currentAttributes[attr] !== prevAttributes[attr])) {
+                        addToHistory('mods', {
+                          type: 'mod-attribute-changed',
+                          gameId,
+                          data: {
+                            id: modId,
+                            name: modName(currentMod),
+                            attribute: attr,
+                            from: prevAttributes[attr],
+                            to: currentAttributes[attr],
+                          },
+                        });
+                      }
+                    });
+                }
+              }
             });
             Object.keys(prev[gameId]).forEach(modId => {
-              if (current[gameId]?.[modId] === undefined) {
-                addToHistory?.('mods', {
+              const oldState = prev[gameId]?.[modId]?.state;
+
+              if ((current[gameId]?.[modId] === undefined)
+                  && (oldState === 'installed')) {
+                addToHistory('mods', {
                   type: 'mod-uninstalled',
                   gameId,
                   data: {
@@ -165,23 +231,20 @@ class ModHistory implements IHistoryStack {
 
   public describe(evt: IHistoryEvent): string {
     if (this.mEventTypes[evt.type] === undefined) {
-      return `Unsupported event ${evt.type}: ${JSON.stringify(evt.data)}`;
+      return `Unsupported event ${evt.type}`;
     }
     return this.mEventTypes[evt.type].describe(evt);
   }
 
   public describeRevert(evt: IHistoryEvent): string {
-    if (this.mEventTypes[evt.type] === undefined) {
-      return `Unsupported event ${evt.type}: ${JSON.stringify(evt.data)}`;
-    }
-    if (this.mEventTypes[evt.type].revert === undefined) {
+    if (this.mEventTypes[evt.type]?.revert === undefined) {
       return undefined;
     }
     return this.mEventTypes[evt.type].revert.describe(evt);
   }
 
   public canRevert(evt: IHistoryEvent): Revertability {
-    if (this.mEventTypes[evt.type].revert === undefined) {
+    if (this.mEventTypes[evt.type]?.revert === undefined) {
       return 'never';
     } else if (!this.mEventTypes[evt.type].revert.possible(evt)) {
       return 'invalid';
@@ -224,6 +287,11 @@ class ModHistory implements IHistoryStack {
         }
       });
     });
+  }
+
+  private setModAttribute(gameId: string, modId: string, attr: string, value: any): Promise<void> {
+    this.mApi.store.dispatch(setModAttribute(gameId, modId, attr, value));
+    return Promise.resolve();
   }
 }
 

@@ -50,7 +50,11 @@ export const modsReducer: IReducerSpec = {
       if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
         return state;
       }
-      return setSafe(state, [gameId, modId, 'attributes', attribute], value);
+      if (value === undefined) {
+        return deleteOrNop(state, [gameId, modId, 'attributes', attribute]);
+      } else {
+        return setSafe(state, [gameId, modId, 'attributes', attribute], value);
+      }
     },
     [actions.setModAttributes as any]: (state, payload) => {
       const { gameId, modId, attributes } = payload;

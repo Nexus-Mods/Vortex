@@ -41,7 +41,6 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['session', 'history'], sessionReducer);
 
   context.registerDialog('history-dialog', HistoryDialog, () => {
-    const state = context.api.getState();
     return {
       onClose: () => {
         context.api.store.dispatch(showHistory(undefined));
