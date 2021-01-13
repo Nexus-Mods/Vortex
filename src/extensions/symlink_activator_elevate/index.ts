@@ -322,12 +322,13 @@ class DeploymentMethod extends LinkingDeployment {
     return new Promise((resolve,  reject) => {
       this.mIPCServer.close((err?: Error) => {
         // note: err may be undefined instead of null
-        if (!!err && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
-          return reject(err);
-        } else {
-          this.mIPCServer = undefined;
-          return resolve();
+        if (!!err) {
+          // afaik the server having already been closed is the only situation that would
+          // trigger an error here
+          log('warn', 'failed to close ipc connection', err);
         }
+        this.mIPCServer = undefined;
+        return resolve();
       });
     });
   }
@@ -397,7 +398,7 @@ class DeploymentMethod extends LinkingDeployment {
     // can't use dynamic id for the task
     const ipcPath: string = useTask
       ? IPC_ID
-      : `${IPC_ID}vortex_elevate_symlink_${shortid()}`;
+      : `${IPC_ID}_${shortid()}`;
 
     return new Promise<void>((resolve, reject) => {
       let elevating = false;
@@ -413,7 +414,8 @@ class DeploymentMethod extends LinkingDeployment {
       this.mIPCServer = startIPCServer(ipcPath,
                                        (conn: JsonSocket, message: string, payload: any) => {
         if (message === 'initialised') {
-          log('debug', 'ipc connected');
+          const { pid } = payload;
+          log('debug', 'ipc connected', { pid });
           this.mElevatedClient = conn;
           this.api.store.dispatch(clearUIBlocker('elevating'));
           elevating = false;
@@ -672,7 +674,11 @@ function installTask(scriptPath: string) {
     if (message === 'log') {
       log(payload.level, payload.message, payload.meta);
     } else if (message === 'quit') {
-      ipcServer.close();
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
     }
   });
 
@@ -777,7 +783,11 @@ function removeTask(): Promise<void> {
     if (message === 'log') {
       log(payload.level, payload.message, payload.meta);
     } else if (message === 'quit') {
-      ipcServer.close();
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
     }
   });
 
