@@ -231,7 +231,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     options = {};
   }
   const sourceErr = new Error();
-  const err = renderError(details);
+  const err = renderError(details, options);
 
   const allowReport = err.allowReport !== undefined
     ? err.allowReport
@@ -343,7 +343,7 @@ export interface IPrettifiedError {
   allowReport?: boolean;
 }
 
-export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
+export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPrettifiedError {
   if ((err.errno === 225) || (err['nativeCode'] === 225)) {
     // doesn't contain a code attribute
     return {
@@ -351,7 +351,10 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       replace: { path: err.path },
       allowReport: false,
     };
-  } else if ([362, 383, 404].indexOf(err.errno) !== -1) {
+  } else if (
+    [362, 383, 404].includes(err.errno)
+    || (
+      (err.errno === 1359) && (err['path'] ?? '').toLowerCase().includes('onedrive'))) {
     return {
       message: `The file "{{path}}" is stored on a cloud storage drive `
         + '(Microsoft OneDrive) which is currently unavailable.',
@@ -591,7 +594,7 @@ const HIDE_ATTRIBUTES = new Set(
  * render error message for display to the user
  * @param err
  */
-export function renderError(err: string | Error | any):
+export function renderError(err: string | Error | any, options?: IErrorOptions):
     { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } {
   if (Array.isArray(err)) {
     err = err[0];
@@ -601,7 +604,7 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof HTTPError) {
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
-    const errMessage = prettifyNodeErrorMessage(err);
+    const errMessage = prettifyNodeErrorMessage(err, options);
 
     const flatErr = flatten(err || {}, { maxLength: 5 });
     delete flatErr['allowReport'];
