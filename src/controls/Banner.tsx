@@ -71,11 +71,15 @@ class Banner extends React.Component<IProps, {}> {
 
   private cycle = () => {
     if (truthy(this.mRef)) {
-      (this.mRef.childNodes.item(this.mCurrentBanner) as any).attributes.removeNamedItem('class');
+      const prev = (this.mRef.childNodes.item(this.mCurrentBanner) as any);
+      prev?.attributes?.removeNamedItem?.('class');
+
       this.mCurrentBanner = (this.mCurrentBanner + 1) % this.mBanners.length;
       const attr = document.createAttribute('class');
       attr.value = 'active';
-      (this.mRef.childNodes.item(this.mCurrentBanner) as any).attributes.setNamedItem(attr);
+
+      const current = (this.mRef.childNodes.item(this.mCurrentBanner) as any);
+      current?.attributes?.setNamedItem?.(attr);
     }
   }
 }
