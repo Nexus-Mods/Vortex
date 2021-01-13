@@ -37,6 +37,9 @@ class Tracking {
       calc: (mod: IMod) => {
         if (mod.attributes?.source === 'nexus') {
           const gameMode = activeGameId(this.mApi.getState());
+          if (mod.attributes?.modId === undefined) {
+            return false;
+          }
           return this.mTrackedMods[gameMode]?.has?.(
             mod.attributes?.modId.toString(),
           );
@@ -81,6 +84,9 @@ class Tracking {
     return (props?: { t: TFunction; mod: IMod }) => {
       const { t, mod } = props;
       const gameMode = activeGameId(this.mApi.getState());
+      if (mod.attributes?.modId === undefined) {
+        return null;
+      }
       return (
         <IconButton
           icon='track'
@@ -113,6 +119,9 @@ class Tracking {
         return prev;
       }, {});
       this.mOnChanged?.();
+    })
+    .catch(err => {
+      this.mApi.showErrorNotification('Failed to get tracked mods', err);
     });
   }
 
