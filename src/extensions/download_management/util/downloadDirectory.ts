@@ -148,7 +148,6 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
       return fs.statAsync(path.join(currentDownloadPath, DOWNLOADS_DIR_TAG));
     })
     .catch(err => {
-
       if (!dirExists
           && (Object.keys(state.persistent.downloads.files ?? {}).length === 0)) {
         return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve());

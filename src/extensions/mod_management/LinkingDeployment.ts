@@ -328,7 +328,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         }
       });
-    });
+    }, { skipHidden: false });
   }
 
   public prePurge(): Promise<void> {
