@@ -10,9 +10,9 @@ import SuperTable, { ITableRowAction } from '../../../controls/Table';
 import OptionsFilter from '../../../controls/table/OptionsFilter';
 import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
+import ZoomableImage from '../../../controls/ZoomableImage';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -42,11 +42,12 @@ import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import { ENABLED_TIME, INSTALL_TIME, PICTURE } from '../modAttributes';
+import { ENABLED_TIME, INSTALL_TIME } from '../modAttributes';
 import getText from '../texts';
 
 import Author from './Author';
 import CheckModVersionsButton from './CheckModVersionsButton';
+import Description from './Description';
 import InstallArchiveButton from './InstallArchiveButton';
 
 import Promise from 'bluebird';
@@ -142,6 +143,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modActions: ITableRowAction[];
   private modEnabledAttribute: ITableAttribute;
   private modNameAttribute: ITableAttribute;
+  private modPictureAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
@@ -258,7 +260,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     ];
 
     this.mAttributes = [
-      PICTURE,
+      this.modPictureAttribute,
       this.modEnabledAttribute,
       this.modNameAttribute,
       this.modVersionAttribute,
@@ -615,6 +617,32 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     };
 
+    this.modPictureAttribute = {
+      id: 'picture',
+      description: 'A picture provided by the author',
+      customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
+        const long = getSafe(mod, ['attributes', 'description'], '');
+        const short = getSafe(mod, ['attributes', 'shortDescription'], '');
+
+        const url = getSafe(mod, ['attributes', 'pictureUrl'], undefined);
+        return (
+          <ZoomableImage className='mod-picture' url={url}>
+            <Description
+              t={t}
+              long={long}
+              short={short}
+              modId={mod.id}
+              editable={mod.attributes?.source === undefined}
+              startEditDescription={this.editDescription}
+            />
+          </ZoomableImage>
+        );
+      },
+      calc: mod => getSafe(mod.attributes, ['pictureUrl'], ''),
+      placement: 'detail',
+      edit: {},
+    };
+
     this.modEnabledAttribute = {
       id: 'enabled',
       name: 'Status',
@@ -957,6 +985,34 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.context.api.events.emit('mods-enabled', [modId], false, gameMode);
     this.context.api.events.emit('mods-enabled', [altId], true, gameMode);
+  }
+
+  private editDescription = (modId: string) => {
+    const { gameMode, mods } = this.props;
+
+    this.context.api.showDialog('question', 'Enter new description', {
+      text: 'You can use bbcode here. If you put in two spaces, ',
+      input: [{
+        id: 'description',
+        type: 'multiline',
+        value: (mods[modId].attributes['description'] ?? '').replace(/<br\/>/g, '\n'),
+      }],
+    }, [
+      { label: 'Cancel' },
+      { label: 'Save' },
+    ])
+    .then(result => {
+      if (result.action === 'Save') {
+        let description = result.input['description'];
+        const endShort = description.indexOf('\n\n');
+        if (endShort !== -1) {
+          this.props.onSetModAttribute(gameMode, modId, 'shortDescription',
+                                       description.substring(0, endShort));
+        }
+        description = description.replace(/\n/g, '<br/>');
+        this.props.onSetModAttribute(gameMode, modId, 'description', description);
+      }
+    });
   }
 
   private enableSelected = (modIds: string[]) => {

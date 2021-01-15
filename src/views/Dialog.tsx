@@ -274,7 +274,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.input !== undefined) {
       controls.push((
-      <div key='dialog-form-content'>
+      <div key='dialog-form-content' className='dialog-content-input'>
         {content.input.map(this.renderInput)}
       </div>
       ));
@@ -330,6 +330,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         ? (valRes.length !== 0) ? 'error' : 'success'
         : null;
 
+    let effectiveType = input.type || 'text';
+    if (input.type === 'multiline') {
+      effectiveType = 'text';
+    }
+
     return (
       <FormGroup key={input.id} validationState={validationState}>
       { input.label ? (
@@ -337,7 +342,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ) : null }
       <FormControl
         id={`dialoginput-${input.id}`}
-        type={input.type || 'text'}
+        componentClass={(input.type === 'multiline') ? 'textarea' : 'p'}
+        type={effectiveType}
         value={input.value || ''}
         label={input.label}
         placeholder={input.placeholder}

@@ -6,33 +6,8 @@ import { userFriendlyTime } from '../../util/relativeTime';
 import { getSafe } from '../../util/storeHelper';
 
 import { IModWithState } from './types/IModProps';
-import Description from './views/Description';
 
-import { TFunction } from 'i18next';
 import * as React from 'react';
-
-export const PICTURE: ITableAttribute<IModWithState> = {
-  id: 'picture',
-  description: 'A picture provided by the author',
-  customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
-    const long = getSafe(mod, ['attributes', 'description'], '');
-    const short = getSafe(mod, ['attributes', 'shortDescription'], '');
-
-    const url = getSafe(mod, ['attributes', 'pictureUrl'], undefined);
-    return (
-      <ZoomableImage className='mod-picture' url={url}>
-        <Description
-          t={t}
-          long={long}
-          short={short}
-        />
-      </ZoomableImage>
-    );
-  },
-  calc: mod => getSafe(mod.attributes, ['pictureUrl'], ''),
-  placement: 'detail',
-  edit: {},
-};
 
 export const ENABLED_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
   return {

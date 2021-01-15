@@ -49,7 +49,7 @@ export interface ICheckbox extends IControlBase {
 }
 
 export interface IInput extends IControlBase {
-  type?: 'text' | 'password' | 'number' | 'date' | 'time' | 'email' | 'url';
+  type?: 'text' | 'password' | 'number' | 'date' | 'time' | 'email' | 'url' | 'multiline';
   value?: string;
   label?: string;
   placeholder?: string;

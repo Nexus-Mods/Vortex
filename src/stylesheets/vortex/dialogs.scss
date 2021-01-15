@@ -78,6 +78,14 @@
    flex: 1 1 90%;
   }
 
+  .dialog-content-input {
+    display: flex;
+    > div {
+      flex: 1 1 0;
+      display: flex;
+    }
+  }
+
   > .dialog-content-text {
     flex: initial;
     margin-bottom: $half-gutter;
