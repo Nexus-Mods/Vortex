@@ -56,9 +56,11 @@ class GameStoreHelper {
 
   public launchGameStore(api: IExtensionApi, gameStoreId: string,
                          parameters?: string[], askConsent: boolean = false): Promise<void> {
-    const gameStore = this.getGameStore(gameStoreId);
-    if (gameStore === undefined) {
-      api.showErrorNotification('Unknown game store id', gameStoreId);
+    let gameStore: IGameStore;
+    try {
+      gameStore = this.getGameStore(gameStoreId);
+    } catch (err) {
+      api.showErrorNotification('Failed to launch game store', err);
       return Promise.resolve();
     }
 
@@ -191,12 +193,32 @@ class GameStoreHelper {
       ? new RegExp(pattern.map(wrapNamePattern).join('|'))
       : new RegExp(wrapNamePattern(pattern));
 
-    const matcher = Array.isArray(pattern)
+    const matcher = (Array.isArray(pattern))
       ? entry => pattern.indexOf(entryInfo(entry)) !== -1
       : entry => entryInfo(entry) === pattern;
 
-    const gameStores = ((!!storeId)
-      ? [this.getGameStore(storeId)]
+    const name = (Array.isArray(pattern))
+      ? pattern.join(' - ')
+      : pattern;
+
+    const stores = this.mStores.map(store => store.id).join(', ');
+
+    // queriedStore object is only populated if the game store helper caller
+    //  is looking for a specific game store.
+    let queriedStore: IGameStore;
+    if (!!storeId) {
+      try {
+        queriedStore = this.getGameStore(storeId);
+      } catch (err) {
+        // It's possible for a game store to be missing
+        //  especially if it is added by a 3rd party extension.
+        log('warn', 'Game entry not found in specified store', { pattern: name, storeId, availableStores: stores });
+        return Promise.reject(new GameEntryNotFound(name, stores));
+      }
+    }
+
+    const gameStores: IGameStore[] = ((!!queriedStore)
+      ? [queriedStore]
       : this.getstores()).filter(store => !!store);
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
@@ -229,11 +251,6 @@ class GameStoreHelper {
         if (foundEntries.length > 0) {
           return Promise.resolve(foundEntries[0]);
         } else {
-          const name = (Array.isArray(pattern))
-            ? pattern.join(' - ')
-            : pattern;
-
-          const stores = this.mStores.map(store => store.id).join(', ');
           log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
           return Promise.reject(new GameEntryNotFound(name, stores));
         }
