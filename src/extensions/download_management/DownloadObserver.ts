@@ -269,8 +269,12 @@ export class DownloadObserver {
   }
 
   private handleRemoveDownload(downloadId: string) {
+    if (downloadId === null) {
+      log('warn', 'invalid download id');
+      return;
+    }
     const download =
-        this.mApi.store.getState().persistent.downloads.files[downloadId];
+        this.mApi.store.getState().persistent.downloads.files?.[downloadId];
     if (download === undefined) {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
