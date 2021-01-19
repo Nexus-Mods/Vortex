@@ -100,7 +100,10 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
     }
     const state = api.store.getState();
     const gameMode = activeGameId(state);
-    // ensure anything changed for the actiave game
+    // TODO: this triggers only for the current game but "swallows" all changes
+    //   for all games, meaning that if we change the nexus id for a mod of a
+    //   different game, it will never be re-fetched
+    // ensure anything changed for the active game
     if ((lastModTable[gameMode] !== newModTable[gameMode])
         && (lastModTable[gameMode] !== undefined)
         && (newModTable[gameMode] !== undefined)) {
@@ -129,6 +132,7 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
         }
       }).then(() => null);
     } else {
+      lastModTable = newModTable;
       return Promise.resolve();
     }
   }, 2000);
