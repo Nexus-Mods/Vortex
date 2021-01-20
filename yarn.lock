@@ -14033,8 +14033,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.2.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/d4e8bbb99b89d89dab284916c274b6040f3f61d5"
+  version "2.2.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c0ecb2c3096d776622e4259ff736fdd9c83053e2"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^3.1.0"
