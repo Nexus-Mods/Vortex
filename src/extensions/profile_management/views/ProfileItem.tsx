@@ -209,7 +209,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
-      <>
+      <React.Fragment key={id}>
         <div className='profile-feature-name'>
           <a
             className='fake-link'
@@ -222,7 +222,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         <div className='profile-feature-value'>
           {this.renderFeatureValue(feature.type, value)}
         </div>
-      </>
+      </React.Fragment>
     );
   }
 
