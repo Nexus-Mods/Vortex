@@ -27,11 +27,11 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
+import { finalizeDownload } from './util/postprocessDownload';
 
 import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
 import Promise from 'bluebird';
-import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -224,29 +224,9 @@ export class DownloadObserver {
         callback(new Error('html result'), id);
       }
     } else {
-      this.mApi.store.dispatch(finalizingDownload(id));
-      const {genHash} = require('modmeta-db');
-      genHash(res.filePath)
-          .then((md5Hash: IHashResult) => {
-            this.mApi.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
-            if (callback !== undefined) {
-              callback(null, id);
-            }
-          })
-          .catch(err => {
-            if (callback !== undefined) {
-              callback(err, id);
-            }
-          })
-          .finally(() => {
-            // still storing the download as successful even if we didn't manage to calculate its
-            // hash
-            this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
-            const state = this.mApi.getState();
-            if (state.settings.automation?.install) {
-              this.mApi.events.emit('start-install-download', id);
-            }
-          });
+      finalizeDownload(this.mApi, id, res.filePath)
+        .then(() => callback(null, id))
+        .catch(err => callback(err, id));
     }
   }
 
