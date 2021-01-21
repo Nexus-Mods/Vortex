@@ -125,7 +125,7 @@ class Tracking {
     });
   }
 
-  private toggleTracked(evt: React.MouseEvent<any>) {
+  private toggleTracked = (evt: React.MouseEvent<any>) => {
     const gameMode = activeGameId(this.mApi.getState());
     const modIdStr: string = evt.currentTarget.getAttribute('data-modid');
 
