@@ -353,8 +353,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           + 'Please restart the download.',
           undefined, false);
       } // else nop
-    } else if ((err.HTTPStatus !== undefined)
-      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
+    } else if (((err.HTTPStatus !== undefined)
+                && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1))
+               || (err.message === 'No download urls')) {
       this.props.onShowError(title,
         'Sorry, the download link is no longer valid. '
         + 'Please restart the download.',
