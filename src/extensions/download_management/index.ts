@@ -839,7 +839,7 @@ function init(context: IExtensionContextExt): boolean {
       if (unfinalized.length > 0) {
         context.api.sendNotification({
           type: 'error',
-          title: 'Some savegames were not finalized',
+          title: 'Some downloads were not finalized',
           message: 'Vortex may appear frozen for a moment while repairing this.',
           actions: [
             { title: 'Repair', action: dismiss => {
