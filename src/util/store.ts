@@ -14,9 +14,9 @@ import {reduxSanity, StateError} from './reduxSanity';
 import Promise from 'bluebird';
 import { app as appIn, dialog, ipcMain, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
-import * as encode from 'encoding-down';
+import encode from 'encoding-down';
 import * as leveldown from 'leveldown';
-import * as levelup from 'levelup';
+import levelup from 'levelup';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -119,8 +119,8 @@ export function extendStore(store: Redux.Store<IState>,
 
 function importStateV1(importPath: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    (levelup as any)(encode(leveldown(importPath)),
-                     { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err, db) => {
+    const db = levelup(encode(leveldown(importPath)),
+            { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err: Error) => {
       if (err !== null) {
         log('info', 'failed to open db', err);
         reject(err);
