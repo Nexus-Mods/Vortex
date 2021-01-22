@@ -14,7 +14,7 @@
     "electron": "11.1.1"
   },
   "dependencies": {
-    "@nexusmods/nexus-api": "^1.0.5",
+    "@nexusmods/nexus-api": "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",

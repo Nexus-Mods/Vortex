@@ -1730,8 +1730,8 @@
     cross-spawn "^7.0.1"
 
 "@nexusmods/nexus-api@git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs":
-  version "1.1.0-dev11"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#a2d581f3b176ac80b68310f647a16a34c36a1fe7"
+  version "1.1.0-dev15"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#ea351421ac6767c52b8f47c98caea14845a32f69"
   dependencies:
     string-template "^1.0.0"
 
@@ -5535,10 +5535,10 @@ electron-wix-msi@^3.0.2:
   optionalDependencies:
     "@bitdisaster/exe-icon-extractor" "^1.0.10"
 
-electron@^11.0.4:
-  version "11.0.4"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-11.0.4.tgz#78b54760294eb42a36f33308a7987bf0b3dd6125"
-  integrity sha512-ipfQ28Km52iuDSe9VK0G5uuyxi8qy8szg+01kQTRXZFCLlpgsgU+vQxWkld2tkhXWdu+H3dmgYHvWtoijOvhjw==
+electron@^11.1.1:
+  version "11.1.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-11.1.1.tgz#188f036f8282798398dca9513e9bb3b10213e3aa"
+  integrity sha512-tlbex3xosJgfileN6BAQRotevPRXB/wQIq48QeQ08tUJJrXwE72c8smsM/hbHx5eDgnbfJ2G3a60PmRjHU2NhA==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
