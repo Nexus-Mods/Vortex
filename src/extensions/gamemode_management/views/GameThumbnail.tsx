@@ -18,6 +18,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel, Popover } from 'react-bootstrap';
 import { Provider } from 'react-redux';
+import { pathToFileURL } from 'url';
 
 export interface IBaseProps {
   t: TFunction;
@@ -81,7 +82,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         <Panel.Body className='game-thumbnail-body'>
           <img
             className={'thumbnail-img'}
-            src={logoPath}
+            src={pathToFileURL(logoPath).href}
           />
           <div className='bottom'>
             <div className='name'>

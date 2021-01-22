@@ -18,6 +18,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { ListGroupItem, Media, Popover } from 'react-bootstrap';
 import { Provider } from 'react-redux';
+import { pathToFileURL } from 'url';
 
 export interface IProps {
   t: TFunction;
@@ -100,7 +101,7 @@ class GameRow extends ComponentEx<IProps, {}> {
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>
-              <img className='game-thumbnail-img-list' src={logoPath} />
+              <img className='game-thumbnail-img-list' src={pathToFileURL(logoPath).href} />
             </div>
           </Media.Left>
           <Media.Body>

@@ -12,7 +12,9 @@ import { truthy } from '../util/util';
 
 import Promise from 'bluebird';
 import { ipcMain, screen } from 'electron';
+import * as path from 'path';
 import * as Redux from 'redux';
+import { pathToFileURL } from 'url';
 import TrayIcon from './TrayIcon';
 
 const MIN_HEIGHT = 700;
@@ -88,7 +90,7 @@ class MainWindow {
 
     this.mWindow = new BrowserWindow(this.getWindowSettings(store.getState().settings.window));
 
-    this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+    this.mWindow.loadURL(pathToFileURL(path.join(getVortexPath('base'), 'index.html')).href);
     // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
     let cancelTimer: NodeJS.Timer;

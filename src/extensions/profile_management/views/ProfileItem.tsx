@@ -17,6 +17,7 @@ import { nativeImage, remote } from 'electron';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
+import { pathToFileURL } from 'url';
 
 export interface IProps {
   t: TFunction;
@@ -118,10 +119,6 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       ? game.name
       : t('Unknown game {{ gameId }}', { replace: { gameId: profile.gameId } });
 
-    if (process.platform === 'win32') {
-      logo = logo.replace(/\\/g, '/');
-    }
-
     const imageClass = ['profile-image'];
     if (!hasProfileImage) {
       // game images have a different aspect ratio so offset a bit. Makes
@@ -135,7 +132,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         <div style={{ flex: '1 1 0' }}>
           <div
             className={imageClass.join(' ')}
-            style={{ background: `url('file://${logo}?${counter}')` }}
+            style={{ background: `url('${pathToFileURL(logo).href}?${counter}')` }}
             onClick={this.changeImage}
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
