@@ -723,8 +723,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup id='install-path-form' validationState={validationState.state}>
         <ControlLabel>
           {label}
-          <More id='more-paths' name={t('Paths')} >
-            {getText('paths', t)}
+          <More id='more-paths' name={t('Mod Staging Folder')} >
+            {getText('modspath', t)}
           </More>
         </ControlLabel>
         <FlexLayout type='row'>

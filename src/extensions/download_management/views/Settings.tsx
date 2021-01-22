@@ -115,9 +115,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <FormGroup validationState={validationState.state}>
           <div id='download-path-form'>
             <ControlLabel>
-              {t('Download Folder')}
-              <More id='more-paths' name={t('Paths')} >
-                {getTextMod('paths', t)}
+              {t('Downloads Folder')}
+              <More id='more-paths' name={t('Downloads Folder')} >
+                {getTextMod('downloadspath', t)}
               </More>
             </ControlLabel>
             <FlexLayout type='row'>
