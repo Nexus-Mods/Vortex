@@ -268,7 +268,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
-function removeDisappearedGames(api: IExtensionApi): Promise<void> {
+function removeDisappearedGames(api: IExtensionApi, initGameMode: string): Promise<void> {
   const state: IState = api.store.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
@@ -307,6 +307,12 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
       if (known.find(game => game.id === gameMode) === undefined) {
         log('info', 'the active game is no longer known, resetting', gameMode);
         api.store.dispatch(setNextProfile(undefined));
+      }
+
+      if ((gameMode === undefined)
+          && (initGameMode !== undefined)
+          && (known.find(game => game.id === initGameMode) === undefined)) {
+        api.events.emit('install-game-extension', initGameMode);
       }
     });
 }
@@ -513,7 +519,9 @@ function init(context: IExtensionContext): boolean {
               .join('\n');
           }
 
-          removeDisappearedGames(context.api);
+          const gameMode = activeGameId(oldState);
+
+          removeDisappearedGames(context.api, gameMode);
           context.api.sendNotification({
             type: 'success',
             title: 'Discovery completed',
@@ -582,6 +590,8 @@ function init(context: IExtensionContext): boolean {
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 
+    const initGameMode = activeGameId(store.getState());
+
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
       gameStoreLaunchers,
@@ -591,12 +601,12 @@ function init(context: IExtensionContext): boolean {
       });
     $.gameModeManager.attachToStore(store);
     $.gameModeManager.startQuickDiscovery()
-    .then(() => removeDisappearedGames(context.api));
+    .then(() => removeDisappearedGames(context.api, initGameMode));
 
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api)
+          return removeDisappearedGames(context.api, initGameMode)
             .then(() => {
               if (cb !== undefined) {
                 cb(gameIds);

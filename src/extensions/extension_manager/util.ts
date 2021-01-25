@@ -287,6 +287,15 @@ function archiveFileName(ext: IExtensionDownloadInfo): string {
 export function downloadFromNexus(api: IExtensionApi,
                                   ext: IExtensionDownloadInfo)
                                   : Promise<string[]> {
+  if ((ext.fileId === undefined) && (ext.modId !== undefined)) {
+    const state = api.getState();
+    const availableExt = state.session.extensions.available.find(iter => iter.modId === ext.modId);
+    if (availableExt !== undefined) {
+      ext.fileId = availableExt.fileId;
+    } else {
+      return Promise.reject(new Error('unvailable nexus extension'));
+    }
+  }
   return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId, archiveFileName(ext));
 }
 

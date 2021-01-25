@@ -1,4 +1,4 @@
-import { IExtension } from '../extensions/extension_manager/types';
+import { IExtension, IExtensionDownloadInfo } from '../extensions/extension_manager/types';
 import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
 import { IHistoryStack } from '../extensions/history_management/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
@@ -41,9 +41,8 @@ import Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { ComplexActionCreator2 } from '../actions/safeCreateAction';
 import { ComplexActionCreator } from 'redux-act';
+import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
@@ -979,6 +978,12 @@ export interface IExtensionContext {
    * @param {IGame} game
    */
   registerGame: (game: IGame) => void;
+
+  /**
+   * register a game stub. This is to ease the transition for games that used to be bundled with
+   * Vortex and might already be in use but are now maintained by a third party.
+   */
+  registerGameStub: (gameId: string, ext: IExtensionDownloadInfo) => void;
 
   /**
    * registers support for a game store.
