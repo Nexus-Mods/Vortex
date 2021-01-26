@@ -169,8 +169,13 @@ class Steam implements IGameStore {
     return this.mCache;
   }
 
-  public getGameStorePath() {
-    return this.mBaseFolder.then(baseFolder => path.join(baseFolder, STEAM_EXEC));
+  public getGameStorePath(): Promise<string> {
+    return this.mBaseFolder.then(baseFolder => {
+      if (baseFolder === undefined) {
+        return Promise.resolve(undefined);
+      }
+      return Promise.resolve(path.join(baseFolder, STEAM_EXEC));
+    });
   }
 
   public reloadGames(): Promise<void> {
