@@ -260,10 +260,14 @@ class InstallManager {
                   api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
                   api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
                 }
+                rules = oldMod.rules || [];
+                overrides = oldMod.fileOverrides;
+                fullInfo.previous = oldMod.attributes;
                 return Promise.resolve();
               } else if (action === REPLACE_ACTION) {
                 rules = oldMod.rules || [];
                 overrides = oldMod.fileOverrides;
+                fullInfo.previous = oldMod.attributes;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
