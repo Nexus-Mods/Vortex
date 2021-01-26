@@ -254,12 +254,6 @@ function init(context: IExtensionContext) {
     updateAvailableExtensions(context.api, true);
   };
 
-  const gameStubs: { [gameId: string]: IExtensionDownloadInfo } = {};
-
-  context.registerGameStub = (id: string, ext: IExtensionDownloadInfo) => {
-    gameStubs[id] = ext;
-  };
-
   context.registerDialog('browse-extensions', BrowseExtensions, () => ({
     localState,
     updateExtensions,
@@ -297,37 +291,6 @@ function init(context: IExtensionContext) {
             updateExtensions(false);
           }
         }));
-
-    context.api.events.on('install-game-extension', (gameId: string) => {
-      if (gameStubs[gameId] !== undefined) {
-        context.api.showDialog('info', gameStubs[gameId].name, {
-          text: 'The game you were managing requires an extension to be installed. '
-              + 'Do you want Vortex to install it now?',
-        }, [
-          { label: 'Cancel' },
-          { label: 'Install' },
-        ])
-        .then(result => {
-          if (result.action === 'Install') {
-            return downloadAndInstallExtension(context.api, gameStubs[gameId])
-              .then(success => {
-                if (success) {
-                  updateExtensions(false);
-                }
-              });
-          } else {
-            return Promise.resolve();
-          }
-        })
-        .catch(err => {
-          if ((err instanceof UserCanceled)
-              || (err instanceof ProcessCanceled)) {
-            return Promise.resolve();
-          }
-          context.api.showErrorNotification('Failed to install game extension', err);
-        });
-      }
-    });
 
     context.api.onAsync('install-extension-from-download', (archiveId: string) => {
       const state = context.api.getState();

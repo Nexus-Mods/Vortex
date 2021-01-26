@@ -24,6 +24,7 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
@@ -268,11 +269,48 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
-function removeDisappearedGames(api: IExtensionApi, initGameMode: string): Promise<void> {
-  const state: IState = api.store.getState();
+function installGameExtenstion(api: IExtensionApi,
+                               gameId: string,
+                               dlInfo: IExtensionDownloadInfo)
+                               : Promise<void> {
+  if (dlInfo !== undefined) {
+    return api.showDialog('info', dlInfo.name, {
+      text: 'The game you were managing requires an extension to be installed. '
+        + 'Do you want Vortex to install it now?',
+    }, [
+      { label: 'Cancel' },
+      { label: 'Stop managing' },
+      { label: 'Install' },
+    ])
+      .then(result => {
+        if (result.action === 'Install') {
+          return api.emitAndAwait('install-extension', dlInfo);
+        } else if (result.action === 'Stop managing') {
+          return api.ext.unmanageGame?.(gameId, dlInfo.name);
+        } else {
+          return Promise.resolve(false);
+        }
+      })
+      .catch(err => {
+        if ((err instanceof UserCanceled)
+          || (err instanceof ProcessCanceled)) {
+          return Promise.resolve();
+        }
+        api.showErrorNotification('Failed to install game extension', err);
+      });
+  } else {
+    return Promise.resolve();
+  }
+}
+
+function removeDisappearedGames(api: IExtensionApi,
+                                gameStubs?: { [gameId: string]: IExtensionDownloadInfo })
+                                : Promise<void> {
+  const state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
   let gameMode = activeGameId(state);
+  const managedGames = new Set(Object.values(state.persistent.profiles).map(prof => prof.gameId));
 
   return Promise.map(
     Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
@@ -309,10 +347,17 @@ function removeDisappearedGames(api: IExtensionApi, initGameMode: string): Promi
         api.store.dispatch(setNextProfile(undefined));
       }
 
-      if ((gameMode === undefined)
-          && (initGameMode !== undefined)
-          && (known.find(game => game.id === initGameMode) === undefined)) {
-        api.events.emit('install-game-extension', initGameMode);
+      if (gameStubs !== undefined) {
+        const knownGameIds = new Set(known.map(game => game.id));
+        return Promise.all(Array.from(managedGames).map(gameId => {
+          if (knownGameIds.has(gameId)) {
+            return Promise.resolve();
+          }
+          return installGameExtenstion(api, gameId, gameStubs[gameId]);
+        }))
+          .then(() => Promise.resolve());
+      } else {
+        return Promise.resolve();
       }
     });
 }
@@ -444,6 +489,12 @@ function init(context: IExtensionContext): boolean {
     }
   }) as any;
 
+  const gameStubs: { [gameId: string]: IExtensionDownloadInfo } = {};
+
+  context.registerGameStub = (id: string, ext: IExtensionDownloadInfo) => {
+    gameStubs[id] = ext;
+  };
+
   context.registerGameInfoProvider =
     (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => {
       gameInfoProviders.push({ id, priority, expireMS, keys, query });
@@ -521,7 +572,7 @@ function init(context: IExtensionContext): boolean {
 
           const gameMode = activeGameId(oldState);
 
-          removeDisappearedGames(context.api, gameMode);
+          removeDisappearedGames(context.api);
           context.api.sendNotification({
             type: 'success',
             title: 'Discovery completed',
@@ -590,8 +641,6 @@ function init(context: IExtensionContext): boolean {
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 
-    const initGameMode = activeGameId(store.getState());
-
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
       gameStoreLaunchers,
@@ -601,12 +650,12 @@ function init(context: IExtensionContext): boolean {
       });
     $.gameModeManager.attachToStore(store);
     $.gameModeManager.startQuickDiscovery()
-    .then(() => removeDisappearedGames(context.api, initGameMode));
+    .then(() => removeDisappearedGames(context.api, gameStubs));
 
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api, initGameMode)
+          return removeDisappearedGames(context.api)
             .then(() => {
               if (cb !== undefined) {
                 cb(gameIds);

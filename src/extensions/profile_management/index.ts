@@ -525,7 +525,7 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<v
   });
 }
 
-function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
+function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Promise<void> {
   const state = api.getState();
   const game = getGame(gameId);
 
@@ -549,7 +549,7 @@ function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
           + 'you\'re sure this is what you want![/color]',
     message,
     parameters: {
-      gameName: game.name,
+      gameName: game?.name ?? gameName ?? api.translate('<Missing game>'),
     },
   }, [
     { label: 'Cancel' },
@@ -695,6 +695,9 @@ function init(context: IExtensionContext): boolean {
     // promise used to ensure a new profile switch can't be started before the last one
     // is complete
     let finishProfileSwitch: () => void;
+
+    context.api.ext['unmanageGame'] = (gameId: string, gameName?: string) =>
+      unmanageGame(context.api, gameId, gameName);
 
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
