@@ -48,8 +48,13 @@ if ((process as any).type === 'renderer') {
   const { ipcMain } = require('electron');
   if (ipcMain !== undefined) {
     ipcMain.on('log-message',
-      (event, level: LogLevel, message: string, metadata?: any[]) =>
-        logger.log(level, message, metadata));
+      (event, level: LogLevel, message: string, metadata?: any[]) => {
+        try {
+          logger.log(level, message, metadata);
+        } catch (e) {
+          // failed to log, what am I supposed to do now?
+        }
+      });
   } // otherwise we're not in electron
 }
 
