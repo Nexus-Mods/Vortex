@@ -6,7 +6,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 
 import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
 
-import { Icon } from '../../../controls/api';
+import { Icon, tooltip } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
 
 import * as selectors from '../../../util/selectors';
@@ -40,14 +40,29 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       : null;
   }
 
-  private renderExternalBanner(): JSX.Element {
+  private renderValidationError(): JSX.Element {
+    const { invalidEntries, loEntry } = this.props.item;
+    const invalidEntry = (invalidEntries !== undefined)
+      ? invalidEntries.find(inv => inv.id.toLowerCase() === loEntry.id.toLowerCase())
+      : undefined;
+    return (invalidEntry !== undefined)
+      ? (
+        <tooltip.Icon
+          className='fblo-invalid-entry'
+          name='feedback-error'
+          tooltip={invalidEntry.reason}
+        />
+      ) : null;
+  }
+
+  private renderExternalBanner(item: ILoadOrderEntry): JSX.Element {
     const { t } = this.props;
-    return (
-    <div className='load-order-unmanaged-banner'>
-      <span>{t('Not managed by Vortex')}</span>
-      <Icon className='external-caution-logo' name='dialog-info'/>
-    </div>
-    );
+    return this.isExternal(item) ? (
+      <div className='load-order-unmanaged-banner'>
+        <span>{t('Not managed by Vortex')}</span>
+        <Icon className='external-caution-logo' name='dialog-info'/>
+      </div>
+    ) : null;
   }
 
   private renderDraggable(item: ILoadOrderEntry, displayCheckboxes: boolean): JSX.Element {
@@ -59,6 +74,10 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     let classes = ['load-order-entry'];
     if (className !== undefined) {
       classes = classes.concat(className.split(' '));
+    }
+
+    if (this.isExternal(item)) {
+      classes = classes.concat('external');
     }
 
     const checkBox = () => (displayCheckboxes)
@@ -84,7 +103,8 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
         ref={this.props.item.setRef}
       >
         <p className='load-order-index'>{position}</p>
-        {this.isExternal(item) && this.renderExternalBanner()}
+        {this.renderValidationError()}
+        {this.renderExternalBanner(item)}
         <p>{key}</p>
         {checkBox()}
         {lock()}

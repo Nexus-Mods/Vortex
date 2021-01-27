@@ -32,8 +32,9 @@ async function errorHandler(api: types.IExtensionApi,
     const invalLOErr = err as LoadOrderValidationError;
     const errorMessage = 'Load order failed validation';
     const details = {
+      message: errorMessage,
       loadOrder: invalLOErr.loadOrder,
-      reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}`),
+      reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}\n`),
     };
     api.showErrorNotification(errorMessage, details, { allowReport });
   } else if (err instanceof LoadOrderSerializationError) {
@@ -192,6 +193,7 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 
   try {
     const validRes: IValidationResult = await gameEntry.validate(prev, newLO);
+    assertValidationResult(validRes);
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, newLO);
     }
@@ -272,7 +274,8 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
   const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
   try {
     const loadOrder = await gameEntry.deserializeLoadOrder();
-    const validRes = await gameEntry.validate(prev, loadOrder);
+    const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
+    assertValidationResult(validRes);
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
@@ -282,6 +285,16 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
     return errorHandler(api, gameId, err)
       .then(() => (err instanceof LoadOrderValidationError)
         ? Promise.reject(err) : Promise.resolve(undefined));
+  }
+}
+
+function assertValidationResult(validRes: any) {
+  if (validRes === undefined) {
+    return;
+  }
+  if ((Array.isArray(validRes)) || (validRes as IValidationResult)?.invalid === undefined) {
+    throw new TypeError('Received incorrect/invalid return type from validation function; '
+      + 'expected object of type IValidationResult');
   }
 }
 

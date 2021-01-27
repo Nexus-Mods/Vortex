@@ -10,6 +10,10 @@ export interface IItemRendererProps {
   // Tells the item renderer whether to display checkboxes or not.
   displayCheckboxes: boolean;
 
+  // Used to display a small tooltip icon next to the invalid mod entry
+  //  describing the issue directly on the mod entry in the LO page.
+  invalidEntries?: IInvalidResult[];
+
   // Function components cannot be given refs, which means that DnD
   //  will not work when using the Vortex API's DraggableItem without
   //  forwarding the ref to the itemRenderer.

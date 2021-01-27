@@ -27,6 +27,11 @@
       margin-left: auto;
     }
 
+    .fblo-invalid-entry {
+      margin-right: 5px;
+      color: $brand-danger;
+    }
+
     .entry-checkbox {
       margin-right: 15px;
       margin-left: auto;
@@ -65,12 +70,24 @@
   #fb-lo-errorbox {
     background-color: $brand-bg;
     width: 100%;
-    height: 100%;
+    height: 80%;
     border-width: 1px;
     border-style: solid;
     border-color: $gray;
+    overflow: auto;
     p {
-      color: $brand-danger;
+      padding: 5px 5px 5px 5px;
+    }
+    &.valid {
+      p {
+        color: $brand-success;
+      }
+    }
+
+    &.invalid {
+      p {
+        color: $brand-danger;
+      }
     }
   }
 

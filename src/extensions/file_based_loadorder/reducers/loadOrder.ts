@@ -10,10 +10,15 @@ export const modLoadOrderReducer: IReducerSpec = {
     [actions.setLoadOrderEntry as any]: (state, payload) => {
       const { profileId, loEntry } = payload;
       const loadOrder = getSafe(state, [profileId], []);
-      const existingEntry = loadOrder.find(entry => entry.id === loEntry.id);
-      const idx = loadOrder.indexOf(existingEntry);
-      loadOrder[idx] = loEntry;
-      return setSafe(state, [profileId], loadOrder);
+      const newLO = loadOrder.reduce((accum, iter) => {
+        if (iter.id === loEntry.id) {
+          accum.push(loEntry);
+        } else {
+          accum.push(iter);
+        }
+        return accum;
+      }, []);
+      return setSafe(state, [profileId], newLO);
     },
     [actions.setNewLoadOrder as any]: (state, payload) => {
       const { profileId, loadOrder } = payload;

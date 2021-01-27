@@ -130,6 +130,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           const rendOps: IItemRendererProps = {
             loEntry,
             displayCheckboxes: gameEntry.toggleableEntries || false,
+            invalidEntries: validationError?.validationResult?.invalid,
           };
           accum.push(rendOps);
           return accum;
