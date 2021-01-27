@@ -165,7 +165,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       <MainPage>
         <MainPage.Header>
           <IconBar
-            group='generic-load-order-icons'
+            group='fb-load-order-icons'
             staticElements={this.mStaticButtons}
             className='menubar'
             t={t}
