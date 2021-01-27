@@ -3024,22 +3024,7 @@
     },
     {
       "modId": 191,
-      "fileId": 904,
-      "author": "Wistipouf",
-      "uploader": "Wistipouf",
-      "description": {
-        "short": "Support for Outward",
-        "long": "[size=5][u]Usage[/u]\n<br />[/size]\n<br />[size=3]I recommend using a fresh installation of Outward if you want to use Vortex to manage your mods.\n<br />I also suggest installing BepInEx and PartialityWrapper with Vortex.\n<br />\n<br />[/size][size=3]   ﻿- Download the [url=https://github.com/BepInEx/BepInEx/releases]BepInEx [/url]and [url=https://github.com/sinai-dev/BepInEx-Partiality-Wrapper/releases]PartialityWrapper [/url].zip file corresponding to your system.\n<br />        - Go to the \"Mods\" tab on the left of Vortex\n<br />        - Drop the zip file on the bottom of the page\n<br />        - Install it like you would any other mod\n<br />[/size]\n<br />* In case the links above would be outdated, use those from [url=https://outward.gamepedia.com/Installing_Mods#BepInEx_Loader]Outward's Official Wiki[/url]﻿\n<br />\n<br />[u][size=5]How it works[/size]\n<br />[/u]\n<br />[size=3]It checks if there is a[/size][b] BepInEx folder[/b][size=3] at the [/size][b]root [/b][size=3]of the zip file and if there are files in it or in its sub-folders. Basically, if you follow the current standard for BepInEx mods .zip files, it should work without issues.\n<br />\n<br />[b]If the BepInEx Check is true,[/b] it copies the content in the outward folder, basically following the standard guidelines for installing bepinex mods[/size]\n<br />[quote][list=1]\n<br />[*][size=2]Download the Mod.zip file from the Files page[/size]\n<br />[*][size=2]Put this zip file in your Outward directory, so it looks like \"Outward&#92;Mod.zip\"[/size]\n<br />[*][size=2]Right-click the file and \"Extract Here\", so it merges with the folders.[/size]\n<br />[*][size=2]Done![/size]\n<br />[/list][/quote]\n<br />[size=3][b]If the BepInEx Check is false[/b], it check if the zip file contains [b].dll, .xml or .json[/b] files. If it does, it [b]assumes it is a Partiality [/b]mod and copies every file in the [b]BepInEx/plugins [/b]folder.\n<br />\n<br />if no .dll, .xml or .json files are found it throws an [b]\"Incompatible Mod\"[/b] error.\n<br />\n<br />How the extension manages Partiality mods is a bit janky, but it should work for most of them.\n<br />\n<br />If a partiality mod is not installed properly, you can make a new zip file with the .dll, .xml and .json in the BepInEx/plugins folder and the rest of the files placed correctly. Tthat way it will install it as a bepinex mod and should work.[/size]"
-      },
-      "downloads": 3370,
-      "endorsements": 104,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/191/191-1607395127-1266061788.jpeg",
-      "name": "Game support - Outward",
-      "timestamp": 1611698261,
-      "tags": [],
-      "version": "0.0.5",
-      "type": "game",
-      "gameName": "Outward"
+      "fileId": 904
     },
     {
       "modId": 194,
