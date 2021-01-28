@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Checkbox, ListGroupItem } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import { pathToFileURL } from 'url';
+import * as url from 'url';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
 import { IItemRendererOptions, ILoadOrder, ILoadOrderDisplayItem,
@@ -51,8 +51,11 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderModImg(): JSX.Element {
     const { itemRendererOptions, item } = this.props;
+    const effectiveURL = (url.parse(item.imgUrl).protocol !== null)
+      ? item.imgUrl
+      : url.pathToFileURL(item.imgUrl).href;
     return (itemRendererOptions.listViewType !== 'compact')
-      ? <img src={pathToFileURL(item.imgUrl).href} id='mod-img'/>
+      ? <img src={effectiveURL} id='mod-img'/>
       : null;
   }
 
