@@ -16,6 +16,7 @@ import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
+import { NEXUS_DOMAIN } from '../../nexus_integration/constants';
 import { IProfile } from '../../profile_management/types/IProfile';
 
 import { setPickerLayout } from '../actions/settings';
@@ -319,7 +320,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private openGameExtWiki = () => {
-    opn('https://wiki.nexusmods.com/index.php/Creating_a_game_extension_for_Vortex')
+    opn(`https://wiki.${NEXUS_DOMAIN}/index.php/Creating_a_game_extension_for_Vortex`)
       .catch(() => null);
   }
 

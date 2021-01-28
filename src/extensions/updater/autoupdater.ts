@@ -6,6 +6,8 @@ import { log } from '../../util/log';
 import opn from '../../util/opn';
 import { truthy } from '../../util/util';
 
+import { NEXUS_BASE_URL } from '../nexus_integration/constants';
+
 import {app as appIn, dialog as dialogIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
@@ -36,7 +38,7 @@ interface IProgressInfo {
 }
 
 function openStable() {
-  opn('https://www.nexusmods.com/site/mods/1').catch(() => null);
+  opn(`${NEXUS_BASE_URL}/site/mods/1`).catch(() => null);
 }
 
 function openTesting() {

@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import FlexLayout from '../../../controls/FlexLayout';
+import FormInput from '../../../controls/FormInput';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
@@ -22,6 +23,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
+import { NEXUS_DOMAIN } from '../../nexus_integration/constants';
 import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
@@ -39,9 +41,8 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import FormInput from '../../../controls/FormInput';
 
-const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
+const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships`;
 
 interface IConnectedProps {
   parallelDownloads: number;

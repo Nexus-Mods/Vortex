@@ -14,6 +14,7 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
+import { NEXUS_DOMAIN } from '../nexus_integration/constants';
 import {activeGameId} from '../profile_management/selectors';
 
 import {iniFiles, iniFormat} from './gameSupport';
@@ -269,7 +270,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
           + 'Windows 10\'s Windows Defender will block access without prompt.<br /><br />'
           + 'For more information please visit our wiki: '
           + '[url]'
-          + 'https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex'
+          + `https://wiki.${NEXUS_DOMAIN}/index.php/Configuring_your_anti-virus_to_work_with_Vortex`
           + '[/url]<br /><br />'
           + '[b][color=red]Important: Error reporting from Vortex will be disabled '
           + 'until you remedy this situation.[/color][/b]',

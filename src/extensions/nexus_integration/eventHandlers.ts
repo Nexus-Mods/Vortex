@@ -149,7 +149,7 @@ export function onOpenModPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn(['https://www.nexusmods.com',
+    opn([NEXUS_BASE_URL,
       nexusGameId(game) || gameId, 'mods', modId,
     ].join('/')).catch(err => undefined);
   };
@@ -242,7 +242,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = ['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/');
+        const url = [NEXUS_BASE_URL, nexusGameId(game), 'mods', modId].join('/');
         const params = `?tab=files&file_id=${fileId}&nmm=1`;
         return opn(url + params)
           .catch(() => undefined);

@@ -1,3 +1,5 @@
+import { NEXUS_BASE_URL } from '../constants';
+
 export function getPageURL(loginId: string) {
-  return `https://www.nexusmods.com/sso?application=vortex&id=${loginId}`;
+  return `${NEXUS_BASE_URL}/sso?application=vortex&id=${loginId}`;
 }

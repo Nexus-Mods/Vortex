@@ -5,6 +5,7 @@ import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
 import { IconButton } from '../../controls/TooltipControls';
 import ZoomableImage from '../../controls/ZoomableImage';
+import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
@@ -19,7 +20,7 @@ import * as React from 'react';
 import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
 import * as semver from 'semver';
 
-const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
+const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 const GITHUB_BASE_URL: string = 'https://www.github.com';
 
 export interface IBrowseExtensionsProps {

@@ -12,6 +12,7 @@ import opn from '../../../util/opn';
 
 import { setUserAPIKey } from '../actions/account';
 import { setLoginId } from '../actions/session';
+import { NEXUS_BASE_URL } from '../constants';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 import { getPageURL } from '../util/sso';
 
@@ -26,7 +27,7 @@ import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-const API_ACCESS_URL = 'https://www.nexusmods.com/users/myaccount?tab=api+access';
+const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
 export interface IBaseProps extends WithTranslation {
   visible: boolean;

@@ -1,11 +1,14 @@
+import { NEXUS_BASE_URL } from '../extensions/nexus_integration/constants';
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
 import { COMPANY_ID } from './constants';
 import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
+import getVortexPath from './getVortexPath';
 import { fallbackTFunc } from './i18n';
 import { log } from './log';
+import { bundleAttachment } from './message';
 import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
@@ -26,8 +29,6 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
-import getVortexPath from './getVortexPath';
-import { bundleAttachment } from './message';
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -136,7 +137,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
       hash,
       referenceId))
     .tap(() =>
-      opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(() => null))
+      opn(`${NEXUS_BASE_URL}/crash-report/?key=${referenceId}`).catch(() => null))
     .catch(err => {
       log('error', 'failed to report error to nexus', err.message);
       return undefined;

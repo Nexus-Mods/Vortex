@@ -1,4 +1,5 @@
 import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
+import { NEXUS_DOMAIN } from '../extensions/nexus_integration/constants';
 import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
@@ -342,7 +343,7 @@ class Application {
           }).then(response => {
             if (response.response === 1) {
               shell.openExternal(
-                'https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
+                `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`);
             }
             app.quit();
           }))

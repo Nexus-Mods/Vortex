@@ -10,7 +10,7 @@ import { truthy } from '../../../util/util';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import { FALLBACK_AVATAR } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 
 import NexusT from '@nexusmods/nexus-api';
 import * as React from 'react';
@@ -113,7 +113,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     if (!this.isLoggedIn()) {
       this.setDialogVisible(true);
     } else {
-      opn(`https://www.nexusmods.com/users/${userInfo.userId}`).catch(err => undefined);
+      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(err => undefined);
     }
   }
 

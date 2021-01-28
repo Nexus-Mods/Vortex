@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 import { activeGameId } from '../profile_management/selectors';
 
 import { GAMEID_PLACEHOLDER } from './constants';
@@ -9,7 +10,7 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('News', 1, 3, 250, RSSDashlet, undefined, () => ({
     title: t('Latest News'),
     emptyText: t('No News'),
-    url: 'https://www.nexusmods.com/rss/news/',
+    url: `${NEXUS_BASE_URL}/rss/news/`,
     maxLength: 400,
     extras: [
       { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ count }} comments'},
@@ -22,7 +23,7 @@ function init(context: IExtensionContext): boolean {
         return {
           title: t('New Files'),
           emptyText: t('No New Files'),
-          url: `https://www.nexusmods.com/${GAMEID_PLACEHOLDER}/rss/newtoday/`,
+          url: `${NEXUS_BASE_URL}/${GAMEID_PLACEHOLDER}/rss/newtoday/`,
           maxLength: 400,
           extras: [
             { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },

@@ -8,7 +8,7 @@ import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import { FALLBACK_AVATAR } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -111,7 +111,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
 
   private openProfile = () => {
     const { userInfo } = this.props;
-    opn(`https://www.nexusmods.com/users/${userInfo.userId}`).catch(err => undefined);
+    opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(err => undefined);
   }
 
   private logout = () => {

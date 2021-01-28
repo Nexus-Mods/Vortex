@@ -44,8 +44,8 @@ import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
-import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
-import { NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
+  genModIdAttribute } from './attributes';
+import { NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';

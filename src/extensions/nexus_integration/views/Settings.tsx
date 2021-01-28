@@ -13,6 +13,7 @@ import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';
 
+import { NEXUS_BASE_URL } from '../constants';
 import getText from '../texts';
 
 import * as React from 'react';
@@ -103,7 +104,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private openNexus = () => {
-    opn('https://www.nexusmods.com').catch(() => null);
+    opn(NEXUS_BASE_URL).catch(() => null);
   }
 
   private chromeFix = () => {
