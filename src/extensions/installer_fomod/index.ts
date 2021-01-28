@@ -646,8 +646,8 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
 }
 
 function init(context: IExtensionContext): boolean {
-  const installWrap = async (files, scriptPath, gameId, progressDelegate, choices, unattended) => {
-    const canBeUnattended = (choices !== undefined) && (choices.type === 'fomod');
+  const installWrap = async (files, scriptPath, gameId, progressDelegate, choicesIn, unattended) => {
+    const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
     const coreDelegates = new Core(context.api, gameId, canBeUnattended && (unattended === true));
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
     const pluginPath = getPluginPath(gameId);
@@ -655,11 +655,40 @@ function init(context: IExtensionContext): boolean {
 
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
     try {
-      const fomodChoices = (choices !== undefined) && (choices.type === 'fomod')
-        ? choices.options
+      const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
+        ? choicesIn.options
         : undefined;
-      return await install(files, stopPatterns, pluginPath,
+
+      const result = await install(files, stopPatterns, pluginPath,
         scriptPath, fomodChoices, progressDelegate, coreDelegates);
+
+      const state = context.api.store.getState();
+      const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
+  
+      const choices = (dialogState === undefined)
+      ? undefined
+      : dialogState.installSteps.map(step => {
+        const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+        return {
+          name: step.name,
+          groups: (ofg.group || []).map(group => ({
+            name: group.name,
+            choices: group.options
+              .filter(opt => opt.selected)
+              .map(opt => ({ name: opt.name, idx: opt.id })),
+          })),
+        };
+      });
+  
+      result.instructions.push({
+        type: 'attribute',
+        key: 'installerChoices',
+        value: {
+          type: 'fomod',
+          options: choices,
+        },
+      });
+      return result;
     } catch (err) {
       context.api.store.dispatch(endDialog());
       return Promise.reject(transformError(err));

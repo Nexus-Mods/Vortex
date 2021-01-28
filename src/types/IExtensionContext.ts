@@ -765,6 +765,7 @@ export interface IModTypeOptions {
   // any other context
   customDependencyManagement?: boolean;
   deploymentEssential?: boolean;
+  noConflicts?: boolean;
 }
 
 /**

@@ -113,6 +113,9 @@ class Tracking {
         return prev;
       }, {});
       this.mOnChanged?.();
+    })
+    .catch(err => {
+      this.mApi.showErrorNotification('failed to fetch tracking info', err);
     });
   }
 

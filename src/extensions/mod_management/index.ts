@@ -987,16 +987,20 @@ function once(api: IExtensionApi) {
       (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
 
   api.events.on('install-dependencies', (profileId: string, modIds: string[], silent?: boolean) => {
-    const state: IState = api.store.getState();
-    const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-    if (profile === undefined) {
-      api.showErrorNotification('Failed to install dependencies', 'Invalid profile');
-    }
+    try {
+      const state: IState = api.store.getState();
+      const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+      if (profile === undefined) {
+        api.showErrorNotification('Failed to install dependencies', 'Invalid profile');
+      }
 
-    Promise.map(modIds, modId =>
+      Promise.map(modIds, modId =>
         installManager.installDependencies(api, profile, modId, silent === true)
-        .catch(ProcessCanceled, () => null))
-      .catch(err => api.showErrorNotification('Failed to install dependencies', err));
+          .catch(ProcessCanceled, () => null))
+        .catch(err => api.showErrorNotification('Failed to install dependencies', err));
+    } catch (err) {
+      api.showErrorNotification('Failed to install dependencies', err);
+    }
   });
 
   api.events.on('install-recommendations', (profileId: string, modIds: string[]) => {

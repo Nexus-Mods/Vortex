@@ -1,12 +1,11 @@
-
 import { log } from '../../../util/log';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
 
-import NexusT, { ICategory } from '@nexusmods/nexus-api';
+import NexusT, { IModCategory } from '@nexusmods/nexus-api';
 
 interface IGameInfo {
-  categories: ICategory[];
+  categories: IModCategory[];
 }
 
 /**
@@ -28,7 +27,7 @@ function retrieveCategoryList(
           const res: ICategoryDictionary = {};
           let counter: number = 1;
 
-          gameInfo.categories.forEach((category: ICategory) => {
+          gameInfo.categories.forEach((category: IModCategory) => {
             const parent = category.parent_category === false
               ? undefined
               : category.parent_category.toString();

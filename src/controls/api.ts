@@ -20,6 +20,7 @@ import Modal from './Modal';
 import More from './More';
 import Overlay from './Overlay';
 import OverlayTrigger from './OverlayTrigger';
+import PortalMenu from './PortalMenu';
 import ProgressBar from './ProgressBar';
 import SelectUpDown from './SelectUpDown';
 import Spinner from './Spinner';
@@ -41,7 +42,7 @@ export {
   DraggableList, Dropdown, DropdownButton, Dropzone, EmptyPlaceholder, ErrorBoundary,
   FlexLayout, FormFeedback, FormInput, FormCheckboxItem, FormPathItem, FormTextItem, Icon, IconBar,
   ITableRowAction, makeGetSelection, Modal,
-  More, OptionsFilter, Overlay, OverlayTrigger, ProgressBar,
+  More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, TriStateCheckbox,
   Toggle, ToolbarIcon, tooltip, Usage, Webview};
