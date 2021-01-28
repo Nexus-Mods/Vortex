@@ -110,7 +110,10 @@ class GameStoreHelper {
         return gameStore.getGameStorePath()
           .then(launcherPath => {
             if (!!launcherPath && !this.isStoreRunning(launcherPath)) {
-              api.runExecutable(launcherPath, parameters || [], { suggestDeploy: false });
+              api.runExecutable(launcherPath, parameters || [], {
+                detach: true,
+                suggestDeploy: false,
+              });
             }
             return Promise.resolve();
         });
