@@ -240,6 +240,7 @@ function gatherDependenciesGraph(
         lookupResults,
         dependencies: nodes.filter(node => node !== null),
         redundant: false,
+        extra: rule.extra,
       };
       return res;
     })
@@ -272,7 +273,7 @@ function gatherDependencies(
   progressCB?: (percent: number) => void,
 ): Promise<IDependency[]> {
   const state = api.store.getState();
-  const requirements: IRule[] =
+  const requirements: IModRule[] =
     rules === undefined
       ? []
       : rules.filter(
@@ -292,7 +293,7 @@ function gatherDependencies(
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.all(
     requirements
-      .map((rule: IRule) => gatherDependenciesGraph(rule, api, recommendations)
+      .map((rule: IModRule) => gatherDependenciesGraph(rule, api, recommendations)
         .tap(() => onProgress())),
   )
     .then((nodes: IDependencyNode[]) => {

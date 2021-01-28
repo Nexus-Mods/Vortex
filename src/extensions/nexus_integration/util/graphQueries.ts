@@ -6,7 +6,7 @@ const revisionInfo: IRevisionQuery = {
   adultContent: true,
   createdAt: true,
   updatedAt: true,
-  downloadUri: true,
+  downloadLink: true,
   fileSize: true,
   rating: true,
   votes: true,
@@ -35,7 +35,6 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   id: true,
   name: true,
   endorsements: true,
-  category: true,
   user: {
     name: true,
     avatar: true,

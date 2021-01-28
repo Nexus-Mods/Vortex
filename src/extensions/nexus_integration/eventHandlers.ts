@@ -22,10 +22,11 @@ import { nexusGameId, toNXMId } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
+import { NEXUS_BASE_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
-                RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+                RateLimitError, TimeoutError, IDownloadURL } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as semver from 'semver';
 
@@ -133,6 +134,7 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
         }
       }).then(() => null);
     } else {
+      lastModTable = newModTable;
       return Promise.resolve();
     }
   }, 2000);
@@ -299,6 +301,16 @@ export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
       .catch(err => {
         api.showErrorNotification('Failed to get list of collections', err);
         return Promise.resolve(undefined);
+      });
+}
+
+export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
+  : (apiLink: string) => Promise<IDownloadURL[]> {
+  return (apiLink: string): Promise<IDownloadURL[]> =>
+    Promise.resolve(nexus.getCollectionDownloadLink(apiLink))
+      .catch(err => {
+        api.showErrorNotification('Failed to get list of collections', err);
+        return Promise.resolve([]);
       });
 }
 

@@ -44,6 +44,10 @@ import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
+import {
+  genCollectionIdAttribute,
+  genEndorsedAttribute,
+  genGameAttribute,
   genModIdAttribute } from './attributes';
 import { NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
@@ -799,6 +803,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
   api.onAsync('get-nexus-collection', eh.onGetNexusCollection(api, nexus));
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
+  api.onAsync('resolve-collection-url', eh.onResolveCollectionUrl(api, nexus));
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
@@ -1010,7 +1015,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                 .catch(rej)
                 .finally(dismiss);
             });
-            opn(`https://www.${NEXUS_DOMAIN}/${url.gameId}/mods/${url.modId}?`
+            opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?`
                 + `tab=files&file_id=${url.fileId}&nmm=1`)
               .catch(() => null);
           } }],
@@ -1028,10 +1033,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
           .then((res: IDownloadURL[]) =>
             ({ urls: res.map(u => u.URI), meta: {}, updatedUrl: input }))
-        : nexus.getRevisionGraph({ downloadUri: true }, url.revisionId)
+        : nexus.getRevisionGraph({ downloadLink: true }, url.revisionId)
           .then((res: Partial<IRevision>) =>
             ({
-              urls: [res.downloadUri],
+              urls: [res.downloadLink],
               updatedUrl: input,
               meta: {
                 nexus: {
@@ -1194,6 +1199,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
+  context.registerTableAttribute('mods', genCollectionIdAttribute(context.api));
 
   context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner,
                           undefined, undefined, {

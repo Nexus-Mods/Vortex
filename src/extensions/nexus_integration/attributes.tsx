@@ -127,16 +127,37 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     description: laterT('Internal ID used by www.nexusmods.com'),
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
-      const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
+      const res = ((mod.attributes?.source ?? 'nexus') && (mod.type !== 'collection'))
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;
       return res;
     },
-    calc: (mod: IMod) =>
-      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? getSafe(mod.attributes, ['modId'], null)
-        : undefined
-    ,
+    calc: (mod: IMod) => ((mod.attributes?.source ?? 'nexus') && (mod.type !== 'collection'))
+        ? (mod.attributes?.modId ?? null)
+        : undefined,
+    placement: 'detail',
+    isToggleable: false,
+    edit: {},
+    isSortable: false,
+    isVolatile: true,
+  };
+}
+
+export function genCollectionIdAttribute(api: IExtensionApi): ITableAttribute {
+  return {
+    id: 'nexusCollectionId',
+    name: laterT('Nexus Collection ID'),
+    description: laterT('Internal ID used by www.nexusmods.com'),
+    icon: 'external-link',
+    customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
+      const res = ((mod.attributes?.source ?? 'nexus') && (mod.type === 'collection'))
+        ? renderNexusModIdDetail(api.store, mod, t)
+        : null;
+      return res;
+    },
+    calc: (mod: IMod) => ((mod.attributes?.source ?? 'nexus') && (mod.type === 'collection'))
+        ? (mod.attributes?.collectionId ?? null)
+        : undefined,
     placement: 'detail',
     isToggleable: false,
     edit: {},

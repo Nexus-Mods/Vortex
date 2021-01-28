@@ -52,6 +52,7 @@ export interface IModReference extends IReference {
   // the user chose for the mod.
   description?: string;
   tag?: string;
+  instructions?: string;
 }
 
 /**
