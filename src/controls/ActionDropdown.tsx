@@ -78,7 +78,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
  * @extends {ComponentEx<IProps, {}>}
  */
 class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
-  private mRef: JSX.Element;
+  private mRef: Element;
 
   constructor(props: IProps) {
     super(props);
