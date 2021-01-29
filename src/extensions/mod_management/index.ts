@@ -436,8 +436,7 @@ function genUpdateModDeployment() {
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
     if ((game === undefined)
-        || (gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)) {
+        || (gameDiscovery?.path === undefined)) {
       const err = new Error('Game no longer available');
       err['attachLogOnReport'] = true;
       return Promise.reject(err);
