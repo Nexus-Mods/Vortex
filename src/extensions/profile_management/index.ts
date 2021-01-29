@@ -196,6 +196,13 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     return Promise.resolve();
   }
 
+  const gameDiscovery =
+    getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
+  if (gameDiscovery?.path === undefined) {
+    // can't deploy a game that hasn't been discovered
+    return Promise.resolve();
+  }
+
   return new Promise((resolve, reject) => {
     api.events.emit('deploy-mods', onceCB((err: Error) => {
         if (err === null) {
@@ -282,7 +289,7 @@ function genOnProfileChange(api: IExtensionApi,
         }
 
         const discovery = state.settings.gameMode.discovered[profile.gameId];
-        if ((discovery === undefined) || (discovery.path === undefined)) {
+        if ((discovery?.path === undefined)) {
           showError(store.dispatch,
             'Game is no longer discoverable, please go to the games page and scan for, or '
           + 'manually select the game folder.',
