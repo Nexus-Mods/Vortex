@@ -158,21 +158,27 @@ export interface ILoadOrderGameInfo {
 
 export class LoadOrderValidationError extends Error {
   private mValidationRes: IValidationResult;
-  private mLoadOrder: string[];
+  private mLoadOrder: LoadOrder;
   constructor(validationRes: IValidationResult, loadOrder: LoadOrder) {
     super('Invalid Load Order');
     this.name = 'LoadOrderValidationError';
     this.mValidationRes = validationRes;
-    this.mLoadOrder = loadOrder.map(entry => entry.name);
+    this.mLoadOrder = loadOrder;
   }
 
   public get validationResult(): IValidationResult {
     return this.mValidationRes;
   }
 
-  public get loadOrder(): string {
-    return this.mLoadOrder.filter(entry => !!entry)
-                          .join('\n');
+  public get loadOrder(): LoadOrder {
+    return this.mLoadOrder;
+  }
+
+  public get loadOrderEntryNames(): string {
+    const lo = this.mLoadOrder.filter(entry => !!entry)
+                              .map(entry => entry.name)
+                              .join('\n');
+    return lo;
   }
 }
 
