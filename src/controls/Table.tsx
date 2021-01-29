@@ -659,7 +659,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderRow(rowId: string, sortAttribute: ITableAttribute, groupId?: string): JSX.Element {
-    const { t, data, language, hasActions, tableId } = this.props;
+    const { t, attributeState, data, language, hasActions, objects, tableId } = this.props;
     const { calculatedValues, rowState, rowVisibility, singleRowActions } = this.state;
 
     if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
@@ -668,6 +668,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attributes = this.mVisibleAttributes;
 
+    const extraClasses = this.props.objects
+      .map(attr => attr.cssClass?.(data[rowId],this.getAttributeState(attr, attributeState).enabled))
+      .filter(cls => truthy(cls));
+
+    extraClasses.push(sanitizeCSSId(rowId));
+
     const tableRowId = sanitizeCSSId(rowId + '_' + (groupId || ''));
 
     return (
@@ -675,7 +681,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         t={t}
         tableId={tableId}
         id={tableRowId}
-        rowClass={sanitizeCSSId(rowId)}
+        rowClasses={extraClasses}
         key={tableRowId}
         data={calculatedValues[rowId]}
         group={groupId}

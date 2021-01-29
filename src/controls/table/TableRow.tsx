@@ -241,7 +241,7 @@ export interface IRowProps {
   t: TFunction;
   id: string;
   tableId: string;
-  rowClass: string;
+  rowClasses: string[];
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
@@ -291,11 +291,9 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
   public render(): JSX.Element | JSX.Element[] {
     const { data, domRef, inlines, group, grouped, highlighted, id, onClick,
-            rowClass, selected } = this.props;
+            rowClasses, selected } = this.props;
 
-    const classes = [
-      rowClass,
-    ];
+    const classes = rowClasses;
 
     if (selected) {
       classes.push('table-selected');

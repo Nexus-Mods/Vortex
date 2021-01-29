@@ -337,6 +337,9 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
       }
       return modType.options.name || mod.type;
     },
+    cssClass: mod => (mod.type !== '')
+        ? `mod-modtype-${mod.type}`
+        : undefined,
     help: 'The mod type controls where (and maybe even how) a mod gets deployed. '
       + 'Leave empty (default) unless you know what you\'re doing.',
     supportsMultiple: true,

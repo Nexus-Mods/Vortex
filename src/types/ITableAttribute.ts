@@ -183,6 +183,12 @@ export interface ITableAttribute<T = any> {
    *        the Table props the Table may appear glitchy as it won't update as necessary.
    */
   calc?: (object: T, t: TFunction) => any | Promise<any>;
+
+  /**
+   * allows the attribute to add a css class to the table row.
+   */
+  cssClass?: (object: T, enabled: boolean) => string;
+
   /**
    * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
    * the output of calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and
