@@ -7,7 +7,7 @@ import ExtensionGate from '../controls/ExtensionGate';
 
 interface IExtDialog {
   id: string;
-  component: React.ComponentClass<any>;
+  component: React.ComponentType<any>;
   props: PropsCallback;
 }
 

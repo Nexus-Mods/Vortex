@@ -122,7 +122,7 @@ export interface IMainPageOptions {
 }
 
 export type RegisterMainPage =
-  (icon: string, title: string, element: React.ComponentClass<any> | React.StatelessComponent<any>,
+  (icon: string, title: string, element: React.ComponentType<any>,
    options: IMainPageOptions) => void;
 
 export interface IDashletOptions {
@@ -141,6 +141,11 @@ export type RegisterDashlet =
    props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
+  (id: string,
+   element: React.ComponentType<any>,
+   props?: PropsCallback) => void;
+
+export type RegisterOverlay =
   (id: string,
    element: React.ComponentType<any>,
    props?: PropsCallback) => void;
@@ -870,6 +875,12 @@ export interface IExtensionContext {
    * This dialog has to control its own visibility
    */
   registerDialog: RegisterDialog;
+
+  /**
+   * registers a component to be rendered very high in the DOM, overlaying the main window.
+   * Similar to registerDialogs, except that Vortex won't control whether the overlay gets rendered.
+   */
+  registerOverlay: RegisterOverlay;
 
   /**
    * registers a element to be displayed in the footer

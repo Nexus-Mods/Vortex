@@ -1397,8 +1397,9 @@ class InstallManager {
       }
       return dlPromise
         .then((downloadId: string) => (dep.mod === undefined)
-           ? this.installModAsync(dep.reference, api, downloadId,
-                                  { choices: dep.installerChoices }, dep.fileList)
+           ? this.withInstructions(api, renderModReference(dep.reference), dep.extra?.['instructions'], () =>
+                this.installModAsync(dep.reference, api, downloadId,
+                                  { choices: dep.installerChoices }, dep.fileList))
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
@@ -1742,6 +1743,25 @@ class InstallManager {
       .finally(() => {
         api.events.emit('did-install-dependencies', profile.id, modId, true);
       });
+  }
+
+  private withInstructions<T>(api: IExtensionApi,
+                              title: string,
+                              instructions: string,
+                              cb: () => Promise<T>)
+                              : Promise<T> {
+    if (!truthy(instructions)) {
+      return cb();
+    }
+
+    return api.showDialog('info', 'Installation Instructions', {
+      text: 'There are instructions provided for the following mod installation.',
+    }, [
+      { label: 'Show', action: () => {
+        api.ext.showOverlay?.('install-instructions', title, instructions)
+      } },
+    ])
+    .then(() => cb());
   }
 
   private installModAsync(requirement: IReference,

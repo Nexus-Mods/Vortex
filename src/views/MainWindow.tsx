@@ -28,6 +28,7 @@ import DNDContainer from './DNDContainer';
 import MainFooter from './MainFooter';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
+import OverlayContainer from './OverlayContainer';
 import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
@@ -249,6 +250,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </FlexLayout>
             <Dialog />
             <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+            <OverlayContainer />
             {customTitlebar ? <WindowControls /> : null}
           </div>
           {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
