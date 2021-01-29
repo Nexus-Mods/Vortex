@@ -36,19 +36,27 @@ async function errorHandler(api: types.IExtensionApi,
       loadOrder: invalLOErr.loadOrderEntryNames,
       reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}\n`),
     };
-    api.showErrorNotification(errorMessage, details, { allowReport });
+    reportError(api, errorMessage, details, allowReport);
   } else if (err instanceof LoadOrderSerializationError) {
     const serErr = err as LoadOrderSerializationError;
     const errMess = 'Failed to serialize load order';
     const details = {
       loadOrder: serErr.loadOrder,
     };
-    api.showErrorNotification(errMess, details, { allowReport });
+    reportError(api, errMess, details, allowReport);
   } else {
-    api.showErrorNotification('Failed load order operation', err, { allowReport });
+    reportError(api, 'Failed load order operation', err, allowReport);
   }
 
   return Promise.resolve();
+}
+
+function reportError(api: types.IExtensionApi,
+                     errorMessage: string,
+                     errDetails: any,
+                     allowReport: boolean = true) {
+  const errorId = errorMessage + JSON.stringify(errDetails);
+  api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
 }
 
 async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any) {
