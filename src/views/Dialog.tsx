@@ -23,6 +23,7 @@ import {
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import ReactMarkdown from 'react-markdown';
 
 const nop = () => undefined;
 
@@ -197,6 +198,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(t(content.bbcode, { replace: content.parameters }),
             content.options?.bbcodeContext)}
+        </div>
+      ));
+    }
+
+    if (content.md !== undefined) {
+      controls.push((
+        <div key='dialog-content-markdown' className='dialog-content-markdown'>
+          <ReactMarkdown source={t(content.md, { replace: content.parameters })} />
         </div>
       ));
     }
