@@ -44,7 +44,14 @@ export interface IModRepoId {
 }
 
 export interface IModReference extends IReference {
+  // the id is more of a hint than a requirement, making sure we use a previously resolved
+  // match, otherwise we could get into a situation where the fuzzy reference value lead us to
+  // a valid download&installation but then we don't recognize the installed mod as matching.
+  // This can also be the only attribute during the creation of collections.
   id?: string;
+  // the archive id is used only if it's the only flag alongside id, alowing to find a previously
+  // downloaded archive in the same way id helps find a locally installed mod
+  archiveId?: string;
   // using a set of ids identifying the mod on a specific repository
   repo?: { repository: string } & IModRepoId;
   // optional parameter used to display the reference in a user-friendly way if available.
