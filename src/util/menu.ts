@@ -86,6 +86,8 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         click(item, focusedWindow) {
           if (focusedWindow) {
             focusedWindow.webContents.toggleDevTools();
+          } else {
+            extensions.getApi().showErrorNotification('Failed to open developer tools', 'no focused window');
           }
         },
       });

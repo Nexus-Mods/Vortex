@@ -111,6 +111,9 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
   const {
     fileExpression, fileMD5, fileSize, gameId, logicalFileName, versionMatch,
   } = reference;
+  if (lookup === undefined) {
+    return false;
+  }
   const { value } = lookup;
   return ((gameId === undefined) || (gameId === value.gameId))
       && ((fileMD5 === undefined) || (fileMD5 === value.fileMD5))
