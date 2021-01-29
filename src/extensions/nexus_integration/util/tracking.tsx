@@ -7,7 +7,7 @@ import { IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { laterT } from '../../../util/i18n';
 import { activeGameId } from '../../../util/selectors';
-
+import { getSafe } from '../../../util/storeHelper';
 class Tracking {
   private mApi: IExtensionApi;
   private mNexus: Nexus;
@@ -20,7 +20,11 @@ class Tracking {
 
   public once(nexusInstance: Nexus) {
     this.mNexus = nexusInstance;
-    this.fetch();
+    const state = this.mApi.getState();
+    const username = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+    if (username !== undefined) {
+      this.fetch();
+    }
   }
 
   public attribute(): ITableAttribute {
