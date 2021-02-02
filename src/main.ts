@@ -83,7 +83,8 @@ const handleError = (error: any) => {
        'net::ERR_ABORTED',
        'net::ERR_CONTENT_LENGTH_MISMATCH',
        'net::ERR_SSL_PROTOCOL_ERROR',
-       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
+       'net::ERR_HTTP2_PROTOCOL_ERROR',
+       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)) {
     return;
   }
 
