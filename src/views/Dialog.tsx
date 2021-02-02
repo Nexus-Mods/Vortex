@@ -342,7 +342,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ) : null }
       <FormControl
         id={`dialoginput-${input.id}`}
-        componentClass={(input.type === 'multiline') ? 'textarea' : 'p'}
+        componentClass={(input.type === 'multiline') ? 'textarea' : undefined}
         type={effectiveType}
         value={input.value || ''}
         label={input.label}
