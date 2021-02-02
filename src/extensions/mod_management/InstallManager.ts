@@ -1,9 +1,11 @@
+import { addLocalDownload, setDownloadHashByFile } from '../../actions';
 import { showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled } from '../../util/CustomErrors';
+import { fileMD5 } from '../../util/checksum';
 import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
@@ -1857,6 +1859,23 @@ class InstallManager {
                 ? path.join(dlPath, dest.dest)
                 : path.join(destinationPath, dest.dest);
               return this.transferFile(sourcePath, destPath, idx === len - 1)
+                .then(() => {
+                  if (dest.section === 'download') {
+                    const archiveId = shortid();
+                    let fileSize: number;
+                    return fs.statAsync(destPath)
+                      .then(stat => {
+                        fileSize = stat.size;
+                        api.store.dispatch(addLocalDownload(archiveId, gameId, dest.dest, fileSize));
+                        return fileMD5(destPath);
+                      })
+                      .then(md5 => {
+                        api.store.dispatch(setDownloadHashByFile(dest.dest, md5, fileSize));
+                      });
+                  } else {
+                    return Promise.resolve();
+                  }
+                })
                 .catch(err => {
                   if (err.code === 'ENOENT') {
                     missingFiles.push(srcRel);
