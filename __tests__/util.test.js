@@ -1,5 +1,11 @@
 import * as util from '../src/util/util';
 
+// for the tests regarding invalid filename detection/sanitation we need a consistent
+// platform and windows is just way more "interesting" in this regard
+jest.mock('process', () => ({
+  platform: 'win32',
+}));
+
 describe('objDiff', () => {
   it('finds added entries', () => {
     const res = util.objDiff({ old: 'a' }, { old: 'a', new: 'b' });
@@ -94,46 +100,31 @@ describe('isFilenameValid', () => {
 
 describe('isPathValid', () => {
   it('reports invalid path', () => {
-    const invalidNames = (process.platform === 'win32')
-      ? [
-        'foo\\b/ar.txt',
-        'con\\bar.txt',
-        'foo\\..\\bar.txt',
-        '\\foo\\bar',
-      ]
-      : [
-        'foo/../bar.txt',
-        'foo\\bar.txt',
-        'c:\\foo\\bar.txt',
-        'c:/foo/bar.txt',
-      ];
+    const invalidNames = [
+      'foo\\b/ar.txt',
+      'con\\bar.txt',
+      'foo\\..\\bar.txt',
+      '\\foo\\bar',
+    ];
     invalidNames.forEach(name => {
       expect(util.isPathValid(name)).toBe(false);
     });
   });
   it('allows valid names', () => {
-    const validNames = (process.platform === 'win32')
-      ? [
-        'foo\\bar.txt',
-        'c:\\conx\\bar.txt',
-        '\\\\server\\foo\\bar',
-        'foo\\bar\\'
-      ]
-      : [
-        'foo/bar.txt'
-      ];
+    const validNames = [
+      'foo\\bar.txt',
+      'c:\\conx\\bar.txt',
+      '\\\\server\\foo\\bar',
+      'foo\\bar\\'
+    ];
     validNames.forEach(name => {
       expect(util.isPathValid(name)).toBe(true);
     });
   });
   it('can be set to allow relative paths', () => {
-    const validNames = (process.platform === 'win32')
-      ? [
-        'c:\\conx\\..\\bar.txt',
-      ]
-      : [
-        'foo/../bar.txt'
-      ];
+    const validNames = [
+      'c:\\conx\\..\\bar.txt',
+    ];
     validNames.forEach(name => {
       expect(util.isPathValid(name, true)).toBe(true);
     });
@@ -163,7 +154,19 @@ describe('isMajorUpgrade', () => {
 
 describe('unique', () => {
   it('removes duplicates, keeping the first item', () => {
-    expect(util.unique([{ k: 1, v: 1 }, { k: 1, v: 2}, {k: 2, v: 1}], i => i.k))
+    expect(util.unique([{ k: 1, v: 1 }, { k: 1, v: 2 }, { k: 2, v: 1 }], i => i.k))
       .toEqual([{ k: 1, v: 1 }, { k: 2, v: 1 }]);
+  });
+});
+
+describe('sanitizeFilename', () => {
+  it('sanitizes disallowed characters', () => {
+    expect(util.sanitizeFilename('foo*bar')).toBe('foo_42_bar');
+  });
+  it('sanitizes reserved names', () => {
+    expect(util.sanitizeFilename('LPT1.txt')).toBe('_reserved_LPT1.txt');
+  });
+  it('sanitizes invalid trailing character', () => {
+    expect(util.sanitizeFilename('foobar.')).toBe('foobar._');
   });
 });

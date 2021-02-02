@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as process from 'process';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
 
@@ -465,6 +466,25 @@ function isDriveLetter(input: string): boolean {
   return (process.platform === 'win32')
     && (input.length === 2)
     && (input[1] === ':');
+}
+
+/**
+ * encodes a string so it can safely be used as a filename
+ */
+export function sanitizeFilename(input: string): string {
+  if (input.length === 0) {
+    return '_empty_';
+  }
+  if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
+    return path.join(path.dirname(input), '_reserved_' + path.basename(input));
+  }
+  if ((process.platform === 'win32')
+    && (input.endsWith(' ') || input.endsWith('.'))) {
+    // Although Windows' underlying file system may support
+    //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
+    return input + '_';
+  }
+  return input.replace(INVALID_FILENAME_RE, invChar => `_${invChar.charCodeAt(0)}_`);
 }
 
 const trimTrailingSep = new RegExp(`\\${path.sep}*$`, 'g');
