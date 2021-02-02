@@ -349,7 +349,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         description: 'the action to take on files in this mod',
         calc: (source: ISourceEntry) => {
           const action = possibleActions[type].find(act => act.key === source.action);
-          if (action !== undefined) {
+          if (action === undefined) {
             this.reportInvalidAction(type, source.action);
             return 'INVALID!';
           }
@@ -413,7 +413,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         description: 'the action to take on the file',
         calc: (file: IFileEntry) => {
           const action = possibleActions[type].find(act => act.key === file.action);
-          if (action !== undefined) {
+          if (action === undefined) {
             this.reportInvalidAction(type, file.action);
             return 'INVALID!';
           }
