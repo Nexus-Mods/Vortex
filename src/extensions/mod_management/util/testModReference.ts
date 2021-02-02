@@ -48,7 +48,7 @@ export function sanitizeExpression(fileName: string): string {
 }
 
 function isFuzzyVersion(input: string) {
-  if (input === undefined) {
+  if (!truthy(input)) {
     return false;
   }
 
@@ -86,7 +86,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
 
   const versionMatchSafe = ref.versionMatch || '1.0.0';
 
-  // if reference is by file hash and the match , use only that
+  // if reference is by file hash and the match is not fuzzy, require the md5 to match
   if ((ref.fileMD5 !== undefined)
       && !versionMatchSafe.endsWith('+prefer')
       && (semver.validRange(versionMatchSafe) === versionMatchSafe)

@@ -26,7 +26,7 @@ import { NEXUS_BASE_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
-                RateLimitError, TimeoutError, IDownloadURL } from '@nexusmods/nexus-api';
+                RateLimitError, TimeoutError, IDownloadURL, ICollectionManifest } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as semver from 'semver';
 
@@ -429,7 +429,7 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
   };
 }
 
-function sendCollection(nexus: Nexus, collectionInfo: any, collectionId: number, data: Buffer) {
+function sendCollection(nexus: Nexus, collectionInfo: ICollectionManifest, collectionId: number, data: Buffer) {
   if (collectionId === undefined) {
     return nexus.createCollection({
         adultContent: false,
@@ -448,7 +448,7 @@ function sendCollection(nexus: Nexus, collectionInfo: any, collectionId: number,
 }
 
 export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
-  return (collectionInfo: any,
+  return (collectionInfo: ICollectionManifest,
           assetFilePath: string,
           collectionId: number,
           callback: (err: Error, response?: any) => void) => {

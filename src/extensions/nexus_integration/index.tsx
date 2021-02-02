@@ -49,7 +49,7 @@ import {
   genEndorsedAttribute,
   genGameAttribute,
   genModIdAttribute } from './attributes';
-import { NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
+import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
@@ -830,7 +830,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus));
 
   api.addMetaServer('nexus_api',
-                    { nexus, url: `https://api.${NEXUS_DOMAIN}`, cacheDurationSec: 86400 });
+    { nexus, url: `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}`, cacheDurationSec: 86400 });
 
   nexus.getModInfo(1, SITE_ID)
     .then(info => {

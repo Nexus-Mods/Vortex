@@ -144,8 +144,8 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
         // within blocks of equal number of collaterals, consider the newer versions
         // before the ones with lower version
         return semver.compare(
-          semver.coerce(rhs.dep.lookupResults[0].value.fileVersion),
-          semver.coerce(lhs.dep.lookupResults[0].value.fileVersion),
+          semver.coerce(rhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1'),
+          semver.coerce(lhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1'),
         );
       }
     });

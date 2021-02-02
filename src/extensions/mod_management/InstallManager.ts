@@ -1093,7 +1093,7 @@ class InstallManager {
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
       .then(() => this.extractArchive(api, archivePath, tempPath, destinationPath,
-                                      instructionGroups.copy))
+                                      instructionGroups.copy, gameId))
       .then(() => this.processGenerateFiles(instructionGroups.generatefile,
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
@@ -1823,8 +1823,11 @@ class InstallManager {
     archivePath: string,
     tempPath: string,
     destinationPath: string,
-    copies: IInstruction[]): Promise<void> {
+    copies: IInstruction[],
+    gameId: string): Promise<void> {
     let normalize: Normalize;
+
+    const dlPath = downloadPathForGame(api.getState(), gameId);
 
     const missingFiles: string[] = [];
     return fs.ensureDirAsync(destinationPath)
@@ -1833,9 +1836,14 @@ class InstallManager {
           normalize = normalizeFunc;
         })
         .then(() => {
-          const sourceMap: {[src: string]: string[]} =
-              copies.reduce((prev: { [src: string]: string[] }, copy) => {
-                setdefault(prev, copy.source, []).push(copy.destination);
+          interface IDest {
+            dest: string;
+            section: string;
+          }
+          const sourceMap: {[src: string]: IDest[]} =
+              copies.reduce((prev: { [src: string]: IDest[] }, copy) => {
+                setdefault(prev, copy.source, [])
+                  .push({ dest:  copy.destination, section: copy.section });
                 return prev;
               }, {});
           // for each source, copy or rename to destination(s)
@@ -1843,8 +1851,11 @@ class InstallManager {
             const sourcePath = path.join(tempPath, srcRel);
             // need to do this sequentially, otherwise we can't use the idx to
             // decide between rename and copy
-            return Promise.mapSeries(sourceMap[srcRel], (destRel, idx, len) => {
-              const destPath = path.join(destinationPath, destRel);
+            return Promise.mapSeries(sourceMap[srcRel], (dest, idx, len) => {
+              // 'download' is currently the only supported section
+              const destPath = (dest.section === 'download')
+                ? path.join(dlPath, dest.dest)
+                : path.join(destinationPath, dest.dest);
               return this.transferFile(sourcePath, destPath, idx === len - 1)
                 .catch(err => {
                   if (err.code === 'ENOENT') {
