@@ -16,6 +16,14 @@ import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+// Adding these to assist with capturing and debugging
+//  invalid action errors - will remove this once we're able
+//  to deduct what is happening in reports such as:
+//  https://github.com/Nexus-Mods/Vortex/issues/7629
+import path from 'path';
+import getVortexPath from '../../../util/getVortexPath';
+import { getReduxLog } from '../../../util/reduxLogger';
+
 export interface IBaseProps {
 }
 
@@ -283,6 +291,38 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private reportInvalidAction(type: string, action: FileAction) {
+    const { changes } = this.props;
+    getReduxLog()
+      .then((logData: any) => {
+        const state = this.context.api.getState();
+        const sessionData = state.session;
+        this.context.api.showErrorNotification('Invalid action', { type, action }, {
+          attachments: [{
+            id: 'logfile',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          }, {
+            id: 'events',
+            type: 'data',
+            data: logData,
+            description: 'Events Log',
+          }, {
+            id: 'changes',
+            type: 'data',
+            data: changes,
+            description: 'External Changes Log',
+          }, {
+            id: 'session',
+            type: 'data',
+            data: sessionData,
+            description: 'Session State',
+          }],
+        });
+      });
+  }
+
   private genSourceColumns(type: string): ITableAttribute[] {
     const { onChangeAction } = this.props;
 
@@ -309,11 +349,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         description: 'the action to take on files in this mod',
         calc: (source: ISourceEntry) => {
           const action = possibleActions[type].find(act => act.key === source.action);
-          if (action === undefined) {
-            this.context.api.showErrorNotification('Invalid action', {
-              type,
-              action: source.action,
-            });
+          if (action !== undefined) {
+            this.reportInvalidAction(type, source.action);
             return 'INVALID!';
           }
           return action.text;
@@ -376,14 +413,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         description: 'the action to take on the file',
         calc: (file: IFileEntry) => {
           const action = possibleActions[type].find(act => act.key === file.action);
-          if (action === undefined) {
-            this.context.api.showErrorNotification('Invalid action', {
-              type,
-              action: file.action,
-            });
+          if (action !== undefined) {
+            this.reportInvalidAction(type, file.action);
             return 'INVALID!';
           }
-
           return action.text;
         },
         placement: 'table',
