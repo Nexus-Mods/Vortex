@@ -114,6 +114,10 @@ class Tracking {
   }
 
   private fetch() {
+    if (this.mNexus.getValidationResult() !== null) {
+      return;
+    }
+
     this.mNexus.getTrackedMods().then(tracked => {
       this.mTrackedMods = tracked.reduce((prev, iter) => {
         if (prev[iter.domain_name] === undefined) {
