@@ -602,6 +602,11 @@ function genUpdateModDeployment() {
               ErrorCode: err.errno,
             });
           }
+          // Error codes that we can't debug without a log.
+          const attachLogErrCodes: string[] = ['ELOOP'];
+          if (attachLogErrCodes.includes(err.code)) {
+            err['attachLogOnReport'] = true;
+          }
           return api.showErrorNotification('Failed to deploy mods', err, {
             allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
           });
