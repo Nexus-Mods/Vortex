@@ -206,6 +206,13 @@ export class DownloadObserver {
   private handleDownloadFinished(id: string,
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
+    const download = this.mApi.store.getState().persistent.downloads.files?.[id];
+    if (download === undefined) {
+      // The only way for the download entry to be missing at this point
+      //  is if the user had canceled the download which would mean it was
+      //  removed from the state and the file no longer exists.
+      return;
+    }
     const fileName = path.basename(res.filePath);
     if (truthy(fileName)) {
       log('debug', 'setting final download name', { id, fileName });
@@ -224,13 +231,6 @@ export class DownloadObserver {
         callback(new Error('html result'), id);
       }
     } else {
-      const download = this.mApi.store.getState().persistent.downloads.files?.[id];
-      if (download === undefined) {
-        // The only way for the download entry to be missing at this point
-        //  is if the user had canceled the download which would mean it was
-        //  removed from the state and the file no longer exists.
-        return;
-      }
       finalizeDownload(this.mApi, id, res.filePath)
         .then(() => callback(null, id))
         .catch(err => callback(err, id));
