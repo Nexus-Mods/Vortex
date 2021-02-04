@@ -56,6 +56,7 @@ interface IConnectedProps {
   downloadPathForGame: (gameId: string) => string;
   showDropzone: boolean;
   showGraph: boolean;
+  maxBandwidth: number;
 }
 
 interface IActionProps {
@@ -187,7 +188,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode, secondary, showGraph } = this.props;
+    const { t, downloads, gameMode, maxBandwidth, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
 
     if (this.mColumns === undefined) {
@@ -222,7 +223,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                   onToggle={nop}
                 >
                   <Panel.Body collapsible={true}>
-                    <DownloadGraph />
+                    <DownloadGraph t={t} maxBandwidth={maxBandwidth} />
                   </Panel.Body>
                   <CollapseIcon
                     position='bottomright'
@@ -592,6 +593,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
+    maxBandwidth: state.settings.downloads.maxBandwidth,
   };
 }
 

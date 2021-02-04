@@ -42,6 +42,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import FormInput from '../../../controls/FormInput';
 
 const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
+const MB = 1024 * 1024;
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -205,18 +206,18 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             }
           </div>
         </FormGroup>
-        <FormGroup>
+        <FormGroup id='download-bandwidth-limit'>
           <ControlLabel>
             {t('Limit Bandwidth')}
           </ControlLabel>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <FormInput
-              value={maxBandwidth > 0 ? (maxBandwidth / 1024).toString() : undefined}
+              value={maxBandwidth > 0 ? (maxBandwidth / MB).toString() : undefined}
               placeholder={t('Unlimited')}
               onChange={this.changeMaxBandwidth}
               type='number'
             />
-            KB/s
+            MB/s
           </div>
         </FormGroup>
         <FormGroup>
@@ -235,7 +236,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (input.length === 0) {
       this.props.onSetMaxBandwidth(0);
     } else {
-      this.props.onSetMaxBandwidth(parseInt(input, 10) * 1024);
+      this.props.onSetMaxBandwidth(parseFloat(input) * MB);
     }
   }
 
