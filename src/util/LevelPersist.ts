@@ -4,7 +4,7 @@ import { log } from './log';
 
 import Promise from 'bluebird';
 import encode from 'encoding-down';
-import leveldown from 'leveldown';
+import leveldownT from 'leveldown';
 import * as levelup from 'levelup';
 
 const SEPARATOR: string = '###';
@@ -21,6 +21,7 @@ export class DatabaseLocked extends Error {
 function repairDB(dbPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     log('warn', 'repairing database', dbPath);
+    const leveldown: typeof leveldownT = require('leveldown');
     leveldown.repair(dbPath, (err: Error) => {
       if (err !== null) {
         reject(err);
@@ -33,6 +34,7 @@ function repairDB(dbPath: string): Promise<void> {
 
 function openDB(dbPath: string): Promise<levelup.LevelUp> {
   return new Promise<levelup.LevelUp>((resolve, reject) => {
+    const leveldown: typeof leveldownT = require('leveldown');
     const db = levelup.default(encode(leveldown(dbPath)),
                      { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err) => {
       if (err !== null) {
@@ -58,7 +60,8 @@ class LevelPersist implements IPersistor {
           log('info', 'failed to open db', err);
           return Promise.reject(new DatabaseLocked());
         } else {
-          return Promise.delay(500).then(() => LevelPersist.create(persistPath, tries - 1));
+          return Promise.delay(500)
+            .then(() => LevelPersist.create(persistPath, tries - 1, false));
         }
       });
   }
@@ -72,7 +75,7 @@ class LevelPersist implements IPersistor {
   public close(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.mDB.close((err) =>
-        err !== null ? reject(err) : resolve());
+        !!err ? reject(err) : resolve());
     });
   }
 
@@ -91,21 +94,11 @@ class LevelPersist implements IPersistor {
     });
   }
 
-  public getAllKeys(): Promise<string[][]> {
+  public getAllKeys(options?: any): Promise<string[][]> {
     return new Promise((resolve, reject) => {
       const keys: string[][] = [];
       let resolved = false;
-      /* on certain types of data corruption the reader will just
-         block forever. Unfortunately in this case we can't close the db
-         anymore without killing the process
-      setTimeout(() => {
-        if (!resolved) {
-          reject(new DataInvalid('Timeout reading from state database'));
-          resolved = true;
-        }
-      }, READ_TIMEOUT);
-      */
-      this.mDB.createKeyStream()
+      this.mDB.createKeyStream(options)
           .on('data', data => {
             keys.push(data.split(SEPARATOR));
           })
@@ -126,24 +119,26 @@ class LevelPersist implements IPersistor {
 
   public getAllKVs(prefix?: string): Promise<Array<{ key: string[], value: string }>> {
     return new Promise((resolve, reject) => {
-      const kvs: Array<{ key: string[], value: string }> = [];
+        const kvs: Array<{ key: string[], value: string }> = [];
 
-      const options = (prefix === undefined)
-        ? undefined
-        : {
-          gt: `${prefix}${SEPARATOR}`,
-          lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
-        };
+        const options = (prefix === undefined)
+          ? undefined
+          : {
+            gt: `${prefix}${SEPARATOR}`,
+            lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
+          };
 
-      this.mDB.createReadStream(options)
-        .on('data', data => {
-          kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
-        })
-        .on('error', error => reject(error))
-        .on('close', () => {
-          resolve(kvs);
-        });
-    });
+        this.mDB.createReadStream(options)
+          .on('data', data => {
+            kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
+          })
+          .on('error', error => {
+            reject(error);
+          })
+          .on('close', () => {
+            resolve(kvs);
+          });
+      });
   }
 
   public setItem(statePath: string[], newState: string): Promise<void> {

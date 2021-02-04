@@ -15,7 +15,7 @@ import Promise from 'bluebird';
 import { app as appIn, dialog, ipcMain, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import encode from 'encoding-down';
-import * as leveldown from 'leveldown';
+import * as leveldownT from 'leveldown';
 import levelup from 'levelup';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -119,6 +119,7 @@ export function extendStore(store: Redux.Store<IState>,
 
 function importStateV1(importPath: string): Promise<any> {
   return new Promise((resolve, reject) => {
+    const leveldown: typeof leveldownT = require('leveldown');
     const db = levelup(encode(leveldown(importPath)),
             { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err: Error) => {
       if (err !== null) {

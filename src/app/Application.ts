@@ -2,7 +2,7 @@ import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/a
 import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
-import commandLine, {IParameters} from '../util/commandLine';
+import commandLine, {IParameters, relaunch} from '../util/commandLine';
 import { DataInvalid, DocumentsPathMissing, ProcessCanceled,
          UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
@@ -18,6 +18,7 @@ import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
+import startupSettings from '../util/startupSettings';
 import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
@@ -666,12 +667,20 @@ class Application {
             .catch(() => undefined))
           .then(() => null);
 
+    // storing the last version that ran in the startup.json settings file.
+    // We have that same information in the leveldb store but what if we need
+    // to react to an upgrade before the state us loaded?
+    // In development of 1.4 I assumed we had a case where this was necessary.
+    // Turned out it wasn't, still feel it's sensible to have this
+    // information available asap
+    startupSettings.storeVersion = app.getVersion();
+
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
     return LevelPersist.create(path.join(this.mBasePath, currentStatePath),
                                undefined,
-                               repair || false)
+                               repair ?? false)
       .then(levelPersistor => {
         this.mLevelPersistors.push(levelPersistor);
         return insertPersistor(
@@ -709,7 +718,11 @@ class Application {
           setLogPath(dataPath);
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
-          return LevelPersist.create(path.join(dataPath, currentStatePath))
+          return LevelPersist.create(
+            path.join(dataPath, currentStatePath),
+            undefined,
+            repair ?? false,
+            )
             .then(levelPersistor => {
               this.mLevelPersistors.push(levelPersistor);
             });
@@ -732,6 +745,14 @@ class Application {
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
+        if (this.mExtensions.hasOutdatedExtensions) {
+          log('debug', 'relaunching');
+          relaunch();
+
+          // relaunching the process happens asynchronously but we don't want to any further work
+          // before that
+          return new Promise(() => null);
+        }
         const reducer = require('../reducers/index').default;
         newStore.replaceReducer(reducer(this.mExtensions.getReducers(), querySanitize));
         return Promise.mapSeries(allHives(this.mExtensions), hive =>

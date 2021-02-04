@@ -619,13 +619,16 @@ class ExtensionManager {
           { name: ext });
         // if we get here in the renderer process, initStore is not defined.
         // This should happen in the main process only
-        initStore?.dispatch(removeExtension(ext));
+        initStore?.dispatch?.(removeExtension(ext));
       });
-
-      relaunch();
+      return;
     }
 
     this.initExtensions();
+  }
+
+  public get hasOutdatedExtensions() {
+    return this.mOutdated.length > 0;
   }
 
   public setTranslation(translator: i18n) {

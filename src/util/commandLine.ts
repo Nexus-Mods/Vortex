@@ -1,9 +1,7 @@
 import program from 'commander';
 import { app, ipcMain, ipcRenderer } from 'electron';
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import * as process from 'process';
-import { log } from './log';
+import startupSettings from './startupSettings';
 
 export interface IParameters {
   download?: string;
@@ -22,6 +20,7 @@ export interface IParameters {
   disableGPU?: boolean;
   userData?: string;
   inspector?: boolean;
+  storeVersion?: string;
 }
 
 function assign(input: string): string[] {
@@ -95,17 +94,6 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     argv = electronIsShitArgumentSort(argv);
   }
 
-  let cfgFile: IParameters = {};
-
-  try {
-    cfgFile = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'startup.json'),
-                                         { encoding: 'utf-8' }));
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      log('warn', 'failed to parse startup.json', { error: err.message });
-    }
-  }
-
   let version: string = '1.0.0';
   try {
     // won't happen in regular operation but lets us test this function outside vortex
@@ -145,7 +133,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .parse(argv || []).opts() as IParameters;
 
   return {
-    ...cfgFile,
+    ...startupSettings,
     ...commandLine,
   };
 }

@@ -16,6 +16,7 @@ import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import startupSettings from '../util/startupSettings';
 
 interface ISettingsPage {
   title: string;
@@ -52,20 +53,7 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
-  private mStartupPath = path.join(remote.app.getPath('appData'),
-                                   remote.app.name,
-                                   'startup.json');
-  private mStartupSettings = makeReactive({});
-
-  constructor(props: IProps) {
-    super(props);
-    try {
-      this.mStartupSettings =
-        makeReactive(JSON.parse(fs.readFileSync(this.mStartupPath, { encoding: 'utf-8' })));
-    } catch (err) {
-      // nop
-    }
-  }
+  private mStartupSettings = makeReactive(startupSettings);
 
   public render(): JSX.Element {
     const { settingsPage, objects } = this.props;
@@ -153,15 +141,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private changeStartup = (key: string, value: any) => {
-    this.mStartupSettings = {
-      ...this.mStartupSettings,
-      [key]: value,
-    };
-    writeFileAtomic(this.mStartupPath, JSON.stringify(this.mStartupSettings))
-      .then(() => this.forceUpdate())
-      .catch(err => {
-        log('error', 'failed to write startup.json', { error: err.message });
-      });
+    startupSettings[key] = value;
   }
 }
 
