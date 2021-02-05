@@ -29,6 +29,12 @@ export const setDownloadFilePath = safeCreateAction('SET_DOWNLOAD_FILEPATH',
   (id: string, filePath: string) => ({ id, filePath }));
 
 /**
+ * mark the download as pausable or not
+ */
+export const setDownloadPausable = safeCreateAction('SET_DOWNLOAD_PAUSABLE',
+  (id: string, pausable: boolean) => ({ id, pausable }));
+
+/**
  * mark download as started
  */
 export const startDownload = safeCreateAction('START_DOWNLOAD',

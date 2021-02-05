@@ -212,7 +212,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </ControlLabel>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <FormInput
-              value={maxBandwidth > 0 ? (maxBandwidth / MB).toString() : undefined}
+              value={maxBandwidth > 0 ? (maxBandwidth / MB).toString() : ''}
               placeholder={t('Unlimited')}
               onChange={this.changeMaxBandwidth}
               type='number'

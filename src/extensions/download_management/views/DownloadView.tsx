@@ -332,9 +332,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   private pausable = (downloadIds: string[]) => {
-    return downloadIds.find((downloadId: string) => (
-      this.getDownload(downloadId).state === 'started'
-    )) !== undefined;
+    return downloadIds.find((downloadId: string) => {
+      const download = this.getDownload(downloadId);
+      return (download.state === 'started')
+          && (download.pausable !== false);
+    }) !== undefined;
   }
 
   private reportDownloadError(err: any, resume: boolean) {

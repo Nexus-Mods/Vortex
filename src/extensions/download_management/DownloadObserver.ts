@@ -7,19 +7,18 @@ import {log} from '../../util/log';
 import {renderError, showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { setdefault, truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
 
 import {
   downloadProgress,
-  finalizingDownload,
   finishDownload,
   initDownload,
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
-  setDownloadHash,
+  setDownloadPausable,
 } from './actions/state';
 import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
@@ -37,9 +36,10 @@ import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], urls: string[], filePath: string,
-                        smallUpdate: boolean) {
-  if (store.getState().persistent.downloads.files[dlId] === undefined) {
+                        total: number, chunks: IChunk[], chunkable: boolean,
+                        urls: string[], filePath: string, smallUpdate: boolean) {
+  const download: IDownload = store.getState().persistent.downloads.files[dlId];
+  if (download === undefined) {
     // progress for a download that's no longer active
     return;
   }
@@ -49,10 +49,11 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
     }
     store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
-  if ((filePath !== undefined) &&
-      (path.basename(filePath) !==
-       store.getState().persistent.downloads.files[dlId].localPath)) {
+  if ((filePath !== undefined) && (path.basename(filePath) !== download.localPath)) {
     store.dispatch(setDownloadFilePath(dlId, path.basename(filePath)));
+  }
+  if ((chunkable !== undefined) && (chunkable !== download.pausable)) {
+    store.dispatch(setDownloadPausable(dlId, chunkable));
   }
 }
 
@@ -64,6 +65,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
 export class DownloadObserver {
   private mApi: IExtensionApi;
   private mManager: DownloadManager;
+  private mOnFinishCBs: { [dlId: string]: Array<() => Promise<void>> } = {};
 
   constructor(api: IExtensionApi, manager: DownloadManager) {
     this.mApi = api;
@@ -79,6 +81,13 @@ export class DownloadObserver {
     events.on('start-download',
               (urls, modInfo, fileName?, callback?, redownload?) =>
                   this.handleStartDownload(urls, modInfo, fileName, events, callback, redownload));
+  }
+
+  // enqueues an operation to be run when a download finishes
+  private queueFinishCB(id: string, cb: () => Promise<void>): Promise<void> {
+    return new Promise((resolve) => {
+      setdefault(this.mOnFinishCBs, id, []).push(() => cb().then(resolve));
+    });
   }
 
   private translateError(err: any): string {
@@ -221,8 +230,18 @@ export class DownloadObserver {
       log('error', 'finished download has no filename?', res);
     }
     log('debug', 'unfinished chunks', { chunks: JSON.stringify(res.unfinishedChunks) });
+
+    const onceFinished = () => {
+      if (this.mOnFinishCBs[id] !== undefined) {
+        return Promise.all(this.mOnFinishCBs[id].map(cb => cb())).then(() => null);
+      } else {
+        return Promise.resolve();
+      }
+    };
+
     if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      return onceFinished();
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
       this.mApi.store.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
       this.mApi.store.dispatch(
@@ -230,17 +249,19 @@ export class DownloadObserver {
       if (callback !== undefined) {
         callback(new Error('html result'), id);
       }
+      return onceFinished();
     } else {
       finalizeDownload(this.mApi, id, res.filePath)
         .then(() => callback(null, id))
-        .catch(err => callback(err, id));
+        .catch(err => callback(err, id))
+        .finally(() => onceFinished());
     }
   }
 
   private genProgressCB(id: string): ProgressCallback {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
-    return (received: number, total: number, chunks: IChunk[],
+    return (received: number, total: number, chunks: IChunk[], chunkable: boolean,
             urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
@@ -250,7 +271,7 @@ export class DownloadObserver {
         lastUpdateTick = now;
         lastUpdatePerc = newPerc;
       }
-      progressUpdate(this.mApi.store, id, received, total, chunks,
+      progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
                      urls, filePath, small);
     };
   }
@@ -266,29 +287,40 @@ export class DownloadObserver {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
     }
-    if (['init', 'started'].includes(download.state)) {
-      // need to cancel the download
-      this.mManager.stop(downloadId);
-    }
-    if (truthy(download.localPath) && truthy(download.game)) {
-      // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.35 in particular)
-      // would put manually added downloads into the download root if no game was being managed.
-      // Newer versions won't do this anymore (hopefully) but we still need to enable users to
-      // clean up these broken downloads
-      const gameId = getDownloadGames(download)[0];
-      const dlPath = truthy(gameId)
-        ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
-        : selectors.downloadPath(this.mApi.store.getState());
 
-      fs.removeAsync(path.join(dlPath, download.localPath))
-          .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
+    const onceStopped = (): Promise<void> => {
+      if (truthy(download.localPath) && truthy(download.game)) {
+        // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
+        // would put manually added downloads into the download root if no game was being managed.
+        // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+        // clean up these broken downloads
+        const gameId = getDownloadGames(download)[0];
+        const dlPath = truthy(gameId)
+          ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+          : selectors.downloadPath(this.mApi.store.getState());
+
+        return fs.removeAsync(path.join(dlPath, download.localPath))
+          .then(() => {
+            this.mApi.store.dispatch(removeDownload(downloadId));
+          })
           .catch(UserCanceled, () => undefined)
           .catch(err => {
             showError(this.mApi.store.dispatch, 'Failed to remove file', err, {
-                      allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
+              allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1,
+            });
           });
+      } else {
+        this.mApi.store.dispatch(removeDownload(downloadId));
+        return Promise.resolve();
+      }
+    };
+
+    if (['init', 'started'].includes(download.state)) {
+      // need to cancel the download
+      this.mManager.stop(downloadId);
+      this.queueFinishCB(downloadId, () => onceStopped());
     } else {
-      this.mApi.store.dispatch(removeDownload(downloadId));
+      onceStopped();
     }
   }
 

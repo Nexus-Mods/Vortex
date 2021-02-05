@@ -4,6 +4,7 @@ import Spinner from '../../controls/Spinner';
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import GameFilter from '../../controls/table/GameFilter';
 import TextFilter from '../../controls/table/TextFilter';
+import { Icon } from '../../controls/TooltipControls';
 
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -19,15 +20,15 @@ import { IDownload } from './types/IDownload';
 import getDownloadGames from './util/getDownloadGames';
 import DownloadGameList from './views/DownloadGameList';
 import DownloadProgressFilter from './views/DownloadProgressFilter';
+import { IDownloadViewProps } from './views/DownloadView';
 import FileTime from './views/FileTime';
 
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import * as url from 'url';
-import { IDownloadViewProps } from './views/DownloadView';
 
-function progress(props) {
+function progress(props: { t: TFunction, download: IDownload }) {
   const {t, download} = props;
   const {state} = download;
   const received = download.received || 0;
@@ -41,8 +42,22 @@ function progress(props) {
     case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: return (
-        <ProgressBar now={received} max={size} showPercentage showTimeLeft />
-      );
+      <div style={{ display: 'flex' }}>
+        <ProgressBar
+          style={{ flex: '1 1 0' }}
+          now={received}
+          max={size}
+          showPercentage
+          showTimeLeft
+        />
+        {!download.pausable ? (
+          <Icon
+            name='feedback-warning'
+            tooltip={t('The download server doesn\'t support resuming downloads ')}
+          />
+         ) : null}
+      </div>
+    );
   }
 }
 

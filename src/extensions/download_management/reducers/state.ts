@@ -55,6 +55,8 @@ export const stateReducer: IReducerSpec = {
     },
     [action.setDownloadFilePath as any]: (state, payload) =>
       setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath),
+    [action.setDownloadPausable as any]: (state, payload) =>
+      setOrNop(state, ['files', payload.id, 'pausable'], payload.pausable),
     [action.setDownloadHash as any]: (state, payload) =>
       setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5),
     [action.setDownloadHashByFile as any]: (state, payload) => {
