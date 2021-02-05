@@ -277,8 +277,12 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     });
 }
 
+const UPDATE_PREFIX = 'Vortex Extension Update -';
+
 function archiveFileName(ext: IExtensionDownloadInfo): string {
-  const name = ext.name.replace('Game:', 'Vortex Extension Update -');
+  const name = ext.name.startsWith('Game:')
+    ? ext.name.replace('Game:', UPDATE_PREFIX)
+    : UPDATE_PREFIX + ' ' + ext.name;
   return (ext['version'] !== undefined)
     ? `${sanitize(name)} v${ext['version']}.7z`
     : `${sanitize(name)}.7z`;
@@ -296,6 +300,8 @@ export function downloadFromNexus(api: IExtensionApi,
       return Promise.reject(new Error('unvailable nexus extension'));
     }
   }
+
+  log('debug', 'download from nexus', archiveFileName(ext));
   return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId, archiveFileName(ext));
 }
 

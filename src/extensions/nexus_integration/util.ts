@@ -36,10 +36,12 @@ const app = remote !== undefined ? remote.app : appIn;
 export function startDownload(api: IExtensionApi,
                               nexus: Nexus,
                               nxmurl: string,
-                              redownload?: RedownloadMode)
+                              redownload?: RedownloadMode,
+                              fileName?: string)
                               : Promise<string> {
   let url: NXMUrl;
 
+  log('debug', 'start download', fileName);
   try {
     url = new NXMUrl(nxmurl);
   } catch (err) {
@@ -84,7 +86,7 @@ export function startDownload(api: IExtensionApi,
             fileInfo: nexusFileInfo,
           },
         },
-        nexusFileInfo.file_name,
+        fileName ?? nexusFileInfo.file_name,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
           : resolve(downloadId)),

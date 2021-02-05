@@ -616,6 +616,8 @@ class DownloadManager {
             id,
             origName: nameTemplate,
             tempName: filePath,
+            finalName: (fileName !== undefined)
+              ? Promise.resolve(path.join(destPath, fileName)) : undefined,
             error: false,
             urls,
             redownload,
@@ -983,7 +985,9 @@ class DownloadManager {
 
   private updateDownload(download: IRunningDownload, fileSize: number,
                          fileName: string, chunkable: boolean) {
-    if ((fileName !== undefined) && (fileName !== download.origName)) {
+    if ((fileName !== undefined)
+        && (fileName !== download.origName)
+        && (download.finalName === undefined)) {
       const newName = this.unusedName(
         path.dirname(download.tempName), fileName, download.redownload);
       newName.then(resolvedName => {
@@ -1125,7 +1129,11 @@ class DownloadManager {
               log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
               download.progressCB(download.size, download.size, undefined,
                                   undefined, undefined, resolvedPath);
-              return fs.renameAsync(download.tempName, resolvedPath);
+              if (download.tempName !== resolvedPath) {
+                return fs.renameAsync(download.tempName, resolvedPath);
+              } else {
+                return Promise.resolve();
+              }
             });
           } else if ((download.headers !== undefined)
                      && (download.headers['content-type'] !== undefined)
