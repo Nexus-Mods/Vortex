@@ -55,7 +55,24 @@
     },
     {
       "modId": 37,
-      "fileId": 490
+      "fileId": 916,
+      "author": "Tannin",
+      "uploader": "Tannin42",
+      "description": {
+        "short": "Fully Virtual Deployment for Vortex using the usvfs library.",
+        "long": "[size=4][b]Introduction\n<br />[/b][/size]\n<br />This is an extension for Vortex that adds a new deployment method to Vortex.\n<br />[b][size=4][color=#ff0000]This is highly experimental and currently not officially supported. Please do NOT report bugs for this through the Vortex feedback system, report them here.[/color]\n<br />[/size][/b]\n<br />[size=4]Features[/size]\n<br />\n<br />[list]\n<br />[*][size=2]Deploying with this gets no real files placed in the game directory[/size]\n<br />[*][size=2]Deployment is quite a bit faster than using links[/size]\n<br />[*][size=2]It works with any filesystem[/size]\n<br />[*][size=2]The staging folder doesn't have to be on the same drive as the game[/size]\n<br />[/list]\n<br />[size=4]Limitations (can't be fixed)[/size]\n<br />\n<br />[list]\n<br />[*][color=#ff0000][size=3]Requires Vortex 0.17.0 or newer![/size][/color]\n<br />[*][size=2]Games &amp; Tools always have to be started from inside Vortex, otherwise the mods aren't working[/size]\n<br />[*][size=2]Supports only games that get started directly (some games, e.g. Sims 4, Dark Souls, Kotor always get started through Origin/Steam)[/size]\n<br />[*][size=2]Errors caused by an incompatibility with the game can be quite hard to decipher[/size]\n<br />[/list]\n<br />[size=4][b]Known Bugs\n<br />[/b][/size]\n<br />[list]\n<br />[*]Many games aren't currently compatible (need testing to produce a list)\n<br />[*]External Changes will currently not be detected\n<br />[*]Vortex will show plugins as not-deployed - they can still be sorted and everything should work functionally\n<br />[/list]\n<br />[size=4][b]How to install\n<br />[/b][/size]\n<br />Open the extensions tab in vortex (requires advanced mode) and drag the 7z file onto the drop zone at the bottom.\n<br />\n<br />[size=4][b]Usage[/b]\n<br />[/size]\n<br />In Settings-&gt;Mods switch the deployment method to \"USVFS Deployment\""
+      },
+      "downloads": 1139,
+      "endorsements": 122,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/37/37-1548351418-434824795.jpeg",
+      "name": "Fully Virtual Deployment",
+      "timestamp": 1612536785,
+      "tags": [],
+      "version": "0.1.5",
+      "type": null,
+      "dependencies": {
+        "vortex": "~1.4.0"
+      }
     },
     {
       "modId": 9,
@@ -1429,21 +1446,6 @@
       "id": "game-stateofdecay"
     },
     {
-      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-subnautica/gameart.jpg",
-      "name": "Game: Subnautica",
-      "author": "toebean, MrPurple6411, PrimeSonic & Pickysaurus",
-      "description": {
-        "short": "Support for Subnautica",
-        "long": "Support for Subnautica"
-      },
-      "gameName": "Subnautica",
-      "type": "game",
-      "github": "Nexus-Mods/vortex-games",
-      "githubRawPath": "game-subnautica",
-      "version": "2.0.0",
-      "id": "game-subnautica"
-    },
-    {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-survivingmars/gameart.jpg",
       "name": "Game: Surviving Mars",
       "author": "Black Tree Gaming Ltd.",
@@ -1472,21 +1474,6 @@
       "githubRawPath": "game-sw-kotor",
       "version": "1.0.0",
       "id": "game-sw-kotor"
-    },
-    {
-      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-subnauticabelowzero/gameart.jpg",
-      "name": "Game: Subnautica Below Zero",
-      "author": "Chloe S. & AlexejheroYTB",
-      "description": {
-        "short": "Support for Subnautica: Below Zero",
-        "long": "Support for Subnautica: Below Zero"
-      },
-      "gameName": "Subnautica Below Zero",
-      "type": "game",
-      "github": "Nexus-Mods/vortex-games",
-      "githubRawPath": "game-subnauticabelowzero",
-      "version": "1.1.0",
-      "id": "game-subnauticabelowzero"
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-teamfortress2/gameart.jpg",
@@ -1866,25 +1853,7 @@
     },
     {
       "modId": 96,
-      "fileId": 827,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "Adds support for installing and managing Beat Saber mods with Vortex",
-        "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />Find full documentation on using Vortex with Beat Saber at [url=https://beatvortex.dev]beatvortex.dev[/url]\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />You should be able to automatically install the extension by clicking Manage on Beat Saber in the Games list, just like your other Vortex games. If that doesn't work, you can install the extension directly using the Find More button at the bottom of the Extensions screen: just find Beat Saber Support and Install it.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version.\n<br />\n<br />[size=5]OneClick[/size]\n<br />\n<br />Since v0.2.0, you can enable our preview support for OneClick installs from your Vortex settings. Open the Download tab in Settings, scroll down to \"Enable OneClick Installations\" and you can individually enable OneClick link handling for maps, models or playlists. You can then use the OneClick links on BeatSaver, BeastSaber and ModelSaber to install mods with Vortex. See [url=https://beatvortex.dev/docs/usage/mods/]beatvortex.dev[/url] for more information on OneClick installation."
-      },
-      "downloads": 14139,
-      "endorsements": 379,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/96/96-1585722074-59618986.png",
-      "name": "Beat Saber Support",
-      "timestamp": 1604533823,
-      "tags": [],
-      "version": "0.4.3",
-      "type": "game",
-      "gameName": "Beat Saber",
-      "dependencies": {
-        "vortex": "~ 1.3.0"
-      }
+      "fileId": 827
     },
     {
       "modId": 97,
@@ -2479,24 +2448,7 @@
     },
     {
       "modId": 145,
-      "fileId": 810,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "Share your modding setups and build shareable mod lists directly from Vortex. <br /><br />This simple extension lets you create \"showcases\" to share mod lists using your whole mod list, or just individual mods to share with your fellow modders.",
-        "long": "[quote]Find the full documentation at [url=https://showcase.vortex.support/]showcase.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that lets you create \"showcases\" to share mod lists. You can create a showcase from your entire behemoth of a mod list, or just select individual mods to share with your fellow modders.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://showcase.vortex.support/]the docs[/url], especially [url=https://showcase.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go.\n<br />\n<br />You can then create showcases based on either all of your enabled mods (from the top bar), or only a selection directly from your Mods list (select your mods and choose the button from the bottom action bar).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods"
-      },
-      "downloads": 1952,
-      "endorsements": 273,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/145/145-1594048990-1029659374.png",
-      "name": "Vortex Showcase",
-      "timestamp": 1603874558,
-      "tags": [],
-      "version": "0.1.6",
-      "type": null,
-      "dependencies": {
-        "vortex": "~ 1.3.0"
-      }
+      "fileId": 810
     },
     {
       "modId": 142,
@@ -2571,24 +2523,7 @@
     },
     {
       "modId": 152,
-      "fileId": 685,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "Easily build and upload your modlists to Modwatch directly from Vortex. Powered by Vortex Showcase.",
-        "long": "[quote]Find the full documentation at [url=https://modwatch.vortex.support]modwatch.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that adds support for building and uploading modlists based on your installed mods directly to Modwatch from Vortex. You can easily create and upload modlists for any supported game directly from the Vortex mods page without any external uploader.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://modwatch.vortex.support/]the docs[/url], especially [url=https://modwatch.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go. If you don't have Showcase installed, Vortex will prompt you to install it.\n<br />\n<br />You can then create and upload mod lists based on your enabled mods (from the top bar) of the mods page. You can also use the normal \"Create Showcase\" buttons to create a modlist for only a selection of mods (check [url=https://modwatch.vortex.support/docs/usage/]the docs [/url]for more details).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods, nor with Modwatch."
-      },
-      "downloads": 337,
-      "endorsements": 53,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/152/152-1597291731-1862535100.jpeg",
-      "name": "Modwatch for Vortex",
-      "timestamp": 1597331096,
-      "tags": [],
-      "version": "0.0.2",
-      "type": null,
-      "dependencies": {
-        "vortex": "~ 1.3.0"
-      }
+      "fileId": 685
     },
     {
       "modId": 151,
@@ -2923,24 +2858,7 @@
     },
     {
       "modId": 182,
-      "fileId": 807,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "An extension for Vortex Showcase that adds a handful of additional formats that you can use to share your mods including CSV, Discord and a more compact Markdown format.",
-        "long": "This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that adds a number of alternative formats to Showcase, allowing you to create more specialised showcases and share them more easily. These new formats integrate neatly and easily into Vortex Showcase so there's no additional steps.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://showcase.vortex.support/]the Showcase docs[/url], especially [url=https://showcase.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go.\n<br />\n<br />You can then create showcases just as you normally would (from either the top bar or action bar with mods selected) and choose any of the new formats in the dialog. You can then copy/save/share your showcase like usual.\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods"
-      },
-      "downloads": 684,
-      "endorsements": 83,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/182/182-1603207352-574946359.png",
-      "name": "Vortex Showcase - Extended Formats",
-      "timestamp": 1603718970,
-      "tags": [],
-      "version": "0.0.2",
-      "type": null,
-      "dependencies": {
-        "vortex": "~ 1.3.0"
-      }
+      "fileId": 807
     },
     {
       "modId": 184,
@@ -3206,6 +3124,50 @@
       "version": "0.0.2",
       "type": "game",
       "gameName": "Jurassic World Evolution"
+    },
+    {
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/203/203-1612535772-771215109.jpeg",
+      "name": "Subnautica Below Zero Support",
+      "author": "Chloe S and AlexejheroYTB",
+      "description": {
+        "short": "Vortex support for Subnautica: Below Zero",
+        "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Subnautica: Below Zero to Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.4.0 (currently not publicly available)! To install, go to Extensions-&gt;Find More. Find this extension and click install."
+      },
+      "gameName": "Subnautica Below Zero",
+      "type": "game",
+      "version": "1.2.0",
+      "modId": 203,
+      "fileId": 915,
+      "uploader": "Tannin42",
+      "downloads": 0,
+      "endorsements": 0,
+      "timestamp": 1612535869,
+      "tags": [],
+      "dependencies": {
+        "vortex": "~1.4.0"
+      }
+    },
+    {
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/202/202-1612535659-1496134740.jpeg",
+      "name": "Subnautica Support",
+      "author": "toebean MrPurple6411 PrimeSonic Pickysaurus",
+      "description": {
+        "short": "Vortex support for Subnautica",
+        "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Subnautica to Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.4.0 (currently not publicly available)! To install, go to Extensions-&gt;Find More. Find this extension and click install."
+      },
+      "gameName": "Subnautica",
+      "type": "game",
+      "version": "2.1.0",
+      "modId": 202,
+      "fileId": 914,
+      "uploader": "Tannin42",
+      "downloads": 0,
+      "endorsements": 0,
+      "timestamp": 1612535551,
+      "tags": [],
+      "dependencies": {
+        "vortex": "~1.4.0"
+      }
     }
   ]
 }
