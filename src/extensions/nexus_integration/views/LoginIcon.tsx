@@ -86,7 +86,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const loggedIn = this.isLoggedIn();
 
     const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
-      ? `${pathToFileURL(userInfo.profileUrl).href}?r_${START_TIME}`
+      ? `${userInfo.profileUrl}?r_${START_TIME}`
       : pathToFileURL(FALLBACK_AVATAR).href;
 
     return (
