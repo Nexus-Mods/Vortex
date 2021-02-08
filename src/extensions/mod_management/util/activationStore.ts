@@ -184,6 +184,13 @@ function getManifestImpl(api: IExtensionApi,
       if (err.code === 'ENOENT') {
         return emptyManifest(instanceId);
       }
+      if (err.code === 'EPERM') {
+        err.message = `The manifest file "${filePath}" is inaccessible due to `
+          + 'insufficient permissions.\n Please ensure your Windows user account '
+          + 'has full read/write permissions to the manifest file and try again.';
+        err.allowReport = false;
+        return Promise.reject(err);
+      }
 
       if (err.message.startsWith('Unexpected token')
           || err.message.startsWith('Unexpected end of JSON input')) {
