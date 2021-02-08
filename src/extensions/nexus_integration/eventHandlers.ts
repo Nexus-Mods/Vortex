@@ -3,10 +3,11 @@ import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/a
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { DataInvalid, ProcessCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, currentGame, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -24,6 +25,7 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload,
 import Nexus, { EndorsedStatus, IFeedbackResponse, IIssue, NexusError,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
+import * as path from 'path';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -180,7 +182,7 @@ export function onRequestOwnIssues(nexus: Nexus) {
 function downloadFile(api: IExtensionApi, nexus: Nexus,
                       game: IGameStored, modId: number, fileId: number,
                       fileName?: string): Promise<string> {
-    const state: IState = api.store.getState();
+    const state: IState = api.getState();
     const gameId = game !== null ? game.id : SITE_ID;
     if ((game !== null)
         && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
@@ -201,7 +203,12 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
     if (existingId !== undefined) {
       log('debug', 'found an existing matching download',
         { id: existingId, data: JSON.stringify(downloads[existingId]) });
-      return Promise.resolve(existingId);
+      const downloadPath = downloadPathForGame(state, gameId);
+      return fs.statAsync(path.join(downloadPath, downloads[existingId].localPath))
+        .then(() => Promise.resolve(existingId))
+        .catch((err) => (err.code === 'ENOENT')
+          ? startDownload(api, nexus, url, 'never', fileName)
+          : Promise.reject(err));
     } else {
       // startDownload will report network errors and only reject on usage error
       return startDownload(api, nexus, url, 'never', fileName);
