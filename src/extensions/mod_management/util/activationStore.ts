@@ -186,7 +186,7 @@ function getManifestImpl(api: IExtensionApi,
       }
       if (err.code === 'EPERM') {
         err.message = `The manifest file "${filePath}" is inaccessible due to `
-          + 'insufficient permissions.\n Please ensure your Windows user account '
+          + 'insufficient permissions.\nPlease ensure your Windows user account '
           + 'has full read/write permissions to the manifest file and try again.';
         err.allowReport = false;
         return Promise.reject(err);
