@@ -6,12 +6,12 @@ import { DownloadState } from '../types/IDownload';
 
 export class DownloadSelectionFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    const { t, filter } = this.props;
 
     const selectionFilters = [ 'Failed', 'Finished', 'In Progress'];
 
     const currentFilters = selectionFilters.map(current => ({
-      label: current,
+      label: t(current),
       value: current,
     }));
 
@@ -21,6 +21,7 @@ export class DownloadSelectionFilterComponent extends React.Component<IFilterPro
         options={currentFilters}
         value={filter || ''}
         onChange={this.changeFilter}
+        placeholder={t('Select...')}
       />
     );
   }

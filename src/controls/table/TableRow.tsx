@@ -172,6 +172,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         valueComponent={ValueComponent}
         clearable={false}
         searchable={false}
+        placeholder={t('Select...')}
       />
     );
   }

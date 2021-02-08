@@ -262,7 +262,10 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const game = games.find((iter: IGameStored) => iter.id === gameId);
     const discovered = discoveredGames[gameId];
-    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
+    let gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
+    if (gameName !== undefined) {
+      gameName = gameName.split('\t').map(part => t(part)).join(' ');
+    }
 
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -125,6 +125,7 @@
     "@types/react-dom": "^16.9.4",
     "@types/react-redux": "^7.1.9",
     "@types/react-router": "^5.1.3",
+    "@types/react-select": "^1.2.0",
     "@types/react-sortable-tree": "^0.3.11",
     "@types/react-test-renderer": "^16.9.1",
     "@types/react-transition-group": "^4.2.3",

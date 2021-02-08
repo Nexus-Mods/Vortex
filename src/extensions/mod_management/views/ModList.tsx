@@ -676,9 +676,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isSortable: false,
       isGroupable: true,
       filter: new OptionsFilter([
-        { value: true, label: 'Enabled' },
-        { value: false, label: 'Disabled' },
-        { value: undefined, label: 'Uninstalled' },
+        { value: true, label: this.props.t('Enabled') },
+        { value: false, label: this.props.t('Disabled') },
+        { value: undefined, label: this.props.t('Uninstalled') },
       ], true),
     };
 

@@ -5,12 +5,12 @@ import Select from 'react-select';
 
 export class EndorsementFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    const { t, filter } = this.props;
 
     const selectionFilters = [ 'Endorsed', 'Abstained', 'Undecided', 'N/A'];
 
     const currentFilters = selectionFilters.map(current => ({
-      label: current,
+      label: t(current),
       value: current,
     }));
 
@@ -21,6 +21,7 @@ export class EndorsementFilterComponent extends React.Component<IFilterProps, {}
         value={filter || ''}
         onChange={this.changeFilter}
         autosize={false}
+        placeholder={t('Select...')}
       />
     );
   }

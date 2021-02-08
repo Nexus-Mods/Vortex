@@ -255,6 +255,8 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     options: {
       wrap: err.wrap,
       hideMessage: options.hideDetails !== false,
+      // don't try to translate error messages
+      translated: true,
     },
     parameters: {
       ...(options.replace || {}),
