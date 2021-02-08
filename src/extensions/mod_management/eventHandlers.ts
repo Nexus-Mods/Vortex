@@ -318,8 +318,11 @@ export function onGameModeActivated(
       log('warn', 'Failed to refresh mods', err.message);
     })
     .catch((err: Error) => {
-      showError(store.dispatch, 'Failed to refresh mods', err,
-                { allowReport: (err as any).code !== 'ENOENT' });
+      const error: any = (err as any);
+      const allowReport = (error.allowReport !== undefined)
+        ? error.allowReport
+        : !['ENOENT'].includes(error.code);
+      showError(store.dispatch, 'Failed to refresh mods', err, { allowReport });
     });
 }
 
