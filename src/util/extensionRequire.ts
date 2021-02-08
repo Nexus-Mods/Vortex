@@ -1,3 +1,5 @@
+import * as reactSelect from '../controls/ReactSelectWrap';
+
 import ExtensionManager, { IRegisteredExtension } from './ExtensionManager';
 
 import {} from 'module';
@@ -49,6 +51,8 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
         // but which is 100% dependent of vortex
         return api;
       }
+    } else if (id === 'react-select') {
+      return reactSelect;
     }
     if (extensionPaths.find(iter => this.filename.startsWith(iter.path)) !== undefined) {
       let res;

@@ -6,12 +6,14 @@ import { getSafe } from '../../../util/storeHelper';
 import { setDashletEnabled } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';
 
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 interface IDashletToggleProps {
+  t: TFunction;
   enabled: boolean;
   dashlet: IDashletProps;
   onToggle: (dashletId: string, enabled: boolean) => void;
@@ -19,10 +21,10 @@ interface IDashletToggleProps {
 
 class DashletToggle extends React.PureComponent<IDashletToggleProps, {}> {
   public render(): JSX.Element {
-    const { dashlet, enabled } = this.props;
+    const { t, dashlet, enabled } = this.props;
     return (
       <Toggle checked={enabled} onToggle={this.toggle}>
-        {dashlet.title}
+        {t(dashlet.title)}
       </Toggle>
     );
   }
@@ -59,6 +61,7 @@ class Settings extends ComponentEx<IProps, {}> {
           {
             dashlets.filter(dashlet => dashlet.closable !== false).map(dashlet => (
               <DashletToggle
+                t={t}
                 key={dashlet.title}
                 dashlet={dashlet}
                 enabled={getSafe(dashletSettings, [dashlet.title, 'enabled'], true)}

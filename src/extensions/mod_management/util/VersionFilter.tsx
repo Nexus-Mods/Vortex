@@ -7,10 +7,10 @@ import Select from 'react-select';
 
 export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    const { t, filter } = this.props;
 
     const options = [
-      { value: 'has-update', label: 'Update available' },
+      { value: 'has-update', label: t('Update available') },
     ];
     return (
       <Select
@@ -19,6 +19,7 @@ export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
         value={filter}
         onChange={this.changeFilter}
         autosize={false}
+        placeholder={t('Select...')}
       />
     );
   }

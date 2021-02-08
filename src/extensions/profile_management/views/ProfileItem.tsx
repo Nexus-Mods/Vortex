@@ -115,8 +115,8 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       log('warn', 'failed to identify profile logo path', { profile, hasProfileImage });
     }
 
-    const gameName = (game !== undefined)
-      ? game.name
+    const gameName = (game?.name !== undefined)
+      ? game.name.split('\t').map(part => t(part)).join(' ')
       : t('Unknown game {{ gameId }}', { replace: { gameId: profile.gameId } });
 
     const imageClass = ['profile-image'];

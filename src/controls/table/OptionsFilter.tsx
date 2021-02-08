@@ -23,7 +23,7 @@ const dummy = '__undefined_BJL9vbThZ';
 
 class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
   public render(): JSX.Element {
-    const { filter, multi } = this.props;
+    const { t, filter, multi } = this.props;
 
     let options = this.props.options;
     if (!Array.isArray(options)) {
@@ -42,6 +42,7 @@ class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
         value={filter}
         onChange={multi ? this.changeFilterMulti : this.changeFilter}
         autosize={false}
+        placeholder={t('Select...')}
       />
     );
   }

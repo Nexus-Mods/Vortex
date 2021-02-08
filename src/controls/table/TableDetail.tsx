@@ -27,16 +27,14 @@ interface ICellProps {
 
 const nop = () => undefined;
 
-class ValueComponent extends React.Component<any, {}> {
-  public render() {
-    return (
-      <div className='Select-value' title={this.props.value.text}>
-        <span className='Select-value-label' role='option'>
-          {this.props.value.text}
-        </span>
-      </div>
-    );
-  }
+function ValueComponent(props: any) {
+  return (
+    <div className='Select-value' title={props.value.text}>
+      <span className='Select-value-label' role='option'>
+        {props.value.text}
+      </span>
+    </div>
+  );
 }
 
 class DetailCell extends React.Component<ICellProps, {}> {
@@ -167,7 +165,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
             labelKey='text'
             valueComponent={ValueComponent}
             placeholder={(attribute.edit.placeholder !== undefined)
-              ? attribute.edit.placeholder() : undefined}
+              ? attribute.edit.placeholder() : t('Select...')}
           />
         </div>
       );

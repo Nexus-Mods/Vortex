@@ -33,6 +33,9 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { t, discovered, filter, games } = this.props;
 
+    const translate = (gameName: string) =>
+      gameName.split('\t').map(part => t(part)).join(' ');
+
     const options = [{
       label: `<${t('Current Game')}>`,
       value: '$',
@@ -41,7 +44,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
                 extensionPath: null, requiredFiles: null, executable: null })
       .sort((lhs, rhs) => compare(lhs, rhs, discovered))
       .map(game => ({
-        label: game.shortName || game.name,
+        label: game.shortName || translate(game.name),
         value: game.id,
       })));
 
@@ -52,6 +55,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
         value={filter}
         onChange={this.changeFilter}
         autosize={false}
+        placeholder={t('Select...')}
       />
     );
   }
