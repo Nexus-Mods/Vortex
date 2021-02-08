@@ -19,6 +19,7 @@ import { setNewLoadOrder } from './actions/loadOrder';
 
 interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {
   // The things I do to reduce complexity for extension developers...
+  //  (and to block users from sending us reports which we can do nothing about)
   isContributed: boolean;
 }
 
@@ -64,7 +65,7 @@ function reportError(api: types.IExtensionApi,
                      errorMessage: string,
                      errDetails: any,
                      allowReport: boolean = true) {
-  const errorId = errorMessage + JSON.stringify(errDetails);
+  const errorId = errorMessage + 'notifId';
   api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
 }
 
