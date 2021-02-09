@@ -269,6 +269,7 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
                                       discoveredGames: {[id: string]: IDiscoveryResult},
                                       onDiscoveredTool: DiscoveredToolCB, normalize: Normalize)
                                : Promise<void> {
+  log('info', 'discovering relative tools', gamePath);
   const discoveredTools: { [id: string]: IToolStored } =
     getSafe(discoveredGames[game.id], ['tools'], {});
   const relativeTools = (game.supportedTools || [])

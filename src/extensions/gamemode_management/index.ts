@@ -274,6 +274,7 @@ function installGameExtenstion(api: IExtensionApi,
                                dlInfo: IExtensionDownloadInfo)
                                : Promise<void> {
   if (dlInfo !== undefined) {
+    log('info', 'installing missing game extension', { gameId });
     const name = dlInfo.name.replace(/^Game: /, '');
     return api.showDialog('info', dlInfo.name, {
       text: 'In an older version of Vortex you were managing "{{name}}", however, '
@@ -315,6 +316,7 @@ function installGameExtenstion(api: IExtensionApi,
 function removeDisappearedGames(api: IExtensionApi,
                                 gameStubs?: { [gameId: string]: IExtensionDownloadInfo })
                                 : Promise<void> {
+  log('info', 'remove disappeared games');
   const state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
