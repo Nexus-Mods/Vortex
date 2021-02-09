@@ -182,10 +182,15 @@ if (process.platform === 'win32') {
   nativeErr.InitHook();
   const oldPrep = Error.prepareStackTrace;
   Error.prepareStackTrace = (error, stack) => {
-    if ((error['code'] === 'UNKNOWN') && (error['nativeCode'] === undefined)) {
-      const native = nativeErr.GetLastError();
-      error.message = `${native.message} (${native.code})`;
-      error['nativeCode'] = native.code;
+    if ((error['code'] === 'UNKNOWN')
+        && (error['nativeCode'] === undefined)) {
+      if (error['systemCode'] !== undefined) {
+        error['nativeCode'] = error['systemCode'];
+      } else {
+        const native = nativeErr.GetLastError();
+        error.message = `${native.message} (${native.code})`;
+        error['nativeCode'] = native.code;
+      }
     }
     return oldPrep !== undefined
       ? oldPrep(error, stack)
