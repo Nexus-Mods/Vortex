@@ -70,5 +70,11 @@
   "severity": "information",
   "gamemode": "*",
 	"version": "<=1.3.22"
+  }, {
+	"date": "2021-02-10T08:00:00",
+	"description": "The community developed Minecraft extension (version 0.01) is faulty and Vortex is unable to load it. If you have downloaded it, please remove it from your \"%appdata%\\Vortex\\plugins\" folder",
+  "severity": "information",
+  "gamemode": "*",
+	"version": "<=1.3.22"
   }
 ]
