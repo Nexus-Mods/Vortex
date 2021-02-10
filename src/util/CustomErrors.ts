@@ -1,3 +1,5 @@
+import { log } from './log';
+
 export class NotSupportedError extends Error {
   constructor() {
     super('Not supported');
@@ -62,12 +64,34 @@ export class ArgumentInvalid extends Error {
   }
 }
 
+/*
 export class UserCanceled extends Error {
   constructor() {
     super('canceled by user');
     this.name = this.constructor.name;
   }
 }
+*/
+
+interface IUserCanceled extends Error {}
+
+type IUserCanceledConstructor = new() => IUserCanceled;
+
+const UserCanceled: IUserCanceledConstructor = function(this: IUserCanceled) {
+  if (!(this instanceof UserCanceled)) {
+    log('error', 'UserCanceled invoked without new', Error.captureStackTrace(this, UserCanceled));
+    return new Error('UserCanceled invoked without new');
+  }
+
+  this.message = 'canceled by user';
+  Error.captureStackTrace(this, UserCanceled);
+} as unknown as IUserCanceledConstructor;
+
+UserCanceled.prototype = Object.create(Error.prototype);
+UserCanceled.prototype.name = 'UserCanceled';
+UserCanceled.prototype.constructor = UserCanceled;
+
+export { UserCanceled };
 
 export class MissingDependency extends Error {
   constructor() {

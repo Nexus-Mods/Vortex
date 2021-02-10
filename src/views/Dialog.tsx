@@ -177,7 +177,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderContent(content: IDialogContent): JSX.Element {
     let { t } = this.props;
-    if (content.options && content.options.translated) {
+    if (content.options?.translated) {
+      // t = (input: string, options) => this.props.t(input, { ...options, lng: 'en' });
       t = (input: any) => input;
     }
 

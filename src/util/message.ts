@@ -256,7 +256,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       wrap: err.wrap,
       hideMessage: options.hideDetails !== false,
       // don't try to translate error messages
-      translated: true,
+      translated: err.translated,
     },
     parameters: {
       ...(options.replace || {}),
@@ -557,7 +557,7 @@ function renderCustomError(err: any) {
   return res;
 }
 
-function prettifyHTTPError(err: HTTPError) {
+function prettifyHTTPError(err: HTTPError): IErrorRendered {
   const fallback = () => {
     const rangeDescription = (err.statusCode >= 500)
       ? 'This code is usually the responsibility of the server and will likely be temporary'
@@ -580,6 +580,8 @@ function prettifyHTTPError(err: HTTPError) {
       //  just redirect to themselves
       // 2xx aren't errors and shouldn't have been reported.
       allowReport: err.statusCode < 300,
+      wrap: false,
+      translated: true,
     };
   };
 
@@ -592,12 +594,20 @@ function prettifyHTTPError(err: HTTPError) {
 const HIDE_ATTRIBUTES = new Set(
   ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport']);
 
+interface IErrorRendered {
+  message?: string;
+  text?: string;
+  parameters?: any;
+  allowReport?: boolean;
+  wrap: boolean;
+  translated?: boolean;
+}
+
 /**
  * render error message for display to the user
  * @param err
  */
-export function renderError(err: string | Error | any, options?: IErrorOptions):
-    { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } {
+export function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered {
   if (Array.isArray(err)) {
     err = err[0];
   }
@@ -633,6 +643,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
       parameters: errMessage.replace,
       wrap: false,
       allowReport: errMessage.allowReport,
+      translated: true,
     };
   } else {
     return renderCustomError(err);
