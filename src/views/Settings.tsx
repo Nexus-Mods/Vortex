@@ -141,7 +141,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private changeStartup = (key: string, value: any) => {
-    startupSettings[key] = value;
+    this.mStartupSettings[key] = value;
   }
 }
 
