@@ -181,7 +181,8 @@ export function onRequestOwnIssues(nexus: Nexus) {
 
 function downloadFile(api: IExtensionApi, nexus: Nexus,
                       game: IGameStored, modId: number, fileId: number,
-                      fileName?: string): Promise<string> {
+                      fileName?: string,
+                      allowInstall?: boolean): Promise<string> {
     const state: IState = api.getState();
     const gameId = game !== null ? game.id : SITE_ID;
     if ((game !== null)
@@ -207,11 +208,11 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       return fs.statAsync(path.join(downloadPath, downloads[existingId].localPath))
         .then(() => Promise.resolve(existingId))
         .catch((err) => (err.code === 'ENOENT')
-          ? startDownload(api, nexus, url, 'never', fileName)
+          ? startDownload(api, nexus, url, 'never', fileName, allowInstall)
           : Promise.reject(err));
     } else {
       // startDownload will report network errors and only reject on usage error
-      return startDownload(api, nexus, url, 'never', fileName);
+      return startDownload(api, nexus, url, 'never', fileName, allowInstall);
     }
 }
 
@@ -253,7 +254,8 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
 export function onNexusDownload(api: IExtensionApi,
                                 nexus: Nexus)
                                 : (...args: any[]) => Promise<any> {
-  return (gameId: string, modId: number, fileId: number, fileName?: string): Promise<string> => {
+  return (gameId: string, modId: number, fileId: number,
+          fileName?: string, allowInstall?: boolean): Promise<string> => {
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'], '');
@@ -264,7 +266,7 @@ export function onNexusDownload(api: IExtensionApi,
       return Promise.resolve(undefined);
     } else {
       log('debug', 'on nexus download', fileName);
-      return downloadFile(api, nexus, game, modId, fileId, fileName)
+      return downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall)
         .catch(ProcessCanceled, err => {
           api.sendNotification({
             type: 'error',

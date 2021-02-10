@@ -129,7 +129,6 @@ function installDependency(api: IExtensionApi,
 
   const ext = availableExtensions.find(iter =>
     (!iter.type && ((iter.name === depId) || (iter.id === depId))));
-
   if (ext !== undefined) {
     return downloadAndInstallExtension(api, ext)
       .then(success => {
@@ -284,13 +283,14 @@ function init(context: IExtensionContext) {
     .then(() => {
       updateAvailableExtensions(context.api);
     });
-    context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
-      downloadAndInstallExtension(context.api, ext)
+    context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
+      return downloadAndInstallExtension(context.api, ext)
         .tap(success => {
           if (success) {
             updateExtensions(false);
           }
-        }));
+        });
+      });
 
     context.api.onAsync('install-extension-from-download', (archiveId: string) => {
       const state = context.api.getState();

@@ -311,11 +311,10 @@ function installExtension(api: IExtensionApi,
           }
         }
       })
-      .catch(DataInvalid, err => {
+      .catch(DataInvalid, err =>
         rimrafAsync(tempPath, { glob: false })
         .then(() => api.showErrorNotification('Invalid Extension', err,
-                                              { allowReport: false, message: archivePath }));
-      })
+                                              { allowReport: false, message: archivePath })))
       .catch(err =>
         rimrafAsync(tempPath, { glob: false })
         .then(() => Promise.reject(err)));

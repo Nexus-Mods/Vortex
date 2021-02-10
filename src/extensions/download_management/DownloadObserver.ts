@@ -77,10 +77,12 @@ export class DownloadObserver {
     events.on('pause-download',
               downloadId => this.handlePauseDownload(downloadId));
     events.on('resume-download',
-              (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
+              (downloadId, callback?, allowInstall?) =>
+                  this.handleResumeDownload(downloadId, callback, allowInstall));
     events.on('start-download',
-              (urls, modInfo, fileName?, callback?, redownload?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, events, callback, redownload));
+              (urls, modInfo, fileName?, callback?, redownload?, allowInstall?) =>
+                  this.handleStartDownload(urls, modInfo, fileName, events, callback,
+                                           redownload, allowInstall));
   }
 
   // enqueues an operation to be run when a download finishes
@@ -164,7 +166,8 @@ export class DownloadObserver {
                               fileName: string,
                               events: NodeJS.EventEmitter,
                               callback?: (error: Error, id?: string) => void,
-                              redownload?: RedownloadMode) {
+                              redownload?: RedownloadMode,
+                              allowInstall?: boolean) {
     const id = shortid();
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
@@ -207,14 +210,15 @@ export class DownloadObserver {
         .then(() => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath, redownload))
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { id, file: res.filePath });
-          this.handleDownloadFinished(id, callback, res);
+          this.handleDownloadFinished(id, callback, res, allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath, callback)));
   }
 
   private handleDownloadFinished(id: string,
                                  callback: (error: Error, id: string) => void,
-                                 res: IDownloadResult) {
+                                 res: IDownloadResult,
+                                 allowInstall: boolean) {
     const download = this.mApi.store.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
       // The only way for the download entry to be missing at this point
@@ -251,7 +255,7 @@ export class DownloadObserver {
       }
       return onceFinished();
     } else {
-      finalizeDownload(this.mApi, id, res.filePath)
+      finalizeDownload(this.mApi, id, res.filePath, allowInstall)
         .then(() => callback(null, id))
         .catch(err => callback(err, id))
         .finally(() => onceFinished());
@@ -340,7 +344,8 @@ export class DownloadObserver {
   }
 
   private handleResumeDownload(downloadId: string,
-                               callback?: (error: Error, id: string) => void) {
+                               callback?: (error: Error, id: string) => void,
+                               allowInstall?: boolean) {
     try {
       const download: IDownload =
         this.mApi.store.getState().persistent.downloads.files[downloadId];
@@ -378,7 +383,7 @@ export class DownloadObserver {
                 this.genProgressCB(downloadId)))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
-                this.handleDownloadFinished(downloadId, callback, res);
+                this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           }

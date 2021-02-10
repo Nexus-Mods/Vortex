@@ -850,7 +850,8 @@ function init(context: IExtensionContextExt): boolean {
                 const downloadPath =
                   selectors.downloadPathForGame(context.api.getState(), gameId);
                 return finalizeDownload(context.api, id,
-                                        path.join(downloadPath, downloads[id].localPath))
+                                        path.join(downloadPath, downloads[id].localPath),
+                                        false)
                   .catch(err => {
                     log('warn', 'failed to properly finalize download', {
                       fileName: downloads[id].localPath,

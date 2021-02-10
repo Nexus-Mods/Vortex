@@ -37,7 +37,8 @@ export function startDownload(api: IExtensionApi,
                               nexus: Nexus,
                               nxmurl: string,
                               redownload?: RedownloadMode,
-                              fileName?: string)
+                              fileName?: string,
+                              allowInstall?: boolean)
                               : Promise<string> {
   let url: NXMUrl;
 
@@ -90,7 +91,7 @@ export function startDownload(api: IExtensionApi,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
           : resolve(downloadId)),
-        redownload);
+        redownload, allowInstall);
       });
     })
     .then(downloadId => {

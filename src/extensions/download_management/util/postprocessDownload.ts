@@ -2,7 +2,8 @@ import { genHash, IHashResult } from 'modmeta-db';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { finalizingDownload, finishDownload, setDownloadHash } from '../actions/state';
 
-export function finalizeDownload(api: IExtensionApi, id: string, filePath: string) {
+export function finalizeDownload(api: IExtensionApi, id: string,
+                                 filePath: string, allowInstall: boolean) {
   api.store.dispatch(finalizingDownload(id));
 
   return genHash(filePath)
@@ -14,7 +15,7 @@ export function finalizeDownload(api: IExtensionApi, id: string, filePath: strin
       // hash
       api.store.dispatch(finishDownload(id, 'finished', undefined));
       const state = api.getState();
-      if (state.settings.automation?.install) {
+      if (state.settings.automation?.install && allowInstall) {
         api.events.emit('start-install-download', id);
       }
     });

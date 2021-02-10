@@ -302,7 +302,8 @@ export function downloadFromNexus(api: IExtensionApi,
   }
 
   log('debug', 'download from nexus', archiveFileName(ext));
-  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId, archiveFileName(ext));
+  return api.emitAndAwait('nexus-download',
+    SITE_ID, ext.modId, ext.fileId, archiveFileName(ext), false);
 }
 
 export function downloadGithubRelease(api: IExtensionApi,
@@ -326,7 +327,7 @@ export function downloadGithubRelease(api: IExtensionApi,
       } else {
         return resolve([dlId]);
       }
-    }, 'always');
+    }, 'always', false);
   })
   .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
     const state = api.getState();
