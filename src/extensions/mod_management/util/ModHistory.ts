@@ -22,7 +22,7 @@ interface IEventType {
 
 // some attributes we don't want to show because they are used internally as caches or something
 // and shouldn't be controlled by the user
-const HIDDEN_ATTRIBUTES = ['noContent', 'installTime', 'content'];
+const HIDDEN_ATTRIBUTES = ['noContent', 'installTime', 'content', 'endorsed'];
 
 class ModHistory implements IHistoryStack {
   private mApi: IExtensionApi;
