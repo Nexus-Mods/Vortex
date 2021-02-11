@@ -402,6 +402,23 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-download', [dlId]);
+
+      api.sendNotification({
+        id: `ready-to-install-${dlId}`,
+        type: 'success',
+        title: 'File imported',
+        group: 'download-finished',
+        message: fileName,
+        actions: [
+          {
+            title: 'Install All', action: dismiss => {
+              api.events.emit('start-install-download', dlId);
+              dismiss();
+            },
+          },
+        ],
+      });
+
       return dlId;
     })
     .catch(err => {
