@@ -1,5 +1,10 @@
 #page-file-based-loadorder,
 #page-generic-loadorder {
+  .layout-flex {
+    flex: 1 1 0;
+    position: relative;
+    overflow: auto;
+  }
   .load-order-entry {
     display: flex;
     flex-direction: row;
