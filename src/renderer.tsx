@@ -69,7 +69,7 @@ import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
-import { crashReporter as crashReporterT, ipcRenderer, remote, webFrame } from 'electron';
+import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
@@ -161,16 +161,7 @@ remote.app.setPath('temp', tempPath);
 
 let deinitCrashDump: () => void;
 
-if (process.env.CRASH_REPORTING === 'electron') {
-  // tslint:disable-next-line:no-var-requires
-  const crashReporter: typeof crashReporterT = require('electron').crashReporter;
-  crashReporter.start({
-    productName: 'Vortex',
-    companyName: 'Black Tree Gaming Ltd.',
-    uploadToServer: false,
-    submitURL: '',
-  });
-} else if (process.env.CRASH_REPORTING === 'vortex') {
+if (process.env.CRASH_REPORTING === 'vortex') {
   // tslint:disable-next-line:no-var-requires
   const crashDump: typeof crashDumpT = require('crash-dump').default;
   deinitCrashDump =
