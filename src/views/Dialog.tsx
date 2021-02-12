@@ -178,8 +178,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private renderContent(content: IDialogContent): JSX.Element {
     let { t } = this.props;
     if (content.options?.translated) {
-      // t = (input: string, options) => this.props.t(input, { ...options, lng: 'en' });
-      t = (input: any) => input;
+      // bit of a hack, setting lngs to empty list so that no translation happens,
+      // but we still make use of the i18next interpolator
+      t = (input: string, options) => this.props.t(input, { ...options, lngs: [] });
     }
 
     const controls: JSX.Element[] = [];
