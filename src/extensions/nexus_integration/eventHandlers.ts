@@ -10,7 +10,7 @@ import opn from '../../util/opn';
 import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
-import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
@@ -208,11 +208,15 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       return fs.statAsync(path.join(downloadPath, downloads[existingId].localPath))
         .then(() => Promise.resolve(existingId))
         .catch((err) => (err.code === 'ENOENT')
-          ? startDownload(api, nexus, url, 'never', fileName, allowInstall)
+          ? startDownload(api, nexus, url,
+                          fileName !== undefined ? 'replace' : 'never',
+                          fileName, allowInstall)
           : Promise.reject(err));
     } else {
       // startDownload will report network errors and only reject on usage error
-      return startDownload(api, nexus, url, 'never', fileName, allowInstall);
+      return startDownload(api, nexus, url,
+                           fileName !== undefined ? 'replace' : 'never',
+                           fileName, allowInstall);
     }
 }
 
@@ -272,6 +276,11 @@ export function onNexusDownload(api: IExtensionApi,
             type: 'error',
             message: err.message,
           });
+        })
+        .catch(AlreadyDownloaded, err => {
+          const { files } = api.getState().persistent.downloads;
+          const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
+          return Promise.resolve(dlId);
         })
         .catch(err => {
           api.showErrorNotification('Nexus download failed', err);

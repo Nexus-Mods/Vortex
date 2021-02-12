@@ -279,12 +279,14 @@ function init(context: IExtensionContext) {
     });
 
   context.once(() => {
+    let onDidFetch: () => void;
+    const didFetchAvailableExtensions = new Promise((resolve => onDidFetch = resolve));
     updateExtensions(true)
-    .then(() => {
-      updateAvailableExtensions(context.api);
-    });
+    .then(() => updateAvailableExtensions(context.api))
+    .then(() => onDidFetch());
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
-      return downloadAndInstallExtension(context.api, ext)
+      return didFetchAvailableExtensions
+        .then(() => downloadAndInstallExtension(context.api, ext))
         .tap(success => {
           if (success) {
             updateExtensions(false);

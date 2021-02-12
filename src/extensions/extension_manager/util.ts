@@ -43,8 +43,8 @@ function githubRawUrl(repo: string, branch: string, repoPath: string) {
 }
 
 const EXTENSION_FORMAT = '1_4';
-
-const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', `extensions_${EXTENSION_FORMAT}.json`);
+const EXTENSION_FILENAME = `extensions_${EXTENSION_FORMAT}.json`;
+const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSION_FILENAME);
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -137,8 +137,8 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   const bundledPath = getVortexPath('bundledPlugins');
   const extensionsPath = path.join(remote.app.getPath('userData'), 'plugins');
 
-  return Promise.join(readExtensionDir(bundledPath, true),
-                      readExtensionDir(extensionsPath, false))
+  return Promise.all([readExtensionDir(bundledPath, true),
+                      readExtensionDir(extensionsPath, false)])
     .then(extLists => [].concat(...extLists))
     .reduce((prev, value: { id: string, info: IExtension }) => {
       prev[value.id] = value.info;
@@ -156,8 +156,12 @@ export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boo
 }
 
 function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
+  log('info', 'downloading extension list', { url: EXTENSION_URL });
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
-    .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined))
+    .then(manifest => {
+      log('debug', 'extension list received');
+      return manifest.extensions.filter(ext => ext.name !== undefined);
+    })
     .tap(extensions =>
       fs.writeFileAsync(cachePath,
                         JSON.stringify({ extensions }, undefined, 2),
@@ -166,7 +170,7 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
 
 function doFetchAvailableExtensions(forceDownload: boolean)
                                     : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
-  const cachePath = path.join(remote.app.getPath('temp'), 'extensions.json');
+  const cachePath = path.join(remote.app.getPath('temp'), EXTENSION_FILENAME);
   let time = new Date();
 
   const checkCache = forceDownload
@@ -181,7 +185,13 @@ function doFetchAvailableExtensions(forceDownload: boolean)
     });
 
   return checkCache
-    .then(needsDownload => needsDownload
+    .then(needsDownload => {
+      if (needsDownload) {
+        log('info', 'extension list outdated, will update');
+      } else {
+        log('info', 'extension list up-to-date');
+      }
+      return needsDownload
         ? downloadExtensionList(cachePath)
         : fs.readFileAsync(cachePath, { encoding: 'utf8' })
           .then(data => {
@@ -191,8 +201,12 @@ function doFetchAvailableExtensions(forceDownload: boolean)
               return Promise.reject(
                 new DataInvalid('Extension cache invalid, please try again later'));
             }
-          }))
-    .catch({ code: 'ENOENT' }, () => downloadExtensionList(cachePath))
+          });
+    })
+    .catch({ code: 'ENOENT' }, () => {
+      log('info', 'extension list missing, will update');
+      return downloadExtensionList(cachePath);
+    })
     .catch(err => {
       log('error', 'failed to fetch list of extensions', err);
       return Promise.resolve([]);
@@ -297,7 +311,7 @@ export function downloadFromNexus(api: IExtensionApi,
     if (availableExt !== undefined) {
       ext.fileId = availableExt.fileId;
     } else {
-      return Promise.reject(new Error('unvailable nexus extension'));
+      return Promise.reject(new Error('unavailable nexus extension'));
     }
   }
 
