@@ -120,6 +120,11 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         }
       })
       .catch((err: Error) => {
+        // why are we catching here at all? shouldn't a failure here cancel the
+        // entire operation?
+        if (err instanceof UserCanceled) {
+          return Promise.reject(err);
+        }
         showError(store.dispatch, 'Failed to set profile', err);
       })
       ;
@@ -378,6 +383,7 @@ function genOnProfileChange(api: IExtensionApi,
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
       })
+      .catch(UserCanceled, () => null)
       .catch(err => {
         showError(store.dispatch, 'Failed to set profile', err);
       });
@@ -764,23 +770,6 @@ function init(context: IExtensionContext): boolean {
         }
       });
 
-    const initProfile = activeProfile(store.getState());
-    refreshProfile(store, initProfile, 'import')
-        .then(() => {
-          if (initProfile !== undefined) {
-            context.api.events.emit('profile-did-change', initProfile.id);
-          }
-          return null;
-        })
-        .catch((err: Error) => {
-          showError(store.dispatch, 'Failed to set profile', err);
-          store.dispatch(setCurrentProfile(undefined, undefined));
-          store.dispatch(setNextProfile(undefined));
-          if (finishProfileSwitch !== undefined) {
-            finishProfileSwitch();
-          }
-        });
-
     context.api.onStateChange(
         ['persistent', 'profiles'], (prev: string, current: string) => {
           Object.keys(current).forEach(profileId => {
@@ -808,6 +797,26 @@ function init(context: IExtensionContext): boolean {
         });
     {
       const state: IState = store.getState();
+
+      const initProfile = activeProfile(state);
+      refreshProfile(store, initProfile, 'import')
+          .then(() => {
+            if (initProfile !== undefined) {
+              context.api.events.emit('profile-did-change', initProfile.id);
+            }
+            return null;
+          })
+          .catch((err: Error) => {
+            if (!(err instanceof UserCanceled)) {
+              showError(store.dispatch, 'Failed to set profile', err);
+            }
+            store.dispatch(setCurrentProfile(undefined, undefined));
+            store.dispatch(setNextProfile(undefined));
+            if (finishProfileSwitch !== undefined) {
+              finishProfileSwitch();
+            }
+          });
+
       const { activeProfileId, nextProfileId } = state.settings.profiles;
       if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');
