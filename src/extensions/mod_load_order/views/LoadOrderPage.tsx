@@ -468,7 +468,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const mapToDisplay = (mod: types.IMod): ILoadOrderDisplayItem => ({
       id: mod.id,
       name: (mod?.attributes !== undefined) ? util.renderModName(mod) : mod.id,
-      imgUrl: (mod?.attributes?.pictureUrl !== undefined)
+      imgUrl: (!!mod?.attributes?.pictureUrl)
         ? mod.attributes.pictureUrl
         : activeGameEntry.gameArtURL,
     });

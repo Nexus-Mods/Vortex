@@ -51,7 +51,13 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderModImg(): JSX.Element {
     const { itemRendererOptions, item } = this.props;
-    const effectiveURL = (url.parse(item.imgUrl).protocol !== null)
+    let effectiveURL;
+    try {
+      effectiveURL = url.parse(item.imgUrl);
+    } catch (err) {
+      return null;
+    }
+    effectiveURL = (effectiveURL.protocol !== null)
       ? item.imgUrl
       : url.pathToFileURL(item.imgUrl).href;
     return (itemRendererOptions.listViewType !== 'compact')
