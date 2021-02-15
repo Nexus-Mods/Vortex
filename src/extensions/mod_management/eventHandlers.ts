@@ -389,6 +389,12 @@ function undeploy(api: IExtensionApi,
   }
 
   const game = getGame(gameMode);
+
+  if (game === undefined) {
+    log('info', 'tried to undeploy for unknown game', gameMode);
+    return Promise.resolve();
+  }
+
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 
