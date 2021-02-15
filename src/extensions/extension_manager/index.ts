@@ -296,7 +296,7 @@ function init(context: IExtensionContext) {
 
     context.api.onAsync('install-extension-from-download', (archiveId: string) => {
       const state = context.api.getState();
-      const { modId } = state.persistent.downloads.files[archiveId].modInfo.nexus.ids;
+      const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find(iter => iter.modId === modId);
       if ((modId !== undefined) && (ext !== undefined)) {
         return downloadAndInstallExtension(context.api, ext)
@@ -306,7 +306,11 @@ function init(context: IExtensionContext) {
             }
           });
       } else {
-        return Promise.reject(new ProcessCanceled('not recognized as a Vortex extension'));
+        context.api.sendNotification({
+          type: 'warning',
+          message: 'Archive not recognized as a Vortex extension',
+        });
+        return Promise.resolve();
       }
     });
 
