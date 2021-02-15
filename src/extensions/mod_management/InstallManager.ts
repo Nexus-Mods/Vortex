@@ -62,6 +62,7 @@ interface IReplaceChoice {
   variant: string;
   enable: boolean;
   attributes: { [key: string]: any };
+  rules: IRule[];
 }
 
 interface ISupportedInstaller {
@@ -232,6 +233,7 @@ class InstallManager {
                 enable = true;
               }
               setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
+              rules = choice.rules;
               fullInfo.previous = choice.attributes;
               return checkNameLoop();
             })
@@ -1040,6 +1042,7 @@ class InstallManager {
           variant: '',
           enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
           attributes: {},
+          rules: [],
         });
       }
       api.store
@@ -1086,6 +1089,7 @@ class InstallManager {
               variant: result.input.variant,
               enable: wasEnabled(),
               attributes: {},
+              rules: [],
             });
           } else if (result.action === REPLACE_ACTION) {
             api.events.emit('remove-mod', gameId, modId, (err) => {
@@ -1097,6 +1101,7 @@ class InstallManager {
                   variant: '',
                   enable: wasEnabled(),
                   attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
+                  rules: mod.rules,
                 });
               }
             });

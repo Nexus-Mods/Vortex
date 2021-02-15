@@ -321,8 +321,10 @@ function processAttributes(input: any) {
     : 100;
 
   return ({
-    modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
-    fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
+    modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined)
+      ?? input.previous?.modId,
+    fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined)
+      ?? input.previous?.modId,
     author: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'author'], undefined),
     uploader: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'uploaded_by'], undefined),
     uploader_url: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'uploaded_users_profile_url'], undefined),
