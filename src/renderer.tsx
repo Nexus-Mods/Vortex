@@ -101,7 +101,13 @@ import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/uti
 log('debug', 'renderer process started', { pid: process.pid });
 
 function fetchReduxState(tries: number = 5) {
-  const msg: string = ipcRenderer.sendSync('get-redux-state');
+  // using implicit structured clone algorithm
+  return ipcRenderer.sendSync('get-redux-state');
+
+  /* using explicit json cloning. This was used in an attempt to debug
+  mysterious issues transporting initial state between processes but this didn't
+  seem to help. Leaving it here in case the situation actually gets worse after
+  reverting to implicit serialization
 
   const expectedMD5 = msg.slice(0, 32);
   const dat = msg.slice(32);
@@ -116,6 +122,7 @@ function fetchReduxState(tries: number = 5) {
         { tries, expectedMD5, actualMD5, length: dat.length });
     return fetchReduxState(tries - 1);
   }
+  */
 }
 
 function initialState(): any {

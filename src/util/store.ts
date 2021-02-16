@@ -77,10 +77,20 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   });
 
   ipcMain.on('get-redux-state', (evt: Electron.IpcMainEvent) => {
+    // implicit structured clone algorithm
+    evt.returnValue = store.getState();
+
+    /* using explicit json cloning. This was used in an attempt to debug
+    mysterious issues transporting initial state between processes but this didn't
+    seem to help. Leaving it here in case the situation actually gets worse after
+    reverting to implicit serialization
+
     const dat = JSON.stringify(store.getState());
     const md5 = checksum(Buffer.from(dat));
     evt.returnValue = md5 + dat;
+    */
   });
+
   return store;
 }
 
