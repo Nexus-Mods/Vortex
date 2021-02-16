@@ -9,7 +9,9 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('News', 1, 3, 250, RSSDashlet, undefined, () => ({
     title: t('Latest News'),
     emptyText: t('No News'),
-    url: 'https://www.nexusmods.com/rss/news/',
+    url: activeGameId(context.api.getState()) !== undefined
+      ? `https://www.nexusmods.com/${GAMEID_PLACEHOLDER}/rss/news/`
+      : 'https://www.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
       { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ count }} comments'},
