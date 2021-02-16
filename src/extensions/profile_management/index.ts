@@ -91,7 +91,7 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
                         direction: 'import' | 'export'): Promise<void> {
   log('debug', 'refresh profile', profile);
-  if (profile === undefined) {
+  if (profile === undefined || profile?.pendingRemove === true) {
     return Promise.resolve();
   }
   if ((profile.gameId === undefined) || (profile.id === undefined)) {
