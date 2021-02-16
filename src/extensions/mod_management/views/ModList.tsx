@@ -1047,15 +1047,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeRelated = (modIds: string[]) => {
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
+      .filter(mod => mod !== undefined)
       .map(mod => ({ mod, enabled: mod.id !== modId }));
 
-    const repoModId = this.state.modsWithState[modId].attributes?.modId?.toString?.();
+    const repoModId = this.state.modsWithState[modId]?.attributes?.modId?.toString?.();
     if (repoModId !== undefined) {
       const existing = new Set(candidates.map(cand => cand.mod.id));
       existing.add(modId);
       Object.keys(this.state.modsWithState)
-        .filter(iter => !existing.has(iter)
-                    && this.state.modsWithState[iter].attributes?.modId?.toString?.() === repoModId)
+        .filter(iter =>
+            !existing.has(iter)
+            && this.state.modsWithState[iter]?.attributes?.modId?.toString?.() === repoModId)
         .forEach(iter => {
           candidates.push({ mod: this.state.modsWithState[iter], enabled: false });
         });
