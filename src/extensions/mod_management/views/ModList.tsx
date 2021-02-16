@@ -225,6 +225,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         title: 'Reinstall',
         action: this.reinstall,
         condition: (instanceId: string | string[]) => {
+          if (this.conditionNotInstalled(instanceId)) {
+            return false;
+          }
           const cond = (id: string) => (this.props.mods[id] !== undefined)
               && (truthy(this.props.mods[id].archiveId));
           const res: boolean = (typeof(instanceId) === 'string')
