@@ -1572,8 +1572,18 @@ class ExtensionManager {
         .catch(ProcessCanceled, () => null)
         .catch({ code: 'EACCES' }, () =>
           this.runElevated(executable, cwd, args, env, options.onSpawned))
+        .catch({ code: 'ECANCELED' }, () => Promise.reject(new UserCanceled()))
+        .catch({ systemCode: 1223 }, () => Promise.reject(new UserCanceled()))
+        // Is errno still used ? looks like shellEx call returns systemCode instead
         .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
         .catch((err) => {
+          if (err.message.toLowerCase().indexOf('the operation was canceled by the user') !== -1) {
+            // This is more of a sanity check than anything else as one user report
+            //  contained none of the properties we rely on to detect when a user
+            //  cancels the UAC dialog.
+            //  https://github.com/Nexus-Mods/Vortex/issues/8524
+            return Promise.reject(new UserCanceled());
+          }
           return Promise.reject(err);
         });
   }
