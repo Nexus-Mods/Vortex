@@ -411,6 +411,21 @@ export class DownloadObserver {
           allowReport: false,
         });
       }
+    } else if (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY') {
+      // may be resumable
+      this.handlePauseDownload(downloadId);
+      if (callback !== undefined) {
+        callback(new TemporaryError('Certificate Error'), downloadId);
+      } else {
+        showError(this.mApi.store.dispatch, 'Download failed',
+          'The download failed due to a https certificate error. '
+          + 'This is is usually caused by misconfigured or outdated '
+          + 'AntiVirus, Firewall, VPN or proxy. '
+          + 'You can try resuming the download to see if it was a temporary issue but also '
+          + 'please check your network-related software for updates.', {
+          allowReport: false,
+        });
+      }
     } else {
       const message = this.translateError(err);
 
