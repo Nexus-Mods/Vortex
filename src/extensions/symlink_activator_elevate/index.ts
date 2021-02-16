@@ -515,7 +515,7 @@ class DeploymentMethod extends LinkingDeployment {
         //  for ERROR_CANCELLED, which in this case is raised if the user
         //  selects to deny elevation when prompted.
         //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
-        .catch({ code: 5 }, () => reject(new UserCanceled))
+        .catch({ code: 5 }, () => reject(new UserCanceled()))
         .catch({ systemCode: 1223 }, () => reject(new UserCanceled()))
         // Just in case this is still used somewhere - doesn't look like it though.
         .catch({ errno: 1223 }, () => reject(new UserCanceled()))
