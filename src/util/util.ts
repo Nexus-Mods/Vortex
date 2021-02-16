@@ -515,6 +515,8 @@ export interface IFlattenParameters {
   // the base key that will be included in all attribute names. You will usually want
   // to leave this as an empty array unless the result gets merged with something else
   baseKey?: string[];
+  // also include non-enumerable properties
+  nonEnumerable?: boolean;
 }
 
 /**
@@ -538,7 +540,10 @@ function flattenInner(obj: any, key: string[],
   if ((obj.length !== undefined) && (obj.length > 10)) {
     return { [key.join(options.separator)]: '<long array cut>' };
   }
-  return Object.keys(obj).reduce((prev, attr: string) => {
+  const getKeys = options.nonEnumerable
+    ? Object.getOwnPropertyNames
+    : Object.keys;
+  return getKeys(obj).reduce((prev, attr: string) => {
     if (objStack.indexOf(obj[attr]) !== -1) {
       return prev;
     }
