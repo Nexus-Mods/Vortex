@@ -93,7 +93,6 @@ class Application {
       const crashReporter: typeof crashReporterT = require('electron').crashReporter;
       crashReporter.start({
         productName: 'Vortex',
-        companyName: 'Black Tree Gaming Ltd.',
         uploadToServer: false,
         submitURL: '',
       });

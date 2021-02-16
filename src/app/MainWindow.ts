@@ -269,6 +269,7 @@ class MainWindow {
         webviewTag: true,
         enableWebSQL: false,
         enableRemoteModule: true,
+        contextIsolation: false,
       },
     };
   }
