@@ -574,6 +574,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
         .then(() => purgeMods(api, gameId))
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
         .then(() => Promise.resolve())
+        .catch(UserCanceled, () => Promise.resolve())
         .catch(NoDeployment, () => {
           api.showDialog('error', 'Failed to purge', {
             text: 'Failed to purge mods deployed for this game. To ensure there are no '
