@@ -346,7 +346,7 @@ export interface IPrettifiedError {
 }
 
 export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPrettifiedError {
-  if ((err.errno === 225) || (err['nativeCode'] === 225)) {
+  if ((err.systemCode === 225) || (err['nativeCode'] === 225)) {
     // doesn't contain a code attribute
     return {
       message: 'Your Antivirus software has blocked access to "{{path}}".',
@@ -354,9 +354,9 @@ export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPr
       allowReport: false,
     };
   } else if (
-    [362, 383, 404].includes(err.errno)
+    [362, 383, 404].includes(err.systemCode)
     || (
-      (err.errno === 1359) && (err['path'] ?? '').toLowerCase().includes('onedrive'))) {
+      (err.systemCode === 1359) && (err['path'] ?? '').toLowerCase().includes('onedrive'))) {
     return {
       message: `The file "{{path}}" is stored on a cloud storage drive `
         + '(Microsoft OneDrive) which is currently unavailable.',

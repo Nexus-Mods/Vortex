@@ -869,7 +869,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
     runElevated(ipcPath, func, parameters)
       .catch(err => {
         if ((err.code === 5)
-            || ((process.platform === 'win32') && (err.errno === 1223))) {
+            || ((process.platform === 'win32') && (err.systemCode === 1223))) {
           // this code is returned when the user rejected the UAC dialog. Not currently
           // aware of another case
           reject(new UserCanceled());
@@ -1084,7 +1084,7 @@ export function forcePerm<T>(t: TFunction,
   return op()
     .catch(err => {
       const fileToAccess = filePath !== undefined ? filePath : err.path;
-      if ((['EPERM', 'EACCES'].indexOf(err.code) !== -1) || (err.errno === 5)) {
+      if ((['EPERM', 'EACCES'].indexOf(err.code) !== -1) || (err.systemCode === 5)) {
         const wantedAttributes = process.platform === 'win32'
           ? parseInt('0666', 8)
           : parseInt('0600', 8);
