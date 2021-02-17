@@ -49,7 +49,7 @@ import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
-         pad, sanitizeCSSId, setdefault, toPromise, unique } from './util';
+         pad, sanitizeCSSId, sanitizeFilename, setdefault, toPromise, unique } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -120,6 +120,7 @@ export {
   runElevated,
   runThreaded,
   sanitizeCSSId,
+  sanitizeFilename,
   setdefault,
   SetupError,
   SevenZip,
