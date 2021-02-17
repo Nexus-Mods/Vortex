@@ -286,6 +286,9 @@ export function onNexusDownload(api: IExtensionApi,
 export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
     : (collectionId: number) => Promise<ICollection> {
   return (collectionId: number): Promise<ICollection> => {
+    if (!Number.isFinite(collectionId)) {
+      return Promise.reject(new Error('invalid parameter, collectionId has to be a number'));
+    }
     return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, collectionId))
       .catch(err => {
         api.showErrorNotification('Failed to get collection info', err);
@@ -316,12 +319,17 @@ export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
 
 export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
     : (collectionId: number, revisionId: number) => Promise<IRevision> {
-  return (collectionId: number, revisionId: number): Promise<IRevision> =>
-    Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
+  return (collectionId: number, revisionId: number): Promise<IRevision> => {
+    if (!Number.isFinite(collectionId) || !Number.isFinite(revisionId)) {
+      return Promise.reject(
+        new Error('invalid parameter, collectionId and revisionId have to be numbers'));
+    }
+    return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
       .catch(err => {
         api.showErrorNotification('Failed to get nexus revision info', err);
         return Promise.resolve(undefined);
       });
+  }
 }
 
 export function onRateRevision(api: IExtensionApi, nexus: Nexus)
