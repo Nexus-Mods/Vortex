@@ -233,7 +233,7 @@ class InstallManager {
                 enable = true;
               }
               setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
-              rules = choice.rules;
+              rules = choice.rules || [];
               fullInfo.previous = choice.attributes;
               return checkNameLoop();
             })
@@ -332,7 +332,7 @@ class InstallManager {
         const existingKeys =
           Object.keys(state.persistent.mods[installGameId]?.[modId]?.attributes || {});
         installContext.finishInstallCB('success', _.omit(modInfo, existingKeys));
-        rules.forEach(rule => {
+        (rules ?? []).forEach(rule => {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
