@@ -201,7 +201,7 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       (downloads[downloadId]?.game || []).includes(gameId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.modId === modId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.fileId === fileId));
-    if (existingId !== undefined) {
+    if ((existingId !== undefined) && (downloads[existingId]?.localPath !== undefined)) {
       log('debug', 'found an existing matching download',
         { id: existingId, data: JSON.stringify(downloads[existingId]) });
       const downloadPath = downloadPathForGame(state, gameId);
