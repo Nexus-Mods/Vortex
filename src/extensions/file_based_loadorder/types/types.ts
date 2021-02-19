@@ -1,5 +1,3 @@
-import * as Promise from 'bluebird';
-
 export type LockedState = 'true' | 'false' | 'always' | 'never';
 export type LoadOrder = ILoadOrderEntry[];
 
