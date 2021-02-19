@@ -762,6 +762,8 @@ function upgradeExtractor(input: any) {
     customFileName: getSafe(input.previous, ['customFileName'], undefined),
     variant: getSafe(input.previous, ['variant'], undefined),
     notes: getSafe(input.previous, ['notes'], undefined),
+    icon: getSafe(input.previous, ['icon'], undefined),
+    color: getSafe(input.previous, ['color'], undefined),
   });
 }
 
