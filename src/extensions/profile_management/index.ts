@@ -52,6 +52,7 @@ import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
 
+import { STUCK_TIMEOUT } from './constants';
 import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
@@ -208,8 +209,18 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     return Promise.resolve();
   }
 
+  let lastProgress: number = Date.now();
+
+  const watchdog = setInterval(() => {
+    if ((Date.now() - lastProgress) > STUCK_TIMEOUT) {
+      api.store.dispatch(setProgress('profile', 'deploying',
+                  api.translate('Stuck? Please check your vortex.log file.'), 0));
+    }
+  }, 1000);
+
   return new Promise((resolve, reject) => {
     api.events.emit('deploy-mods', onceCB((err: Error) => {
+        clearInterval(watchdog);
         if (err === null) {
           resolve();
         } else {
@@ -217,6 +228,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
         }
       }), profileId,
       (text: string, percent: number) => {
+        lastProgress = Date.now();
         api.store.dispatch(
           setProgress('profile', 'deploying', text, percent));
       });
