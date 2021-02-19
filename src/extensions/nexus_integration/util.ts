@@ -18,7 +18,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-import { DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -171,6 +171,8 @@ export function startDownload(api: IExtensionApi,
           error: err,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
+      } else if (err instanceof AlreadyDownloaded) {
+        return err.downloadId;
       } else if (err instanceof UserCanceled) {
         // nop
       } else {
