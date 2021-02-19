@@ -1,12 +1,21 @@
 import { genHash, IHashResult } from 'modmeta-db';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { finalizingDownload, finishDownload, setDownloadHash } from '../actions/state';
+import { finalizingDownload, finalizingProgress, finishDownload, setDownloadHash } from '../actions/state';
 
 export function finalizeDownload(api: IExtensionApi, id: string,
                                  filePath: string, allowInstall: boolean) {
   api.store.dispatch(finalizingDownload(id));
 
-  return genHash(filePath)
+  let lastProgress: number = 0;
+  const progressHash = (progress: number, total: number) => {
+    const prog = Math.floor(progress * 100 / total);
+    if (prog > lastProgress) {
+      lastProgress = prog;
+      api.store.dispatch(finalizingProgress(id, progress));
+    }
+  };
+
+  return genHash(filePath, progressHash)
     .then((md5Hash: IHashResult) => {
       api.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
     })

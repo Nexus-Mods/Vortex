@@ -32,13 +32,24 @@ function progress(props: { t: TFunction, download: IDownload }) {
   const {t, download} = props;
   const {state} = download;
   const received = download.received || 0;
+  const verified = download.verified || 0;
   const size = download.size || 1;
 
   switch (state) {
     case 'init': return <span>{t('Pending')}</span>;
     case 'finished': return <span>{t('Finished')}</span>;
     case 'failed': return <span>{t('Failed')}</span>;
-    case 'finalizing': return <span><Spinner /> {t('Finalizing')}</span>;
+    case 'finalizing': return (
+      <div style={{ display: 'flex' }}>
+        <ProgressBar
+          style={{ flex: '1 1 0' }}
+          now={verified}
+          max={size}
+          labelLeft={t('Finalizing')}
+          showPercentage
+        />
+      </div>
+    );
     case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: return (
@@ -67,10 +78,12 @@ function capitalize(input: string): string {
 
 function calc(props) {
   const {download} = props;
-  const {state, received, size} = download;
+  const {state, received, size, verified} = download;
 
   if (state === 'started') {
     return (received / Math.max(size, 1));
+  } else if (state === 'finalizing') {
+    return (verified / Math.max(size, 1));
   } else {
     return state;
   }

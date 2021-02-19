@@ -53,6 +53,12 @@ export const stateReducer: IReducerSpec = {
       }
       return merge(state, [ 'files', payload.id ], update);
     },
+    [action.finalizingProgress as any]: (state, payload) => {
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+      return setSafe(state, [ 'files', payload.id, 'verified' ], payload.progress);
+    },
     [action.setDownloadFilePath as any]: (state, payload) =>
       setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath),
     [action.setDownloadPausable as any]: (state, payload) =>

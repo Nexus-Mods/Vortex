@@ -250,7 +250,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
           .catch(() => undefined);
       })
       .catch(err => {
-        api.showErrorNotification('failed to start download', err);
+        api.showErrorNotification('Failed to start download', err);
       });
   };
 }

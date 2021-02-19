@@ -22,6 +22,9 @@ export const downloadProgress = safeCreateAction('DOWNLOAD_PROGRESS',
   (id: string, received: number, total: number, chunks: IChunk[], urls: string[]) =>
     ({ id, received, total, chunks, urls }));
 
+export const finalizingProgress = safeCreateAction('FINALIZING_PROGRESS',
+  (id: string, progress: number) => ({ id, progress }));
+
 /**
  * set/change the file path
  */
