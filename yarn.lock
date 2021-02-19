@@ -13656,8 +13656,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.2.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/d0f969b155b5d6b3c8c361861dd571ee9da70c24"
+  version "2.3.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/e4b0d98dec0145c2aec85ea6dc952ed2c33dbd00"
 
 winston-transport@^4.4.0:
   version "4.4.0"

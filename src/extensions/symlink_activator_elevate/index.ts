@@ -7,6 +7,7 @@ import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
+import makeReactive from '../../util/makeReactive';
 import { activeGameId, gameName } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
@@ -869,6 +870,53 @@ function migrate(api: IExtensionApi, oldVersion: string) {
   return Promise.resolve();
 }
 
+const localState: { symlinkRight: boolean } = makeReactive({
+  symlinkRight: false,
+});
+
+function giveSymlinkRight(enable: boolean) {
+  const sid = winapi.GetUserSID();
+
+  const ipcPath = `ipc_${shortid()}`;
+
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === 'log') {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === 'quit') {
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
+      if (payload !== undefined) {
+        localState.symlinkRight = payload;
+      }
+    }
+  });
+
+  runElevated(ipcPath, (ipc, req) => {
+    const winapiRemote: typeof winapi = req('winapi-bindings');
+    const func = enable
+      ? winapiRemote.AddUserPrivilege
+      : winapiRemote.RemoveUserPrivilege;
+    try {
+      func(sid, 'SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({ message: 'quit', payload: enable });
+    } catch (err) {
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'error', message: 'Failed to change privilege', meta: err,
+        },
+      });
+
+      ipc.sendMessage({ message: 'quit' });
+    }
+  }, { sid, enable })
+  .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
+}
+
 function init(context: IExtensionContextEx): boolean {
   const method = new DeploymentMethod(context.api);
   context.registerDeploymentMethod(method);
@@ -878,6 +926,8 @@ function init(context: IExtensionContextEx): boolean {
   if (process.platform === 'win32') {
     context.registerSettings('Workarounds', Settings, () => ({
       supported: tasksSupported(),
+      localState,
+      onSymlinksPrivilege: (enable: boolean) => giveSymlinkRight(enable),
     }));
   }
 
@@ -887,6 +937,9 @@ function init(context: IExtensionContextEx): boolean {
     method.initEvents(context.api);
 
     if (process.platform === 'win32') {
+      const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
+      localState.symlinkRight = privileges.includes('SeCreateSymbolicLinkPrivilege');
+
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
         ensureTask(context.api, current, false);

@@ -3939,8 +3939,8 @@ wide-align@^1.1.0:
     string-width "^1.0.2 || 2"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.2.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/d0f969b155b5d6b3c8c361861dd571ee9da70c24"
+  version "2.3.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/e4b0d98dec0145c2aec85ea6dc952ed2c33dbd00"
 
 winston@^2.4.3:
   version "2.4.5"
