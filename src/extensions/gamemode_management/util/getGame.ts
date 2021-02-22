@@ -67,7 +67,14 @@ export function getGame(gameId: string): IGame {
   if ($.gameModeManager === undefined) {
     throw new Error('getGame only available in renderer process');
   }
-  return makeGameProxy($.gameModeManager.games.find(iter => iter.id === gameId));
+  let game = $.gameModeManager.games.find(iter => iter.id === gameId);
+  if (game === undefined) {
+    const stub = $.gameModeManager.stubs.find(iter => iter.game.id === gameId);
+    if (stub !== undefined) {
+      game = stub.game;
+    }
+  }
+  return makeGameProxy(game);
 }
 
 export function getGameStores(): IGameStore[] {

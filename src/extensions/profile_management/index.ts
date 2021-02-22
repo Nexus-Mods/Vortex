@@ -523,7 +523,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
   const currentProfile = activeProfile(state);
 
   store.dispatch(willRemoveProfile(profileId));
-  if (profileId === currentProfile.id) {
+  if (profileId === currentProfile?.id) {
     store.dispatch(setNextProfile(undefined));
   }
 
@@ -582,8 +582,9 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
   ])
   .then(result => {
     if (result.action === 'Delete profiles') {
-      return Promise.map(Object.keys(mods[gameId] ?? {}), modId => removeMod(api, gameId, modId))
-        .then(() => purgeMods(api, gameId))
+      return purgeMods(api, gameId)
+        .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
+          modId => removeMod(api, gameId, modId)))
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
         .then(() => Promise.resolve())
         .catch(UserCanceled, () => Promise.resolve())

@@ -49,7 +49,7 @@ import PathSelectionDialog from './views/PathSelection';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 
-import GameModeManager from './GameModeManager';
+import GameModeManager, { IGameStub } from './GameModeManager';
 import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
 
 import Promise from 'bluebird';
@@ -61,6 +61,7 @@ import * as semver from 'semver';
 
 const gameStoreLaunchers: IGameStore[] = [];
 const extensionGames: IGame[] = [];
+const extensionStubs: IGameStub[] = [];
 
 const $ = local<{
   gameModeManager: GameModeManager,
@@ -500,10 +501,8 @@ function init(context: IExtensionContext): boolean {
     }
   }) as any;
 
-  const gameStubs: { [gameId: string]: IExtensionDownloadInfo } = {};
-
-  context.registerGameStub = (id: string, ext: IExtensionDownloadInfo) => {
-    gameStubs[id] = ext;
+  context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
+    extensionStubs.push({ ext, game });
   };
 
   context.registerGameInfoProvider =
@@ -654,6 +653,7 @@ function init(context: IExtensionContext): boolean {
 
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
+      extensionStubs,
       gameStoreLaunchers,
       (gameMode: string) => {
         log('debug', 'gamemode activated', gameMode);
@@ -661,7 +661,10 @@ function init(context: IExtensionContext): boolean {
       });
     $.gameModeManager.attachToStore(store);
     $.gameModeManager.startQuickDiscovery()
-    .then(() => removeDisappearedGames(context.api, gameStubs));
+      .then(() => removeDisappearedGames(context.api, extensionStubs.reduce((prev, stub) => {
+        prev[stub.game.id] = stub.ext;
+        return prev;
+      }, {})));
 
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
       $.gameModeManager.startQuickDiscovery()

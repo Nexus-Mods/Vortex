@@ -983,7 +983,7 @@ export interface IExtensionContext {
    * register a game stub. This is to ease the transition for games that used to be bundled with
    * Vortex and might already be in use but are now maintained by a third party.
    */
-  registerGameStub: (gameId: string, ext: IExtensionDownloadInfo) => void;
+  registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
 
   /**
    * registers support for a game store.

@@ -14,6 +14,7 @@ import { activeProfile, discoveryByGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setPrimaryTool } from '../starter_dashlet/actions';
 
 import {
@@ -33,6 +34,11 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 
+export interface IGameStub {
+  ext: IExtensionDownloadInfo;
+  game: IGame;
+}
+
 /**
  * discovers game modes
  *
@@ -41,15 +47,18 @@ import * as Redux from 'redux';
 class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
+  private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: Promise<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
+              gameStubs: IGameStub[],
               gameStoreExtensions: IGameStore[],
               onGameModeActivated: (mode: string) => void) {
     this.mStore = null;
     this.mKnownGames = extensionGames;
+    this.mGameStubs = gameStubs;
     this.mKnownGameStores = gameStoreExtensions;
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
@@ -170,6 +179,10 @@ class GameModeManager {
 
   public get games(): IGame[] {
     return this.mKnownGames;
+  }
+
+  public get stubs(): IGameStub[] {
+    return this.mGameStubs;
   }
 
   public get gameStores(): IGameStore[] {
