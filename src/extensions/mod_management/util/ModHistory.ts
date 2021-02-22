@@ -198,7 +198,7 @@ class ModHistory implements IHistoryStack {
                 }
               }
             });
-            Object.keys(prev[gameId]).forEach(modId => {
+            Object.keys(prev[gameId] ?? {}).forEach(modId => {
               const oldState = prev[gameId]?.[modId]?.state;
 
               if ((current[gameId]?.[modId] === undefined)
