@@ -121,6 +121,7 @@ class ReduxPersistor<T> {
   private handleChange = () => {
     const oldState = this.mPersistedState;
     const newState = this.mStore.getState();
+    this.mPersistedState = newState;
 
     this.mUpdateQueue = this.mUpdateQueue
       .then(() => this.doProcessChange(oldState, newState));
@@ -130,7 +131,6 @@ class ReduxPersistor<T> {
     if (oldState === newState) {
       return Promise.resolve();
     }
-    this.mPersistedState = newState;
 
     return this.ensureStoreDiffHive(oldState, newState);
   }

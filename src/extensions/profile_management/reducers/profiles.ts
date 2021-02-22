@@ -1,5 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { deleteOrNop, getSafe, merge, setSafe } from '../../../util/storeHelper';
+import { log } from '../../../util/log';
+import { deleteOrNop, getSafe, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/profiles';
 
@@ -15,8 +16,12 @@ export const profilesReducer: IReducerSpec = {
       }),
     [actions.removeProfile as any]: (state, payload) =>
       deleteOrNop(state, [ payload ]),
-    [actions.willRemoveProfile as any]: (state, payload) =>
-      setSafe(state, [payload, 'pendingRemove'], true),
+    [actions.willRemoveProfile as any]: (state, payload) => {
+      if (state[payload] === undefined) {
+        return state;
+      }
+      return setSafe(state, [payload, 'pendingRemove'], true);
+    },
     [actions.setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
 

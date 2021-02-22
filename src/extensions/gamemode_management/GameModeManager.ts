@@ -6,7 +6,7 @@ import { IGameStore } from '../../types/IGameStore';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
@@ -94,9 +94,7 @@ class GameModeManager {
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const gameDiscovery = discoveredGames[newMode];
-    if ((game === undefined)
-        || (gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)) {
+    if ((game === undefined) || (gameDiscovery?.path === undefined)) {
       // new game mode is not valid
       return Promise.reject(new ProcessCanceled('game mode not found'));
     }
@@ -140,8 +138,8 @@ class GameModeManager {
         }
       })
       .catch(err => {
-        return (['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1)
-        ? Promise.reject(new ProcessCanceled('Missing: ' + (err.filename || modPath)))
+        return ['ENOENT', 'ENOTFOUND'].includes(err.code)
+        ? Promise.reject(new SetupError('Missing: ' + (err.filename || modPath)))
         : Promise.reject(err);
       });
   }

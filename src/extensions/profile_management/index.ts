@@ -520,6 +520,11 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
   const { profiles } = state.persistent;
   log('info', 'user removing profile', { id: profileId });
 
+  if (profiles[profileId] === undefined) {
+    // nothing to do
+    return Promise.resolve();
+  }
+
   const currentProfile = activeProfile(state);
 
   store.dispatch(willRemoveProfile(profileId));

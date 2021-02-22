@@ -314,11 +314,20 @@ function installGameExtenstion(api: IExtensionApi,
   }
 }
 
+function awaitProfileSwitch(api: IExtensionApi): Promise<string> {
+  const { activeProfileId, nextProfileId } = api.getState().settings.profiles;
+  if (activeProfileId !== nextProfileId) {
+    return new Promise(resolve => api.events.once('profile-did-change', resolve));
+  } else {
+    return Promise.resolve(activeProfileId);
+  }
+}
+
 function removeDisappearedGames(api: IExtensionApi,
                                 gameStubs?: { [gameId: string]: IExtensionDownloadInfo })
                                 : Promise<void> {
   log('info', 'remove disappeared games');
-  const state: IState = api.getState();
+  let state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
   let gameMode = activeGameId(state);
@@ -352,10 +361,12 @@ function removeDisappearedGames(api: IExtensionApi,
             api.store.dispatch(setGamePath(gameId, undefined));
           });
     })
+    .then(() => awaitProfileSwitch(api))
     .then(() => {
+      state = api.getState();
       gameMode = activeGameId(state);
       if (known.find(game => game.id === gameMode) === undefined) {
-        log('info', 'the active game is no longer known, resetting', gameMode);
+        log('info', 'the active game is no longer known, resetting', { activeGame: gameMode ?? 'none', known });
         api.store.dispatch(setNextProfile(undefined));
       }
 
@@ -580,8 +591,6 @@ function init(context: IExtensionContext): boolean {
               .join('\n');
           }
 
-          const gameMode = activeGameId(oldState);
-
           removeDisappearedGames(context.api);
           context.api.sendNotification({
             type: 'success',
@@ -742,10 +751,9 @@ function init(context: IExtensionContext): boolean {
         })
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
-          if (err instanceof UserCanceled) {
+          if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
             // nop
-          } else if ((err instanceof ProcessCanceled)
-                    || (err instanceof SetupError)
+          } else if ((err instanceof SetupError)
                     || (err instanceof DataInvalid)) {
             showError(store.dispatch, 'Failed to set game mode', err, {
               allowReport: false, message: newGameId, id: 'failed-to-set-gamemode' });
