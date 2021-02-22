@@ -41,8 +41,14 @@ class ModHistory implements IHistoryStack {
           possible: evt => {
             const state = api.getState();
             const { id, profileId } = evt.data;
+
+            const profile = state.persistent.profiles[profileId];
+            if (profile === undefined) {
+              // the profile may not exist any more
+              return false;
+            }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && state.persistent.profiles[profileId].modState[id].enabled;
+                   && profile.modState[id].enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
@@ -61,8 +67,13 @@ class ModHistory implements IHistoryStack {
           possible: evt => {
             const state = api.getState();
             const { id, profileId } = evt.data;
+            const profile = state.persistent.profiles[profileId];
+            if (profile === undefined) {
+              // the profile may not exist any more
+              return false;
+            }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && !state.persistent.profiles[profileId].modState[id].enabled;
+                   && !profile.modState[id].enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
@@ -260,19 +271,21 @@ class ModHistory implements IHistoryStack {
     const addToHistory: (stack: string, entry: IHistoryEvent) => void = this.mApi.ext.addToHistory;
 
     Object.keys(after.modState ?? {}).forEach(modId => {
-      const { enabled } = after.modState[modId];
-      if ((before?.modState?.[modId].enabled ?? false) !== enabled) {
+      const enabled = after.modState?.[modId]?.enabled;
+      if ((before?.modState?.[modId]?.enabled ?? false) !== enabled) {
         const mod = this.mApi.getState().persistent.mods[after.gameId][modId];
-        addToHistory?.('mods', {
-          type: enabled ? 'mod-enabled' : 'mod-disabled',
-          gameId: after.gameId,
-          data: {
-            id: modId,
-            name: modName(mod),
-            profileId: after.id,
-            profileName: after.name,
-          },
-        });
+        if (mod !== undefined) {
+          addToHistory?.('mods', {
+            type: enabled ? 'mod-enabled' : 'mod-disabled',
+            gameId: after.gameId,
+            data: {
+              id: modId,
+              name: modName(mod),
+              profileId: after.id,
+              profileName: after.name,
+            },
+          });
+        }
       }
     });
   }
