@@ -28,6 +28,20 @@ export interface IFilterProps {
 export interface ITableFilter {
   /**
    * return true if value matches the filter
+   * @param filter the filter pattern to filter by
+   * @param value the row value for the specified column
+   * @param state application state, usually an IState object but may contain additional fields
+   *              from extensions
+   * @note the raw parameter controls what value actually gets passed into matches. If raw is false,
+   *       value will be the output of the calc function of the ITableAttribute.
+   *       If raw is true, value will be the raw value of the table item where the name matches
+   *       the table attribute. So if the table attribute has id "name" then value would be
+   *       tableitem["name"]. If raw is a string, that is used instead of the table attribute id.
+   *       If ITableAttribute.calc doesn't simply transform an attribute of the item but consults
+   *       a separate data source, you have to set raw to false, there is no way to get correct
+   *       results otherwise.
+   *       If calc returns localized strings for example you will want to use raw, generally it
+   *       is often simpler to deal with raw values (true instead of "Enabled")
    */
   matches: (filter: any, value: any, state: any) => boolean;
   /**
@@ -35,6 +49,10 @@ export interface ITableFilter {
    * if not specified the filter will be assumed to be "empty" if it's not truthy
    */
   isEmpty?: (filter: any) => boolean;
+  /**
+   * this controls what value gets passed into the matches function, see the documentation there
+   * for possible values
+   */
   raw: string | boolean;
   component: React.ComponentType<IFilterProps>;
   dataId?: string;
