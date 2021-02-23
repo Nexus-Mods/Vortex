@@ -879,6 +879,9 @@ function giveSymlinkRight(enable: boolean) {
 
   const ipcPath = `ipc_${shortid()}`;
 
+  log('info', 'switching symlink privilege', { sid, from: localState.symlinkRight, to: enable });
+  localState.symlinkRight = enable;
+
   const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
     if (message === 'log') {
       log(payload.level, payload.message, payload.meta);
@@ -901,7 +904,8 @@ function giveSymlinkRight(enable: boolean) {
       : winapiRemote.RemoveUserPrivilege;
     try {
       func(sid, 'SeCreateSymbolicLinkPrivilege');
-      ipc.sendMessage({ message: 'quit', payload: enable });
+      const enabled = winapiRemote.GetUserPrivilege(sid).includes('SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({ message: 'quit', payload: enabled });
     } catch (err) {
       ipc.sendMessage({
         message: 'log', payload: {
