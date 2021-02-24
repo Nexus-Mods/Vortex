@@ -32,7 +32,7 @@ function fallbackDateFormat(locales?: string | string[], options?: Intl.DateTime
   return formatter.format(this);
 }
 
-function appyMonkeyPatches() {
+function applyMonkeyPatches() {
   monkeyPatch(Date, 'toLocaleString',
     function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
       try {
@@ -100,4 +100,4 @@ function appyMonkeyPatches() {
   };
 }
 
-appyMonkeyPatches();
+applyMonkeyPatches();
