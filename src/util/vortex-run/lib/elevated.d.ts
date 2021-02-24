@@ -1,6 +1,5 @@
 /// <reference types="node" />
 /// <reference types="jest" />
-/// <reference types="webpack-env" />
 import Bluebird from 'bluebird';
 /**
  * run a function as an elevated process (windows only!).

@@ -899,12 +899,29 @@ function giveSymlinkRight(enable: boolean) {
 
   runElevated(ipcPath, (ipc, req) => {
     const winapiRemote: typeof winapi = req('winapi-bindings');
+    ipc.sendMessage({
+      message: 'log', payload: {
+        level: 'info', message: `will ${enable ? 'enable' : 'disable'} privilege`,
+      },
+    });
+
     const func = enable
       ? winapiRemote.AddUserPrivilege
       : winapiRemote.RemoveUserPrivilege;
     try {
       func(sid, 'SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'call successful',
+        },
+      });
       const enabled = winapiRemote.GetUserPrivilege(sid).includes('SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'verification', meta: { expected: enable, actual: enabled },
+        },
+      });
+
       ipc.sendMessage({ message: 'quit', payload: enabled });
     } catch (err) {
       ipc.sendMessage({
