@@ -5,8 +5,10 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 import * as fs from '../util/fs';
 import { writeFileAtomic } from '../util/fsAtomic';
+import lazyRequire from '../util/lazyRequire';
 import { log } from '../util/log';
 import makeReactive from '../util/makeReactive';
+import startupSettingsT from '../util/startupSettings';
 
 import MainPage from './MainPage';
 
@@ -16,7 +18,9 @@ import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import startupSettings from '../util/startupSettings';
+
+const startupSettings =
+  lazyRequire<typeof startupSettingsT>(() => require('./util/startupSettings'));
 
 interface ISettingsPage {
   title: string;
@@ -53,7 +57,12 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
-  private mStartupSettings = makeReactive(startupSettings);
+  private mStartupSettings;
+
+  constructor(props: IProps) {
+    super(props);
+    this.mStartupSettings = makeReactive(startupSettings);
+  }
 
   public render(): JSX.Element {
     const { settingsPage, objects } = this.props;

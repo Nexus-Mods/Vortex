@@ -10,11 +10,11 @@ import { log } from './log';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-const startupPath = path.join(getVortexPath('appData'), app.name, 'startup.json');
+const startupPath = () => path.join(getVortexPath('appData'), app.name, 'startup.json');
 
 function read(): IParameters {
   try {
-    return JSON.parse(fs.readFileSync(startupPath, { encoding: 'utf-8' }));
+    return JSON.parse(fs.readFileSync(startupPath(), { encoding: 'utf-8' }));
   } catch (err) {
     if (err.code !== 'ENOENT') {
       log('warn', 'failed to parse startup.json', { error: err.message });
@@ -24,7 +24,7 @@ function read(): IParameters {
 }
 
 const updateDebouncer = new Debouncer(() => {
-  return writeFileAtomic(startupPath, JSON.stringify(settings))
+  return writeFileAtomic(startupPath(), JSON.stringify(settings))
     .catch(err => {
       log('error', 'failed to write startup.json', { error: err.message });
     });
