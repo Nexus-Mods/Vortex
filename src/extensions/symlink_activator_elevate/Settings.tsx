@@ -39,7 +39,7 @@ class Settings extends ComponentEx<IProps, {}> {
     this.mInitialSymlinkPrivilege = this.props.localState.symlinkRight;
   }
 
-  public componentDidUnmount() {
+  public componentWillUnmount() {
     this.props.localState['detach']?.(this);
   }
 
