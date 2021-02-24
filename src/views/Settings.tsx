@@ -12,15 +12,13 @@ import startupSettingsT from '../util/startupSettings';
 
 import MainPage from './MainPage';
 
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 const startupSettings =
-  lazyRequire<typeof startupSettingsT>(() => require('./util/startupSettings'));
+  lazyRequire<typeof startupSettingsT>(() => require('../util/startupSettings'));
 
 interface ISettingsPage {
   title: string;
