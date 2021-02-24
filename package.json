@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "11.2.1"
+    "electron": "11.3.0"
   },
   "scripts": {
     "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
@@ -161,9 +161,9 @@
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
-    "electron": "^11.2.2",
+    "electron": "^11.3.0",
     "electron-builder": "20.15.0",
-    "electron-devtools-installer": "^3.1.1",
+    "electron-devtools-installer": "rwwagner90/electron-devtools-installer",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.8.8",
     "enzyme": "^3.10.0",
