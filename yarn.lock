@@ -9458,7 +9458,7 @@ node-abi@^2.11.0, node-abi@^2.19.2, node-abi@^2.7.0:
   dependencies:
     semver "^5.4.1"
 
-node-addon-api@*:
+node-addon-api@*, node-addon-api@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.1.0.tgz#98b21931557466c6729e51cb77cd39c965f42239"
   integrity sha512-flmrDNB06LIl5lywUz7YlNGZH/5p0M7W28k8hzd9Lshtdh1wshD2Y+U4h9LD6KObOy1f+fEVdgprPrEymjM5uw==
@@ -13667,8 +13667,12 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.3.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/cdc5ce0fdc9c5fceae72763c69490fbcf924a59c"
+  version "2.3.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3592564c54af8ab2e9f281d3e50b4c27ea0c5c58"
+  dependencies:
+    autogypi "^0.2.2"
+    node-addon-api "^3.1.0"
+    node-gyp "^6.0.0"
 
 winston-transport@^4.4.0:
   version "4.4.0"
