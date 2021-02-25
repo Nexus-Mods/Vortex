@@ -141,7 +141,7 @@ class DeploymentMethod extends LinkingDeployment {
       lastReport = report;
 
       if (report === 'not-supported') {
-        api.showErrorNotification('Symlinks are not supported',
+        api.showErrorNotification('Symlinks are not support',
           'It appears symbolic links aren\'t supported between your mod staging folder and game '
           + 'folder. On Windows, symbolic links only work on NTFS drives.', { allowReport: false });
       } else {
@@ -875,67 +875,67 @@ const localState: { symlinkRight: boolean } = makeReactive({
 });
 
 function giveSymlinkRight(enable: boolean) {
-  // const sid = winapi.GetUserSID();
+  const sid = winapi.GetUserSID();
 
-  // const ipcPath = `ipc_${shortid()}`;
+  const ipcPath = `ipc_${shortid()}`;
 
-  // log('info', 'switching symlink privilege', { sid, from: localState.symlinkRight, to: enable });
-  // localState.symlinkRight = enable;
+  log('info', 'switching symlink privilege', { sid, from: localState.symlinkRight, to: enable });
+  localState.symlinkRight = enable;
 
-  // const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
-  //   if (message === 'log') {
-  //     log(payload.level, payload.message, payload.meta);
-  //   } else if (message === 'quit') {
-  //     ipcServer.close(err => {
-  //       if (!!err) {
-  //         log('warn', 'failed to close ipc connection', err);
-  //       }
-  //     });
-  //     if (payload !== undefined) {
-  //       localState.symlinkRight = payload;
-  //     }
-  //   }
-  // });
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === 'log') {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === 'quit') {
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
+      if (payload !== undefined) {
+        localState.symlinkRight = payload;
+      }
+    }
+  });
 
-  // runElevated(ipcPath, (ipc, req) => {
-  //   const winapiRemote: typeof winapi = req('winapi-bindings');
-  //   ipc.sendMessage({
-  //     message: 'log', payload: {
-  //       level: 'info', message: `will ${enable ? 'enable' : 'disable'} privilege`,
-  //     },
-  //   });
+  runElevated(ipcPath, (ipc, req) => {
+    const winapiRemote: typeof winapi = req('winapi-bindings');
+    ipc.sendMessage({
+      message: 'log', payload: {
+        level: 'info', message: `will ${enable ? 'enable' : 'disable'} privilege`,
+      },
+    });
 
-  //   const func = enable
-  //     ? winapiRemote.AddUserPrivilege
-  //     : winapiRemote.RemoveUserPrivilege;
-  //   try {
-  //     func(sid, 'SeCreateSymbolicLinkPrivilege');
-  //     ipc.sendMessage({
-  //       message: 'log', payload: {
-  //         level: 'info', message: 'call successful',
-  //       },
-  //     });
-  //     const enabled = winapiRemote.GetUserPrivilege(sid).includes('SeCreateSymbolicLinkPrivilege');
-  //     ipc.sendMessage({
-  //       message: 'log', payload: {
-  //         level: 'info', message: 'verification', meta: { expected: enable, actual: enabled },
-  //       },
-  //     });
+    const func = enable
+      ? winapiRemote.AddUserPrivilege
+      : winapiRemote.RemoveUserPrivilege;
+    try {
+      func(sid, 'SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'call successful',
+        },
+      });
+      const enabled = winapiRemote.GetUserPrivilege(sid).includes('SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'verification', meta: { expected: enable, actual: enabled },
+        },
+      });
 
-  //     ipc.sendMessage({ message: 'quit', payload: enabled });
-  //   } catch (err) {
-  //     ipc.sendMessage({
-  //       message: 'log', payload: {
-  //         level: 'error', message: 'Failed to change privilege', meta: err,
-  //       },
-  //     });
+      ipc.sendMessage({ message: 'quit', payload: enabled });
+    } catch (err) {
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'error', message: 'Failed to change privilege', meta: err,
+        },
+      });
 
-  //     ipc.sendMessage({ message: 'quit' });
-  //   }
-  // }, { sid, enable })
-  // .catch(err => (err['nativeCode'] === 1223)
-  //     ? Promise.reject(new UserCanceled())
-  //     : Promise.reject(err));
+      ipc.sendMessage({ message: 'quit' });
+    }
+  }, { sid, enable })
+  .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
 }
 
 function init(context: IExtensionContextEx): boolean {
@@ -958,8 +958,8 @@ function init(context: IExtensionContextEx): boolean {
     method.initEvents(context.api);
 
     if (process.platform === 'win32') {
-      //const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
-      //localState.symlinkRight = privileges.includes('SeCreateSymbolicLinkPrivilege');
+      const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
+      localState.symlinkRight = privileges.includes('SeCreateSymbolicLinkPrivilege');
 
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
