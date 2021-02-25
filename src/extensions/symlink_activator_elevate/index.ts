@@ -141,7 +141,7 @@ class DeploymentMethod extends LinkingDeployment {
       lastReport = report;
 
       if (report === 'not-supported') {
-        api.showErrorNotification('Symlinks are not support',
+        api.showErrorNotification('Symlinks are not supported',
           'It appears symbolic links aren\'t supported between your mod staging folder and game '
           + 'folder. On Windows, symbolic links only work on NTFS drives.', { allowReport: false });
       } else {
