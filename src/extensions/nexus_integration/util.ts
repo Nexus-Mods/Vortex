@@ -77,15 +77,19 @@ function startDownloadCollection(api: IExtensionApi,
         message: 'Downloading Collection',
         displayMS: 40000,
       });
-      return toPromise<string>(cb => api.events.emit('start-download', [urlStr], {
+      return nexus.getCollectionDownloadLink(revision.downloadLink)
+    })
+    .then(downloadUrls => {
+      return toPromise<string>(cb => api.events.emit('start-download',
+        downloadUrls.map(iter => iter.URI), {
         game: gameId,
         source: 'nexus',
-        name: revision.collection?.name,
+        name: revisionInfo.collection?.name,
         nexus: {
           ids: { gameId: pageId, collectionId: url.collectionId, revisionId: url.revisionId },
           revisionInfo,
         },
-      }, (revision as any).file_name, cb))
+      }, (revisionInfo as any).file_name, cb))
       .catch(err => Promise.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId));

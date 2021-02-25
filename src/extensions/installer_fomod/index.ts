@@ -656,7 +656,7 @@ function init(context: IExtensionContext): boolean {
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
     try {
       const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
-        ? choicesIn.options
+        ? (choicesIn.options ?? {})
         : undefined;
 
       const result = await install(files, stopPatterns, pluginPath,

@@ -5,7 +5,7 @@ import { ProcessCanceled } from '../../../util/CustomErrors';
 import { IBrowserResult } from '../../browser/types';
 
 import { Dependency, IDependency, ILookupResultEx } from '../types/IDependency';
-import { IDownloadHint, IMod, IModRule } from '../types/IMod';
+import { IDownloadHint, IFileListItem, IMod, IModRule } from '../types/IMod';
 
 import {log} from '../../../util/log';
 import {activeGameId} from '../../../util/selectors';
@@ -205,6 +205,8 @@ function findDownloadByRef(reference: IReference, state: IState): string {
 interface IDependencyNode extends IDependency {
   dependencies: IDependencyNode[];
   redundant: boolean;
+  fileList?: IFileListItem[];
+  installerChoices?: any;
 }
 
 function gatherDependenciesGraph(
@@ -244,6 +246,8 @@ function gatherDependenciesGraph(
         dependencies: nodes.filter(node => node !== null),
         redundant: false,
         extra: rule.extra,
+        installerChoices: rule.installerChoices,
+        fileList: rule.fileList,
       };
       return res;
     })

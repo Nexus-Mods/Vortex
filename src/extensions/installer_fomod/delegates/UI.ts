@@ -71,11 +71,9 @@ class UI extends DelegateBase {
       this.api.store.dispatch(setDialogState(state));
       callback(null);
       if (this.mUnattended) {
-        setTimeout(() => {
-          if (this.mContinueCB !== undefined) {
-            this.mContinueCB('forward');
-          }
-        }, 1000);
+        if (this.mContinueCB !== undefined) {
+          this.mContinueCB({ direction: 'forward' });
+        }
       }
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed',

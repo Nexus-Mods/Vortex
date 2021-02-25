@@ -462,6 +462,10 @@ export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
           callback: (err: Error, response?: any) => void) => {
     fs.readFileAsync(assetFilePath)
       .then((data: Buffer) => sendCollection(nexus, collectionInfo, collectionId, data))
+      .then(response => (nexus as any).attachCollectionsToCategory(3, [response.collectionId])
+        .then(() => response))
+      .then(response => (nexus as any).publishRevision(response.revisionId)
+        .then(() => response))
       .then(response => callback(null, response))
       .catch(err => callback(err));
   };
