@@ -108,7 +108,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
 /**
  * validate a theme extension. A theme extension can contain multiple themes, one directory
  * per theme, each is expected to contain at least one of
- * "variables.scss", "styles.scss" or "fonts.scss"
+ * "variables.scss", "style.scss" or "fonts.scss"
  */
 function validateTheme(extPath: string): Promise<void> {
   return fs.readdirAsync(extPath)
@@ -124,7 +124,7 @@ function validateTheme(extPath: string): Promise<void> {
         fs.readdirAsync(path.join(extPath, dirName))
           .then(files => {
             if (!files.includes('variables.scss')
-                && !files.includes('styles.scss')
+                && !files.includes('style.scss')
                 && !files.includes('fonts.scss')) {
               return Promise.reject(
                 new DataInvalid('Theme not found'));
