@@ -138,32 +138,31 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
 async function genProfilesChange(api: types.IExtensionApi,
                                  oldState: IProfileState,
                                  newState: IProfileState) {
-  try {
-    const state = api.store.getState();
-    const profile = selectors.activeProfile(state);
-    if (profile?.gameId === undefined) {
-      // Profiles changed with no active profile.
-      //  Maybe it was changed by an extension ?
-      return;
-    }
+  const state = api.store.getState();
+  const profile = selectors.activeProfile(state);
+  if (profile?.gameId === undefined) {
+    // Profiles changed with no active profile.
+    //  Maybe it was changed by an extension ?
+    return;
+  }
 
-    const gameEntry = findGameEntry(profile.gameId);
-    if (gameEntry === undefined) {
-      // This game wasn't registered with the LO component. That's fine
-      //  probably just a game that doesn't need LO support.
-      return;
-    }
+  const gameEntry = findGameEntry(profile.gameId);
+  if (gameEntry === undefined) {
+    // This game wasn't registered with the LO component. That's fine
+    //  probably just a game that doesn't need LO support.
+    return;
+  }
 
-    if (newState[profile.id] === undefined) {
-      // Profile removed.
-      return;
-    }
+  if (newState[profile.id] === undefined) {
+    // Profile removed.
+    return;
+  }
 
   try {
     const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
     api.store.dispatch(setNewLoadOrder(profile.id, loadOrder));
   } catch (err) {
-    api.showErrorNotification('failed to react to profile change', err);
+    // nop - any errors would've been reported by applyNewLoadOrder.
   }
 }
 

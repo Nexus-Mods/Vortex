@@ -56,7 +56,7 @@ export function startDownload(api: IExtensionApi,
   }
 
   return (url.type === 'mod')
-    ? startDownloadMod(api, nexus, nxmurl, url, redownload)
+    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall)
     : startDownloadCollection(api, nexus, nxmurl, url);
 }
 
@@ -108,7 +108,9 @@ function startDownloadMod(api: IExtensionApi,
                           nexus: Nexus,
                           urlStr: string,
                           url: NXMUrl,
-                          redownload?: RedownloadMode): Promise<string> {
+                          redownload?: RedownloadMode,
+                          fileName?: string,
+                          allowInstall?: boolean): Promise<string> {
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);

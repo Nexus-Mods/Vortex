@@ -23,7 +23,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
       // still storing the download as successful even if we didn't manage to calculate its
       // hash
       api.store.dispatch(finishDownload(id, 'finished', undefined));
-      this.mApi.events.emit('did-finish-download', id, 'finished');
+      api.events.emit('did-finish-download', id, 'finished');
       const state = api.getState();
       if (state.settings.automation?.install && allowInstall) {
         api.events.emit('start-install-download', id);
