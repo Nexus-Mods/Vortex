@@ -45,7 +45,6 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
     })
     .finally(() => {
       client.end();
-      process.exit(0);
     });
   })
   .on('close', () => {

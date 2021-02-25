@@ -12,6 +12,7 @@ import { setModEnabled } from '../../actions';
 import { IDeploymentManifest } from '../../types/api';
 import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 import { getManifest } from '../mod_management/util/activationStore';
 import Workarounds from './Workarounds';
@@ -22,7 +23,9 @@ const ONE_HOUR = 60 * 60 * 1000;
 
 function createBackup(api: IExtensionApi, name: string): Bluebird<string> {
   return createFullStateBackup(name, api.store)
-    .catch(() => api.sendNotification({
+    .catch(err => {
+      log('error', 'failed to create state backup', { error: err.message });
+      return api.sendNotification({
         type: 'error',
         message: 'Failed to create state backup.',
         actions: [
@@ -41,7 +44,8 @@ function createBackup(api: IExtensionApi, name: string): Bluebird<string> {
             },
           },
         ],
-      }));
+      });
+    });
 }
 
 async function resetToManifest(api: IExtensionApi) {

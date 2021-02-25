@@ -52,6 +52,7 @@ import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
 
+import { STUCK_TIMEOUT } from './constants';
 import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
@@ -91,7 +92,7 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
                         direction: 'import' | 'export'): Promise<void> {
   log('debug', 'refresh profile', profile);
-  if (profile === undefined) {
+  if (profile === undefined || profile?.pendingRemove === true) {
     return Promise.resolve();
   }
   if ((profile.gameId === undefined) || (profile.id === undefined)) {
@@ -120,6 +121,11 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         }
       })
       .catch((err: Error) => {
+        // why are we catching here at all? shouldn't a failure here cancel the
+        // entire operation?
+        if (err instanceof UserCanceled) {
+          return Promise.reject(err);
+        }
         showError(store.dispatch, 'Failed to set profile', err);
       })
       ;
@@ -196,8 +202,25 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     return Promise.resolve();
   }
 
+  const gameDiscovery =
+    getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
+  if (gameDiscovery?.path === undefined) {
+    // can't deploy a game that hasn't been discovered
+    return Promise.resolve();
+  }
+
+  let lastProgress: number = Date.now();
+
+  const watchdog = setInterval(() => {
+    if ((Date.now() - lastProgress) > STUCK_TIMEOUT) {
+      api.store.dispatch(setProgress('profile', 'deploying',
+                  api.translate('Stuck? Please check your vortex.log file.'), 0));
+    }
+  }, 1000);
+
   return new Promise((resolve, reject) => {
     api.events.emit('deploy-mods', onceCB((err: Error) => {
+        clearInterval(watchdog);
         if (err === null) {
           resolve();
         } else {
@@ -205,6 +228,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
         }
       }), profileId,
       (text: string, percent: number) => {
+        lastProgress = Date.now();
         api.store.dispatch(
           setProgress('profile', 'deploying', text, percent));
       });
@@ -282,7 +306,7 @@ function genOnProfileChange(api: IExtensionApi,
         }
 
         const discovery = state.settings.gameMode.discovered[profile.gameId];
-        if ((discovery === undefined) || (discovery.path === undefined)) {
+        if ((discovery?.path === undefined)) {
           showError(store.dispatch,
             'Game is no longer discoverable, please go to the games page and scan for, or '
           + 'manually select the game folder.',
@@ -371,6 +395,7 @@ function genOnProfileChange(api: IExtensionApi,
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
       })
+      .catch(UserCanceled, () => null)
       .catch(err => {
         showError(store.dispatch, 'Failed to set profile', err);
       });
@@ -495,10 +520,15 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
   const { profiles } = state.persistent;
   log('info', 'user removing profile', { id: profileId });
 
+  if (profiles[profileId] === undefined) {
+    // nothing to do
+    return Promise.resolve();
+  }
+
   const currentProfile = activeProfile(state);
 
   store.dispatch(willRemoveProfile(profileId));
-  if (profileId === currentProfile.id) {
+  if (profileId === currentProfile?.id) {
     store.dispatch(setNextProfile(undefined));
   }
 
@@ -525,7 +555,7 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<v
   });
 }
 
-function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
+function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Promise<void> {
   const state = api.getState();
   const game = getGame(gameId);
 
@@ -549,7 +579,7 @@ function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
           + 'you\'re sure this is what you want![/color]',
     message,
     parameters: {
-      gameName: game.name,
+      gameName: game?.name ?? gameName ?? api.translate('<Missing game>'),
     },
   }, [
     { label: 'Cancel' },
@@ -557,10 +587,12 @@ function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
   ])
   .then(result => {
     if (result.action === 'Delete profiles') {
-      return Promise.map(Object.keys(mods[gameId] ?? {}), modId => removeMod(api, gameId, modId))
-        .then(() => purgeMods(api, gameId))
+      return purgeMods(api, gameId)
+        .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
+          modId => removeMod(api, gameId, modId)))
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
         .then(() => Promise.resolve())
+        .catch(UserCanceled, () => Promise.resolve())
         .catch(NoDeployment, () => {
           api.showDialog('error', 'Failed to purge', {
             text: 'Failed to purge mods deployed for this game. To ensure there are no '
@@ -696,6 +728,9 @@ function init(context: IExtensionContext): boolean {
     // is complete
     let finishProfileSwitch: () => void;
 
+    context.api.ext['unmanageGame'] = (gameId: string, gameName?: string) =>
+      unmanageGame(context.api, gameId, gameName);
+
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
         genOnProfileChange(context.api, (callback: () => void) => finishProfileSwitch = callback));
@@ -754,23 +789,6 @@ function init(context: IExtensionContext): boolean {
         }
       });
 
-    const initProfile = activeProfile(store.getState());
-    refreshProfile(store, initProfile, 'import')
-        .then(() => {
-          if (initProfile !== undefined) {
-            context.api.events.emit('profile-did-change', initProfile.id);
-          }
-          return null;
-        })
-        .catch((err: Error) => {
-          showError(store.dispatch, 'Failed to set profile', err);
-          store.dispatch(setCurrentProfile(undefined, undefined));
-          store.dispatch(setNextProfile(undefined));
-          if (finishProfileSwitch !== undefined) {
-            finishProfileSwitch();
-          }
-        });
-
     context.api.onStateChange(
         ['persistent', 'profiles'], (prev: string, current: string) => {
           Object.keys(current).forEach(profileId => {
@@ -798,6 +816,26 @@ function init(context: IExtensionContext): boolean {
         });
     {
       const state: IState = store.getState();
+
+      const initProfile = activeProfile(state);
+      refreshProfile(store, initProfile, 'import')
+          .then(() => {
+            if (initProfile !== undefined) {
+              context.api.events.emit('profile-did-change', initProfile.id);
+            }
+            return null;
+          })
+          .catch((err: Error) => {
+            if (!(err instanceof UserCanceled)) {
+              showError(store.dispatch, 'Failed to set profile', err);
+            }
+            store.dispatch(setCurrentProfile(undefined, undefined));
+            store.dispatch(setNextProfile(undefined));
+            if (finishProfileSwitch !== undefined) {
+              finishProfileSwitch();
+            }
+          });
+
       const { activeProfileId, nextProfileId } = state.settings.profiles;
       if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');

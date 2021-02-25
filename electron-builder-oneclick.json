@@ -26,7 +26,8 @@
       }
     ],
     "forceCodeSigning": true,
-    "rfc3161TimeStampServer": "http://rfc3161timestamp.globalsign.com/advanced",
+    "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
+    "timeStampServer": "http://timestamp.comodoca.com",
     "publisherName": "Black Tree Gaming Limited",
     "extraFiles": [
       {
@@ -90,6 +91,7 @@
     "!**/node_modules/d3-geo/img",
     "!**/node_modules/*/prebuilds/linux-*",
     "!**/node_modules/*/prebuilds/darwin-*",
+    "!**/node_modules/*/prebuilds/android-*",
     "!**/node_modules/*/prebuilds/*-ia32",
     "!**/node_modules/fomod-installer/Build",
     "!**/node_modules/fomod-installer/lib",

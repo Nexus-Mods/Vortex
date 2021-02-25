@@ -438,8 +438,7 @@ function genUpdateModDeployment() {
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
     if ((game === undefined)
-        || (gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)) {
+        || (gameDiscovery?.path === undefined)) {
       const err = new Error('Game no longer available');
       err['attachLogOnReport'] = true;
       return Promise.reject(err);
@@ -605,6 +604,11 @@ function genUpdateModDeployment() {
               ErrorCode: err.errno,
             });
           }
+          // Error codes that we can't debug without a log.
+          const attachLogErrCodes: string[] = ['ELOOP'];
+          if (attachLogErrCodes.includes(err.code)) {
+            err['attachLogOnReport'] = true;
+          }
           return api.showErrorNotification('Failed to deploy mods', err, {
             allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
           });
@@ -760,6 +764,8 @@ function upgradeExtractor(input: any) {
     customFileName: getSafe(input.previous, ['customFileName'], undefined),
     variant: getSafe(input.previous, ['variant'], undefined),
     notes: getSafe(input.previous, ['notes'], undefined),
+    icon: getSafe(input.previous, ['icon'], undefined),
+    color: getSafe(input.previous, ['color'], undefined),
   });
 }
 

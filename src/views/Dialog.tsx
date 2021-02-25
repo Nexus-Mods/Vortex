@@ -179,8 +179,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderContent(content: IDialogContent): JSX.Element {
     let { t } = this.props;
-    if (content.options && content.options.translated) {
-      t = (input: any) => input;
+    if (content.options?.translated) {
+      // bit of a hack, setting lngs to empty list so that no translation happens,
+      // but we still make use of the i18next interpolator
+      t = (input: string, options) => this.props.t(input, { ...options, lngs: [] });
     }
 
     const controls: JSX.Element[] = [];
@@ -284,7 +286,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.input !== undefined) {
       controls.push((
-      <div key='dialog-form-content'>
+      <div key='dialog-form-content' className='dialog-content-input'>
         {content.input.map(this.renderInput)}
       </div>
       ));
@@ -340,24 +342,29 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         ? (valRes.length !== 0) ? 'error' : 'success'
         : null;
 
+    let effectiveType = input.type || 'text';
+    if (input.type === 'multiline') {
+      effectiveType = 'text';
+    }
+
     return (
       <FormGroup key={input.id} validationState={validationState}>
-        {input.label ? (
-          <ControlLabel>{t(input.label)}</ControlLabel>
-        ) : null}
-        <FormControl
-          id={`dialoginput-${input.id}`}
-          componentClass={input.type === 'textarea' ? 'textarea' : 'input'}
-          type={input.type || 'text'}
-          value={input.value || ''}
-          label={input.label}
-          placeholder={input.placeholder}
-          onChange={this.changeInput}
-          ref={idx === 0 ? this.focusMe : undefined}
-        />
-        {((valRes !== undefined) && (valRes.length !== 0))
-          ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
-          : null}
+      { input.label ? (
+        <ControlLabel>{t(input.label)}</ControlLabel>
+      ) : null }
+      <FormControl
+        id={`dialoginput-${input.id}`}
+        componentClass={(input.type === 'multiline') ? 'textarea' : undefined}
+        type={effectiveType}
+        value={input.value || ''}
+        label={input.label}
+        placeholder={input.placeholder}
+        onChange={this.changeInput}
+        ref={idx === 0 ? this.focusMe : undefined}
+      />
+      {((valRes !== undefined) && (valRes.length !== 0))
+        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
+        : null}
       </FormGroup>
     );
   }

@@ -22,7 +22,8 @@ if ((process as any).type === 'renderer') {
   const { ipcRenderer } = require('electron');
   IPCTransport.prototype.log =
     (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
-      ipcRenderer.send('log-message', level, message, meta);
+      ipcRenderer.send('log-message', level, message,
+                       meta !== undefined ? JSON.stringify(meta) : undefined);
       callback(null);
   };
 
@@ -48,8 +49,16 @@ if ((process as any).type === 'renderer') {
   const { ipcMain } = require('electron');
   if (ipcMain !== undefined) {
     ipcMain.on('log-message',
-      (event, level: LogLevel, message: string, metadata?: any[]) =>
-        logger.log(level, message, metadata));
+      (event, level: LogLevel, message: string, metadataSer?: string) => {
+        try {
+          const metadata = (metadataSer !== undefined)
+            ? JSON.parse(metadataSer)
+            : undefined;
+          logger.log(level, message, metadata);
+        } catch (e) {
+          // failed to log, what am I supposed to do now?
+        }
+      });
   } // otherwise we're not in electron
 }
 

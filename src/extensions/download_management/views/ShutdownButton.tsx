@@ -15,7 +15,7 @@ function ShutdownButton(props: IShutdownButtonProps) {
   return (
     <ToolbarIcon
       icon='onoff'
-      text={t('Power off when finished')}
+      text={t('Power off when done')}
       className={shutdownPending ? 'toolbar-flash-button' : undefined}
       disabled={!shutdownPending && (Object.keys(activeDownloads ?? {}).length === 0)}
       onClick={toggleShutdown}

@@ -11,6 +11,7 @@ import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IRunningTool, IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
+import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -24,7 +25,7 @@ import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { TFunction } from '../util/i18n';
+import { pathToFileURL } from 'url';
 
 export interface IBaseProps {
   t: TFunction;
@@ -168,7 +169,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const discovered = discoveredGames[gameId];
 
     const iconPath = (gameIconCache[gameId].icon !== undefined)
-      ? gameIconCache[gameId].icon.replace(/\\/g, '/').replace(/'/, '%27')
+      ? pathToFileURL(gameIconCache[gameId].icon).href
       : undefined;
     const game = gameIconCache[gameId].game;
 

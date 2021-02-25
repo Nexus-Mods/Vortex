@@ -148,10 +148,21 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
       return fs.statAsync(path.join(currentDownloadPath, DOWNLOADS_DIR_TAG));
     })
     .catch(err => {
-
       if (!dirExists
           && (Object.keys(state.persistent.downloads.files ?? {}).length === 0)) {
-        return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve());
+        return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
+          .catch({ code: 'ENOENT' }, () => {
+            // user has no downloads yet so no point asking them for the location but
+            // the current one is invalid so we reset
+            api.store.dispatch(setDownloadPath(''));
+            currentDownloadPath = getDownloadPath(api.getState().settings.downloads.path);
+            return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
+              .then(() => ensureDownloadsDirectory(api))
+              .then(() => api.sendNotification({
+                type: 'info',
+                message: 'Your download directory was misconfigured and got reset.',
+              }));
+          });
       }
 
       return queryDownloadFolderInvalid(api, err, dirExists, currentDownloadPath)

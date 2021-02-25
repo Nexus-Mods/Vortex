@@ -6,7 +6,7 @@ import { IGameStore } from '../../types/IGameStore';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
@@ -14,6 +14,7 @@ import { activeProfile, discoveryByGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setPrimaryTool } from '../starter_dashlet/actions';
 
 import {
@@ -33,6 +34,11 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 
+export interface IGameStub {
+  ext: IExtensionDownloadInfo;
+  game: IGame;
+}
+
 /**
  * discovers game modes
  *
@@ -41,15 +47,18 @@ import * as Redux from 'redux';
 class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
+  private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: Promise<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
+              gameStubs: IGameStub[],
               gameStoreExtensions: IGameStore[],
               onGameModeActivated: (mode: string) => void) {
     this.mStore = null;
     this.mKnownGames = extensionGames;
+    this.mGameStubs = gameStubs;
     this.mKnownGameStores = gameStoreExtensions;
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
@@ -85,9 +94,7 @@ class GameModeManager {
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const gameDiscovery = discoveredGames[newMode];
-    if ((game === undefined)
-        || (gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)) {
+    if ((game === undefined) || (gameDiscovery?.path === undefined)) {
       // new game mode is not valid
       return Promise.reject(new ProcessCanceled('game mode not found'));
     }
@@ -131,8 +138,8 @@ class GameModeManager {
         }
       })
       .catch(err => {
-        return (['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1)
-        ? Promise.reject(new ProcessCanceled('Missing: ' + (err.filename || modPath)))
+        return ['ENOENT', 'ENOTFOUND'].includes(err.code)
+        ? Promise.reject(new SetupError('Missing: ' + (err.filename || modPath)))
         : Promise.reject(err);
       });
   }
@@ -170,6 +177,10 @@ class GameModeManager {
 
   public get games(): IGame[] {
     return this.mKnownGames;
+  }
+
+  public get stubs(): IGameStub[] {
+    return this.mGameStubs;
   }
 
   public get gameStores(): IGameStore[] {

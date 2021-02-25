@@ -102,6 +102,7 @@ interface IRunningDownload {
   headers?: any;
   assembler?: FileAssembler;
   chunks: IDownloadJob[];
+  chunkable: boolean;
   promises: Array<Promise<any>>;
   progressCB?: ProgressCallback;
   finishCB: (res: IDownloadResult) => void;
@@ -363,7 +364,7 @@ class DownloadWorker {
 
   private handleComplete() {
     if (this.mEnded) {
-      log('debug', 'chunk completed but can\'t write it anymore');
+      log('debug', 'chunk completed but can\'t write it anymore', JSON.stringify(this.mJob));
       return;
     }
     clearTimeout(this.mStallTimer);
@@ -434,26 +435,28 @@ class DownloadWorker {
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
-      let size: number = response.headers['content-length'] !== undefined
+      const chunkSize: number = (response.headers['content-length'] !== undefined)
         ? parseInt(response.headers['content-length'] as string, 10)
         : -1;
 
+      let fileSize = chunkSize;
       if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
         if (sizeMatch.length > 1) {
-          size = parseInt(sizeMatch[3], 10);
+          fileSize = parseInt(sizeMatch[3], 10);
         }
       } else {
         log('debug', 'download doesn\'t support partial requests');
+        // download can't be resumed so the returned data will start at 0
         this.mJob.offset = 0;
       }
-      if (size < this.mJob.size + this.mJob.offset) {
+      if (chunkSize !== this.mJob.size) {
         // on the first request it's possible we requested more than the file size if
-        // the file is smaller than the minimum size for chunking. offset should always be 0 here
-        this.mJob.size = (size !== -1)
-          ? size - this.mJob.offset
-          : - 1;
+        // the file is smaller than the minimum size for chunking or - if the file isn't chunkable -
+        // the request may be larger than what we requested initially.
+        // offset should always be 0 here
+        this.mJob.confirmedSize = this.mJob.size = chunkSize;
       }
 
       let fileName;
@@ -479,7 +482,7 @@ class DownloadWorker {
             'content-disposition': cd, message: err.message });
         }
       }
-      this.mJob.responseCB(size, fileName, chunkable);
+      this.mJob.responseCB(fileSize, fileName, chunkable);
     }
   }
 
@@ -520,7 +523,7 @@ class DownloadWorker {
   }
 
   private handleData(data: Buffer) {
-    if (this.mEnded) {
+    if (this.mEnded || ['paused', 'finished'].includes(this.mJob.state)) {
       log('debug', 'got data after ended',
           { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
       this.mRequest.abort();
@@ -657,6 +660,8 @@ class DownloadManager {
             id,
             origName: nameTemplate,
             tempName: filePath,
+            finalName: (fileName !== undefined)
+              ? Promise.resolve(path.join(destPath, fileName)) : undefined,
             error: false,
             urls,
             resolvedUrls: this.resolveUrls(urls, nameTemplate),
@@ -665,6 +670,7 @@ class DownloadManager {
             lastProgressSent: 0,
             received: 0,
             chunks: [],
+            chunkable: undefined,
             progressCB,
             finishCB: resolve,
             failedCB: (err) => {
@@ -675,7 +681,8 @@ class DownloadManager {
           download.chunks.push(this.initChunk(download));
           this.mQueue.push(download);
           progressCB(0, undefined,
-                     download.chunks.map(this.toStoredChunk), undefined, filePath);
+                     download.chunks.map(this.toStoredChunk), download.chunkable,
+                     undefined, filePath);
           this.tickQueue();
         }))
       .finally(() => (download !== undefined) && (download.assembler !== undefined)
@@ -708,6 +715,7 @@ class DownloadManager {
         size,
         started: new Date(started),
         chunks: [],
+        chunkable: undefined,
         progressCB,
         finishCB: resolve,
         failedCB: (err) => {
@@ -729,7 +737,9 @@ class DownloadManager {
   }
 
   /**
-   * cancel a download. This stops the download but doesn't remove the file
+   * cancels a download. This stops the download but doesn't remove the file
+   * This call does not wait for the download to actually be stopped, it merely
+   * sends the signal to stop it
    *
    * @param {string} id
    *
@@ -878,7 +888,7 @@ class DownloadManager {
       size: this.mMinChunkSize,
       options: download.options,
       errorCB: (err) => { this.cancelDownload(download, err); },
-      responseCB: (size: number, fileName: string, chunkable) =>
+      responseCB: (size: number, fileName: string, chunkable: boolean) =>
         this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
     };
   }
@@ -963,7 +973,7 @@ class DownloadManager {
       download.assembler = assembler;
 
       log('debug', 'start download worker',
-        { name: download.tempName, workerId: job.workerId, size: job.size });
+        { name: download.tempName, workerId: job.workerId, size: job.size, offset: job.offset });
 
       this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
         (pause) => this.finishChunk(download, job, pause),
@@ -997,6 +1007,7 @@ class DownloadManager {
               synced
                 ? download.chunks.map(this.toStoredChunk)
                 : undefined,
+              download.chunkable,
               urls,
               download.tempName);
           return Promise.resolve(synced);
@@ -1015,16 +1026,22 @@ class DownloadManager {
     };
   }
 
-  private updateDownloadSize(download: IRunningDownload, size: number) {
+  private updateDownloadSize(download: IRunningDownload, size: number, chunkable: boolean) {
     if (download.size !== size) {
       download.size = size;
       download.assembler.setTotalSize(size);
     }
-  }
+    if (chunkable || (download.chunkable === null) || (download.chunkable === undefined)) {
+      download.chunkable = chunkable;
+    }
 
-  private updateDownload(download: IRunningDownload, size: number,
+}
+
+  private updateDownload(download: IRunningDownload, fileSize: number,
                          fileName: string, chunkable: boolean) {
-    if ((fileName !== undefined) && (fileName !== download.origName)) {
+    if ((fileName !== undefined)
+        && (fileName !== download.origName)
+        && (download.finalName === undefined)) {
       const newName = this.unusedName(
         path.dirname(download.tempName), fileName, download.options.redownload);
       download.finalName = newName;
@@ -1052,20 +1069,24 @@ class DownloadManager {
       });
     }
 
-    if (download.size !== size) {
-      download.size = size;
-      download.assembler.setTotalSize(size);
+    if (chunkable || (download.chunkable === null) || (download.chunkable === undefined)) {
+      download.chunkable = chunkable;
+    }
+
+    if (download.size !== fileSize) {
+      download.size = fileSize;
+      download.assembler.setTotalSize(fileSize);
     }
 
     if (download.chunks.length > 1) {
       return;
     }
 
-    if ((size > this.mMinChunkSize) && chunkable) {
+    if ((fileSize > this.mMinChunkSize) && chunkable) {
       // download the file in chunks. We use a fixed number of variable size chunks.
       // Since the download link may expire we need to start all threads asap
 
-      const remainingSize = size - this.mMinChunkSize;
+      const remainingSize = fileSize - this.mMinChunkSize;
 
       const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
 
@@ -1073,8 +1094,8 @@ class DownloadManager {
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
       let offset = this.mMinChunkSize + 1;
-      while (offset < size) {
-        const minSize = Math.min(chunkSize, size - offset);
+      while (offset < fileSize) {
+        const minSize = Math.min(chunkSize, fileSize - offset);
         download.chunks.push({
           confirmedReceived: 0,
           confirmedOffset: offset,
@@ -1089,11 +1110,11 @@ class DownloadManager {
         offset += chunkSize;
       }
       log('debug', 'downloading file in chunks',
-        { size: chunkSize, count: download.chunks.length, max: maxChunks, total: size });
+        { size: chunkSize, count: download.chunks.length, max: maxChunks, total: fileSize });
       this.tickQueue();
     } else {
       log('debug', 'download not chunked (no server support or it\'s too small)',
-        { name: download.finalName, size });
+        { name: download.finalName, size: fileSize });
     }
   }
 
@@ -1127,7 +1148,8 @@ class DownloadManager {
       responseCB: first
         ? (size: number, fileName: string, chunkable: boolean) =>
             this.updateDownload(download, size, fileName || fileNameFromURL, chunkable)
-        : (size: number) => this.updateDownloadSize(download, size),
+        : (size: number, fileName: string, chunkable: boolean) =>
+            this.updateDownloadSize(download, size, chunkable),
     };
     if (download.size === undefined) {
       // if the size isn't known yet, use the first job response to update it
@@ -1151,9 +1173,9 @@ class DownloadManager {
       download.error = true;
     }
 
-    const activeChunks = download.chunks.find(
-      (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
-    if (activeChunks === undefined) {
+    const activeChunk = download.chunks.find(
+      (chunk: IDownloadJob) => !['paused', 'finished'].includes(chunk.state));
+    if (activeChunk === undefined) {
       let finalPath = download.tempName;
       download.assembler.close()
         .then(() => {
@@ -1162,8 +1184,16 @@ class DownloadManager {
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
               log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
-              download.progressCB(download.size, download.size, undefined, undefined, resolvedPath);
-              return fs.renameAsync(download.tempName, resolvedPath);
+              const received = download.chunks.filter(chunk => chunk.state === 'paused')
+                ? download.received
+                : download.size;
+              download.progressCB(received, download.size, undefined,
+                                  undefined, undefined, resolvedPath);
+              if (download.tempName !== resolvedPath) {
+                return fs.renameAsync(download.tempName, resolvedPath);
+              } else {
+                return Promise.resolve();
+              }
             });
           } else if ((download.headers !== undefined)
                      && (download.headers['content-type'] !== undefined)

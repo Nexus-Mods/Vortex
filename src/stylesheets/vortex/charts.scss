@@ -32,8 +32,21 @@
   padding-left: 15px;
 }
 
+.download-chart .recharts-reference-line {
+  line {
+    stroke: $brand-danger;
+  }
+  text {
+    fill: $link-color;
+    &:hover {
+      fill: $link-hover-color;
+    }
+  }
+}
+
 .dashlet-download .recharts-sector {
   fill: $brand-success;
+  cursor: pointer;
 }
 
 .graph-gradient-start {

@@ -7,6 +7,7 @@ import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
+import makeReactive from '../../util/makeReactive';
 import { activeGameId, gameName } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
@@ -140,7 +141,7 @@ class DeploymentMethod extends LinkingDeployment {
       lastReport = report;
 
       if (report === 'not-supported') {
-        api.showErrorNotification('Symlinks not support',
+        api.showErrorNotification('Symlinks are not support',
           'It appears symbolic links aren\'t supported between your mod staging folder and game '
           + 'folder. On Windows, symbolic links only work on NTFS drives.', { allowReport: false });
       } else {
@@ -322,12 +323,13 @@ class DeploymentMethod extends LinkingDeployment {
     return new Promise((resolve,  reject) => {
       this.mIPCServer.close((err?: Error) => {
         // note: err may be undefined instead of null
-        if (!!err && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
-          return reject(err);
-        } else {
-          this.mIPCServer = undefined;
-          return resolve();
+        if (!!err) {
+          // afaik the server having already been closed is the only situation that would
+          // trigger an error here
+          log('warn', 'failed to close ipc connection', err);
         }
+        this.mIPCServer = undefined;
+        return resolve();
       });
     });
   }
@@ -397,7 +399,7 @@ class DeploymentMethod extends LinkingDeployment {
     // can't use dynamic id for the task
     const ipcPath: string = useTask
       ? IPC_ID
-      : `${IPC_ID}vortex_elevate_symlink_${shortid()}`;
+      : `${IPC_ID}_${shortid()}`;
 
     return new Promise<void>((resolve, reject) => {
       let elevating = false;
@@ -413,7 +415,8 @@ class DeploymentMethod extends LinkingDeployment {
       this.mIPCServer = startIPCServer(ipcPath,
                                        (conn: JsonSocket, message: string, payload: any) => {
         if (message === 'initialised') {
-          log('debug', 'ipc connected');
+          const { pid } = payload;
+          log('debug', 'ipc connected', { pid });
           this.mElevatedClient = conn;
           this.api.store.dispatch(clearUIBlocker('elevating'));
           elevating = false;
@@ -513,11 +516,11 @@ class DeploymentMethod extends LinkingDeployment {
         //  for ERROR_CANCELLED, which in this case is raised if the user
         //  selects to deny elevation when prompted.
         //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
-        .catch(err => (err.code === 5)
-          || ((process.platform === 'win32') && (err.errno === 1223))
-            ? reject(new UserCanceled())
-            : reject(err))
-        .catch(reject);
+        .catch({ code: 5 }, () => reject(new UserCanceled()))
+        .catch({ systemCode: 1223 }, () => reject(new UserCanceled()))
+        // Just in case this is still used somewhere - doesn't look like it though.
+        .catch({ errno: 1223 }, () => reject(new UserCanceled()))
+        .catch(err => reject(err));
     });
   }
 
@@ -672,7 +675,11 @@ function installTask(scriptPath: string) {
     if (message === 'log') {
       log(payload.level, payload.message, payload.meta);
     } else if (message === 'quit') {
-      ipcServer.close();
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
     }
   });
 
@@ -777,7 +784,11 @@ function removeTask(): Promise<void> {
     if (message === 'log') {
       log(payload.level, payload.message, payload.meta);
     } else if (message === 'quit') {
-      ipcServer.close();
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
     }
   });
 
@@ -808,7 +819,9 @@ function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> 
           title: 'Clean up', action: dismiss => {
             removeTask()
               .catch(err => {
-                api.showErrorNotification('Failed to disable task', err);
+                api.showErrorNotification('Failed to disable task', err, {
+                  allowReport: !(err instanceof UserCanceled),
+                });
               });
             dismiss();
           },
@@ -857,6 +870,74 @@ function migrate(api: IExtensionApi, oldVersion: string) {
   return Promise.resolve();
 }
 
+const localState: { symlinkRight: boolean } = makeReactive({
+  symlinkRight: false,
+});
+
+function giveSymlinkRight(enable: boolean) {
+  const sid = winapi.GetUserSID();
+
+  const ipcPath = `ipc_${shortid()}`;
+
+  log('info', 'switching symlink privilege', { sid, from: localState.symlinkRight, to: enable });
+  localState.symlinkRight = enable;
+
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === 'log') {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === 'quit') {
+      ipcServer.close(err => {
+        if (!!err) {
+          log('warn', 'failed to close ipc connection', err);
+        }
+      });
+      if (payload !== undefined) {
+        localState.symlinkRight = payload;
+      }
+    }
+  });
+
+  runElevated(ipcPath, (ipc, req) => {
+    const winapiRemote: typeof winapi = req('winapi-bindings');
+    ipc.sendMessage({
+      message: 'log', payload: {
+        level: 'info', message: `will ${enable ? 'enable' : 'disable'} privilege`,
+      },
+    });
+
+    const func = enable
+      ? winapiRemote.AddUserPrivilege
+      : winapiRemote.RemoveUserPrivilege;
+    try {
+      func(sid, 'SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'call successful',
+        },
+      });
+      const enabled = winapiRemote.GetUserPrivilege(sid).includes('SeCreateSymbolicLinkPrivilege');
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'info', message: 'verification', meta: { expected: enable, actual: enabled },
+        },
+      });
+
+      ipc.sendMessage({ message: 'quit', payload: enabled });
+    } catch (err) {
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'error', message: 'Failed to change privilege', meta: err,
+        },
+      });
+
+      ipc.sendMessage({ message: 'quit' });
+    }
+  }, { sid, enable })
+  .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
+}
+
 function init(context: IExtensionContextEx): boolean {
   const method = new DeploymentMethod(context.api);
   context.registerDeploymentMethod(method);
@@ -866,6 +947,8 @@ function init(context: IExtensionContextEx): boolean {
   if (process.platform === 'win32') {
     context.registerSettings('Workarounds', Settings, () => ({
       supported: tasksSupported(),
+      localState,
+      onSymlinksPrivilege: (enable: boolean) => giveSymlinkRight(enable),
     }));
   }
 
@@ -875,6 +958,9 @@ function init(context: IExtensionContextEx): boolean {
     method.initEvents(context.api);
 
     if (process.platform === 'win32') {
+      const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
+      localState.symlinkRight = privileges.includes('SeCreateSymbolicLinkPrivilege');
+
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
         ensureTask(context.api, current, false);

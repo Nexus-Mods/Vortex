@@ -22,11 +22,20 @@ export const downloadProgress = safeCreateAction('DOWNLOAD_PROGRESS',
   (id: string, received: number, total: number, chunks: IChunk[], urls: string[]) =>
     ({ id, received, total, chunks, urls }));
 
+export const finalizingProgress = safeCreateAction('FINALIZING_PROGRESS',
+  (id: string, progress: number) => ({ id, progress }));
+
 /**
  * set/change the file path
  */
 export const setDownloadFilePath = safeCreateAction('SET_DOWNLOAD_FILEPATH',
   (id: string, filePath: string) => ({ id, filePath }));
+
+/**
+ * mark the download as pausable or not
+ */
+export const setDownloadPausable = safeCreateAction('SET_DOWNLOAD_PAUSABLE',
+  (id: string, pausable: boolean) => ({ id, pausable }));
 
 /**
  * mark download as started

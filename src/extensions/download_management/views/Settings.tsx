@@ -43,6 +43,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships`;
+const MB = 1024 * 1024;
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -116,9 +117,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <FormGroup validationState={validationState.state}>
           <div id='download-path-form'>
             <ControlLabel>
-              {t('Download Folder')}
-              <More id='more-paths' name={t('Paths')} >
-                {getTextMod('paths', t)}
+              {t('Downloads Folder')}
+              <More id='more-paths' name={t('Downloads Folder')} >
+                {getTextMod('downloadspath', t)}
               </More>
             </ControlLabel>
             <FlexLayout type='row'>
@@ -206,18 +207,18 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             }
           </div>
         </FormGroup>
-        <FormGroup>
+        <FormGroup id='download-bandwidth-limit'>
           <ControlLabel>
             {t('Limit Bandwidth')}
           </ControlLabel>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <FormInput
-              value={maxBandwidth > 0 ? (maxBandwidth / 1024).toString() : undefined}
+              value={maxBandwidth > 0 ? (maxBandwidth / MB).toString() : ''}
               placeholder={t('Unlimited')}
               onChange={this.changeMaxBandwidth}
               type='number'
             />
-            KB/s
+            MB/s
           </div>
         </FormGroup>
         <FormGroup>
@@ -236,7 +237,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (input.length === 0) {
       this.props.onSetMaxBandwidth(0);
     } else {
-      this.props.onSetMaxBandwidth(parseInt(input, 10) * 1024);
+      this.props.onSetMaxBandwidth(parseFloat(input) * MB);
     }
   }
 

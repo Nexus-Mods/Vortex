@@ -28,8 +28,9 @@ interface IBaseState {
 
 export interface IBaseProps {
   getGameEntry: (gameId: string) => ILoadOrderGameInfo;
-  applyLoadOrder: (profile: types.IProfile, prev: LoadOrder, newLO: LoadOrder) => Promise<void>;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
+  onShowError: (gameId: string, error: Error) => void;
+  validateLoadOrder: (profile: types.IProfile, newLO: LoadOrder) => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -112,7 +113,14 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         }
       })
       .catch(err => {
+        // The deserialized loadorder failed validation; although invalid
+        //  we still want to give the user the ability to modify the LO
+        //  to a valid state through the UI rather than force him to do
+        //  so manually, which is why we're updating the loadorder state.
+        //  Fortunately the lo will fail validation when serialized unless
+        //  a valid LO is provided.
         this.nextState.validationError = err as LoadOrderValidationError;
+        onSetOrder(profile.id, (err as LoadOrderValidationError).loadOrder);
       })
       .finally(() => this.nextState.loading = false);
   }
@@ -130,6 +138,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           const rendOps: IItemRendererProps = {
             loEntry,
             displayCheckboxes: gameEntry.toggleableEntries || false,
+            invalidEntries: validationError?.validationResult?.invalid,
           };
           accum.push(rendOps);
           return accum;
@@ -164,7 +173,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       <MainPage>
         <MainPage.Header>
           <IconBar
-            group='generic-load-order-icons'
+            group='fb-load-order-icons'
             staticElements={this.mStaticButtons}
             className='menubar'
             t={t}
@@ -209,14 +218,21 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
 
   private onApply = (ordered: IItemRendererProps[]) => {
-    const { applyLoadOrder, loadOrder, profile } = this.props;
+    const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } = this.props;
     const newLO = ordered.map(item => item.loEntry);
-    applyLoadOrder(profile, loadOrder, newLO)
+    validateLoadOrder(profile, newLO)
       .then(() => this.nextState.validationError = undefined)
       .catch(err => {
-        const valError = err as LoadOrderValidationError;
-        this.nextState.validationError = valError;
-      });
+        if (err instanceof LoadOrderValidationError) {
+          this.nextState.validationError = err;
+        } else {
+          onShowError(profile.gameId, err);
+        }
+      })
+      // Regardless of whether the lo is valid or not, we still want it
+      //  displayed to the user to give them a chance to fix it from inside
+      //  Vortex (if possible)
+      .finally(() => onSetOrder(profile.id, newLO));
   }
 
   private onRefreshList = () => {
@@ -224,12 +240,14 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.nextState.updating = true;
     onStartUp(profile?.gameId)
       .then(lo => {
-        if (lo !== undefined) {
-          onSetOrder(profile.id, lo);
-        }
+        this.nextState.validationError = undefined;
+        onSetOrder(profile.id, lo);
       })
       .catch(err => {
-        this.nextState.validationError = err as LoadOrderValidationError;
+        if (err instanceof LoadOrderValidationError) {
+          this.nextState.validationError = err as LoadOrderValidationError;
+          onSetOrder(profile.id, err.loadOrder);
+        }
       })
       .finally(() => this.nextState.updating = false);
   }

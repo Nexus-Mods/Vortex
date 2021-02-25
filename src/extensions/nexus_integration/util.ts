@@ -18,7 +18,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
-import { DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -37,10 +37,13 @@ const app = remote !== undefined ? remote.app : appIn;
 export function startDownload(api: IExtensionApi,
                               nexus: Nexus,
                               nxmurl: string,
-                              redownload?: RedownloadMode)
+                              redownload?: RedownloadMode,
+                              fileName?: string,
+                              allowInstall?: boolean)
                               : Promise<string> {
   let url: NXMUrl;
 
+  log('debug', 'start download', fileName);
   try {
     url = new NXMUrl(nxmurl);
   } catch (err) {
@@ -134,11 +137,11 @@ function startDownloadMod(api: IExtensionApi,
             fileInfo,
           },
         },
-        fileInfo.file_name,
+        fileName ?? nexusFileInfo.file_name,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
           : resolve(downloadId)),
-        redownload);
+        redownload, allowInstall);
       });
     })
     .then(downloadId => {
@@ -227,6 +230,8 @@ function startDownloadMod(api: IExtensionApi,
           error: err,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
+      } else if (err instanceof AlreadyDownloaded) {
+        return err.downloadId;
       } else if (err instanceof UserCanceled) {
         // nop
       } else {
@@ -325,7 +330,7 @@ function reportEndorseError(api: IExtensionApi, err: Error,
       message,
       displayMS: calcDuration(message.length),
     });
-  } else if ((['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1)
+  } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
       || (err instanceof ProcessCanceled)) {
     api.showErrorNotification('Endorsing mod failed, please try again later', err, {
       allowReport: false,

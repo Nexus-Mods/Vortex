@@ -328,7 +328,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         }
       });
-    });
+    }, { skipHidden: false });
   }
 
   public prePurge(): Promise<void> {
@@ -618,7 +618,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   private postLinkPurge(baseDir: string, doRemove: boolean, restoreBackups: boolean,
-                        directoryCleaning: DirectoryCleaningMode): Promise<boolean> {
+                        directoryCleaning: DirectoryCleaningMode,
+                        reportMissing: boolean = true): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     let empty = true;
@@ -631,9 +632,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       : (entries: IEntry[]) => entries.find(entry =>
         !entry.isDirectory && LinkingActivator.isTagName(entry.filePath)) !== undefined;
 
-    return turbowalk(baseDir, entries => {
+    return Promise.resolve(turbowalk(baseDir, entries => {
       allEntries = allEntries.concat(entries);
-    }, { recurse: false, skipHidden: false, skipLinks: false })
+    }, { recurse: false, skipHidden: false, skipLinks: false }))
     .then(() => {
       doRemove = doRemove || taggedForRemoval(allEntries);
 
@@ -641,7 +642,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       // recurse into subdirectories
       queue = queue.then(() =>
         Promise.each(dirs, dir =>
-          this.postLinkPurge(dir.filePath, doRemove, restoreBackups, directoryCleaning)
+          this.postLinkPurge(dir.filePath, doRemove,
+            restoreBackups, directoryCleaning, false)
             .then(removed => {
               if (!removed) { empty = false; }
             }))
@@ -664,10 +666,19 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         }));
     })
-      .catch({ code: 'ENOTFOUND' }, err => {
+      .catch((err: Error) => {
         // was only able to reproduce this by removing directory manually while purge was happening
         // still, if the directory doesn't exist, there is nothing to clean up, so - job done?
-        log('error', 'mod directory not found wrapping up deployment', err.message);
+        if (['ENOTFOUND', 'ENOENT'].includes(err['code'])) {
+          if (reportMissing) {
+            log('error', 'mod directory not found wrapping up deployment', {
+              error: err.message,
+              path: baseDir,
+            });
+          } // otherwise ignore missing files
+        } else {
+          return Promise.reject(err);
+        }
       })
       .then(() => queue)
       .then(() => (empty && doRemove)

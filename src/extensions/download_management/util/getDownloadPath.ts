@@ -1,6 +1,7 @@
 import makeCI from '../../../util/makeCaseInsensitive';
 
 import { app as appIn, remote } from 'electron';
+import * as os from 'os';
 import * as path from 'path';
 import format from 'string-template';
 
@@ -19,6 +20,7 @@ function getDownloadPath(pattern: string, gameId?: string): string {
   }
   const formatKeys = makeCI({
     userdata: userData,
+    username: os.userInfo().username,
   });
 
   let result = gameId !== undefined

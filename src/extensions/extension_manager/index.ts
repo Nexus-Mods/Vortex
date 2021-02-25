@@ -2,7 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -129,7 +129,6 @@ function installDependency(api: IExtensionApi,
 
   const ext = availableExtensions.find(iter =>
     (!iter.type && ((iter.name === depId) || (iter.id === depId))));
-
   if (ext !== undefined) {
     return downloadAndInstallExtension(api, ext)
       .then(success => {
@@ -280,21 +279,24 @@ function init(context: IExtensionContext) {
     });
 
   context.once(() => {
+    let onDidFetch: () => void;
+    const didFetchAvailableExtensions = new Promise((resolve => onDidFetch = resolve));
     updateExtensions(true)
-    .then(() => {
-      updateAvailableExtensions(context.api);
-    });
-    context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
-      downloadAndInstallExtension(context.api, ext)
+    .then(() => updateAvailableExtensions(context.api))
+    .then(() => onDidFetch());
+    context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
+      return didFetchAvailableExtensions
+        .then(() => downloadAndInstallExtension(context.api, ext))
         .tap(success => {
           if (success) {
             updateExtensions(false);
           }
-        }));
+        });
+      });
 
     context.api.onAsync('install-extension-from-download', (archiveId: string) => {
       const state = context.api.getState();
-      const { modId } = state.persistent.downloads.files[archiveId].modInfo.nexus.ids;
+      const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find(iter => iter.modId === modId);
       if ((modId !== undefined) && (ext !== undefined)) {
         return downloadAndInstallExtension(context.api, ext)
@@ -304,7 +306,11 @@ function init(context: IExtensionContext) {
             }
           });
       } else {
-        return Promise.reject(new ProcessCanceled('not recognized as a Vortex extension'));
+        context.api.sendNotification({
+          type: 'warning',
+          message: 'Archive not recognized as a Vortex extension',
+        });
+        return Promise.resolve();
       }
     });
 

@@ -69,7 +69,7 @@ import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
-import { crashReporter as crashReporterT, ipcRenderer, remote, webFrame } from 'electron';
+import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
@@ -101,7 +101,13 @@ import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/uti
 log('debug', 'renderer process started', { pid: process.pid });
 
 function fetchReduxState(tries: number = 5) {
-  const msg: string = ipcRenderer.sendSync('get-redux-state');
+  // using implicit structured clone algorithm
+  return ipcRenderer.sendSync('get-redux-state');
+
+  /* using explicit json cloning. This was used in an attempt to debug
+  mysterious issues transporting initial state between processes but this didn't
+  seem to help. Leaving it here in case the situation actually gets worse after
+  reverting to implicit serialization
 
   const expectedMD5 = msg.slice(0, 32);
   const dat = msg.slice(32);
@@ -116,6 +122,7 @@ function fetchReduxState(tries: number = 5) {
         { tries, expectedMD5, actualMD5, length: dat.length });
     return fetchReduxState(tries - 1);
   }
+  */
 }
 
 function initialState(): any {
@@ -173,10 +180,15 @@ if (process.platform === 'win32') {
   nativeErr.InitHook();
   const oldPrep = Error.prepareStackTrace;
   Error.prepareStackTrace = (error, stack) => {
-    if ((error['code'] === 'UNKNOWN') && (error['nativeCode'] === undefined)) {
-      const native = nativeErr.GetLastError();
-      error.message = `${native.message} (${native.code})`;
-      error['nativeCode'] = native.code;
+    if ((error['code'] === 'UNKNOWN')
+        && (error['nativeCode'] === undefined)) {
+      if (error['systemCode'] !== undefined) {
+        error['nativeCode'] = error['systemCode'];
+      } else {
+        const native = nativeErr.GetLastError();
+        error.message = `${native.message} (${native.code})`;
+        error['nativeCode'] = native.code;
+      }
     }
     return oldPrep !== undefined
       ? oldPrep(error, stack)
@@ -277,6 +289,11 @@ function errorHandler(evt: any) {
 
   if (error.message === 'Cannot read property \'parentNode\' of undefined') {
     // thrown by packery - seemingly at random
+    return;
+  }
+
+  if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+    log('error', 'invalid leaf signature', error.message);
     return;
   }
 

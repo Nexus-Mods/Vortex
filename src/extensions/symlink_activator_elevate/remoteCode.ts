@@ -97,6 +97,8 @@ export function remoteCode(ipcClient, req) {
         resolve();
       }
     });
-    emit('initialised', {});
+    emit('initialised', {
+      pid: process.pid,
+    });
   });
 }

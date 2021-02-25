@@ -11,7 +11,7 @@ type Callback = (err: Error) => void;
  */
 class Debouncer {
   private mDebounceMS: number;
-  private mFunc: (...args: any[]) => Error | Promise<void>;
+  private mFunc: (...args: any[]) => Error | PromiseLike<void>;
   private mTimer: NodeJS.Timer;
 
   private mCallbacks: Callback[] = [];
@@ -37,7 +37,7 @@ class Debouncer {
    *                           until the timer expires. Otherwise (the default)
    *                           the initial call is delay.
    */
-  constructor(func: (...args: any[]) => Error | Promise<void>,
+  constructor(func: (...args: any[]) => Error | PromiseLike<void>,
               debounceMS: number,
               reset?: boolean,
               triggerImmediately: boolean = false) {
@@ -149,15 +149,15 @@ class Debouncer {
     this.mArgs = [];
     this.mTimer = undefined;
 
-    let prom: Error | Promise<void>;
+    let prom: Error | PromiseLike<void>;
     try {
       prom = this.mFunc(...args);
     } catch (err) {
       prom = err;
     }
-    if (prom instanceof Promise) {
+    if (prom?.['then'] !== undefined) {
       this.mRunning = true;
-      prom.then(() => this.invokeCallbacks(callbacks, null))
+      prom['then'](() => this.invokeCallbacks(callbacks, null))
           .catch((err: Error) => this.invokeCallbacks(callbacks, err))
           .finally(() => {
             this.mRunning = false;

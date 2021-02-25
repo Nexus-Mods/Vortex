@@ -7,11 +7,11 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, currentGame, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise } from '../../util/util';
 
-import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
@@ -28,6 +28,7 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload,
 import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
                 RateLimitError, TimeoutError, IDownloadURL, ICollectionManifest } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
+import * as path from 'path';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -105,7 +106,10 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
     }
     const state = api.store.getState();
     const gameMode = activeGameId(state);
-    // ensure anything changed for the actiave game
+    // TODO: this triggers only for the current game but "swallows" all changes
+    //   for all games, meaning that if we change the nexus id for a mod of a
+    //   different game, it will never be re-fetched
+    // ensure anything changed for the active game
     if ((lastModTable[gameMode] !== newModTable[gameMode])
         && (lastModTable[gameMode] !== undefined)
         && (newModTable[gameMode] !== undefined)) {
@@ -191,8 +195,10 @@ function getFileId(download: IDownload): number {
 }
 
 function downloadFile(api: IExtensionApi, nexus: Nexus,
-                      game: IGameStored, modId: number, fileId: number): Promise<string> {
-    const state: IState = api.store.getState();
+                      game: IGameStored, modId: number, fileId: number,
+                      fileName?: string,
+                      allowInstall?: boolean): Promise<string> {
+    const state: IState = api.getState();
     const gameId = game !== null ? game.id : SITE_ID;
     if ((game !== null)
         && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
@@ -202,7 +208,7 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
     const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
-    log('debug', 'downloading from generated nxm link', { url });
+    log('debug', 'downloading from generated nxm link', { url, fileName });
 
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
@@ -210,13 +216,22 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       (downloads[downloadId]?.game || []).includes(gameId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.modId === modId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.fileId === fileId));
-    if (existingId !== undefined) {
+    if ((existingId !== undefined) && (downloads[existingId]?.localPath !== undefined)) {
       log('debug', 'found an existing matching download',
         { id: existingId, data: JSON.stringify(downloads[existingId]) });
-      return Promise.resolve(existingId);
+      const downloadPath = downloadPathForGame(state, gameId);
+      return fs.statAsync(path.join(downloadPath, downloads[existingId].localPath))
+        .then(() => Promise.resolve(existingId))
+        .catch((err) => (err.code === 'ENOENT')
+          ? startDownload(api, nexus, url,
+                          fileName !== undefined ? 'replace' : 'never',
+                          fileName, allowInstall)
+          : Promise.reject(err));
     } else {
       // startDownload will report network errors and only reject on usage error
-      return startDownload(api, nexus, url, 'never');
+      return startDownload(api, nexus, url,
+                           fileName !== undefined ? 'replace' : 'never',
+                           fileName, allowInstall);
     }
 }
 
@@ -250,7 +265,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
           .catch(() => undefined);
       })
       .catch(err => {
-        api.showErrorNotification('failed to start download', err);
+        api.showErrorNotification('Failed to start download', err);
       });
   };
 }
@@ -258,7 +273,8 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
 export function onNexusDownload(api: IExtensionApi,
                                 nexus: Nexus)
                                 : (...args: any[]) => Promise<any> {
-  return (gameId, modId, fileId): Promise<string> => {
+  return (gameId: string, modId: number, fileId: number,
+          fileName?: string, allowInstall?: boolean): Promise<string> => {
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'], '');
@@ -268,12 +284,18 @@ export function onNexusDownload(api: IExtensionApi,
                                 { allowReport: false });
       return Promise.resolve(undefined);
     } else {
-      return downloadFile(api, nexus, game, modId, fileId)
+      log('debug', 'on nexus download', fileName);
+      return downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall)
         .catch(ProcessCanceled, err => {
           api.sendNotification({
             type: 'error',
             message: err.message,
           });
+        })
+        .catch(AlreadyDownloaded, err => {
+          const { files } = api.getState().persistent.downloads;
+          const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
+          return Promise.resolve(dlId);
         })
         .catch(err => {
           api.showErrorNotification('Nexus download failed', err);

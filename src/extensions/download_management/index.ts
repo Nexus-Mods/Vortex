@@ -31,6 +31,7 @@ import { IDownload } from './types/IDownload';
 import { IProtocolHandlers, IResolvedURL } from './types/ProtocolHandlers';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
+import { finalizeDownload } from './util/postprocessDownload';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
 import ShutdownButton from './views/ShutdownButton';
@@ -398,6 +399,23 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-download', [dlId]);
+
+      api.sendNotification({
+        id: `ready-to-install-${dlId}`,
+        type: 'success',
+        title: 'File imported',
+        group: 'download-finished',
+        message: fileName,
+        actions: [
+          {
+            title: 'Install All', action: dismiss => {
+              api.events.emit('start-install-download', dlId);
+              dismiss();
+            },
+          },
+        ],
+      });
+
       return dlId;
     })
     .catch(err => {
@@ -794,8 +812,9 @@ function init(context: IExtensionContextExt): boolean {
       observer =
           observeImpl(context.api, manager);
 
-      const downloads = getSafe((store.getState() as IState),
-        ['persistent', 'downloads', 'files'], {});
+      const state = context.api.getState();
+      const downloads = state.persistent.downloads?.files ?? {};
+      const gameMode = selectors.activeGameId(state);
 
       const interruptedDownloads = Object.keys(downloads)
         .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
@@ -803,7 +822,12 @@ function init(context: IExtensionContextExt): boolean {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled
           log('info', 'download removed because urls were never retrieved', { id });
-          const downloadPath = selectors.downloadPath(context.api.store.getState());
+          const gameId = Array.isArray(downloads[id].game)
+              ? downloads[id].game[0]
+              : gameMode;
+
+          const downloadPath =
+            selectors.downloadPathForGame(context.api.getState(), gameId);
           if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
             fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
               .then(() => {
@@ -822,6 +846,38 @@ function init(context: IExtensionContextExt): boolean {
           store.dispatch(setDownloadInterrupted(id, realSize));
         }
       });
+
+      const unfinalized = Object.keys(downloads)
+        .filter(id => downloads[id].state === 'finalizing');
+
+      if (unfinalized.length > 0) {
+        context.api.sendNotification({
+          type: 'error',
+          title: 'Some downloads were not finalized',
+          message: 'Vortex may appear frozen for a moment while repairing this.',
+          actions: [
+            { title: 'Repair', action: dismiss => {
+              Promise.map(unfinalized, id => {
+                const gameId = Array.isArray(downloads[id].game)
+                    ? downloads[id].game[0]
+                    : gameMode;
+                const downloadPath =
+                  selectors.downloadPathForGame(context.api.getState(), gameId);
+                return finalizeDownload(context.api, id,
+                                        path.join(downloadPath, downloads[id].localPath),
+                                        false)
+                  .catch(err => {
+                    log('warn', 'failed to properly finalize download', {
+                      fileName: downloads[id].localPath,
+                    });
+                  });
+              })
+              .then(() => dismiss());
+            } },
+          ],
+        });
+      }
+
       // remove downloads that have no localPath set because they just cause trouble. They shouldn't
       // exist at all
       Object.keys(downloads)

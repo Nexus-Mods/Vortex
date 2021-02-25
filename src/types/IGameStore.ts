@@ -98,12 +98,39 @@ export interface IGameStore {
   findByName: (appName: string) => Promise<IGameStoreEntry>;
 
   /**
+   * Returns the full path to the launcher's executable.
+   *  As of 1.4, this function is no longer optional - gamestores
+   *  such as the Xbox app which do not have a stat-able store path
+   *  should return Promise.resolve(undefined) and define the
+   *  "isGameStoreInstalled" function so that the game store helper
+   *  is able to confirm that the gamestore is installed on the user's PC
+   */
+  getGameStorePath: () => Promise<string>;
+
+  /**
+   * Launches the game using this game launcher.
+   * @param appId whatever the game store uses to identify a game.
+   * @param api gives access to API functions if needed.
+   */
+  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
+
+  /**
    * Determine whether the game has been installed by this game store launcher.
    *  returns true if the game store installed this game, false otherwise.
    *
    * @param name of the game we're looking for.
    */
   isGameInstalled?: (name: string) => Promise<boolean>;
+
+  /**
+   * In most cases the game store helper is fully capable of determining
+   *  whether a gamestore is installed by stat-ing the store's executable.
+   *
+   * However, gamestores such as the Xbox store which do not have a stat-able
+   *  executable path MUST provide this function so that the game store helper
+   *  can confirm that the store is installed correctly!
+   */
+  isGameStoreInstalled?: () => Promise<boolean>;
 
   /**
    * Some launchers may support Posix paths when attempting to launch a
@@ -135,11 +162,6 @@ export interface IGameStore {
   launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Promise<void>;
 
   /**
-   * Returns the full path to the launcher's executable.
-   */
-  getGameStorePath?: () => Promise<string>;
-
-  /**
    * Allows game stores to provide functionality to reload/refresh their
    *  game entries. This is potentially a resource intensive operation and
    *  should not be called unless it is vital to do so.
@@ -148,11 +170,4 @@ export interface IGameStore {
    *  game stores when a discovery scan is initiated.
    */
   reloadGames?: () => Promise<void>;
-
-  /**
-   * Launches the game using this game launcher.
-   * @param appId whatever the game store uses to identify a game.
-   * @param api gives access to API functions if needed.
-   */
-  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
 }

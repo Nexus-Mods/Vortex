@@ -359,7 +359,7 @@ function main(context: IExtensionContext) {
           const allowReport = !(
             err.stack.includes('not enough space on the disk')
             || err.stack.includes('The cloud operation was unsuccessful')
-            || [362, 1359].includes(err.errno)
+            || [362, 1359].includes(err.systemCode)
             );
           context.api.showErrorNotification('Failed to bake settings files', err,
             { allowReport });

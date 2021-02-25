@@ -41,6 +41,7 @@ class InfoPanel extends ComponentEx<IProps, {}> {
   private renderErrorBox() {
     const { t } = this.props;
     const { validationError } = this.props;
+    const classname = validationError === undefined ? 'valid' : 'invalid';
     const title = t('Validation Error Console:');
     let errorText = t('No validation errors.');
     if (validationError !== undefined) {
@@ -53,12 +54,12 @@ class InfoPanel extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <div style={{ height: '100%', width: '100%' }}>
+      <>
         <h5>{title}</h5>
-        <div id='fb-lo-errorbox'>
+        <div className={classname} id='fb-lo-errorbox'>
           <p>{bbcode(errorText)}</p>
         </div>
-      </div>
+      </>
     );
   }
 }

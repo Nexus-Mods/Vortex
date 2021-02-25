@@ -231,7 +231,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     options = {};
   }
   const sourceErr = new Error();
-  const err = renderError(details);
+  const err = renderError(details, options);
 
   const allowReport = err.allowReport !== undefined
     ? err.allowReport
@@ -255,6 +255,8 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     options: {
       wrap: err.wrap,
       hideMessage: options.hideDetails !== false,
+      // don't try to translate error messages
+      translated: err.translated,
     },
     parameters: {
       ...(options.replace || {}),
@@ -343,15 +345,18 @@ export interface IPrettifiedError {
   allowReport?: boolean;
 }
 
-export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
-  if ((err.errno === 225) || (err['nativeCode'] === 225)) {
+export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPrettifiedError {
+  if ((err.systemCode === 225) || (err['nativeCode'] === 225)) {
     // doesn't contain a code attribute
     return {
       message: 'Your Antivirus software has blocked access to "{{path}}".',
       replace: { path: err.path },
       allowReport: false,
     };
-  } else if ([362, 383, 404].indexOf(err.errno) !== -1) {
+  } else if (
+    [362, 383, 404].includes(err.systemCode)
+    || (
+      (err.systemCode === 1359) && (err['path'] ?? '').toLowerCase().includes('onedrive'))) {
     return {
       message: `The file "{{path}}" is stored on a cloud storage drive `
         + '(Microsoft OneDrive) which is currently unavailable.',
@@ -552,7 +557,7 @@ function renderCustomError(err: any) {
   return res;
 }
 
-function prettifyHTTPError(err: HTTPError) {
+function prettifyHTTPError(err: HTTPError): IErrorRendered {
   const fallback = () => {
     const rangeDescription = (err.statusCode >= 500)
       ? 'This code is usually the responsibility of the server and will likely be temporary'
@@ -575,6 +580,8 @@ function prettifyHTTPError(err: HTTPError) {
       //  just redirect to themselves
       // 2xx aren't errors and shouldn't have been reported.
       allowReport: err.statusCode < 300,
+      wrap: false,
+      translated: true,
     };
   };
 
@@ -587,12 +594,20 @@ function prettifyHTTPError(err: HTTPError) {
 const HIDE_ATTRIBUTES = new Set(
   ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport']);
 
+interface IErrorRendered {
+  message?: string;
+  text?: string;
+  parameters?: any;
+  allowReport?: boolean;
+  wrap: boolean;
+  translated?: boolean;
+}
+
 /**
  * render error message for display to the user
  * @param err
  */
-export function renderError(err: string | Error | any):
-    { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } {
+export function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered {
   if (Array.isArray(err)) {
     err = err[0];
   }
@@ -609,7 +624,7 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof HTTPError) {
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
-    const errMessage = prettifyNodeErrorMessage(err);
+    const errMessage = prettifyNodeErrorMessage(err, options);
 
     const flatErr = flatten(err || {}, { maxLength: 5 });
     delete flatErr['allowReport'];
@@ -636,6 +651,7 @@ export function renderError(err: string | Error | any):
       parameters: errMessage.replace,
       wrap: false,
       allowReport: errMessage.allowReport,
+      translated: true,
     };
   } else {
     return renderCustomError(err);

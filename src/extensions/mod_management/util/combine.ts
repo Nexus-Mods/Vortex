@@ -1,13 +1,16 @@
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { IDeploymentMethod, IExtensionApi } from '../../../types/IExtensionContext';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
+import { getSafe } from '../../../util/storeHelper';
 import { toPromise } from '../../../util/util';
 import { onAddMod } from '../eventHandlers';
 import { installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
+import allTypesSupported from './allTypesSupported';
+import { getAllActivators } from './deploymentMethods';
 import modName from './modName';
 import { removeMod, removeMods } from './removeMods';
 import sortMods from './sort';
@@ -17,16 +20,32 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
   const mods = state.persistent.mods[gameId];
   const stagingPath = installPathForGame(state, gameId);
 
+  const activatorId: string = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
+  const activators = getAllActivators();
+  const modTypes = new Set(modIds.map(modId => mods[modId].type));
+
   {
-    const modTypes = new Set(modIds.map(modId => mods[modId].type));
     if (modTypes.size > 1) {
-      return api.showDialog('error', 'Combining this Mods isn\'t possible', {
+      return api.showDialog('error', 'Combining these mods isn\'t possible', {
         text: 'You can only combine mods that have the same mod type, otherwise '
             + 'they couldn\'t deploy correctly any more.',
       }, [
         { label: 'Close' },
       ]);
     }
+  }
+
+  const activator: IDeploymentMethod = activatorId !== undefined
+    ? activators.find(act => act.id === activatorId)
+    : activators.find(act =>
+        allTypesSupported(act, state, gameId, Array.from(modTypes)).errors.length === 0);
+
+  if (activator === undefined) {
+    return api.showDialog('error', 'Combining these mods not possible', {
+      text: 'No deployment method is currently configured for this game.',
+    }, [
+      { label: 'Close' },
+    ]);
   }
 
   const sorted = await sortMods(gameId, modIds.map(id => mods[id]), api);
@@ -99,9 +118,6 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
 
     // merge is done, remove the source mods
     await removeMods(api, gameId, [...sourceIds, tempName]);
-    // we now have the temporary merge directory and the original merge target left.
-    // doing a little switchery-doo on the directories so that the merge maintains the
-    // meta data and then remove the temporary data
   } catch (err) {
     if (api.getState().persistent.mods[gameId][tempName] !== undefined) {
       try {
@@ -111,7 +127,16 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
         log('error', 'failed to remove temporary directory', tempName);
       }
     }
-    api.showErrorNotification('Failed to combine mods', err);
+    if (err instanceof UserCanceled) {
+      // nop
+    } else if (err instanceof ProcessCanceled) {
+      api.sendNotification({
+        type: 'warning',
+        message: err.message,
+      });
+    } else {
+      api.showErrorNotification('Failed to combine mods', err);
+    }
   }
 }
 

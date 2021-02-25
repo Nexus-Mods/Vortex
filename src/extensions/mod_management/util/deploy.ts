@@ -95,8 +95,8 @@ export function purgeMods(api: IExtensionApi, gameId?: string): Promise<void> {
 function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
                        profile: IProfile): Promise<void> {
   const state = api.store.getState();
-  const stagingPath = installPath(state);
-  const gameId = profile.gameId;
+  const { gameId } = profile;
+  const stagingPath = installPathForGame(state, gameId);
   const gameDiscovery = discoveryByGame(state, gameId);
   const t = api.translate;
 

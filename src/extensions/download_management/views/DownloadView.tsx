@@ -56,6 +56,7 @@ interface IConnectedProps {
   downloadPathForGame: (gameId: string) => string;
   showDropzone: boolean;
   showGraph: boolean;
+  maxBandwidth: number;
 }
 
 interface IActionProps {
@@ -187,7 +188,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode, secondary, showGraph } = this.props;
+    const { t, downloads, gameMode, maxBandwidth, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
 
     if (this.mColumns === undefined) {
@@ -222,7 +223,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                   onToggle={nop}
                 >
                   <Panel.Body collapsible={true}>
-                    <DownloadGraph />
+                    <DownloadGraph t={t} maxBandwidth={maxBandwidth} />
                   </Panel.Body>
                   <CollapseIcon
                     position='bottomright'
@@ -331,9 +332,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   private pausable = (downloadIds: string[]) => {
-    return downloadIds.find((downloadId: string) => (
-      this.getDownload(downloadId).state === 'started'
-    )) !== undefined;
+    return downloadIds.find((downloadId: string) => {
+      const download = this.getDownload(downloadId);
+      return (download.state === 'started')
+          && (download.pausable !== false);
+    }) !== undefined;
   }
 
   private reportDownloadError(err: any, resume: boolean) {
@@ -353,8 +356,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           + 'Please restart the download.',
           undefined, false);
       } // else nop
-    } else if ((err.HTTPStatus !== undefined)
-      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
+    } else if (((err.HTTPStatus !== undefined)
+                && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1))
+               || (err.message === 'No download urls')) {
       this.props.onShowError(title,
         'Sorry, the download link is no longer valid. '
         + 'Please restart the download.',
@@ -591,6 +595,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
+    maxBandwidth: state.settings.downloads.maxBandwidth,
   };
 }
 

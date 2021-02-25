@@ -293,7 +293,7 @@ function createConnection(ipcPath: string, tries: number = 5): Promise<net.Socke
 }
 
 class ConnectionIPC {
-  public static async bind(): Promise<ConnectionIPC> {
+  public static async bind(retry: boolean = false): Promise<ConnectionIPC> {
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
@@ -305,10 +305,11 @@ class ConnectionIPC {
     let servSocket: net.Socket;
     let cliSocket: net.Socket;
 
-    const pipe = process.platform === 'win32';
+    // on windows, retry using a network socket, maybe that will work
+    const pipe = (process.platform === 'win32') && !retry;
     const debug = false;
 
-    if (ConnectionIPC.sListen === undefined) {
+    if ((ConnectionIPC.sListen === undefined) || retry) {
       // only set up the listening server once, otherwise we might end
       // up creating orphaned connections if a connection later dies
       ConnectionIPC.sListen = await createSocket({
@@ -351,34 +352,52 @@ class ConnectionIPC {
       }
     });
 
+    let res: ConnectionIPC;
+
     if (!debug) {
       // for debugging purposes, the user has to run the installer manually
       // invoke the c# installer, passing the id/port
       try {
-        proc = await createIPC(pipe, ipcId);
+        proc = await createIPC(pipe, ipcId, procCB => {
+          procCB.stdout.on('data', (dat: Buffer) => {
+            log('debug', 'from installer:', dat.toString().trim());
+          });
+          procCB.stderr.on('data', async (dat: Buffer) => {
+            const errorMessage = dat.toString().trim();
+            if (!retry && errorMessage.includes('The operation has timed out')) {
+              // if the client failed to connect to our pipe, try a second time connecting
+              // via socket
+              try {
+                res = await ConnectionIPC.bind(true);
+                onResolve();
+              } catch (err) {
+                onReject?.(err);
+                onReject = undefined;
+              }
+            } else if (errorMessage.length > 0) {
+              log('error', 'from installer:', errorMessage);
+              if (!wasConnected) {
+                onReject?.(new Error(errorMessage));
+                onReject = undefined;
+                wasConnected = true;
+              }
+            }
+          });
+        });
       } catch (err) {
-        return Promise.reject(new ProcessCanceled(err.message));
+        onReject?.(new ProcessCanceled(err.message));
+        onReject = undefined;
       }
-      proc.stdout.on('data', (dat: Buffer) => {
-        log('debug', 'from installer:', dat.toString().trim());
-      });
-      proc.stderr.on('data', (dat: Buffer) => {
-        const errorMessage = dat.toString().trim();
-        if (errorMessage.length > 0) {
-          log('error', 'from installer:', errorMessage);
-          if (!wasConnected) {
-            onReject(new Error(errorMessage));
-            wasConnected = true;
-          }
-        }
-      });
     }
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
     await connectedPromise;
 
-    return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
+    if (res === undefined) {
+      return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
+    }
+    return res;
   }
 
   private static sListen: { ipcId: string, server: net.Server };

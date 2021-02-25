@@ -1,4 +1,6 @@
 import Promise from 'bluebird';
+import * as path from 'path';
+import { pathToFileURL } from 'url';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
 
@@ -66,7 +68,10 @@ class SplashScreen {
           nodeIntegration: true,
         },
       });
-      this.mWindow.loadURL(`file://${getVortexPath('base')}/splash.html?disableGPU=${disableGPU ? 1 : 0}`);
+
+      this.mWindow.loadURL(
+        pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href
+        + `?disableGPU=${disableGPU ? 1 : 0}`);
       // this.mWindow.webContents.openDevTools();
       this.mWindow.once('ready-to-show', onReady);
     });

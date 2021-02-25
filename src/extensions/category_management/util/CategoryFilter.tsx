@@ -14,7 +14,7 @@ import Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
-import Select from 'react-select';
+import { Creatable } from 'react-select';
 
 interface IConnectedProps {
   gameId: string;
@@ -63,7 +63,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { filter, categories, mods } = this.props;
+    const { t, filter, categories, mods } = this.props;
     const { archiveCategories } = this.state;
 
     const installedArchives = new Set<string>();
@@ -96,7 +96,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
         value: id.toString(),
         label: getSafe(categories, [id, 'name'], ''),
       })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
-    options.unshift({ value: UNASSIGNED_ID, label: '<Unassigned>' });
+    options.unshift({ value: UNASSIGNED_ID, label: `<${t('Unassigned')}>` });
     if (this.state.customOption !== undefined) {
       options.unshift(this.state.customOption);
     }
@@ -111,7 +111,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     // How is this supposed to be used in practice without hacking?
 
     return (
-      <Select.Creatable
+      <Creatable
         multi
         className='select-compact'
         options={options}

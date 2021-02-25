@@ -17,6 +17,7 @@ import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { pathToFileURL } from 'url';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -86,7 +87,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
-      : FALLBACK_AVATAR;
+      : pathToFileURL(FALLBACK_AVATAR).href;
 
     return (
       <tooltip.Button

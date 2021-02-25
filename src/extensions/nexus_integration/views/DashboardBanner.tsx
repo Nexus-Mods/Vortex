@@ -15,6 +15,7 @@ import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { pathToFileURL } from 'url';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -65,10 +66,11 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
 
   private renderLoggedIn(userInfo: IValidateKeyData): JSX.Element {
     const { t } = this.props;
+    const fallback = pathToFileURL(FALLBACK_AVATAR).href;
     return (
       <div className='dashlet-nexus-account'>
         <Image
-          srcs={[`${userInfo.profileUrl}?r_${START_TIME}` || FALLBACK_AVATAR, FALLBACK_AVATAR]}
+          srcs={[`${userInfo.profileUrl}?r_${START_TIME}` || fallback, fallback]}
           circle
           style={{ height: 64, width: 64, marginRight: 32 }}
         />

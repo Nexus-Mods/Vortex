@@ -5,17 +5,20 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 import * as fs from '../util/fs';
 import { writeFileAtomic } from '../util/fsAtomic';
+import lazyRequire from '../util/lazyRequire';
 import { log } from '../util/log';
 import makeReactive from '../util/makeReactive';
+import startupSettingsT from '../util/startupSettings';
 
 import MainPage from './MainPage';
 
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+const startupSettings =
+  lazyRequire<typeof startupSettingsT>(() => require('../util/startupSettings'));
 
 interface ISettingsPage {
   title: string;
@@ -52,19 +55,11 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
-  private mStartupPath = path.join(remote.app.getPath('appData'),
-                                   remote.app.name,
-                                   'startup.json');
-  private mStartupSettings = makeReactive({});
+  private mStartupSettings;
 
   constructor(props: IProps) {
     super(props);
-    try {
-      this.mStartupSettings =
-        makeReactive(JSON.parse(fs.readFileSync(this.mStartupPath, { encoding: 'utf-8' })));
-    } catch (err) {
-      // nop
-    }
+    this.mStartupSettings = makeReactive(startupSettings);
   }
 
   public render(): JSX.Element {
@@ -153,15 +148,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private changeStartup = (key: string, value: any) => {
-    this.mStartupSettings = {
-      ...this.mStartupSettings,
-      [key]: value,
-    };
-    writeFileAtomic(this.mStartupPath, JSON.stringify(this.mStartupSettings))
-      .then(() => this.forceUpdate())
-      .catch(err => {
-        log('error', 'failed to write startup.json', { error: err.message });
-      });
+    this.mStartupSettings[key] = value;
   }
 }
 

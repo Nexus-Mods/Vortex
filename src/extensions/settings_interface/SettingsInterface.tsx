@@ -254,6 +254,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               >
                 {t('Enable GPU Acceleration')}
               </Toggle>
+              {(startup.disableGPU === true) ? (
+                <ControlLabel>
+                  <Alert bsStyle='warning'>
+                    {t('Disabling GPU acceleration will make the Vortex UI significantly less '
+                      + 'responsive in places.')}
+                  </Alert>
+                </ControlLabel>
+              ) : null}
             </div>
           </div>
         </FormGroup>

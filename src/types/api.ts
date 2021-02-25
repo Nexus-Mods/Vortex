@@ -36,6 +36,11 @@ export { IModLookupInfo } from '../extensions/mod_management/util/testModReferen
 export { IMod, IModReference, IModRepoId, IModRule } from '../extensions/mod_management/types/IMod';
 export { IInstallResult } from '../extensions/mod_management/types/IInstallResult';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
+export {
+  IHistoryEvent,
+  IHistoryStack,
+  Revertability,
+} from '../extensions/history_management/types';
 export { IProfile, IProfileMod } from '../extensions/profile_management/types/IProfile';
 export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';
 export { ILoadOrderDisplayItem, SortType, UpdateType } from '../extensions/mod_load_order/types/types';

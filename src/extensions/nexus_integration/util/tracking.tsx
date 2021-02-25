@@ -7,7 +7,7 @@ import { IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { laterT } from '../../../util/i18n';
 import { activeGameId } from '../../../util/selectors';
-
+import { getSafe } from '../../../util/storeHelper';
 class Tracking {
   private mApi: IExtensionApi;
   private mNexus: Nexus;
@@ -20,7 +20,11 @@ class Tracking {
 
   public once(nexusInstance: Nexus) {
     this.mNexus = nexusInstance;
-    this.fetch();
+    const state = this.mApi.getState();
+    const username = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+    if (username !== undefined) {
+      this.fetch();
+    }
   }
 
   public attribute(): ITableAttribute {
@@ -37,6 +41,9 @@ class Tracking {
       calc: (mod: IMod) => {
         if (mod.attributes?.source === 'nexus') {
           const gameMode = activeGameId(this.mApi.getState());
+          if (mod.attributes?.modId === undefined) {
+            return false;
+          }
           return this.mTrackedMods[gameMode]?.has?.(
             mod.attributes?.modId.toString(),
           );
@@ -81,6 +88,9 @@ class Tracking {
     return (props?: { t: TFunction; mod: IMod }) => {
       const { t, mod } = props;
       const gameMode = activeGameId(this.mApi.getState());
+      if (mod.attributes?.modId === undefined) {
+        return null;
+      }
       return (
         <IconButton
           icon='track'
@@ -104,6 +114,10 @@ class Tracking {
   }
 
   private fetch() {
+    if (this.mNexus.getValidationResult() !== null) {
+      return;
+    }
+
     this.mNexus.getTrackedMods().then(tracked => {
       this.mTrackedMods = tracked.reduce((prev, iter) => {
         if (prev[iter.domain_name] === undefined) {
@@ -115,11 +129,11 @@ class Tracking {
       this.mOnChanged?.();
     })
     .catch(err => {
-      this.mApi.showErrorNotification('failed to fetch tracking info', err);
+      this.mApi.showErrorNotification('Failed to get tracked mods', err);
     });
   }
 
-  private toggleTracked(evt: React.MouseEvent<any>) {
+  private toggleTracked = (evt: React.MouseEvent<any>) => {
     const gameMode = activeGameId(this.mApi.getState());
     const modIdStr: string = evt.currentTarget.getAttribute('data-modid');
 

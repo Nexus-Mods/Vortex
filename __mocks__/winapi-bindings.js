@@ -24,7 +24,7 @@ module.exports = {
     if (res === '/missing') {
       let err = new Error('fake error');
       err.code = 'ENOTFOUND';
-      err.errno = 2;
+      err.systemCode = 2;
       throw err;
     }
     return res;

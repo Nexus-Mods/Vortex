@@ -14,9 +14,9 @@ import {reduxSanity, StateError} from './reduxSanity';
 import Promise from 'bluebird';
 import { app as appIn, dialog, ipcMain, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
-import * as encode from 'encoding-down';
-import * as leveldown from 'leveldown';
-import * as levelup from 'levelup';
+import encode from 'encoding-down';
+import * as leveldownT from 'leveldown';
+import levelup from 'levelup';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -78,10 +78,20 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   });
 
   ipcMain.on('get-redux-state', (evt: Electron.IpcMainEvent) => {
+    // implicit structured clone algorithm
+    evt.returnValue = store.getState();
+
+    /* using explicit json cloning. This was used in an attempt to debug
+    mysterious issues transporting initial state between processes but this didn't
+    seem to help. Leaving it here in case the situation actually gets worse after
+    reverting to implicit serialization
+
     const dat = JSON.stringify(store.getState());
     const md5 = checksum(Buffer.from(dat));
     evt.returnValue = md5 + dat;
+    */
   });
+
   return store;
 }
 
@@ -120,8 +130,9 @@ export function extendStore(store: Redux.Store<IState>,
 
 function importStateV1(importPath: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    (levelup as any)(encode(leveldown(importPath)),
-                     { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err, db) => {
+    const leveldown: typeof leveldownT = require('leveldown');
+    const db = levelup(encode(leveldown(importPath)),
+            { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err: Error) => {
       if (err !== null) {
         log('info', 'failed to open db', err);
         reject(err);

@@ -15,7 +15,7 @@ import { II18NProps } from '../types/II18NProps';
 import { IMainPage } from '../types/IMainPage';
 import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
-import { IProgress, IState, IUIBlocker } from '../types/IState';
+import { IProfile, IProgress, IState, IUIBlocker } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { IRegisteredExtension } from '../util/ExtensionManager';
 import { TFunction } from '../util/i18n';
@@ -81,6 +81,7 @@ export interface IConnectedProps {
   notifications: INotification[];
   APIKey: string;
   uiBlockers: { [id: string]: IUIBlocker };
+  profiles: { [key: string]: IProfile };
 }
 
 export interface IActionProps {
@@ -264,14 +265,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderWait() {
-    const { onHideDialog, progressProfile, visibleDialog } = this.props;
+    const { t, onHideDialog, nextProfileId, profiles, progressProfile, visibleDialog } = this.props;
     const progress = getSafe(progressProfile, ['deploying'], undefined);
-    const control = progress !== undefined
+    const profile = nextProfileId !== undefined ? profiles[nextProfileId] : undefined;
+    const control = (progress !== undefined)
       ? <ProgressBar labelLeft={progress.text} now={progress.percent} style={{ width: '50%' }} />
       : <Spinner style={{ width: 64, height: 64 }} />;
     return (
       <div key='wait'>
-        <div className='center-content'>{control}</div>
+        <div className='center-content' style={{ flexDirection: 'column' }}>
+          <h4>{
+            t('Switching to Profile: {{name}}',
+            { replace: { name: profile?.name ?? t('None') } })
+          }</h4>
+          {control}
+        </div>
         <Dialog />
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
@@ -581,6 +589,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     secondaryPage: state.session.base.secondaryPage,
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
+    profiles: state.persistent.profiles,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
     userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),

@@ -6,14 +6,24 @@ import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
 
+import path from 'path';
+
 import * as types from '../../types/api';
 import * as util from '../../util/api';
+import { COMPANY_ID } from '../../util/constants';
+import * as fs from '../../util/fs';
 import * as selectors from '../../util/selectors';
 
 import { log } from '../../util/log';
 import { setNewLoadOrder } from './actions/loadOrder';
 
-const gameSupport: ILoadOrderGameInfo[] = [];
+interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {
+  // The things I do to reduce complexity for extension developers...
+  //  (and to block users from sending us reports which we can do nothing about)
+  isContributed: boolean;
+}
+
+const gameSupport: ILoadOrderGameInfoExt[] = [];
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -26,28 +36,37 @@ interface IProfileState {
 async function errorHandler(api: types.IExtensionApi,
                             gameId: string,
                             err: Error) {
-  const game = util.getGame(gameId);
-  const allowReport = game.contributed === undefined;
+  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
+  const allowReport = !gameEntry.isContributed;
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const errorMessage = 'Load order failed validation';
     const details = {
-      loadOrder: invalLOErr.loadOrder,
-      reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}`),
+      message: errorMessage,
+      loadOrder: invalLOErr.loadOrderEntryNames,
+      reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}\n`),
     };
-    api.showErrorNotification(errorMessage, details, { allowReport });
+    reportError(api, errorMessage, details, allowReport);
   } else if (err instanceof LoadOrderSerializationError) {
     const serErr = err as LoadOrderSerializationError;
     const errMess = 'Failed to serialize load order';
     const details = {
       loadOrder: serErr.loadOrder,
     };
-    api.showErrorNotification(errMess, details, { allowReport });
+    reportError(api, errMess, details, allowReport);
   } else {
-    api.showErrorNotification('Failed load order operation', err, { allowReport });
+    reportError(api, 'Failed load order operation', err, allowReport);
   }
 
   return Promise.resolve();
+}
+
+function reportError(api: types.IExtensionApi,
+                     errorMessage: string,
+                     errDetails: any,
+                     allowReport: boolean = true) {
+  const errorId = errorMessage + 'notifId';
+  api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
 }
 
 async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any) {
@@ -70,9 +89,8 @@ async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any
     }
 
     try {
-      const prevLO: LoadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
       const currentLO: LoadOrder = await gameEntry.deserializeLoadOrder();
-      await applyNewLoadOrder(api, profile, prevLO, currentLO);
+      api.store.dispatch(setNewLoadOrder(profile.id, currentLO));
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
     }
@@ -108,6 +126,8 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
   if (JSON.stringify(oldState[profile.id]) !== JSON.stringify(newState[profile.id])) {
     const loadOrder: LoadOrder = newState[profile.id];
     try {
+      // This is the only place where we want applyNewLoadOrder to be called
+      //  as we've detected a change in the load order.
       await applyNewLoadOrder(api, profile, prevLO, loadOrder);
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
@@ -139,13 +159,9 @@ async function genProfilesChange(api: types.IExtensionApi,
       return;
     }
 
-    const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
-    try {
-      const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
-      await applyNewLoadOrder(api, profile, prevLO, loadOrder);
-    } catch (err) {
-      // nop - any errors would've been reported by applyNewLoadOrder.
-    }
+  try {
+    const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
+    api.store.dispatch(setNewLoadOrder(profile.id, loadOrder));
   } catch (err) {
     api.showErrorNotification('failed to react to profile change', err);
   }
@@ -169,11 +185,9 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
     return;
   }
 
-  let deserializedLO: LoadOrder = [];
-  const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
   try {
-    deserializedLO = await gameEntry.deserializeLoadOrder();
-    await applyNewLoadOrder(api, profile, prevLO, deserializedLO);
+    const deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
+    api.store.dispatch(setNewLoadOrder(profile.id, deserializedLO));
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }
@@ -183,6 +197,9 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
                                  profile: types.IProfile,
                                  prev: LoadOrder,
                                  newLO: LoadOrder): Promise<void> {
+  // This function is intended to execute as a reaction to a change
+  //  in LO - never call the setNewLoadOrder state action in here unless
+  //  you have a fetish for infinite loops.
   const gameEntry = findGameEntry(profile.gameId);
   if (gameEntry === undefined || profile === undefined) {
     // How ?
@@ -196,12 +213,11 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 
   try {
     const validRes: IValidationResult = await gameEntry.validate(prev, newLO);
+    assertValidationResult(validRes);
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, newLO);
     }
-
     await gameEntry.serializeLoadOrder(newLO);
-    api.store.dispatch(setNewLoadOrder(profile.id, newLO));
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
   }
@@ -233,18 +249,19 @@ export default function init(context: IExtensionContext) {
     props: () => {
       return {
         getGameEntry: findGameEntry,
-        applyLoadOrder: (profile: types.IProfile, prev: LoadOrder, newLO: LoadOrder) =>
-          applyNewLoadOrder(context.api, profile, prev, newLO),
+        validateLoadOrder: (profile: types.IProfile, loadOrder: LoadOrder) =>
+          validateLoadOrder(context.api, profile, loadOrder),
         onStartUp: (gameId: string) => onStartUp(context.api, gameId),
+        onShowError: (gameId: string, error: Error) => errorHandler(context.api, gameId, error),
       };
     },
   });
 
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
 
-  context.registerLoadOrder = (gameInfo: ILoadOrderGameInfo) => {
-    addGameEntry(gameInfo);
-  };
+  context.registerLoadOrder = ((gameInfo: ILoadOrderGameInfo, extPath: string) => {
+    addGameEntry(gameInfo, extPath);
+  }) as any;
 
   context.once(() =>  {
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
@@ -263,8 +280,38 @@ export default function init(context: IExtensionContext) {
   return true;
 }
 
+async function validateLoadOrder(api: types.IExtensionApi,
+                                 profile: types.IProfile,
+                                 loadOrder: LoadOrder): Promise<IValidationResult> {
+  const state = api.getState();
+  try {
+    if (profile?.id === undefined) {
+      log('error', 'failed to validate load order due to undefined profile', loadOrder);
+      throw new util.DataInvalid('invalid profile');
+    }
+    const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
+    const gameEntry: ILoadOrderGameInfo = findGameEntry(profile.gameId);
+    if (gameEntry === undefined) {
+      const details = (gameEntry === undefined)
+        ? { gameId: profile.gameId }
+        : { profileId: profile.id };
+      log('error', 'invalid game entry', details);
+      throw new util.DataInvalid('invalid game entry');
+    }
+    const validRes: IValidationResult = await gameEntry.validate(prevLO, loadOrder);
+    assertValidationResult(validRes);
+    if (validRes !== undefined) {
+      throw new LoadOrderValidationError(validRes, loadOrder);
+    }
+
+    return Promise.resolve(undefined);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
 async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<LoadOrder> {
-  const state = api.store.getState();
+  const state = api.getState();
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
   if ((gameEntry === undefined) || (profileId === undefined)) {
@@ -276,7 +323,8 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
   const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
   try {
     const loadOrder = await gameEntry.deserializeLoadOrder();
-    const validRes = await gameEntry.validate(prev, loadOrder);
+    const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
+    assertValidationResult(validRes);
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
@@ -289,7 +337,17 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
   }
 }
 
-function addGameEntry(gameEntry: ILoadOrderGameInfo) {
+function assertValidationResult(validRes: any) {
+  if (validRes === undefined) {
+    return;
+  }
+  if ((Array.isArray(validRes)) || (validRes as IValidationResult)?.invalid === undefined) {
+    throw new TypeError('Received incorrect/invalid return type from validation function; '
+      + 'expected object of type IValidationResult');
+  }
+}
+
+function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
   if (gameEntry === undefined) {
     log('error', 'unable to add load order page - invalid game entry');
     return;
@@ -303,9 +361,17 @@ function addGameEntry(gameEntry: ILoadOrderGameInfo) {
     return;
   }
 
-  gameSupport.push(gameEntry);
+  // The LO page registration can be done as an "addon" through
+  //  another extension - which means we could have an officially supported
+  //  game extension but an unofficial load order registration so checking if
+  //  game.contributed === undefined is not sufficient - we need to read the
+  //  info.json file of the extension that registers the LO page.
+  const gameExtInfo = JSON.parse(
+    fs.readFileSync(path.join(extPath, 'info.json'), { encoding: 'utf8' }));
+
+  gameSupport.push({ ...gameEntry, isContributed: gameExtInfo.author !== COMPANY_ID });
 }
 
-function findGameEntry(gameId: string): ILoadOrderGameInfo {
+function findGameEntry(gameId: string): ILoadOrderGameInfoExt {
   return gameSupport.find(game => game.gameId === gameId);
 }

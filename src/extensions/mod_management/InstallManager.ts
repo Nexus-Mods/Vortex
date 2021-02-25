@@ -74,6 +74,7 @@ interface IReplaceChoice {
   variant: string;
   enable: boolean;
   attributes: { [key: string]: any };
+  rules: IRule[];
 }
 
 interface IInvalidInstruction {
@@ -261,6 +262,7 @@ class InstallManager {
                 enable = true;
               }
               setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
+              rules = choice.rules || [];
               fullInfo.previous = choice.attributes;
               return checkNameLoop();
             })
@@ -293,10 +295,14 @@ class InstallManager {
                   api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
                   api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
                 }
+                rules = oldMod.rules || [];
+                overrides = oldMod.fileOverrides;
+                fullInfo.previous = oldMod.attributes;
                 return Promise.resolve();
               } else if (action === REPLACE_ACTION) {
                 rules = oldMod.rules || [];
                 overrides = oldMod.fileOverrides;
+                fullInfo.previous = oldMod.attributes;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
@@ -360,7 +366,7 @@ class InstallManager {
         const existingKeys =
           Object.keys(state.persistent.mods[installGameId]?.[modId]?.attributes || {});
         installContext.finishInstallCB('success', _.omit(modInfo, existingKeys));
-        rules.forEach(rule => {
+        (rules ?? []).forEach(rule => {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
@@ -1173,6 +1179,7 @@ class InstallManager {
           variant: '',
           enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
           attributes: {},
+          rules: [],
         });
       }
       api.store
@@ -1219,6 +1226,7 @@ class InstallManager {
               variant: result.input.variant,
               enable: wasEnabled(),
               attributes: {},
+              rules: [],
             });
           } else if (result.action === REPLACE_ACTION) {
             api.events.emit('remove-mod', gameId, modId, (err) => {
@@ -1230,6 +1238,7 @@ class InstallManager {
                   variant: '',
                   enable: wasEnabled(),
                   attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
+                  rules: mod.rules,
                 });
               }
             });

@@ -17,7 +17,7 @@ import { NEXUS_BASE_URL } from '../constants';
 import getText from '../texts';
 
 import * as React from 'react';
-import { FormGroup, HelpBlock, Alert } from 'react-bootstrap';
+import { Alert, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 

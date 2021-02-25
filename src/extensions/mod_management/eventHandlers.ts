@@ -319,8 +319,11 @@ export function onGameModeActivated(
       log('warn', 'Failed to refresh mods', err.message);
     })
     .catch((err: Error) => {
-      showError(store.dispatch, 'Failed to refresh mods', err,
-                { allowReport: (err as any).code !== 'ENOENT' });
+      const error: any = (err as any);
+      const allowReport = (error.allowReport !== undefined)
+        ? error.allowReport
+        : !['ENOENT'].includes(error.code);
+      showError(store.dispatch, 'Failed to refresh mods', err, { allowReport });
     });
 }
 
@@ -343,7 +346,9 @@ export function onPathsChanged(api: IExtensionApi,
       })
       .then(() => null)
       .catch((err: Error) => {
-        showError(store.dispatch, 'Failed to refresh mods', err);
+        showError(store.dispatch, 'Failed to refresh mods', err, {
+          allowReport: !(err instanceof UserCanceled),
+        });
       });
   }
 }
@@ -385,6 +390,12 @@ function undeploy(api: IExtensionApi,
   }
 
   const game = getGame(gameMode);
+
+  if (game === undefined) {
+    log('info', 'tried to undeploy for unknown game', gameMode);
+    return Promise.resolve();
+  }
+
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 

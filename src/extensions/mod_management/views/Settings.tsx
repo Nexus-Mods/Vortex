@@ -153,7 +153,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    const gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
+    let gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
+    if (gameName !== undefined) {
+      gameName = gameName.split('\t').map(part => t(part)).join(' ');
+    }
 
     const PanelX: any = Panel;
 
@@ -723,8 +726,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup id='install-path-form' validationState={validationState.state}>
         <ControlLabel>
           {label}
-          <More id='more-paths' name={t('Paths')} >
-            {getText('paths', t)}
+          <More id='more-paths' name={t('Mod Staging Folder')} >
+            {getText('modspath', t)}
           </More>
         </ControlLabel>
         <FlexLayout type='row'>
@@ -886,9 +889,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderActivatorOption(activator: IDeploymentMethod): JSX.Element {
+  private renderActivatorOption = (activator: IDeploymentMethod): JSX.Element => {
+    const { t } = this.props;
     return (
-      <option key={activator.id} value={activator.id}>{activator.name}</option>
+      <option key={activator.id} value={activator.id}>{t(activator.name)}</option>
     );
   }
 

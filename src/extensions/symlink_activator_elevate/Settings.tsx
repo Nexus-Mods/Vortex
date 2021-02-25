@@ -16,6 +16,8 @@ import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   supported: string;
+  onSymlinksPrivilege: (enable: boolean) => void;
+  localState: { symlinkRight: boolean };
 }
 
 interface IConnectedProps {
@@ -31,19 +33,42 @@ interface IActionProps {
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class Settings extends ComponentEx<IProps, {}> {
+  private mInitialSymlinkPrivilege: boolean;
+  public componentDidMount() {
+    this.props.localState['attach']?.(this);
+    this.mInitialSymlinkPrivilege = this.props.localState.symlinkRight;
+  }
+
+  public componentWillUnmount() {
+    this.props.localState['detach']?.(this);
+  }
+
   public render(): JSX.Element {
-    const { t, supported, userSymlinks } = this.props;
+    const { t, supported, localState, userSymlinks } = this.props;
 
     return (
       <form>
         <FormGroup controlId='no-elevation-symlink'>
           <ControlLabel>{t('Symlinks')}</ControlLabel>
           <Toggle
+            checked={localState.symlinkRight}
+            onToggle={this.togglePriv}
+            disabled={supported !== null}
+          >
+            {t('Allow Symlinks without elevation (experimental!)')}
+          </Toggle>
+          {(this.mInitialSymlinkPrivilege !== localState.symlinkRight) ? (
+            <Alert>
+              {t('You have to log out the user account or reboot windows for this change to be '
+                 + 'applied.')}
+            </Alert>
+          ) : (null)}
+          <Toggle
             checked={userSymlinks}
             onToggle={this.toggle}
             disabled={supported !== null}
           >
-            {t('Allow Symlinks without elevation')}
+            {t('Allow Symlinks without elevation (old mechanism, pre Vortex v1.4.3)')}
           </Toggle>
           {(supported !== null) ? (
             <Alert>
@@ -54,6 +79,31 @@ class Settings extends ComponentEx<IProps, {}> {
         </FormGroup>
       </form>
     );
+  }
+
+  private togglePriv = (enabled: boolean) => {
+    const { onSymlinksPrivilege, onShowDialog } = this.props;
+    const text = enabled
+      ? 'This will give your windows account the right to create symlinks. '
+          + 'You will have to log out or restart your computer for this change to take effect.\n'
+          + '\nAre there drawbacks? This is supposedly disabled by default for security reasons '
+          + 'but\na) It\'s certainly not safer for us to constantly have to elevate a process '
+          + '\nb) Windows lets any account create hard-links, why would symlinks be more '
+          + 'of a security problem?\n'
+          + 'So as far as I can tell, this is a win-win.'
+      : 'This will strip your windows account of the right to create symlinks globally! '
+          + 'You will have to log out or restart your computer for this change to take effect.\n';
+    onShowDialog('info', 'Enable Symlinks without elevation', {
+      text,
+    }, [
+      { label: 'Cancel' },
+      { label: enabled ? 'Give Privilege' : 'Remove Privilege' },
+    ])
+    .then(result => {
+      if (result.action !== 'Cancel') {
+        onSymlinksPrivilege(enabled);
+      }
+    });
   }
 
   private toggle = (enabled: boolean) => {

@@ -115,7 +115,17 @@ export interface IDownload {
   received: number;
 
   /**
+   * number of bytes hashed during finalizing
+   */
+  verified: number;
+
+  /**
    * for paused downloads, this contains the list segments that are still missing
    */
   chunks?: IChunk[];
+
+  /**
+   * whether the download server supports resuming downloads
+   */
+  pausable?: boolean;
 }

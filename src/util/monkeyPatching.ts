@@ -32,7 +32,7 @@ function fallbackDateFormat(locales?: string | string[], options?: Intl.DateTime
   return formatter.format(this);
 }
 
-function appyMonkeyPatches() {
+function applyMonkeyPatches() {
   monkeyPatch(Date, 'toLocaleString',
     function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
       try {
@@ -86,6 +86,18 @@ function appyMonkeyPatches() {
         }
       }
   });
+
+  const path = require('path');
+  const oldJoin = path.join;
+  // tslint:disable-next-line:only-arrow-functions
+  path.join = function(...paths: string[]) {
+    try {
+      return oldJoin(...paths);
+    } catch (err) {
+      err['paths'] = paths;
+      throw err;
+    }
+  };
 }
 
-appyMonkeyPatches();
+applyMonkeyPatches();

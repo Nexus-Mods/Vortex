@@ -1,6 +1,8 @@
 import Promise from 'bluebird';
 import { GameEntryNotFound, GameStoreNotFound,
   IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
+
+import * as fs from '../util/fs';
 import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
@@ -11,7 +13,7 @@ import { makeExeId } from '../reducers/session';
 
 import { getGameStores } from '../extensions/gamemode_management/util/getGame';
 
-import { UserCanceled } from '../util/CustomErrors';
+import { UserCanceled, ProcessCanceled } from '../util/CustomErrors';
 
 type SearchType = 'name' | 'id';
 
@@ -46,6 +48,25 @@ class GameStoreHelper {
       .catch(err => Promise.resolve(undefined));
   }
 
+  public isGameStoreInstalled(storeId: string): Promise<boolean> {
+    try {
+      const gameStore = this.getGameStore(storeId);
+      return (!!gameStore.isGameStoreInstalled)
+        ? gameStore.isGameStoreInstalled()
+        : gameStore.getGameStorePath()
+        .then(execPath => (execPath === undefined)
+            ? Promise.reject(new Error(`failed to determine path for ${storeId}`))
+            : fs.statAsync(execPath))
+        .then(() => Promise.resolve(true))
+        .catch(err => {
+          log('debug', 'gamestore is not installed', err);
+          return Promise.resolve(false);
+        });
+    } catch (err) {
+      return Promise.resolve(false);
+    }
+  }
+
   public findByName(name: string | string[], storeId?: string): Promise<IGameStoreEntry> {
     return this.findGameEntry('name', name, storeId);
   }
@@ -56,35 +77,47 @@ class GameStoreHelper {
 
   public launchGameStore(api: IExtensionApi, gameStoreId: string,
                          parameters?: string[], askConsent: boolean = false): Promise<void> {
-    const gameStore = this.getGameStore(gameStoreId);
-    if (gameStore === undefined) {
-      api.showErrorNotification('Unknown game store id', gameStoreId);
+    let gameStore: IGameStore;
+    try {
+      gameStore = this.getGameStore(gameStoreId);
+      if (!gameStore.getGameStorePath) {
+        throw new ProcessCanceled('gamestore implementation does not define getGameStorePath');
+      }
+    } catch (err) {
+      api.showErrorNotification('Failed to launch game store', err);
       return Promise.resolve();
     }
 
-    const launchStore = () => {
-      // Game Store specific launch has priority.
-      if (!!gameStore.launchGameStore) {
-        return gameStore.launchGameStore(api, parameters)
-          .catch(err => {
-            api.showErrorNotification('Failed to launch game store', err);
-            return Promise.resolve();
-          });
-      }
+    const t = api.translate;
+    const launchStore = () => this.isGameStoreInstalled(gameStoreId)
+      .then((gamestoreInstalled) => {
+        if (!gamestoreInstalled) {
+          api.showErrorNotification('Game store is not installed',
+            t('Please install/reinstall {{storeId}} to be able to launch this game store.',
+              { replace: { storeId: gameStoreId } }), { allowReport: false });
+          return Promise.resolve();
+        }
 
-      if (!!gameStore.getGameStorePath) {
+        // Game Store specific launch has priority.
+        if (!!gameStore.launchGameStore) {
+          return gameStore.launchGameStore(api, parameters)
+            .catch(err => {
+              api.showErrorNotification('Failed to launch game store', err);
+              return Promise.resolve();
+            });
+        }
+
         return gameStore.getGameStorePath()
           .then(launcherPath => {
             if (!!launcherPath && !this.isStoreRunning(launcherPath)) {
-              api.runExecutable(launcherPath, parameters || [], { suggestDeploy: false });
+              api.runExecutable(launcherPath, parameters || [], {
+                detach: true,
+                suggestDeploy: false,
+              });
             }
             return Promise.resolve();
-          });
-      }
-
-      api.showErrorNotification('Game store not configured correctly', gameStoreId);
-      return Promise.resolve();
-    };
+        });
+    })
 
     const isGameStoreRunning = () => (!!gameStore.getGameStorePath)
       ? gameStore.getGameStorePath()
@@ -101,7 +134,7 @@ class GameStoreHelper {
               { replace: { storeid: gameStoreId } }),
         }, [
           { label: 'Cancel', action: () => reject(new UserCanceled()) },
-          { label: 'Ok', action: () => resolve() },
+          { label: 'Start Store', action: () => resolve() },
         ]);
       }));
     };
@@ -191,12 +224,32 @@ class GameStoreHelper {
       ? new RegExp(pattern.map(wrapNamePattern).join('|'))
       : new RegExp(wrapNamePattern(pattern));
 
-    const matcher = Array.isArray(pattern)
+    const matcher = (Array.isArray(pattern))
       ? entry => pattern.indexOf(entryInfo(entry)) !== -1
       : entry => entryInfo(entry) === pattern;
 
-    const gameStores = ((!!storeId)
-      ? [this.getGameStore(storeId)]
+    const name = (Array.isArray(pattern))
+      ? pattern.join(' - ')
+      : pattern;
+
+    const stores = this.mStores.map(store => store.id).join(', ');
+
+    // queriedStore object is only populated if the game store helper caller
+    //  is looking for a specific game store.
+    let queriedStore: IGameStore;
+    if (!!storeId) {
+      try {
+        queriedStore = this.getGameStore(storeId);
+      } catch (err) {
+        // It's possible for a game store to be missing
+        //  especially if it is added by a 3rd party extension.
+        log('warn', 'Game entry not found in specified store', { pattern: name, storeId, availableStores: stores });
+        return Promise.reject(new GameEntryNotFound(name, stores));
+      }
+    }
+
+    const gameStores: IGameStore[] = ((!!queriedStore)
+      ? [queriedStore]
       : this.getstores()).filter(store => !!store);
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
@@ -229,11 +282,6 @@ class GameStoreHelper {
         if (foundEntries.length > 0) {
           return Promise.resolve(foundEntries[0]);
         } else {
-          const name = (Array.isArray(pattern))
-            ? pattern.join(' - ')
-            : pattern;
-
-          const stores = this.mStores.map(store => store.id).join(', ');
           log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
           return Promise.reject(new GameEntryNotFound(name, stores));
         }

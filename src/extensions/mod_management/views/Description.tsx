@@ -1,3 +1,4 @@
+import Icon from '../../../controls/Icon';
 import bbcode from '../../../util/bbcode';
 
 import { TFunction } from 'i18next';
@@ -9,12 +10,19 @@ interface IBaseProps {
   t: TFunction;
   short: string;
   long: string;
+  modId: string;
+  editable: boolean;
+  startEditDescription: (modId: string) => void;
 }
 
 type IProps = IBaseProps;
 
 interface IComponentState {
   open: boolean;
+}
+
+function nop() {
+  // nop
 }
 
 class Description extends React.Component<IProps, IComponentState> {
@@ -32,15 +40,26 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, long, short } = this.props;
-
-    if (!long && !short) {
-      return <div>{t('No description')}</div>;
-    }
+    const { t, editable, short } = this.props;
 
     const popover = (
       <Popover id='popover-mod-description'>
         <div style={{ maxHeight: 700, overflowY: 'auto' }}>{this.mLongBB}</div>
+        {editable
+          ? (
+            <a onClick={this.editDescription}>
+              <Icon name='edit'/>{t('Edit Description')}
+            </a>
+          ) : (
+            <a
+              onClick={nop}
+              className='fake-link'
+              title={t('Description is synchronized with an online source')}
+            >
+              <Icon name='edit'/>{t('Edit Description')}
+            </a>
+          )
+        }
       </Popover>
     );
 
@@ -62,6 +81,10 @@ class Description extends React.Component<IProps, IComponentState> {
     );
   }
 
+  private editDescription = () => {
+    this.props.startEditDescription(this.props.modId);
+  }
+
   private getRef = () => this.mRef;
 
   private setRef = ref => {
@@ -73,8 +96,10 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   private toggle = () => {
+    const { t } = this.props;
     if (!this.state.open) {
-      this.mLongBB = bbcode(this.props.long);
+      this.mLongBB = bbcode(this.props.long
+        || `<${t('No description')}>`);
     }
     this.setState({ open: !this.state.open });
   }

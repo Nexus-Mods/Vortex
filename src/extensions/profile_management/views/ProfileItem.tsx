@@ -17,6 +17,7 @@ import { nativeImage, remote } from 'electron';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
+import { pathToFileURL } from 'url';
 
 export interface IProps {
   t: TFunction;
@@ -114,13 +115,9 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       log('warn', 'failed to identify profile logo path', { profile, hasProfileImage });
     }
 
-    const gameName = (game !== undefined)
-      ? game.name
+    const gameName = (game?.name !== undefined)
+      ? game.name.split('\t').map(part => t(part)).join(' ')
       : t('Unknown game {{ gameId }}', { replace: { gameId: profile.gameId } });
-
-    if (process.platform === 'win32') {
-      logo = logo.replace(/\\/g, '/');
-    }
 
     const imageClass = ['profile-image'];
     if (!hasProfileImage) {
@@ -135,7 +132,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         <div style={{ flex: '1 1 0' }}>
           <div
             className={imageClass.join(' ')}
-            style={{ background: `url('file://${logo}?${counter}')` }}
+            style={{ background: `url('${pathToFileURL(logo).href}?${counter}')` }}
             onClick={this.changeImage}
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
@@ -209,7 +206,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
-      <>
+      <React.Fragment key={id}>
         <div className='profile-feature-name'>
           <a
             className='fake-link'
@@ -222,7 +219,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         <div className='profile-feature-value'>
           {this.renderFeatureValue(feature.type, value)}
         </div>
-      </>
+      </React.Fragment>
     );
   }
 

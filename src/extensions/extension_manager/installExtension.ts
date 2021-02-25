@@ -97,7 +97,9 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
                   && ((info.id !== undefined) && (installed[key].id === info.id)
                     || (info.modId !== undefined) && (installed[key].modId === info.modId)
                     || (installed[key].name === info.name)));
-  log('info', 'removing previous versions of the extension', previousVersions);
+  if (previousVersions.length > 0) {
+    log('info', 'removing previous versions of the extension', previousVersions);
+  }
 
   previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
   return Promise.resolve();
@@ -309,11 +311,10 @@ function installExtension(api: IExtensionApi,
           }
         }
       })
-      .catch(DataInvalid, err => {
+      .catch(DataInvalid, err =>
         rimrafAsync(tempPath, { glob: false })
         .then(() => api.showErrorNotification('Invalid Extension', err,
-                                              { allowReport: false, message: archivePath }));
-      })
+                                              { allowReport: false, message: archivePath })))
       .catch(err =>
         rimrafAsync(tempPath, { glob: false })
         .then(() => Promise.reject(err)));
