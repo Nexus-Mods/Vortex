@@ -508,7 +508,10 @@ export function onRemoveMod(api: IExtensionApi,
       return Promise.resolve();
     }
     return undeploy(api, activators, gameMode, mod)
-      .catch({ code: 'ENOTFOUND' }, () => {
+      .catch((err) => {
+        if (!['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+          return Promise.reject(err);
+        }
         return api.showDialog('error', 'Mod not found', {
           text: 'The mod you\'re removing has already been deleted on disk.\n'
               + 'This makes it impossible for Vortex to cleanly undeploy the mod '

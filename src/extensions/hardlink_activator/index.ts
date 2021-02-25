@@ -214,7 +214,7 @@ class DeploymentMethod extends LinkingDeployment {
           details: true,
           skipHidden: false,
         })
-        .catch(err => (err.code === 'ENOTFOUND')
+        .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
           ? Promise.resolve()
           : Promise.reject(err))
         .then(() => Promise.resolve(this.mInstallationFiles));

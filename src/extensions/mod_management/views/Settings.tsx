@@ -618,7 +618,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             ErrorCode: err.errno,
           }, true);
         } else {
-          onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
+          onShowError('Failed to purge previous deployment',
+                      err, !['ENOTFOUND', 'ENOENT'].includes(err.code));
         }
       });
   }
