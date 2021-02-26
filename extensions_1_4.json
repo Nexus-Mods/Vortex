@@ -130,10 +130,6 @@
       "uploader": "Bassforce86"
     },
     {
-      "modId": 51,
-      "fileId": 249
-    },
-    {
       "modId": 23,
       "fileId": 590,
       "author": "vanjavs",
@@ -265,10 +261,6 @@
       "version": "1.3.22",
       "type": "translation",
       "language": "zh"
-    },
-    {
-      "modId": 33,
-      "fileId": 547
     },
     {
       "modId": 19,
@@ -457,14 +449,6 @@
       "type": null,
       "timestamp": 1597666918,
       "uploader": "Garethp"
-    },
-    {
-      "modId": 69,
-      "fileId": 305
-    },
-    {
-      "modId": 71,
-      "fileId": 386
     },
     {
       "modId": 73,
@@ -1773,10 +1757,6 @@
       "type": null
     },
     {
-      "modId": 90,
-      "fileId": 466
-    },
-    {
       "modId": 91,
       "fileId": 639,
       "author": "Pickysaurus",
@@ -1867,10 +1847,6 @@
       "gameName": "Phoenix Point"
     },
     {
-      "modId": 96,
-      "fileId": 827
-    },
-    {
       "modId": 97,
       "fileId": 481,
       "author": "Aogara",
@@ -1925,10 +1901,6 @@
       "type": "theme"
     },
     {
-      "modId": 103,
-      "fileId": 521
-    },
-    {
       "modId": 101,
       "fileId": 423,
       "author": "FLATLabs",
@@ -1965,10 +1937,6 @@
       "version": "1.1.0",
       "type": "game",
       "gameName": "Warhammer 40000 Gladius - Relics of War"
-    },
-    {
-      "modId": 105,
-      "fileId": 430
     },
     {
       "modId": 108,
@@ -2129,10 +2097,6 @@
       "tags": [],
       "version": "0.0.1",
       "type": "theme"
-    },
-    {
-      "modId": 35,
-      "fileId": 110
     },
     {
       "modId": 120,
@@ -2359,10 +2323,6 @@
       "gameName": "Half-Life 2 Deathmatch"
     },
     {
-      "modId": 137,
-      "fileId": 677
-    },
-    {
       "modId": 133,
       "fileId": 608,
       "author": "agc93",
@@ -2458,10 +2418,6 @@
       "language": "cs"
     },
     {
-      "modId": 140,
-      "fileId": 591
-    },
-    {
       "modId": 145,
       "fileId": 934,
       "author": "agc93",
@@ -2481,10 +2437,6 @@
       "dependencies": {
         "vortex": "~ 1.4.0"
       }
-    },
-    {
-      "modId": 142,
-      "fileId": 610
     },
     {
       "modId": 146,
@@ -2552,10 +2504,6 @@
       "tags": [],
       "version": "0.0.2",
       "type": null
-    },
-    {
-      "modId": 152,
-      "fileId": 685
     },
     {
       "modId": 151,
@@ -2910,10 +2858,6 @@
       }
     },
     {
-      "modId": 184,
-      "fileId": 815
-    },
-    {
       "modId": 185,
       "fileId": 819,
       "author": "Wyrm",
@@ -3118,10 +3062,6 @@
       "type": "theme"
     },
     {
-      "modId": 204,
-      "fileId": 901
-    },
-    {
       "modId": 205,
       "fileId": 905,
       "author": "Keelhauled",
@@ -3195,7 +3135,7 @@
       "modId": 202,
       "fileId": 929,
       "uploader": "MrPurple6411",
-      "downloads": 148,
+      "downloads": 149,
       "endorsements": 1,
       "timestamp": 1613369352,
       "tags": [],
@@ -3220,6 +3160,43 @@
       "tags": [],
       "version": "v.2.2",
       "type": "theme"
+    },
+    {
+      "modId": 96,
+      "fileId": 827,
+      "author": "agc93",
+      "uploader": "agc93",
+      "description": {
+        "short": "Adds support for installing and managing Beat Saber mods with Vortex",
+        "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />Find full documentation on using Vortex with Beat Saber at [url=https://beatvortex.dev]beatvortex.dev[/url]\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />You should be able to automatically install the extension by clicking Manage on Beat Saber in the Games list, just like your other Vortex games. If that doesn't work, you can install the extension directly using the Find More button at the bottom of the Extensions screen: just find Beat Saber Support and Install it.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version.\n<br />\n<br />[size=5]OneClick[/size]\n<br />\n<br />Since v0.2.0, you can enable our preview support for OneClick installs from your Vortex settings. Open the Download tab in Settings, scroll down to \"Enable OneClick Installations\" and you can individually enable OneClick link handling for maps, models or playlists. You can then use the OneClick links on BeatSaver, BeastSaber and ModelSaber to install mods with Vortex. See [url=https://beatvortex.dev/docs/usage/mods/]beatvortex.dev[/url] for more information on OneClick installation."
+      },
+      "downloads": 14897,
+      "endorsements": 417,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/96/96-1585722074-59618986.png",
+      "name": "Beat Saber Support",
+      "timestamp": 1604533823,
+      "tags": [],
+      "version": "0.4.3",
+      "type": "game",
+      "gameName": "Beat Saber"
+    },
+    {
+      "modId": 152,
+      "fileId": 685,
+      "author": "agc93",
+      "uploader": "agc93",
+      "description": {
+        "short": "Easily build and upload your modlists to Modwatch directly from Vortex. Powered by Vortex Showcase.",
+        "long": "[quote]Find the full documentation at [url=https://modwatch.vortex.support]modwatch.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that adds support for building and uploading modlists based on your installed mods directly to Modwatch from Vortex. You can easily create and upload modlists for any supported game directly from the Vortex mods page without any external uploader.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://modwatch.vortex.support/]the docs[/url], especially [url=https://modwatch.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go. If you don't have Showcase installed, Vortex will prompt you to install it.\n<br />\n<br />You can then create and upload mod lists based on your enabled mods (from the top bar) of the mods page. You can also use the normal \"Create Showcase\" buttons to create a modlist for only a selection of mods (check [url=https://modwatch.vortex.support/docs/usage/]the docs [/url]for more details).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods, nor with Modwatch."
+      },
+      "downloads": 379,
+      "endorsements": 56,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/152/152-1597291731-1862535100.jpeg",
+      "name": "Modwatch for Vortex",
+      "timestamp": 1597331096,
+      "tags": [],
+      "version": "0.0.2",
+      "type": null
     }
   ]
 }
