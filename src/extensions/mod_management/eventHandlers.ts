@@ -21,7 +21,7 @@ import {setActivator} from './actions/settings';
 import { IDeploymentManifest } from './types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
+import {getManifest, loadActivation, purgeDeployedFiles, saveActivation, withActivationLock} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import getDownloadGames from '../download_management/util/getDownloadGames';
@@ -105,14 +105,72 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
     });
 }
 
+function purgeOldMethod(api: IExtensionApi,
+                        oldActivator: IDeploymentMethod,
+                        profile: IProfile,
+                        gameId: string,
+                        instPath: string,
+                        modPaths: { [typeId: string]: string }) {
+  const state = api.getState();
+  const stagingPath = installPath(state);
+  const manifests: { [typeId: string]: IDeploymentManifest } = {};
+  const deployments: { [typeId: string]: IDeployedFile[] } = {};
+
+  return Promise.all(Object.keys(modPaths).map((modType) =>
+    getManifest(api, modType, gameId)
+      .then(manifest => {
+        manifests[modType] = manifest;
+        deployments[modType] = manifest.files;
+      })))
+    .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
+    .then(() => oldActivator.prePurge(instPath))
+    .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
+      return getNormalizeFunc(modPaths[typeId])
+        .then(normalize => {
+          // test for the special case where the game has been moved since the deployment
+          // happened. Based on the assumption that this is the reason the deployment method
+          // changed, the regular purge is almost guaranteed to not work correctly and we're
+          // better off using the manifest-based fallback purge.
+          // For example: if the game directory with hard links was moved, those links were
+          // turned into real files, the regular purge op wouldn't clean up anything
+          if ((manifests[typeId].targetPath !== undefined)
+            && (normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath))
+            && oldActivator.isFallbackPurgeSafe) {
+            log('warn', 'using manifest-based purge because deployment path changed',
+              { from: manifests[typeId].targetPath, to: modPaths[typeId] });
+            return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
+          } else {
+            return oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
+          }
+        })
+        ;
+    }))
+    // save (empty) activation
+    .then(() => Promise.map(Object.keys(modPaths), typeId =>
+      saveActivation(typeId, state.app.instanceId, modPaths[typeId],
+        stagingPath, [], oldActivator.id)))
+    .then(() => undefined)
+    .finally(() => oldActivator.postPurge())
+    .catch(ProcessCanceled, () => Promise.resolve())
+    .catch(TemporaryError, err =>
+      api.showErrorNotification('Purge failed, please try again',
+        err.message, { allowReport: false }))
+    .catch(err => api.showErrorNotification('Purge failed', err, {
+      allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
+    }));
+}
+
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   // TODO: This function is a monster and needs to be refactored desperately, unfortunately
   //   it's also sensitive code
   const store = api.store;
   let state: IState = store.getState();
-  let supported = getSupportedActivators(state);
-  let activatorToUse = getCurrentActivator(state, newGame, true);
+  let supported: IDeploymentMethod[] = getSupportedActivators(state);
+  // this is either the configured activator or the default one if none is configured.
+  // might be undefined if the game isn't properly discovered or the configured activator
+  // is no longer supported
+  let activatorToUse: IDeploymentMethod = getCurrentActivator(state, newGame, true);
   const profile: IProfile = activeProfile(state);
   const gameId = profile.gameId;
   if (gameId !== newGame) {
@@ -184,6 +242,10 @@ export function onGameModeActivated(
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
 
+    const safeFB = (oldActivator !== undefined)
+      ? supported.find(method => (method.compatible ?? []).includes(oldActivator.id))
+      : undefined;
+
     // TODO: at this point we may also want to take into consideration the deployment
     //   method stored in the manifest, just in case that doesn't match the configured
     //   method for some reason
@@ -209,17 +271,25 @@ export function onGameModeActivated(
           // wut? Guess the problem was temporary
           changeActivator = false;
         } else {
-          api.showErrorNotification(
-            'Deployment method no longer supported',
-            {
-              message:
-                'The deployment method you had configured is no longer applicable.\n' +
-                'Please resolve the problem described below or go to "Settings" and ' +
-                'change the deployment method.',
-              reason: reason.errors[0].description(api.translate),
-            },
-            { allowReport: false, id: 'deployment-method-unavailable' },
-          );
+          if (safeFB !== undefined) {
+            api.sendNotification({
+              type: 'info',
+              title: 'Deployment method changed',
+              message: safeFB.name,
+            });
+          } else {
+            api.showErrorNotification(
+              'Deployment method no longer supported',
+              {
+                message:
+                  'The deployment method you had configured is no longer applicable.\n' +
+                  'Please resolve the problem described below or go to "Settings" and ' +
+                  'change the deployment method.',
+                reason: reason.errors[0].description(api.translate),
+              },
+              { allowReport: false, id: 'deployment-method-unavailable' },
+            );
+          }
         }
       }
     }
@@ -228,50 +298,12 @@ export function onGameModeActivated(
 
     if (changeActivator) {
       if (oldActivator !== undefined) {
-        const stagingPath = installPath(state);
-        const manifests: { [typeId: string]: IDeploymentManifest } = {};
-        const deployments: { [typeId: string]: IDeployedFile[] } = {};
         const oldInit = initProm;
         initProm = () => oldInit()
-          .then(() => Promise.all(Object.keys(modPaths).map((modType) =>
-            getManifest(api, modType, gameId)
-              .then(manifest => {
-                manifests[modType] = manifest;
-                deployments[modType] = manifest.files;
-              })))
-          .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
-          .then(() => oldActivator.prePurge(instPath))
-          .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
-            return getNormalizeFunc(modPaths[typeId])
-              .then(normalize => {
-                // test for the special case where the game has been moved since the deployment
-                // happened. Based on the assumption that this is the reason the deployment method
-                // changed, the regular purge is almost guaranteed to not work correctly and we're
-                // better off using the manifest-based fallback purge.
-                // For example: if the game directory with hard links was moved, those links were
-                // turned into real files, the regular purge op wouldn't clean up anything
-                if ((manifests[typeId].targetPath !== undefined)
-                    && (normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath))
-                    && oldActivator.isFallbackPurgeSafe) {
-                  log('warn', 'using manifest-based purge because deployment path changed',
-                      { from: manifests[typeId].targetPath, to: modPaths[typeId] });
-                  return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
-                } else {
-                  return oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
-                }
-              });
-          }))
-            .then(() => undefined)
-            .catch(ProcessCanceled, () => Promise.resolve())
-            .catch(TemporaryError, err =>
-              api.showErrorNotification('Purge failed, please try again',
-                err.message, { allowReport: false }))
-            .catch(err => api.showErrorNotification('Purge failed', err, {
-              allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
-            })))
-          .catch(ProcessCanceled, () => Promise.resolve())
-          .finally(() => oldActivator.postPurge())
-          .then(() => api.emitAndAwait('did-purge', profile.id));
+          .then(() => (safeFB === undefined)
+            ? purgeOldMethod(api, oldActivator, profile, gameId, instPath, modPaths)
+            : Promise.resolve())
+          .catch(ProcessCanceled, () => Promise.resolve());
       }
 
       {
@@ -281,7 +313,7 @@ export function onGameModeActivated(
             // by this point the flag may have been reset
             if (changeActivator) {
               if (supported.length > 0) {
-                api.store.dispatch(setActivator(gameId, supported[0].id));
+                api.store.dispatch(setActivator(gameId, (safeFB ?? supported[0]).id));
               }
             }
           });

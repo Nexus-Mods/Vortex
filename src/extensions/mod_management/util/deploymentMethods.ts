@@ -46,7 +46,7 @@ export function getSupportedActivators(state: IState): IDeploymentMethod[] {
     act => allTypesSupported(act, state, gameId, modTypes).errors.length === 0);
 }
 
-export function getSelectedActivator(state: IState, gameId: string) {
+export function getSelectedActivator(state: IState, gameId: string): IDeploymentMethod {
   const activatorId = state.settings.mods.activator[gameId];
 
   return (activatorId !== undefined)
@@ -77,9 +77,7 @@ export function getCurrentActivator(state: IState,
 
   // if no activator has been selected for the game, allow using a default
   if (allowDefault && (activator === undefined)) {
-    if ((game !== undefined)
-        && (gameDiscovery !== undefined)
-        && (gameDiscovery.path !== undefined)) {
+    if ((game !== undefined) && (gameDiscovery?.path !== undefined)) {
       const modTypes = Object.keys(modPaths);
       activator = activators.find(act =>
         allTypesSupported(act, state, gameId, modTypes) === undefined);

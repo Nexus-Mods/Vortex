@@ -97,6 +97,7 @@ class DeploymentMethod extends LinkingDeployment {
   public id: string;
   public name: string;
   public description: string;
+  public compatible: string[] = ['symlink_activator'];
 
   public priority: number = 20;
 
@@ -390,6 +391,13 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private startElevated(): Promise<void> {
+    return this.startElevatedImpl()
+      .tapCatch(() => {
+        this.api.store.dispatch(clearUIBlocker('elevating'));
+      });
+  }
+
+  private startElevatedImpl(): Promise<void> {
     this.mOpenRequests = {};
     this.mDone = null;
 
