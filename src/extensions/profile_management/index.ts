@@ -451,7 +451,8 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
           api.store.dispatch(setUIBlocker('installing-game', 'download',
             'Installing Game, Vortex will restart upon completion.', true));
 
-          api.emitAndAwait('install-extension', extension)
+          api.ext.ensureLoggedIn()
+          .then(() => api.emitAndAwait('install-extension', extension))
             .then(() => {
               relaunch(['--game', gameId]);
             })
