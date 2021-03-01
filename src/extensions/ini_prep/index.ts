@@ -355,10 +355,12 @@ function main(context: IExtensionContext) {
           log('info', 'user canceled baking game settings');
         })
         .catch(err => {
+          const nonReportable = [362, 1359];
           const allowReport = !(
             err.stack.includes('not enough space on the disk')
             || err.stack.includes('The cloud operation was unsuccessful')
-            || [362, 1359].includes(err.systemCode)
+            || nonReportable.includes(err.systemCode)
+            || nonReportable.includes(err.errno)
             );
           context.api.showErrorNotification('Failed to bake settings files', err,
             { allowReport });
