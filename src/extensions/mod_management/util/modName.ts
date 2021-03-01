@@ -19,7 +19,7 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
     fields.push(`(v${getSafe(mod, ['version'], '?')})`);
   }
 
-  if (options?.variant && (mod.variant !== undefined)) {
+  if (options?.variant && (mod?.variant !== undefined)) {
     fields.push(`(${mod.variant})`);
   }
 

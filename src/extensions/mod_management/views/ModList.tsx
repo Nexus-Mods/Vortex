@@ -1047,7 +1047,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeRelated = (modIds: string[]) => {
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
-      .filter(mod => mod !== undefined)
+      .filter(mod => mod?.attributes !== undefined)
       .map(mod => ({ mod, enabled: mod.id !== modId }));
 
     const repoModId = this.state.modsWithState[modId]?.attributes?.modId?.toString?.();
