@@ -299,7 +299,8 @@ function doMergeMods(api: IExtensionApi,
 
   // all mod types that require merging
   const mergeModTypes = Object.keys(modPaths)
-    .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
+    .filter(modType => (fileMergers.find(merger => merger.modType === modType) !== undefined)
+                    || ((modType === '') && (game.mergeArchive !== undefined)));
 
   const result: { [typeId: string]: IMergeResultByType } = Object.keys(modPaths)
     .reduce((prev, modType) => {
