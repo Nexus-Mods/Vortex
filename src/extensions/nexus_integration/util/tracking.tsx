@@ -67,8 +67,8 @@ class Tracking {
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
     modIds.forEach(modId => {
-      if (mods[modId].attributes?.modId !== undefined) {
-        this.trackMod(gameMode, mods[modId].attributes?.modId?.toString?.());
+      if (mods[modId]?.attributes?.modId !== undefined) {
+        this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
       }
     });
   }
@@ -78,8 +78,8 @@ class Tracking {
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
     modIds.forEach(modId => {
-      if (mods[modId].attributes?.modId !== undefined) {
-        this.untrackMod(gameMode, mods[modId].attributes?.modId?.toString?.());
+      if (mods[modId]?.attributes?.modId !== undefined) {
+        this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
       }
     });
   }
