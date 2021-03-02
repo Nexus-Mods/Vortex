@@ -201,6 +201,14 @@ export interface IGame extends ITool {
   directoryCleaning?: DirectoryCleaningMode;
 
   /**
+   * list of game ids. If one of the games listed here is discovered in the same location as this
+   * extension they get disabled.
+   * This allows third-party extensions or total conversions to take precedence over the original
+   * they're replacing
+   */
+  overrides?: string[];
+
+  /**
    * if set this function is always called before automatic deployment and it will be delayed
    * until the promise resolves.
    * This can be used if the deployment process is very slow and/or involves user interaction

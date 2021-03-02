@@ -202,7 +202,7 @@ function deployModType(api: IExtensionApi,
           (entry.source === mod.installationPath)
           || ((entry.merged || []).includes(mod.id))) === undefined));
 
-      return doSaveActivation(api, typeId,
+      return doSaveActivation(api, game.id, typeId,
         targetPath, stagingPath,
         newActivation, activator.id)
         .catch(err => api.showDialog('error', 'Saving manifest failed', {
@@ -515,7 +515,7 @@ function genUpdateModDeployment() {
         progress(t('Loading deployment manifest'), 0);
 
         return Promise.each(deployableModTypes(modPaths), typeId =>
-            loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
+            loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, activator)
               .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
           .tap(() => progress(t('Running pre-deployment events'), 2))
           .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
@@ -618,11 +618,12 @@ function genUpdateModDeployment() {
     };
 }
 
-function doSaveActivation(api: IExtensionApi, typeId: string,
+function doSaveActivation(api: IExtensionApi, gameId: string, typeId: string,
                           deployPath: string, stagingPath: string,
                           files: IDeployedFile[], activatorId: string) {
   const state: IState = api.store.getState();
-  return saveActivation(typeId, state.app.instanceId, deployPath, stagingPath, files, activatorId)
+  return saveActivation(gameId, typeId, state.app.instanceId, deployPath,
+                        stagingPath, files, activatorId)
     .catch(err => {
       const canceled = err instanceof UserCanceled;
       let text = canceled
@@ -641,7 +642,7 @@ function doSaveActivation(api: IExtensionApi, typeId: string,
           { label: 'Ignore' },
         ])
         .then(result => (result.action === 'Retry')
-          ? doSaveActivation(api, typeId, deployPath, stagingPath, files, activatorId)
+          ? doSaveActivation(api, gameId, typeId, deployPath, stagingPath, files, activatorId)
           : Promise.resolve());
     });
 }
@@ -866,7 +867,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     return withActivationLock(() => getNormalizeFunc(dataPath)
       .then(norm => {
         normalize = norm;
-        return loadActivation(api, mod.type, dataPath, stagingPath, activator);
+        return loadActivation(api, gameId, mod.type, dataPath, stagingPath, activator);
       })
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
@@ -882,7 +883,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       })
       .then(() => activator.finalize(gameId, dataPath, stagingPath))
       .then(newActivation =>
-        doSaveActivation(api, mod.type, dataPath, stagingPath, newActivation, activator.id))
+        doSaveActivation(api, gameId, mod.type, dataPath, stagingPath, newActivation, activator.id))
       .catch(ProcessCanceled, err => {
         api.sendNotification({
           type: 'warning',

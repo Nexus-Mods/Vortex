@@ -231,7 +231,7 @@ function getManifestImpl(api: IExtensionApi,
 }
 
 function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
-                           modType: string, deployPath: string,
+                           gameId: string, modType: string, deployPath: string,
                            stagingPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
@@ -253,7 +253,7 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
             }
           }
           result = purgeDeployedFiles(deployPath, tagObject.files)
-              .then(() => saveActivation(modType, state.app.instanceId,
+              .then(() => saveActivation(gameId, modType, state.app.instanceId,
                                          deployPath, stagingPath,
                                          [], activator !== undefined ? activator.id : undefined))
               .then(() => Promise.resolve());
@@ -283,7 +283,7 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   const activator = getCurrentActivator(state, gameId, false);
 
   return Promise.each(Object.keys(modPaths), typeId =>
-    fallbackPurgeType(api, activator, typeId, modPaths[typeId], stagingPath))
+    fallbackPurgeType(api, activator, gameId, typeId, modPaths[typeId], stagingPath))
     .then(() => undefined);
 }
 
@@ -339,7 +339,7 @@ export function getManifest(api: IExtensionApi,
   return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
 }
 
-export function loadActivation(api: IExtensionApi, modType: string,
+export function loadActivation(api: IExtensionApi, gameId: string, modType: string,
                                deployPath: string, stagingPath: string,
                                activator: IDeploymentMethod): Promise<IDeployedFile[]> {
   if (deployPath === undefined) {
@@ -364,7 +364,7 @@ export function loadActivation(api: IExtensionApi, modType: string,
             }
           }
           result = queryPurge(api, deployPath, tagObject.files, safe)
-              .then(() => saveActivation(modType, state.app.instanceId, deployPath,
+              .then(() => saveActivation(gameId, modType, state.app.instanceId, deployPath,
                                          stagingPath, [], activator.id))
               .then(() => Promise.resolve([]));
         } else {
@@ -374,7 +374,7 @@ export function loadActivation(api: IExtensionApi, modType: string,
       });
 }
 
-export function saveActivation(modType: string, instance: string,
+export function saveActivation(gameId: string, modType: string, instance: string,
                                gamePath: string, stagingPath: string,
                                activation: IDeployedFile[], activatorId?: string) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
@@ -382,6 +382,7 @@ export function saveActivation(modType: string, instance: string,
     instance,
     version: CURRENT_VERSION,
     deploymentMethod: activatorId,
+    gameId,
     deploymentTime: Date.now(),
     stagingPath,
     targetPath: gamePath,

@@ -142,7 +142,9 @@ export function quickDiscovery(knownGames: IGame[],
       // don't escalate exception because a single game shouldn't break everything
       return resolve();
     }
-  })).then(gameNames => gameNames.filter(name => name !== undefined));
+  }))
+  .then(gameNames => gameNames.filter(name => name !== undefined))
+  ;
 }
 
 /**

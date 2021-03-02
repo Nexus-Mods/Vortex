@@ -5,6 +5,7 @@ function deserialize(input: any): IDeploymentManifest {
     version: 1,
     instance: input.instance,
     files: input.files,
+    gameId: input.gameId,
     deploymentMethod: input.deploymentMethod,
     deploymentTime: input.deploymentTime,
     stagingPath: input.stagingPath,

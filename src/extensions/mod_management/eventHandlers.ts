@@ -31,7 +31,7 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
 import allTypesSupported from './util/allTypesSupported';
-import { genSubDirFunc } from './util/deploy';
+import { genSubDirFunc, purgeMods } from './util/deploy';
 import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
@@ -44,6 +44,32 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
 const app = remote !== undefined ? remote.app : appIn;
+
+function checkStagingGame(api: IExtensionApi, gameId: string, manifestGameId: string)
+  : Promise<boolean> {
+  if ((manifestGameId !== undefined) && (gameId !== manifestGameId)) {
+    return api.showDialog('error', 'Game managed by different game extension', {
+      text: 'You seem to have multiple games inside Vortex trying to manage the same game '
+          + 'directory. This can happen in case of total conversions or if you use a '
+          + 'third-party extension for a game that has also bundled support in Vortex.\n'
+          + 'If you continue now, Vortex will purge the deployment from the other extension. '
+          + 'This is not destructive, you can go back to the other extension any time.',
+    }, [
+      { label: 'Cancel' },
+      { label: 'Purge' },
+    ])
+    .then(result => {
+      if (result.action === 'Cancel') {
+        return Promise.reject(new UserCanceled());
+      } else {
+        return purgeMods(api, manifestGameId)
+          .then(() => true);
+      }
+    });
+  } else {
+    return Promise.resolve(false);
+  }
+}
 
 // check staging folder against deployment manifest
 function checkStagingFolder(api: IExtensionApi, gameId: string,
@@ -147,7 +173,7 @@ function purgeOldMethod(api: IExtensionApi,
     }))
     // save (empty) activation
     .then(() => Promise.map(Object.keys(modPaths), typeId =>
-      saveActivation(typeId, state.app.instanceId, modPaths[typeId],
+      saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId],
         stagingPath, [], oldActivator.id)))
     .then(() => undefined)
     .finally(() => oldActivator.postPurge())
@@ -206,7 +232,10 @@ export function onGameModeActivated(
       }
       existingManifest = manifest;
 
-      return checkStagingFolder(api, gameId, manifest.stagingPath, instPath)
+      return checkStagingGame(api, gameId, manifest.gameId)
+        .then((purged: boolean) => purged
+          ? Promise.resolve(false)
+          : checkStagingFolder(api, gameId, manifest.stagingPath, instPath))
         .then(useManifest => {
           if (useManifest) {
             log('info', 'reverting to staging path used in manifest');
@@ -454,7 +483,7 @@ function undeploy(api: IExtensionApi,
   return getNormalizeFunc(deployPath)
     .then(norm => {
       normalize = norm;
-      return loadActivation(api, mod.type, deployPath, stagingPath, activator);
+      return loadActivation(api, gameMode, mod.type, deployPath, stagingPath, activator);
     })
     .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
@@ -468,7 +497,7 @@ function undeploy(api: IExtensionApi,
     })
     .then(() => activator.finalize(gameMode, deployPath, stagingPath))
     .then(newActivation =>
-      saveActivation(mod.type, state.app.instanceId, deployPath,
+      saveActivation(gameMode, mod.type, state.app.instanceId, deployPath,
                      stagingPath, newActivation, activator.id))
     .finally(() => {
       log('debug', 'done undeploying single mod', { game: gameMode, modId: mod.id });

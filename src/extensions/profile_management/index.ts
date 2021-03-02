@@ -29,7 +29,7 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
-import { discoveryByGame, installPathForGame, needToDeployForGame } from '../../util/selectors';
+import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -624,6 +624,23 @@ function addDescriptionFeature() {
   });
 }
 
+function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
+  const { disabled } = state.session.gameMode;
+
+  if (disabled[gameId] === undefined) {
+    return Promise.resolve();
+  }
+
+  return api.showDialog('question', 'Game disabled', {
+    text: 'A different game extension is currently managing that game directory.',
+    message: gameById(state, disabled[gameId]).name,
+  }, [
+    { label: 'Cancel' },
+  ])
+  .then(() => Promise.reject(new UserCanceled()));
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
@@ -646,26 +663,46 @@ function init(context: IExtensionContext): boolean {
 
       // double check, calling manageGameDiscovered for a game that isn't
       // actually discovered would be invalid
-      if (state.settings.gameMode.discovered[gameId]?.path !== undefined) {
-        manageGameDiscovered(context.api, gameId);
-      } else {
-        manageGameUndiscovered(context.api, gameId);
-      }
+      const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
+        ? manageGameDiscovered
+        : manageGameUndiscovered;
+
+      checkOverridden(context.api, gameId)
+        .then(() => manageFunc(context.api, gameId))
+        .catch(err => {
+          if (!(err instanceof UserCanceled)) {
+            context.api.showErrorNotification('Failed to manage game', err);
+          }
+        });
   });
 
   context.registerAction('game-undiscovered-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Manage', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
-    manageGameUndiscovered(context.api, gameId);
+
+    checkOverridden(context.api, gameId)
+      .then(() => manageGameUndiscovered(context.api, gameId))
+      .catch(err => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification('Failed to manage game', err);
+        }
+      });
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
-    activateGame(context.api.store, instanceIds[0]);
+    const gameId = instanceIds[0];
+    checkOverridden(context.api, gameId)
+      .then(() => activateGame(context.api.store, gameId))
+      .catch(err => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification('Failed to activate game', err);
+        }
+      });
   }, (instanceIds: string[]) =>
-      activeGameId(context.api.store.getState()) !== instanceIds[0],
+      activeGameId(context.api.getState()) !== instanceIds[0],
   );
 
   context.registerProfileFile = (gameId: string, filePath: string) => {

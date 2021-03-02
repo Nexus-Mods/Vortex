@@ -57,12 +57,13 @@ function filterManifest(activator: IDeploymentMethod,
 
 export function loadAllManifests(api: IExtensionApi,
                                  deploymentMethod: IDeploymentMethod,
+                                 gameId: string,
                                  modPaths: { [typeId: string]: string },
                                  stagingPath: string) {
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
   return Promise.reduce(modTypes, (prev, typeId) =>
-        loadActivation(api, typeId, modPaths[typeId], stagingPath, deploymentMethod)
+        loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, deploymentMethod)
           .then(deployment => {
             prev[typeId] = deployment;
             return prev;
@@ -149,7 +150,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
     //   deployment method.
     return activator.prePurge(stagingPath)
       // load previous deployments
-      .then(() => loadAllManifests(api, activator, modPaths, stagingPath)
+      .then(() => loadAllManifests(api, activator, gameId, modPaths, stagingPath)
         .then(deployments => { lastDeployment = deployments; }))
       .then(() => api.emitAndAwait('will-purge', profile.id, lastDeployment))
       // deal with all external changes
@@ -160,7 +161,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
           activator.purge(stagingPath, modPaths[typeId], gameId)))
       // save (empty) activation
       .then(() => Promise.map(modTypes, typeId =>
-          saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+          saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                          [], activator.id)))
       // the deployment may be changed so on an exception we still need to update it
       .tapCatch(() => {
@@ -172,7 +173,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
         return Promise.map(modTypes, typeId =>
           filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
             .then(files =>
-              saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+              saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                 files, activator.id)));
       })
       .catch(ProcessCanceled, () => null)
@@ -236,7 +237,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       // purge the specified mod type
       .then(() => activator.purge(stagingPath, modPath, gameId))
       // save (empty) activation
-      .then(() => saveActivation(typeId, state.app.instanceId, modPath, stagingPath,
+      .then(() => saveActivation(gameId, typeId, state.app.instanceId, modPath, stagingPath,
                          [], activator.id))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())

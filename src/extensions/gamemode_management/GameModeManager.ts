@@ -22,12 +22,13 @@ import {
   discoveryProgress,
   setPhaseCount,
 } from './actions/discovery';
-import {setKnownGames} from './actions/session';
+import {clearGameDisabled, setGameDisabled, setKnownGames} from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
+import { getGame } from './util/getGame';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -197,7 +198,9 @@ class GameModeManager {
     return this.reloadStoreGames()
       .then(() => quickDiscovery(this.mKnownGames,
         this.mStore.getState().settings.gameMode.discovered,
-        this.onDiscoveredGame, this.onDiscoveredTool));
+        this.onDiscoveredGame, this.onDiscoveredTool))
+      .tap(() => this.postDiscovery())
+      ;
   }
 
   public isSearching(): boolean {
@@ -259,6 +262,7 @@ class GameModeManager {
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
       this.mActiveSearch = null;
+      return this.postDiscovery();
     });
   }
 
@@ -273,6 +277,31 @@ class GameModeManager {
       this.mActiveSearch.cancel();
       this.mActiveSearch = null;
     }
+  }
+
+  private postDiscovery() {
+    const { discovered } = this.mStore.getState().settings.gameMode;
+    this.mStore.dispatch(clearGameDisabled());
+    Promise.map(Object.keys(discovered), gameId => {
+      if (discovered[gameId].path === undefined) {
+        return Promise.resolve();
+      }
+
+      return getNormalizeFunc(discovered[gameId].path)
+        .then(normalize => {
+          const discovery = discovered[gameId];
+          const game = getGame(gameId);
+          // game may be uninstalled here so game being undefined is fine
+          if (game?.overrides !== undefined) {
+            game.overrides.forEach(override => {
+              if ((discovered[override]?.path !== undefined)
+                && (normalize(discovered[override].path) === normalize(discovery.path))) {
+                this.mStore.dispatch(setGameDisabled(override, gameId));
+              }
+            });
+          }
+        });
+    });
   }
 
   private ensureWritable(modPath: string): Promise<void> {
