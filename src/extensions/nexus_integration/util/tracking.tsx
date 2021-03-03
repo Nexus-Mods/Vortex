@@ -3,11 +3,13 @@ import { TFunction } from 'i18next';
 import React from 'react';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { IMod } from '../../../types/IState';
+import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { laterT } from '../../../util/i18n';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, gameById, knownGames } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { convertGameIdReverse, nexusGameId } from './convertGameId';
+
 class Tracking {
   private mApi: IExtensionApi;
   private mNexus: Nexus;
@@ -25,6 +27,16 @@ class Tracking {
     if (username !== undefined) {
       this.fetch();
     }
+
+    this.mApi.onStateChange(['persistent', 'nexus', 'userInfo'],
+      (oldUserInfo, newUserInfo) => {
+        if (newUserInfo === undefined) {
+          this.mTrackedMods = {};
+          this.mOnChanged?.();
+        } else {
+          this.fetch();
+        }
+    });
   }
 
   public attribute(): ITableAttribute {
@@ -114,16 +126,18 @@ class Tracking {
   }
 
   private fetch() {
-    if (this.mNexus.getValidationResult() !== null) {
+    if (this.mNexus.getValidationResult() === null) {
       return;
     }
 
     this.mNexus.getTrackedMods().then(tracked => {
       this.mTrackedMods = tracked.reduce((prev, iter) => {
-        if (prev[iter.domain_name] === undefined) {
-          prev[iter.domain_name] = new Set<string>();
+        const gameId = convertGameIdReverse(
+          knownGames(this.mApi.store.getState()), iter.domain_name);
+        if (prev[gameId] === undefined) {
+          prev[gameId] = new Set<string>();
         }
-        prev[iter.domain_name].add(iter.mod_id.toString());
+        prev[gameId].add(iter.mod_id.toString());
         return prev;
       }, {});
       this.mOnChanged?.();
@@ -134,13 +148,27 @@ class Tracking {
   }
 
   private toggleTracked = (evt: React.MouseEvent<any>) => {
-    const gameMode = activeGameId(this.mApi.getState());
+    const state = this.mApi.getState();
+    const gameMode = activeGameId(state);
     const modIdStr: string = evt.currentTarget.getAttribute('data-modid');
 
+    if (state.persistent['nexus']?.userInfo === undefined) {
+      // user not logged in
+      this.mApi.sendNotification({
+        type: 'warning',
+        message: 'You have to be logged in to track mods',
+        displayMS: 5000,
+      });
+      return;
+    }
+
+    const game: IGameStored = gameById(state, gameMode);
+    const nexusId = nexusGameId(game);
+
     if (this.mTrackedMods[gameMode]?.has?.(modIdStr)) {
-      this.untrackMod(gameMode, modIdStr);
+      this.untrackMod(nexusId, modIdStr);
     } else {
-      this.trackMod(gameMode, modIdStr);
+      this.trackMod(nexusId, modIdStr);
     }
   }
 
