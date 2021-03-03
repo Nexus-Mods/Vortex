@@ -70,6 +70,7 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
       terminate({
         message: 'Failed to store state change',
         details: err.message,
+        stack: err.stack,
         allowReport: true,
         attachLog: true,
       }, store.getState(), true);

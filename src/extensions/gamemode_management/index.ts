@@ -586,7 +586,7 @@ function init(context: IExtensionContext): boolean {
           });
 
           if (newGames.length > 0) {
-            message += newGames
+            message += '\n' + newGames
               .map(id => '- ' + knownGames.find(iter => iter.id === id).name)
               .join('\n');
           }
