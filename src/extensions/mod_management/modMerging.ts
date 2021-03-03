@@ -76,6 +76,10 @@ function mergeArchive(api: IExtensionApi,
                   hash,
                 };
               })))
+      // not really an error if the source archive doesn't exist
+      .catch(err => (err.code === 'ENOENT')
+              ? Promise.resolve()
+              : Promise.reject(err))
       // now iterate over each mod containing the archive, extract their version
       // of the archive, then copy every file from the archive that differs from the
       // base into the output directory, overwriting the file from previous mods if
