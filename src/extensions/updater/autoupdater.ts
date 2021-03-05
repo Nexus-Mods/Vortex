@@ -1,4 +1,4 @@
-import { showDialog } from '../../actions';
+import { setUpdateChannel, showDialog } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { getVisibleWindow, UserCanceled } from '../../util/api';
@@ -60,6 +60,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
+  let channelOverride: 'beta';
 
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
@@ -121,7 +122,32 @@ function setupAutoUpdate(api: IExtensionApi) {
     }
   });
 
+  autoUpdater.on('update-not-available', () => {
+    if (channelOverride !== undefined) {
+      log('info', 'installed version seems to be a beta, switching update channel');
+      api.store.dispatch(setUpdateChannel(channelOverride));
+      api.sendNotification({
+        type: 'info',
+        message: 'You are running a beta version of Vortex so auto update settings have been '
+               + 'changed to keep you up-to-date with current betas.',
+      });
+    }
+  });
+
   autoUpdater.on('update-available', (info: UpdateInfo) => {
+    const installedVersion = semver.parse(app.getVersion());
+    const version = semver.parse(info.version);
+
+    const channel = channelOverride ?? api.getState().settings.update.channel;
+
+    if ((channel === 'stable')
+      && ((version.major < installedVersion.major)
+        || (version.minor < installedVersion.minor))) {
+      log('info', 'installed version newer than the available update, check if this is a beta');
+      channelOverride = 'beta';
+      return;
+    }
+
     let instPath: string;
     if (process.platform === 'win32') {
       try {
@@ -140,7 +166,6 @@ function setupAutoUpdate(api: IExtensionApi) {
               }, [
                 { label: 'Close' },
                 { label: 'Open Page', action: () => {
-                  const { channel } = state().settings.update;
                   if (channel === 'beta') {
                     openTesting();
                   } else {
@@ -220,6 +245,7 @@ function setupAutoUpdate(api: IExtensionApi) {
     if (!state().session.base.networkConnected) {
       log('info', 'Not checking for updates because network is offline');
     }
+    const didOverride = channelOverride !== undefined;
     autoUpdater.allowPrerelease = channel === 'beta';
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
@@ -229,6 +255,10 @@ function setupAutoUpdate(api: IExtensionApi) {
           check.downloadPromise.catch(err => {
             log('warn', 'Checking for update failed', err);
           });
+        }
+
+        if (!didOverride && (channelOverride !== undefined)) {
+          return checkNow(channelOverride);
         }
       })
       .catch(err => {
@@ -243,7 +273,9 @@ function setupAutoUpdate(api: IExtensionApi) {
   ipcMain.on('set-update-channel', (event, channel) => {
     try {
       log('info', 'set channel', channel);
-      if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
+      if ((channel !== 'none')
+          && (channelOverride === undefined)
+          && (process.env.NODE_ENV !== 'development')) {
         checkNow(channel);
       }
     } catch (err) {
