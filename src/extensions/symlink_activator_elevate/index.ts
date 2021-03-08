@@ -725,7 +725,7 @@ function installTask(scriptPath: string) {
     }
     ipc.sendMessage({ message: 'quit' });
   }, { scriptPath, taskName, exePath, exeArgs })
-    .catch(err => (err['nativeCode'] === 1223)
+    .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }
@@ -807,7 +807,7 @@ function removeTask(): Promise<void> {
     winapiRemote.DeleteTask(taskName);
     ipc.sendMessage({ message: 'quit' });
   }, { taskName })
-  .catch(err => (err['nativeCode'] === 1223)
+  .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }
@@ -941,7 +941,7 @@ function giveSymlinkRight(enable: boolean) {
       ipc.sendMessage({ message: 'quit' });
     }
   }, { sid, enable })
-  .catch(err => (err['nativeCode'] === 1223)
+  .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }

@@ -1612,9 +1612,7 @@ class ExtensionManager {
         if (onSpawned !== undefined) {
           onSpawned();
         }
-      }).catch(err => {
-        reject(err);
-      });
+      }).catch(err => reject(err));
     })
     .finally(() => {
       if (tmpFilePath !== undefined) {
