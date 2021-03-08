@@ -80,6 +80,7 @@ const handleError = (error: any) => {
   }
 
   if (['net::ERR_CONNECTION_RESET',
+       'net::ERR_CONNECTION_ABORTED',
        'net::ERR_ABORTED',
        'net::ERR_CONTENT_LENGTH_MISMATCH',
        'net::ERR_SSL_PROTOCOL_ERROR',
