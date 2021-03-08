@@ -62,7 +62,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     if ((selectedPlugins !== oldState.selectedPlugins)
         && (localUpdate > sentUpdate)
         // if the confirmation is still pending, don't send now
-        && (confirmedUpdate > sentUpdate)) {
+        && (confirmedUpdate >= sentUpdate)) {
       onSelect(group.id, selectedPlugins, valid === undefined);
       this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
     }
@@ -448,13 +448,12 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     const {events} = this.context.api;
     const {installerState} = this.props;
     let newState = this.state;
-    if (valid) {
-      newState = removeValue(newState, ['invalidGroups'], groupId);
-      events.emit('fomod-installer-select',
-        installerState.installSteps[installerState.currentStep].id, groupId, plugins);
-    } else {
-      newState = pushSafe(newState, ['invalidGroups'], groupId);
-    }
+    newState = valid
+      ? removeValue(newState, ['invalidGroups'], groupId)
+      : pushSafe(newState, ['invalidGroups'], groupId);
+
+    events.emit('fomod-installer-select',
+      installerState.installSteps[installerState.currentStep].id, groupId, plugins);
     this.setState(newState);
   }
 
