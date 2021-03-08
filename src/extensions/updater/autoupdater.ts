@@ -135,6 +135,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
+    log('info', 'found update available', info.version);
     const installedVersion = semver.parse(app.getVersion());
     const version = semver.parse(info.version);
 
@@ -245,12 +246,14 @@ function setupAutoUpdate(api: IExtensionApi) {
     if (!state().session.base.networkConnected) {
       log('info', 'Not checking for updates because network is offline');
     }
+    log('info', 'checking for vortex update');
     const didOverride = channelOverride !== undefined;
     autoUpdater.allowPrerelease = channel === 'beta';
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
     autoUpdater.checkForUpdates()
       .then(check => {
+        log('info', 'completed update check');
         if (truthy(check.downloadPromise)) {
           check.downloadPromise.catch(err => {
             log('warn', 'Checking for update failed', err);
@@ -275,7 +278,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       log('info', 'set channel', channel);
       if ((channel !== 'none')
           && (channelOverride === undefined)
-          && (process.env.NODE_ENV !== 'development')) {
+          && (process.env.NODE_ENV !== 'developmentx')) {
         checkNow(channel);
       }
     } catch (err) {
