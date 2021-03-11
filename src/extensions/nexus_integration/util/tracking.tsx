@@ -10,6 +10,7 @@ import { activeGameId, gameById, knownGames } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from './convertGameId';
+import { ProcessCanceled } from '../../../util/api';
 
 class Tracking {
   private mApi: IExtensionApi;
@@ -146,8 +147,10 @@ class Tracking {
       this.mOnChanged?.();
     })
     .catch(err => {
+      const allowReport = !(err instanceof RateLimitError)
+                        && !(err instanceof ProcessCanceled);
       this.mApi.showErrorNotification('Failed to get tracked mods', err, {
-        allowReport: !(err instanceof RateLimitError),
+        allowReport,
       });
     });
   }
