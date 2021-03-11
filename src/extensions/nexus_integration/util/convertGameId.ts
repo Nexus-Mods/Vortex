@@ -1,3 +1,4 @@
+import { IGame } from '../../../types/IGame';
 import { IGameStored } from '../../../types/IState';
 import { SITE_ID } from '../../gamemode_management/constants';
 
@@ -5,7 +6,7 @@ import { SITE_ID } from '../../gamemode_management/constants';
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(game: IGameStored, fallbackGameId?: string): string {
+export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string): string {
   if ((game === undefined) && (fallbackGameId === undefined)) {
     return undefined;
   }
