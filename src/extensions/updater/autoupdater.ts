@@ -278,7 +278,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       log('info', 'set channel', channel);
       if ((channel !== 'none')
           && (channelOverride === undefined)
-          && (process.env.NODE_ENV !== 'developmentx')) {
+          && (process.env.NODE_ENV !== 'development')) {
         checkNow(channel);
       }
     } catch (err) {
