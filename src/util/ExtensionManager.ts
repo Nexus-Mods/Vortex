@@ -1058,7 +1058,8 @@ class ExtensionManager {
         } catch (err) {
           log('error', 'state change handler failed', {
             message: err.message,
-            stack: stackErr.stack,
+            stack1: err.stack,
+            stack2: stackErr.stack,
             key,
           });
         }
