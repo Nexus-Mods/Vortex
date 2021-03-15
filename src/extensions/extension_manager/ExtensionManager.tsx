@@ -82,6 +82,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           const { extensions, onSetExtensionEnabled } = this.props;
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
+          log('info', 'user toggling extension manually', { extId, enabled });
           onSetExtensionEnabled(extId, enabled);
         },
       onToggleExtensionEnabled:
@@ -89,7 +90,9 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           const { extensionConfig, extensions, onSetExtensionEnabled } = this.props;
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
-          onSetExtensionEnabled(extId, !getSafe(extensionConfig, [extId, 'enabled'], true));
+          const enabled = !getSafe(extensionConfig, [extId, 'enabled'], true);
+          log('info', 'user toggling extension manually', { extId, enabled });
+          onSetExtensionEnabled(extId, enabled);
         },
       onEndorseMod:
         (gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {

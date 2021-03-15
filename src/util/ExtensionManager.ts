@@ -579,7 +579,9 @@ class ExtensionManager {
             fs.readdirSync(app.getPath('temp'))
                 .filter(name => name.startsWith('__disable_'));
         disableExtensions.forEach(ext => {
-          initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
+          const extId = ext.substr(10);
+          log('info', 'disabling extension that caused a crash before', { extId });
+          initStore.dispatch(setExtensionEnabled(extId, false));
           fs.unlinkSync(path.join(app.getPath('temp'), ext));
         });
       } catch (err) {
