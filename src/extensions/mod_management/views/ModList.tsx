@@ -1080,8 +1080,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         value: candidate.enabled,
       })),
       choices: [
-        { id: 'mods-only', value: true, text: 'Remove Mod only' },
-        { id: 'mods-and-archive', value: false, text: 'Remove Mod and delete archive' },
+        { id: 'mods-only', value: true, text: 'Remove mod only' },
+        { id: 'mods-and-archive', value: false, text: 'Remove mod and delete archive' },
       ],
     }, [
       { label: 'Cancel' },

@@ -1,16 +1,16 @@
-import Nexus, { RateLimitError } from '@nexusmods/nexus-api';
+import Nexus, { RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import React from 'react';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import { laterT } from '../../../util/i18n';
-import { activeGameId, gameById, knownGames } from '../../../util/selectors';
+import { activeGameId, gameById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from './convertGameId';
-import { ProcessCanceled } from '../../../util/api';
 
 class Tracking {
   private mApi: IExtensionApi;
@@ -148,7 +148,8 @@ class Tracking {
     })
     .catch(err => {
       const allowReport = !(err instanceof RateLimitError)
-                        && !(err instanceof ProcessCanceled);
+                        && !(err instanceof ProcessCanceled)
+                        && !(err instanceof TimeoutError);
       this.mApi.showErrorNotification('Failed to get tracked mods', err, {
         allowReport,
       });
