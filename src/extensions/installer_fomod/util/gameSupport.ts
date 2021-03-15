@@ -308,6 +308,18 @@ export function initGameSupport(store: Redux.Store<IState>) {
       gameSupport['enderalspecialedition'].iniPath = gameSupport['skyrimse'].iniPath;
     }
   }
+
+  if (discovered['skyrimse']?.path !== undefined) {
+    if (discovered['skyrimse']?.path.toLowerCase().includes('3275kfvn8vcwc')) {
+      gameSupport['skyrimse'].iniPath = () => bethIni('Skyrim Special Edition MS', 'Skyrim');
+    }
+  }
+
+  if (discovered['fallout4']?.path !== undefined) {
+    if (discovered['fallout4']?.path.toLowerCase().includes('3275kfvn8vcwc')) {
+      gameSupport['fallout4'].iniPath = () => bethIni('Fallout4 MS', 'Fallout4');
+    }
+  }
 }
 
 export function getIniFilePath(gameMode: string): string {

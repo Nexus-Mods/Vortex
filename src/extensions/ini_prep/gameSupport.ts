@@ -7,6 +7,24 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 
 const app = appIn || remote.app;
 
+const gameSupportGamePass = {
+  skyrimse: {
+    iniFiles: [
+      path.join('{mygames}', 'Skyrim Special Edition MS', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimPrefs.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
+  fallout4: {
+    iniFiles: [
+      path.join('{mygames}', 'Fallout4 MS', 'Fallout4.ini'),
+      path.join('{mygames}', 'Fallout4 MS', 'Fallout4Prefs.ini'),
+      path.join('{mygames}', 'Fallout4 MS', 'Fallout4Custom.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
+}
+
 const gameSupport = {
   skyrim: {
     iniFiles: [
@@ -82,6 +100,13 @@ const gameSupport = {
 
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
   const mygames = path.join(app.getPath('documents'), 'My Games');
+
+  if ((gameSupportGamePass[gameMode] !== undefined) && (discovery?.path !== undefined)) {
+    if (discovery.path.toLowerCase().includes('3275kfvn8vcwc')) {
+      return getSafe(gameSupportGamePass, [gameMode, 'iniFiles'], [])
+        .map(file => format(file, { mygames, game: discovery.path }));
+    }
+  }
 
   return getSafe(gameSupport, [gameMode, 'iniFiles'], [])
     .map(file => format(file, { mygames, game: discovery.path }));
