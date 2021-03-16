@@ -242,6 +242,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       {
         icon: 'merge',
         title: 'Combine',
+        condition: this.canBeCombined,
         action: this.combine,
         multiRowAction: true,
         singleRowAction: false,
@@ -1240,6 +1241,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
       });
     }
+  }
+
+  private canBeCombined = (modIds: string[]) => {
+    const { t, mods } = this.props;
+
+    const notInstalled = modIds.find(modId => mods[modId] === undefined);
+    if (notInstalled !== undefined) {
+      return t('You can only combine installed mods') ;
+    }
+    return true;
   }
 
   private combine = (modIds: string[]) => {

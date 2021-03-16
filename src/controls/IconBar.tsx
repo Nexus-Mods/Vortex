@@ -285,6 +285,10 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const hasText = (buttonType === undefined)
         || ['text', 'both', 'menu'].indexOf(buttonType) !== -1;
 
+      const tooltip = (typeof(icon.show) === 'string')
+        ? icon.show
+        : t(icon.title, { ns: icon.options?.namespace });
+
       return (
         <ToolbarIcon
           key={actionId}
@@ -292,7 +296,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
           text={hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined}
-          tooltip={t(icon.title, { ns: icon.options?.namespace })}
+          tooltip={tooltip}
           onClick={icon.action}
           placement={tooltipPlacement}
           disabled={(icon.show !== true) && (icon.show !== undefined)}

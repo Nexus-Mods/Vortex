@@ -263,6 +263,12 @@
     &:hover {
       background-color: $gray-dark;
     }
+    // this simply restores the settings from ".table-footer .btn" but with a
+    // higher specificity
+    &:disabled {
+      background-color: transparent;
+      color: inherit;
+    }
   }
 }
 

@@ -20,9 +20,17 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
   const mods = state.persistent.mods[gameId];
   const stagingPath = installPathForGame(state, gameId);
 
+  if (modIds.find(modId => mods[modId] === undefined) !== undefined) {
+    return api.showDialog('error', 'Combining these mods isn\'t possible', {
+      text: 'You can only combine installed mods.',
+    }, [
+      { label: 'Close' },
+    ]);
+  }
+
   const activatorId: string = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
   const activators = getAllActivators();
-  const modTypes = new Set(modIds.map(modId => mods[modId].type));
+  const modTypes = new Set(modIds.map(modId => mods[modId]?.type));
 
   {
     if (modTypes.size > 1) {
