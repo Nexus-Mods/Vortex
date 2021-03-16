@@ -604,7 +604,9 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
           ]);
         })
         .catch(err => {
-          api.showErrorNotification('Failed to stop managing game', err);
+          api.showErrorNotification('Failed to stop managing game', err, {
+            allowReport: !(err instanceof ProcessCanceled),
+          });
         });
     } else {
       return Promise.resolve();
