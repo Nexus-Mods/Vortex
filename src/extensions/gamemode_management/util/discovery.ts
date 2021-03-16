@@ -132,8 +132,12 @@ export function quickDiscovery(knownGames: IGame[],
             .then(() => resolve(game.id));
         })
         .catch((err) => {
-          log('debug', 'game not found',
-            { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+          if (err.message !== undefined) {
+            log('debug', 'game not found',
+              { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+          } else {
+            log('warn', 'game not found - invalid exception', { id: game.id, err });
+          }
           resolve();
         });
     } catch (err) {
