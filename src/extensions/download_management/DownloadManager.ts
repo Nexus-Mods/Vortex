@@ -95,6 +95,8 @@ interface IRunningDownload {
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
+  assemblerProm?: Promise<FileAssembler>;
+
   redownload: RedownloadMode;
   chunks: IDownloadJob[];
   chunkable: boolean;
@@ -126,6 +128,7 @@ class DownloadWorker {
   private mEnded: boolean = false;
   private mResponse: http.IncomingMessage;
   private mWriting: boolean = false;
+  private mRestart: boolean = false;
   private mRedirected: boolean = false;
   private mRedirectsFollowed: number = 0;
   private mThrottle: () => stream.Transform;
@@ -195,6 +198,7 @@ class DownloadWorker {
   public restart() {
     this.mResponse.removeAllListeners('error');
     this.mRequest.abort();
+    this.mRestart = true;
   }
 
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
@@ -294,6 +298,9 @@ class DownloadWorker {
       // as long as we made progress on this chunk, retry
       this.mJob.url().then(jobUrl => {
         this.assignJob(this.mJob, jobUrl);
+      })
+      .catch(innerErr => {
+        this.handleError(innerErr);
       });
     } else {
       this.mEnded = true;
@@ -331,10 +338,20 @@ class DownloadWorker {
     });
     this.writeBuffer()
       .then(() => {
-        if (this.mJob.completionCB !== undefined) {
-          this.mJob.completionCB();
+        if (this.mRestart && (this.mJob.size > 0)) {
+          this.mRestart = false;
+          this.mJob.url().then(jobUrl => {
+            this.assignJob(this.mJob, jobUrl);
+          })
+            .catch(err => {
+              this.handleError(err);
+            });
+        } else {
+          if (this.mJob.completionCB !== undefined) {
+            this.mJob.completionCB();
+          }
+          this.abort(false);
         }
-        this.abort(false);
       })
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
@@ -908,14 +925,14 @@ class DownloadManager {
   }
 
   private startJob(download: IRunningDownload, job: IDownloadJob) {
-    const assemblerProm = download.assembler !== undefined
-      ? Promise.resolve(download.assembler)
-      : FileAssembler.create(download.tempName)
+    if (download.assemblerProm === undefined) {
+      download.assemblerProm = FileAssembler.create(download.tempName)
         .tap(assembler => assembler.setTotalSize(download.size));
+    }
 
     job.dataCB = this.makeDataCB(download);
 
-    return assemblerProm.then(assembler => {
+    return download.assemblerProm.then(assembler => {
       download.assembler = assembler;
 
       log('debug', 'start download worker',
