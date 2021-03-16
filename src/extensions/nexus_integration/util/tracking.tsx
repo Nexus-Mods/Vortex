@@ -1,4 +1,4 @@
-import Nexus, { RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+import Nexus, { NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import React from 'react';
 import { IconButton } from '../../../controls/TooltipControls';
@@ -149,8 +149,9 @@ class Tracking {
     .catch(err => {
       const allowReport = !(err instanceof RateLimitError)
                         && !(err instanceof ProcessCanceled)
-                        && !(err instanceof TimeoutError);
-      this.mApi.showErrorNotification('Failed to get tracked mods', err, {
+                        && !(err instanceof TimeoutError)
+                        && !(err instanceof NexusError);
+      this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
         allowReport,
       });
     });
