@@ -98,11 +98,17 @@ const gameSupport = {
   },
 };
 
+function isXboxPath(discoveryPath: string) {
+  const hasPathElement = (element) =>
+    discoveryPath.toLowerCase().includes(element);
+  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
+}
+
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
   const mygames = path.join(app.getPath('documents'), 'My Games');
 
   if ((gameSupportGamePass[gameMode] !== undefined) && (discovery?.path !== undefined)) {
-    if (discovery.path.toLowerCase().includes('3275kfvn8vcwc')) {
+    if (isXboxPath(discovery.path)) {
       return getSafe(gameSupportGamePass, [gameMode, 'iniFiles'], [])
         .map(file => format(file, { mygames, game: discovery.path }));
     }

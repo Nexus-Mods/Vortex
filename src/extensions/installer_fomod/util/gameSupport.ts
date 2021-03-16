@@ -298,6 +298,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
 };
 
+function isXboxPath(discoveryPath: string) {
+  const hasPathElement = (element) =>
+    discoveryPath.toLowerCase().includes(element);
+  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
+}
+
 export function initGameSupport(store: Redux.Store<IState>) {
   const state: IState = store.getState();
 
@@ -310,13 +316,13 @@ export function initGameSupport(store: Redux.Store<IState>) {
   }
 
   if (discovered['skyrimse']?.path !== undefined) {
-    if (discovered['skyrimse']?.path.toLowerCase().includes('3275kfvn8vcwc')) {
+    if (isXboxPath(discovered['skyrimse'].path)) {
       gameSupport['skyrimse'].iniPath = () => bethIni('Skyrim Special Edition MS', 'Skyrim');
     }
   }
 
   if (discovered['fallout4']?.path !== undefined) {
-    if (discovered['fallout4']?.path.toLowerCase().includes('3275kfvn8vcwc')) {
+    if (isXboxPath(discovered['fallout4'].path)) {
       gameSupport['fallout4'].iniPath = () => bethIni('Fallout4 MS', 'Fallout4');
     }
   }
