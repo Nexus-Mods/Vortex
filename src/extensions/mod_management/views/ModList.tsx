@@ -636,7 +636,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               long={long}
               short={short}
               modId={mod.id}
-              editable={mod.attributes?.source === undefined}
+              source={mod.attributes?.source}
+              installed={mod.state === 'installed'}
               startEditDescription={this.editDescription}
             />
           </ZoomableImage>
@@ -993,6 +994,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private editDescription = (modId: string) => {
     const { gameMode, mods } = this.props;
+
+    if (mods[modId] === undefined) {
+      // mod not installed, we shouldn't have gotten here
+      return;
+    }
 
     this.context.api.showDialog('question', 'Enter new description', {
       text: 'You can use bbcode here. If you put in two spaces, ',
