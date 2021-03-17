@@ -80,14 +80,13 @@ class Tracking {
   public trackMods(modIds: string[]) {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
-    const mods = state.persistent.mods[gameMode];
-    if (mods === undefined) {
-      this.reportMissingModsBranch(gameMode);
-      return;
-    }
+    const mods = state.persistent.mods[gameMode] ?? {};
+    const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
       if (mods[modId]?.attributes?.modId !== undefined) {
         this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
+      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+        this.trackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
   }
@@ -95,27 +94,15 @@ class Tracking {
   public untrackMods(modIds: string[]) {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
-    const mods = state.persistent.mods[gameMode];
-    if (mods === undefined) {
-      this.reportMissingModsBranch(gameMode);
-      return;
-    }
+    const mods = state.persistent.mods[gameMode] ?? {};
+    const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
       if (mods[modId]?.attributes?.modId !== undefined) {
         this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
+      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+        this.untrackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
-  }
-
-  private reportMissingModsBranch = (gameMode) => {
-    const errDetails = {
-      message: `Vortex's application state has no mods for "${gameMode}". `
-             + 'This is probably the result of manual state manipulation, please '
-             + 'only report this if you did not touch the state backup/restoration '
-             + 'functionality.',
-      attachLogOnReport: true,
-    }
-    this.mApi.showErrorNotification('Failed to untrack mods', errDetails);
   }
 
   private makeIcon() {
