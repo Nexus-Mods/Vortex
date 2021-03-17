@@ -1103,6 +1103,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         return this.removeSelectedImpl(idsToRemove, true, removeArchives);
       }
+    })
+    .catch(ProcessCanceled, err => {
+      this.context.api.sendNotification({
+        id: 'cant-remove-mod',
+        type: 'warning',
+        title: 'Failed to remove mods',
+        message: err.message,
+      });
+    })
+    .catch(UserCanceled, () => null)
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to remove selected mods', err);
     });
 
     return true;
