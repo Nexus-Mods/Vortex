@@ -81,6 +81,10 @@ class Tracking {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
+    if (mods !== undefined) {
+      this.reportMissingModsBranch(gameMode);
+      return;
+    }
     modIds.forEach(modId => {
       if (mods[modId]?.attributes?.modId !== undefined) {
         this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
@@ -92,11 +96,26 @@ class Tracking {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
+    if (mods !== undefined) {
+      this.reportMissingModsBranch(gameMode);
+      return;
+    }
     modIds.forEach(modId => {
       if (mods[modId]?.attributes?.modId !== undefined) {
         this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
       }
     });
+  }
+
+  private reportMissingModsBranch = (gameMode) => {
+    const errDetails = {
+      message: `Vortex's application state has no mods for "${gameMode}". `
+             + 'This is probably the result of manual state manipulation, please '
+             + 'only report this if you did not touch the state backup/restoration '
+             + 'functionality.',
+      attachLogOnReport: true,
+    }
+    this.mApi.showErrorNotification('Failed to untrack mods', errDetails);
   }
 
   private makeIcon() {
