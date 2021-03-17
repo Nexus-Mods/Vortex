@@ -81,7 +81,7 @@ class Tracking {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
-    if (mods !== undefined) {
+    if (mods === undefined) {
       this.reportMissingModsBranch(gameMode);
       return;
     }
@@ -96,7 +96,7 @@ class Tracking {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode];
-    if (mods !== undefined) {
+    if (mods === undefined) {
       this.reportMissingModsBranch(gameMode);
       return;
     }
