@@ -42,9 +42,17 @@ class SplashScreen {
     const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        log('warn', 'splash screen taking awfully long');
+        resolve?.();
+        resolve = undefined;
+      }, 1000);
+
       const onReady = () => {
+        clearTimeout(timeout);
         this.mWindow.show();
-        resolve();
+        resolve?.();
+        resolve = undefined;
       };
 
       this.mWindow = new BrowserWindow({
