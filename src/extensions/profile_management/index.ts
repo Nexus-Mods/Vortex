@@ -22,7 +22,7 @@ import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session
 import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, UserCanceled } from '../../util/CustomErrors';
 import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -458,7 +458,19 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
             })
             .finally(() => {
               api.store.dispatch(clearUIBlocker('installing-game'));
+            })
+          .catch(err => {
+            if (err instanceof UserCanceled) {
+              return Promise.resolve();
+            }
+
+            const allowReport = !(err instanceof ProcessCanceled)
+                             && !(err instanceof ServiceTemporarilyUnavailable);
+            api.showErrorNotification('Log-in failed', err, {
+              id: 'failed-get-nexus-key',
+              allowReport,
             });
+          });
         },
       },
     ]);

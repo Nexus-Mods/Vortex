@@ -479,6 +479,9 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
             callback(err);
           }
         } catch (err) {
+          if (err.message.startsWith('Unexpected token')) {
+            err.message = 'Failed to parse: ' + data.toString();
+          }
           err.stack = stackErr.stack;
           callback(err);
         }
