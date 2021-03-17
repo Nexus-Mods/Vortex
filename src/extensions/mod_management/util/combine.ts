@@ -13,7 +13,7 @@ import allTypesSupported from './allTypesSupported';
 import { getAllActivators } from './deploymentMethods';
 import modName from './modName';
 import { removeMod, removeMods } from './removeMods';
-import sortMods from './sort';
+import sortMods, { CycleError } from './sort';
 
 async function combineMods(api: IExtensionApi, gameId: string, modIds: string[]) {
   const state = api.getState();
@@ -56,33 +56,33 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
     ]);
   }
 
-  const sorted = await sortMods(gameId, modIds.map(id => mods[id]), api);
-  const result = await api.showDialog('question', 'Combine Mods', {
-    bbcode: 'You are combining the mods listed below into the selected one.<br/>'
-      + 'Please be aware that Vortex will then only track updates for the one '
-      + 'mod that remains and if you do update or reinstall it, the other mods are gone.<br/>'
-      + 'Thus we would suggest you [color=red]only use this to merge in patches/fixes[/color] that '
-      + 'become obsolete with the next update anyway.<br/>'
-      + 'If there are file conflicts between these mods they will be overwritten in '
-      + 'the order specified by mod rules (same way as deployment would have).',
-    choices: sorted.map((mod, idx) => ({
-      id: mod.id,
-      text: modName(mod, { version: true }) + ' - ' + mod.attributes?.fileType,
-      value: idx === 0,
-    })),
-  }, [
-    { label: 'Cancel' },
-    { label: 'Continue' },
-  ]);
-
-  if (result.action !== 'Continue') {
-    return Promise.resolve();
-  }
-
   const combineId = shortid();
   const tempName = '__combine' + combineId;
 
   try {
+    const sorted = await sortMods(gameId, modIds.map(id => mods[id]), api);
+    const result = await api.showDialog('question', 'Combine Mods', {
+      bbcode: 'You are combining the mods listed below into the selected one.<br/>'
+        + 'Please be aware that Vortex will then only track updates for the one '
+        + 'mod that remains and if you do update or reinstall it, the other mods are gone.<br/>'
+        + 'Thus we would suggest you [color=red]only use this to merge in patches/fixes[/color] that '
+        + 'become obsolete with the next update anyway.<br/>'
+        + 'If there are file conflicts between these mods they will be overwritten in '
+        + 'the order specified by mod rules (same way as deployment would have).',
+      choices: sorted.map((mod, idx) => ({
+        id: mod.id,
+        text: modName(mod, { version: true }) + ' - ' + mod.attributes?.fileType,
+        value: idx === 0,
+      })),
+    }, [
+      { label: 'Cancel' },
+      { label: 'Continue' },
+    ]);
+
+    if (result.action !== 'Continue') {
+      return Promise.resolve();
+    }
+
     const keys = Object.keys(result.input);
     const targetId = keys.find(id => result.input[id]);
     const targetIdx = sorted.findIndex(mod => mod.id === targetId);
@@ -132,7 +132,10 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
         // remove the temporary mod, if it was created
         await removeMod(api, gameId, tempName);
       } catch (err) {
-        log('error', 'failed to remove temporary directory', tempName);
+        log('error', 'failed to remove temporary directory', {
+          tempName,
+          error: err.message,
+        });
       }
     }
     if (err instanceof UserCanceled) {
@@ -143,7 +146,10 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
         message: err.message,
       });
     } else {
-      api.showErrorNotification('Failed to combine mods', err);
+      const allowReport = !(err instanceof CycleError);
+      api.showErrorNotification('Failed to combine mods', err, {
+        allowReport,
+      });
     }
   }
 }
