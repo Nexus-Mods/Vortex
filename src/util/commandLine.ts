@@ -14,6 +14,7 @@ export interface IParameters {
   get?: string;
   set?: string[];
   del?: string;
+  merge?: string;
   run?: string;
   shared?: boolean;
   maxMemory?: string;
@@ -43,6 +44,7 @@ const ARG_COUNTS = {
   '--run': 1,
   '--report': 1,
   '--restore': 1,
+  '--merge': 1,
   '--max-memory': 1,
   '--user-data': 1,
 };
@@ -122,6 +124,8 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
     .option('--restore [path]', 'Restore a state backup')
+    .option('--merge [path]', 'Merge a state backup. Unlike restore, the content of the specified '
+                              + 'state file will be merged into the existing state.')
     .option('--shared', 'Used in conjunction with set, get or del, this will access the database'
                                        + 'in the shared location instead of the per-user one')
     .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
@@ -148,6 +152,7 @@ const SKIP_ARGS = {
   '--profile': 1,
   '--install': 1,
   '--restore': 1,
+  '--merge': 1,
 };
 
 export function filterArgs(input: string[]): string[] {

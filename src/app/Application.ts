@@ -270,7 +270,7 @@ class Application {
           : log('debug', 'starting without splash screen'))
         .then(splashIn => {
           splash = splashIn;
-          return this.createStore(args.restore)
+          return this.createStore(args.restore, args.merge)
             .catch(DataInvalid, err => {
               log('error', 'store data invalid', err.message);
               dialog.showMessageBox(getVisibleWindow(), {
@@ -288,7 +288,7 @@ class Application {
                       + 'If not, you can go to settings->workarounds and restore a backup '
                       + 'which shouldn\'t lose you more than an hour of progress.',
               })
-              .then(() => this.createStore(args.restore, true));
+              .then(() => this.createStore(args.restore, args.merge, true));
             });
         })
         .tap(() => log('debug', 'checking admin rights'))
@@ -649,7 +649,7 @@ class Application {
     }
   }
 
-  private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
+  private createStore(restoreBackup?: string, mergeBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
@@ -804,6 +804,27 @@ class Application {
                   ? err.message
                   : 'Specified backup file doesn\'t exist',
                 path: restoreBackup,
+              }, {}, false);
+            });
+        } else if (mergeBackup !== undefined) {
+          log('info', 'merging state backup', mergeBackup);
+          return fs.readFileAsync(mergeBackup, { encoding: 'utf-8' })
+            .then(backupState => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: JSON.parse(backupState),
+              });
+            })
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.reject(err);
+              }
+              terminate({
+                message: 'Failed to merge backup',
+                details: (err.code !== 'ENOENT')
+                  ? err.message
+                  : 'Specified backup file doesn\'t exist',
+                path: mergeBackup,
               }, {}, false);
             });
         } else {
