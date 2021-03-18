@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { withTranslation } from 'react-i18next';
-import { ComponentEx } from 'vortex-api';
+import { ComponentEx } from '../../../util/ComponentEx';
 
 interface IProps {
   infoText: string;

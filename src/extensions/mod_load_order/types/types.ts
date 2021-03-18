@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
-import { types } from 'vortex-api';
 import { IActionDefinitionEx } from '../../../controls/ActionControl';
+import { IMod } from '../../../types/IState';
 
 export type SortType = 'ascending' | 'descending';
 
@@ -150,7 +150,7 @@ export interface IGameLoadOrderEntry {
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.
-  filter?: (mods: types.IMod[]) => types.IMod[];
+  filter?: (mods: IMod[]) => IMod[];
 
   // Allow game extensions to react whenever the load order
   //  changes.
