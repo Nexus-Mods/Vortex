@@ -456,10 +456,9 @@ class InstallManager {
                       const download = state.persistent.downloads.files[archiveId];
                       api.events.emit('remove-download', archiveId, () => {
                         api.events.emit('start-download', download.urls, info.download,
-                          path.basename(archivePath), () => {
-                            dismiss();
-                          });
+                          path.basename(archivePath));
                       });
+                      dismiss();
                     } },
                   ],
                 });
@@ -629,9 +628,10 @@ class InstallManager {
                        extractList?: IFileListItem[],
                        unattended?: boolean): Promise<IInstallResult> {
     const fileList: string[] = [];
+    let phase = 'Extracting';
     const progress = (files: string[], percent: number) => {
       if ((percent !== undefined) && (installContext !== undefined)) {
-        installContext.setProgress(percent);
+        installContext.setProgress(phase, percent);
       }
     };
     log('debug', 'extracting mod archive', { archivePath, tempPath });
@@ -650,8 +650,9 @@ class InstallManager {
     return extractProm
         .then(({ code, errors }: {code: number, errors: string[] }) => {
           log('debug', 'extraction completed');
+          phase = 'Installing';
           if (installContext !== undefined) {
-            installContext.setProgress();
+            installContext.setProgress('Installing');
           }
           if (code !== 0) {
             log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
@@ -717,7 +718,7 @@ class InstallManager {
           // process.noAsar = false;
         })
         .then(() => {
-          if (extractList !== undefined) {
+          if (truthy(extractList) && extractList.length > 0) {
             return makeListInstaller(extractList, tempPath);
           } else if (forceInstaller === undefined) {
             return this.getInstaller(fileList, gameId);
@@ -746,7 +747,10 @@ class InstallManager {
             { installer: installer.id, enforced: forceInstaller !== undefined });
           return installer.install(
               fileList, tempPath, gameId,
-              (perc: number) => log('info', 'progress', perc),
+              (perc: number) => {
+                log('info', 'progress', perc);
+                progress([], perc);
+              },
               installChoices,
               unattended);
         });
@@ -1315,7 +1319,7 @@ class InstallManager {
           } else {
             reject(error);
           }
-        })) {
+        }, 'never', false)) {
         reject(new Error('download manager not installed?'));
       }
     }));
@@ -1337,7 +1341,7 @@ class InstallManager {
           : Promise.resolve(dlIds[0]));
   }
 
-  private downloadModAsync(
+  private downloadDependencyAsync(
     requirement: IReference,
     api: IExtensionApi,
     lookupResult: IModInfoEx): Promise<string> {
@@ -1392,7 +1396,7 @@ class InstallManager {
         if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
           dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
         } else {
-          dlPromise = this.downloadModAsync(
+          dlPromise = this.downloadDependencyAsync(
             dep.reference,
             api,
             dep.lookupResults[0].value);
@@ -1504,6 +1508,101 @@ class InstallManager {
     return Promise.resolve();
   }
 
+  private doInstallDependencyList(api: IExtensionApi,
+                                  profile: IProfile,
+                                  modId: string,
+                                  dependencies: IDependency[],
+                                  silent: boolean) {
+    if (dependencies.length === 0) {
+      return Promise.resolve();
+    }
+
+    interface IDependencySplit {
+      success: IDependency[];
+      existing: IDependency[];
+      error: IDependencyError[];
+    }
+    const { success, existing, error } = dependencies.reduce(
+      (prev: IDependencySplit, dep: Dependency) => {
+        if (dep['error'] !== undefined) {
+          prev.error.push(dep as IDependencyError);
+        } else {
+          const { mod } = dep as IDependency;
+          if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
+            prev.success.push(dep as IDependency);
+          } else {
+            prev.existing.push(dep as IDependency);
+          }
+        }
+        return prev;
+      }, { success: [], existing: [], error: [] });
+
+    log('debug', 'determined unfulfilled dependencies',
+      { count: success.length, errors: error.length });
+
+    if (silent && (error.length === 0)) {
+      return this.doInstallDependencies(api, profile, modId, success, false)
+        .then(updated => this.updateRules(api, profile, modId,
+          [].concat(existing, updated), false));
+    }
+
+    const state: IState = api.store.getState();
+    const downloads = state.persistent.downloads.files;
+
+    const requiredInstalls = success.filter(dep => dep.mod === undefined);
+    const requiredDownloads = requiredInstalls.filter(dep => {
+      return (dep.download === undefined)
+        || (downloads[dep.download].state === 'paused');
+    });
+
+    let bbcode = '';
+
+    if (success.length > 0) {
+      bbcode += '{{modName}} has {{count}} unresolved dependencies. '
+        + '{{instCount}} mods have to be installed, '
+        + '{{dlCount}} of them have to be downloaded first.<br/><br/>';
+    }
+
+    if (error.length > 0) {
+      bbcode += '[color=red]'
+        + '{{modName}} has unsolved dependencies that could not be found automatically. '
+        + 'Please install them manually:<br/>'
+        + '{{errors}}'
+        + '[/color]';
+    }
+
+    if (success.length === 0) {
+      return Promise.resolve();
+    }
+
+    const actions = success.length > 0
+      ? [
+        { label: 'Don\'t install' },
+        { label: 'Install' },
+      ]
+      : [{ label: 'Close' }];
+
+    return api.store.dispatch(
+      showDialog('question', 'Install Dependencies', {
+        bbcode, parameters: {
+          modName: name,
+          count: success.length,
+          instCount: requiredInstalls.length,
+          dlCount: requiredDownloads.length,
+          errors: error.map(err => err.error).join('<br/>'),
+        }
+      }, actions)).then(result => {
+        if (result.action === 'Install') {
+          return this.doInstallDependencies(api, profile, modId, success, false)
+            .then(updated => this.updateRules(api, profile, modId,
+              [].concat(existing, updated), false));
+        } else {
+          return Promise.resolve();
+        }
+      });
+
+  }
+
   private installDependenciesImpl(api: IExtensionApi,
                                   profile: IProfile,
                                   modId: string,
@@ -1514,6 +1613,7 @@ class InstallManager {
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, false);
+
     const progress = (perc: number) => {
       api.sendNotification({
         id: notificationId,
@@ -1522,100 +1622,16 @@ class InstallManager {
         message: 'Resolving dependencies',
         progress: perc * 100,
       });
+
     };
 
     progress(0);
 
     log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(rules, api, false, progress)
-      .then((dependencies: Dependency[]) => {
+      .then((dependencies: IDependency[]) => {
         api.dismissNotification(notificationId);
-
-        if (dependencies.length === 0) {
-          return Promise.resolve();
-        }
-
-        interface IDependencySplit {
-          success: IDependency[];
-          existing: IDependency[];
-          error: IDependencyError[];
-        }
-        const { success, existing, error } = dependencies.reduce(
-          (prev: IDependencySplit, dep: Dependency) => {
-            if (dep['error'] !== undefined) {
-              prev.error.push(dep as IDependencyError);
-            } else {
-              const { mod } = dep as IDependency;
-              if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
-                prev.success.push(dep as IDependency);
-              } else {
-                prev.existing.push(dep as IDependency);
-              }
-            }
-            return prev;
-          }, { success: [], existing: [], error: [] });
-
-        log('debug', 'determined unfulfilled dependencies',
-            { count: success.length, errors: error.length });
-
-        if (silent && (error.length === 0)) {
-          return this.doInstallDependencies(api, profile, modId, success, false)
-            .then(updated => this.updateRules(api, profile, modId,
-              [].concat(existing, updated), false));
-        }
-
-        const state: IState = api.store.getState();
-        const downloads = state.persistent.downloads.files;
-
-        const requiredInstalls = success.filter(dep => dep.mod === undefined);
-        const requiredDownloads = requiredInstalls.filter(dep => {
-          return (dep.download === undefined)
-              || (downloads[dep.download].state === 'paused');
-        });
-
-        let bbcode = '';
-
-        if (success.length > 0) {
-          bbcode += '{{modName}} has {{count}} unresolved dependencies. '
-                  + '{{instCount}} mods have to be installed, '
-                  + '{{dlCount}} of them have to be downloaded first.<br/><br/>';
-        }
-
-        if (error.length > 0) {
-          bbcode += '[color=red]'
-            + '{{modName}} has unsolved dependencies that could not be found automatically. '
-            + 'Please install them manually:<br/>'
-            + '{{errors}}'
-            + '[/color]';
-        }
-
-        if (success.length === 0) {
-          return Promise.resolve();
-        }
-
-        const actions = success.length > 0
-          ? [
-            { label: 'Don\'t install' },
-            { label: 'Install' },
-          ]
-          : [ { label: 'Close' } ];
-
-        return api.store.dispatch(
-          showDialog('question', 'Install Dependencies', { bbcode, parameters: {
-            modName: name,
-            count: success.length,
-            instCount: requiredInstalls.length,
-            dlCount: requiredDownloads.length,
-            errors: error.map(err => err.error).join('<br/>'),
-          } }, actions)).then(result => {
-            if (result.action === 'Install') {
-              return this.doInstallDependencies(api, profile, modId, success, false)
-                .then(updated => this.updateRules(api, profile, modId,
-                                                  [].concat(existing, updated), false));
-            } else {
-              return Promise.resolve();
-            }
-          });
+        this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
         api.dismissNotification(notificationId);

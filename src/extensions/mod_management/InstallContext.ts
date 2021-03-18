@@ -149,13 +149,13 @@ class InstallContext implements IInstallContext {
     });
   }
 
-  public setProgress(percent?: number) {
-    if ((percent === undefined) || ((percent - this.mLastProgress) >= 2)) {
+  public setProgress(phase: string, percent?: number) {
+    if ((percent === undefined) || ((percent - (this.mLastProgress ?? 0)) >= 2)) {
       this.mLastProgress = percent;
       this.mUpdateNotification(
         'install_' + this.mIndicatorId,
         percent,
-        percent !== undefined ? 'Extracting' : 'Installing',
+        phase,
       );
     }
   }

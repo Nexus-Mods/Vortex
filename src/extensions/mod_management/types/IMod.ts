@@ -72,7 +72,10 @@ export interface IModReference extends IReference {
  */
 export interface IFileListItem {
   path: string;
-  md5: string;
+  // hex-encoded md5 hash
+  md5?: string;
+  // base64 encoded 64-bit xxhash
+  xxh64?: string;
 }
 
 export interface IDownloadHint {
