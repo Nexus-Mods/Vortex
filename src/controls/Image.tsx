@@ -3,7 +3,7 @@ import * as React from 'react';
 
 interface IExtraImageProps<T> extends React.ImgHTMLAttributes<T> {
   srcs: string[];
-  circle: boolean;
+  circle?: boolean;
 }
 
 export type IImageProps = React.DetailedHTMLProps<
@@ -26,7 +26,7 @@ function Image(props: IImageProps): JSX.Element {
   }, []);
 
   const classes: string[] = [];
-  if (circle) {
+  if (circle === true) {
     classes.push('img-circle');
   }
 

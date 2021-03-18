@@ -665,3 +665,11 @@ export function replaceRecursive(input: any, from: any, to: any) {
       return prev;
     }, {});
 }
+
+function removeLeadingZeros(input: string): string {
+  return input.split('.').map(seg => seg.replace(/^0+(\d+$)/,'$1')).join('.');
+}
+
+export function semverCoerce(input: string): semver.SemVer {
+  return semver.coerce(removeLeadingZeros(input));
+}

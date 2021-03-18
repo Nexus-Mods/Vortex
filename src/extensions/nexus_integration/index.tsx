@@ -982,7 +982,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(new ProcessCanceled('Wrong user id'));
     }
 
-    if (!userInfo.isPremium && (url.type === 'mod') && (url.key === undefined)) {
+    if (!userInfo?.isPremium
+        && (url.type === 'mod')
+        && (url.gameId !== SITE_ID)
+        && (url.key === undefined)) {
       // non-premium user trying to download a file with no id, have to send the user to the
       // corresponding site to generate a proper link
       return new Promise((resolve, reject) => {

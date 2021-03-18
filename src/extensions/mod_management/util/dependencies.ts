@@ -7,10 +7,11 @@ import { IBrowserResult } from '../../browser/types';
 import { Dependency, IDependency, ILookupResultEx } from '../types/IDependency';
 import { IDownloadHint, IFileListItem, IMod, IModRule } from '../types/IMod';
 
+import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
 import {log} from '../../../util/log';
 import {activeGameId} from '../../../util/selectors';
 import {getSafe} from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import { semverCoerce, truthy } from '../../../util/util';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -141,12 +142,22 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
       if (lhs.collateral.length !== rhs.collateral.length) {
         return rhs.collateral.length - lhs.collateral.length;
       } else {
+        try {
         // within blocks of equal number of collaterals, consider the newer versions
         // before the ones with lower version
         return semver.compare(
-          semver.coerce(rhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1'),
-          semver.coerce(lhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1'),
+          semverCoerce(rhs.dep.lookupResults[0]?.value?.fileVersion) ?? '0.0.1',
+          semverCoerce(lhs.dep.lookupResults[0]?.value?.fileVersion) ?? '0.0.1',
         );
+        } catch (err) {
+          log('error', 'failed to compare version', {
+            lhs: lhs.dep.lookupResults[0]?.value?.fileVersion,
+            rhs: rhs.dep.lookupResults[0]?.value?.fileVersion
+          });
+          return rhs.dep.lookupResults[0]?.value?.fileVersion.localeCompare(
+            lhs.dep.lookupResults[0]?.value?.fileVersion
+          );
+        }
       }
     });
 
@@ -221,6 +232,8 @@ function gatherDependenciesGraph(
 
   let urlFromHint: IBrowserResult;
 
+  const limit = new ConcurrencyLimiter(10);
+
   return ((download !== undefined)
               ? Promise.resolve(undefined)
               : lookupDownloadHint(api, rule.downloadHint))
@@ -236,7 +249,7 @@ function gatherDependenciesGraph(
       const rules = details[0]?.value?.rules || [];
 
       return Promise.all(rules
-          .map(subRule => gatherDependenciesGraph(subRule, api, recommendations)));
+          .map(subRule => limit.do(() => gatherDependenciesGraph(subRule, api, recommendations))));
     })
     .then(nodes => {
       const res: IDependencyNode = {
@@ -297,16 +310,21 @@ function gatherDependencies(
     }
   };
 
+  const limit = new ConcurrencyLimiter(10);
+
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.all(
     requirements
-      .map((rule: IModRule) => gatherDependenciesGraph(rule, api, recommendations)
-        .tap(() => onProgress())),
+      .map((rule: IModRule) =>
+        Promise.resolve(limit.do(() => gatherDependenciesGraph(rule, api, recommendations)))
+        .then((node: IDependencyNode) => {
+          onProgress();
+          return node;
+        })),
   )
-    .then((nodes: IDependencyNode[]) => {
-      // tag duplicates
-      return tagDuplicates(flatten(nodes)).then(() => nodes);
-    })
+    // tag duplicates
+    .then((nodes: IDependencyNode[]) =>
+      tagDuplicates(flatten(nodes)).then(() => nodes))
     .then((nodes: IDependencyNode[]) =>
       // this filters out the duplicates including their subtrees,
       // then converts IDependencyNodes to IDependencies

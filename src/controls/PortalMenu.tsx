@@ -50,26 +50,30 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
         }}
       >
         {args => {
-          if (useMousePosition === true) {
-            args.props.style.top = this.state.y;
-            args.props.style.left = this.state.x;
-            delete args.props.style.transform;
-          } else if (!!useMousePosition) {
-            args.props.style.top = useMousePosition.y;
-            args.props.style.left = useMousePosition.x;
-            delete args.props.style.transform;
-          } else if ((args.props.style !== undefined)
-              && (args.props.style.transform !== undefined)) {
-            // translate3d causes blurry text on "low-res" screens.
-            // Newer popper versions seem to account for that but react-popper still
-            // relies on an old version at the time of writing
-            const translateMatch =
-              args.props.style.transform.match(/translate3d\((\w+), (\w+), 0\)/);
-            if (translateMatch !== undefined) {
-              args.props.style.top = translateMatch[2];
-              args.props.style.left = translateMatch[1];
+          try {
+            if (useMousePosition === true) {
+              args.props.style.top = this.state.y;
+              args.props.style.left = this.state.x;
               delete args.props.style.transform;
+            } else if (!!useMousePosition) {
+              args.props.style.top = useMousePosition.y;
+              args.props.style.left = useMousePosition.x;
+              delete args.props.style.transform;
+            } else if ((args.props.style !== undefined)
+              && (args.props.style.transform !== undefined)) {
+              // translate3d causes blurry text on "low-res" screens.
+              // Newer popper versions seem to account for that but react-popper still
+              // relies on an old version at the time of writing
+              const translateMatch =
+                args.props.style.transform.match(/translate3d\((\w+), (\w+), 0\)/);
+              if (translateMatch !== undefined) {
+                args.props.style.top = translateMatch[2];
+                args.props.style.left = translateMatch[1];
+                delete args.props.style.transform;
+              }
             }
+          } catch (err) {
+            // nop, wtf is going on here?
           }
           return (
             <div {...args.props} className='icon-menu-positioner'>

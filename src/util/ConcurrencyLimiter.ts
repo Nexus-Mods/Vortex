@@ -28,18 +28,18 @@ class ConcurrencyLimiter {
     this.mRepeatTest = repeatTest;
   }
 
-  public async do<T>(cb: () => Promise<T>): Promise<T> {
+  public async do<T>(cb: () => PromiseLike<T>): Promise<T> {
     return this.doImpl(cb, RETRIES);
   }
 
-  private async doImpl<T>(cb: () => Promise<T>, tries: number): Promise<T> {
+  private async doImpl<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
     if (this.mLimit <= 0) {
       return this.enqueue(cb, tries);
     }
     return this.process(cb, tries);
   }
 
-  private async process<T>(cb: () => Promise<T>, tries: number): Promise<T> {
+  private async process<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
     // reduce limit while processing
     --this.mLimit;
     try {
@@ -63,7 +63,7 @@ class ConcurrencyLimiter {
     }
   }
 
-  private enqueue<T>(cb: () => Promise<T>, tries: number): Promise<T> {
+  private enqueue<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
     return new Promise((outerResolve, outerReject) => {
       this.mEndOfQueue = this.mEndOfQueue
         .then(() => new Promise<boolean>((resolve) => {

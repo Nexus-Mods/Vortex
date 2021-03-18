@@ -858,7 +858,8 @@ class DownloadManager {
               });
             })
             .catch(UserCanceled, () => Promise.resolve(prev))
-            .catch(ProcessCanceled, () => Promise.resolve(prev));
+            .catch(ProcessCanceled, () => Promise.resolve(prev))
+            .catch(Error, () => Promise.resolve(prev));
         }, { urls: [], meta: {}, updatedUrls: [] });
       }
       return cache;

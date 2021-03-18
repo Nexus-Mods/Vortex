@@ -433,7 +433,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           }
         }
 
-        return startDownload(api, nexus, url)
+        return startDownload(api, nexus, url, undefined, undefined, false)
           .catch(err => {
             api.showErrorNotification('Failed to download mod', err, {
               allowReport: false,
@@ -445,7 +445,7 @@ export function onDownloadUpdate(api: IExtensionApi,
         // there is a really good chance that the download will fail
         log('warn', 'failed to fetch mod file list', err.message);
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
-        return startDownload(api, nexus, url);
+        return startDownload(api, nexus, url, undefined, undefined, false);
       });
   };
 }

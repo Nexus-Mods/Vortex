@@ -92,7 +92,7 @@ function startDownloadCollection(api: IExtensionApi,
           ids: { gameId: pageId, collectionId: url.collectionId, revisionId: url.revisionId },
           revisionInfo,
         },
-      }, (revisionInfo as any).file_name, cb))
+      }, (revisionInfo as any).file_name, cb, undefined, false))
       .catch(err => Promise.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId));
@@ -111,6 +111,7 @@ function startDownloadMod(api: IExtensionApi,
                           redownload?: RedownloadMode,
                           fileName?: string,
                           allowInstall?: boolean): Promise<string> {
+  log('info', 'start download mod', { urlStr, allowInstall });
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);

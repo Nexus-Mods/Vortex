@@ -29,7 +29,7 @@ function idOnly(ref: IModReference) {
 }
 
 // these are only the "important" fields of the reference, not the "helper" fields
-const REFERENCE_FIELDS = ['fileMD5', 'logicalFileName', 'fileExpression', 'versionMatch'];
+const REFERENCE_FIELDS = ['fileMD5', 'logicalFileName', 'fileExpression', 'versionMatch', 'repo'];
 export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean {
   // the id is only used if it's the only matching field (apart from the archive id)
   if (idOnly(lhs) || idOnly(rhs)) {
