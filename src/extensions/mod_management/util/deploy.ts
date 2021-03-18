@@ -85,8 +85,11 @@ export function purgeMods(api: IExtensionApi, gameId?: string, isUnmanaging?: bo
     //  to block him from purging the mods. Any profile will do.
     const profiles: { [profileId: string]: IProfile } = getSafe(state, ['persistent', 'profiles'], {});
 
-    const profileId = Object.keys(profiles).pop();
-    profile = profiles[profileId];
+    const profileId = Object.keys(profiles)
+      .filter(id => profiles[id].gameId === gameId)
+      .pop();
+
+    profile = profiles?.[profileId];
   }
 
   if (profile === undefined) {
