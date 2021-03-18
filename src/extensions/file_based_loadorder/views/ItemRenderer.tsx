@@ -12,7 +12,7 @@ import { IProfile, IState } from '../../../types/api';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-import { setLoadOrderEntry } from '../actions/loadOrder';
+import { setFBLoadOrderEntry } from '../actions/loadOrder';
 
 interface IConnectedProps {
   modState: any;
@@ -144,7 +144,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
     onSetLoadOrderEntry: (profileId, entry) =>
-      dispatch(setLoadOrderEntry(profileId, entry)),
+      dispatch(setFBLoadOrderEntry(profileId, entry)),
   };
 }
 

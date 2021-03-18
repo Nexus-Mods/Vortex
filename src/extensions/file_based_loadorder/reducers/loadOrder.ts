@@ -7,7 +7,7 @@ import * as actions from '../actions/loadOrder';
 
 export const modLoadOrderReducer: IReducerSpec = {
   reducers: {
-    [actions.setLoadOrderEntry as any]: (state, payload) => {
+    [actions.setFBLoadOrderEntry as any]: (state, payload) => {
       const { profileId, loEntry } = payload;
       const loadOrder = getSafe(state, [profileId], []);
       const newLO = loadOrder.reduce((accum, iter) => {
@@ -20,7 +20,7 @@ export const modLoadOrderReducer: IReducerSpec = {
       }, []);
       return setSafe(state, [profileId], newLO);
     },
-    [actions.setNewLoadOrder as any]: (state, payload) => {
+    [actions.setFBLoadOrder as any]: (state, payload) => {
       const { profileId, loadOrder } = payload;
       if (Array.isArray(loadOrder)) {
         return setSafe(state, [profileId], loadOrder);
