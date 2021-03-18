@@ -70,11 +70,24 @@ export function loadAllManifests(api: IExtensionApi,
           }), {});
 }
 
-export function purgeMods(api: IExtensionApi, gameId?: string): Promise<void> {
+export function purgeMods(api: IExtensionApi, gameId?: string, isUnmanaging?: boolean): Promise<void> {
   const state = api.store.getState();
-  const profile = gameId !== undefined
+  let profile = gameId !== undefined
     ? profileById(state, lastActiveProfileForGame(state, gameId))
     : activeProfile(state);
+
+  if (isUnmanaging && profile === undefined) {
+    // This block intends to cater for a use case where the user is attempting
+    //  to unmanage his game but has removed the last active profile manually
+    //  through the profiles page. The user most definitely still has profiles
+    //  for the game as the game entry gets removed if all have been deleted.
+    // Given that the user is attempting to unmanage his game, we do not want
+    //  to block him from purging the mods. Any profile will do.
+    const profiles: { [profileId: string]: IProfile } = getSafe(state, ['persistent', 'profiles'], {});
+
+    const profileId = Object.keys(profiles).pop();
+    profile = profiles[profileId];
+  }
 
   if (profile === undefined) {
     return Promise.reject(new TemporaryError('No active profile'));
