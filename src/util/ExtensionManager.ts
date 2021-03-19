@@ -875,7 +875,7 @@ class ExtensionManager {
         const prom = call.arguments[0]() || Promise.resolve();
 
         const start = Date.now();
-        return timeout(prom, 30000, {
+        return timeout(prom, 60000, {
           throw: true,
           queryContinue: () => this.queryLoadTimeout(call.extension),
         })
