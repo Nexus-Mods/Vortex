@@ -44,10 +44,13 @@ export class Context extends DelegateBase {
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
     this.mGameInfo = getGame(this.mGameId);
     if (this.mGameDiscovery?.path === undefined) {
-      throw new ProcessCanceled('Game not installed');
+      const error = new ProcessCanceled('Game not installed');
+      (error as any)['attachLogOnReport'] = true;
+      (error as any)['gameMode'] = gameId;
+      throw error;
     }
 
-    this.mPatcherDetails = this.mGameInfo.details?.harmonyPatchDetails;
+    this.mPatcherDetails = this.mGameInfo?.details?.harmonyPatchDetails;
   }
 
   public getAppVersion =
