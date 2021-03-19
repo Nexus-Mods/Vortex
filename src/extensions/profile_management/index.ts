@@ -600,7 +600,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
   ])
   .then(result => {
     if (result.action === 'Delete profiles') {
-      return purgeMods(api, gameId)
+      return purgeMods(api, gameId, true)
         .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
           modId => removeMod(api, gameId, modId)))
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
