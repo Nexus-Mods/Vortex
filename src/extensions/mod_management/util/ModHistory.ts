@@ -48,7 +48,7 @@ class ModHistory implements IHistoryStack {
               return false;
             }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && profile.modState[id].enabled;
+                   && profile.modState?.[id]?.enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
@@ -73,7 +73,7 @@ class ModHistory implements IHistoryStack {
               return false;
             }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && !profile.modState[id].enabled;
+                   && !profile.modState?.[id]?.enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
