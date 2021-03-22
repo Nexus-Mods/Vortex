@@ -46,4 +46,5 @@ export {
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, TriStateCheckbox,
-  Toggle, ToolbarIcon, tooltip, Usage, Webview};
+  Toggle, ToolbarIcon, tooltip, Usage, Webview,
+};

@@ -337,10 +337,16 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
         message: `This crash was caused by an extension (${error.extension}). ` +
-                 'Do you want to disable this extension?',
+                 'Do you want to disable this extension? All functionality provided '
+                 + 'by the extension will be removed from Vortex!',
         noLink: true,
       });
       if (action === 0) {
+        log('warn', 'extension will be disabled after causing a crash', {
+          extId: error.extension,
+          error: error.message,
+          stack: error.stack,
+        });
         // can't access the store at this point because we won't be waiting for the store
         // to be persisted
         fs.writeFileSync(path.join(app.getPath('temp'), '__disable_' + error.extension), '');

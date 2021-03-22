@@ -22,6 +22,7 @@ class DeploymendMethod extends LinkingDeployment {
   public id: string;
   public name: string;
   public description: string;
+  public compatible: string[] = ['symlink_activator_elevated'];
 
   public priority: number = 10;
 

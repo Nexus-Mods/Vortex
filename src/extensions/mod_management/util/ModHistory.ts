@@ -48,7 +48,7 @@ class ModHistory implements IHistoryStack {
               return false;
             }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && profile.modState[id].enabled;
+                   && profile.modState?.[id]?.enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
@@ -73,7 +73,7 @@ class ModHistory implements IHistoryStack {
               return false;
             }
             return (state.persistent.mods[evt.gameId]?.[id] !== undefined)
-                   && !profile.modState[id].enabled;
+                   && !profile.modState?.[id]?.enabled;
           },
           do: evt => {
             const profile = profileById(api.getState(), evt.data.profileId);
@@ -219,20 +219,24 @@ class ModHistory implements IHistoryStack {
 
     this.mApi.onAsync('will-deploy', async (profileId: string) => {
       const profile = profileById(this.mApi.getState(), profileId);
-      addToHistory?.('mods', {
-        type: 'will-deploy',
-        gameId: profile.gameId,
-        data: {},
-      });
+      if (profile !== undefined) {
+        addToHistory?.('mods', {
+          type: 'will-deploy',
+          gameId: profile.gameId,
+          data: {},
+        });
+      }
     });
 
     this.mApi.onAsync('did-deploy', async (profileId: string) => {
       const profile = profileById(this.mApi.getState(), profileId);
-      addToHistory?.('mods', {
-        type: 'did-deploy',
-        gameId: profile.gameId,
-        data: {},
-      });
+      if (profile !== undefined) {
+        addToHistory?.('mods', {
+          type: 'did-deploy',
+          gameId: profile.gameId,
+          data: {},
+        });
+      }
     });
   }
 

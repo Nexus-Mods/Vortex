@@ -2,6 +2,8 @@
  * entry point for the main process
  */
 
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from './constants';
+
 import * as sourceMapSupport from 'source-map-support';
 sourceMapSupport.install();
 
@@ -80,6 +82,7 @@ const handleError = (error: any) => {
   }
 
   if (['net::ERR_CONNECTION_RESET',
+       'net::ERR_CONNECTION_ABORTED',
        'net::ERR_ABORTED',
        'net::ERR_CONTENT_LENGTH_MISMATCH',
        'net::ERR_SSL_PROTOCOL_ERROR',
@@ -137,6 +140,9 @@ function main() {
     return;
   }
 
+  const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
+  process.env.NODE_OPTIONS = NODE_OPTIONS + ` --max-http-header-size=${HTTP_HEADER_SIZE}`;
+
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--disable-software-rasterizer');
@@ -147,7 +153,7 @@ function main() {
   process.on('unhandledRejection', handleError);
 
   if (process.env.NODE_ENV === 'development') {
-    app.commandLine.appendSwitch('remote-debugging-port', '9222');
+    app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 
   /* allow application controlled scaling

@@ -104,20 +104,20 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
         return;
       }
-      if (!rhs.hasOwnProperty(key) && lhs.hasOwnProperty(key)) {
+      if (!rhs?.hasOwnProperty?.(key) && lhs?.hasOwnProperty?.(key)) {
         res['-' + key] = lhs[key];
       } else {
-        const sub = objDiff(lhs[key], rhs[key]);
+        const sub = objDiff(lhs?.[key] ?? {}, rhs?.[key] ?? {});
         if (sub === null) {
-          res['-' + key] = lhs[key];
-          res['+' + key] = rhs[key];
+          res['-' + key] = lhs?.[key] ?? null;
+          res['+' + key] = rhs?.[key] ?? null;
         } else if (Object.keys(sub).length !== 0) {
           res[key] = sub;
         }
       }
     });
     Object.keys(rhs || {}).forEach(key => {
-      if (!lhs.hasOwnProperty(key) && rhs.hasOwnProperty(key)) {
+      if (!lhs?.hasOwnProperty?.(key) && rhs?.hasOwnProperty?.(key)) {
         res['+' + key] = rhs[key];
       }
     });

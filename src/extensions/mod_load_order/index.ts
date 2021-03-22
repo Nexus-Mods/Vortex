@@ -1,10 +1,10 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 import { modLoadOrderReducer } from './reducers/loadOrder';
 import { loadOrderSettingsReducer } from './reducers/settings';
 import { IGameLoadOrderEntry } from './types/types';
 import LoadOrderPage from './views/LoadOrderPage';
-
-import { log, selectors, types } from 'vortex-api';
 
 const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
 
@@ -14,7 +14,7 @@ export default function init(context: IExtensionContext) {
     hotkey: 'E',
     group: 'per-game',
     visible: () => {
-      const currentGameId: string = selectors.activeGameId(context.api.store.getState());
+      const currentGameId: string = activeGameId(context.api.store.getState());
       const gameEntry: IGameLoadOrderEntry = findGameEntry(currentGameId);
       return (gameEntry !== undefined) ? true : false;
     },

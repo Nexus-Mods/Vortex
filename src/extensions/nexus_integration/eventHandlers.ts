@@ -249,7 +249,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
       return;
     }
 
-    downloadFile(api, nexus, game, modId, fileId)
+    downloadFile(api, nexus, game, modId, fileId, undefined, false)
       .then(downloadId => {
         api.events.emit('start-install-download', downloadId);
       })

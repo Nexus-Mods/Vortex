@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import getVortexPath from '../../util/getVortexPath';
@@ -17,11 +17,15 @@ import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import { createIPC } from 'harmony-patcher';
 import * as net from 'net';
+import path from 'path';
 
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
 import { IPatchConfig } from './types/injector';
+
+import { fs } from '../..';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
@@ -231,7 +235,7 @@ class ConnectionIPC {
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
-    const connectedPromise = new Promise((resolve, reject) => {
+    const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;
       onReject = reject;
     });
@@ -502,19 +506,35 @@ async function applyInjectCommand(patchConfig: IPatchConfig,
     });
 }
 
-// function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
-//   return (...args: any[]) => Bluebird.resolve(func(...args));
-// }
+async function resolveGameId(api: IExtensionApi, patchConfig: IPatchConfig) {
+  // We can't rely on the active gameId to be correct - we need to resolve
+  //  the gameId using the extension path.
+  const state = api.getState();
+  const gameId = activeGameId(state);
+  if (patchConfig.ExtensionPath === undefined) {
+    return gameId;
+  }
+
+  try {
+    // tslint:disable-next-line: max-line-length
+    const knownGames: IGameStored[] = state.session.gameMode.known;
+    const match = knownGames.find(game => game.extensionPath === patchConfig.ExtensionPath);
+    return match !== undefined ? match.id : gameId;
+  } catch (err) {
+    log('error', 'failed to resolve gameId', err);
+    return gameId;
+  }
+}
 
 function init(context: IExtensionContext): boolean {
   const injectorWrap = async (patchConfig: IPatchConfig,
                               modLoaderPath: string,
                               data?: any,
                               callback?: (err, result) => void) => {
-    const state = context.api.store.getState();
-    const gameId = activeGameId(state);
-    const coreDelegates = new Core(context.api, gameId, modLoaderPath);
+    const gameId = await resolveGameId(context.api, patchConfig);
+    let coreDelegates;
     try {
+      coreDelegates = new Core(context.api, gameId, modLoaderPath);
       await applyInjectCommand(patchConfig, coreDelegates, data, callback);
     } catch (err) {
       let allowReport = true;
@@ -524,7 +544,9 @@ function init(context: IExtensionContext): boolean {
       }
       context.api.showErrorNotification('Unable to apply patch command', err, { allowReport });
     } finally {
-      coreDelegates.detach();
+      if (coreDelegates !== undefined) {
+        coreDelegates.detach();
+      }
     }
   };
 

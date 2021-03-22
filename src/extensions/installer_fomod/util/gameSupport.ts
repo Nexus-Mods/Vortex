@@ -2,6 +2,8 @@ import { IGame } from '../../../types/IGame';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
+import * as Redux from 'redux';
+import { IState } from '../../../types/IState';
 
 const app = appIn || remote.app;
 
@@ -217,6 +219,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       'update.esm',
     ],
   },
+  enderalspecialedition: {
+    iniPath: () => bethIni('Enderal Special Edition', 'Enderal'),
+    stopPatterns: stopPatterns('skyrimse'),
+    pluginPath: 'Data',
+    nativePlugins: [],
+  },
   skyrimse: {
     iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
     stopPatterns: stopPatterns('skyrimse'),
@@ -289,6 +297,36 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     stopPatterns: stopPatterns('thesims4'),
   },
 };
+
+function isXboxPath(discoveryPath: string) {
+  const hasPathElement = (element) =>
+    discoveryPath.toLowerCase().includes(element);
+  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
+}
+
+export function initGameSupport(store: Redux.Store<IState>) {
+  const state: IState = store.getState();
+
+  const {discovered} = state.settings.gameMode;
+
+  if (discovered['enderalspecialedition']?.path !== undefined) {
+    if (discovered['enderalspecialedition']?.path.toLowerCase().includes('skyrim')) {
+      gameSupport['enderalspecialedition'].iniPath = gameSupport['skyrimse'].iniPath;
+    }
+  }
+
+  if (discovered['skyrimse']?.path !== undefined) {
+    if (isXboxPath(discovered['skyrimse'].path)) {
+      gameSupport['skyrimse'].iniPath = () => bethIni('Skyrim Special Edition MS', 'Skyrim');
+    }
+  }
+
+  if (discovered['fallout4']?.path !== undefined) {
+    if (isXboxPath(discovered['fallout4'].path)) {
+      gameSupport['fallout4'].iniPath = () => bethIni('Fallout4 MS', 'Fallout4');
+    }
+  }
+}
 
 export function getIniFilePath(gameMode: string): string {
   if ((gameSupport[gameMode] === undefined)

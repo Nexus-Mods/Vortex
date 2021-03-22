@@ -10,10 +10,10 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import { setLastUpdateCheck } from '../actions/session';
 
-import Promise from 'bluebird';
-import { TFunction } from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from '@nexusmods/nexus-api';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 

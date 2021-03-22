@@ -101,6 +101,9 @@ interface IRunningDownload {
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
+  assemblerProm?: Promise<FileAssembler>;
+
+  redownload: RedownloadMode;
   chunks: IDownloadJob[];
   chunkable: boolean;
   promises: Array<Promise<any>>;
@@ -132,6 +135,7 @@ class DownloadWorker {
   private mEnded: boolean = false;
   private mResponse: http.IncomingMessage;
   private mWriting: boolean = false;
+  private mRestart: boolean = false;
   private mRedirected: boolean = false;
   private mStallTimer: NodeJS.Timer;
   private mStallResets: number = MAX_STALL_RESETS;
@@ -204,6 +208,7 @@ class DownloadWorker {
   public restart() {
     this.mResponse.removeAllListeners('error');
     this.mRequest.abort();
+    this.mRestart = true;
   }
 
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
@@ -336,6 +341,9 @@ class DownloadWorker {
       // as long as we made progress on this chunk, retry
       this.mJob.url().then(jobUrl => {
         this.assignJob(this.mJob, jobUrl);
+      })
+      .catch(innerErr => {
+        this.handleError(innerErr);
       });
     } else {
       this.mEnded = true;
@@ -374,11 +382,20 @@ class DownloadWorker {
     });
     this.writeBuffer()
       .then(() => {
-        if (this.mJob.completionCB !== undefined) {
-          this.mJob.completionCB();
+        if (this.mRestart && (this.mJob.size > 0)) {
+          this.mRestart = false;
+          this.mJob.url().then(jobUrl => {
+            this.assignJob(this.mJob, jobUrl);
+          })
+            .catch(err => {
+              this.handleError(err);
+            });
+        } else {
+          if (this.mJob.completionCB !== undefined) {
+            this.mJob.completionCB();
+          }
+          this.abort(false);
         }
-        log('debug', 'worker completed');
-        this.abort(false);
       })
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
@@ -637,7 +654,8 @@ class DownloadManager {
                  fileName: string,
                  progressCB: ProgressCallback,
                  destinationPath?: string,
-                 options?: IDownloadOptions): Promise<IDownloadResult> {
+                 options?: IDownloadOptions,
+                 redownload: RedownloadMode = 'ask'): Promise<IDownloadResult> {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
@@ -661,9 +679,10 @@ class DownloadManager {
             origName: nameTemplate,
             tempName: filePath,
             finalName: (fileName !== undefined)
-              ? Promise.resolve(path.join(destPath, fileName)) : undefined,
+              ? Promise.resolve(path.join(destPath, this.sanitizeFilename(fileName))) : undefined,
             error: false,
             urls,
+            redownload,
             resolvedUrls: this.resolveUrls(urls, nameTemplate),
             options,
             started: new Date(),
@@ -712,6 +731,7 @@ class DownloadManager {
         received,
         // we don't know what this was set to initially but going to assume that it was always
         // or the user said yes, otherwise why is this resumable and not canceled?
+        redownload: 'always',
         size,
         started: new Date(started),
         chunks: [],
@@ -963,14 +983,14 @@ class DownloadManager {
   }
 
   private startJob(download: IRunningDownload, job: IDownloadJob) {
-    const assemblerProm = download.assembler !== undefined
-      ? Promise.resolve(download.assembler)
-      : FileAssembler.create(download.tempName)
+    if (download.assemblerProm === undefined) {
+      download.assemblerProm = FileAssembler.create(download.tempName)
         .tap(assembler => assembler.setTotalSize(download.size));
+    }
 
     job.dataCB = this.makeDataCB(download);
 
-    return assemblerProm.then(assembler => {
+    return download.assemblerProm.then(assembler => {
       download.assembler = assembler;
 
       log('debug', 'start download worker',

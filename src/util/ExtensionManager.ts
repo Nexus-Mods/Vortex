@@ -588,7 +588,9 @@ class ExtensionManager {
             fs.readdirSync(app.getPath('temp'))
                 .filter(name => name.startsWith('__disable_'));
         disableExtensions.forEach(ext => {
-          initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
+          const extId = ext.substr(10);
+          log('info', 'disabling extension that caused a crash before', { extId });
+          initStore.dispatch(setExtensionEnabled(extId, false));
           fs.unlinkSync(path.join(app.getPath('temp'), ext));
         });
       } catch (err) {
@@ -882,7 +884,7 @@ class ExtensionManager {
         const prom = call.arguments[0]() || Promise.resolve();
 
         const start = Date.now();
-        return timeout(prom, 30000, {
+        return timeout(prom, 60000, {
           throw: true,
           queryContinue: () => this.queryLoadTimeout(call.extension),
         })
@@ -1067,7 +1069,8 @@ class ExtensionManager {
         } catch (err) {
           log('error', 'state change handler failed', {
             message: err.message,
-            stack: stackErr.stack,
+            stack1: err.stack,
+            stack2: stackErr.stack,
             key,
           });
         }
@@ -1679,9 +1682,7 @@ class ExtensionManager {
         if (onSpawned !== undefined) {
           onSpawned();
         }
-      }).catch(err => {
-        reject(err);
-      });
+      }).catch(err => reject(err));
     })
     .finally(() => {
       if (tmpFilePath !== undefined) {

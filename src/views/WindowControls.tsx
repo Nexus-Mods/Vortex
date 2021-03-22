@@ -12,56 +12,57 @@ const window = (() => {
   };
 })();
 
-class WindowControls extends React.Component<{}, {}> {
+class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
+  private mClosed: boolean = false;
+
+  constructor(props: {}) {
+    super(props);
+
+    this.state = {
+      isMaximized: window().isMaximized(),
+    };
+  }
+
   public componentDidMount() {
     window().on('maximize', this.onMaximize);
-    window().on('unmaximize', this.onMaximize);
+    window().on('unmaximize', this.onUnMaximize);
+    window().on('close', this.onClose);
   }
 
   public componentWillUnmount() {
     window().removeListener('maximize', this.onMaximize);
-    window().removeListener('unmaximize', this.onMaximize);
+    window().removeListener('unmaximize', this.onUnMaximize);
+    window().removeListener('close', this.onClose);
   }
 
   public render(): JSX.Element {
-    if (window().isDestroyed()) {
+    const { isMaximized } = this.state;
+    if (this.mClosed) {
       return null;
     }
     return (
       <div id='window-controls'>
-        { window().minimizable
-          ? (
-            <IconButton
-              id='window-minimize'
-              className='window-control'
-              tooltip=''
-              icon='window-minimize'
-              onClick={this.minimize}
-            />
-          ) : null
-        }
-        { window().maximizable
-          ? (
-            <IconButton
-              id='window-maximize'
-              className='window-control'
-              tooltip=''
-              icon={window().isMaximized() ? 'window-restore' : 'window-maximize'}
-              onClick={this.toggleMaximize}
-            />
-          ) : null
-        }
-        { window().closable
-          ? (
-            <IconButton
-              id='window-close'
-              className='window-control'
-              tooltip=''
-              icon='window-close'
-              onClick={this.close}
-            />
-          ) : null
-        }
+        <IconButton
+          id='window-minimize'
+          className='window-control'
+          tooltip=''
+          icon='window-minimize'
+          onClick={this.minimize}
+        />
+        <IconButton
+          id='window-maximize'
+          className='window-control'
+          tooltip=''
+          icon={isMaximized ? 'window-restore' : 'window-maximize'}
+          onClick={this.toggleMaximize}
+        />
+        <IconButton
+          id='window-close'
+          className='window-control'
+          tooltip=''
+          icon='window-close'
+          onClick={this.close}
+        />
       </div>
     );
   }
@@ -71,11 +72,22 @@ class WindowControls extends React.Component<{}, {}> {
   }
 
   private onMaximize = () => {
+    this.setState({ isMaximized: true });
     this.forceUpdate();
   }
 
+  private onUnMaximize = () => {
+    this.setState({ isMaximized: false });
+    this.forceUpdate();
+  }
+
+  private onClose = () => {
+    this.mClosed = true;
+  }
+
   private toggleMaximize = () => {
-    window().isMaximized() ? window().unmaximize() : window().maximize();
+    const wasMaximized = window().isMaximized();
+    wasMaximized ? window().unmaximize() : window().maximize();
   }
 
   private close = () => {

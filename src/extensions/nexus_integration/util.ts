@@ -65,7 +65,7 @@ function startDownloadCollection(api: IExtensionApi,
                                  urlStr: string,
                                  url: NXMUrl)
                                  : Promise<string> {
-  const state = api.store.getState();
+  const state: IState = api.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
@@ -151,21 +151,23 @@ function startDownloadMod(api: IExtensionApi,
       if (gameId === SITE_ID) {
         return downloadId;
       }
-      api.sendNotification({
-        id: `ready-to-install-${downloadId}`,
-        type: 'success',
-        title: 'Download finished',
-        group: 'download-finished',
-        message: nexusFileInfo.name,
-        actions: [
-          {
-            title: 'Install All', action: dismiss => {
-              api.events.emit('start-install-download', downloadId);
-              dismiss();
+      if (!state.settings.automation?.install) {
+        api.sendNotification({
+          id: `ready-to-install-${downloadId}`,
+          type: 'success',
+          title: 'Download finished',
+          group: 'download-finished',
+          message: nexusFileInfo.name,
+          actions: [
+            {
+              title: 'Install All', action: dismiss => {
+                api.events.emit('start-install-download', downloadId);
+                dismiss();
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      }
       return downloadId;
     })
     .catch((err) => {

@@ -1,5 +1,6 @@
 import Icon from '../../../controls/Icon';
 import bbcode from '../../../util/bbcode';
+import { truthy } from '../../../util/util';
 
 import { TFunction } from 'i18next';
 import memoizeOne from 'memoize-one';
@@ -11,7 +12,8 @@ interface IBaseProps {
   short: string;
   long: string;
   modId: string;
-  editable: boolean;
+  source: string;
+  installed: boolean;
   startEditDescription: (modId: string) => void;
 }
 
@@ -40,22 +42,34 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, editable, short } = this.props;
+    const { t, installed, short, source } = this.props;
 
     const popover = (
       <Popover id='popover-mod-description'>
         <div style={{ maxHeight: 700, overflowY: 'auto' }}>{this.mLongBB}</div>
-        {editable
+        {truthy(source)
           ? (
-            <a onClick={this.editDescription}>
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          ) : (
             <a
               onClick={nop}
               className='fake-link'
               title={t('Description is synchronized with an online source')}
             >
+              <Icon name='edit'/>{t('Edit Description')}
+            </a>
+          )
+          : !installed
+          ? (
+            <a
+              onClick={nop}
+              className='fake-link'
+              title={t('Description can only be changed for installed mods')}
+            >
+              <Icon name='edit'/>{t('Edit Description')}
+            </a>
+          )
+          :
+          (
+            <a onClick={this.editDescription}>
               <Icon name='edit'/>{t('Edit Description')}
             </a>
           )

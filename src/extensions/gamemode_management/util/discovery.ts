@@ -132,8 +132,12 @@ export function quickDiscovery(knownGames: IGame[],
             .then(() => resolve(game.id));
         })
         .catch((err) => {
-          log('debug', 'game not found',
-            { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+          if (err.message !== undefined) {
+            log('debug', 'game not found',
+              { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+          } else {
+            log('warn', 'game not found - invalid exception', { id: game.id, err });
+          }
           resolve();
         });
     } catch (err) {
@@ -142,7 +146,9 @@ export function quickDiscovery(knownGames: IGame[],
       // don't escalate exception because a single game shouldn't break everything
       return resolve();
     }
-  })).then(gameNames => gameNames.filter(name => name !== undefined));
+  }))
+  .then(gameNames => gameNames.filter(name => name !== undefined))
+  ;
 }
 
 /**

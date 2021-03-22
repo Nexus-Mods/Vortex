@@ -404,7 +404,7 @@ class InstallManager {
         const canceled = (err instanceof UserCanceled)
                          || (err instanceof TemporaryError)
                          || (err instanceof ProcessCanceled)
-                         || (err === null)
+                         || !truthy(err)
                          || (err.message === 'Canceled')
                          || (truthy(err.stack)
                              && err.stack.startsWith('UserCanceled: canceled by user'));

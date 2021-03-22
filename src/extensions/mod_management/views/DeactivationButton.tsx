@@ -84,7 +84,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
             ErrorCode: err.errno,
           }, true);
         } else {
-          onShowError('Failed to purge mods', err, err.code !== 'ENOTFOUND');
+          onShowError('Failed to purge mods', err, !['ENOTFOUND', 'ENOENT'].includes(err.code));
         }
       });
   }

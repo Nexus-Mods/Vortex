@@ -46,23 +46,6 @@ function calcHash(filePath: string, tries: number = 3): Promise<string> {
     });
 }
 
-function genArchiveMergeSet(
-    game: IGame,
-    fileLists: FileLists): Promise<{[filePath: string]: string[]}> {
-  const result: {[filePath: string]: string[]} = {};
-  if (game.mergeArchive !== undefined) {
-    fileLists.forEach(fileList => {
-      fileList.files.forEach(entry => {
-        if (game.mergeArchive(entry.filePath)) {
-          const relPath = path.relative(fileList.basePath, entry.filePath);
-          setdefault(result, relPath, []).push(fileList.basePath);
-        }
-      });
-    });
-  }
-  return Promise.resolve(result);
-}
-
 // merge a single archive
 function mergeArchive(api: IExtensionApi,
                       game: IGame,
@@ -72,6 +55,7 @@ function mergeArchive(api: IExtensionApi,
                       mergePath: string) {
   const baseContent: { [path: string]: { size: number, hash: string } } = {};
   const resultPath = path.join(mergePath, 'result');
+  log('debug', 'merging archive', relArcPath);
 
   return fs.ensureDirAsync(resultPath)
       // first, unpack the base/reference archive
@@ -92,6 +76,10 @@ function mergeArchive(api: IExtensionApi,
                   hash,
                 };
               })))
+      // not really an error if the source archive doesn't exist
+      .catch(err => (err.code === 'ENOENT')
+              ? Promise.resolve()
+              : Promise.reject(err))
       // now iterate over each mod containing the archive, extract their version
       // of the archive, then copy every file from the archive that differs from the
       // base into the output directory, overwriting the file from previous mods if
@@ -160,7 +148,7 @@ function mergeMods(api: IExtensionApi,
 
   const mergeDest = path.join(modBasePath, MERGED_PATH);
 
-  const archiveMerges: { [relPath: string]: string[] } = {};
+  const archiveMerges: { [relPath: string]: Array<{ id: string, path: string }> } = {};
   const fileExists = (file: string) => fs.statAsync(file)
     .then(() => Promise.resolve(true))
     .catch(() => Promise.resolve(false));
@@ -180,7 +168,7 @@ function mergeMods(api: IExtensionApi,
         if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {
           const relPath = path.relative(modPath, fileEntry.filePath);
           res.usedInMerge.push(relPath);
-          setdefault(archiveMerges, relPath, []).push(modPath);
+          setdefault(archiveMerges, relPath, []).push({ path: modPath, id: mod.id });
         } else {
           // for every file merger (registerMerger) that applies to this file, initialize
           // the merge if necessary
@@ -266,7 +254,13 @@ function mergeMods(api: IExtensionApi,
     })
     // merge archives
     .then(() => Promise.mapSeries(Object.keys(archiveMerges), relPath =>
-      mergeArchive(api, game, relPath, destinationPath, archiveMerges[relPath], mergeDest)))
+      mergeArchive(api, game, relPath, destinationPath,
+                   archiveMerges[relPath].map(iter => iter.path), mergeDest)
+      .then(() => getNormalizeFunc(destinationPath))
+      .then(normalize => {
+        setdefault(res.mergeInfluences, normalize(relPath),
+                   { modType: '', sources: archiveMerges[relPath].map(iter => iter.id) });
+      })))
     .then(() => res);
 }
 

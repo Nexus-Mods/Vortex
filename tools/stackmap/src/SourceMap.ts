@@ -50,7 +50,7 @@ class SourceMap {
             return Promise.reject(null);
           }
           const fullPath: string =
-            path.resolve(this.mSourcePath, path.dirname(filePath), sourceMapPath);
+            path.resolve(this.mSourcePath, path.dirname(filePath), path.basename(sourceMapPath));
           console.log('res', sourceMapPath, this.mSourcePath, fullPath);
           return fs.readFile(fullPath, { encoding: 'utf8' });
         })

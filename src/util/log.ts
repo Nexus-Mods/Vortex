@@ -7,6 +7,22 @@ import * as path from 'path';
 import * as util from 'util';
 import * as winstonT from 'winston';
 
+export function circularReplacer() {
+  const known = new Map();
+
+  return (key: string, value: any) => {
+    if (typeof(value) === 'object') {
+      if (known.has(value)) {
+        return '<Circular>';
+      }
+
+      known.set(value, true);
+    }
+
+    return value;
+  };
+}
+
 function IPCTransport(options: winstonT.TransportOptions) {
   this.name = 'IPCTransport';
   this.level = 'debug';
@@ -23,7 +39,7 @@ if ((process as any).type === 'renderer') {
   IPCTransport.prototype.log =
     (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
       ipcRenderer.send('log-message', level, message,
-                       meta !== undefined ? JSON.stringify(meta) : undefined);
+                       meta !== undefined ? JSON.stringify(meta, circularReplacer()) : undefined);
       callback(null);
   };
 

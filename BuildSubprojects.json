@@ -215,6 +215,14 @@
     },
     {
       "type": "build-copy",
+      "name": "modtype-bepinex",
+      "path": "extensions/modtype-bepinex",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-bepinex"
+    },
+    {
+      "type": "build-copy",
       "name": "modtype-dinput",
       "path": "extensions/modtype-dinput",
       "removeModules": ["vortex-api"],

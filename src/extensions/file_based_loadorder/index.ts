@@ -15,7 +15,7 @@ import * as fs from '../../util/fs';
 import * as selectors from '../../util/selectors';
 
 import { log } from '../../util/log';
-import { setNewLoadOrder } from './actions/loadOrder';
+import { setFBLoadOrder } from './actions/loadOrder';
 
 interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {
   // The things I do to reduce complexity for extension developers...
@@ -90,7 +90,7 @@ async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any
 
     try {
       const currentLO: LoadOrder = await gameEntry.deserializeLoadOrder();
-      api.store.dispatch(setNewLoadOrder(profile.id, currentLO));
+      api.store.dispatch(setFBLoadOrder(profile.id, currentLO));
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
     }
@@ -160,7 +160,7 @@ async function genProfilesChange(api: types.IExtensionApi,
 
   try {
     const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
-    api.store.dispatch(setNewLoadOrder(profile.id, loadOrder));
+    api.store.dispatch(setFBLoadOrder(profile.id, loadOrder));
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }
@@ -186,7 +186,7 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
 
   try {
     const deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
-    api.store.dispatch(setNewLoadOrder(profile.id, deserializedLO));
+    api.store.dispatch(setFBLoadOrder(profile.id, deserializedLO));
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }

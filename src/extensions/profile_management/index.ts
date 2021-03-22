@@ -22,14 +22,14 @@ import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session
 import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, UserCanceled } from '../../util/CustomErrors';
 import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
-import { discoveryByGame, installPathForGame, needToDeployForGame } from '../../util/selectors';
+import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -451,13 +451,26 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
           api.store.dispatch(setUIBlocker('installing-game', 'download',
             'Installing Game, Vortex will restart upon completion.', true));
 
-          api.emitAndAwait('install-extension', extension)
+          api.ext.ensureLoggedIn()
+          .then(() => api.emitAndAwait('install-extension', extension))
             .then(() => {
               relaunch(['--game', gameId]);
             })
             .finally(() => {
               api.store.dispatch(clearUIBlocker('installing-game'));
+            })
+          .catch(err => {
+            if (err instanceof UserCanceled) {
+              return Promise.resolve();
+            }
+
+            const allowReport = !(err instanceof ProcessCanceled)
+                             && !(err instanceof ServiceTemporarilyUnavailable);
+            api.showErrorNotification('Log-in failed', err, {
+              id: 'failed-get-nexus-key',
+              allowReport,
             });
+          });
         },
       },
     ]);
@@ -587,7 +600,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
   ])
   .then(result => {
     if (result.action === 'Delete profiles') {
-      return purgeMods(api, gameId)
+      return purgeMods(api, gameId, true)
         .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
           modId => removeMod(api, gameId, modId)))
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
@@ -603,7 +616,9 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
           ]);
         })
         .catch(err => {
-          api.showErrorNotification('Failed to stop managing game', err);
+          api.showErrorNotification('Failed to stop managing game', err, {
+            allowReport: !(err instanceof ProcessCanceled),
+          });
         });
     } else {
       return Promise.resolve();
@@ -621,6 +636,23 @@ function addDescriptionFeature() {
     supported: () => true,
     namespace: 'default',
   });
+}
+
+function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
+  const { disabled } = state.session.gameMode;
+
+  if (disabled[gameId] === undefined) {
+    return Promise.resolve();
+  }
+
+  return api.showDialog('question', 'Game disabled', {
+    text: 'A different game extension is currently managing that game directory.',
+    message: gameById(state, disabled[gameId]).name,
+  }, [
+    { label: 'Cancel' },
+  ])
+  .then(() => Promise.reject(new UserCanceled()));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -645,26 +677,46 @@ function init(context: IExtensionContext): boolean {
 
       // double check, calling manageGameDiscovered for a game that isn't
       // actually discovered would be invalid
-      if (state.settings.gameMode.discovered[gameId]?.path !== undefined) {
-        manageGameDiscovered(context.api, gameId);
-      } else {
-        manageGameUndiscovered(context.api, gameId);
-      }
+      const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
+        ? manageGameDiscovered
+        : manageGameUndiscovered;
+
+      checkOverridden(context.api, gameId)
+        .then(() => manageFunc(context.api, gameId))
+        .catch(err => {
+          if (!(err instanceof UserCanceled)) {
+            context.api.showErrorNotification('Failed to manage game', err);
+          }
+        });
   });
 
   context.registerAction('game-undiscovered-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Manage', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
-    manageGameUndiscovered(context.api, gameId);
+
+    checkOverridden(context.api, gameId)
+      .then(() => manageGameUndiscovered(context.api, gameId))
+      .catch(err => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification('Failed to manage game', err);
+        }
+      });
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
-    activateGame(context.api.store, instanceIds[0]);
+    const gameId = instanceIds[0];
+    checkOverridden(context.api, gameId)
+      .then(() => activateGame(context.api.store, gameId))
+      .catch(err => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification('Failed to activate game', err);
+        }
+      });
   }, (instanceIds: string[]) =>
-      activeGameId(context.api.store.getState()) !== instanceIds[0],
+      activeGameId(context.api.getState()) !== instanceIds[0],
   );
 
   context.registerProfileFile = (gameId: string, filePath: string) => {

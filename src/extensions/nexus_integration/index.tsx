@@ -533,6 +533,9 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
             callback(err);
           }
         } catch (err) {
+          if (err.message.startsWith('Unexpected token')) {
+            err.message = 'Failed to parse: ' + data.toString();
+          }
           err.stack = stackErr.stack;
           callback(err);
         }
@@ -573,28 +576,27 @@ function doDownload(api: IExtensionApi, url: string): Promise<string> {
 
 function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   if (sel.apiKey(api.store.getState()) === undefined) {
-    return new Promise((resolve, reject) => {
-      api.sendNotification({
-        type: 'info',
-        title: 'Not logged in',
-        message: 'Nexus Mods requires Vortex to be logged in for downloading',
-        actions: [
-          {
-            title: 'Log in',
-            action: (dismiss: () => void) => {
+    return api.showDialog('info', 'Not logged in', {
+        text: 'Nexus Mods requires Vortex to be logged in for downloading',
+      }, [
+        { label: 'Cancel' },
+        { label: 'Log in' },
+      ])
+      .then(result => {
+        if (result.action === 'Log in') {
+          return new Promise((resolve, reject) => {
               requestLogin(api, (err) => {
                 if (err !== null) {
                   return reject(err);
                 } else {
-                  dismiss();
                   return resolve();
                 }
               });
-            },
-          },
-        ],
+            });
+        } else {
+          return Promise.reject(new UserCanceled());
+        }
       });
-    });
   } else {
     return Promise.resolve();
   }
@@ -1235,6 +1237,7 @@ function init(context: IExtensionContextExt): boolean {
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
+  context.registerAPI('ensureLoggedIn', () => ensureLoggedIn(context.api), {});
 
   context.once(() => once(context.api, [(nex: NexusT) => tracking.once(nex)]));
   context.onceMain(() => onceMain(context.api));

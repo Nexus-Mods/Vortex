@@ -1,13 +1,17 @@
-import Nexus from '@nexusmods/nexus-api';
+import Nexus, { NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import React from 'react';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { IMod } from '../../../types/IState';
+import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import { laterT } from '../../../util/i18n';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, gameById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { getGame } from '../../gamemode_management/util/getGame';
+import { nexusGameId } from './convertGameId';
+
 class Tracking {
   private mApi: IExtensionApi;
   private mNexus: Nexus;
@@ -25,6 +29,16 @@ class Tracking {
     if (username !== undefined) {
       this.fetch();
     }
+
+    this.mApi.onStateChange(['persistent', 'nexus', 'userInfo'],
+      (oldUserInfo, newUserInfo) => {
+        if (newUserInfo === undefined) {
+          this.mTrackedMods = {};
+          this.mOnChanged?.();
+        } else {
+          this.fetch();
+        }
+    });
   }
 
   public attribute(): ITableAttribute {
@@ -41,10 +55,11 @@ class Tracking {
       calc: (mod: IMod) => {
         if (mod.attributes?.source === 'nexus') {
           const gameMode = activeGameId(this.mApi.getState());
+          const nexusId = nexusGameId(getGame(gameMode));
           if (mod.attributes?.modId === undefined) {
             return false;
           }
-          return this.mTrackedMods[gameMode]?.has?.(
+          return this.mTrackedMods[nexusId]?.has?.(
             mod.attributes?.modId.toString(),
           );
         } else {
@@ -65,10 +80,13 @@ class Tracking {
   public trackMods(modIds: string[]) {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
-    const mods = state.persistent.mods[gameMode];
+    const mods = state.persistent.mods[gameMode] ?? {};
+    const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
-      if (mods[modId].attributes?.modId !== undefined) {
-        this.trackMod(gameMode, mods[modId].attributes?.modId?.toString?.());
+      if (mods[modId]?.attributes?.modId !== undefined) {
+        this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
+      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+        this.trackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
   }
@@ -76,10 +94,13 @@ class Tracking {
   public untrackMods(modIds: string[]) {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
-    const mods = state.persistent.mods[gameMode];
+    const mods = state.persistent.mods[gameMode] ?? {};
+    const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
-      if (mods[modId].attributes?.modId !== undefined) {
-        this.untrackMod(gameMode, mods[modId].attributes?.modId?.toString?.());
+      if (mods[modId]?.attributes?.modId !== undefined) {
+        this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
+      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+        this.untrackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
   }
@@ -91,17 +112,20 @@ class Tracking {
       if (mod.attributes?.modId === undefined) {
         return null;
       }
+
+      const nexusId = nexusGameId(getGame(gameMode));
+
       return (
         <IconButton
           icon='track'
           className='btn-embed'
           stroke={
-            !this.mTrackedMods[gameMode]?.has?.(
+            !this.mTrackedMods[nexusId]?.has?.(
               mod.attributes?.modId.toString(),
             )
           }
           hollow={
-            !this.mTrackedMods[gameMode]?.has?.(
+            !this.mTrackedMods[nexusId]?.has?.(
               mod.attributes?.modId.toString(),
             )
           }
@@ -114,7 +138,7 @@ class Tracking {
   }
 
   private fetch() {
-    if (this.mNexus.getValidationResult() !== null) {
+    if (this.mNexus.getValidationResult() === null) {
       return;
     }
 
@@ -129,49 +153,71 @@ class Tracking {
       this.mOnChanged?.();
     })
     .catch(err => {
-      this.mApi.showErrorNotification('Failed to get tracked mods', err);
+      const allowReport = !(err instanceof RateLimitError)
+                        && !(err instanceof ProcessCanceled)
+                        && !(err instanceof TimeoutError)
+                        && !(err instanceof NexusError);
+      this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
+        allowReport,
+      });
     });
   }
 
   private toggleTracked = (evt: React.MouseEvent<any>) => {
-    const gameMode = activeGameId(this.mApi.getState());
+    const state = this.mApi.getState();
+    const gameMode = activeGameId(state);
     const modIdStr: string = evt.currentTarget.getAttribute('data-modid');
 
-    if (this.mTrackedMods[gameMode]?.has?.(modIdStr)) {
-      this.untrackMod(gameMode, modIdStr);
+    if (state.persistent['nexus']?.userInfo === undefined) {
+      // user not logged in
+      this.mApi.sendNotification({
+        type: 'warning',
+        message: 'You have to be logged in to track mods',
+        displayMS: 5000,
+      });
+      return;
+    }
+
+    const game: IGameStored = gameById(state, gameMode);
+    const nexusId = nexusGameId(game);
+
+    if (this.mTrackedMods[nexusId]?.has?.(modIdStr)) {
+      this.untrackMod(nexusId, modIdStr);
     } else {
-      this.trackMod(gameMode, modIdStr);
+      this.trackMod(nexusId, modIdStr);
     }
   }
 
-  private trackMod(gameId: string, nexusModId: string) {
-    if (this.mTrackedMods[gameId]?.has?.(nexusModId)) {
+  private trackMod(nexusId: string, nexusModId: string) {
+    if (this.mTrackedMods[nexusId]?.has?.(nexusModId)) {
       return Promise.resolve();
     }
 
     return this.mNexus
-      .trackMod(nexusModId, gameId)
+      .trackMod(nexusModId, nexusId)
       .then(() => {
-        if (this.mTrackedMods[gameId] === undefined) {
-          this.mTrackedMods[gameId] = new Set<string>();
+        if (this.mTrackedMods[nexusId] === undefined) {
+          this.mTrackedMods[nexusId] = new Set<string>();
         }
-        this.mTrackedMods[gameId].add(nexusModId);
+        this.mTrackedMods[nexusId].add(nexusModId);
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
-        this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+        this.mApi.showErrorNotification('Failed to track/untrack mod', err, {
+          allowReport: err instanceof RateLimitError,
+        });
       });
   }
 
-  private untrackMod(gameId: string, nexusModId: string) {
-    if (!this.mTrackedMods[gameId]?.has?.(nexusModId)) {
+  private untrackMod(nexusId: string, nexusModId: string) {
+    if (!this.mTrackedMods[nexusId]?.has?.(nexusModId)) {
       return Promise.resolve();
     }
 
     return this.mNexus
-      .untrackMod(nexusModId, gameId)
+      .untrackMod(nexusModId, nexusId)
       .then(() => {
-        this.mTrackedMods[gameId].delete(nexusModId);
+        this.mTrackedMods[nexusId].delete(nexusModId);
         this.mOnChanged?.();
       })
       .catch((err: Error) => {

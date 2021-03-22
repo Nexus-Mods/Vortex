@@ -107,6 +107,13 @@ export interface IDeploymentMethod {
   readonly id: string;
 
   /**
+   * if set, lists ids of other deployment methods that this is compatible to.
+   * Compatible means we can switch between methods without requiring a purge or
+   * a need to warn the user.
+   */
+  readonly compatible?: string[];
+
+  /**
    * name of this activator as presented to the user
    *
    * @type {string}

@@ -6,6 +6,7 @@ export interface IDeploymentManifest {
   deploymentMethod?: string;
   deploymentTime?: number;
   stagingPath?: string;
+  gameId?: string;
   targetPath?: string;
   files: IDeployedFile[];
 }

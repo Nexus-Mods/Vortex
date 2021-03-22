@@ -242,6 +242,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       {
         icon: 'merge',
         title: 'Combine',
+        condition: this.canBeCombined,
         action: this.combine,
         multiRowAction: true,
         singleRowAction: false,
@@ -636,7 +637,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               long={long}
               short={short}
               modId={mod.id}
-              editable={mod.attributes?.source === undefined}
+              source={mod.attributes?.source}
+              installed={mod.state === 'installed'}
               startEditDescription={this.editDescription}
             />
           </ZoomableImage>
@@ -995,6 +997,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private editDescription = (modId: string) => {
     const { gameMode, mods } = this.props;
 
+    if (mods[modId] === undefined) {
+      // mod not installed, we shouldn't have gotten here
+      return;
+    }
+
     this.context.api.showDialog('question', 'Enter new description', {
       text: 'You can use bbcode here. If you put in two spaces, ',
       input: [{
@@ -1049,7 +1056,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeRelated = (modIds: string[]) => {
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
-      .filter(mod => mod !== undefined)
+      .filter(mod => mod?.attributes !== undefined)
       .map(mod => ({ mod, enabled: mod.id !== modId }));
 
     const repoModId = this.state.modsWithState[modId]?.attributes?.modId?.toString?.();
@@ -1082,8 +1089,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         value: candidate.enabled,
       })),
       choices: [
-        { id: 'mods-only', value: true, text: 'Remove Mod only' },
-        { id: 'mods-and-archive', value: false, text: 'Remove Mod and delete archive' },
+        { id: 'mods-only', value: true, text: 'Remove mod only' },
+        { id: 'mods-and-archive', value: false, text: 'Remove mod and delete archive' },
       ],
     }, [
       { label: 'Cancel' },
@@ -1098,6 +1105,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         return this.removeSelectedImpl(idsToRemove, true, removeArchives);
       }
+    })
+    .catch(ProcessCanceled, err => {
+      this.context.api.sendNotification({
+        id: 'cant-remove-mod',
+        type: 'warning',
+        title: 'Failed to remove mods',
+        message: err.message,
+      });
+    })
+    .catch(UserCanceled, () => null)
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to remove selected mods', err);
     });
 
     return true;
@@ -1245,6 +1264,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
       });
     }
+  }
+
+  private canBeCombined = (modIds: string[]) => {
+    const { t, mods } = this.props;
+
+    const notInstalled = modIds.find(modId => mods[modId] === undefined);
+    if (notInstalled !== undefined) {
+      return t('You can only combine installed mods') ;
+    }
+    return true;
   }
 
   private combine = (modIds: string[]) => {

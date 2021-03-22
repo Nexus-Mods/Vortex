@@ -97,6 +97,7 @@ class DeploymentMethod extends LinkingDeployment {
   public id: string;
   public name: string;
   public description: string;
+  public compatible: string[] = ['symlink_activator'];
 
   public priority: number = 20;
 
@@ -141,7 +142,7 @@ class DeploymentMethod extends LinkingDeployment {
       lastReport = report;
 
       if (report === 'not-supported') {
-        api.showErrorNotification('Symlinks are not support',
+        api.showErrorNotification('Symlinks are not supported',
           'It appears symbolic links aren\'t supported between your mod staging folder and game '
           + 'folder. On Windows, symbolic links only work on NTFS drives.', { allowReport: false });
       } else {
@@ -390,6 +391,13 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private startElevated(): Promise<void> {
+    return this.startElevatedImpl()
+      .tapCatch(() => {
+        this.api.store.dispatch(clearUIBlocker('elevating'));
+      });
+  }
+
+  private startElevatedImpl(): Promise<void> {
     this.mOpenRequests = {};
     this.mDone = null;
 
@@ -717,7 +725,7 @@ function installTask(scriptPath: string) {
     }
     ipc.sendMessage({ message: 'quit' });
   }, { scriptPath, taskName, exePath, exeArgs })
-    .catch(err => (err['nativeCode'] === 1223)
+    .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }
@@ -799,7 +807,7 @@ function removeTask(): Promise<void> {
     winapiRemote.DeleteTask(taskName);
     ipc.sendMessage({ message: 'quit' });
   }, { taskName })
-  .catch(err => (err['nativeCode'] === 1223)
+  .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }
@@ -933,7 +941,7 @@ function giveSymlinkRight(enable: boolean) {
       ipc.sendMessage({ message: 'quit' });
     }
   }, { sid, enable })
-  .catch(err => (err['nativeCode'] === 1223)
+  .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
       ? Promise.reject(new UserCanceled())
       : Promise.reject(err));
 }
