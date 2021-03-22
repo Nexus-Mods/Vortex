@@ -70,7 +70,9 @@ export function loadAllManifests(api: IExtensionApi,
           }), {});
 }
 
-export function purgeMods(api: IExtensionApi, gameId?: string, isUnmanaging?: boolean): Promise<void> {
+export function purgeMods(api: IExtensionApi,
+                          gameId?: string,
+                          isUnmanaging?: boolean): Promise<void> {
   const state = api.store.getState();
   let profile = gameId !== undefined
     ? profileById(state, lastActiveProfileForGame(state, gameId))
@@ -83,7 +85,8 @@ export function purgeMods(api: IExtensionApi, gameId?: string, isUnmanaging?: bo
     //  for the game as the game entry gets removed if all have been deleted.
     // Given that the user is attempting to unmanage his game, we do not want
     //  to block him from purging the mods. Any profile will do.
-    const profiles: { [profileId: string]: IProfile } = getSafe(state, ['persistent', 'profiles'], {});
+    const profiles: { [profileId: string]: IProfile } =
+      getSafe(state, ['persistent', 'profiles'], {});
 
     const profileId = Object.keys(profiles)
       .filter(id => profiles[id].gameId === gameId)

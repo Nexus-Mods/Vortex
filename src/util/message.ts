@@ -4,6 +4,7 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
+import { NoDeployment } from '../extensions/mod_management/util/exceptions';
 import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
@@ -368,6 +369,12 @@ export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPr
   } else if (err instanceof ThirdPartyError) {
     return {
       message: err.message,
+      allowReport: false,
+    };
+  } else if (err instanceof NoDeployment) {
+    return {
+      message: 'No supported deployment method selected, '
+             + 'please review the deployment settings in Settings->Mods',
       allowReport: false,
     };
   } else if (err.code === undefined) {
