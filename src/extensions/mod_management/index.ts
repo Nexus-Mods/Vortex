@@ -1147,6 +1147,12 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['session', 'mods'], sessionReducer);
+  context.registerReducer(['settings', 'mods'], settingsReducer);
+  context.registerReducer(['persistent', 'mods'], modsReducer);
+  context.registerReducer(['persistent', 'deployment'], deploymentReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
+
   const modsActivity = new ReduxProp(context.api, [
     ['session', 'base', 'activity', 'mods'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
@@ -1193,12 +1199,6 @@ function init(context: IExtensionContext): boolean {
     LazyComponent(() => require('./views/FixDeploymentDialog')), () => {
       // nop
     });
-
-  context.registerReducer(['session', 'mods'], sessionReducer);
-  context.registerReducer(['settings', 'mods'], settingsReducer);
-  context.registerReducer(['persistent', 'mods'], modsReducer);
-  context.registerReducer(['persistent', 'deployment'], deploymentReducer);
-  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 

@@ -907,6 +907,10 @@ export interface IExtensionContext {
    *        for the newly introduced settings
    *
    * @memberOf IExtensionContext
+   * @note If you have registerReducer calls you should call them first thing in the init function.
+   *       Usually if your init call fails your extension shouldn't load at all but in case that
+   *       doesn't work, registering any functionality that depends on state that never got loaded
+   *       would load to further bug reports that are a lot harder to investigate
    */
   registerReducer: (path: string[], spec: IReducerSpec) => void;
 

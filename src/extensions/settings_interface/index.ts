@@ -6,9 +6,9 @@ import settingsReducer from './reducers/interface';
 import SettingsInterface from './SettingsInterface';
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Interface', SettingsInterface, undefined, undefined, 10);
   context.registerReducer(['settings', 'interface'], settingsReducer);
   context.registerReducer(['settings', 'automation'], automationReducer);
+  context.registerSettings('Interface', SettingsInterface, undefined, undefined, 10);
 
   context.once(() => {
     context.api.onStateChange(['settings', 'interface', 'advanced'], () => {

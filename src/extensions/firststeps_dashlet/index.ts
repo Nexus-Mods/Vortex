@@ -11,6 +11,8 @@ import { TFunction } from 'i18next';
 const extTodos: IToDo[] = [];
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['settings', 'firststeps'], settingsReducer);
+
   context.registerToDo = (id: string,
                           type: ToDoType,
                           props: (state: any) => any,
@@ -43,8 +45,6 @@ function init(context: IExtensionContext): boolean {
   }, () => ({
     todos: [].concat(todos(context.api), extTodos),
   }), undefined);
-
-  context.registerReducer(['settings', 'firststeps'], settingsReducer);
 
   return true;
 }

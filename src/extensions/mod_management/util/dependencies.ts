@@ -160,7 +160,7 @@ function gatherDependenciesGraph(
     .then((details: ILookupResult[]) => {
       lookupDetails = details;
 
-      if (details.length === 0 || details[0].value === undefined) {
+      if ((details.length === 0) || (details[0].value === undefined)) {
         throw new Error(
           'reference not found: ' + JSON.stringify(rule.reference),
         );

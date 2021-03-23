@@ -679,6 +679,8 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
+  context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
+
   context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
   context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
@@ -686,7 +688,6 @@ function init(context: IExtensionContext): boolean {
     context.registerTest('net-current', 'startup', checkNetInstall);
   }
   context.registerDialog('fomod-installer', InstallerDialog);
-  context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
   context.registerAttributeExtractor(75, processAttributes);
 

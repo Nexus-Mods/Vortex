@@ -589,6 +589,10 @@ function init(context: IExtensionContextExt): boolean {
       return count > 0 ? count : undefined;
     });
 
+  context.registerReducer(['persistent', 'downloads'], stateReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
+  context.registerReducer(['settings', 'downloads'], settingsReducer);
+
   context.registerMainPage('download', 'Downloads', DownloadView, {
                              hotkey: 'D',
                              group: 'global',
@@ -598,10 +602,6 @@ function init(context: IExtensionContextExt): boolean {
   context.registerSettings('Download', Settings, undefined, undefined, 75);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
-
-  context.registerReducer(['persistent', 'downloads'], stateReducer);
-  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
-  context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;

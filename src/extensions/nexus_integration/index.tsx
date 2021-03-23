@@ -821,6 +821,11 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
 }
 
 function init(context: IExtensionContextExt): boolean {
+  context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
+  context.registerReducer(['settings', 'nexus'], settingsReducer);
+  context.registerReducer(['persistent', 'nexus'], persistentReducer);
+  context.registerReducer(['session', 'nexus'], sessionReducer);
+
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {
@@ -933,10 +938,6 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
-  context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
-  context.registerReducer(['settings', 'nexus'], settingsReducer);
-  context.registerReducer(['persistent', 'nexus'], persistentReducer);
-  context.registerReducer(['session', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({
     onCancelLogin: () => {
       if (cancelLogin !== undefined) {

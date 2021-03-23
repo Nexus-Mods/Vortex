@@ -451,6 +451,11 @@ function init(context: IExtensionContext): boolean {
   const onRefreshGameInfo = (gameId: string) => refreshGameInfo(context.api.store, gameId);
   const onBrowseGameLocation = (gameId: string) => browseGameLocation(context.api, gameId);
 
+  context.registerReducer(['session', 'discovery'], discoveryReducer);
+  context.registerReducer(['session', 'gameMode'], sessionReducer);
+  context.registerReducer(['settings', 'gameMode'], settingsReducer);
+  context.registerReducer(['persistent', 'gameMode'], persistentReducer);
+
   context.registerMainPage('game', 'Games', LazyComponent(() => require('./views/GamePicker')), {
     hotkey: 'G',
     group: 'global',
@@ -460,10 +465,6 @@ function init(context: IExtensionContext): boolean {
     }),
     activity,
   });
-  context.registerReducer(['session', 'discovery'], discoveryReducer);
-  context.registerReducer(['session', 'gameMode'], sessionReducer);
-  context.registerReducer(['settings', 'gameMode'], settingsReducer);
-  context.registerReducer(['persistent', 'gameMode'], persistentReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));

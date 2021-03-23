@@ -215,6 +215,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
       call.key === name);
   }
 
+  public dropCalls(extNames: string) {
+    this.mInitCalls = this.mInitCalls.filter(iter => iter.extension !== extNames);
+  }
+
   public invokeAdditions(extensions: IRegisteredExtension[]) {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
       this.getCalls(addition.key).forEach(call => {
@@ -1105,6 +1109,15 @@ class ExtensionManager {
         ext.initFunc()(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (err) {
+        if (!ext.dynamic) {
+          // if one of the static extension fails to initialize we should be
+          // crashing, otherwise we risk data loss if the user restores a backup
+          // and the important reducers aren't loaded
+          throw err;
+        }
+        // make sure we're not calling any of the register calls if the extension
+        // isn't fully initialized
+        this.mContextProxyHandler.dropCalls(ext.name);
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
           {name: ext.name, err: err.message, stack: err.stack});

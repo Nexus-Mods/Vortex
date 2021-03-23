@@ -656,6 +656,10 @@ function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['persistent', 'profiles'], profilesReducer);
+  context.registerReducer(['settings', 'profiles'], settingsReducer);
+  context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
+
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
@@ -663,10 +667,6 @@ function init(context: IExtensionContext): boolean {
       && (context.api.store.getState().settings.interface.profilesVisible),
     props: () => ({ features: profileFeatures }),
   });
-
-  context.registerReducer(['persistent', 'profiles'], profilesReducer);
-  context.registerReducer(['settings', 'profiles'], settingsReducer);
-  context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
   context.registerAction('game-discovered-buttons', 50, 'activate', {
     noCollapse: true,
