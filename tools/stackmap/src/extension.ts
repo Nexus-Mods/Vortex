@@ -23,6 +23,14 @@ export class StackItem extends vscode.TreeItem {
 			name: frame.getFunctionName(),
 			source: this.sanitizeRel(frame.getFileName()),
 		};
+
+		this.tooltip = `${this.mFrame.name} (${this.mFrame.source}:${this.mFrame.line})`;
+		this.command = {
+			command: 'stackmap.open',
+			title: '',
+			arguments: [this.mFrame.source, this.mFrame.line, this.mFrame.column],
+		};
+
 		this.mIsExtension = (this.mFrame.source || '').indexOf('bundledPlugins') !== -1;
 
 		this.updateLabel();
@@ -40,22 +48,6 @@ export class StackItem extends vscode.TreeItem {
 		}
 	}
 
-	get tooltip(): string {
-		return `${this.mFrame.name} (${this.mFrame.source}:${this.mFrame.line})`;
-	}
-
-	get description(): string {
-		return '';
-	}
-
-	get command() {
-		return {
-			command: 'stackmap.open',
-			title: '',
-			arguments: [this.mFrame.source, this.mFrame.line, this.mFrame.column],
-		};
-	}
-
 	private updateLabel() {
 		this.label = `${this.mFrame.name} (${this.mFrame.source}:${this.mFrame.line})`;
 	}
@@ -71,6 +63,8 @@ export class StackItem extends vscode.TreeItem {
 		let res = (input || '').replace(/^webpack:\/*/, '');
 		if (this.mIsExtension) {
 			res = path.join('extensions', res);
+		} else { 
+			res = res.replace(/.*\/src\//, 'src/');
 		}
 		return res;
 	}
@@ -104,7 +98,7 @@ export class StackProvider implements vscode.TreeDataProvider<StackItem> {
 	}
 
 	refresh(): void {
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	getTreeItem(element: StackItem): vscode.TreeItem {
@@ -123,7 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new StackProvider();
 	vscode.window.registerTreeDataProvider('stackmap', provider);
 
-	let workspaceFolders: vscode.WorkspaceFolder[] | undefined = undefined;
+	let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = undefined;
 
 	let updateWSFolders = () => {
 		workspaceFolders = vscode.workspace.workspaceFolders;
