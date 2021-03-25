@@ -1,6 +1,6 @@
 import { ActionDropdown } from '../../../controls/api';
-import { Table, TBody, TD, TR } from '../../../controls/table/MyTable';
-import { IActionDefinition } from '../../../types/api';
+import { IActionDefinition } from '../../../types/IActionDefinition';
+import { IMod } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
@@ -25,6 +25,7 @@ export interface IProps {
   available: boolean;
   profile: IProfile;
   features: IProfileFeature[];
+  mods: { [modId: string]: IMod };
   highlightGameId: string;
 
   onActivate: (profileId: string) => void;
@@ -82,14 +83,14 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, active, available, features, highlightGameId, profile } = this.props;
+    const { t, active, available, features, highlightGameId, mods, profile } = this.props;
     const { counter, hasProfileImage } = this.state;
 
     const modState = getSafe(profile, ['modState'], {});
 
     const enabledMods = Object.keys(modState).reduce(
       (prev: number, key: string): number => {
-        return modState[key].enabled ? prev + 1 : prev;
+        return (modState[key]?.enabled) && (mods[key] !== undefined) ? prev + 1 : prev;
     }, 0);
 
     // TODO: not using ListGroupItem because it puts the content into
