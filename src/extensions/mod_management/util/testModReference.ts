@@ -56,9 +56,10 @@ function isFuzzyVersion(input: string) {
       || (semver.validRange(input) !== input);
 }
 
-function hasIdentifyingMarker(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
-  const fuzzyVersion = isFuzzyVersion(ref.versionMatch);
-
+function hasIdentifyingMarker(mod: IModLookupInfo,
+                              modId: string,
+                              ref: IModReference,
+                              fuzzyVersion: boolean): boolean {
   return ((ref.id !== undefined) && (modId !== undefined))
       || (!fuzzyVersion && (mod.fileMD5 !== undefined))
       || ((ref.fileExpression !== undefined) && (mod.fileName !== undefined))
@@ -68,7 +69,9 @@ function hasIdentifyingMarker(mod: IModLookupInfo, modId: string, ref: IModRefer
 }
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
-  if (!hasIdentifyingMarker(mod, modId, ref)) {
+  const fuzzyVersion = isFuzzyVersion(ref.versionMatch);
+
+  if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion)) {
     // if the reference doesn't have any marker that _could_ match this mod,
     // return !false!, otherwise we might match any random mod that also has no matching marker
     return false;
@@ -88,16 +91,22 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
 
   // if reference is by file hash and the match is not fuzzy, require the md5 to match
   if ((ref.fileMD5 !== undefined)
-      && !versionMatchSafe.endsWith('+prefer')
-      && (semver.validRange(versionMatchSafe) === versionMatchSafe)
+      && !fuzzyVersion
       && (mod.fileMD5 !== ref.fileMD5)) {
     return false;
   }
 
   if (ref.repo !== undefined) {
-    return (ref.repo.repository === mod.source)
-        && (ref.repo.modId === (mod.modId || -1).toString())
-        && (ref.repo.fileId === (mod.fileId || -1).toString());
+    if ((ref.repo.repository !== mod.source)
+        || (ref.repo.modId !== (mod.modId || -1).toString())) {
+      return false;
+    }
+
+    if (!fuzzyVersion) {
+      // we already know it's the same repo and modId, if it's also the same
+      // file id this is definitively the same file
+      return (ref.repo.fileId === (mod.fileId || -1).toString());
+    }
   }
 
   // right file?

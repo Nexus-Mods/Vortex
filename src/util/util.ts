@@ -671,5 +671,15 @@ function removeLeadingZeros(input: string): string {
 }
 
 export function semverCoerce(input: string): semver.SemVer {
-  return semver.coerce(removeLeadingZeros(input));
+  let res = semver.coerce(removeLeadingZeros(input));
+
+  if (res === null) {
+    if (input === '') {
+      res = new semver.SemVer('0.0.0');
+    } else {
+      res = new semver.SemVer(`0.0.0-${input}`);
+    }
+  }
+
+  return res;
 }
