@@ -98,10 +98,42 @@ function startDownloadCollection(api: IExtensionApi,
     .tap(dlId => api.events.emit('did-download-collection', dlId));
 }
 
+export interface IRemoteInfo {
+  modInfo?: IModInfo;
+  fileInfo?: IFileInfo;
+  revisionInfo?: Partial<IRevision>;
+}
+
 export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
-                        : Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> {
+                        : Promise<IRemoteInfo> {
   return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
-    .then(([ modInfo, fileInfo ]) => ({modInfo, fileInfo}));
+    .then(([ modInfo, fileInfo ]) => ({ modInfo, fileInfo }));
+}
+
+export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRemoteInfo> {
+  return Promise.resolve(nexus.getRevisionGraph({
+    adultContent: true,
+    collection: {
+      category: true,
+      createdAt: true,
+      endorsements: true,
+      name: true,
+      user: {
+        name: true,
+      },
+      tileImage: true,
+      metadata: {
+        summary: true,
+        description: true,
+      }
+    },
+    createdAt: true,
+    updatedAt: true,
+    installationInfo: true,
+    rating: true,
+    votes: true,
+  }, revisionId))
+    .then(revision => ({ revisionInfo: revision }));
 }
 
 function startDownloadMod(api: IExtensionApi,

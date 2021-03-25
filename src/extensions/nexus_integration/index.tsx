@@ -8,7 +8,7 @@ import { DataInvalid, HTTPError, ProcessCanceled,
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
-import { log } from '../../util/log';
+import { log, LogLevel } from '../../util/log';
 import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
@@ -53,10 +53,10 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, getInfo, nexusGames, nexusGamesProm, processErrorMessage,
+import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm, processErrorMessage,
          startDownload, updateKey } from './util';
 
-import NexusT, { IDownloadURL, IFileInfo,
+import NexusT, { IDateTime, IDownloadURL, IFileInfo,
   IModInfo, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -81,7 +81,7 @@ export class APIDisabled extends Error {
 
 // functions in the nexus api that don't trigger requests but instead are
 // management functions to control the our api connection
-const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits']);
+const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits', 'setLogger']);
 
 class Disableable {
   private mDisabled = false;
@@ -337,6 +337,17 @@ function remapCategory(state: IState, category: number, fromGame: string, toGame
   return sorted[0];
 }
 
+function toTimestamp(time?: IDateTime | string): number {
+  if (time === undefined) {
+    return 0;
+  }
+  if (typeof(time) === 'string') {
+    return (new Date(time)).getTime();
+  } else {
+    return (new Date(time.year, time.month, time.day, time.hour, time.minute, time.second)).getTime();
+  }
+}
+
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
   const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
 
@@ -348,59 +359,60 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
     ? fuzz.ratio(modName, fileName)
     : 100;
 
-  let fetchPromise: Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> =
-    Promise.resolve(undefined);
+  let fetchPromise: Promise<IRemoteInfo> = Promise.resolve(undefined);
 
   const gameId = getSafe(input, ['download', 'modInfo', 'game'], undefined);
   if ((getSafe(input, ['download', 'modInfo', 'nexus'], undefined) === undefined)
       && (getSafe(input, ['download', 'modInfo', 'source'], undefined) === 'nexus')) {
     const modId = getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined);
     const fileId = getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined);
+    const revisionId = getSafe(input, ['download', 'modInfo', 'ids', 'revisionId'], undefined);
 
-    if (!quick && truthy(gameId) && truthy(modId) && truthy(fileId)) {
-      const domain = nexusGameId(gameById(state, gameId), gameId);
-      fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
-        .catch(err => {
-          log('error', 'failed to fetch nexus info during mod install',
-            { gameId, modId, fileId, error: err.message });
-          return undefined;
-        });
+    if (!quick) {
+      if (truthy(gameId) && truthy(modId) && truthy(fileId)) {
+        const domain = nexusGameId(gameById(state, gameId), gameId);
+        fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
+          .catch(err => {
+            log('error', 'failed to fetch nexus info during mod install',
+              { gameId, modId, fileId, error: err.message });
+            return undefined;
+          });
+      } else if (truthy(revisionId)) {
+        fetchPromise = getCollectionInfo(nexus, revisionId);
+      }
     }
   }
 
-  return fetchPromise.then((info: { modInfo: IModInfo, fileInfo: IFileInfo }) => {
-    const nexusModInfo = info !== undefined
-      ? info.modInfo
-      :  getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo'], undefined);
-    const nexusFileInfo = info !== undefined
-      ? info.fileInfo
-      : getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo'], undefined);
+  return fetchPromise.then((info: IRemoteInfo) => {
+    const nexusModInfo = info?.modInfo ?? input.download?.modInfo?.nexus?.modInfo;
+    const nexusFileInfo = info?.fileInfo ?? input.download?.modInfo?.nexus?.fileInfo;
+    const nexusCollectionInfo = info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
     const gameMode = activeGameId(state);
-    const category = remapCategory(state,
-                                   getSafe(nexusModInfo, ['category_id'], undefined),
-                                   gameId, gameMode);
+    const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
 
     return {
-      modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
-      fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
-      author: getSafe(nexusModInfo, ['author'], undefined),
-      uploader: getSafe(nexusModInfo, ['uploaded_by'], undefined),
-      uploader_url: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'uploaded_users_profile_url'], undefined),
+      modId: input.download?.modInfo?.nexus?.ids?.modId,
+      fileId: input.download?.modInfo?.nexus?.ids?.fileId,
+      collectionId: input.download?.modInfo?.nexus?.ids?.collectionId,
+      revisionId: input.download?.modInfo?.nexus?.ids?.revisionId,
+      author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
+      uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
+      uploader_url: input.download?.modInfo?.nexus?.modInfo?.uploaded_users_profile_url,
       category,
-      pictureUrl: getSafe(nexusModInfo, ['picture_url'], undefined),
-      description: getSafe(nexusModInfo, ['description'], undefined),
-      shortDescription: getSafe(nexusModInfo, ['summary'], undefined),
-      fileType: getSafe(nexusFileInfo, ['category_name'], undefined),
-      isPrimary: getSafe(nexusFileInfo, ['is_primary'], undefined),
+      pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage,
+      description: nexusModInfo?.description ?? nexusCollectionInfo?.collection?.metadata?.description,
+      shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.metadata?.summary,
+      fileType: nexusFileInfo?.category_name,
+      isPrimary: nexusFileInfo?.is_primary,
       modName,
       logicalFileName: fileName,
       changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
-      uploadedTimestamp: getSafe(nexusFileInfo, ['uploaded_timestamp'], undefined),
-      version: getSafe(nexusFileInfo, ['version'], undefined),
-      modVersion: getSafe(nexusModInfo, ['version'], undefined),
-      allowRating: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'allow_rating'],
-        undefined),
+      uploadedTimestamp: nexusFileInfo?.uploaded_timestamp ?? toTimestamp(nexusCollectionInfo?.createdAt),
+      updatedTimestamp: toTimestamp(nexusCollectionInfo?.updatedAt),
+      version: nexusFileInfo?.version ?? nexusCollectionInfo?.revision,
+      modVersion: nexusModInfo?.version ?? nexusCollectionInfo?.revision,
+      allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
     };
   });
@@ -793,6 +805,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
         new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000),
         requestLog),
       new Disableable(api));
+
+    nexus['setLogger']?.((level: LogLevel, message: string, meta: any) =>
+      log(level, message, meta));
 
     updateKey(api, nexus, apiKey);
 
