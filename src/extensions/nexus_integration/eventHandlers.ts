@@ -340,9 +340,9 @@ export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
 }
 
 export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number, revisionId: number) => Promise<IRevision> {
-  return (collectionId: number, revisionId: number): Promise<IRevision> => {
-    if (!Number.isFinite(collectionId) || !Number.isFinite(revisionId)) {
+    : (revisionId: number) => Promise<IRevision> {
+  return (revisionId: number): Promise<IRevision> => {
+    if (!Number.isFinite(revisionId)) {
       return Promise.reject(
         new Error('invalid parameter, collectionId and revisionId have to be numbers'));
     }

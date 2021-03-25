@@ -384,9 +384,12 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
   }
 
   return fetchPromise.then((info: IRemoteInfo) => {
-    const nexusModInfo = info?.modInfo ?? input.download?.modInfo?.nexus?.modInfo;
-    const nexusFileInfo = info?.fileInfo ?? input.download?.modInfo?.nexus?.fileInfo;
-    const nexusCollectionInfo = info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
+    const nexusModInfo: IModInfo =
+      info?.modInfo ?? input.download?.modInfo?.nexus?.modInfo;
+    const nexusFileInfo: IFileInfo =
+      info?.fileInfo ?? input.download?.modInfo?.nexus?.fileInfo;
+    const nexusCollectionInfo: IRevision =
+      info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
     const gameMode = activeGameId(state);
     const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
@@ -414,6 +417,8 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       modVersion: nexusModInfo?.version ?? nexusCollectionInfo?.revision,
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
+      rating: nexusCollectionInfo?.rating,
+      votes: nexusCollectionInfo?.votes,
     };
   });
 }
