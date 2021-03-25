@@ -7,6 +7,7 @@ import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { laterT } from '../../../util/i18n';
+import { log } from '../../../util/log';
 import { activeGameId, gameById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -221,7 +222,15 @@ class Tracking {
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
-        this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+        if (err['statusCode'] === 404) {
+          // user isn't actually tracking the mod
+          log('warn', 'mod tracking state out of sync between server and Vortex',
+            { game: nexusId, modId: nexusModId });
+          this.mTrackedMods[nexusId].delete(nexusModId);
+          this.mOnChanged?.();
+        } else {
+          this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+        }
       });
   }
 }
