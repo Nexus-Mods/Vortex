@@ -91,7 +91,7 @@ function lookupDownloadHint(api: IExtensionApi,
   } else if (input.mode === 'browse') {
     return browseForDownload(api, input.url, input.instructions);
   } else {
-    throw Promise.reject(new ProcessCanceled(input.instructions));
+    return Promise.reject(new ProcessCanceled(input.instructions));
   }
 }
 
@@ -228,6 +228,9 @@ function gatherDependenciesGraph(
   const state = api.getState();
 
   const download = findDownloadByRef(rule.reference, state);
+  if (download === undefined) {
+    log('debug', 'no download found', { ref: JSON.stringify(rule.reference) });
+  }
   let lookupResults: ILookupResult[];
 
   let urlFromHint: IBrowserResult;
