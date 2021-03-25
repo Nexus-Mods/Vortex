@@ -1,4 +1,4 @@
-import { addLocalDownload, setDownloadHashByFile } from '../../actions';
+import { addLocalDownload, setDownloadHashByFile, startActivity, stopActivity } from '../../actions';
 import { showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
@@ -1387,11 +1387,11 @@ class InstallManager {
     const downloads = state.persistent.downloads.files;
 
     return Promise.map(dependencies, (dep: IDependency) => {
-      let dlPromise = Promise.resolve(dep.download);
       log('debug', 'installing as dependency', {
         ref: JSON.stringify(dep.reference),
         downloadRequired: dep.download === undefined,
       });
+      let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
         if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
           dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
@@ -1622,7 +1622,7 @@ class InstallManager {
         message: 'Resolving dependencies',
         progress: perc * 100,
       });
-
+      api.store.dispatch(startActivity('dependencies', 'gathering'));
     };
 
     progress(0);
@@ -1630,14 +1630,14 @@ class InstallManager {
     log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(rules, api, false, progress)
       .then((dependencies: IDependency[]) => {
-        api.dismissNotification(notificationId);
         this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
-        api.dismissNotification(notificationId);
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
+        api.dismissNotification(notificationId);
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         log('debug', 'done installing dependencies', { profile: profile.id, modId });
         api.events.emit('did-install-dependencies', profile.id, modId, false);
       });
@@ -1657,10 +1657,9 @@ class InstallManager {
       type: 'activity',
       message: 'Checking dependencies',
     });
+    api.store.dispatch(startActivity('dependencies', 'gathering'));
     return gatherDependencies(rules, api, true)
       .then((dependencies: Dependency[]) => {
-        api.dismissNotification(notificationId);
-
         if (dependencies.length === 0) {
           return Promise.resolve();
         }
@@ -1764,10 +1763,11 @@ class InstallManager {
           });
       })
       .catch((err) => {
-        api.dismissNotification(notificationId);
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
+        api.dismissNotification(notificationId);
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.events.emit('did-install-dependencies', profile.id, modId, true);
       });
   }
