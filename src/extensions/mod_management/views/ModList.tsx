@@ -755,14 +755,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       description: 'Author of the mod',
       icon: 'author',
       calc: mod => {
-        const authors = [];
+        const authors = new Set<string>();
         if (mod.attributes?.author !== undefined) {
-          authors.push(mod.attributes.author);
+          authors.add(mod.attributes.author);
         }
         if (mod.attributes?.uploader !== undefined) {
-          authors.push(mod.attributes.uploader);
+          authors.add(mod.attributes.uploader);
         }
-        return authors.join(' & ');
+        return Array.from(authors).join(' & ');
       },
       customRenderer: (mod: IModWithState, detailCell: boolean, t: TFunction) => detailCell
         ? (<Author t={t} gameId={this.props.gameMode} mod={mod} />)
