@@ -351,6 +351,31 @@ class ConnectionIPC {
 
     let res: ConnectionIPC;
 
+    // yuck. This is necessary to avoid race conditions between this process and the
+    // fomod installer, though there is probably a simpler way...
+    let connectOutcome: null | Error;
+    let setConnectOutcome = (error: Error) => {
+      if (connectOutcome === undefined) {
+        connectOutcome = error;
+      }
+    };
+
+    const awaitConnected = async () => {
+      if (connectOutcome !== undefined) {
+        return connectOutcome === null ? Promise.resolve() : Promise.reject(connectOutcome);
+      } else {
+        setConnectOutcome = (error: Error) => {
+          if (error === null) {
+            onResolve?.();
+          } else {
+            onReject?.(error);
+          }
+          onResolve = onReject = undefined;
+        };
+        return connectedPromise;
+      }
+    };
+
     if (!debug) {
       // for debugging purposes, the user has to run the installer manually
       // invoke the c# installer, passing the id/port
@@ -366,30 +391,33 @@ class ConnectionIPC {
               // via socket
               try {
                 res = await ConnectionIPC.bind(true);
-                onResolve();
+                setConnectOutcome(null);
               } catch (err) {
-                onReject?.(err);
-                onReject = undefined;
+                setConnectOutcome(err);
               }
             } else if (errorMessage.length > 0) {
               log('error', 'from installer:', errorMessage);
               if (!wasConnected) {
-                onReject?.(new Error(errorMessage));
-                onReject = undefined;
+                const err = new Error(errorMessage);
+                err['attachLogOnReport'] = true;
+                setConnectOutcome(err);
                 wasConnected = true;
               }
             }
           });
         });
       } catch (err) {
-        onReject?.(new ProcessCanceled(err.message));
-        onReject = undefined;
+        setConnectOutcome(err);
       }
     }
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
-    await connectedPromise;
+    try {
+      await awaitConnected();
+    } catch (err) {
+      throw err;
+    }
 
     if (res === undefined) {
       return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
