@@ -32,7 +32,7 @@ import {
   modPathsForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { isChildPath, truthy } from '../../util/util';
+import { isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -120,9 +120,18 @@ class BlacklistSet extends Set<string> {
   }
 }
 
-function registerInstaller(id: string, priority: number,
-                           testSupported: TestSupported, install: InstallFunc) {
-  installers.push({ id, priority, testSupported, install });
+function registerInstaller(id: string,
+                           priority: number,
+                           testSupported: TestSupported,
+                           install: InstallFunc,
+                           extPath?: string,
+                           ext?: any) {
+  installers.push({
+    id,
+    priority,
+    testSupported: wrapExtCBAsync(testSupported, ext),
+    install: wrapExtCBAsync(install, ext),
+  });
 }
 
 function registerModSource(id: string,

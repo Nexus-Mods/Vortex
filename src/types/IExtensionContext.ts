@@ -275,7 +275,7 @@ export interface IErrorOptions {
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
-  extension?: IExtension;
+  extensionName?: string;
 }
 
 /**

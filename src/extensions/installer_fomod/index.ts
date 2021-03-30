@@ -413,11 +413,7 @@ class ConnectionIPC {
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
-    try {
-      await awaitConnected();
-    } catch (err) {
-      throw err;
-    }
+    await awaitConnected();
 
     if (res === undefined) {
       return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
