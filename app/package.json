@@ -14,7 +14,7 @@
     "electron": "11.4.0"
   },
   "dependencies": {
-    "@nexusmods/nexus-api": "^1.0.5",
+    "@nexusmods/nexus-api": "^1.1.3",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",

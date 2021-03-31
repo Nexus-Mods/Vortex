@@ -10,6 +10,7 @@ import { laterT } from '../../../util/i18n';
 import { log } from '../../../util/log';
 import { activeGameId, gameById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from './convertGameId';
 
@@ -57,7 +58,7 @@ class Tracking {
         if (mod.attributes?.source === 'nexus') {
           const gameMode = activeGameId(this.mApi.getState());
           const nexusId = nexusGameId(getGame(gameMode));
-          if (mod.attributes?.modId === undefined) {
+          if (!truthy(mod.attributes?.modId)) {
             return false;
           }
           return this.mTrackedMods[nexusId]?.has?.(
@@ -122,12 +123,12 @@ class Tracking {
           className='btn-embed'
           stroke={
             !this.mTrackedMods[nexusId]?.has?.(
-              mod.attributes?.modId.toString(),
+              parseInt(mod.attributes?.modId, 10).toString(),
             )
           }
           hollow={
             !this.mTrackedMods[nexusId]?.has?.(
-              mod.attributes?.modId.toString(),
+              parseInt(mod.attributes?.modId, 10).toString(),
             )
           }
           tooltip={t('Mod Tracked')}
