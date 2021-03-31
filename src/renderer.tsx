@@ -58,6 +58,7 @@ import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionContext } from './util/ExtensionProvider';
+import { setTFunction } from './util/fs';
 import GlobalNotifications from './util/GlobalNotifications';
 import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
@@ -93,7 +94,6 @@ import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
-import { checksum } from './util/fsAtomic';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
@@ -547,6 +547,8 @@ function renderer() {
   })
     .then(res => {
       ({ i18n, tFunc, error } = res);
+
+      setTFunction(tFunc);
 
       const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
         .filter(ext => ext.dynamic)
