@@ -42,7 +42,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
+import { isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -199,10 +199,7 @@ class ExtEventHandler extends EventEmitter {
   }
 
   private makeWrapped(event: string | symbol, listener: CBFunc) {
-    const wrapped = wrapExtCBSync(listener, {
-        name: this.mExtension.info?.name ?? this.mExtension.name,
-        official: this.mExtension.info?.bundled ?? true,
-      });
+    const wrapped = wrapExtCBSync(listener, convertExtInfo(this.mExtension));
     this.funcMap(event).push({ orig: listener, wrapped });
     return wrapped;
   }
@@ -211,13 +208,23 @@ class ExtEventHandler extends EventEmitter {
     const wrapped = wrapExtCBSync((...args: any[]): void => {
       listener(...args);
       this.removeListener(event, listener);
-    }, {
-      name: this.mExtension.info?.name ?? this.mExtension.name,
-      official: this.mExtension.info?.bundled ?? true,
-    });
+    }, convertExtInfo(this.mExtension));
     this.funcMap(event).push({ orig: listener, wrapped });
     return wrapped;
   }
+}
+
+function convertExtInfo(ext: IRegisteredExtension) {
+  if (ext === undefined) {
+    return undefined;
+  }
+  return {
+    name: ext.info?.name ?? ext.name,
+    namespace: ext.namespace,
+    path: ext.path,
+    dynamic: ext.dynamic,
+    official: ext.info?.bundled ?? true,
+  };
 }
 
 class APIProxyHandler implements ProxyHandler<any> {
@@ -242,10 +249,10 @@ class APIProxyHandler implements ProxyHandler<any> {
       return target[key];
     } else if (key === 'onAsync') {
       return (eventName: string, listener: (...args: any[]) => PromiseLike<any>) =>
-        (target['onAsync'] as any)(eventName, listener, {
-          name: this.mExtension.info?.name ?? this.mExtension.name,
-          official: this.mExtension.info === undefined || this.mExtension.info?.bundled,
-        });
+        (target['onAsync'] as any)(eventName, listener, convertExtInfo(this.mExtension));
+    } else if (key === 'onStateChange') {
+      return (statePath: string[], callback: StateChangeCallback) =>
+        (target[key] as any)(statePath, callback, this.mExtension);
     } else if (key === 'events') {
       return this.mEvents;
     } else if (key === 'laterT') {
@@ -352,13 +359,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
       this.getCalls(addition.key).forEach(call => {
         const ext = extensions.find(iter => iter.name === call.extension);
-        const extInfo = {
-          name: ext.info?.name ?? ext.name,
-          namespace: ext.namespace,
-          path: ext.path,
-          dynamic: ext.dynamic,
-          official: ext.info?.bundled ?? true,
-        };
+        const extInfo = convertExtInfo(ext);
         addition.callback(...call.arguments, call.extensionPath, extInfo);
       });
     });
@@ -1175,7 +1176,16 @@ class ExtensionManager {
   }
 
   private stateChangeHandler = (watchPath: string[],
-                                callback: StateChangeCallback) => {
+                                callback: StateChangeCallback,
+                                ext?: IRegisteredExtension) => {
+    if (!isFunction(callback)) {
+      // TODO we should be throwing an exception here but this didn't fail in the past and I don't
+      //   want to break previously ok extensions in a minor update
+      // throw new Error('attempt to register invalid change handler');
+      log('error', 'attempt to register invalid change handler', { stack: (new Error()).stack });
+      return;
+    }
+
     const stackErr = new Error();
     // have to initialize to a value that we _know_ is never set by the user.
     let lastValue = UNDEFINED;
@@ -1211,7 +1221,7 @@ class ExtensionManager {
       this.mWatches[key] = [];
       this.mReduxWatcher.on<any>(watchPath, changeHandler);
     }
-    this.mWatches[key].push(callback);
+    this.mWatches[key].push(wrapExtCBSync(callback, convertExtInfo(ext)));
   }
 
   private showErrorBox = (message: string, details: string | Error | any) => {

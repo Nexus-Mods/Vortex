@@ -614,6 +614,10 @@ export function replaceRecursive(input: any, from: any, to: any) {
     }, {});
 }
 
+export function isFunction(functionToCheck) {
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}
+
 /**
  * wrap a callback provided by an extension such that we don't allow reports
  * for that extension and display the extension name if possible
