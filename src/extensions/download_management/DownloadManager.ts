@@ -649,7 +649,7 @@ class DownloadManager {
             origName: nameTemplate,
             tempName: filePath,
             finalName: (fileName !== undefined)
-              ? Promise.resolve(path.join(destPath, this.sanitizeFilename(fileName))) : undefined,
+              ? Promise.resolve(path.join(destPath, path.basename(filePath))) : undefined,
             error: false,
             urls,
             redownload,
