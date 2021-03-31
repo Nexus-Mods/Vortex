@@ -259,12 +259,12 @@ class DownloadWorker {
 
         str
           .on('data', (data: Buffer) => {
-            this.handleData(data);
+            this.handleData(data, str);
           })
           .on('error', err => this.handleError(err))
           .on('end', () => {
             if (!this.mRedirected) {
-              this.handleComplete();
+              this.handleComplete(str);
             }
             this.mRequest.abort();
           });
@@ -327,7 +327,7 @@ class DownloadWorker {
     }
   }
 
-  private handleComplete() {
+  private handleComplete(str?: stream.Readable) {
     if (this.mEnded) {
       log('debug', 'chunk completed but can\'t write it anymore', JSON.stringify(this.mJob));
       return;
@@ -336,7 +336,7 @@ class DownloadWorker {
       id: this.mJob.workerId,
       numBuffers: this.mBuffers.length,
     });
-    this.writeBuffer()
+    this.writeBuffer(str)
       .then(() => {
         if (this.mRestart && (this.mJob.size > 0)) {
           this.mRestart = false;
@@ -469,33 +469,48 @@ class DownloadWorker {
     return this.mBuffers.reduce((prev, iter) => prev + iter.length, 0);
   }
 
-  private writeBuffer(): Promise<void> {
+  private doWriteBuffer(buf: Buffer): Promise<void> {
+    const len = buf.length;
+    const res = this.mJob.dataCB(this.mJob.offset, buf)
+      .then(() => {
+        this.mJob.confirmedReceived += len;
+        this.mJob.confirmedOffset += len;
+        this.mJob.confirmedSize -= len;
+      });
+
+    // need to update immediately, otherwise chunks might overwrite each other
+    this.mJob.received += len;
+    this.mJob.offset += len;
+    this.mJob.size -= len;
+    return res;
+  }
+
+  private writeBuffer(str: stream.Readable): Promise<void> {
     if (this.mBuffers.length === 0) {
       return Promise.resolve();
     }
 
     let merged: Buffer;
+
     try {
       merged = this.mergeBuffers();
     } catch (err) {
-      return Promise.reject(err);
+      // we failed to merge the smaller buffers, probably a memory issue.
+      log('warn', 'failed to merge buffers', { sizes: this.mBuffers.map(buf => buf.length) });
+      // let's try to write the buffers individually
+      const bufs = this.mBuffers;
+      this.mBuffers = [];
+      str?.pause?.();
+      return Promise.mapSeries(bufs, buf => this.doWriteBuffer(buf))
+        .then(() => {
+          str?.resume?.();
+        });
     }
 
-    const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(() => {
-        this.mJob.confirmedReceived += merged.length;
-        this.mJob.confirmedOffset += merged.length;
-        this.mJob.confirmedSize -= merged.length;
-      });
-
-    // need to update immediately, otherwise chunks might overwrite each other
-    this.mJob.received += merged.length;
-    this.mJob.offset += merged.length;
-    this.mJob.size -= merged.length;
-    return res;
+    return this.doWriteBuffer(merged);
   }
 
-  private handleData(data: Buffer) {
+  private handleData(data: Buffer, str: stream.Readable) {
     if (this.mEnded || ['paused', 'finished'].includes(this.mJob.state)) {
       log('debug', 'got data after ended',
           { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
@@ -515,7 +530,7 @@ class DownloadWorker {
     if (bufferLength >= DownloadWorker.BUFFER_SIZE) {
       if (!this.mWriting) {
         this.mWriting = true;
-        this.writeBuffer()
+        this.writeBuffer(str)
           .catch(UserCanceled, () => null)
           .catch(ProcessCanceled, () => null)
           .catch(err => {
