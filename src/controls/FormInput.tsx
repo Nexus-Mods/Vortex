@@ -9,7 +9,9 @@ import FormFeedback from './FormFeedback';
 
 export interface IProps {
   className?: string;
-  value: string;
+  value: string | number;
+  min?: number;
+  max?: number;
   onChange: (newValue: string, id: string) => void;
   onFocus?: (focused: boolean) => void;
   id?: string;
@@ -23,7 +25,7 @@ export interface IProps {
 }
 
 interface IComponentState {
-  cachedValue: string;
+  cachedValue: string | number;
 }
 
 /**
@@ -48,7 +50,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       this.mLastCommitted = newValue;
       if ((validate === undefined)
     || (validate(newValue) !== 'error')) {
-        this.props.onChange(newValue, props.id);
+        onChange(newValue, props.id);
       }
       return null;
     }, this.props.debounceTimer || 1000);
@@ -63,7 +65,8 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { className, clearable, id, label, placeholder, readOnly, type, validate } = this.props;
+    const { className, clearable, id, label, min, max,
+            placeholder, readOnly, type, validate } = this.props;
     const { cachedValue } = this.state;
     const content = (
       <div className={className}>
@@ -78,6 +81,8 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
           placeholder={placeholder}
           onBlur={this.onBlur}
           onFocus={this.onFocus}
+          min={min}
+          max={max}
         />
         {clearable ? this.renderClear() : null}
       </div>
@@ -132,8 +137,21 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   private onChange = (evt: React.FormEvent<HTMLInputElement>) => {
+    const { type, min, max } = this.props;
     evt.preventDefault();
-    const newValue = evt.currentTarget.value;
+    let newValue = evt.currentTarget.value;
+
+    if (type === 'number') {
+      let numValue = parseInt(newValue, 10);
+      if (min !== undefined) {
+        numValue = Math.max(numValue, min);
+      }
+      if (max !== undefined) {
+        numValue = Math.min(numValue, max);
+      }
+      newValue = numValue.toString();
+    }
+
     this.setState({ cachedValue: newValue });
     this.mDebouncer.schedule(undefined, newValue);
   }
