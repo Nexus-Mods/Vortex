@@ -759,6 +759,7 @@ function init(context: IExtensionContext): boolean {
             showError(store.dispatch, 'Failed to set game mode', err, {
               allowReport: false, message: newGameId, id: 'failed-to-set-gamemode' });
           } else {
+            err['attachLogOnReport'] = true;
             showError(store.dispatch, 'Failed to set game mode', err, {
               message: newGameId, id: 'failed-to-set-gamemode',
             });

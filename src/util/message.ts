@@ -26,6 +26,7 @@ import { file as tmpFile, tmpName } from 'tmp';
 
 import * as _ from 'lodash';
 import getVortexPath from './getVortexPath';
+import { decodeSystemError } from './nativeErrors';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -353,26 +354,16 @@ export interface IPrettifiedError {
 }
 
 export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPrettifiedError {
-  if ((err.systemCode === 225) || (err['nativeCode'] === 225)) {
-    // doesn't contain a code attribute
+  const decoded = decodeSystemError(err, err.path ?? err.filename);
+  if (decoded !== undefined) {
     return {
-      message: 'Your Antivirus software has blocked access to "{{path}}".',
-      replace: { path: err.path },
+      message: decoded.message,
+      replace: { path: err.path ?? err.filename },
       allowReport: false,
     };
-  } else if (
-    [362, 383, 404].includes(err.systemCode)
-    || (
-      (err.systemCode === 1359) && (err['path'] ?? '').toLowerCase().includes('onedrive'))) {
-    return {
-      message: `The file "{{path}}" is stored on a cloud storage drive `
-        + '(Microsoft OneDrive) which is currently unavailable.',
-      replace: {
-        path: err.path || err.filename,
-      },
-      allowReport: false,
-    };
-  } else if (err instanceof ThirdPartyError) {
+  }
+
+  if (err instanceof ThirdPartyError) {
     return {
       message: err.message,
       allowReport: false,
