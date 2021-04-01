@@ -183,8 +183,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
         {this.renderChangedSources(t('File content modified '
-                    + '("Save" will apply the changed file from the game directory permanently, '
-                    + '"Revert" will restore the original file from the mod directory)'),
+                    + '("Save" will apply the changed file from the game folder permanently, '
+                    + '"Revert" will restore the original file from the staging folder)'),
           'refchange', rc)}
         {this.renderChangedSources(t('Source files were deleted '
           + '("Save" will remove the corresponding files permanenly, "Revert" will restore them)'),
@@ -204,8 +204,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
         {this.renderChangedFile(t('File content modified '
-                    + '("Save" will apply the changed file from the game directory permanently, '
-                    + '"Revert" will restore the original file from the mod directory)'),
+                    + '("Save" will apply the changed file from the game folder permanently, '
+                    + '"Revert" will restore the original file from the staging folder)'),
           'refchange', refChanged)}
         {this.renderChangedFile(t('Source files were deleted'
           + '("Save" will remove the files permanenly, "Revert" will restore them)'),
@@ -323,121 +323,135 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private genSourceColumns(type: string): ITableAttribute[] {
-    const { onChangeAction } = this.props;
+  // tslint:disable-next-line:member-ordering
+  private genSourceColumns = (() => {
+    const cache: { [type: string]: ITableAttribute[] } = {};
 
-    return [
-      {
-        id: 'name',
-        name: 'Mod Name',
-        description: 'Mod Name',
-        calc: (source: ISourceEntry) => source.id,
-        placement: 'table',
-        edit: {},
-      }, {
-        id: 'file_count',
-        name: 'File Count',
-        description: 'Number of files in this mod that were changed',
-        calc: (source: ISourceEntry, t: TFunction) =>
-          t('{{count}} file', {
-            count: source.filePaths !== undefined ? source.filePaths.length : 0 }),
-        placement: 'table',
-        edit: {},
-      }, {
-        id: 'action',
-        name: 'Action',
-        description: 'the action to take on files in this mod',
-        calc: (source: ISourceEntry) => {
-          const action = possibleActions[type].find(act => act.key === source.action);
-          if (action === undefined) {
-            this.reportInvalidAction(type, source.action);
-            return 'INVALID!';
-          }
-          return action.text;
-        },
-        placement: 'table',
-        edit: {
-          inline: true,
-          actions: false,
-          choices: () => possibleActions[type],
-          onChangeValue: (source: ISourceEntry, value: any) => {
-            let newAction = value;
-            if (value === undefined) {
-              const typeActions = possibleActions[type];
-              const idx = typeActions.findIndex(act => act.key === source.action);
+    return (type: string): ITableAttribute[] => {
+      if (cache[type] === undefined) {
+        cache[type] = [
+          {
+            id: 'name',
+            name: 'Mod Name',
+            description: 'Mod Name',
+            calc: (source: ISourceEntry) => source.id,
+            placement: 'table',
+            edit: {},
+          }, {
+            id: 'file_count',
+            name: 'File Count',
+            description: 'Number of files in this mod that were changed',
+            calc: (source: ISourceEntry, t: TFunction) =>
+              t('{{count}} file', {
+                count: source.filePaths !== undefined ? source.filePaths.length : 0 }),
+            placement: 'table',
+            edit: {},
+          }, {
+            id: 'action',
+            name: 'Action',
+            description: 'the action to take on files in this mod',
+            calc: (source: ISourceEntry) => {
+              const action = possibleActions[type].find(act => act.key === source.action);
+              if (action === undefined) {
+                this.reportInvalidAction(type, source.action);
+                return 'INVALID!';
+              }
+              return action.text;
+            },
+            placement: 'table',
+            edit: {
+              inline: true,
+              actions: false,
+              choices: () => possibleActions[type],
+              onChangeValue: (source: ISourceEntry, value: any) => {
+                let newAction = value;
+                if (value === undefined) {
+                  const typeActions = possibleActions[type];
+                  const idx = typeActions.findIndex(act => act.key === source.action);
 
-              newAction = typeActions[(idx + 1) % typeActions.length].key as FileAction;
-            }
-            // TODO: the way source is created, filePaths should never be undefined and
-            //   I wasn't able to reproduce a case where it was, but we did get a crash
-            //   report where it was.
-            if (source.filePaths !== undefined) {
-              source.filePaths.forEach(filePath => onChangeAction([filePath], newAction));
-            }
+                  newAction = typeActions[(idx + 1) % typeActions.length].key as FileAction;
+                }
+                // TODO: the way source is created, filePaths should never be undefined and
+                //   I wasn't able to reproduce a case where it was, but we did get a crash
+                //   report where it was.
+                if (source.filePaths !== undefined) {
+                  source.filePaths.forEach(filePath =>
+                    this.props.onChangeAction([filePath], newAction));
+                }
+              },
+            },
           },
-        },
-      },
-    ];
-  }
+        ];
+      }
+      return cache[type];
+    };
+  })();
 
-  private genColumns(type: string): ITableAttribute[] {
-    const { onChangeAction } = this.props;
+  // tslint:disable-next-line:member-ordering
+  private genColumns = (() => {
+    const cache: { [type: string]: ITableAttribute[] } = {};
 
-    return [
-      {
-        id: 'name',
-        name: 'File Name',
-        description: 'file name',
-        calc: (file: IFileEntry) => file.filePath,
-        placement: 'table',
-        edit: {},
-      }, {
-        id: 'staged_changed',
-        name: 'Staged file modified',
-        description: 'Last time the stage file (the one in the mod staging folder) was modified',
-        calc: (file: IFileEntry, t) => (file.sourceModified !== undefined)
-                                       ? file.sourceModified.toLocaleString() : '',
-        placement: 'table',
-        edit: {},
-      }, {
-        id: 'deployment_changed',
-        name: 'Deployed file modified',
-        description: 'Last time the deployed file (the one in the game folder) was modified',
-        calc: (file: IFileEntry) => (file.destModified !== undefined)
-                                    ? file.destModified.toLocaleString() : '',
-        placement: 'table',
-        edit: {},
-      }, {
-        id: 'action',
-        name: 'Action',
-        description: 'the action to take on the file',
-        calc: (file: IFileEntry) => {
-          const action = possibleActions[type].find(act => act.key === file.action);
-          if (action === undefined) {
-            this.reportInvalidAction(type, file.action);
-            return 'INVALID!';
-          }
-          return action.text;
-        },
-        placement: 'table',
-        edit: {
-          inline: true,
-          actions: false,
-          choices: () => possibleActions[type],
-          onChangeValue: (file: IFileEntry, value: any) => {
-            if (value === undefined) {
-              const typeActions = possibleActions[type];
-              const idx = typeActions.findIndex(act => act.key === file.action);
-              onChangeAction([file.filePath],
-                             typeActions[(idx + 1) % typeActions.length].key as FileAction);
-            } else {
-              onChangeAction([file.filePath], value);
-            }
+    return (type: string): ITableAttribute[] => {
+      if (cache[type] === undefined) {
+        cache[type] = [
+          {
+            id: 'name',
+            name: 'File Name',
+            description: 'file name',
+            calc: (file: IFileEntry) => file.filePath,
+            placement: 'table',
+            edit: {},
+          }, {
+            id: 'staged_changed',
+            name: 'Staged file modified',
+            description:
+              'Last time the stage file (the one in the mod staging folder) was modified',
+            calc: (file: IFileEntry, t) => (file.sourceModified !== undefined)
+                                          ? file.sourceModified.toLocaleString() : '',
+            placement: 'table',
+            edit: {},
+          }, {
+            id: 'deployment_changed',
+            name: 'Deployed file modified',
+            description: 'Last time the deployed file (the one in the game folder) was modified',
+            calc: (file: IFileEntry) => (file.destModified !== undefined)
+                                        ? file.destModified.toLocaleString() : '',
+            placement: 'table',
+            edit: {},
+          }, {
+            id: 'action',
+            name: 'Action',
+            description: 'the action to take on the file',
+            calc: (file: IFileEntry) => {
+              const action = possibleActions[type].find(act => act.key === file.action);
+              if (action === undefined) {
+                this.reportInvalidAction(type, file.action);
+                return 'INVALID!';
+              }
+              return action.text;
+            },
+            placement: 'table',
+            edit: {
+              inline: true,
+              actions: false,
+              choices: () => possibleActions[type],
+              onChangeValue: (file: IFileEntry, value: any) => {
+                if (value === undefined) {
+                  const typeActions = possibleActions[type];
+                  const idx = typeActions.findIndex(act => act.key === file.action);
+                  this.props.onChangeAction([file.filePath],
+                                typeActions[(idx + 1) % typeActions.length].key as FileAction);
+                } else {
+                  this.props.onChangeAction([file.filePath], value);
+                }
+              },
+            },
           },
-        },
-      },
-    ];
-  }
+        ];
+      }
+      return cache[type];
+    };
+  })();
 
   private toggleShowFiles = () => {
     this.setState(update(this.state, { showFiles: { $set: !this.state.showFiles } }));
