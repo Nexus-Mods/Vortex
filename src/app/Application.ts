@@ -166,14 +166,14 @@ class Application {
       this.applyArguments(commandLine(secondaryArgv, true));
     });
 
-    app.on('ready', () => {
+    app.whenReady().then(() => {
       const vortexPath = process.env.NODE_ENV === 'development'
           ? 'vortex_devel'
           : 'vortex';
 
       // if userData specified, use it
       let userData = args.userData
-          // (only on windows) use ProgramData from environtment
+          // (only on windows) use ProgramData from environment
           ?? ((args.shared && process.platform === 'win32')
             ? path.join(process.env.ProgramData, 'vortex')
             // this allows the development build to access data from the
@@ -713,7 +713,7 @@ class Application {
         }
 
         log('info', `using ${dataPath} as the storage directory`);
-        if (multiUser) {
+        if (multiUser || (this.mArgs.userData !== undefined)) {
           log('info', 'all further logging will happen in', path.join(dataPath, 'vortex.log'));
           setLogPath(dataPath);
           log('info', '--------------------------');
