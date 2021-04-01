@@ -368,6 +368,7 @@ function profilePath(profile: IProfile): string {
 }
 
 const emptyArray = [];
+const emptyObject = {};
 
 function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
@@ -376,7 +377,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     currentProfile: state.settings.profiles.activeProfileId,
     profiles: state.persistent.profiles,
     language: state.settings.interface.language,
-    mods: state.persistent.mods[gameId],
+    mods: state.persistent.mods[gameId] || emptyObject,
     games: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     activity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
