@@ -568,7 +568,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
       try {
         const nxmUrl = new NXMUrl(url);
-        if (nxmUrl.gameId === SITE_ID) {
+        const isExtAvailable = api.getState().session.extensions.available
+          .find(iter => iter.modId === nxmUrl.modId) !== undefined;
+        if (nxmUrl.gameId === SITE_ID && isExtAvailable) {
           if (install) {
             return api.emitAndAwait('install-extension',
               { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });

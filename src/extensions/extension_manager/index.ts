@@ -315,29 +315,8 @@ function init(context: IExtensionContext) {
     });
 
     context.api.events.on('show-extension-page', (modId: number) => {
-      const showExtension = () => {
-        // Returns true if we managed to find and display the extension
-        //  otherwise returns false.
-        const state = context.api.getState();
-        const isExtAvailable = state.session.extensions.available.find(iter =>
-          iter.modId === modId) !== undefined;
-        if (isExtAvailable) {
-          localState.preselectModId = modId;
-          context.api.store.dispatch(setDialogVisible('browse-extensions'));
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      if (!showExtension()) {
-        updateAvailableExtensions(context.api, true)
-          .then(() => !showExtension()
-            ? Promise.reject(new NotFound(`extension ${modId} is unavailable`))
-            : Promise.resolve())
-          .catch(err => context.api.showErrorNotification('Extension is unavailable', err,
-          { allowReport: false }));
-      }
+      localState.preselectModId = modId;
+      context.api.store.dispatch(setDialogVisible('browse-extensions'));
     });
 
     context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
