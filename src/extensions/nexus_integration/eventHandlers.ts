@@ -1,11 +1,12 @@
 import { setDownloadModInfo } from '../../actions';
-import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
-import { IExtensionApi } from '../../types/IExtensionContext';
+import { IExtensionApi, StateChangeCallback } from '../../types/IExtensionContext';
+import { IDownload, IModTable, IState } from '../../types/IState';
 import { ArgumentInvalid, DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { upload } from '../../util/network';
 import opn from '../../util/opn';
 import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -344,7 +345,8 @@ export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
   return (revisionId: number): Promise<IRevision> => {
     if (!Number.isFinite(revisionId)) {
       return Promise.reject(
-        new Error('invalid parameter, collectionId and revisionId have to be numbers'));
+        new Error('invalid parameter, collectionId and revisionId have to be numbers, '
+                  + `got: ${revisionId}`));
     }
     return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
       .catch(err => {
@@ -459,21 +461,19 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
   };
 }
 
-function sendCollection(nexus: Nexus, collectionInfo: ICollectionManifest, collectionId: number, data: Buffer) {
+function sendCollection(nexus: Nexus, collectionInfo: ICollectionManifest, collectionId: number, uuid: string) {
   if (collectionId === undefined) {
     return nexus.createCollection({
         adultContent: false,
         collectionManifest: collectionInfo,
-        assetFile: data.toString('base64'),
         collectionSchemaId: 1,
-      });
+      }, uuid);
   } else {
     return nexus.updateCollection({
         adultContent: false,
         collectionManifest: collectionInfo,
-        assetFile: data.toString('base64'),
         collectionSchemaId: 1,
-    }, collectionId);
+    }, uuid, collectionId);
   }
 }
 
@@ -482,8 +482,13 @@ export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
           assetFilePath: string,
           collectionId: number,
           callback: (err: Error, response?: any) => void) => {
-    fs.readFileAsync(assetFilePath)
-      .then((data: Buffer) => sendCollection(nexus, collectionInfo, collectionId, data))
+    nexus.getRevisionUploadUrl()
+    .then(({ url, uuid }) => {
+      return fs.statAsync(assetFilePath)
+        .then(stat => upload(url, fs.createReadStream(assetFilePath), stat.size))
+        .then(() => uuid);
+      })
+      .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
       .then(response => (nexus as any).attachCollectionsToCategory(3, [response.collectionId])
         .then(() => response))
       .then(response => (nexus as any).publishRevision(response.revisionId)

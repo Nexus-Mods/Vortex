@@ -1,5 +1,6 @@
-import { get as getHTTP, IncomingMessage } from 'http';
-import { get as getHTTPS } from 'https';
+import { get as getHTTP, IncomingMessage, request as requestHTTP, ClientRequest } from 'http';
+import { get as getHTTPS, request as requestHTTPS } from 'https';
+import { Readable } from 'stream';
 import * as url from 'url';
 import { DataInvalid } from './api';
 
@@ -75,5 +76,58 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
     } catch (err) {
       return Promise.reject(new DataInvalid('Invalid json response: ' + rawData));
     }
+  });
+}
+
+export type Method = 'GET' | 'POST' | 'PUT';
+
+export function request(method: Method,
+                        reqURL: string,
+                        headers: any,
+                        cb: (res: IncomingMessage) => void): ClientRequest {
+  const parsed = url.parse(reqURL);
+  const reqFunc = (parsed.protocol === 'http:')
+    ? requestHTTP
+    : requestHTTPS;
+
+  const result: ClientRequest = reqFunc({
+    ...parsed,
+    method,
+    headers: { 'User-Agent': 'Vortex', ...headers },
+  }, cb);
+  return result;
+}
+
+export function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const req = request('PUT', targetUrl, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': dataSize.toString(),
+    }, res => {
+      const { statusCode } = res;
+
+      let err: string;
+      if (statusCode !== 200) {
+        err = `Request Failed. Status Code: ${statusCode}`;
+      }
+
+      let rawData: Buffer = Buffer.alloc(0);
+      res.on('data', (chunk) => {
+        rawData = Buffer.concat([rawData, chunk]);
+      })
+      .on('end', () => {
+        try {
+          resolve(rawData);
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .on('error', (reqErr: Error) => {
+        return reject(reqErr);
+      });
+    });
+    dataStream.pipe(req, {
+      end: true,
+    });
   });
 }
