@@ -13,6 +13,19 @@ const revisionInfo: IRevisionQuery = {
   status: true,
   modFiles: {
     file: {
+      mod: {
+        author: true,
+        description: true,
+        category: true,
+        modCategory: {
+          id: true,
+          name: true,
+        },
+        name: true,
+        pictureUrl: true,
+        summary: true,
+        version: true,
+      },
       modId: true,
       fileId: true,
       size: true,
