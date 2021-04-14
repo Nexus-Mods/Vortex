@@ -283,6 +283,17 @@ textarea {
   }
 }
 
+.btn-ad {
+  background-color: $brand-primary;
+  color: $text-color;
+
+  &:hover {
+    background-color: $text-color;
+    color: $brand-primary;
+  }
+}
+
+
 .input-group-btn:last-child > .btn-primary {
   margin-left: 5px;
 }
