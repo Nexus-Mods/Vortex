@@ -15,16 +15,17 @@ export interface IActionOptions {
 export interface IActionDefinition {
   icon?: string;
   title?: string;
+  data?: any;
   component?: React.ComponentType<any>;
   props?: () => any;
-  action?: (instanceId: string | string[]) => void;
+  action?: (instanceId: string | string[], data?: any) => void;
   // condition under which the action is displayed.
   // returning false hides the action entirely. Returning a string shows
   // the action disabled and grayed out, with the returned string as a tooltip
   // so you can explain to the user why it's unavailable.
   // Please use that second option unless you're absolutely sure the user
   // will understand from context why the action is unavailable in this case.
-  condition?: (instanceId: string | string[]) => boolean | string;
+  condition?: (instanceId: string | string[], data?: any) => boolean | string;
   position?: number;
   options?: IActionOptions;
   // in certain situations where the actions may be grouped together (e.g. in a dropdown button)

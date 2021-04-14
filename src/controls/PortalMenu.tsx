@@ -41,6 +41,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
         placement='bottom'
         target={target}
         flip={true}
+        rootClose={true}
         popperConfig={{
           modifiers: {
             preventOverflow: {

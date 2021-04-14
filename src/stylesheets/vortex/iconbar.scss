@@ -5,6 +5,16 @@
   }
 }
 
+@mixin menubar-button-text {
+  margin-top: 2px;
+  margin-bottom: 0px;
+  font-size: 0.75em;
+  white-space: normal;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+}
+
 .menubar {
   display: flex;
   flex-direction: row;
@@ -28,18 +38,16 @@
     margin-left: initial !important;
   }
   .button-text {
-    margin-top: 2px;
-    margin-bottom: 0px;
-    font-size: 0.75em;
-    white-space: normal;
-    flex: 1 1 0;
-    display: flex;
-    align-items: center;
+    @include menubar-button-text;
   }
 }
 
 .icon-menu-positioner {
   z-index: $zindex-menu-layer;
+}
+
+.icon-menu-overlay {
+  z-index: calc(#{$zindex-menu-layer} + 1);
 }
 
 .toolbar-dropdown {

@@ -25,10 +25,42 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
         disabled={action.show !== true}
         title={typeof(action.show) === 'string' ? t(action.show) : undefined}
       >
-        {action.icon !== undefined ? <Icon name={action.icon} /> : null}
-        <div className='button-text'>{t(action.title)}</div>
+        {(action.component !== undefined)
+          ? this.renderCustom()
+          : (<>
+              {action.icon !== undefined ? <Icon name={action.icon} /> : null}
+              <div className='button-text'>{t(action.title)}</div>
+            </>)}
       </MenuItem>
     );
+  }
+
+  private renderCustom() {
+    const { action, id } = this.props;
+
+    const knownProps = ['condition', 'className', 'group', 't', 'i18nLoadedAt',
+      'objects', 'children'];
+    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: this.props[current],
+        };
+      } else {
+        return prev;
+      }
+    }, {});
+
+    const staticProps = {
+      ...unknownProps,
+      key: id,
+    };
+    if (action.props !== undefined) {
+      const addProps = action.props();
+      return <action.component {...staticProps} {...addProps} parentType='context' />;
+    } else {
+      return <action.component {...staticProps} parentType='context' />;
+    }
   }
 
   private trigger = () => {
@@ -36,23 +68,29 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
-    action.action(instanceIds);
+    action.action?.(instanceIds, action.data);
   }
 }
 
 class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
   public componentDidMount() {
-    document.addEventListener('click', this.props.onClose);
-    document.addEventListener('contextmenu', this.props.onClose);
+    document.addEventListener('click', this.close);
+    document.addEventListener('contextmenu', this.close);
   }
 
   public componentWillUnmount() {
-    document.removeEventListener('click', this.props.onClose);
-    document.removeEventListener('contextmenu', this.props.onClose);
+    document.removeEventListener('click', this.close);
+    document.removeEventListener('contextmenu', this.close);
   }
 
   public render() {
     return this.props.children;
+  }
+
+  private close = (evt: MouseEvent) => {
+    if (!evt.defaultPrevented) {
+      this.props.onClose();
+    }
   }
 }
 
@@ -68,6 +106,7 @@ export interface IContextMenuProps {
   onHide: () => void;
   instanceId: string;
   actions?: IActionDefinitionEx[];
+  className?: string;
 }
 
 type IProps = IContextMenuProps;
@@ -94,7 +133,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { actions, children, onHide, position, visible } = this.props;
+    const { actions, children, className, onHide, position, visible } = this.props;
     const { right, bottom } = this.state;
     if (!visible || ((actions || []).length === 0)) {
       return null;
@@ -119,14 +158,15 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
           container={this.context.menuLayer}
         >
           <div
+            className={className}
             style={menuStyle}
             ref={this.setMenuRef}
           >
             <div className='menu-content'>{children}</div>
             <Dropdown.Menu
               style={{ display: 'block', position: 'initial' }}
-              onClose={onHide}
               open={true}
+              onClose={onHide}
               onClick={onHide}
             >
               {(actions || []).map(this.renderMenuItem)}
@@ -144,7 +184,9 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
 
     const tf = t ?? (input => input);
 
-    if ((action.icon === null) && (action.component === undefined)) {
+    if ((action.icon === null)
+        && (action.component === undefined)
+        && (action.action === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
           {action.title !== undefined ? tf(action.title) : <hr />}

@@ -272,7 +272,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     let actionId = (icon.title || index.toString()).toLowerCase().replace(/ /g, '-');
     actionId = `action-${actionId}`;
-    if (icon.icon !== undefined) {
+    if (icon.component === undefined) {
       // simple case
 
       if (icon.icon === null) {
@@ -333,9 +333,9 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     };
     if (icon.props !== undefined) {
       const addProps = icon.props();
-      return <icon.component {...staticProps} {...addProps} />;
+      return <icon.component {...staticProps} {...addProps} parentType='iconbar' />;
     } else {
-      return <icon.component {...staticProps} />;
+      return <icon.component {...staticProps} parentType='iconbar' />;
     }
   }
 

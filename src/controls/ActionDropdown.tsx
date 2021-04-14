@@ -203,9 +203,9 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     };
     if (action.props !== undefined) {
       const addProps = action.props();
-      return <action.component {...staticProps} {...addProps} />;
+      return <action.component {...staticProps} {...addProps} parentType='dropdown' />;
     } else {
-      return <action.component {...staticProps} />;
+      return <action.component {...staticProps} parentType='dropdown' />;
     }
   }
 
@@ -220,7 +220,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     const action = actions.find(iter => iter.title === title);
     if (action !== undefined) {
       const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-      action.action(instanceIds);
+      action.action?.(instanceIds);
     }
   }
 }
