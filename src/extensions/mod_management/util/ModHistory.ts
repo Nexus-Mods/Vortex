@@ -95,7 +95,12 @@ class ModHistory implements IHistoryStack {
           possible: evt => {
             const state = api.getState();
             const { id } = evt.data;
-            return state.persistent.mods[evt.gameId]?.[id] !== undefined;
+            const mod = state.persistent.mods[evt.gameId]?.[id];
+            const modState = (mod !== undefined)
+              ? state.persistent.mods[evt.gameId][id].state
+              : undefined;
+            const isStateValid = ['installed'].includes(modState);
+            return isStateValid;
           },
           do: evt => this.removeMod(evt.gameId, evt.data.id),
         },
