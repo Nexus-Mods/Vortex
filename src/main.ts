@@ -63,7 +63,6 @@ import {} from './util/extensionRequire';
 import './util/monkeyPatching';
 import { truthy } from './util/util';
 
-import Promise from 'bluebird';
 import * as child_processT from 'child_process';
 import { app, dialog } from 'electron';
 import * as path from 'path';

@@ -22,14 +22,14 @@
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
-    "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
+    "package": "electron-builder --config electron-builder-oneclick.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
-    "preinstall": "git submodule update --init --recursive",
+    "_preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
@@ -286,7 +286,8 @@
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
     "ws": "^7.2.0",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "xxhash-addon": "^1.3.0"
   },
   "config": {
     "forge": {

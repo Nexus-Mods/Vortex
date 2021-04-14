@@ -23,6 +23,7 @@ import Overlay from './Overlay';
 import OverlayTrigger from './OverlayTrigger';
 import PortalMenu from './PortalMenu';
 import ProgressBar from './ProgressBar';
+import RadialProgress from './RadialProgress';
 import SelectUpDown from './SelectUpDown';
 import Spinner from './Spinner';
 import Steps from './Steps';
@@ -44,7 +45,7 @@ export {
   FlexLayout, FormFeedback, FormInput, FormCheckboxItem, FormPathItem, FormTextItem, Icon, IconBar,
   Image, ITableRowAction, makeGetSelection, Modal,
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
-  SelectUpDown, Spinner, Steps,
+  RadialProgress, SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, TriStateCheckbox,
   Toggle, ToolbarIcon, tooltip, Usage, Webview,
 };
