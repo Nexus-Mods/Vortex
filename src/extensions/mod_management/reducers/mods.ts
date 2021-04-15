@@ -152,6 +152,11 @@ export const modsReducer: IReducerSpec = {
                   description: () => 'Corrupted mod changelog will be reset',
                   deleteBroken: true,
                 },
+                version: {
+                  type: 'string',
+                  description: () => 'Corrupted mod version will be reset',
+                  deleteBroken: true,
+                },
               },
             },
           },
