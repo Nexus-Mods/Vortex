@@ -68,7 +68,9 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
   context.registerDashlet('Starter', 2, 2, 100, Starter,
-                          undefined, undefined, undefined);
+                          undefined, undefined, {
+                            closable: false,
+                          });
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));
