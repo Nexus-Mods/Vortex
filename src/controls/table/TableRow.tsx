@@ -89,7 +89,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
             tooltip={preT(t, attribute.name, undefined, true)}
-            icon={data ? 'checkbox-checked' : 'square-remove'}
+            icon={data ? 'checkbox-checked' : 'checkbox-unchecked'}
             onClick={this.toggle}
           />
         );

@@ -328,11 +328,11 @@
       "rmFill": true
     },
     "checkbox-checked": {
-      "path": "{fa}/check-square-o",
+      "path": "{nucleo}/user interface/{nucleo_simple}_checkbox-btn-checked",
       "rmFill": true
     },
     "checkbox-unchecked": {
-      "path": "{fa}/square-o",
+      "path": "{nucleo}/user interface/{nucleo_simple}_checkbox-btn",
       "rmFill": true
     },
     "start-install": {

@@ -54,6 +54,7 @@ export interface IBaseProps {
   showHeader?: boolean;
   showDetails?: boolean;
   hasActions?: boolean;
+  onChangeSelection?: (ids: string[]) => void;
 }
 
 interface IConnectedProps {
@@ -1460,8 +1461,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private onRowStateChanged = () => {
+    const { onChangeSelection } = this.props;
     const { rowState } = this.state;
-    this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
+    const selectedIds: string[] = Object.keys(rowState).filter(id => rowState[id].selected);
+    this.updateDetailIds(selectedIds);
+
+    onChangeSelection?.(selectedIds);
   }
 
   private deselectAll = () => {
