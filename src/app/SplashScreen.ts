@@ -57,9 +57,14 @@ class SplashScreen {
 
       this.mWindow = new BrowserWindow({
         frame: false,
+        /*
         width: 687,
-        height: 227,
+        height: 240,
         transparent: !disableGPU,
+        */
+        width: 475,
+        height: 166,
+        transparent: false,
         show: false,
         resizable: false,
         movable: false,
