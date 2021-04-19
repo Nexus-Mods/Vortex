@@ -4,7 +4,7 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, lastActiveProfileForGame } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
@@ -12,7 +12,7 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { removeProfile, setFeature, setProfile, willRemoveProfile } from '../actions/profiles';
-import { setNextProfile } from '../actions/settings';
+import { clearLastActiveProfile, setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
 
@@ -44,6 +44,7 @@ interface IConnectedProps {
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
   onRemoveProfile: (profileId: string) => void;
+  onClearLastActiveProfile: (gameId: string) => void;
   onWillRemoveProfile: (profileId: string) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
@@ -318,8 +319,10 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { activity, currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
+    const { activity, currentProfile, onClearLastActiveProfile,
+            onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
             onShowDialog, profiles } = this.props;
+
     const confirmText = (profileId === currentProfile)
       ? 'You are trying to remove your currently active profile, "{{profileName}}". '
         + 'This will result in Vortex exiting to the dashboard screen, with no active profile set. '
@@ -343,10 +346,24 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);
               }
+              const gameMode = profiles[profileId].gameId;
+              const doRemoveProfile = () => {
+                onRemoveProfile(profileId);
+                if (gameMode !== undefined) {
+                  // It's possible that this is the last active profile
+                  //  for this game - we need to remove the last active
+                  //  game entry.
+                  const state = this.context.api.getState();
+                  const lastActiveProfileId = lastActiveProfileForGame(state, gameMode);
+                  if (profileId === lastActiveProfileId) {
+                    onClearLastActiveProfile(gameMode);
+                  }
+                }
+              };
               return fs.removeAsync(profilePath(profiles[profileId]))
-                .then(() => onRemoveProfile(profileId))
+                .then(() => doRemoveProfile())
                 .catch(err => (err.code === 'ENOENT')
-                  ? onRemoveProfile(profileId) // Profile path is already missing, that's fine.
+                  ? doRemoveProfile() // Profile path is already missing, that's fine.
                   : this.context.api.showErrorNotification('Failed to remove profile',
                       err, { allowReport: err.code !== 'EPERM' }));
             },
@@ -384,6 +401,7 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
     onRemoveProfile: (profileId: string) => dispatch(removeProfile(profileId)),
+    onClearLastActiveProfile: (gameId: string) => dispatch(clearLastActiveProfile(gameId)),
     onWillRemoveProfile: (profileId: string) => dispatch(willRemoveProfile(profileId)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>

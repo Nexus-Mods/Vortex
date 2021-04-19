@@ -1,7 +1,7 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, setSafe } from '../../../util/storeHelper';
 
-import { setCurrentProfile, setNextProfile } from '../actions/settings';
+import { clearLastActiveProfile, setCurrentProfile, setNextProfile } from '../actions/settings';
 
 export const settingsReducer: IReducerSpec = {
   reducers: {
@@ -15,6 +15,10 @@ export const settingsReducer: IReducerSpec = {
       }
       return res;
     },
+    [clearLastActiveProfile as any]: (state, payload) =>
+      // Theoretically we could assign the next available profile here instead
+      //  of completely deleting the game entry..
+      deleteOrNop(state, ['lastActiveProfile', payload.gameId]),
   },
   defaults: {
     nextProfileId: undefined,
