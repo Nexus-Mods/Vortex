@@ -161,7 +161,7 @@
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
-    "electron": "^11.4.0",
+    "electron": "^11.4.3",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "rwwagner90/electron-devtools-installer",
     "electron-download-tf": "^4.3.4",

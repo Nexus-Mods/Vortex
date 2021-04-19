@@ -1453,7 +1453,7 @@
   dependencies:
     cross-spawn "^7.0.1"
 
-"@nexusmods/nexus-api@^1.0.5":
+"@nexusmods/nexus-api@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.1.3.tgz#836d6109be4add06b9c6808a66f1162d26bab877"
   integrity sha512-cl1Z1qR/gsLAU7Ku8A56wk74jb2cOZrBbQTq+yVadlggJcz+zk/tKWO1CEd62IOAISmz2/EL+HmS6WARUw7Tuw==
@@ -5634,10 +5634,10 @@ electron-wix-msi@^3.0.2:
   optionalDependencies:
     "@bitdisaster/exe-icon-extractor" "^1.0.10"
 
-electron@^11.4.0:
-  version "11.4.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-11.4.1.tgz#9598530756221c20d8efec7746dd449f3933ee60"
-  integrity sha512-FaH15/yN5vSkKk4mieXemEl1AdQ9P+tsBVsgS+uTVa1agnHDcxMxyoPmtme8NsyLCgobVWHIwNtKD1jSADmzXA==
+electron@^11.4.3:
+  version "11.4.3"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-11.4.3.tgz#74319635417c24fd19e31cfce5a39c8792e4014b"
+  integrity sha512-RhCWJqiYK5oIRGOheilhg/nngCgk0fPgaf00KvbxorlvFZAz8OeMT5ShCpVsMSoyYhk4XEnn4orRly5ltaFYJg==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
