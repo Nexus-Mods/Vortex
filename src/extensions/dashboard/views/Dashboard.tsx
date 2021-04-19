@@ -109,7 +109,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const sorted = dashlets
       .filter((dash: IDashletProps) =>
         ((dash.isVisible === undefined) || dash.isVisible(state))
-        && getSafe(dashletSettings, [dash.title, 'enabled'], true))
+        && (!dash.closable || getSafe(dashletSettings, [dash.title, 'enabled'], true)))
       .sort((lhs: IDashletProps, rhs: IDashletProps) =>
         (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
       ;
