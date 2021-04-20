@@ -249,11 +249,17 @@ export interface ITableAttribute<T = any> {
      * if set, this function determines if the attribute is editable. If "edit" is an empty
      * object, the attribute is readonly. If "edit" is non-empty and "readonly" is
      * undefined, the attribute is editable.
+     * 
+     * @note: This currently only affects controls in the sidebar, not the ones in the table
      */
     readOnly?: (object: any) => boolean;
 
     /**
-     * allow inline editing of this cell
+     * allow inline editing of this cell for attribute with "choices".
+     * 
+     * @note This does not work as described if choices is undefined, boolean attributes for example
+     *       become read-only if this attribute is set and strings and dates don't get rendered
+     *       properly any more.
      */
     inline?: boolean,
 

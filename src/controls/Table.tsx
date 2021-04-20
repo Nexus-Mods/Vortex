@@ -1644,13 +1644,17 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 const emptyObj = {};
 const emptyList = [];
 
-function mapStateToProps(state: any, ownProps: any): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: any): IConnectedProps {
+  let groupBy = state.settings.tables[ownProps.tableId]?.groupBy;
+  if ((ownProps.columnBlacklist ?? []).includes(groupBy)) {
+    groupBy = undefined;
+  }
   return {
     language: state.settings.interface.language,
     attributeState:
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
-    filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
-    groupBy: getSafe(state, ['settings', 'tables', ownProps.tableId, 'groupBy'], undefined),
+    filter: state.settings.tables[ownProps.tableId]?.filter,
+    groupBy,
     collapsedGroups: getSafe(state,
                              ['settings', 'tables', ownProps.tableId, 'collapsedGroups'],
                              emptyList),
@@ -1702,4 +1706,4 @@ export default
   translate(['common'])(
     extend(registerTableAttribute, 'tableId')(
       connect(mapStateToProps, mapDispatchToProps)(
-        SuperTable))) as React.ComponentClass<IBaseProps & IExtensibleProps>;
+        SuperTable))) as React.ComponentType<IBaseProps & IExtensibleProps>;

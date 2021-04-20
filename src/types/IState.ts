@@ -116,6 +116,8 @@ export interface IRowState {
 export interface ITableState {
   attributes: { [id: string]: IAttributeState };
   rows: { [id: string]: IRowState };
+  groupBy?: string;
+  filter?: { [id: string]: any };
 }
 
 export interface IExtensionState {
