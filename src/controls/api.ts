@@ -38,6 +38,7 @@ import * as tooltip from './TooltipControls';
 import TriStateCheckbox from './TriStateCheckbox';
 import Usage from './Usage';
 import Webview from './Webview';
+import ZoomableImage from './ZoomableImage';
 
 export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
@@ -47,5 +48,5 @@ export {
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   RadialProgress, SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, TriStateCheckbox,
-  Toggle, ToolbarIcon, tooltip, Usage, Webview,
+  Toggle, ToolbarIcon, tooltip, Usage, Webview, ZoomableImage
 };
