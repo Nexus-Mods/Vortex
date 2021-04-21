@@ -1,8 +1,11 @@
 import {ipcRenderer} from 'electron';
 
 ipcRenderer.on('fade-out', () => {
-  document.getElementById('splash').setAttribute('transition', 'opacity 500ms ease-in-out');
-  document.getElementById('splash').setAttribute('style', 'opacity: 0');
+  const splash = document.getElementById('splash');
+  if (!!splash) {
+    splash.setAttribute('transition', 'opacity 500ms ease-in-out');
+    splash.setAttribute('style', 'opacity: 0');
+  }
 });
 
 const url = new URL(window.location.href);
