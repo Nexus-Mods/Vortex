@@ -235,7 +235,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   const sourceErr = new Error();
 
   if ((options.extensionName === undefined)
-      && (details['extensionName'] !== undefined)) {
+      && (details?.['extensionName'] !== undefined)) {
     options.extensionName = details['extensionName'];
   }
 
