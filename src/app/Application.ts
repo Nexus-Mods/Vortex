@@ -25,7 +25,7 @@ import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 import { isMajorDowngrade, replaceRecursive, spawnSelf, timeout, truthy } from '../util/util';
 
-import { addNotification, setCommandLine } from '../actions';
+import { addNotification, setCommandLine, showDialog } from '../actions';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -828,21 +828,46 @@ class Application {
       })
       .then(() => {
         if (backups.length > 0) {
+          const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
+          const mostRecent = sorted[0];
+          const timestamp = path.basename(mostRecent, '.json').replace('backup_', '');
+          const date = new Date(+timestamp);
+          const dateString = `${date.toDateString()} `
+            + `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+          const replace = { date: dateString };
           this.mStore.dispatch(addNotification({
             type: 'info',
-            message: 'A backup of application state was created recently.',
+            message: 'Found an application state backup. Created on: {{date}}',
             actions: [
               { title: 'Restore', action: () => {
-                const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
-                log('info', 'sorted backups', sorted);
-                spawnSelf(['--restore', path.join(backupPath, sorted[0])]);
-                app.exit();
+                this.mStore.dispatch(showDialog('question', 'Restoring Application State', {
+                  bbcode: 'You are attempting to restore an application state backup which will revert any '
+                        + 'state changes you have made since the backup was created.[br][/br][br][/br]'
+                        + 'Please note that this operation will NOT uninstall/remove any mods you '
+                        + 'may have downloaded/installed since the backup was created, however Vortex '
+                        + 'may "forget" some changes:[list]'
+                        + '[*] Which download archive belongs to which mod installation, exhibiting '
+                        + 'itself as "duplicate" entries of the same mod (archive entry and installed mod entry).'
+                        + '[*] The state of an installed mod - reverting it to a disabled state.'
+                        + '[*] Any conflict rules you had defined after the state backup.'
+                        + '[*] Any other configuration changes you may have made.'
+                        + '[/list][br][/br]'
+                        + 'Are you sure you wish to restore the backed up state ?',
+                }, [
+                  { label: 'Cancel' },
+                  { label: 'Restore', action: () => {
+                    log('info', 'sorted backups', sorted);
+                    spawnSelf(['--restore', path.join(backupPath, mostRecent)]);
+                    app.exit();
+                  } },
+                ]));
               } },
               { title: 'Delete', action: dismiss => {
                 deleteBackups();
                 dismiss();
               } },
             ],
+            replace,
           }));
         } else if (!repair) {
           // we started without any problems, save this application state
