@@ -16,7 +16,7 @@ export type IImageProps = React.DetailedHTMLProps<
  * successfully
  */
 function Image(props: IImageProps): JSX.Element {
-  const { circle, srcs } = props;
+  const { className, circle, srcs } = props;
 
   const [srcIdx, setSourceIndex] = React.useState(0);
   const errorCB = React.useCallback(() => {
@@ -28,6 +28,9 @@ function Image(props: IImageProps): JSX.Element {
   const classes: string[] = [];
   if (circle === true) {
     classes.push('img-circle');
+  }
+  if (className !== undefined) {
+    classes.push(className);
   }
 
   return (
