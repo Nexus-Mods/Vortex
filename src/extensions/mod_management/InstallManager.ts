@@ -277,8 +277,9 @@ class InstallManager {
         return filterModInfo(fullInfo, undefined);
       })
       .then(modInfo => {
-        const oldMod = (modInfo.fileId !== undefined)
-          ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
+        const fileId = modInfo.fileId ?? modInfo.revisionId;
+        const oldMod = (fileId !== undefined)
+          ? this.findPreviousVersionMod(fileId, api.store, installGameId)
           : undefined;
 
         if ((oldMod !== undefined) && (fullInfo.choices === undefined)) {
@@ -1128,9 +1129,10 @@ class InstallManager {
     const mods = store.getState().persistent.mods[gameMode] || {};
     let mod: IMod;
     Object.keys(mods).forEach(key => {
-      const newestFileId: number = getSafe(mods[key].attributes, ['newestFileId'], undefined);
-      const currentFileId: number = getSafe(mods[key].attributes, ['fileId'], undefined);
-      if (newestFileId !== currentFileId && newestFileId === fileId) {
+      const newestFileId: number = mods[key].attributes?.newestFileId;
+      const currentFileId: number = mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
+      if ((newestFileId !== currentFileId)
+          && (newestFileId === fileId)) {
         mod = mods[key];
       }
     });

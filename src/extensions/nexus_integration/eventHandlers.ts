@@ -27,7 +27,7 @@ import { NEXUS_BASE_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
-                RateLimitError, TimeoutError, IDownloadURL, ICollectionManifest } from '@nexusmods/nexus-api';
+                RateLimitError, TimeoutError, IDownloadURL, ICollectionManifest, ICollectionInfo } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -150,6 +150,18 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
       updateDebouncer.schedule(undefined, newValue);
 }
 
+export function onOpenCollectionPage(api: IExtensionApi) {
+  return (gameId: string, collectionId: string, source: string) => {
+    if (source !== 'nexus') {
+      return;
+    }
+    const game = gameById(api.store.getState(), gameId);
+    opn([NEXUS_BASE_URL,
+      nexusGameId(game) || gameId, 'collections', collectionId,
+    ].join('/')).catch(err => undefined);
+  };
+}
+
 export function onOpenModPage(api: IExtensionApi) {
   return (gameId: string, modId: string, source: string) => {
     if (source !== 'nexus') {
@@ -251,6 +263,12 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
     }
 
     downloadFile(api, nexus, game, modId, fileId, undefined, false)
+      .catch(AlreadyDownloaded, err => {
+        const state = api.getState();
+        const downloads = state.persistent.downloads.files;
+        const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
+        return dlId;
+      })
       .then(downloadId => {
         api.events.emit('start-install-download', downloadId);
       })

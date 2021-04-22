@@ -865,6 +865,7 @@ class DownloadManager {
 
     return () => {
       if (cache === undefined) {
+        let error: Error; 
         // TODO: Does it make sense here to resolve all urls?
         //   For all we know they could resolve to an empty list so
         //   it wouldn't be enough to just one source url
@@ -877,10 +878,17 @@ class DownloadManager {
                 updatedUrls: [...prev.updatedUrls, resolved.updatedUrl || iter],
               });
             })
-            .catch(UserCanceled, () => Promise.resolve(prev))
-            .catch(ProcessCanceled, () => Promise.resolve(prev))
-            .catch(Error, () => Promise.resolve(prev));
-        }, { urls: [], meta: {}, updatedUrls: [] });
+            .catch(Error, err => {
+              error = err;
+              return Promise.resolve(prev);
+            });
+        }, { urls: [], meta: {}, updatedUrls: [] })
+        .then(res => {
+          if ((urls.length === 0) && (error !== undefined)) {
+            return Promise.reject(error);
+          }
+          return Promise.resolve(res);
+        });
       }
       return cache;
     };

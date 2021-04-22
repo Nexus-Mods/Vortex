@@ -687,7 +687,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
           setDownloadModInfo(dlId, 'collectionId', nxmUrl.collectionId);
         }
         if (nxmUrl.revisionId !== undefined) {
-          setDownloadModInfo(dlId, 'revisionIdId', nxmUrl.revisionId);
+          setDownloadModInfo(dlId, 'revisionId', nxmUrl.revisionId);
         }
 
         return new Promise((resolve, reject) => {
@@ -833,6 +833,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
+  api.events.on('open-collection-page', eh.onOpenCollectionPage(api));
   api.events.on('open-mod-page', eh.onOpenModPage(api));
   api.events.on('request-nexus-login', callback => requestLogin(api, callback));
   api.events.on('request-own-issues', eh.onRequestOwnIssues(nexus));
@@ -1209,7 +1210,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerModSource('nexus', 'Nexus Mods', () => {
     currentGame(context.api.store)
       .then(game => {
-        opn(`https://www.${NEXUS_DOMAIN}/${nexusGameId(game)}`).catch(err => undefined);
+        opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch(err => undefined);
       });
   }, {
     icon: 'nexus',

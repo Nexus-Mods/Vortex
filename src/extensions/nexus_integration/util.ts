@@ -84,7 +84,7 @@ function startDownloadCollection(api: IExtensionApi,
     })
     .then(downloadUrls => {
       return toPromise<string>(cb => api.events.emit('start-download',
-        downloadUrls.map(iter => iter.URI), {
+        (downloadUrls ?? []).map(iter => iter.URI), {
         game: gameId,
         source: 'nexus',
         name: revisionInfo.collection?.name,
@@ -114,14 +114,19 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
   return Promise.resolve(nexus.getRevisionGraph({
     adultContent: true,
     collection: {
-      category: true,
+      category: {
+        id: true,
+        name: true,
+      },
       createdAt: true,
       endorsements: true,
       name: true,
       user: {
         name: true,
       },
-      tileImage: true,
+      tileImage: {
+        url: true,
+      },
       metadata: {
         summary: true,
         description: true,
@@ -130,6 +135,7 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
     createdAt: true,
     updatedAt: true,
     installationInfo: true,
+    revision: true,
     rating: true,
     votes: true,
   }, revisionId))
@@ -553,6 +559,33 @@ function filterByUpdateList(store: Redux.Store<any>,
       });
 }
 
+export function checkForCollectionUpdates(store: Redux.Store<any>,
+                                          nexus: Nexus,
+                                          gameId: string,
+                                          mods: { [modId: string]: IMod }) {
+  const collectionIds = Object.keys(mods)
+    .filter(modId => mods[modId].attributes?.collectionId !== undefined);
+
+  return Promise.all(collectionIds.map(modId => {
+    return nexus.getCollectionGraph({
+      currentRevision: {
+        revision: true,
+        id: true,
+      },
+    }, parseInt(mods[modId].attributes?.collectionId, 10))
+      .then(collection => {
+        store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
+        if (collection.currentRevision.id !== mods[modId].attributes?.revisionId) {
+          store.dispatch(setModAttribute(gameId, modId, 'newestFileId', collection.currentRevision.id));
+          store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
+            collection.currentRevision.revision.toString()));
+          // store.dispatch(setModAttribute(gameId, modId, 'newestRevisionId', collection.currentRevision.id));
+          // store.dispatch(setModAttribute(gameId, modId, 'newestRevisionNumber', collection.currentRevision.revision));
+        }
+      });
+  }));
+}
+
 export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
@@ -574,6 +607,7 @@ export function checkModVersionsImpl(
   const updatedIds: string[] = [];
 
   return refreshEndorsements(store, nexus)
+    .then(() => checkForCollectionUpdates(store, nexus, gameId, mods))
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
     .then((filteredMods: IMod[]) => {
       const filtered = new Set(filteredMods.map(mod => mod.id));
