@@ -141,8 +141,13 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     evt.preventDefault();
     let newValue = evt.currentTarget.value;
 
-    if (type === 'number') {
+    if ((type === 'number') && (newValue.length > 0)) {
       let numValue = parseInt(newValue, 10);
+      if (Number.isNaN(numValue)) {
+        // ignore input if it's not valid
+        evt.currentTarget.value = this.state.cachedValue.toString();
+        return;
+      }
       if (min !== undefined) {
         numValue = Math.max(numValue, min);
       }
