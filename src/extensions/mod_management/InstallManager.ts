@@ -58,6 +58,7 @@ import * as semver from 'semver';
 import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -1334,8 +1335,12 @@ class InstallManager {
     if ((modId === undefined) && (fileId === undefined)) {
       return this.downloadURL(api, lookupResult, referenceTag);
     }
+
+    const knownGames = api.getState().session.gameMode.known;
+    const gameId = convertGameIdReverse(knownGames, lookupResult.domainName || lookupResult.gameId);
+
     return api.emitAndAwait('start-download-update',
-      lookupResult.source, lookupResult.domainName || lookupResult.gameId, modId, fileId, pattern)
+      lookupResult.source, gameId, modId, fileId, pattern)
       .then(dlIds => (dlIds === undefined)
           ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
           : !truthy(dlIds[0])
