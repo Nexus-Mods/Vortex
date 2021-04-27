@@ -11,6 +11,17 @@ import { referenceEqual } from '../util/testModReference';
 import * as _ from 'lodash';
 import { IRule } from 'modmeta-db';
 
+function reduceRule(input: IRule): IRule {
+  return {
+    type: input.type,
+    reference: _.omit(input.reference, ['archiveId']),
+  };
+}
+
+function ruleEqual(lhs: IRule, rhs: IRule) {
+  return _.isEqual(reduceRule(lhs), reduceRule(rhs));
+}
+
 /**
  * reducer for changes to the known mods
  */
@@ -118,7 +129,7 @@ export const modsReducer: IReducerSpec = {
     [actions.removeModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
       return removeValueIf(state, [gameId, modId, 'rules'],
-        (iterRule: IRule) => _.isEqual(iterRule, rule));
+        (iterRule: IRule) => ruleEqual(iterRule, rule));
     },
     [actions.setINITweakEnabled as any]: (state, payload) => {
       const { gameId, modId, tweak, enabled } = payload;
