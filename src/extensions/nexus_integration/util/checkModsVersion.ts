@@ -102,8 +102,10 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
 
   const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
   const game = gameById(store.getState(), gameId);
+  const fallBackGameId = gameId === 'site'
+    ? 'site' : undefined;
 
-  return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game)))
+  return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
       .tapCatch(err => {
         log('warn', 'dropping update info', { gameMode, id: mod.id, err: err.message });
