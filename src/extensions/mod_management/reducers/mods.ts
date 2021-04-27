@@ -14,7 +14,7 @@ import { IRule } from 'modmeta-db';
 function reduceRule(input: IRule): IRule {
   return {
     type: input.type,
-    reference: _.omit(input.reference, ['archiveId']),
+    reference: _.omit(input.reference, ['archiveId', 'description', 'instructions']),
   };
 }
 
