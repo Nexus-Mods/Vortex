@@ -322,8 +322,9 @@
 }
 
 .xtable .cell-actions {
-  display: inline-flex;
-  width: 100%;
+  // display: inline-flex;
+  // width: 100%;
+
   .dropdown .btn:first-child,
   .dropup .btn:first-child {
     text-align: left;

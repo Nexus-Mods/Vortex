@@ -240,7 +240,7 @@ textarea {
 }
 
 .modal-header, .modal-footer {
-  margin: 0 32px;
+  margin: 0 $gutter-width;
 }
 
 .modal-content {
@@ -313,4 +313,8 @@ hr {
       padding-top: calc(#{$padding-base-vertical} + 2px) !important;
     }
   }
+}
+
+.modal-body {
+  padding: $half-gutter $gutter-width;
 }
