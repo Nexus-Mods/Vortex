@@ -148,7 +148,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onKeyPress={this.handleKeyPress}
       >
         <Modal.Header>
-          <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
+          <Modal.Title>{this.iconForType(dialog.type)}{' '}{
+            t(dialog.title, { replace: dialog.content.parameters })
+          }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ErrorBoundary visible={true}>
