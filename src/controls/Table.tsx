@@ -1502,11 +1502,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectTo(rowId: string, groupId: string) {
-    const { groupBy } = this.props;
+    const {  objects } = this.props;
     const { lastSelected, groupedRows, sortedRows } = this.mNextState;
 
     if (lastSelected === undefined) {
       return;
+    }
+
+    let groupBy = this.props.groupBy;
+
+    const groupByState = (groupBy !== undefined)
+      ? this.getAttributeState(objects.find(
+          (attribute: ITableAttribute) => attribute.id === groupBy))
+      : undefined;
+
+    if ((groupBy !== undefined) && !groupByState?.enabled) {
+      groupBy = undefined;
     }
 
     let groupSortedRows: Array<{ rowId: string, groupId: string }>;
