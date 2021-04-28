@@ -83,6 +83,7 @@ import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { applyMiddleware, compose, createStore } from 'redux';
+import { enableBatching } from 'redux-batched-actions';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
@@ -378,7 +379,7 @@ let tFunc: TFunction = fallbackTFunc;
 // now that we're not using it any more, may want to try again
 // store.replaceReducer(reducer(extReducers));
 store = createStore(
-  reducer(extReducers, () => Decision.QUIT),
+  enableBatching(reducer(extReducers, () => Decision.QUIT)),
   initialState(),
   enhancer);
 replayActionRenderer(store);
