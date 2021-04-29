@@ -146,6 +146,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modPictureAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
+  private modRevisionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
@@ -270,6 +271,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modVersionAttribute,
       this.modAuthorAttribute,
       this.modVersionDetailAttribute,
+      this.modRevisionDetailAttribute,
       this.modVariantDetailAttribute,
       INSTALL_TIME(() => this.context.api.locale()),
       ENABLED_TIME(() => this.context.api.locale()),
@@ -695,7 +697,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       description: 'File version (according to the author)',
       help: getText('version', this.props.t),
       icon: 'cake',
-      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
+      calc: (mod: IModWithState) => (mod.type !== 'collection')
+        ? getSafe(mod.attributes, ['version'], '')
+        : undefined,
       placement: 'detail',
       isToggleable: false,
       edit: {
@@ -704,6 +708,21 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         onChangeValue: (mod: IModWithState, value: any) =>
           this.props.onSetModAttribute(this.props.gameMode, mod.id, 'version', value),
       },
+      isSortable: false,
+    };
+
+    this.modRevisionDetailAttribute = {
+      id: 'revisionDetail',
+      name: 'Revision',
+      description: 'Collection revision',
+      help: getText('version', this.props.t),
+      icon: 'cake',
+      calc: (mod: IModWithState) => (mod.type === 'collection')
+        ? getSafe(mod.attributes, ['version'], '')
+        : undefined,
+      placement: 'detail',
+      isToggleable: false,
+      edit: {},
       isSortable: false,
     };
 
