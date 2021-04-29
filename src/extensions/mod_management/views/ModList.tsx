@@ -20,7 +20,7 @@ import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import { batchDispatch, truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import getDownloadGames from '../../download_management/util/getDownloadGames';
@@ -119,6 +119,7 @@ interface IConnectedProps extends IModProps {
 interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
+  onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
@@ -1047,29 +1048,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private enableSelected = (modIds: string[]) => {
-    const { gameMode, profileId, modState } = this.props;
+    const { gameMode, profileId, modState, onSetModsEnabled } = this.props;
 
-    modIds.forEach((key: string) => {
-      if (!getSafe(modState, [key, 'enabled'], false)) {
-        this.setModState(profileId, key, 'enabled');
-      }
-    });
+    modIds = modIds.filter(modId => modState[modId]?.enabled === false);
+    onSetModsEnabled(profileId, modIds, true);
     this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { gameMode } = this.props;
-    this.disableModsInner(modIds);
+    const { gameMode, profileId, modState, onSetModsEnabled } = this.props;
+    modIds = modIds.filter(modId => modState[modId]?.enabled !== false);
+    onSetModsEnabled(profileId, modIds, false);
     this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
-  }
-
-  private disableModsInner(modIds: string[]) {
-    const { profileId, modState, onSetModEnabled } = this.props;
-    modIds.forEach(key => {
-      if (getSafe(modState, [key, 'enabled'], false)) {
-        onSetModEnabled(profileId, key, false);
-      }
-    });
   }
 
   private removeRelated = (modIds: string[]) => {
@@ -1361,8 +1351,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
       dispatch(setModEnabled(profileId, modId, enabled));
     },
-    onShowDialog:
-    (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
+    onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => {
+      batchDispatch(dispatch, modIds.map(modId => setModEnabled(profileId, modId, enabled)));
+    },
+    onShowDialog: (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
     onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),
   };

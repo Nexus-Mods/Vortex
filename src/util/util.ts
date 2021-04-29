@@ -686,8 +686,9 @@ export function semverCoerce(input: string): semver.SemVer {
   return res;
 }
 
-export function batchDispatch(store: Redux.Store, actions: Redux.Action[]) {
+export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
+  const dispatch = store['dispatch'] ?? store;
   if (actions.length > 0) {
-    store.dispatch(batchActions(actions));
+    dispatch(batchActions(actions));
   }
 }
