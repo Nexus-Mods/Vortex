@@ -21,7 +21,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { enableBatching } from 'redux-batched-actions';
 import thunkMiddleware from 'redux-thunk';
 
 let basePersistor: ReduxPersistor<IState>;
@@ -51,13 +50,13 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> =
-      compose(applyMiddleware(
-          ...middleware,
-          forwardToRenderer,
-        )) as Redux.StoreEnhancer<any>;
+    compose(applyMiddleware(
+      ...middleware,
+      forwardToRenderer,
+    )) as Redux.StoreEnhancer<any>;
 
   const store = createStore<IState, Redux.Action, any, any>(
-    enableBatching(reducer([], querySanitize)),
+    reducer([], querySanitize),
     enhancer);
   basePersistor = new ReduxPersistor(store);
   // replayActionMain(store);
@@ -74,9 +73,9 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
             nestedAction.meta = {};
           }
           nestedAction.meta.origin = action.meta.origin;
-          store.dispatch(nestedAction);
         });
       }
+      store.dispatch(action);
     } catch (err) {
       log('error', 'failed to forward redux action', payload);
       terminate({
