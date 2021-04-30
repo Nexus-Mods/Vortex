@@ -12,6 +12,9 @@ import * as _ from 'lodash';
 import { IRule } from 'modmeta-db';
 
 function reduceRule(input: IRule): IRule {
+  if (input === undefined) {
+    return undefined;
+  }
   return {
     type: input.type,
     reference: _.omit(_.pickBy(input.reference, i => i !== undefined),
