@@ -549,6 +549,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       });
     }
 
+    this.setState(update(this.state, {
+      currentDialogId: { $set: undefined },
+      dialogState: { $set: undefined },
+    }));
+
     onDismiss(dialogs[0].id, action, data);
   }
 }
