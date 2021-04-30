@@ -41,6 +41,7 @@ export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 // simple re-export of functions we don't touch (yet)
 export {
   accessSync,
+  appendFileSync,
   closeSync,
   createReadStream,
   createWriteStream,
@@ -437,9 +438,11 @@ const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<voi
 const writeAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesWritten: number, buffer: BufferT }> = genFSWrapperAsync(fs.write) as any;
 const readAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesRead: number, buffer: BufferT }> = genFSWrapperAsync(fs.read) as any;
 const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.writeFile);
+const appendFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.appendFile);
 // tslint:enable:max-line-length
 
 export {
+  appendFileAsync,
   chmodAsync,
   closeAsync,
   fsyncAsync,
