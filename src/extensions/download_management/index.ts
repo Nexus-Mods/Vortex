@@ -401,7 +401,7 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     .then(stats => {
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
-      api.events.emit('did-import-download', [dlId]);
+      api.events.emit('did-import-downloads', [dlId]);
 
       api.sendNotification({
         id: `ready-to-install-${dlId}`,
