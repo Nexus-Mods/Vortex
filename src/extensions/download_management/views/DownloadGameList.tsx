@@ -79,7 +79,7 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
       : selectors.gameName(this.context.api.store.getState(), gameId);
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
-        {gameName}
+        {gameName || gameId}
         <IconButton
           icon='remove'
           tooltip={t('Remove')}
