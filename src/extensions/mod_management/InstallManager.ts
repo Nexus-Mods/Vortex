@@ -1644,7 +1644,7 @@ class InstallManager {
     log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(filteredRules, api, false, progress)
       .then((dependencies: IDependency[]) => {
-        this.doInstallDependencyList(api, profile, modId, dependencies, silent);
+        return this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
         api.showErrorNotification('Failed to check dependencies', err);
