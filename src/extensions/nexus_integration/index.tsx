@@ -1024,9 +1024,12 @@ function init(context: IExtensionContextExt): boolean {
                          context.api.translate('Open Nexus Page'),
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
-  context.registerAction('game-undiscovered-buttons', 120, 'nexus', {},
-                         context.api.translate('Open Nexus Page'),
-                         (games: string[]) => openNexusPage(context.api.store.getState(), games));
+  context.registerAction(
+    'game-undiscovered-buttons', 120, 'nexus', {},
+    context.api.translate('Open Nexus Page'),
+    (games: string[]) => openNexusPage(context.api.store.getState(), games),
+    (games: string[]) => gameById(context.api.getState(), games[0]) !== undefined,
+  );
 
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
   context.registerAPI('ensureLoggedIn', () => ensureLoggedIn(context.api), {});

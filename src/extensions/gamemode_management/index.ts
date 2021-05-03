@@ -50,7 +50,7 @@ import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 
 import GameModeManager, { IGameStub } from './GameModeManager';
-import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
+import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
 import Promise from 'bluebird';
 import { remote } from 'electron';
@@ -637,7 +637,9 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('game-undiscovered-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
-    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+    (gameIds: string[]) => { browseGameLocation(context.api, gameIds[0]); },
+    (gameIds: string[]) => gameById(context.api.getState(), gameIds[0]) !== undefined,
+    );
 
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
