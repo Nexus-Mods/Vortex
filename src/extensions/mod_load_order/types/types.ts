@@ -1,6 +1,7 @@
 import * as Promise from 'bluebird';
 import { IActionDefinitionEx } from '../../../controls/ActionControl';
 import { IMod } from '../../../types/IState';
+import { ICollection } from '../types/collections';
 
 export type SortType = 'ascending' | 'descending';
 
@@ -136,6 +137,13 @@ export interface IGameLoadOrderEntry {
   //  Obviously no point to change this property if your game
   //  uses a custom one.
   displayCheckboxes?: boolean;
+
+  // Used to dictate whether the generic load order extension should
+  //  automatically generate data to be used by a collection or not.
+  // By default the genLOExt will generate load order data, unless told not
+  //  to do so using this optional property. (useful if the game extension
+  //  needs to export its own data.)
+  noCollectionGeneration?: boolean;
 
   // Provides game extensions with relevant props that the extension writer
   //  can use to build the information panel. Providing a string here instead

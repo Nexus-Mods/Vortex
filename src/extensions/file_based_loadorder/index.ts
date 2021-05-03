@@ -1,29 +1,20 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { ILoadOrderGameInfo, IValidationResult, LoadOrder,
+import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
 
 import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
 
-import path from 'path';
-
 import * as types from '../../types/api';
 import * as util from '../../util/api';
-import { COMPANY_ID } from '../../util/constants';
-import * as fs from '../../util/fs';
 import * as selectors from '../../util/selectors';
 
 import { log } from '../../util/log';
 import { setFBLoadOrder } from './actions/loadOrder';
 
-interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {
-  // The things I do to reduce complexity for extension developers...
-  //  (and to block users from sending us reports which we can do nothing about)
-  isContributed: boolean;
-}
-
-const gameSupport: ILoadOrderGameInfoExt[] = [];
+import { addGameEntry, findGameEntry, initCollectionsSupport } from './gameSupport';
+import { assertValidationResult, errorHandler } from './util';
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -31,42 +22,6 @@ interface IDeployment {
 
 interface IProfileState {
   [id: string]: types.IProfile;
-}
-
-async function errorHandler(api: types.IExtensionApi,
-                            gameId: string,
-                            err: Error) {
-  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
-  const allowReport = !gameEntry.isContributed;
-  if (err instanceof LoadOrderValidationError) {
-    const invalLOErr = err as LoadOrderValidationError;
-    const errorMessage = 'Load order failed validation';
-    const details = {
-      message: errorMessage,
-      loadOrder: invalLOErr.loadOrderEntryNames,
-      reasons: invalLOErr.validationResult.invalid.map(invl => `${invl.id} - ${invl.reason}\n`),
-    };
-    reportError(api, errorMessage, details, allowReport);
-  } else if (err instanceof LoadOrderSerializationError) {
-    const serErr = err as LoadOrderSerializationError;
-    const errMess = 'Failed to serialize load order';
-    const details = {
-      loadOrder: serErr.loadOrder,
-    };
-    reportError(api, errMess, details, allowReport);
-  } else {
-    reportError(api, 'Failed load order operation', err, allowReport);
-  }
-
-  return Promise.resolve();
-}
-
-function reportError(api: types.IExtensionApi,
-                     errorMessage: string,
-                     errDetails: any,
-                     allowReport: boolean = true) {
-  const errorId = errorMessage + 'notifId';
-  api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
 }
 
 async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any) {
@@ -263,6 +218,8 @@ export default function init(context: IExtensionContext) {
   }) as any;
 
   context.once(() =>  {
+    initCollectionsSupport(context.api);
+
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
       (prev, current) => genToolsRunning(context.api, prev, current));
 
@@ -334,43 +291,4 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
       .then(() => (err instanceof LoadOrderValidationError)
         ? Promise.reject(err) : Promise.resolve(undefined));
   }
-}
-
-function assertValidationResult(validRes: any) {
-  if (validRes === undefined) {
-    return;
-  }
-  if ((Array.isArray(validRes)) || (validRes as IValidationResult)?.invalid === undefined) {
-    throw new TypeError('Received incorrect/invalid return type from validation function; '
-      + 'expected object of type IValidationResult');
-  }
-}
-
-function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
-  if (gameEntry === undefined) {
-    log('error', 'unable to add load order page - invalid game entry');
-    return;
-  }
-
-  const isDuplicate: boolean = gameSupport.find(game =>
-    game.gameId === gameEntry.gameId) !== undefined;
-
-  if (isDuplicate) {
-    log('debug', 'attempted to add duplicate gameEntry to load order extension', gameEntry.gameId);
-    return;
-  }
-
-  // The LO page registration can be done as an "addon" through
-  //  another extension - which means we could have an officially supported
-  //  game extension but an unofficial load order registration so checking if
-  //  game.contributed === undefined is not sufficient - we need to read the
-  //  info.json file of the extension that registers the LO page.
-  const gameExtInfo = JSON.parse(
-    fs.readFileSync(path.join(extPath, 'info.json'), { encoding: 'utf8' }));
-
-  gameSupport.push({ ...gameEntry, isContributed: gameExtInfo.author !== COMPANY_ID });
-}
-
-function findGameEntry(gameId: string): ILoadOrderGameInfoExt {
-  return gameSupport.find(game => game.gameId === gameId);
 }

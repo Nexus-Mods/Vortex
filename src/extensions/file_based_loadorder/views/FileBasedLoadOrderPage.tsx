@@ -13,7 +13,7 @@ import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
 import { setFBLoadOrder } from '../actions/loadOrder';
-import { IItemRendererProps, ILoadOrderEntry, ILoadOrderGameInfo, LoadOrder,
+import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
   LoadOrderValidationError } from '../types/types';
 import InfoPanel from './InfoPanel';
 import ItemRenderer from './ItemRenderer';

@@ -27,6 +27,8 @@ import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
+import { ICollectionsGameSupportEntry } from './Collections/api';
+
 import { DialogActions, IDialogContent, IModReference, IModRepoId } from './api';
 import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
@@ -1271,6 +1273,11 @@ export interface IExtensionContext {
    * Sets up a stack for a history of events that can be presented to the user
    */
   registerHistoryStack: (id: string, options: IHistoryStack) => void;
+
+  /**
+   * Allows extensions to define additional data to add to a collection
+   */
+  registerGameSpecificCollectionsData: (data: ICollectionsGameSupportEntry) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions
