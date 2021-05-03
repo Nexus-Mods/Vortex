@@ -10,6 +10,7 @@ import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 
+import { IGameSpecificInterfaceProps } from '../types/collections';
 import { ILoadOrder, ILoadOrderEntry } from '../types/types';
 import { genCollectionLoadOrder } from '../util';
 
@@ -29,7 +30,7 @@ interface IConnectedProps {
 interface IActionProps {
 }
 
-type IProps = IActionProps & types.IGameSpecificInterfaceProps & IConnectedProps;
+type IProps = IActionProps & IGameSpecificInterfaceProps & IConnectedProps;
 type IComponentState = IBaseState;
 
 class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {

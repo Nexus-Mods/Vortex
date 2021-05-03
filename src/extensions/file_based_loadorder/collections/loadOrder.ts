@@ -6,7 +6,7 @@ import * as selectors from '../../../util/selectors';
 import { setFBLoadOrder } from '../actions/loadOrder';
 
 import {
-  CollectionGenerateError, CollectionParseError, ICollectionGenLOProps, ICollectionLoadOrder,
+  CollectionGenerateError, CollectionParseError, ICollection, ICollectionLoadOrder, IGameSpecificInterfaceProps
 } from '../types/collections';
 
 import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder, LoadOrderValidationError } from '../types/types';
@@ -16,8 +16,11 @@ import { assertValidationResult, errorHandler } from '../util';
 
 import LoadOrderCollections from '../views/LoadOrderCollections';
 
-async function genCollectionLoadOrder(props: ICollectionGenLOProps): Promise<LoadOrder> {
-  const { api, gameEntry, mods, profileId } = props;
+async function genCollectionLoadOrder(api: types.IExtensionApi,
+                                      gameEntry: ILoadOrderGameInfoExt,
+                                      mods: { [modId: string]: types.IMod },
+                                      profileId: string,
+                                      collection?: types.IMod): Promise<LoadOrder> {
   const state = api.getState();
   let loadOrder: LoadOrder = [];
   try {
@@ -30,17 +33,19 @@ async function genCollectionLoadOrder(props: ICollectionGenLOProps): Promise<Loa
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
   } catch (err) {
-    errorHandler(api, gameEntry.gameId, err);
-    return undefined;
+    return Promise.reject(err);
   }
 
   return Promise.resolve(loadOrder);
 }
 
 export async function generate(api: types.IExtensionApi,
-                               props: types.IGameSpecificGeneratorProps)
+                               state: types.IState,
+                               gameId: string,
+                               stagingPath: string,
+                               modIds: string[],
+                               mods: { [modId: string]: types.IMod })
                                : Promise<ICollectionLoadOrder> {
-  const { gameId, mods, modIds } = props;
   const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
   if (gameEntry === undefined) {
     return;
@@ -58,15 +63,16 @@ export async function generate(api: types.IExtensionApi,
       }
       return accum;
     }, {});
-    loadOrder = await genCollectionLoadOrder({ gameEntry, api, mods: includedMods, profileId });
+    loadOrder = await genCollectionLoadOrder(api, gameEntry, includedMods, profileId);
   } catch (err) {
     return Promise.reject(err);
   }
   return Promise.resolve({ loadOrder });
 }
 
-export async function parser(props: types.IGameSpecificParserProps): Promise<void> {
-  const { api, gameId, collection } = props;
+export async function parser(api: types.IExtensionApi,
+                             gameId: string,
+                             collection: ICollection): Promise<void> {
   const state = api.getState();
 
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
@@ -78,6 +84,6 @@ export async function parser(props: types.IGameSpecificParserProps): Promise<voi
   return Promise.resolve(undefined);
 }
 
-export function Interface(props: types.IGameSpecificInterfaceProps): JSX.Element {
+export function Interface(props: IGameSpecificInterfaceProps): JSX.Element {
   return React.createElement(LoadOrderCollections, (props as any), []);
 }

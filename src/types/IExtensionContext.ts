@@ -27,7 +27,7 @@ import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
-import { ICollectionsGameSupportEntry } from './Collections/api';
+import { ICollectionsGameSupportEntry } from './collections/api';
 
 import { DialogActions, IDialogContent, IModReference, IModRepoId } from './api';
 import { IActionOptions } from './IActionDefinition';

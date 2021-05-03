@@ -5,7 +5,10 @@ import * as selectors from '../../../util/selectors';
 
 import { setLoadOrder } from '../../../actions/loadOrder';
 
-import { CollectionGenerateError, CollectionParseError, ICollection, ICollectionLoadOrder } from '../types/collections';
+import {
+  CollectionGenerateError, CollectionParseError,
+  ICollection, ICollectionLoadOrder, IGameSpecificInterfaceProps
+} from '../types/collections';
 import { ILoadOrder } from '../types/types';
 
 import { genCollectionLoadOrder } from '../util';
@@ -13,9 +16,12 @@ import { genCollectionLoadOrder } from '../util';
 import LoadOrderCollections from '../views/LoadOrderCollections';
 
 export async function generate(api: types.IExtensionApi,
-                               props: types.IGameSpecificGeneratorProps)
+                               state: types.IState,
+                               gameId: string,
+                               stagingPath: string,
+                               modIds: string[],
+                               mods: { [modId: string]: types.IMod })
                                : Promise<ICollectionLoadOrder> {
-  const { state, gameId, modIds, mods } = props;
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
     return Promise.reject(new CollectionGenerateError('Invalid profile id'));
@@ -43,8 +49,9 @@ export async function generate(api: types.IExtensionApi,
   return Promise.resolve({ loadOrder: filteredLO });
 }
 
-export async function parser(props: types.IGameSpecificParserProps): Promise<void> {
-  const { api, gameId, collection } = props;
+export async function parser(api: types.IExtensionApi,
+                             gameId: string,
+                             collection: ICollection): Promise<void> {
   const state = api.getState();
 
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
@@ -56,6 +63,6 @@ export async function parser(props: types.IGameSpecificParserProps): Promise<voi
   return Promise.resolve(undefined);
 }
 
-export function Interface(props: types.IGameSpecificInterfaceProps): JSX.Element {
+export function Interface(props: IGameSpecificInterfaceProps): JSX.Element {
   return React.createElement(LoadOrderCollections, (props as any), []);
 }

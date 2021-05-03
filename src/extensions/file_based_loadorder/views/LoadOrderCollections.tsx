@@ -10,6 +10,7 @@ import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 
+import { IGameSpecificInterfaceProps } from '../types/collections';
 import { ILoadOrderEntry, LoadOrder } from '../types/types';
 
 const NAMESPACE: string = 'generic-load-order-extension';
@@ -21,7 +22,7 @@ interface IConnectedProps {
   profile: types.IProfile;
 }
 
-type IProps = types.IGameSpecificInterfaceProps & IConnectedProps;
+type IProps = IGameSpecificInterfaceProps & IConnectedProps;
 
 class LoadOrderCollections extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {

@@ -58,6 +58,27 @@ export interface ICollection extends Partial<ICollectionLoadOrder> {
   loadOrder: ILoadOrder;
 }
 
+export interface IGameSpecificInterfaceProps {
+  t: types.TFunction;
+  collection: types.IMod;
+  revisionInfo: IRevision;
+}
+
+export interface ICollectionsGameSupportEntry {
+  gameId: string;
+  generator: (state: types.IState,
+              gameId: string,
+              stagingPath: string,
+              modIds: string[],
+              mods: { [modId: string]: types.IMod }) => Promise<any>;
+
+  parser: (api: types.IExtensionApi,
+           gameId: string,
+           collection: ICollection) => Promise<void>;
+
+  interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
+}
+
 export class CollectionGenerateError extends Error {
   constructor(why: string) {
     super(`Failed to generate game specific data for collection: ${why}`);

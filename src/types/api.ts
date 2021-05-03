@@ -45,7 +45,3 @@ export { IProfile, IProfileMod } from '../extensions/profile_management/types/IP
 export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';
 export { ILoadOrderDisplayItem, SortType, UpdateType } from '../extensions/mod_load_order/types/types';
 
-// This pretty much breaks encapsulation, but the alternative would be
-//  changing these interfaces in several locations whenever we want to
-//  add or remove a new prop.
-export * from './Collections/api';

@@ -62,12 +62,33 @@ export interface ICollection extends Partial<ICollectionLoadOrder> {
   loadOrder: LoadOrder;
 }
 
-export interface ICollectionGenLOProps {
-  api: types.IExtensionApi;
-  gameEntry: ILoadOrderGameInfoExt;
-  mods: { [modId: string]: types.IMod };
-  profileId: string;
-  collection?: types.IMod;
+// export interface ICollectionGenLOProps {
+//   api: types.IExtensionApi;
+//   gameEntry: ILoadOrderGameInfoExt;
+//   mods: { [modId: string]: types.IMod };
+//   profileId: string;
+//   collection?: types.IMod;
+// }
+
+export interface IGameSpecificInterfaceProps {
+  t: types.TFunction;
+  collection: types.IMod;
+  revisionInfo: IRevision;
+}
+
+export interface ICollectionsGameSupportEntry {
+  gameId: string;
+  generator: (state: types.IState,
+              gameId: string,
+              stagingPath: string,
+              modIds: string[],
+              mods: { [modId: string]: types.IMod }) => Promise<any>;
+
+  parser: (api: types.IExtensionApi,
+           gameId: string,
+           collection: ICollection) => Promise<void>;
+
+  interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
 }
 
 export class CollectionGenerateError extends Error {

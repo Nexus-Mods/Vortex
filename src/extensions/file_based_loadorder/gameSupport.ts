@@ -6,6 +6,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { generate, Interface, parser } from './collections/loadOrder';
 
+import { ICollectionsGameSupportEntry } from './types/collections';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from './types/types';
 
 const gameSupport: ILoadOrderGameInfoExt[] = [];
@@ -44,9 +45,10 @@ export function initCollectionsSupport(api: types.IExtensionApi) {
       if (game.noCollectionGeneration === true) {
         continue;
       }
-      const collectionsSupportEntry: types.ICollectionsGameSupportEntry = {
+      const collectionsSupportEntry: ICollectionsGameSupportEntry = {
         gameId: game.gameId,
-        generator: (props: types.IGameSpecificGeneratorProps) => generate(api, props),
+        generator: (state, gameId, stagingPath, modIds, mods) =>
+          generate(api, state, gameId, stagingPath, modIds, mods),
         parser,
         interface: Interface,
       };
