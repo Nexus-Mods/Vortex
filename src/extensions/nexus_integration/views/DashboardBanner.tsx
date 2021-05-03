@@ -4,12 +4,15 @@ import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
+import getVortexPath from '../../../util/getVortexPath';
 import opn from '../../../util/opn';
+import { truthy } from '../../../util/util';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR } from '../constants';
 
+import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
@@ -66,11 +69,18 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
 
   private renderLoggedIn(userInfo: IValidateKeyData): JSX.Element {
     const { t } = this.props;
-    const fallback = pathToFileURL(FALLBACK_AVATAR).href;
+
+    const fallback =
+      pathToFileURL(path.join(getVortexPath('assets'), '..', FALLBACK_AVATAR)).href;
+
+    const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
+      ? `${userInfo.profileUrl}?r_${START_TIME}`
+      : fallback;
+
     return (
       <div className='dashlet-nexus-account'>
         <Image
-          srcs={[`${userInfo.profileUrl}?r_${START_TIME}` || fallback, fallback]}
+          srcs={[profileIcon || fallback, fallback]}
           circle
           style={{ height: 64, width: 64, marginRight: 32 }}
         />
