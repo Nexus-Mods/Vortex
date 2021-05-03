@@ -29,6 +29,7 @@ import { pick } from 'lodash';
 import * as path from 'path';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
+import { enableBatching } from 'redux-batched-actions';
 
 export const STATE_BACKUP_PATH = 'state_backups';
 
@@ -277,7 +278,7 @@ function reducers(extensionReducers: IExtensionReducer[],
   extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return deriveReducer('', tree, querySanitize);
+  return enableBatching(deriveReducer('', tree, querySanitize));
 }
 
 export default reducers;

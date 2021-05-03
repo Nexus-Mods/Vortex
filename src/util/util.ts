@@ -9,6 +9,8 @@ import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as process from 'process';
+import * as Redux from 'redux';
+import { batchActions } from 'redux-batched-actions';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
 
@@ -682,4 +684,11 @@ export function semverCoerce(input: string): semver.SemVer {
   }
 
   return res;
+}
+
+export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
+  const dispatch = store['dispatch'] ?? store;
+  if (actions.length > 0) {
+    dispatch(batchActions(actions));
+  }
 }

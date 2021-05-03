@@ -148,7 +148,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onKeyPress={this.handleKeyPress}
       >
         <Modal.Header>
-          <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
+          <Modal.Title>{this.iconForType(dialog.type)}{' '}{
+            t(dialog.title, { replace: dialog.content.parameters })
+          }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ErrorBoundary visible={true}>
@@ -546,6 +548,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         data[input.id] = input.value;
       });
     }
+
+    this.setState(update(this.state, {
+      currentDialogId: { $set: undefined },
+      dialogState: { $set: undefined },
+    }));
 
     onDismiss(dialogs[0].id, action, data);
   }

@@ -2,9 +2,7 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IDownload, IState } from '../../../types/IState';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 
-import { IBrowserResult } from '../../browser/types';
-
-import { Dependency, IDependency, ILookupResultEx } from '../types/IDependency';
+import { IDependency, ILookupResultEx } from '../types/IDependency';
 import { IDownloadHint, IFileListItem, IMod, IModRule } from '../types/IMod';
 
 import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
@@ -28,6 +26,11 @@ export function isFuzzyVersion(versionMatch: string) {
   return isNaN(parseInt(versionMatch[0], 16))
     || (semver.validRange(versionMatch)
       !== versionMatch);
+}
+
+interface IBrowserResult {
+  url: string | (() => Promise<string>);
+  referer?: string | (() => Promise<string>);
 }
 
 function findModByRef(reference: IReference, state: IState): IMod {
@@ -67,7 +70,10 @@ function browseForDownload(api: IExtensionApi,
     const doLookup = () => {
       if (lookupResult === undefined) {
         lookupResult = api.emitAndAwait('browse-for-download', url, instruction)
-          .then(resultList => resultList[0]);
+          .then((resultList: string[]) => {
+            const [url, referer] = resultList[0].split('<');
+            return { url, referer };
+          });
       }
       return lookupResult;
     };

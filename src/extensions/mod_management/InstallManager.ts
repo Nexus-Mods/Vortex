@@ -1618,6 +1618,13 @@ class InstallManager {
                                   installPath: string,
                                   silent: boolean)
                                   : Promise<void> {
+    const filteredRules = rules.filter(
+          (rule: IModRule) => ['recommends', 'requires'].includes(rule.type));
+
+    if (filteredRules.length === 0) {
+      return Promise.resolve();
+    }
+
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, false);
 
@@ -1635,9 +1642,9 @@ class InstallManager {
     progress(0);
 
     log('debug', 'installing dependencies', { modId, name });
-    return gatherDependencies(rules, api, false, progress)
+    return gatherDependencies(filteredRules, api, false, progress)
       .then((dependencies: IDependency[]) => {
-        this.doInstallDependencyList(api, profile, modId, dependencies, silent);
+        return this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
         api.showErrorNotification('Failed to check dependencies', err);

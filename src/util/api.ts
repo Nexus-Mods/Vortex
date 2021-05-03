@@ -49,8 +49,9 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
-         pad, sanitizeCSSId, sanitizeFilename, semverCoerce, setdefault, toPromise, unique } from './util';
+import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
+         makeQueue, objDiff, pad, sanitizeCSSId, sanitizeFilename, semverCoerce, setdefault,
+         toPromise, unique } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -61,6 +62,7 @@ export * from './network';
 export {
   Archive,
   ArgumentInvalid,
+  batchDispatch,
   bbcodeToHTML,
   bbcodeToReact,
   bytesToString,

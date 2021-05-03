@@ -5662,10 +5662,10 @@ electron-wix-msi@^3.0.2:
   optionalDependencies:
     "@bitdisaster/exe-icon-extractor" "^1.0.10"
 
-electron@^11.3.0:
-  version "11.4.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-11.4.0.tgz#867fb27227e15b783362c0b74f7ac1f50afa927e"
-  integrity sha512-2fL5b/jjohNFEglQNQziZg9BXDYhSz/fKarR9LtvV70iFMJ3OHTs8eWp6poMdBA/FBJv91nQcwwaeWR9WslmfA==
+electron@^11.4.3:
+  version "11.4.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-11.4.4.tgz#d6c046dedd9e22df5f6408841c3f8ae1a1d59414"
+  integrity sha512-m52nF85VADCmL9DpzJfgmkvc9fNiGZPYwptv/4fTYrYhAMiO+hmClGMXncCoSAzoULQjl+f+0b9CY4yd6nRFlQ==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -11250,6 +11250,11 @@ redux-act@^1.7.7:
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/redux-act/-/redux-act-1.8.0.tgz#5394a9433b36937d1a1da11aca6547d97d10ab00"
   integrity sha512-xW3FIco/VwJGMW3eCD3JGAxyozNC4k35qrWM5lEQf9T2pfv3leDC+3vQ8WdHZjcrol/jjWAeJ+ULqrscuDqlKg==
+
+redux-batched-actions@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/redux-batched-actions/-/redux-batched-actions-0.5.0.tgz#d3f0e359b2a95c7d80bab442df450bfafd57d122"
+  integrity sha512-6orZWyCnIQXMGY4DUGM0oj0L7oYnwTACsfsru/J7r94RM3P9eS7SORGpr3LCeRCMoIMQcpfKZ7X4NdyFHBS8Eg==
 
 redux-devtools-dispatch@^2.2.1:
   version "2.2.1"
