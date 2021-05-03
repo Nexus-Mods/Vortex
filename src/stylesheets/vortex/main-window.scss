@@ -112,7 +112,7 @@
     font-size: $font-size-small;
     margin-left: 10px;
     margin-top: 8px;
-    text-transform: uppercase;
+    // text-transform: uppercase;
   }
 
   .menu-label {
@@ -120,7 +120,7 @@
     vertical-align: middle;
     font-size: $font-size-h6;
     margin-left: 10px;
-    text-transform: uppercase;
+    // text-transform: uppercase;
   }
 
   &.sidebar-expanded {
@@ -350,6 +350,6 @@
   .blocker-text {
     font-family: $font-family-headings;
     font-size: 2em;
-    text-transform: uppercase;
+    //text-transform: uppercase;
   }
 }
