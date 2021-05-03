@@ -62,14 +62,6 @@ export interface ICollection extends Partial<ICollectionLoadOrder> {
   loadOrder: LoadOrder;
 }
 
-// export interface ICollectionGenLOProps {
-//   api: types.IExtensionApi;
-//   gameEntry: ILoadOrderGameInfoExt;
-//   mods: { [modId: string]: types.IMod };
-//   profileId: string;
-//   collection?: types.IMod;
-// }
-
 export interface IGameSpecificInterfaceProps {
   t: types.TFunction;
   collection: types.IMod;
