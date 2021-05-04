@@ -92,6 +92,7 @@ import crashDumpT from 'crash-dump';
 import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
+import { relaunch } from './util/commandLine';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
@@ -366,75 +367,88 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-// extension manager initialized without store, the information about what
-// extensions are to be loaded has to be retrieved from the main process
-const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
-const extReducers = extensions.getReducers();
 let tFunc: TFunction = fallbackTFunc;
-
-// I only want to add reducers, but redux-electron-store seems to break
-// when calling replaceReducer in the renderer
-// (https://github.com/samiskin/redux-electron-store/issues/48)
-// now that we're not using it any more, may want to try again
-// store.replaceReducer(reducer(extReducers));
-store = createStore(
-  reducer(extReducers, () => Decision.QUIT),
-  initialState(),
-  enhancer);
-replayActionRenderer(store);
-extensions.setStore(store);
-setOutdated(extensions.getApi());
-extensions.applyExtensionsOfExtensions();
-log('debug', 'renderer connected to store');
-
-setupNotificationSuppression(id => {
-  const state: IState = store.getState();
-  return getSafe(state.settings.notifications, ['suppress', id], false);
-});
-
-let lastHeapSize = 0;
-const REPORT_HEAP_INCREASE = 100 * 1024;
-let highUsageReport = false;
-setInterval(() => {
-  const stat = process.getHeapStatistics();
-  const heapPerc = stat.totalHeapSize / stat.heapSizeLimit;
-  if ((heapPerc > 0.75) && !highUsageReport) {
-    extensions.getApi().sendNotification({
-      id: 'high-memory-usage',
-      type: 'warning',
-      title: 'Vortex is using a lot of memory and may crash',
-      message: bytesToString(stat.totalHeapSize * 1024),
-    });
-    log('warn', 'High memory usage', { usage: stat.totalHeapSize, max: stat.heapSizeLimit });
-  }
-  highUsageReport = heapPerc > 0.75;
-  if ((lastHeapSize > 0) && ((stat.totalHeapSize - lastHeapSize) > REPORT_HEAP_INCREASE)) {
-    log('info', 'memory usage growing fast', {
-      usage: bytesToString(stat.totalHeapSize * 1024),
-      previous: bytesToString(lastHeapSize * 1024),
-      max: bytesToString(stat.heapSizeLimit * 1024),
-    });
-  }
-  lastHeapSize = stat.totalHeapSize;
-}, 5000);
-
 let startupFinished: () => void;
-const startupPromise = new Promise((resolve) => startupFinished = resolve);
 
-// tslint:disable-next-line:no-unused-variable
-const globalNotifications = new GlobalNotifications(extensions.getApi());
+function init() {
+  // extension manager initialized without store, the information about what
+  // extensions are to be loaded has to be retrieved from the main process
+  const extensions: ExtensionManager = new ExtensionManager(
+    undefined,
+    eventEmitter,
+  );
+  if (extensions.hasOutdatedExtensions) {
+    // we should *not* get here, the main process should never have started the renderer
+    // if there are outdated extensions
+    log('warn', 'outdated extensions discovered in renderer');
+    relaunch();
+    return Promise.resolve(null);
+  }
+  const extReducers = extensions.getReducers();
 
-function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
-  store.dispatch(addNotification({
-    type: 'info',
-    title: 'Download started',
-    message: fileName,
-    displayMS: 4000,
-  }));
+  // I only want to add reducers, but redux-electron-store seems to break
+  // when calling replaceReducer in the renderer
+  // (https://github.com/samiskin/redux-electron-store/issues/48)
+  // now that we're not using it any more, may want to try again
+  // store.replaceReducer(reducer(extReducers));
+  store = createStore(
+    reducer(extReducers, () => Decision.QUIT),
+    initialState(),
+    enhancer,
+  );
+  replayActionRenderer(store);
+  extensions.setStore(store);
+  setOutdated(extensions.getApi());
+  extensions.applyExtensionsOfExtensions();
+  log('debug', 'renderer connected to store');
 
-  startupPromise
-    .then(() => {
-      if (typeof (url) !== 'string') {
+  setupNotificationSuppression(id => {
+    const state: IState = store.getState();
+    return getSafe(state.settings.notifications, ['suppress', id], false);
+  });
+
+  let lastHeapSize = 0;
+  const REPORT_HEAP_INCREASE = 100 * 1024;
+  let highUsageReport = false;
+  setInterval(() => {
+    const stat = process.getHeapStatistics();
+    const heapPerc = stat.totalHeapSize / stat.heapSizeLimit;
+    if (heapPerc > 0.75 && !highUsageReport) {
+      extensions.getApi().sendNotification({
+        id: 'high-memory-usage',
+        type: 'warning',
+        title: 'Vortex is using a lot of memory and may crash',
+        message: bytesToString(stat.totalHeapSize * 1024),
+      });
+      log('warn', 'High memory usage', { usage: stat.totalHeapSize, max: stat.heapSizeLimit });
+    }
+    highUsageReport = heapPerc > 0.75;
+    if ((lastHeapSize > 0) && ((stat.totalHeapSize - lastHeapSize) > REPORT_HEAP_INCREASE)) {
+      log('info', 'memory usage growing fast', {
+        usage: bytesToString(stat.totalHeapSize * 1024),
+        previous: bytesToString(lastHeapSize * 1024),
+        max: bytesToString(stat.heapSizeLimit * 1024),
+      });
+    }
+    lastHeapSize = stat.totalHeapSize;
+  }, 5000);
+
+  const startupPromise = new Promise(resolve => (startupFinished = resolve));
+
+  // tslint:disable-next-line:no-unused-variable
+  const globalNotifications = new GlobalNotifications(extensions.getApi());
+
+  function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
+    store.dispatch(
+      addNotification({
+        type: 'info',
+        title: 'Download started',
+        message: fileName,
+        displayMS: 4000,
+      }));
+
+    startupPromise.then(() => {
+      if (typeof url !== 'string') {
         return;
       }
       const protocol = url.split(':')[0];
@@ -445,82 +459,92 @@ function startDownloadFromURL(url: string, fileName?: string, install?: boolean)
         handler(url, install);
       } else {
         store.dispatch(addNotification({
-          type: 'info',
-          message: tFunc('Vortex isn\'t set up to handle this protocol: {{url}}', {
-            replace: { url },
-          }),
-        }));
-      }
-    });
-}
-
-eventEmitter.on('start-download-url', (url: string, fileName: string) => {
-  startDownloadFromURL(url, fileName);
-});
-
-ipcRenderer.on('external-url', (event, url: string, fileName?: string, install?: boolean) => {
-  startDownloadFromURL(url, fileName, install);
-});
-
-ipcRenderer.on('relay-event', (sender, event, ...args) => {
-  eventEmitter.emit(event, ...args);
-});
-
-ipcRenderer.on('relay-event-with-cb', (sender, event, ...args) => {
-  const id = args[args.length - 1];
-  const cb = (...cbArgs) => {
-    const newCBArgs = cbArgs.map(arg => {
-      if (!(arg instanceof Promise)) {
-        return arg;
-      }
-      const promId = shortid();
-      arg.then(res => {
-        ipcRenderer.send('relay-cb-resolve', promId, res);
-      })
-      .catch(err => {
-        ipcRenderer.send('relay-cb-reject', promId, err);
-      });
-      return { __promise: promId };
-    });
-    ipcRenderer.send('relay-cb', id, ...newCBArgs);
-  };
-  const newArgs = [].concat(args.slice(0, args.length - 1), cb);
-  eventEmitter.emit(event, ...newArgs);
-});
-
-ipcRenderer.on('register-relay-listener', (sender, event, ...noArgs) => {
-  eventEmitter.on(event, (...args) => ipcRenderer.send('relay-event', event, ...args));
-});
-
-let currentLanguage: string = store.getState().settings.interface.language;
-store.subscribe(() => {
-  const newLanguage: string = store.getState().settings.interface.language;
-  if (newLanguage !== currentLanguage) {
-    try {
-      new Date().toLocaleString(newLanguage);
-    } catch (err) {
-      store.dispatch(setLanguage(currentLanguage));
-      log('warn', 'Attempt to set invalid language', newLanguage);
-      return;
-    }
-    currentLanguage = newLanguage;
-    I18next.default.changeLanguage(newLanguage, (err, t) => {
-      if (err !== undefined) {
-        if (Array.isArray(err)) {
-          // don't show ENOENT errors because it shouldn't really matter
-          const filtErr = err.filter(iter => iter.code !== 'ENOENT');
-          if (filtErr.length > 0) {
-            showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
-          }
-        } else {
-          showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
-        }
+            type: 'info',
+            message: tFunc('Vortex isn\'t set up to handle this protocol: {{url}}', {
+                replace: { url },
+              }),
+          }));
       }
     });
   }
-});
 
-function renderer() {
+  eventEmitter.on('start-download-url', (url: string, fileName: string) => {
+    startDownloadFromURL(url, fileName);
+  });
+
+  ipcRenderer.on(
+    'external-url',
+    (event, url: string, fileName?: string, install?: boolean) => {
+      startDownloadFromURL(url, fileName, install);
+    },
+  );
+
+  ipcRenderer.on('relay-event', (sender, event, ...args) => {
+    eventEmitter.emit(event, ...args);
+  });
+
+  ipcRenderer.on('relay-event-with-cb', (sender, event, ...args) => {
+    const id = args[args.length - 1];
+    const cb = (...cbArgs) => {
+      const newCBArgs = cbArgs.map(arg => {
+        if (!(arg instanceof Promise)) {
+          return arg;
+        }
+        const promId = shortid();
+        arg.then(res => {
+            ipcRenderer.send('relay-cb-resolve', promId, res);
+          })
+          .catch(err => {
+            ipcRenderer.send('relay-cb-reject', promId, err);
+          });
+        return { __promise: promId };
+      });
+      ipcRenderer.send('relay-cb', id, ...newCBArgs);
+    };
+    const newArgs = [].concat(args.slice(0, args.length - 1), cb);
+    eventEmitter.emit(event, ...newArgs);
+  });
+
+  ipcRenderer.on('register-relay-listener', (sender, event, ...noArgs) => {
+    eventEmitter.on(event, (...args) => ipcRenderer.send('relay-event', event, ...args));
+  });
+
+  let currentLanguage: string = store.getState().settings.interface.language;
+  store.subscribe(() => {
+    const newLanguage: string = store.getState().settings.interface.language;
+    if (newLanguage !== currentLanguage) {
+      try {
+        new Date().toLocaleString(newLanguage);
+      } catch (err) {
+        store.dispatch(setLanguage(currentLanguage));
+        log('warn', 'Attempt to set invalid language', newLanguage);
+        return;
+      }
+      currentLanguage = newLanguage;
+      I18next.default.changeLanguage(newLanguage, (err, t) => {
+        if (err !== undefined) {
+          if (Array.isArray(err)) {
+            // don't show ENOENT errors because it shouldn't really matter
+            const filtErr = err.filter(iter => iter.code !== 'ENOENT');
+            if (filtErr.length > 0) {
+              showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
+            }
+          } else {
+            showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
+          }
+        }
+      });
+    }
+  });
+
+  return Promise.resolve(extensions);
+}
+
+function renderer(extensions: ExtensionManager) {
+  if (!extensions) {
+    return;
+  }
+
   let i18n: I18next.i18n;
   let error: Error;
 
@@ -621,4 +645,4 @@ function renderer() {
   };
 }
 
-renderer();
+init().then((extensions: ExtensionManager) => renderer(extensions));
