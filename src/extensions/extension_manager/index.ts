@@ -2,7 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, NotFound, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -239,6 +239,8 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
 
 function init(context: IExtensionContext) {
   const updateExtensions = genUpdateInstalledExtensions(context.api);
+  context.registerReducer(['session', 'extensions'], sessionReducer);
+
   context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
     group: 'global',
@@ -258,8 +260,6 @@ function init(context: IExtensionContext) {
     updateExtensions,
     onRefreshExtensions: forceUpdateExtensions,
   }));
-
-  context.registerReducer(['session', 'extensions'], sessionReducer);
 
   context.registerActionCheck('SET_EXTENSION_ENABLED', (state, action: any) => {
     if (process.type === 'browser') {

@@ -50,7 +50,7 @@ import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 
 import GameModeManager, { IGameStub } from './GameModeManager';
-import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
+import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
 import Promise from 'bluebird';
 import { remote } from 'electron';
@@ -454,6 +454,11 @@ function init(context: IExtensionContext): boolean {
   const onRefreshGameInfo = (gameId: string) => refreshGameInfo(context.api.store, gameId);
   const onBrowseGameLocation = (gameId: string) => browseGameLocation(context.api, gameId);
 
+  context.registerReducer(['session', 'discovery'], discoveryReducer);
+  context.registerReducer(['session', 'gameMode'], sessionReducer);
+  context.registerReducer(['settings', 'gameMode'], settingsReducer);
+  context.registerReducer(['persistent', 'gameMode'], persistentReducer);
+
   context.registerMainPage('game', 'Games', LazyComponent(() => require('./views/GamePicker')), {
     hotkey: 'G',
     group: 'global',
@@ -463,10 +468,6 @@ function init(context: IExtensionContext): boolean {
     }),
     activity,
   });
-  context.registerReducer(['session', 'discovery'], discoveryReducer);
-  context.registerReducer(['session', 'gameMode'], sessionReducer);
-  context.registerReducer(['settings', 'gameMode'], settingsReducer);
-  context.registerReducer(['persistent', 'gameMode'], persistentReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
@@ -639,7 +640,9 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('game-undiscovered-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
-    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+    (gameIds: string[]) => { browseGameLocation(context.api, gameIds[0]); },
+    (gameIds: string[]) => gameById(context.api.getState(), gameIds[0]) !== undefined,
+    );
 
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
@@ -761,6 +764,7 @@ function init(context: IExtensionContext): boolean {
             showError(store.dispatch, 'Failed to set game mode', err, {
               allowReport: false, message: newGameId, id: 'failed-to-set-gamemode' });
           } else {
+            err['attachLogOnReport'] = true;
             showError(store.dispatch, 'Failed to set game mode', err, {
               message: newGameId, id: 'failed-to-set-gamemode',
             });

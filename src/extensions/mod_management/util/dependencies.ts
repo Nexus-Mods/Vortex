@@ -255,6 +255,12 @@ function gatherDependenciesGraph(
     .then((details: ILookupResult[]) => {
       lookupResults = details;
 
+      if ((details.length === 0) || (details[0].value === undefined)) {
+        throw new Error(
+          'reference not found: ' + JSON.stringify(rule.reference),
+        );
+      }
+
       const rules = details[0]?.value?.rules || [];
 
       return Promise.all(rules

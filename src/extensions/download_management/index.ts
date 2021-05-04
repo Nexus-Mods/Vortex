@@ -398,7 +398,7 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     .then(stats => {
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
-      api.events.emit('did-import-download', [dlId]);
+      api.events.emit('did-import-downloads', [dlId]);
 
       api.sendNotification({
         id: `ready-to-install-${dlId}`,
@@ -586,6 +586,10 @@ function init(context: IExtensionContextExt): boolean {
       return count > 0 ? count : undefined;
     });
 
+  context.registerReducer(['persistent', 'downloads'], stateReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
+  context.registerReducer(['settings', 'downloads'], settingsReducer);
+
   context.registerMainPage('download', 'Downloads', DownloadView, {
                              hotkey: 'D',
                              group: 'global',
@@ -595,10 +599,6 @@ function init(context: IExtensionContextExt): boolean {
   context.registerSettings('Download', Settings, undefined, undefined, 75);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
-
-  context.registerReducer(['persistent', 'downloads'], stateReducer);
-  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
-  context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;

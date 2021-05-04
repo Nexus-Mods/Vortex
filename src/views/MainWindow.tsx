@@ -565,7 +565,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       } else {
         this.sidebarTimer = setTimeout(() => {
           this.sidebarTimer = undefined;
-          this.sidebarRef.setAttribute('style',
+          this.sidebarRef?.setAttribute?.('style',
             'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
         }, 500);
       }

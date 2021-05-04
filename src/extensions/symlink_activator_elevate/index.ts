@@ -947,10 +947,10 @@ function giveSymlinkRight(enable: boolean) {
 }
 
 function init(context: IExtensionContextEx): boolean {
+  context.registerReducer(['settings', 'workarounds'], reducer);
+
   const method = new DeploymentMethod(context.api);
   context.registerDeploymentMethod(method);
-
-  context.registerReducer(['settings', 'workarounds'], reducer);
 
   if (process.platform === 'win32') {
     context.registerSettings('Workarounds', Settings, () => ({

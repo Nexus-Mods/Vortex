@@ -2,6 +2,33 @@
  * entry point for the main process
  */
 
+import getVortexPath from './util/getVortexPath';
+
+import { app, dialog } from 'electron';
+import * as path from 'path';
+
+// ensure the cwd is always set to the path containing the exe, otherwise dynamically loaded
+// dlls will not be able to load vc-runtime files shipped with Vortex.
+process.chdir(getVortexPath('application'));
+
+/* the below would completely restart Vortex to ensure everything is loaded with the cwd
+   reset but that doesn't seem to be necessary
+// if this is the primary instance, verify we run from the right cwd, otherwise
+// vc runtime files might not load correctly
+if (!process.argv.includes('--relaunched')
+  && (path.normalize(process.cwd()).toLowerCase()
+    !== path.normalize(getVortexPath('application')).toLowerCase())) {
+  // tslint:disable-next-line:no-var-requires
+  const cp: typeof child_processT = require('child_process');
+  const args = [].concat(['--relaunched'], process.argv.slice(1));
+  const proc = cp.spawn(process.execPath, args, {
+    cwd: getVortexPath('application'),
+    detached: true,
+  });
+  app.quit();
+}
+*/
+
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from './constants';
 
 import * as sourceMapSupport from 'source-map-support';
@@ -64,8 +91,6 @@ import './util/monkeyPatching';
 import { truthy } from './util/util';
 
 import * as child_processT from 'child_process';
-import { app, dialog } from 'electron';
-import * as path from 'path';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

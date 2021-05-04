@@ -44,7 +44,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { setdefault, timeout, truthy } from './util';
+import { isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -105,24 +105,158 @@ function applyVariables(arg: string, variables: { [key: string]: string }) {
   return stringFormat(arg, variables);
 }
 
+class ExtEventHandler extends EventEmitter {
+  private mWrappee: EventEmitter;
+  private mExtension: IRegisteredExtension;
+  private mFuncMap: Map<string | symbol, Array<{ orig: CBFunc, wrapped: CBFunc }>> = new Map();
+
+  constructor(wrappee: EventEmitter, extension: IRegisteredExtension) {
+    super();
+    this.mWrappee = wrappee;
+    this.mExtension = extension;
+  }
+
+  public addListener(event: string | symbol, listener: (...args: any[]) => void): this {
+    this.mWrappee.addListener(event, this.makeWrapped(event, listener));
+    return this;
+  }
+
+  public on(event: string | symbol, listener: (...args: any[]) => void): this {
+    const stack = (new Error()).stack;
+    return this.addListener(event, listener);
+  }
+
+  public once(event: string | symbol, listener: (...args: any[]) => void): this {
+    this.mWrappee.once(event, this.makeOnceWrapped(event, listener));
+    return this;
+  }
+
+  public prependListener(event: string | symbol, listener: (...args: any[]) => void): this {
+    this.mWrappee.prependListener(event, this.makeWrapped(event, listener));
+    return this;
+  }
+
+  public prependOnceListener(event: string | symbol, listener: (...args: any[]) => void): this {
+    this.mWrappee.prependOnceListener(event, this.makeOnceWrapped(event, listener));
+    return this;
+  }
+
+  public removeListener(event: string | symbol, listener: (...args: any[]) => void): this {
+    if (this.mFuncMap.has(event)) {
+      const listeners = this.mFuncMap.get(event);
+      const idx = listeners.findIndex(iter => iter.orig === listener);
+      if (idx !== -1) {
+        this.mWrappee.removeListener(event, listeners[idx].wrapped);
+        listeners.splice(idx, 1);
+      }
+    }
+    return this;
+  }
+
+  public off(event: string | symbol, listener: (...args: any[]) => void): this {
+    return this.removeListener(event, listener);
+  }
+
+  public removeAllListeners(event?: string | symbol): this {
+    this.mWrappee.removeAllListeners(event);
+    return this;
+  }
+
+  public setMaxListeners(n: number): this {
+    this.mWrappee.setMaxListeners(n);
+    return this;
+  }
+
+  public getMaxListeners(): number {
+    return this.mWrappee.getMaxListeners();
+  }
+
+  // tslint:disable-next-line:ban-types
+  public listeners(event: string | symbol): Function[] {
+    return this.mWrappee.listeners(event);
+  }
+
+  // tslint:disable-next-line:ban-types
+  public rawListeners(event: string | symbol): Function[] {
+    return this.mWrappee.rawListeners(event);
+  }
+
+  public emit(event: string | symbol, ...args: any[]): boolean {
+    return this.mWrappee.emit(event, ...args);
+  }
+
+  public eventNames(): Array<string | symbol> {
+    return this.mWrappee.eventNames();
+  }
+
+  public listenerCount(type: string | symbol): number {
+    return this.listenerCount(type);
+  }
+
+  private funcMap(event: string | symbol) {
+    if (!this.mFuncMap.has(event)) {
+      this.mFuncMap.set(event, []);
+    }
+    return this.mFuncMap.get(event);
+  }
+
+  private makeWrapped(event: string | symbol, listener: CBFunc) {
+    const wrapped = wrapExtCBSync(listener, convertExtInfo(this.mExtension));
+    this.funcMap(event).push({ orig: listener, wrapped });
+    return wrapped;
+  }
+
+  private makeOnceWrapped(event: string | symbol, listener: CBFunc) {
+    const wrapped = wrapExtCBSync((...args: any[]): void => {
+      listener(...args);
+      this.removeListener(event, listener);
+    }, convertExtInfo(this.mExtension));
+    this.funcMap(event).push({ orig: listener, wrapped });
+    return wrapped;
+  }
+}
+
+function convertExtInfo(ext: IRegisteredExtension) {
+  if (ext === undefined) {
+    return undefined;
+  }
+  return {
+    name: ext.info?.name ?? ext.name,
+    namespace: ext.namespace,
+    path: ext.path,
+    dynamic: ext.dynamic,
+    official: ext.info?.bundled ?? true,
+  };
+}
+
 class APIProxyHandler implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
   private mEnabled: boolean;
+  private mEvents: EventEmitter;
 
-  constructor(extension: IRegisteredExtension, enable: boolean) {
+  constructor(extension: IRegisteredExtension, enable: boolean, events: EventEmitter) {
     this.mExtension = extension;
     this.mEnabled = enable;
+    this.mEvents = new ExtEventHandler(events, this.mExtension);
   }
 
   public enable() {
     this.mEnabled = true;
   }
 
-  public get(target, key: PropertyKey): any {
+  public get(target: IExtensionApi, key: PropertyKey): any {
     if (key === 'extension') {
       return this.mExtension;
     } else if (key === 'translate') {
       return target[key];
+    } else if (key === 'onAsync') {
+      return (eventName: string, listener: (...args: any[]) => PromiseLike<any>) =>
+        (target['onAsync'] as any)(eventName, listener, convertExtInfo(this.mExtension));
+    } else if (key === 'onStateChange') {
+      return (statePath: string[], callback: StateChangeCallback) =>
+        (target[key] as any)(statePath, callback, this.mExtension);
+    } else if (key === 'events') {
+      return this.mEvents;
     } else if (key === 'laterT') {
       return (input, options?) => new TString(input, options, this.mExtension.namespace);
     } else if (key === 'NAMESPACE') {
@@ -139,10 +273,12 @@ class APIProxyCreator implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
   private mProxyHandler: APIProxyHandler;
   private mProxy: IExtensionApi;
+  private mEvents: EventEmitter;
   private mAPIEnabled: boolean = false;
 
-  constructor(extension: IRegisteredExtension) {
+  constructor(extension: IRegisteredExtension, events: EventEmitter) {
     this.mExtension = extension;
+    this.mEvents = events;
   }
 
   public enableAPI() {
@@ -155,7 +291,7 @@ class APIProxyCreator implements ProxyHandler<any> {
   public get(target, key: PropertyKey): any {
     if (key === 'api') {
       if (this.mProxy === undefined) {
-        this.mProxyHandler = new APIProxyHandler(this.mExtension, this.mAPIEnabled);
+        this.mProxyHandler = new APIProxyHandler(this.mExtension, this.mAPIEnabled, this.mEvents);
         this.mProxy = new Proxy(target[key], this.mProxyHandler);
       }
       return this.mProxy;
@@ -217,12 +353,15 @@ class ContextProxyHandler implements ProxyHandler<any> {
       call.key === name);
   }
 
+  public dropCalls(extNames: string) {
+    this.mInitCalls = this.mInitCalls.filter(iter => iter.extension !== extNames);
+  }
+
   public invokeAdditions(extensions: IRegisteredExtension[]) {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
       this.getCalls(addition.key).forEach(call => {
         const ext = extensions.find(iter => iter.name === call.extension);
-        const extInfo = _.pick(ext, ['name', 'namespace', 'path']);
-
+        const extInfo = convertExtInfo(ext);
         addition.callback(...call.arguments, call.extensionPath, extInfo);
       });
     });
@@ -469,6 +608,7 @@ class EventProxy extends EventEmitter {
 
 const UNDEFINED = {};
 
+type CBFunc = (...args: any[]) =>  void;
 interface IStartHook {
   priority: number;
   id: string;
@@ -535,7 +675,7 @@ class ExtensionManager {
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
-    if (this.mEventEmitter !== undefined) {
+    if (eventEmitter !== undefined) {
       this.mEventEmitter.setMaxListeners(100);
     }
 
@@ -691,7 +831,7 @@ class ExtensionManager {
         }
         if (options.allowReport !== false) {
           options['allowReport'] = false;
-          options.extension = this.extension.info;
+          options.extensionName = this.extension.info.name;
         }
       }
       showError(store.dispatch, message, details, options);
@@ -1046,7 +1186,16 @@ class ExtensionManager {
   }
 
   private stateChangeHandler = (watchPath: string[],
-                                callback: StateChangeCallback) => {
+                                callback: StateChangeCallback,
+                                ext?: IRegisteredExtension) => {
+    if (!isFunction(callback)) {
+      // TODO we should be throwing an exception here but this didn't fail in the past and I don't
+      //   want to break previously ok extensions in a minor update
+      // throw new Error('attempt to register invalid change handler');
+      log('error', 'attempt to register invalid change handler', { stack: (new Error()).stack });
+      return;
+    }
+
     const stackErr = new Error();
     // have to initialize to a value that we _know_ is never set by the user.
     let lastValue = UNDEFINED;
@@ -1082,7 +1231,7 @@ class ExtensionManager {
       this.mWatches[key] = [];
       this.mReduxWatcher.on<any>(watchPath, changeHandler);
     }
-    this.mWatches[key].push(callback);
+    this.mWatches[key].push(wrapExtCBSync(callback, convertExtInfo(ext)));
   }
 
   private showErrorBox = (message: string, details: string | Error | any) => {
@@ -1110,11 +1259,20 @@ class ExtensionManager {
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
-        const apiProxy = new APIProxyCreator(ext);
+        const apiProxy = new APIProxyCreator(ext, this.mEventEmitter);
         const extProxy = new Proxy(contextProxy, apiProxy);
         ext.initFunc()(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (err) {
+        if (!ext.dynamic) {
+          // if one of the static extension fails to initialize we should be
+          // crashing, otherwise we risk data loss if the user restores a backup
+          // and the important reducers aren't loaded
+          throw err;
+        }
+        // make sure we're not calling any of the register calls if the extension
+        // isn't fully initialized
+        this.mContextProxyHandler.dropCalls(ext.name);
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
           {name: ext.name, err: err.message, stack: err.stack});
@@ -1718,7 +1876,10 @@ class ExtensionManager {
     return queue.then(() => results);
   }
 
-  private onAsync = (event: string, listener: (...args) => PromiseLike<any>) => {
+  private onAsync = (event: string,
+                     listener: (...args) => PromiseLike<any>,
+                     extInfo?: { name: string, official: boolean }) => {
+    const effectiveListener = wrapExtCBAsync(listener, extInfo);
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
       if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
@@ -1728,14 +1889,14 @@ class ExtensionManager {
           args.push(enqueue);
         }
         // call the listener anyway
-        const prom = listener(...args);
+        const prom = effectiveListener(...args);
         if (prom['catch'] !== undefined) {
           prom['catch'](err => {
             this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });
         }
       } else {
-        enqueue(listener(...args));
+        enqueue(effectiveListener(...args));
       }
     });
   }

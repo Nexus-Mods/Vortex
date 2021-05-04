@@ -1,3 +1,4 @@
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import { IGameInfoEntry, IState } from '../../../types/IState';
 import { ComponentEx, connect } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
@@ -67,9 +68,16 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
   }
 
   public render(): JSX.Element {
+    const { t } = this.props;
     const gameInfo = this.props.gameInfo || {};
 
     const keysToRender = Object.keys(gameInfo).filter(key => gameInfo[key].value !== null);
+
+    if (keysToRender.length === 0) {
+      return (
+        <EmptyPlaceholder icon='layout-list' text={t('No Information about this game')} />
+      );
+    }
 
     return (
       <div className='game-info-grid'>

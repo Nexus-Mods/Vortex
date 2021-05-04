@@ -7,8 +7,10 @@ import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { laterT } from '../../../util/i18n';
+import { log } from '../../../util/log';
 import { activeGameId, gameById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from './convertGameId';
 
@@ -56,7 +58,7 @@ class Tracking {
         if (mod.attributes?.source === 'nexus') {
           const gameMode = activeGameId(this.mApi.getState());
           const nexusId = nexusGameId(getGame(gameMode));
-          if (mod.attributes?.modId === undefined) {
+          if (!truthy(mod.attributes?.modId)) {
             return false;
           }
           return this.mTrackedMods[nexusId]?.has?.(
@@ -121,12 +123,12 @@ class Tracking {
           className='btn-embed'
           stroke={
             !this.mTrackedMods[nexusId]?.has?.(
-              mod.attributes?.modId.toString(),
+              parseInt(mod.attributes?.modId, 10).toString(),
             )
           }
           hollow={
             !this.mTrackedMods[nexusId]?.has?.(
-              mod.attributes?.modId.toString(),
+              parseInt(mod.attributes?.modId, 10).toString(),
             )
           }
           tooltip={t('Mod Tracked')}
@@ -221,7 +223,15 @@ class Tracking {
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
-        this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+        if (err['statusCode'] === 404) {
+          // user isn't actually tracking the mod
+          log('warn', 'mod tracking state out of sync between server and Vortex',
+            { game: nexusId, modId: nexusModId });
+          this.mTrackedMods[nexusId].delete(nexusModId);
+          this.mOnChanged?.();
+        } else {
+          this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+        }
       });
   }
 }

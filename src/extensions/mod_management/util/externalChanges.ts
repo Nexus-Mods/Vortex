@@ -221,7 +221,8 @@ export function dealWithExternalChanges(api: IExtensionApi,
         return prev;
       }, {});
 
-      const count = Object.keys(userChanges).length;
+      const count = Object.values(userChanges).reduce((prev: number, list: any[]) =>
+        prev + list.length, 0);
       if (count > 0) {
         log('info', 'found external changes', { automated: automaticActions.length, user: count });
         return api.store.dispatch(showExternalChanges(userChanges))

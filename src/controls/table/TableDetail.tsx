@@ -181,7 +181,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
       <FormInput
         id={attribute.id}
         label={preT(t, attribute.name)}
-        value={various ? t('Various') : this.renderCell(values[0])}
+        value={various ? (t('Various') as string) : this.renderCell(values[0])}
         onChange={this.changeCell}
         readOnly={readOnly}
         validate={various ? this.warning : attribute.edit.validate}

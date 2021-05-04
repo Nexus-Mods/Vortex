@@ -230,9 +230,9 @@ function getManifestImpl(api: IExtensionApi,
       : emptyManifest(instanceId));
 }
 
-function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
-                           gameId: string, modType: string, deployPath: string,
-                           stagingPath: string): Promise<void> {
+export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
+                                  gameId: string, modType: string, deployPath: string,
+                                  stagingPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFileName = `vortex.deployment.${typeTag}json`;

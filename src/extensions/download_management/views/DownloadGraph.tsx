@@ -46,7 +46,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
 
     let showLimit: boolean = false;
     let maxData = Math.max(...speeds);
-    if ((maxBandwidth !== 0) && (maxData * 1.5 > maxBandwidth)) {
+    if ((maxBandwidth !== 0) && (maxBandwidth !== null) && (maxData * 1.5 > maxBandwidth)) {
       maxData = maxBandwidth * 1.2;
       showLimit = true;
     }

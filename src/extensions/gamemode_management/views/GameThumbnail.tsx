@@ -77,7 +77,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       `game-thumbnail-${(discovered !== false) ? 'discovered' : 'undiscovered'}`,
     ];
 
-    const imgurl = url.parse(logoPath).protocol.startsWith('http')
+    const protocol = url.parse(logoPath).protocol;
+    const imgurl = ((protocol !== null) && (protocol.startsWith('http')))
       ? logoPath
       : url.pathToFileURL(logoPath).href;
 

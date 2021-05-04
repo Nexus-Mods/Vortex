@@ -18,7 +18,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 const startupSettings =
-  lazyRequire<typeof startupSettingsT>(() => require('../util/startupSettings'));
+  lazyRequire<typeof startupSettingsT>(() => require('../util/startupSettings'), 'default');
 
 interface ISettingsPage {
   title: string;

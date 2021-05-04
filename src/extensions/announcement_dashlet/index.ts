@@ -120,13 +120,13 @@ function updateSurveys(store: Redux.Store<IState>) {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Announcements', 1, 3, 200, AnnouncementDashlet,
-    (state: IState) => true,
-  () => ({}), { closable: true });
-
   context.registerReducer(['session', 'announcements'], sessionReducer);
   context.registerReducer(['session', 'surveys'], surveySessionReducer);
   context.registerReducer(['persistent', 'surveys'], persistentReducer);
+
+  context.registerDashlet('Announcements', 1, 3, 200, AnnouncementDashlet,
+    (state: IState) => true,
+  () => ({}), { closable: true });
 
   context.once(() => {
     const store = context.api.store;

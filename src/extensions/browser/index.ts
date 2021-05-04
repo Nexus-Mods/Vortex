@@ -45,11 +45,11 @@ function triggerEvent(subscriber: string, eventId: string, value: any): Subscrip
 
 function init(context: IExtensionContext): boolean {
   let lastURL: string;
+  context.registerReducer(['session', 'browser'], sessionReducer);
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
     onNavigate: (navUrl: string) => { lastURL = navUrl; },
   }));
-  context.registerReducer(['session', 'browser'], sessionReducer);
 
   context.once(() => {
     // open a browser to an url, displaying instructions if provided.

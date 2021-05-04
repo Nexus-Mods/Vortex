@@ -645,7 +645,9 @@ function makeNXMLinkCallback(api: IExtensionApi) {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
-      if (nxmUrl.gameId === SITE_ID) {
+      const isExtAvailable = api.getState().session.extensions.available
+        .find(iter => iter.modId === nxmUrl.modId) !== undefined;
+      if (nxmUrl.gameId === SITE_ID && isExtAvailable) {
         if (install) {
           return api.emitAndAwait('install-extension',
             { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
@@ -1088,6 +1090,11 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
 }
 
 function init(context: IExtensionContextExt): boolean {
+  context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
+  context.registerReducer(['settings', 'nexus'], settingsReducer);
+  context.registerReducer(['persistent', 'nexus'], persistentReducer);
+  context.registerReducer(['session', 'nexus'], sessionReducer);
+
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {
@@ -1164,10 +1171,6 @@ function init(context: IExtensionContextExt): boolean {
     })));
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
-  context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
-  context.registerReducer(['settings', 'nexus'], settingsReducer);
-  context.registerReducer(['persistent', 'nexus'], persistentReducer);
-  context.registerReducer(['session', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({
     onCancelLogin: () => {
       if (cancelLogin !== undefined) {
@@ -1253,9 +1256,12 @@ function init(context: IExtensionContextExt): boolean {
                          context.api.translate('Open Nexus Page'),
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
-  context.registerAction('game-undiscovered-buttons', 120, 'nexus', {},
-                         context.api.translate('Open Nexus Page'),
-                         (games: string[]) => openNexusPage(context.api.store.getState(), games));
+  context.registerAction(
+    'game-undiscovered-buttons', 120, 'nexus', {},
+    context.api.translate('Open Nexus Page'),
+    (games: string[]) => openNexusPage(context.api.store.getState(), games),
+    (games: string[]) => gameById(context.api.getState(), games[0]) !== undefined,
+  );
 
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
   context.registerAPI('ensureLoggedIn', () => ensureLoggedIn(context.api), {});

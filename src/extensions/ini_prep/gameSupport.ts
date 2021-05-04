@@ -47,6 +47,13 @@ const gameSupport = {
     ],
     iniFormat: 'winapi',
   },
+  enderalspecialedition: {
+    iniFiles: [
+      path.join('{mygames}', 'Enderal Special Edition', 'Enderal.ini'),
+      path.join('{mygames}', 'Enderal Special Edition', 'EnderalPrefs.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
   skyrimvr: {
     iniFiles: [
       path.join('{mygames}', 'Skyrim VR', 'Skyrim.ini'),
@@ -111,6 +118,12 @@ export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
     if (isXboxPath(discovery.path)) {
       return getSafe(gameSupportGamePass, [gameMode, 'iniFiles'], [])
         .map(file => format(file, { mygames, game: discovery.path }));
+    }
+  }
+
+  if (discovery?.path !== undefined) {
+    if (discovery.path.toLowerCase().includes('skyrim')) {
+      gameSupport['enderalspecialedition'] = JSON.parse(JSON.stringify(gameSupport['skyrimse']));
     }
   }
 

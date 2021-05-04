@@ -217,6 +217,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               placeholder={t('Unlimited')}
               onChange={this.changeMaxBandwidth}
               type='number'
+              min={0}
             />
             MB/s
           </div>

@@ -81,13 +81,13 @@ function init(context: IExtensionContext): boolean {
     return collator;
   };
 
+  context.registerReducer(['persistent', 'categories'], categoryReducer);
+  context.registerReducer(['session', 'categories'], sessionReducer);
+
   context.registerDialog('categories', CategoryDialog);
   context.registerAction('mod-icons', 80, 'categories', {}, 'Categories', () => {
     context.api.store.dispatch(showCategoriesDialog(true));
   });
-
-  context.registerReducer(['persistent', 'categories'], categoryReducer);
-  context.registerReducer(['session', 'categories'], sessionReducer);
 
   context.registerTableAttribute('mods', {
     id: 'category',

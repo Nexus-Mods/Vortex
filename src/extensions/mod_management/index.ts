@@ -33,7 +33,7 @@ import {
   profileById,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { isChildPath, truthy } from '../../util/util';
+import { isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -122,9 +122,18 @@ class BlacklistSet extends Set<string> {
   }
 }
 
-function registerInstaller(id: string, priority: number,
-                           testSupported: TestSupported, install: InstallFunc) {
-  installers.push({ id, priority, testSupported, install });
+function registerInstaller(id: string,
+                           priority: number,
+                           testSupported: TestSupported,
+                           install: InstallFunc,
+                           extPath?: string,
+                           ext?: any) {
+  installers.push({
+    id,
+    priority,
+    testSupported: wrapExtCBAsync(testSupported, ext),
+    install: wrapExtCBAsync(install, ext),
+  });
 }
 
 function registerModSource(id: string,
@@ -1196,6 +1205,12 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['session', 'mods'], sessionReducer);
+  context.registerReducer(['settings', 'mods'], settingsReducer);
+  context.registerReducer(['persistent', 'mods'], modsReducer);
+  context.registerReducer(['persistent', 'deployment'], deploymentReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
+
   const modsActivity = new ReduxProp(context.api, [
     ['session', 'base', 'activity', 'mods'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
@@ -1242,12 +1257,6 @@ function init(context: IExtensionContext): boolean {
     LazyComponent(() => require('./views/FixDeploymentDialog')), () => {
       // nop
     });
-
-  context.registerReducer(['session', 'mods'], sessionReducer);
-  context.registerReducer(['settings', 'mods'], settingsReducer);
-  context.registerReducer(['persistent', 'mods'], modsReducer);
-  context.registerReducer(['persistent', 'deployment'], deploymentReducer);
-  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 

@@ -190,6 +190,8 @@ function genDidPurge(api: types.IExtensionApi) {
 }
 
 export default function init(context: IExtensionContext) {
+  context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
+
   context.registerMainPage('sort-none', 'Load Order', FileBasedLoadOrderPage, {
     id: 'file-based-loadorder',
     hotkey: 'E',
@@ -210,8 +212,6 @@ export default function init(context: IExtensionContext) {
       };
     },
   });
-
-  context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
 
   context.registerLoadOrder = ((gameInfo: ILoadOrderGameInfo, extPath: string) => {
     addGameEntry(gameInfo, extPath);

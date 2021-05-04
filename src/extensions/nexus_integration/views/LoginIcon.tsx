@@ -4,6 +4,7 @@ import Image from '../../../controls/Image';
 import * as tooltip from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import getVortexPath from '../../../util/getVortexPath';
 import opn from '../../../util/opn';
 import { truthy } from '../../../util/util';
 
@@ -13,6 +14,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 
 import NexusT from '@nexusmods/nexus-api';
+import * as path from 'path';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
@@ -85,9 +87,12 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const loggedIn = this.isLoggedIn();
 
-    const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
+    const fallback =
+      pathToFileURL(path.join(getVortexPath('assets'), '..', FALLBACK_AVATAR)).href;
+
+    const profileIcon = truthy(userInfo?.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
-      : pathToFileURL(FALLBACK_AVATAR).href;
+      : fallback;
 
     return (
       <tooltip.Button
@@ -97,7 +102,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
       >
         {loggedIn ? (
           <Image
-            srcs={[profileIcon, FALLBACK_AVATAR]}
+            srcs={[profileIcon, fallback]}
             circle
             style={{ height: 32, width: 32 }}
           />

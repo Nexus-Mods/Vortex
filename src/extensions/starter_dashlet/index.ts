@@ -65,10 +65,12 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Starter', 2, 2, 100, Starter,
-                          undefined, undefined, undefined);
-
   context.registerReducer(['settings', 'interface'], settingsReducer);
+
+  context.registerDashlet('Starter', 2, 2, 100, Starter,
+                          undefined, undefined, {
+                            closable: false,
+                          });
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));

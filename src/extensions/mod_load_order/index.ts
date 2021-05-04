@@ -8,7 +8,12 @@ import LoadOrderPage from './views/LoadOrderPage';
 
 import { addGameEntry, findGameEntry, initCollectionsSupport } from './gameSupport';
 
+const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
+
 export default function init(context: IExtensionContext) {
+  context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
+  context.registerReducer(['settings', 'loadOrder'], loadOrderSettingsReducer);
+
   context.registerMainPage('sort-none', 'Load Order', LoadOrderPage, {
     id: 'generic-loadorder',
     hotkey: 'E',
@@ -29,9 +34,6 @@ export default function init(context: IExtensionContext) {
   context.registerLoadOrderPage = (gameEntry: IGameLoadOrderEntry) => {
     addGameEntry(gameEntry);
   };
-
-  context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
-  context.registerReducer(['settings', 'loadOrder'], loadOrderSettingsReducer);
 
   context.once(() => {
     initCollectionsSupport(context.api);

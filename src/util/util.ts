@@ -692,3 +692,62 @@ export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redu
     dispatch(batchActions(actions));
   }
 }
+
+export function isFunction(functionToCheck) {
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}
+
+/**
+ * wrap a callback provided by an extension such that we don't allow reports
+ * for that extension and display the extension name if possible
+ * @param cb the callback to wrap
+ * @param ext name of the extension that provided the callback
+ * @returns a new callback with an identical call signature
+ *
+ * @note As a side-effect this also ensures promises returned from the extension
+ *       are bluebird extensions.
+ *       This should allow extension authors to use native extension without
+ *       causing surprising bugs
+ */
+export function wrapExtCBAsync<ArgT extends any[], ResT>(
+  cb: (...args: ArgT) => PromiseLike<ResT>,
+  extInfo?: { name: string, official: boolean })
+  : (...args: ArgT) => Bluebird<ResT> {
+
+  return (...args: ArgT): Bluebird<ResT> => {
+    try {
+      return Bluebird.resolve(cb(...args))
+        .catch?.(err => {
+          if ((extInfo !== undefined) && !extInfo.official) {
+            err.allowReport = false;
+            err.extensionName = extInfo.name;
+          }
+          return Promise.reject(err);
+        });
+    } catch (err) {
+      err.allowReport = false;
+      if ((extInfo !== undefined) && !extInfo.official) {
+        err.extensionName = extInfo.name;
+      }
+      return Bluebird.reject(err);
+    }
+  };
+}
+
+export function wrapExtCBSync<ArgT extends any[], ResT>(
+  cb: (...args: ArgT) => ResT,
+  extInfo?: { name: string, official: boolean })
+  : (...args: ArgT) => ResT {
+
+  return (...args: ArgT): ResT => {
+    try {
+      return cb(...args);
+    } catch (err) {
+      if ((extInfo !== undefined) && !extInfo.official) {
+        err.allowReport = false;
+        err.extensionName = extInfo.name;
+      }
+      throw err;
+    }
+  };
+}

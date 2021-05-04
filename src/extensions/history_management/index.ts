@@ -32,14 +32,14 @@ function makeAddToHistory(api: IExtensionApi) {
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['persistent', 'history'], persistentReducer);
+  context.registerReducer(['session', 'history'], sessionReducer);
+
   context.registerHistoryStack = registerHistoryStack;
   context.registerAPI('addToHistory', makeAddToHistory(context.api), {});
   context.registerAPI('showHistory', (stackId: string) => {
     context.api.store.dispatch(showHistory(stackId));
   }, {});
-  context.registerReducer(['persistent', 'history'], persistentReducer);
-  context.registerReducer(['session', 'history'], sessionReducer);
-
   context.registerDialog('history-dialog', HistoryDialog, () => {
     return {
       onClose: () => {

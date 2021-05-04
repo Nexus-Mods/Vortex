@@ -1,5 +1,6 @@
 import FormFeedback from '../../../controls/FormFeedback';
 import FormInput from '../../../controls/FormInput';
+import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { truthy } from '../../../util/util';
 
@@ -34,22 +35,20 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, fileName, nexusModId, readOnly } = this.props;
 
-    const isIdValid = truthy(nexusModId) && !isNaN(Number(nexusModId));
+    const isIdValid = this.validate(nexusModId) === 'success';
 
     return (
       <div>
-        <FormGroup
-          validationState={isIdValid ? 'success' : 'warning'}
-        >
+        <FormGroup>
           <InputGroup style={{ width: '100%' }}>
             <div style={{ position: 'relative' }}>
               <FormInput
                 placeholder='i.e. 1337'
                 value={nexusModId || ''}
+                validate={this.validate}
                 onChange={this.updateNexusModId}
                 readOnly={readOnly}
               />
-              {readOnly ? null : <FormFeedback />}
             </div>
             {(readOnly || isIdValid || (fileName === undefined))
               ? null
@@ -67,6 +66,10 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
     );
   }
 
+  private validate = (value: string): ValidationState => {
+    return (!truthy(value) || isNaN(Number(value))) ? 'error' : 'success';
+  }
+
   private guessNexusId = () => {
     const { fileName, activeGameId, isDownload, modId, store } = this.props;
     const guessed = guessFromFileName(fileName);
@@ -76,16 +79,18 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
       } else {
         store.dispatch(setModAttribute(activeGameId, modId, 'modId', guessed));
       }
+      this.forceUpdate();
     }
   }
 
   private updateNexusModId = (newValue) => {
     const { activeGameId, isDownload, modId, store } = this.props;
     if (isDownload) {
-      store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', newValue));
+      store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', parseInt(newValue, 10)));
     } else {
-      store.dispatch(setModAttribute(activeGameId, modId, 'modId', newValue));
+      store.dispatch(setModAttribute(activeGameId, modId, 'modId', parseInt(newValue, 10)));
     }
+    this.forceUpdate();
   }
 
   private openPage = () => {

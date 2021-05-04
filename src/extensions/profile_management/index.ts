@@ -41,7 +41,7 @@ import { purgeMods } from '../mod_management/util/deploy';
 import { NoDeployment } from '../mod_management/util/exceptions';
 
 import { forgetMod, removeProfile, setProfile, setProfileActivated, willRemoveProfile } from './actions/profiles';
-import { setCurrentProfile, setNextProfile } from './actions/settings';
+import { clearLastActiveProfile, setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
 import transferSetupReducer from './reducers/transferSetup';
@@ -549,7 +549,14 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve()
       : Promise.reject(err))
-    .then(() => store.dispatch(removeProfile(profileId)))
+    .then(() => {
+      const gameMode = profiles[profileId].gameId;
+      const lastProfileId = lastActiveProfileForGame(state, gameMode);
+      if (profileId === lastProfileId) {
+        store.dispatch(clearLastActiveProfile(gameMode));
+      }
+      store.dispatch(removeProfile(profileId));
+    })
     .catch(err => {
       this.context.api.showErrorNotification('Failed to remove profile',
         err, { allowReport: err.code !== 'EPERM' });
@@ -656,6 +663,10 @@ function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['persistent', 'profiles'], profilesReducer);
+  context.registerReducer(['settings', 'profiles'], settingsReducer);
+  context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
+
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
@@ -663,10 +674,6 @@ function init(context: IExtensionContext): boolean {
       && (context.api.store.getState().settings.interface.profilesVisible),
     props: () => ({ features: profileFeatures }),
   });
-
-  context.registerReducer(['persistent', 'profiles'], profilesReducer);
-  context.registerReducer(['settings', 'profiles'], settingsReducer);
-  context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
   context.registerAction('game-discovered-buttons', 50, 'activate', {
     noCollapse: true,
@@ -727,7 +734,7 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.registerAction('game-managed-buttons', 150, 'delete', {},
-    context.api.translate('Stop managing'),
+    context.api.translate('Stop Managing'),
     (instanceIds: string[]) => { unmanageGame(context.api, instanceIds[0]); });
 
   context.registerProfileFeature =

@@ -12,7 +12,7 @@ import { IModType } from '../../gamemode_management/types/IModType';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath, installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
-import { getManifest, loadActivation, saveActivation, withActivationLock } from './activationStore';
+import { fallbackPurgeType, getManifest, loadActivation, saveActivation, withActivationLock } from './activationStore';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
@@ -248,6 +248,15 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     log('debug', 'purging mods', { activatorId: activator.id, stagingPath });
     notification.message = t('Purging mods');
     api.sendNotification(notification);
+
+    if ((gameId !== undefined) && (profile === undefined)) {
+      // gameId was set but we have no last active profile for that game.
+      // In this case there is probably nothing to purge but if that's true
+      // there will also be no manifest so we can just as easily try a fallback
+      // purge just to be safe.
+      return fallbackPurgeType(api, activator, gameId, typeId, modPath, stagingPath)
+        .then(() => api.emitAndAwait('did-purge', profile.id));
+    }
 
     // TODO: we really should be using the deployment specified in the manifest,
     //   not the current one! This only works because we force a purge when switching
