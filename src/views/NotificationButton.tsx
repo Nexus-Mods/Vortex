@@ -5,6 +5,7 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import Icon from '../controls/Icon';
+import Debouncer from '../util/Debouncer';
 import Notification from './Notification';
 
 import * as React from 'react';
@@ -35,6 +36,7 @@ interface IComponentState {
 class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mRef: any = null;
   private mUpdateTimer: NodeJS.Timeout = undefined;
+  private mUpdateDebouncer: Debouncer;
   private mMounted: boolean = false;
 
   constructor(props: IProps) {
@@ -45,6 +47,8 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       open: false,
       filtered: [],
     });
+
+    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 500);
   }
 
   public componentDidMount() {
@@ -61,7 +65,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   public componentDidUpdate(prevProps: IProps) {
     if (prevProps.notifications !== this.props.notifications) {
-      this.updateFiltered();
+      if (prevProps.notifications.length != this.props.notifications.length) {
+        this.mUpdateDebouncer.runNow(() => null);
+      } else {
+        this.mUpdateDebouncer.schedule();
+      }
     }
   }
 
@@ -121,6 +129,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }[item.type] || 10000;
   }
 
+  private triggerFilter = () => {
+    this.updateFiltered();
+    return Promise.resolve();
+  }
+
   private updateFiltered() {
     const { notifications } = this.props;
     const { open } = this.state;
@@ -153,7 +166,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           // should never happen
           clearTimeout(this.mUpdateTimer);
         }
-        this.mUpdateTimer = setTimeout(() => this.updateFiltered(), 1000);
+        this.mUpdateTimer = setTimeout(this.triggerFilter, 1000);
       } else {
         this.mRef?.hide();
       }
