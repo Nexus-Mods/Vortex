@@ -15,6 +15,10 @@ interface IPortalMenuProps {
   bsRole?: string;
 }
 
+function nop() {
+  // nop
+}
+
 class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: number }> {
   public static contextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
@@ -39,6 +43,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
         show={open}
         container={this.context.menuLayer}
         placement='bottom'
+        onHide={nop}
         target={target}
         flip={true}
         rootClose={true}

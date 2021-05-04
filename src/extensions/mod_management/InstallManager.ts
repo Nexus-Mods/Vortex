@@ -570,7 +570,7 @@ class InstallManager {
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
     if (mod === undefined) {
-      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
     this.repairRules(api, mod, profile.gameId);
@@ -1618,7 +1618,7 @@ class InstallManager {
                                   installPath: string,
                                   silent: boolean)
                                   : Promise<void> {
-    const filteredRules = rules.filter(
+    const filteredRules = (rules ?? []).filter(
           (rule: IModRule) => ['recommends', 'requires'].includes(rule.type));
 
     if (filteredRules.length === 0) {

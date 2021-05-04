@@ -271,7 +271,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     this.getCalls('requireVersion').forEach(call => {
       if ((process.env.NODE_ENV !== 'development')
-          && !semver.satisfies(app.getVersion(), call.arguments[0])) {
+          && !semver.satisfies(app.getVersion(), call.arguments[0], { includePrerelease: true })) {
         setdefault(incompatibleExtensions, call.extension, []).push(
           { id: 'unsupported-version' });
       }
