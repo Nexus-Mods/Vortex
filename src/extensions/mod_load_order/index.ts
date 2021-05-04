@@ -6,7 +6,7 @@ import { loadOrderSettingsReducer } from './reducers/settings';
 import { IGameLoadOrderEntry } from './types/types';
 import LoadOrderPage from './views/LoadOrderPage';
 
-const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
+import { addGameEntry, findGameEntry, initCollectionsSupport } from './gameSupport';
 
 export default function init(context: IExtensionContext) {
   context.registerMainPage('sort-none', 'Load Order', LoadOrderPage, {
@@ -33,26 +33,9 @@ export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
   context.registerReducer(['settings', 'loadOrder'], loadOrderSettingsReducer);
 
+  context.once(() => {
+    initCollectionsSupport(context.api);
+  });
+
   return true;
-}
-
-export function addGameEntry(gameEntry: IGameLoadOrderEntry) {
-  if (gameEntry === undefined) {
-    log('error', 'unable to add load order page - invalid game entry');
-    return;
-  }
-
-  const isDuplicate: boolean = SUPPORTED_GAMES.find(game =>
-    game.gameId === gameEntry.gameId) !== undefined;
-
-  if (isDuplicate) {
-    log('debug', 'attempted to add duplicate gameEntry to load order extension', gameEntry.gameId);
-    return;
-  }
-
-  SUPPORTED_GAMES.push(gameEntry);
-}
-
-function findGameEntry(gameId: string): IGameLoadOrderEntry {
-  return SUPPORTED_GAMES.find(game => game.gameId === gameId);
 }

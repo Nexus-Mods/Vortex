@@ -375,6 +375,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerToolVariables: undefined,
       registerLoadOrderPage: undefined,
       registerLoadOrder: undefined,
+      registerGameSpecificCollectionsData: undefined,
       registerHistoryStack: undefined,
       registerAPI: undefined,
       requireVersion: undefined,

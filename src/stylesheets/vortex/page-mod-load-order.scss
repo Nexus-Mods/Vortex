@@ -1,3 +1,4 @@
+#collections-load-order-list,
 #page-file-based-loadorder,
 #page-generic-loadorder {
   .layout-flex {
@@ -41,6 +42,10 @@
         margin-left: initial;
         position: initial;
       }
+    }
+
+    &.collection-tab {
+      padding: 0px 0px 0px 15px;
     }
 
     &.dragging {
