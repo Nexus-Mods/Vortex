@@ -27,6 +27,7 @@
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
+    "testbuild": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-test.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
