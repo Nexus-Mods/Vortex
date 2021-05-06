@@ -1,7 +1,7 @@
 import * as actions from '../actions/session';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { deleteOrNop, pushSafe, removeValue, setSafe } from '../util/storeHelper';
+import { addUniqueSafe, deleteOrNop, pushSafe, removeValue, setSafe } from '../util/storeHelper';
 
 import * as path from 'path';
 
@@ -26,7 +26,7 @@ export const sessionReducer: IReducerSpec = {
     [actions.setSettingsPage as any]: (state, payload) =>
       setSafe(state, [ 'settingsPage' ], payload.pageId),
     [actions.startActivity as any]: (state, payload) =>
-      pushSafe(state, [ 'activity', payload.group ], payload.activityId),
+      addUniqueSafe(state, [ 'activity', payload.group ], payload.activityId),
     [actions.stopActivity as any]: (state, payload) =>
       removeValue(state, [ 'activity', payload.group ], payload.activityId),
     [actions.setProgress as any]: (state, payload) =>
