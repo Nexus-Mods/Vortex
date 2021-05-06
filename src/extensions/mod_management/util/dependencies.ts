@@ -325,7 +325,7 @@ function gatherDependencies(
     }
   };
 
-  const limit = new ConcurrencyLimiter(10);
+  const limit = new ConcurrencyLimiter(20);
 
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.all(

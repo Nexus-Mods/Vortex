@@ -57,6 +57,8 @@ import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, ne
          startDownload, updateKey } from './util';
 
 import NexusT, { IDateTime, IDownloadURL, IFileInfo,
+  IModFile,
+  IModFileQuery,
   IModInfo, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -732,10 +734,116 @@ function makeNXMLinkCallback(api: IExtensionApi) {
   };
 }
 
-function makeRepositoryLookup(nexusConn: NexusT) {
+const gameNum = (() => {
+  let cache: { [gameId: string]: number };
+  return (gameId: string): number => {
+    if (cache === undefined) {
+      cache = nexusGames().reduce((prev, game) => {
+        prev[game.domain_name] = game.id;
+        return prev;
+      }, {});
+    }
+
+    return cache[gameId];
+  }
+})();
+
+function makeFileUID(repoInfo: IModRepoId): string {
+  return ((BigInt(gameNum(repoInfo.gameId)) << BigInt(32))
+          | BigInt(parseInt(repoInfo.fileId, 10))).toString();
+}
+
+function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
+  const query: Partial<IModFileQuery> = {
+    name: true,
+    description: true,
+    size: true,
+    version: true,
+    game: {
+      id: true,
+      domainName: true,
+    },
+    uid: true,
+    uri: true,
+    mod: {
+      author: true,
+      modCategory: {
+        id: true,
+      }
+    }
+  } as any;
+
+  interface IQueueItem {
+    repoInfo: IModRepoId;
+    resolve: (info: any) => void;
+    reject: (err: Error) => void;
+  }
+
+  let pendingQueries: IQueueItem[] = [];
+  const uidLookupDebouncer = new Debouncer(() => {
+    const processingQueries = pendingQueries;
+    pendingQueries = [];
+    return nexusGamesProm()
+      .then(() => {
+        return nexusConn.modFilesByUid(query, processingQueries.map(iter => makeFileUID(iter.repoInfo)) as any[])
+        .then(files => {
+        processingQueries.forEach(query => {
+          const uid = makeFileUID(query.repoInfo);
+          const res = files.find(iter => iter['uid'] === uid);
+          if (res !== undefined) {
+            query.resolve(res);
+          } else {
+            // the number of uids we can request in one call may be limited, just retry.
+            // We're supposed to get an error if the request actually failed.
+            pendingQueries.push(query);
+          }
+        });
+        if (pendingQueries.length > 0) {
+          uidLookupDebouncer.schedule();
+        }
+      });
+    });
+  }, 100, true);
+
+  const queue = (repoInfo: IModRepoId): Promise<Partial<IModFile>> => {
+    return new Promise((resolve, reject) => {
+      pendingQueries.push({ repoInfo, resolve, reject });
+      uidLookupDebouncer.schedule();
+    });
+  };
+
   return (repoInfo: IModRepoId): Promise<IModLookupResult[]> => {
     const modId = parseInt(repoInfo.modId, 10);
     const fileId = parseInt(repoInfo.fileId, 10);
+
+    return queue(repoInfo)
+      .then(modFileInfo => {
+        const res: IModLookupResult = {
+          key: `${repoInfo.gameId}_${repoInfo.modId}_${repoInfo.fileId}`,
+          value: {
+            fileName: modFileInfo.name,
+            fileSizeBytes: modFileInfo.size,
+            fileVersion: modFileInfo.version,
+            gameId: modFileInfo.game.id.toString(),
+            domainName: modFileInfo.game.domainName,
+            sourceURI: `nxm://${repoInfo.gameId}/mods/${modId}/files/${fileId}`,
+            source: 'nexus',
+            logicalFileName: modFileInfo.name,
+            rules: [],
+            details: {
+              modId: repoInfo.modId,
+              fileId: repoInfo.fileId,
+              author: modFileInfo.mod.author,
+              category: (modFileInfo.mod.modCategory.id.toString()).split(',')[0],
+              description: modFileInfo.description,
+              homepage: `https://www.${NEXUS_DOMAIN}/${repoInfo.gameId}/mods/${modId}`,
+            },
+          },
+        };
+        return [res];
+      });
+
+    /*
     let modInfo: IModInfo;
     let fileInfo: IFileInfo;
     return Promise.resolve(nexusConn.getModInfo(modId, repoInfo.gameId))
@@ -769,6 +877,7 @@ function makeRepositoryLookup(nexusConn: NexusT) {
         };
         return [res];
       });
+    */
   };
 }
 
@@ -820,7 +929,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
 
-    api.registerRepositoryLookup('nexus', false, makeRepositoryLookup(nexus));
+    api.registerRepositoryLookup('nexus', true, makeRepositoryLookup(api, nexus));
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
