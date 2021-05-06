@@ -321,7 +321,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {
         return (...args) => {
-          if (!this.mMayRegister) {
+          if (!that.mMayRegister) {
             log('warn', 'extension tries to use register call outside init function', {
               extension: this.mCurrentExtension,
               call: key,
