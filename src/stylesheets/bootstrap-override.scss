@@ -232,6 +232,11 @@ textarea {
   border-width: $border-width !important;
   // in case the popover overlaps with the top bar
   -webkit-app-region: no-drag;
+
+  .popover-content {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
 }
 
 // due to the slant the arrow comes out a bit thinner than the rest of the border
