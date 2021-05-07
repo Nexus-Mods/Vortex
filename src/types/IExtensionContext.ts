@@ -121,6 +121,7 @@ export interface IMainPageOptions {
   props?: () => any;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
+  onReset?: () => void;
 }
 
 export type RegisterMainPage =

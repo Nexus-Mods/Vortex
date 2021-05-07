@@ -531,7 +531,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private handleClickPage = (evt: React.MouseEvent<any>) => {
-    this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
+    if (this.props.mainPage !== evt.currentTarget.id) {
+      this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
+    } else {
+      // a second click on the same nav item is treated as a request to "reset"
+      // the page, as in: return it to its initial state (without canceling any operations).
+      // What that means for an individual page, whether it has an actual effect,
+      // is up to the individual page.
+      const page = this.props.objects.find(iter => iter.id === this.props.mainPage);
+      page?.onReset?.();
+    }
   }
 
   private setMainPage = (pageId: string, secondary: boolean) => {
@@ -627,6 +636,7 @@ function registerMainPage(
     badge: options.badge,
     activity: options.activity,
     priority: options.priority !== undefined ? options.priority : 100,
+    onReset: options.onReset,
     namespace: extInfo.namespace,
   };
 }
