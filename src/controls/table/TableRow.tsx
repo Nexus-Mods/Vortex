@@ -156,7 +156,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   private renderSelect(data: any): JSX.Element {
-    const { t, attribute, rawData } = this.props;
+    const { t, attribute, container, rawData } = this.props;
 
     const choices = attribute.edit.choices(rawData);
 
@@ -186,6 +186,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
           clearable={false}
           searchable={false}
           placeholder={t('Select...')}
+          container={container}
         />
       );
     }
