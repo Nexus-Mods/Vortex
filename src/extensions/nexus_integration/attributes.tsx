@@ -127,12 +127,12 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     description: laterT('Internal ID used by www.nexusmods.com'),
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
-      const res = ((mod.attributes?.source ?? 'nexus') && (mod.type !== 'collection'))
+      const res = ((mod.attributes?.source === 'nexus') && (mod.type !== 'collection'))
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;
       return res;
     },
-    calc: (mod: IMod) => ((mod.attributes?.source ?? 'nexus') && (mod.type !== 'collection'))
+    calc: (mod: IMod) => ((mod.attributes?.source === 'nexus') && (mod.type !== 'collection'))
         ? (mod.attributes?.modId ?? null)
         : undefined,
     placement: 'detail',
