@@ -58,10 +58,10 @@ export function renderModReference(ref: IModReference, mod?: IMod, options?: IRe
   }
 
   if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
-    return ref.fileMD5 || ref.id;
+    return ref.fileMD5 || ref.id || '<Invalid reference>';
   }
 
-  let name = ref.logicalFileName || ref.fileExpression;
+  let name = ref.logicalFileName || ref.fileExpression || '<Invalid reference>';
   if ((ref.versionMatch !== undefined) && version) {
     name += ' v' + ref.versionMatch;
   }

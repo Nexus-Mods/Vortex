@@ -87,8 +87,6 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
     return false;
   } // we do allow a fallback to fuzzy matching if the ids don't match
 
-  const versionMatchSafe = ref.versionMatch || '1.0.0';
-
   // if reference is by file hash and the match is not fuzzy, require the md5 to match
   if ((ref.fileMD5 !== undefined)
       && !fuzzyVersion
