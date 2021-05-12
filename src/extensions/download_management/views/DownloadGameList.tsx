@@ -123,7 +123,8 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     const newPath = selectors.downloadPathForGame(state, gameId);
     const source = path.join(oldPath, fileName);
     const dest = path.join(newPath, fileName);
-    return fs.moveRenameAsync(source, dest);
+    return fs.ensureDirWritableAsync(newPath)
+      .then(() => fs.moveRenameAsync(source, dest));
   }
 
   private removeGame = (evt: React.MouseEvent<any>) => {
