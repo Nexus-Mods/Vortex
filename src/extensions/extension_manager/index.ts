@@ -298,6 +298,17 @@ function init(context: IExtensionContext) {
       const state = context.api.getState();
       const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find(iter => iter.modId === modId);
+      const isInstalled = Object.values(state.session.extensions.installed).find(inst =>
+        (inst.modId === ext.modId) && (inst.version === ext.version)) !== undefined;
+      if (isInstalled) {
+        context.api.sendNotification({
+          id: 'extension-already-installed',
+          type: 'info',
+          message: 'Vortex extension is already installed',
+        });
+        return Promise.resolve();
+      }
+
       if ((modId !== undefined) && (ext !== undefined)) {
         return downloadAndInstallExtension(context.api, ext)
           .tap(success => {
