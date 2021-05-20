@@ -1421,7 +1421,8 @@ class InstallManager {
         .then((downloadId: string) => (dep.mod === undefined)
            ? this.withInstructions(api, renderModReference(dep.reference), dep.extra?.['instructions'], () =>
                 this.installModAsync(dep.reference, api, downloadId,
-                                  { choices: dep.installerChoices }, dep.fileList))
+                                  { choices: dep.installerChoices }, dep.fileList,
+                                  profile.gameId))
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
@@ -1809,7 +1810,8 @@ class InstallManager {
                           api: IExtensionApi,
                           downloadId: string,
                           modInfo?: any,
-                          fileList?: IFileListItem[]): Promise<string> {
+                          fileList?: IFileListItem[],
+                          forceGameId?: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -1826,7 +1828,7 @@ class InstallManager {
           } else {
             reject(error);
           }
-        }, undefined, fileList, true);
+        }, forceGameId, fileList, true);
     });
   }
 
