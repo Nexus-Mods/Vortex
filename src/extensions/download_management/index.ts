@@ -577,6 +577,95 @@ function toggleShutdown(api: IExtensionApi) {
   }
 }
 
+function checkForUnfinalized(api: IExtensionApi,
+                             downloads: { [id: string]: IDownload; },
+                             gameMode: string) {
+  const unfinalized = Object.keys(downloads)
+    .filter(id => (downloads[id].state === 'finalizing')
+               || ((downloads[id].state === 'finished')
+                   && (downloads[id].fileMD5 === undefined)));
+
+  if (unfinalized.length > 0) {
+    api.sendNotification({
+      type: 'error',
+      title: 'Some downloads were not finalized',
+      message: 'Vortex may appear frozen for a moment while repairing this.',
+      actions: [
+        {
+          title: 'Repair', action: dismiss => {
+            Promise.map(unfinalized, id => {
+              const gameId = Array.isArray(downloads[id].game)
+                ? downloads[id].game[0]
+                : gameMode;
+              const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
+              const filePath = path.join(downloadPath, downloads[id].localPath);
+              if (downloads[id].state === 'finalizing') {
+                return finalizeDownload(api, id, filePath, false)
+                  .catch(err => {
+                    log('warn', 'failed to properly finalize download', {
+                      fileName: downloads[id].localPath,
+                    });
+                  });
+              } else {
+                return genHash(filePath)
+                  .then((md5Hash: IHashResult) => {
+                    api.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
+                  });
+              }
+            })
+              .then(() => dismiss());
+          },
+        },
+      ],
+    });
+  }
+}
+
+function removeDownloadsWithoutFile(store: Redux.Store,
+                                    downloads: { [id: string]: IDownload; }) {
+  // remove downloads that have no localPath set because they just cause trouble. They shouldn't
+  // exist at all
+  Object.keys(downloads)
+    .filter(dlId => !truthy(downloads[dlId].localPath))
+    .forEach(dlId => {
+      store.dispatch(removeDownload(dlId));
+    });
+}
+
+function processInterruptedDownloads(api: IExtensionApi,
+                                     downloads: { [dlId: string]: IDownload },
+                                     gameMode: string) {
+  const interruptedDownloads = Object.keys(downloads)
+    .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
+  interruptedDownloads.forEach(id => {
+    if (!truthy(downloads[id].urls)) {
+      // download was interrupted before receiving urls, has to be canceled
+      log('info', 'download removed because urls were never retrieved', { id });
+      const gameId = Array.isArray(downloads[id].game)
+        ? downloads[id].game[0]
+        : gameMode;
+
+      const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
+      if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
+        fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
+          .then(() => {
+            api.store.dispatch(removeDownload(id));
+          });
+      } else {
+        api.store.dispatch(removeDownload(id));
+      }
+    } else {
+      let realSize = (downloads[id].size !== 0)
+        ? downloads[id].size - sum((downloads[id].chunks || []).map(chunk => chunk.size))
+        : 0;
+      if (isNaN(realSize)) {
+        realSize = 0;
+      }
+      api.store.dispatch(setDownloadInterrupted(id, realSize));
+    }
+  });
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -816,75 +905,9 @@ function init(context: IExtensionContextExt): boolean {
       const downloads = state.persistent.downloads?.files ?? {};
       const gameMode = selectors.activeGameId(state);
 
-      const interruptedDownloads = Object.keys(downloads)
-        .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
-      interruptedDownloads.forEach(id => {
-        if (!truthy(downloads[id].urls)) {
-          // download was interrupted before receiving urls, has to be canceled
-          log('info', 'download removed because urls were never retrieved', { id });
-          const gameId = Array.isArray(downloads[id].game)
-              ? downloads[id].game[0]
-              : gameMode;
-
-          const downloadPath =
-            selectors.downloadPathForGame(context.api.getState(), gameId);
-          if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
-            fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
-              .then(() => {
-                store.dispatch(removeDownload(id));
-              });
-          } else {
-            store.dispatch(removeDownload(id));
-          }
-        } else {
-          let realSize = (downloads[id].size !== 0)
-            ? downloads[id].size - sum((downloads[id].chunks || []).map(chunk => chunk.size))
-            : 0;
-          if (isNaN(realSize)) {
-            realSize = 0;
-          }
-          store.dispatch(setDownloadInterrupted(id, realSize));
-        }
-      });
-
-      const unfinalized = Object.keys(downloads)
-        .filter(id => downloads[id].state === 'finalizing');
-
-      if (unfinalized.length > 0) {
-        context.api.sendNotification({
-          type: 'error',
-          title: 'Some downloads were not finalized',
-          message: 'Vortex may appear frozen for a moment while repairing this.',
-          actions: [
-            { title: 'Repair', action: dismiss => {
-              Promise.map(unfinalized, id => {
-                const gameId = Array.isArray(downloads[id].game)
-                    ? downloads[id].game[0]
-                    : gameMode;
-                const downloadPath =
-                  selectors.downloadPathForGame(context.api.getState(), gameId);
-                return finalizeDownload(context.api, id,
-                                        path.join(downloadPath, downloads[id].localPath),
-                                        false)
-                  .catch(err => {
-                    log('warn', 'failed to properly finalize download', {
-                      fileName: downloads[id].localPath,
-                    });
-                  });
-              })
-              .then(() => dismiss());
-            } },
-          ],
-        });
-      }
-
-      // remove downloads that have no localPath set because they just cause trouble. They shouldn't
-      // exist at all
-      Object.keys(downloads)
-        .filter(dlId => !truthy(downloads[dlId].localPath))
-        .forEach(dlId => {
-          store.dispatch(removeDownload(dlId));
-        });
+      processInterruptedDownloads(context.api, downloads, gameMode);
+      checkForUnfinalized(context.api, downloads, gameMode);
+      removeDownloadsWithoutFile(store, downloads);
     }
   });
 
