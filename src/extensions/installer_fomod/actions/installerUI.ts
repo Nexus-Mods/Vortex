@@ -7,6 +7,8 @@ export const startDialog = createAction('START_FOMOD_DIALOG', (info: IInstallerI
 
 export const endDialog = createAction('END_FOMOD_DIALOG');
 
+export const clearDialog = createAction('CLEAR_FOMOD_DIALOG');
+
 export const setDialogState = createAction('SET_FOMOD_DIALOG_STATE',
   (state: IInstallerState): any => state);
 

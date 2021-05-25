@@ -16,7 +16,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 import { IMod } from '../mod_management/types/IMod';
 
-import { endDialog, setInstallerDataPath } from './actions/installerUI';
+import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
 import { IGroupList, IInstallerState } from './types/interface';
@@ -690,7 +690,8 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
 }
 
 function init(context: IExtensionContext): boolean {
-  const installWrap = async (files, scriptPath, gameId, progressDelegate, choicesIn, unattended) => {
+  const installWrap =
+      async (files, scriptPath, gameId, progressDelegate, choicesIn, unattended) => {
     const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
     const coreDelegates = new Core(context.api, gameId, canBeUnattended && (unattended === true));
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
@@ -708,7 +709,7 @@ function init(context: IExtensionContext): boolean {
 
       const state = context.api.store.getState();
       const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
-  
+
       const choices = (dialogState === undefined)
       ? undefined
       : dialogState.installSteps.map(step => {
@@ -723,7 +724,7 @@ function init(context: IExtensionContext): boolean {
           })),
         };
       });
-  
+
       result.instructions.push({
         type: 'attribute',
         key: 'installerChoices',
@@ -737,6 +738,7 @@ function init(context: IExtensionContext): boolean {
       context.api.store.dispatch(endDialog());
       return Promise.reject(transformError(err));
     } finally {
+      context.api.store.dispatch(clearDialog());
       coreDelegates.detach();
     }
   };
