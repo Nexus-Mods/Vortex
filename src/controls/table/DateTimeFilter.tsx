@@ -39,7 +39,9 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    const filt = filter || { comparison: 'eq', value: '' };
+    const filt = this.hasValidComparison(filter)
+      ? filter
+      : { comparison: 'eq', value: '' };
 
     const currentComparison = this.comparisons[filt.comparison];
 
@@ -67,6 +69,11 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
           />
         </InputGroup>
     );
+  }
+
+  private hasValidComparison(filter: any) {
+    const validComparisons = Object.keys(this.comparisons);
+    return validComparisons.includes(filter?.comparison);
   }
 
   private changeFilter = (date) => {
