@@ -42,7 +42,7 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
-import {removeMod, setModAttribute} from './actions/mods';
+import {cacheModReference, removeMod, setModAttribute} from './actions/mods';
 import { setDeploymentProblem } from './actions/session';
 import {setTransferMods} from './actions/transactions';
 import {deploymentReducer} from './reducers/deployment';
@@ -53,7 +53,7 @@ import {transactionsReducer} from './reducers/transactions';
 import {IDeployedFile, IDeploymentMethod, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileMerge} from './types/IFileMerge';
 import { IInstallOptions } from './types/IInstallOptions';
-import {IMod} from './types/IMod';
+import {IMod, IModReference} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {IResolvedMerger} from './types/IResolvedMerger';
@@ -71,6 +71,7 @@ import { registerAttributeExtractor } from './util/filterModInfo';
 import ModHistory from './util/ModHistory';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
+import { setResolvedCB } from './util/testModReference';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
@@ -1104,6 +1105,10 @@ function once(api: IExtensionApi) {
   });
 
   cleanupIncompleteInstalls(api);
+
+  setResolvedCB((gameId: string, sourceModId: string, ref: IModReference, refModId: string) => {
+    api.store.dispatch(cacheModReference(gameId, sourceModId, ref, refModId));
+  });
 }
 
 function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {

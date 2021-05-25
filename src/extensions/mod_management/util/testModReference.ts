@@ -25,7 +25,8 @@ export interface IModLookupInfo {
 
 // test if the reference is by id only, meaning it is only useful in the current setup
 function idOnly(ref: IModReference) {
-  return (ref.id !== undefined) && (Object.keys(_.omit(ref, ['archiveId', 'versionMatch'])).length === 1);
+  return (ref.id !== undefined)
+    && (Object.keys(_.omit(ref, ['archiveId', 'versionMatch', 'idHint'])).length === 1);
 }
 
 // these are only the "important" fields of the reference, not the "helper" fields
@@ -68,7 +69,18 @@ function hasIdentifyingMarker(mod: IModLookupInfo,
       || ((ref.tag !== undefined) && (mod.referenceTag !== undefined));
 }
 
-function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
+let onRefResolved: (gameId: string, modId: string,
+                    reference: IModReference, refModId: string) => void;
+
+function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
+                 source?: { gameId: string, modId: string }): boolean {
+  // if an id is set, it has to match
+  if ((ref.id !== undefined)
+      && ((modId !== undefined) || idOnly(ref))
+      && (ref.id !== modId)) {
+    return false;
+  }
+
   const fuzzyVersion = isFuzzyVersion(ref.versionMatch);
 
   if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion)) {
@@ -80,12 +92,6 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
   if ((ref.tag !== undefined) && (mod.referenceTag === ref.tag)) {
     return true;
   }
-
-  if ((ref.id !== undefined)
-      && ((modId !== undefined) || idOnly(ref))
-      && (ref.id !== modId)) {
-    return false;
-  } // we do allow a fallback to fuzzy matching if the ids don't match
 
   // if reference is by file hash and the match is not fuzzy, require the md5 to match
   if ((ref.fileMD5 !== undefined)
@@ -134,7 +140,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
     if (semver.valid(semver.coerce(mod.version))) {
-      let versionMatch = ref.versionMatch.split('+')[0];
+      const versionMatch = ref.versionMatch.split('+')[0];
       if ((mod.version !== ref.versionMatch)
         && !semver.satisfies(semver.coerce(mod.version), versionMatch, true)) {
         return false;
@@ -154,19 +160,33 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
     return false;
   }
 
+  if ((source !== undefined) && (modId !== undefined) && (ref.idHint !== modId)) {
+    // if this resolved to a different mod
+    onRefResolved?.(source.gameId, source.modId, ref, modId);
+  }
+
   return true;
 }
 
-export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference) {
+/**
+ * sets the callback for when a (fuzzy) mod reference is resolved, so the cache can be updated
+ */
+export function setResolvedCB(
+    cb: (gameId: string, sourceModId: string, ref: IModReference, modId: string) => void) {
+  onRefResolved = cb;
+}
+
+export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference,
+                                 source?: { gameId: string, modId: string }) {
   if (mod === undefined) {
     return false;
   }
 
   if ((mod as any).attributes) {
-    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id, reference);
+    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id, reference, source);
   } else {
     const lookup = mod as IModLookupInfo;
-    return testRef(lookup, lookup.id, reference);
+    return testRef(lookup, lookup.id, reference, source);
   }
 }
 

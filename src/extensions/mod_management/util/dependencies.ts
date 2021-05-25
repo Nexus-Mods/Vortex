@@ -3,7 +3,7 @@ import { IDownload, IState } from '../../../types/IState';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 
 import { IDependency, ILookupResultEx } from '../types/IDependency';
-import { IDownloadHint, IFileListItem, IMod, IModRule } from '../types/IMod';
+import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../types/IMod';
 
 import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
 import {log} from '../../../util/log';
@@ -33,9 +33,16 @@ interface IBrowserResult {
   referer?: string | (() => Promise<string>);
 }
 
-function findModByRef(reference: IReference, state: IState): IMod {
+function findModByRef(reference: IModReference, state: IState, sourceModId: string): IMod {
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
+
+  if ((reference['idHint'] !== undefined)
+      && (testModReference(mods[reference['idHint']], reference,
+                           { gameId: gameMode, modId: sourceModId }))) {
+    // fast-path if we have an id from a previous match
+    return mods[reference['idHint']];
+  }
 
   if ((reference.versionMatch !== undefined)
       && isFuzzyVersion(reference.versionMatch)
@@ -46,7 +53,7 @@ function findModByRef(reference: IReference, state: IState): IMod {
   }
 
   return Object.values(mods).find((mod: IMod): boolean =>
-    testModReference(mod, reference));
+    testModReference(mod, reference, { gameId: gameMode, modId: sourceModId }));
 }
 
 function newerSort(lhs: IDownload, rhs: IDownload): number {
@@ -314,15 +321,15 @@ function gatherDependencies(
   api: IExtensionApi,
   recommendations: boolean,
   progressCB?: (percent: number) => void,
+  modId?: string,
 ): Promise<IDependency[]> {
   const state = api.store.getState();
   const requirements: IModRule[] =
     rules === undefined
       ? []
-      : rules.filter(
-          (rule: IRule) =>
+      : rules.filter((rule: IRule) =>
             (rule.type === (recommendations ? 'recommends' : 'requires'))
-            && findModByRef(rule.reference, state) === undefined,
+            && (findModByRef(rule.reference, state, modId) === undefined),
         );
 
   let numCompleted = 0;

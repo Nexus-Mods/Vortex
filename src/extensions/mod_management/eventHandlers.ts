@@ -20,7 +20,7 @@ import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import { IDeploymentManifest } from './types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
-import {IMod} from './types/IMod';
+import {IMod, IModRule} from './types/IMod';
 import {getManifest, loadActivation, purgeDeployedFiles, saveActivation, withActivationLock} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
@@ -42,6 +42,8 @@ import { ensureStagingDirectory } from './stagingDirectory';
 
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
+import * as _ from 'lodash';
+import { RuleType } from 'modmeta-db';
 import * as path from 'path';
 
 const app = remote !== undefined ? remote.app : appIn;
@@ -414,6 +416,21 @@ export function onPathsChanged(api: IExtensionApi,
   }
 }
 
+function loadOrderRulesChanged(before: IModRule[], after: IModRule[]): boolean {
+  if (before === after) {
+    return false;
+  }
+
+  // if the rules changed it's still possible the change was only in rules unrelated to
+  // load order
+
+  const types: RuleType[] = ['before', 'after'];
+
+  return !_.isEqual(
+    before.filter(rule => types.includes(rule.type)).sort(),
+    after.filter(rule => types.includes(rule.type)).sort());
+}
+
 export function onModsChanged(api: IExtensionApi, previous: IModTable, current: IModTable) {
   const { store } = api;
   const state: IState = store.getState();
@@ -426,7 +443,8 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
 
   const rulesOrOverridesChanged = modId =>
     (getSafe(previous, [gameMode, modId], undefined) !== undefined)
-    && (changed(modId, 'rules') || changed(modId, 'fileOverrides') || changed(modId, 'type'));
+    && (loadOrderRulesChanged(previous[gameMode][modId].rules, current[gameMode][modId].rules)
+        || changed(modId, 'fileOverrides') || changed(modId, 'type'));
 
   if ((previous[gameMode] !== current[gameMode])
       && !state.persistent.deployment.needToDeploy[gameMode]) {

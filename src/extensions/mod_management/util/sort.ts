@@ -26,8 +26,9 @@ export class CycleError extends Error {
   }
 }
 
-function findByRef(mods: IMod[], reference: IReference): IMod {
-  return mods.find((mod: IMod) => testModReference(mod, reference));
+function findByRef(mods: IMod[], reference: IReference,
+                   source: { gameId: string, modId: string }): IMod {
+  return mods.find((mod: IMod) => testModReference(mod, reference, source));
 }
 
 let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } = {
@@ -78,7 +79,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
             getSafe(metaInfo, [0, 'value', 'rules'], []),
             mod.rules || []);
           rules.forEach((rule: IRule) => {
-            const ref = findByRef(mods, rule.reference);
+            const ref = findByRef(mods, rule.reference, { modId: mod.id, gameId });
             if (ref !== undefined) {
               ++numRules;
               if (rule.type === 'before') {

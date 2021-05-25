@@ -135,6 +135,21 @@ export const modsReducer: IReducerSpec = {
       return removeValueIf(state, [gameId, modId, 'rules'],
         (iterRule: IRule) => ruleEqual(iterRule, rule));
     },
+    [actions.cacheModReference as any]: (state, payload) => {
+      const { gameId, modId, reference, refModId } = payload;
+
+      const indices: number[] = [];
+      const rules: IRule[] = getSafe(state, [gameId, modId, 'rules'], []);
+      for (let i = 0; i < rules.length; ++i) {
+        if (referenceEqual(rules[i].reference, reference)) {
+          indices.push(i);
+        }
+      }
+      indices.forEach(idx => {
+        state = setSafe(state, [gameId, modId, 'rules', idx, 'reference', 'idHint'], refModId);
+      });
+      return state;
+    },
     [actions.setINITweakEnabled as any]: (state, payload) => {
       const { gameId, modId, tweak, enabled } = payload;
       return (enabled)

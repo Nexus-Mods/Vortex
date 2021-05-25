@@ -1,6 +1,6 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-import { IMod, IModRule, ModState } from '../types/IMod';
+import { IMod, IModReference, IModRule, ModState } from '../types/IMod';
 
 import * as reduxAct from 'redux-act';
 
@@ -64,6 +64,14 @@ export const addModRule = safeCreateAction('ADD_MOD_RULE',
  */
 export const removeModRule = safeCreateAction('REMOVE_MOD_RULE',
   (gameId: string, modId: string, rule: IModRule) => ({ gameId, modId, rule }));
+
+/**
+ * store the mod id for a resolved rule, so we can resolve it quicker and more
+ * reliably in the future
+ */
+export const cacheModReference = safeCreateAction('CACHE_MOD_REFERENCE',
+  (gameId: string, modId: string, reference: IModReference, refModId: string) =>
+    ({ gameId, modId, reference, refModId }));
 
 export const setINITweakEnabled = safeCreateAction(
     'SET_TWEAK_ENABLED',

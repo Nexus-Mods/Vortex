@@ -44,11 +44,13 @@ export interface IModRepoId {
 }
 
 export interface IModReference extends IReference {
-  // the id is more of a hint than a requirement, making sure we use a previously resolved
-  // match, otherwise we could get into a situation where the fuzzy reference value lead us to
-  // a valid download&installation but then we don't recognize the installed mod as matching.
-  // This can also be the only attribute during the creation of collections.
+  // if this is set, it's a reference tied to a local mod, all other attributes are then treated
+  // as a fallback, meaning they are only considered if a mod by this id doesn't exist.
   id?: string;
+  // this is basically a cache. Once a rule has been successfully matched to a local mod, Vortex
+  // will check against that mod first. It will still have to fulfill all other attributes but if it
+  // does, no more check gets done.
+  idHint?: string;
   // the archive id is used only if it's the only flag alongside id, alowing to find a previously
   // downloaded archive in the same way id helps find a locally installed mod
   archiveId?: string;
