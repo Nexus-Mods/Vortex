@@ -71,8 +71,8 @@ function browseForDownload(api: IExtensionApi,
       if (lookupResult === undefined) {
         lookupResult = api.emitAndAwait('browse-for-download', url, instruction)
           .then((resultList: string[]) => {
-            const [url, referer] = resultList[0].split('<');
-            return { url, referer };
+            const [dlUrl, referer] = resultList[0].split('<');
+            return { url: dlUrl, referer };
           });
       }
       return lookupResult;
@@ -158,10 +158,10 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
         } catch (err) {
           log('error', 'failed to compare version', {
             lhs: lhs.dep.lookupResults[0]?.value?.fileVersion,
-            rhs: rhs.dep.lookupResults[0]?.value?.fileVersion
+            rhs: rhs.dep.lookupResults[0]?.value?.fileVersion,
           });
           return rhs.dep.lookupResults[0]?.value?.fileVersion.localeCompare(
-            lhs.dep.lookupResults[0]?.value?.fileVersion
+            lhs.dep.lookupResults[0]?.value?.fileVersion,
           );
         }
       }
@@ -251,26 +251,34 @@ function gatherDependenciesGraph(
 
       return api.lookupModReference(rule.reference, { requireURL: true });
     })
-
     .then((details: ILookupResult[]) => {
       lookupResults = details;
 
-      if ((details.length === 0) || (details[0].value === undefined)) {
-        throw new Error(
-          'reference not found: ' + JSON.stringify(rule.reference),
-        );
-      }
-
-      const rules = details[0]?.value?.rules || [];
+      const rules = details?.[0]?.value?.rules || [];
 
       return Promise.all(rules
           .map(subRule => limit.do(() => gatherDependenciesGraph(subRule, api, recommendations))));
     })
     .then(nodes => {
+
       const res: IDependencyNode = {
         download,
         reference: rule.reference,
-        lookupResults,
+        lookupResults: (lookupResults.length > 0)
+          ? lookupResults.map(iter => makeLookupResult(iter, urlFromHint))
+          : (urlFromHint !== undefined)
+          ? [{
+            key: 'from-download-hint', value: {
+              fileName: rule.reference.logicalFileName,
+              fileSizeBytes: rule.reference.fileSize,
+              gameId: rule.reference.gameId,
+              fileVersion: undefined,
+              fileMD5: rule.reference.fileMD5,
+              sourceURI: urlFromHint.url,
+              referer: urlFromHint.referer,
+            },
+          }]
+          : [],
         dependencies: nodes.filter(node => node !== null),
         redundant: false,
         extra: rule.extra,
