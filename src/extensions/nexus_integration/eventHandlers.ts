@@ -505,14 +505,10 @@ export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
       return fs.statAsync(assetFilePath)
         .then(stat => upload(url, fs.createReadStream(assetFilePath), stat.size))
         .then(() => uuid);
-      })
-      .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
-      .then(response => nexus.attachCollectionsToCategory(3, [response.collectionId])
-        .then(() => response))
-      .then(response => nexus.publishRevision(response.revisionId)
-        .then(() => response))
-      .then(response => callback(null, response))
-      .catch(err => callback(err));
+    })
+    .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
+    .then(response => callback(null, response))
+    .catch(err => callback(err));
   };
 }
 
