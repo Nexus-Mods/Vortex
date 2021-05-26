@@ -111,17 +111,25 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
       </div>
     );
 
-    return (
-      <Dropdown
-        id={`${id}-menu`}
-        ref={this.setRef}
-      >
+    const btn = (
         <Button
           onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
           data-value={actions[defaultIdx].title}
         >
           {title}
         </Button>
+    );
+
+    if (rest.length === 0) {
+      return btn;
+    }
+
+    return (
+      <Dropdown
+        id={`${id}-menu`}
+        ref={this.setRef}
+      >
+        {btn}
         <Dropdown.Toggle open={this.state.open} onClick={this.toggleOpen} />
         <PortalMenu
           open={this.state.open}
