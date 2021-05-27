@@ -829,7 +829,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 }
 
 export function ensureDirWritableAsync(dirPath: string,
-                                       confirm: () => PromiseLike<void>): PromiseBB<void> {
+                                       confirm?: () => PromiseLike<void>): PromiseBB<void> {
   if (confirm === undefined) {
     confirm = () => PromiseBB.resolve();
   }
