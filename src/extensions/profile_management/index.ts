@@ -19,7 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session';
-import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
+import { IAttachment, IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, UserCanceled } from '../../util/CustomErrors';
@@ -394,6 +394,19 @@ function genOnProfileChange(api: IExtensionApi,
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
+      })
+      .catch(CorruptActiveProfile, (err) => {
+        err['attachLogOnReport'] = true;
+        const persistentData = api.getState().persistent;
+        const attachment: IAttachment = {
+          id: 'persistentData',
+          type: 'data',
+          data: {
+            persistentData,
+          },
+          description: 'Application State',
+        };
+        showError(store.dispatch, 'Failed to set profile', err, { attachments: [ attachment ] });
       })
       .catch(UserCanceled, () => null)
       .catch(err => {
