@@ -102,8 +102,6 @@ interface IRunningDownload {
   headers?: any;
   assembler?: FileAssembler;
   assemblerProm?: Promise<FileAssembler>;
-
-  redownload: RedownloadMode;
   chunks: IDownloadJob[];
   chunkable: boolean;
   promises: Array<Promise<any>>;
@@ -669,8 +667,7 @@ class DownloadManager {
                  fileName: string,
                  progressCB: ProgressCallback,
                  destinationPath?: string,
-                 options?: IDownloadOptions,
-                 redownload: RedownloadMode = 'ask'): Promise<IDownloadResult> {
+                 options?: IDownloadOptions): Promise<IDownloadResult> {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
@@ -697,8 +694,7 @@ class DownloadManager {
               ? Promise.resolve(path.join(destPath, path.basename(filePath))) : undefined,
             error: false,
             urls,
-            redownload,
-            resolvedUrls: this.resolveUrls(urls, nameTemplate),
+            resolvedUrls: this.resolveUrls(urls, nameTemplate, options?.nameHint),
             options,
             started: new Date(),
             lastProgressSent: 0,
@@ -733,6 +729,14 @@ class DownloadManager {
                 chunks: IChunk[],
                 progressCB: ProgressCallback,
                 options?: IDownloadOptions): Promise<IDownloadResult> {
+    if (options === undefined) {
+      options = {};
+    }
+    if (options.redownload === undefined) {
+      // we don't know what this was set to initially but going to assume that it was always
+      // or the user said yes, otherwise why is this resumable and not canceled?
+      options.redownload = 'always';
+    }
     return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
@@ -740,13 +744,10 @@ class DownloadManager {
         tempName: filePath,
         error: false,
         urls,
-        resolvedUrls: this.resolveUrls(urls, path.basename(filePath)),
+        resolvedUrls: this.resolveUrls(urls, path.basename(filePath), options?.nameHint),
         options,
         lastProgressSent: 0,
         received,
-        // we don't know what this was set to initially but going to assume that it was always
-        // or the user said yes, otherwise why is this resumable and not canceled?
-        redownload: 'always',
         size,
         started: new Date(started),
         chunks: [],
@@ -854,7 +855,7 @@ class DownloadManager {
     return unfinishedChunks;
   }
 
-  private resolveUrl(input: string, name: string): Promise<IResolvedURL> {
+  private resolveUrl(input: string, name: string, friendlyName: string): Promise<IResolvedURL> {
     if ((this.mResolveCache[input] !== undefined)
       && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
       const cache = this.mResolveCache[input];
@@ -867,7 +868,7 @@ class DownloadManager {
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
-      ? handler(input, name)
+      ? handler(input, name, friendlyName)
         .then(res => {
           this.mResolveCache[input] = { time: Date.now(), urls: res.urls, meta: res.meta };
           return res;
@@ -875,17 +876,20 @@ class DownloadManager {
       : Promise.resolve({ urls: [input], meta: {} });
   }
 
-  private resolveUrls(urls: string[], name: string): () => Promise<IResolvedURLs> {
+  private resolveUrls(urls: string[],
+                      name: string,
+                      friendlyName: string)
+                      : () => Promise<IResolvedURLs> {
     let cache: Promise<IResolvedURLs>;
 
     return () => {
       if (cache === undefined) {
-        let error: Error; 
+        let error: Error;
         // TODO: Does it make sense here to resolve all urls?
         //   For all we know they could resolve to an empty list so
         //   it wouldn't be enough to just one source url
         cache = Promise.reduce(urls, (prev, iter) => {
-          return this.resolveUrl(iter, name)
+          return this.resolveUrl(iter, name, friendlyName)
             .then(resolved => {
               return Promise.resolve({
                 urls: [...prev.urls, ...resolved.urls],

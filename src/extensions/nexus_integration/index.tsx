@@ -1098,7 +1098,8 @@ type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<st
 
 function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   const resolveFunc = (input: string,
-                       name?: string)
+                       name?: string,
+                       friendlyName?: string)
                        : Promise<IResolvedURL> => {
     const state = api.store.getState();
 
@@ -1142,13 +1143,21 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
             resolve = undefined;
           }
         };
+        if (!friendlyName) {
+          friendlyName = name;
+        }
+        if (!friendlyName) {
+          friendlyName = api.translate(
+            'Nexus Mods (Game {{gameId}}, Mod {{modId}}, File {{fileId}}', {
+            replace: url });
+        }
         api.showDialog('info', 'About to open Nexus Mods', {
           text: 'Since you\'re not a premium user, every download has to be started from the '
               + 'website. Please click the button below to take you to the '
               + 'appropriate site (in your default webbrowser).\n\n'
               + 'This dialog will close automatically (or move to the next required file) '
               + 'once the download has started.',
-          message: name || input,
+          message: friendlyName,
           links: [{ label: 'Open Site', action: (dismiss) => {
             onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
               return resolveFunc(updatedLink, name)

@@ -474,6 +474,7 @@ export class DownloadObserver {
     return {
       referer: modInfo.referer,
       redownload,
+      nameHint: modInfo.name,
     };
   }
 }

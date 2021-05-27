@@ -11,6 +11,9 @@ export interface IDownloadFailCause {
 export interface IDownloadOptions {
   referer?: string;
   redownload?: RedownloadMode;
+  // If available, will contain the user-friendly name of the mod. Will only be used in messages
+  // to the user
+  nameHint?: string;
 }
 
 /**
