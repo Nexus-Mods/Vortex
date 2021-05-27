@@ -121,9 +121,10 @@ class MainWindow {
         }
       });
 
-    this.mWindow.webContents.on('crashed', (evt, killed) => {
-      log('error', killed ? 'killed' : 'crashed');
-      if (!killed) {
+    this.mWindow.webContents.on('render-process-gone',
+        (evt, details: Electron.RenderProcessGoneDetails) => {
+      log('error', 'render process gone', { exitCode: details.exitCode, reason: details.reason });
+      if (details.reason !== 'killed') {
         store.dispatch(addNotification({
           type: 'error',
           message: 'Vortex restarted after a crash, sorry about that.',

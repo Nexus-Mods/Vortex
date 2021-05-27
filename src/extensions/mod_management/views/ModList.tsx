@@ -417,7 +417,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
 
     const filtered = sources.filter(source => {
-      if ((source.options === undefined) || (source.options.condition === undefined)) {
+      if (source.onBrowse === undefined) {
+        return false;
+      }
+      if ((source.options?.condition === undefined)) {
         return true;
       }
       return source.options.condition();
@@ -452,7 +455,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
 
     const filtered = sources.filter(source => {
-      if ((source.options === undefined) || (source.options.condition === undefined)) {
+      if (source.onBrowse === undefined) {
+        return false;
+      }
+      if (source.options?.condition === undefined) {
         return true;
       }
       return source.options.condition();
@@ -496,8 +502,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private getMoreMods = () => {
-    if (this.props.modSources.length > 0) {
-      this.props.modSources[0].onBrowse();
+    const browseable = this.props.modSources.find(iter => iter.onBrowse !== undefined);
+    if (browseable !== undefined) {
+      browseable.onBrowse();
     }
   }
 
@@ -1354,7 +1361,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => {
       batchDispatch(dispatch, modIds.map(modId => setModEnabled(profileId, modId, enabled)));
     },
-    onShowDialog: (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
     onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),
   };

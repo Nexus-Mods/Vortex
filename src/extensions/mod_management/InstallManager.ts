@@ -1131,7 +1131,8 @@ class InstallManager {
     let mod: IMod;
     Object.keys(mods).forEach(key => {
       const newestFileId: number = mods[key].attributes?.newestFileId;
-      const currentFileId: number = mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
+      const currentFileId: number =
+        mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
       if ((newestFileId !== currentFileId)
           && (newestFileId === fileId)) {
         mod = mods[key];
@@ -1336,8 +1337,8 @@ class InstallManager {
       return this.downloadURL(api, lookupResult, referenceTag);
     }
 
-    const knownGames = api.getState().session.gameMode.known;
-    const gameId = convertGameIdReverse(knownGames, lookupResult.domainName || lookupResult.gameId);
+    const gameId = convertGameIdReverse(knownGames(api.getState()),
+                                        lookupResult.domainName || lookupResult.gameId);
 
     return api.emitAndAwait('start-download-update',
       lookupResult.source, gameId, modId, fileId, pattern)
@@ -1495,10 +1496,12 @@ class InstallManager {
     dependencies.map(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.id = dep.mod.id;
+      // if this is a fuzzy reference, drop the md5 hash because while that is useful to
+      // find the mod in the repository, it will no longer be valid after updates.
       if (isFuzzyVersion(dep.reference.versionMatch)
         && (dep.reference.fileMD5 !== undefined)
         && ((dep.reference.logicalFileName !== undefined)
-          || (dep.reference.fileExpression !== undefined))) {
+            || (dep.reference.fileExpression !== undefined))) {
         updatedRef.fileMD5 = undefined;
       }
 
@@ -1598,7 +1601,7 @@ class InstallManager {
           instCount: requiredInstalls.length,
           dlCount: requiredDownloads.length,
           errors: error.map(err => err.error).join('<br/>'),
-        }
+        },
       }, actions)).then(result => {
         if (result.action === 'Install') {
           return this.doInstallDependencies(api, profile, modId, success, false)
@@ -1800,7 +1803,7 @@ class InstallManager {
       text: 'There are instructions provided for the following mod installation.',
     }, [
       { label: 'Show', action: () => {
-        api.ext.showOverlay?.('install-instructions', title, instructions)
+        api.ext.showOverlay?.('install-instructions', title, instructions);
       } },
     ])
     .then(() => cb());
@@ -1907,7 +1910,8 @@ class InstallManager {
                     return fs.statAsync(destPath)
                       .then(stat => {
                         fileSize = stat.size;
-                        api.store.dispatch(addLocalDownload(archiveId, gameId, dest.dest, fileSize));
+                        api.store.dispatch(
+                          addLocalDownload(archiveId, gameId, dest.dest, fileSize));
                         return fileMD5(destPath);
                       })
                       .then(md5 => {

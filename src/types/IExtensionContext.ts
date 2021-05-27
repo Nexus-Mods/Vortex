@@ -177,7 +177,9 @@ export interface IRegisterProtocol {
 }
 
 export interface IRegisterRepositoryLookup {
-  (repositoryId: string, preferOverMD5: boolean, callback: (id: IModRepoId) => Promise<IModLookupResult[]>);
+  (repositoryId: string,
+   preferOverMD5: boolean,
+   callback: (id: IModRepoId) => Promise<IModLookupResult[]>);
 }
 
 export interface IFileFilter {
@@ -549,8 +551,8 @@ export interface IExtensionApi {
    * This will either work as a fallback or as a replacement to the md5 based lookup for
    * applicable mods.
    * The "repositoryId" should be the same as the "source" used.
-   * It's possible to return multiple results if the input data doesn't definitively identify a single
-   * item but this might be a bit of a mess to figure out later.
+   * It's possible to return multiple results if the input data doesn't definitively identify a
+   * single item but this might be a bit of a mess to figure out later.
    */
   registerRepositoryLookup: IRegisterRepositoryLookup;
 
@@ -919,7 +921,7 @@ export interface IExtensionContext {
    */
   registerModSource: (id: string,
                       name: string,
-                      onBrowse: () => void,
+                      onBrowse?: () => void,
                       options?: IModSourceOptions) => void;
 
   /**

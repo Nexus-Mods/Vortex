@@ -48,7 +48,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       filtered: [],
     });
 
-    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 500);
+    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 1000);
   }
 
   public componentDidMount() {
@@ -65,7 +65,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   public componentDidUpdate(prevProps: IProps) {
     if (prevProps.notifications !== this.props.notifications) {
-      if (prevProps.notifications.length != this.props.notifications.length) {
+      if (prevProps.notifications.length !== this.props.notifications.length) {
         this.mUpdateDebouncer.runNow(() => null);
       } else {
         this.mUpdateDebouncer.schedule();

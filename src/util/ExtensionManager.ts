@@ -1412,7 +1412,10 @@ class ExtensionManager {
     return haveToRegister;
   }
 
-  private registerRepositoryLookup = (repository: string, preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
+  private registerRepositoryLookup =
+       (repository: string,
+        preferOverMD5: boolean,
+        func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
     this.mRepositoryLookup[repository] = { preferOverMD5, func };
   }
 

@@ -872,7 +872,7 @@ function init(context: IExtensionContextExt): boolean {
           store.getState().settings.downloads.maxChunks, (speed: number) => {
             if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
               // this first call is only applied in the renderer for performance reasons
-              store.dispatch(setDownloadSpeed(speed));
+              store.dispatch(setDownloadSpeed(Math.round(speed)));
               // this schedules the main progress to be updated
               speedsDebouncer.schedule();
               if (powerTimer !== undefined) {
@@ -898,8 +898,7 @@ function init(context: IExtensionContextExt): boolean {
         ])
         .then(result => result.action === 'Continue');
       });
-      observer =
-          observeImpl(context.api, manager);
+      observer = observeImpl(context.api, manager);
 
       const state = context.api.getState();
       const downloads = state.persistent.downloads?.files ?? {};

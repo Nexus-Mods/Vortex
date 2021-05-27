@@ -3,6 +3,6 @@ import { IModSourceOptions } from '../../../types/IExtensionContext';
 export interface IModSource {
   id: string;
   name: string;
-  onBrowse: () => void;
+  onBrowse?: () => void;
   options?: IModSourceOptions;
 }

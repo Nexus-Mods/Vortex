@@ -53,8 +53,8 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm, processErrorMessage,
-         startDownload, updateKey } from './util';
+import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
+         processErrorMessage, startDownload, updateKey } from './util';
 
 import NexusT, { IDateTime, IDownloadURL, IFileInfo,
   IModFile,
@@ -129,7 +129,7 @@ function getCaller() {
   // set up error to return the vanilla v8 stack trace
   const dummyObject: { stack?: any } = {};
   Error.stackTraceLimit = Infinity;
-  Error.prepareStackTrace = (dummyObject, trace) => trace;
+  Error.prepareStackTrace = (dummy, trace) => trace;
   Error.captureStackTrace(dummyObject, getCaller);
   const v8StackTrace = dummyObject.stack;
 
@@ -346,7 +346,8 @@ function toTimestamp(time?: IDateTime | string): number {
   if (typeof(time) === 'string') {
     return (new Date(time)).getTime();
   } else {
-    return (new Date(time.year, time.month, time.day, time.hour, time.minute, time.second)).getTime();
+    return (new Date(time.year, time.month, time.day, time.hour, time.minute, time.second))
+      .getTime();
   }
 }
 
@@ -406,14 +407,16 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       uploader_url: input.download?.modInfo?.nexus?.modInfo?.uploaded_users_profile_url,
       category,
       pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage,
-      description: nexusModInfo?.description ?? nexusCollectionInfo?.collection?.metadata?.description,
+      description: nexusModInfo?.description
+                ?? nexusCollectionInfo?.collection?.metadata?.description,
       shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.metadata?.summary,
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,
       logicalFileName: fileName,
       changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
-      uploadedTimestamp: nexusFileInfo?.uploaded_timestamp ?? toTimestamp(nexusCollectionInfo?.createdAt),
+      uploadedTimestamp: nexusFileInfo?.uploaded_timestamp
+                      ?? toTimestamp(nexusCollectionInfo?.createdAt),
       updatedTimestamp: toTimestamp(nexusCollectionInfo?.updatedAt),
       version: nexusFileInfo?.version ?? (nexusCollectionInfo?.revision?.toString?.()),
       modVersion: nexusModInfo?.version ?? (nexusCollectionInfo?.revision?.toString?.()),
@@ -745,7 +748,7 @@ const gameNum = (() => {
     }
 
     return cache[gameId];
-  }
+  };
 })();
 
 function makeFileUID(repoInfo: IModRepoId): string {
@@ -769,8 +772,8 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
       author: true,
       modCategory: {
         id: true,
-      }
-    }
+      },
+    },
   } as any;
 
   interface IQueueItem {
@@ -785,17 +788,18 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
     pendingQueries = [];
     return nexusGamesProm()
       .then(() => {
-        return nexusConn.modFilesByUid(query, processingQueries.map(iter => makeFileUID(iter.repoInfo)) as any[])
-        .then(files => {
-        processingQueries.forEach(query => {
-          const uid = makeFileUID(query.repoInfo);
+        return nexusConn.modFilesByUid(query,
+          processingQueries.map(iter => makeFileUID(iter.repoInfo)) as any[])
+        .then((files: IModFile[]) => {
+        processingQueries.forEach(item => {
+          const uid = makeFileUID(item.repoInfo);
           const res = files.find(iter => iter['uid'] === uid);
           if (res !== undefined) {
-            query.resolve(res);
+            item.resolve(res);
           } else {
             // the number of uids we can request in one call may be limited, just retry.
             // We're supposed to get an error if the request actually failed.
-            pendingQueries.push(query);
+            pendingQueries.push(item);
           }
         });
         if (pendingQueries.length > 0) {

@@ -80,7 +80,7 @@ function startDownloadCollection(api: IExtensionApi,
         message: 'Downloading Collection',
         displayMS: 40000,
       });
-      return nexus.getCollectionDownloadLink(revision.downloadLink)
+      return nexus.getCollectionDownloadLink(revision.downloadLink);
     })
     .then(downloadUrls => {
       return toPromise<string>(cb => api.events.emit('start-download',
@@ -130,7 +130,7 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
       metadata: {
         summary: true,
         description: true,
-      }
+      },
     },
     createdAt: true,
     updatedAt: true,
@@ -576,11 +576,10 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
       .then(collection => {
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
         if (collection.currentRevision.id !== mods[modId].attributes?.revisionId) {
-          store.dispatch(setModAttribute(gameId, modId, 'newestFileId', collection.currentRevision.id));
+          store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
+                                         collection.currentRevision.id));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
             collection.currentRevision.revision.toString()));
-          // store.dispatch(setModAttribute(gameId, modId, 'newestRevisionId', collection.currentRevision.id));
-          // store.dispatch(setModAttribute(gameId, modId, 'newestRevisionNumber', collection.currentRevision.revision));
         }
       });
   }));

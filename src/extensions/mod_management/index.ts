@@ -139,7 +139,7 @@ function registerInstaller(id: string,
 
 function registerModSource(id: string,
                            name: string,
-                           onBrowse: () => void,
+                           onBrowse?: () => void,
                            options?: IModSourceOptions) {
   modSources.push({ id, name, onBrowse, options });
 }

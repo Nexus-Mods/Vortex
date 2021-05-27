@@ -26,8 +26,9 @@ import submitFeedback from './util/submitFeedback';
 import { NEXUS_BASE_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
-import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
-                RateLimitError, TimeoutError, IDownloadURL, ICollectionManifest, ICollectionInfo } from '@nexusmods/nexus-api';
+import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
+                IDownloadURL, IFeedbackResponse,
+                IIssue, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -266,7 +267,8 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
       .catch(AlreadyDownloaded, err => {
         const state = api.getState();
         const downloads = state.persistent.downloads.files;
-        const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
+        const dlId = Object.keys(downloads).find(iter =>
+          downloads[iter].localPath === err.fileName);
         return dlId;
       })
       .then(downloadId => {
@@ -371,7 +373,7 @@ export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
         api.showErrorNotification('Failed to get nexus revision info', err);
         return Promise.resolve(undefined);
       });
-  }
+  };
 }
 
 export function onRateRevision(api: IExtensionApi, nexus: Nexus)
@@ -479,7 +481,10 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
   };
 }
 
-function sendCollection(nexus: Nexus, collectionInfo: ICollectionManifest, collectionId: number, uuid: string) {
+function sendCollection(nexus: Nexus,
+                        collectionInfo: ICollectionManifest,
+                        collectionId: number,
+                        uuid: string) {
   if (collectionId === undefined) {
     return nexus.createCollection({
         adultContent: false,

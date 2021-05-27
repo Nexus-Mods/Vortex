@@ -281,9 +281,9 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
       const buttonType = forceButtonType || this.props.buttonType;
       const hasIcon = (buttonType === undefined)
-        || ['icon', 'both', 'menu'].indexOf(buttonType) !== -1;
+        || ['icon', 'both', 'menu'].includes(buttonType);
       const hasText = (buttonType === undefined)
-        || ['text', 'both', 'menu'].indexOf(buttonType) !== -1;
+        || ['text', 'both', 'menu'].includes(buttonType);
 
       const tooltip = (typeof(icon.show) === 'string')
         ? icon.show
