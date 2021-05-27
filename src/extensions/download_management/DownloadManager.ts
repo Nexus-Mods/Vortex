@@ -903,7 +903,7 @@ class DownloadManager {
             });
         }, { urls: [], meta: {}, updatedUrls: [] })
         .then(res => {
-          if ((urls.length === 0) && (error !== undefined)) {
+          if ((res.urls.length === 0) && (error !== undefined)) {
             return Promise.reject(error);
           }
           return Promise.resolve(res);
@@ -1258,7 +1258,11 @@ class DownloadManager {
           download.failedCB(err);
         })
         .then(() => download.resolvedUrls())
-        .then(resolved => {
+        .catch(err => {
+          log('error', 'failed to resolve urls', err.message);
+          return { urls: [], meta: {} };
+        })
+        .then((resolved: IResolvedURLs) => {
           const unfinishedChunks = download.chunks
             .filter(chunk => chunk.state === 'paused')
             .map(this.toStoredChunk);
