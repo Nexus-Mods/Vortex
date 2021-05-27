@@ -349,6 +349,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
       // and any time we change to a different page (forward or backwards)
       || ((this.props.installerState !== undefined)
+          && (nextProps.installerState !== undefined)
           && ((this.props.installerInfo !== nextProps.installerInfo)
             || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
       // fully update the description
