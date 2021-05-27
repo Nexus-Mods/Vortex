@@ -15,6 +15,7 @@ import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
+import { jsonRequest } from '../../util/network';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
@@ -31,6 +32,8 @@ import { FULL_REVISION_INFO } from './util/graphQueries';
 import transformUserInfo from './util/transformUserInfo';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
+
+const GAMES_JSON_URL = 'https://data.nexusmods.com/file/nexus-data/games.json';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -838,12 +841,20 @@ let onCacheLoaded: () => void;
 const cachePromise = new Promise(resolve => onCacheLoaded = resolve);
 
 export function retrieveNexusGames(nexus: Nexus) {
+  return Promise.resolve(jsonRequest<IGameListEntry[]>(GAMES_JSON_URL))
+    .then(gamesList => {
+      nexusGamesCache = gamesList.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      onCacheLoaded();
+    });
+
+  /* could also do this through the API but fetching a static file is more efficient
   nexus.getGames()
     .then(games => {
       nexusGamesCache = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
       onCacheLoaded();
     })
     .catch(err => null);
+  */
 }
 
 export function nexusGames(): IGameListEntry[] {
