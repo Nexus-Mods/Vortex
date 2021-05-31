@@ -103,8 +103,8 @@ export class DownloadObserver {
 
   private handleDownloadError(err: Error, id: string, downloadPath: string,
                               callback?: (err: Error, id: string) => void) {
+    const innerState: IState = this.mApi.getState();
     if (err instanceof DownloadIsHTML) {
-      const innerState: IState = this.mApi.store.getState();
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
 
@@ -119,13 +119,7 @@ export class DownloadObserver {
             this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
           });
       }
-    } else if (err instanceof UserCanceled) {
-      this.mApi.store.dispatch(removeDownload(id));
-      if (callback !== undefined) {
-        callback(err, id);
-      }
-    } else if (err instanceof ProcessCanceled) {
-      const innerState: IState = this.mApi.store.getState();
+    } else if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
       const prom: Promise<void> = (filePath !== undefined)
@@ -149,8 +143,7 @@ export class DownloadObserver {
           }
         });
     } else if (err instanceof AlreadyDownloaded) {
-      const stateNow = this.mApi.getState();
-      const downloads = stateNow.persistent.downloads.files;
+      const downloads = innerState.persistent.downloads.files;
       const dlId = Object.keys(downloads)
         .find(iter => downloads[iter].localPath === err.fileName);
       if (dlId !== undefined) {
