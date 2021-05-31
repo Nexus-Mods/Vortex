@@ -7,7 +7,6 @@ import { setExtensionLoadFailures } from '../actions/session';
 import { IExtension } from '../extensions/extension_manager/types';
 import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
-import { IModLookupResult, ILookupOptions } from '../types/IModLookupResult';
 import {
   ArchiveHandlerCreator,
   IArchiveHandler,
@@ -24,11 +23,11 @@ import {
   ThunkStore,
   ToolParameterCB,
 } from '../types/IExtensionContext';
+import { ILookupOptions, IModLookupResult } from '../types/IModLookupResult';
 import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
@@ -52,6 +51,7 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptio
          remote, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
+import * as fuzz from 'fuzzball';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -619,6 +619,11 @@ function convertMD5Result(input: ILookupResult): IModLookupResult {
   return input;
 }
 
+interface IRepositoryLookup {
+  preferOverMD5: boolean;
+  func: (id: IModRepoId) => Promise<IModLookupResult[]>;
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -649,7 +654,7 @@ class ExtensionManager {
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
-  private mRepositoryLookup: { [repository: string]: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> } } = {};
+  private mRepositoryLookup: { [repository: string]: IRepositoryLookup } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
   private mModDBPromise: Promise<void>;
@@ -1472,7 +1477,20 @@ class ExtensionManager {
     })
     .then((results: IModLookupResult[]) => {
       if (results.length !== 0) {
-        return results;
+        if (reference.logicalFileName !== undefined) {
+          const exactMatch = results.filter(iter =>
+            (iter.value.logicalFileName !== undefined)
+            && (iter.value.logicalFileName === reference.logicalFileName));
+          if (exactMatch.length > 0) {
+            return exactMatch;
+          } else {
+            return results.sort((lhs, rhs) =>
+              fuzz.ratio(rhs.value.logicalFileName, reference.logicalFileName)
+              - fuzz.ratio(lhs.value.logicalFileName, reference.logicalFileName));
+          }
+        } else {
+          return results;
+        }
       } else {
         if ((lookup !== undefined) && !lookup.preferOverMD5) {
           return lookup.func(reference.repo);
