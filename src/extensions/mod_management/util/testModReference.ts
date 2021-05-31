@@ -53,8 +53,14 @@ function isFuzzyVersion(input: string) {
     return false;
   }
 
-  return input.endsWith('+prefer')
-      || (semver.validRange(input) !== input);
+  // +prefer can be used with non-semver versions as well
+  if (input.endsWith('+prefer')) {
+    return true;
+  }
+
+  const valRange = semver.validRange(input);
+
+  return (valRange !== null) && (valRange !== input);
 }
 
 function hasIdentifyingMarker(mod: IModLookupInfo,

@@ -155,21 +155,15 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
       if (lhs.collateral.length !== rhs.collateral.length) {
         return rhs.collateral.length - lhs.collateral.length;
       } else {
+        const fileVerL = lhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1';
+        const fileVerR = rhs.dep.lookupResults[0]?.value?.fileVersion ?? '0.0.1';
         try {
         // within blocks of equal number of collaterals, consider the newer versions
         // before the ones with lower version
-        return semver.compare(
-          semverCoerce(rhs.dep.lookupResults[0]?.value?.fileVersion) ?? '0.0.1',
-          semverCoerce(lhs.dep.lookupResults[0]?.value?.fileVersion) ?? '0.0.1',
-        );
+        return semver.compare(semverCoerce(fileVerR), semverCoerce(fileVerL));
         } catch (err) {
-          log('error', 'failed to compare version', {
-            lhs: lhs.dep.lookupResults[0]?.value?.fileVersion,
-            rhs: rhs.dep.lookupResults[0]?.value?.fileVersion,
-          });
-          return rhs.dep.lookupResults[0]?.value?.fileVersion.localeCompare(
-            lhs.dep.lookupResults[0]?.value?.fileVersion,
-          );
+          log('error', 'failed to compare version', { lhs: fileVerL, rhs: fileVerR });
+          return fileVerR.localeCompare(fileVerL);
         }
       }
     });
@@ -209,21 +203,28 @@ function findDownloadByRef(reference: IReference, state: IState): string {
     reference = _.omit(reference, ['fileMD5']);
   }
 
-  const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
-    const download: IDownload = downloads[dlId];
-    const lookup: IModLookupInfo = {
-      fileMD5: download.fileMD5,
-      fileName: download.localPath,
-      fileSizeBytes: download.size,
-      version: getSafe(download, ['modInfo', 'version'], undefined),
-      logicalFileName: getSafe(download, ['modInfo', 'name'], undefined),
-      game: download.game,
-    };
+  try {
+    const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
+      const download: IDownload = downloads[dlId];
+      const lookup: IModLookupInfo = {
+        fileMD5: download.fileMD5,
+        fileName: download.localPath,
+        fileSizeBytes: download.size,
+        version: getSafe(download, ['modInfo', 'version'], undefined),
+        logicalFileName: getSafe(download, ['modInfo', 'name'], undefined),
+        game: download.game,
+        source: download.modInfo?.source,
+        modId: download.modInfo?.meta?.details?.modId,
+        fileId: download.modInfo?.meta?.details?.fileId,
+      };
 
-    return testModReference(lookup, reference);
-  })
-  .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
-  return existing[0];
+      return testModReference(lookup, reference);
+    })
+      .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
+    return existing[0];
+  } catch (err) {
+    return undefined;
+  }
 }
 
 interface IDependencyNode extends IDependency {
@@ -267,7 +268,6 @@ function gatherDependenciesGraph(
           .map(subRule => limit.do(() => gatherDependenciesGraph(subRule, api, recommendations))));
     })
     .then(nodes => {
-
       const res: IDependencyNode = {
         download,
         reference: rule.reference,
@@ -279,6 +279,7 @@ function gatherDependenciesGraph(
               fileName: rule.reference.logicalFileName,
               fileSizeBytes: rule.reference.fileSize,
               gameId: rule.reference.gameId,
+              domainName: rule.reference.gameId,
               fileVersion: undefined,
               fileMD5: rule.reference.fileMD5,
               sourceURI: urlFromHint.url,
@@ -295,7 +296,10 @@ function gatherDependenciesGraph(
       return res;
     })
     .catch(err => {
-      log('error', 'failed to look up', err.message);
+      if (!(err instanceof ProcessCanceled)) {
+        log('error', 'failed to look up',
+            { rule: JSON.stringify(rule), ex: err.name, message: err.message, stack: err.stack });
+      }
       return null;
     });
 }

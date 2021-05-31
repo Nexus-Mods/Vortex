@@ -1307,7 +1307,7 @@ class InstallManager {
       .then(() => call(lookupResult.referer).then(res => resolvedReferer = res))
       .then(() => new Promise<string>((resolve, reject) => {
       if (!api.events.emit('start-download', [resolvedSource], {
-        game: lookupResult.gameId,
+        game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
         source: lookupResult.source,
         name: lookupResult.logicalFileName,
         referer: resolvedReferer,
@@ -1342,11 +1342,19 @@ class InstallManager {
 
     return api.emitAndAwait('start-download-update',
       lookupResult.source, gameId, modId, fileId, pattern)
-      .then(dlIds => (dlIds === undefined)
-          ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
-          : !truthy(dlIds[0])
-          ? Promise.reject(new ProcessCanceled('Download failed', { alreadyReported: true }))
-          : Promise.resolve(dlIds[0]));
+      .then(dlIds => {
+        if (dlIds === undefined) {
+          return Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`));
+        } else {
+          if (!truthy(dlIds[0])) {
+            return Promise.reject(
+              new ProcessCanceled('Download failed', { alreadyReported: true }));
+          } else {
+            api.store.dispatch(setDownloadModInfo(dlIds[0], 'referenceTag', referenceTag));
+            return Promise.resolve(dlIds[0]);
+          }
+        }
+      });
   }
 
   private downloadDependencyAsync(

@@ -21,7 +21,7 @@ import { makeModReference } from '../extensions/mod_management/util/modReference
 import { removeMods } from '../extensions/mod_management/util/removeMods';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
-import { nexusGameId } from '../extensions/nexus_integration/util/convertGameId';
+import { convertGameIdReverse, nexusGameId } from '../extensions/nexus_integration/util/convertGameId';
 import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
 import bbcodeToReact, { bbcodeToHTML } from './bbcode';
@@ -67,6 +67,7 @@ export {
   bbcodeToReact,
   bytesToString,
   checksum,
+  convertGameIdReverse,
   copyFileAtomic,
   copyRecursive,
   ConcurrencyLimiter,

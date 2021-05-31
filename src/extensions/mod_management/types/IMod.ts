@@ -51,6 +51,11 @@ export interface IModReference extends IReference {
   // will check against that mod first. It will still have to fulfill all other attributes but if it
   // does, no more check gets done.
   idHint?: string;
+  // if a tag is set and a mod or archive has a referenceTag that is identical, that item will be
+  // used, no other attribute will be checked.
+  // When downloading/installing mods from dependencies, this tag is passed along and stored with
+  // the archive/mod to keep track which rule pulled it in.
+  tag?: string;
   // the archive id is used only if it's the only flag alongside id, alowing to find a previously
   // downloaded archive in the same way id helps find a locally installed mod
   archiveId?: string;
@@ -60,7 +65,6 @@ export interface IModReference extends IReference {
   // This is only used when the mod isn't installed, otherwise we always try to use the name
   // the user chose for the mod.
   description?: string;
-  tag?: string;
   instructions?: string;
 }
 
