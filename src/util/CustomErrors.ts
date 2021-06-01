@@ -79,17 +79,23 @@ export class UserCanceled extends Error {
 }
 */
 
-interface IUserCanceled extends Error {}
+interface IUserCanceled extends Error {
+  // if skipped is true, the user only skipped a single action in an entire sequence, if it's
+  // false, the entire sequence is canceled, or if this doesn't apply at all
+  skipped: boolean;
+  timed: number;
+}
 
-type IUserCanceledConstructor = new() => IUserCanceled;
+type IUserCanceledConstructor = new(skipped?: boolean) => IUserCanceled;
 
-const UserCanceled: IUserCanceledConstructor = function(this: IUserCanceled) {
+const UserCanceled: IUserCanceledConstructor = function(this: IUserCanceled, skipped?: boolean) {
   if (!(this instanceof UserCanceled)) {
     log('error', 'UserCanceled invoked without new', Error.captureStackTrace(this, UserCanceled));
     return new Error('UserCanceled invoked without new');
   }
 
   this.message = 'canceled by user';
+  this.skipped = skipped ?? false;
   Error.captureStackTrace(this, UserCanceled);
 } as unknown as IUserCanceledConstructor;
 

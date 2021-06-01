@@ -1,7 +1,7 @@
 import { setDownloadModInfo } from '../../actions';
 import { IExtensionApi, StateChangeCallback } from '../../types/IExtensionContext';
 import { IDownload, IModTable, IState } from '../../types/IState';
-import { ArgumentInvalid, DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
+import { ArgumentInvalid, DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -388,11 +388,16 @@ export function onRateRevision(api: IExtensionApi, nexus: Nexus)
   };
 }
 
+interface IDownloadResult {
+  error: Error;
+  dlId?: string;
+}
+
 export function onDownloadUpdate(api: IExtensionApi,
                                  nexus: Nexus)
-                                 : (...args: any[]) => Promise<string> {
+                                 : (...args: any[]) => Promise<IDownloadResult> {
   return (source: string, gameId: string, modId: string,
-          fileId: string, versionPattern: string): Promise<string> => {
+          fileId: string, versionPattern: string): Promise<IDownloadResult> => {
     if (source !== 'nexus') {
       return Promise.resolve(undefined);
     }
@@ -449,25 +454,29 @@ export function onDownloadUpdate(api: IExtensionApi,
         if (existingId !== undefined) {
           if (downloads[existingId].state === 'paused') {
             return toPromise(cb => api.events.emit('resume-download', existingId, cb))
-              .then(() => existingId);
+              .then(() => ({ error: null, dlId: existingId }));
           } else {
-            return Promise.resolve(existingId);
+            return Promise.resolve({ error: null, dlId: existingId });
           }
         }
 
-        return startDownload(api, nexus, url, undefined, undefined, false)
+        return startDownload(api, nexus, url, 'never', undefined, false, false)
+          .then(dlId => ({ error: null, dlId }))
           .catch(err => {
-            api.showErrorNotification('Failed to download mod', err, {
-              allowReport: false,
-            });
-            return Promise.resolve(undefined);
+            return { error: err };
           });
       })
       .catch(err => {
-        // there is a really good chance that the download will fail
-        log('warn', 'failed to fetch mod file list', err.message);
-        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
-        return startDownload(api, nexus, url, undefined, undefined, false);
+        if (err instanceof UserCanceled) {
+          // there is a really good chance that the download will fail
+          log('warn', 'failed to fetch mod file list', err.message);
+          const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+          return startDownload(api, nexus, url, 'never', undefined, false, false)
+            .then(dlId => ({ error: null, dlId }))
+            .catch(innerErr => ({ error: innerErr }));
+        } else {
+          return Promise.resolve({ error: err });
+        }
       });
   };
 }

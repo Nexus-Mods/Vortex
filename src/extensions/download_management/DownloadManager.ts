@@ -40,12 +40,13 @@ export type RedownloadMode = 'always' | 'never' | 'ask' | 'replace';
 export class AlreadyDownloaded extends Error {
   private mFileName: string;
   private mId: string;
-  constructor(fileName: string) {
+  constructor(fileName: string, id?: string) {
     super('File already downloaded');
     Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name;
     this.mFileName = fileName;
+    this.mId = id;
   }
 
   public get fileName(): string {
@@ -333,7 +334,7 @@ class DownloadWorker {
     if (this.mRequest !== undefined) {
       this.mRequest.abort();
     }
-    if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
+    if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].includes(err.code))
         && !this.mEnded
         && (this.mDataHistory.length > 0)) {
       // as long as we made progress on this chunk, retry
@@ -703,7 +704,7 @@ class DownloadManager {
             chunkable: undefined,
             progressCB,
             finishCB: resolve,
-            failedCB: (err) => {
+            failedCB: err => {
               reject(err);
             },
             promises: [],
@@ -715,9 +716,12 @@ class DownloadManager {
                      undefined, filePath);
           this.tickQueue();
         }))
-      .finally(() => (download !== undefined) && (download.assembler !== undefined)
-          ? download.assembler.close()
-          : Promise.resolve());
+      .finally(() => {
+        if ((download !== undefined) && (download.assembler !== undefined)) {
+          download.assembler.close()
+            .catch(() => null);
+        }
+      });
   }
 
   public resume(id: string,
@@ -880,7 +884,7 @@ class DownloadManager {
                       name: string,
                       friendlyName: string)
                       : () => Promise<IResolvedURLs> {
-    let cache: Promise<IResolvedURLs>;
+    let cache: Promise<{ result: IResolvedURLs, error: Error }>;
 
     return () => {
       if (cache === undefined) {
@@ -902,14 +906,17 @@ class DownloadManager {
               return Promise.resolve(prev);
             });
         }, { urls: [], meta: {}, updatedUrls: [] })
-        .then(res => {
-          if ((res.urls.length === 0) && (error !== undefined)) {
-            return Promise.reject(error);
-          }
-          return Promise.resolve(res);
+        .then(result => {
+          return { result, error };
         });
       }
-      return cache;
+      return cache.then(({ result, error }) => {
+        if ((result.urls.length === 0) && (error !== undefined)) {
+          return Promise.reject(error);
+        } else {
+          return Promise.resolve(result);
+        }
+      });
     };
   }
 
@@ -1210,19 +1217,20 @@ class DownloadManager {
   /**
    * gets called whenever a chunk runs to the end or is interrupted
    */
-  private finishChunk(download: IRunningDownload, job: IDownloadJob, interrupted: boolean) {
+  private finishChunk(download: IRunningDownload, job: IDownloadJob, paused: boolean) {
     this.stopWorker(job.workerId);
 
     log('debug', 'stopping chunk worker',
-      { interrupted, id: job.workerId, offset: job.offset, size: job.size });
+      { paused, id: job.workerId, offset: job.offset, size: job.size });
 
-    job.state = (interrupted || (job.size > 0)) ? 'paused' : 'finished';
-    if (!interrupted && (job.size > 0)) {
+    job.state = (paused || (job.size > 0)) ? 'paused' : 'finished';
+    if (!paused && (job.size > 0)) {
       download.error = true;
     }
 
     const activeChunk = download.chunks.find(
       (chunk: IDownloadJob) => !['paused', 'finished'].includes(chunk.state));
+
     if (activeChunk === undefined) {
       let finalPath = download.tempName;
       download.assembler.close()
@@ -1257,11 +1265,7 @@ class DownloadManager {
         .catch(err => {
           download.failedCB(err);
         })
-        .then(() => download.resolvedUrls())
-        .catch(err => {
-          log('error', 'failed to resolve urls', err.message);
-          return { urls: [], meta: {} };
-        })
+        .then(() => download.resolvedUrls().catch(() => ({ urls: [], meta: {} })))
         .then((resolved: IResolvedURLs) => {
           const unfinishedChunks = download.chunks
             .filter(chunk => chunk.state === 'paused')

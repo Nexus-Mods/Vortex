@@ -42,7 +42,8 @@ export function startDownload(api: IExtensionApi,
                               nxmurl: string,
                               redownload?: RedownloadMode,
                               fileName?: string,
-                              allowInstall?: boolean)
+                              allowInstall?: boolean,
+                              handleErrors: boolean = true)
                               : Promise<string> {
   let url: NXMUrl;
 
@@ -59,14 +60,15 @@ export function startDownload(api: IExtensionApi,
   }
 
   return (url.type === 'mod')
-    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall)
-    : startDownloadCollection(api, nexus, nxmurl, url);
+    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall, handleErrors)
+    : startDownloadCollection(api, nexus, nxmurl, url, handleErrors);
 }
 
 function startDownloadCollection(api: IExtensionApi,
                                  nexus: Nexus,
                                  urlStr: string,
-                                 url: NXMUrl)
+                                 url: NXMUrl,
+                                 handleErrors: boolean = true)
                                  : Promise<string> {
   const state: IState = api.getState();
   const games = knownGames(state);
@@ -98,7 +100,14 @@ function startDownloadCollection(api: IExtensionApi,
       }, (revisionInfo as any).file_name, cb, undefined, false))
       .catch(err => Promise.reject(contextify(err)));
     })
-    .tap(dlId => api.events.emit('did-download-collection', dlId));
+    .tap(dlId => api.events.emit('did-download-collection', dlId))
+    .catch(err => {
+      if (!handleErrors) {
+        return Promise.reject(err);
+      }
+      api.showErrorNotification('Failed to download collection', err);
+      return null;
+    });
 }
 
 export interface IRemoteInfo {
@@ -151,7 +160,8 @@ function startDownloadMod(api: IExtensionApi,
                           url: NXMUrl,
                           redownload?: RedownloadMode,
                           fileName?: string,
-                          allowInstall?: boolean): Promise<string> {
+                          allowInstall?: boolean,
+                          handleErrors: boolean = true): Promise<string> {
   log('info', 'start download mod', { urlStr, allowInstall });
   const state = api.store.getState();
   const games = knownGames(state);
@@ -163,13 +173,6 @@ function startDownloadMod(api: IExtensionApi,
   return getInfo(nexus, pageId, url.modId, url.fileId)
     .then(({ modInfo, fileInfo }) => {
       nexusFileInfo = fileInfo;
-      api.sendNotification({
-        id: url.fileId.toString(),
-        type: 'global',
-        title: 'Downloading from Nexus',
-        message: fileInfo.name,
-        displayMS: 4000,
-      });
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download', [urlStr], {
           game: gameId,
@@ -186,6 +189,15 @@ function startDownloadMod(api: IExtensionApi,
           ? reject(contextify(err))
           : resolve(downloadId)),
         redownload, allowInstall);
+      });
+    })
+    .tap(() => {
+      api.sendNotification({
+        id: url.fileId.toString(),
+        type: 'global',
+        title: 'Downloading from Nexus',
+        message: nexusFileInfo.name,
+        displayMS: 4000,
       });
     })
     .then(downloadId => {
@@ -212,6 +224,9 @@ function startDownloadMod(api: IExtensionApi,
       return downloadId;
     })
     .catch((err) => {
+      if (!handleErrors) {
+        return Promise.reject(err);
+      }
       if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {
         const userName = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
         const t = api.translate;
@@ -247,15 +262,13 @@ function startDownloadMod(api: IExtensionApi,
         }
         showError(api.store.dispatch, 'Download failed', detail,
                   { allowReport });
-      } else if (err instanceof HTTPError) {
-        if (err.statusCode >= 400) {
+      } else if (err.statusCode >= 400) {
           api.showErrorNotification('Download failed', err, { allowReport: false });
-        } else {
-          api.showErrorNotification('Download failed', {
-            error: err,
-            message: 'This may be a temporary issue, please try again later',
-          }, { allowReport: false });
-        }
+      } else if (err instanceof HTTPError) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
       } else if (err instanceof TimeoutError) {
         api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof ProcessCanceled) {

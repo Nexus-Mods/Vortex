@@ -13,7 +13,7 @@ import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { decodeHTML, truthy } from '../../util/util';
+import { batchDispatch, decodeHTML, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -67,6 +67,7 @@ import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
+import { Action } from 'redux';
 import {} from 'uuid';
 import WebSocket from 'ws';
 
@@ -1097,84 +1098,116 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
 type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
 
 function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
-  const resolveFunc = (input: string,
-                       name?: string,
-                       friendlyName?: string)
-                       : Promise<IResolvedURL> => {
-    const state = api.store.getState();
+  interface IDLQueueItem {
+    input: string;
+    url: NXMUrl;
+    name: string;
+    friendlyName: string;
+    res: (res: IResolvedURL) => void;
+    rej: (err: Error) => void;
+  }
 
-    let url: NXMUrl;
-    try {
-      url = new NXMUrl(input);
-    } catch (err) {
-      return Promise.reject(err);
+  // for free users a dialog needs to be displayed sending them to the site for the download.
+  // if we start multiple downloads in parallel, these are shown one by one but if the user cancels
+  // the dialog, we want to cancel all queued downloads, otherwise the client code can't cancel
+  // out of the larger process without the user having to click cancel multiple times.
+  // Thus we have to keep track of all queued downloads.
+  const freeDLQueue: IDLQueueItem[] = [];
+
+  const renderName = (item: IDLQueueItem): string => {
+    let result = item.friendlyName ?? item.name;
+    if (!result) {
+      result = api.translate(
+        'Nexus Mods (Game {{gameId}}, Mod {{modId}}, File {{fileId}}', {
+        replace: item.url });
+    }
+    return result;
+  };
+
+  let lastDisplayed: string;
+
+  const showDLQueue = () => {
+    if (freeDLQueue.length === 0) {
+      api.closeDialog('free-download-dialog');
+      return;
     }
 
-    const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
-    if ((url.userId !== undefined) && (url.userId !== userInfo.userId)) {
-      const userName: string =
-        getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
-      api.showErrorNotification('Invalid download links',
-        'The link was not created for this account ({{userName}}). '
-        + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
-        { allowReport: false, replace: { userName } });
-      return Promise.reject(new ProcessCanceled('Wrong user id'));
+    const nextItem = freeDLQueue[0];
+
+    // right now we only show the next item in the dialog. If that doesn't change, no need to
+    // refresh the dialog
+    if (nextItem.input === lastDisplayed) {
+      return;
     }
 
-    if (!userInfo?.isPremium
-        && (url.type === 'mod')
-        && (url.gameId !== SITE_ID)
-        && (url.key === undefined)) {
-      // non-premium user trying to download a file with no id, have to send the user to the
-      // corresponding site to generate a proper link
-      return new Promise((resolve, reject) => {
-        const res = (result: IResolvedURL) => {
-          if (resolve !== undefined) {
-            resolve(result);
-            reject = undefined;
-            resolve = undefined;
-          }
-          resolve(result);
-        };
-        const rej = (err) => {
-          if (reject !== undefined) {
-            reject(err);
-            reject = undefined;
-            resolve = undefined;
-          }
-        };
-        if (!friendlyName) {
-          friendlyName = name;
-        }
-        if (!friendlyName) {
-          friendlyName = api.translate(
-            'Nexus Mods (Game {{gameId}}, Mod {{modId}}, File {{fileId}}', {
-            replace: url });
-        }
-        api.showDialog('info', 'About to open Nexus Mods', {
-          text: 'Since you\'re not a premium user, every download has to be started from the '
-              + 'website. Please click the button below to take you to the '
-              + 'appropriate site (in your default webbrowser).\n\n'
-              + 'This dialog will close automatically (or move to the next required file) '
-              + 'once the download has started.',
-          message: friendlyName,
-          links: [{ label: 'Open Site', action: (dismiss) => {
-            onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
-              return resolveFunc(updatedLink, name)
-                .then(res)
-                .catch(rej)
-                .finally(dismiss);
+    lastDisplayed = nextItem.input;
+
+    api.showDialog('info', 'About to open Nexus Mods', {
+      text: 'Since you\'re not a premium user, every download has to be started from the '
+          + 'website. Please click the button below to take you to the '
+          + 'appropriate site (in your default webbrowser).\n\n'
+          + 'This dialog will close automatically (or move to the next required file) '
+          + 'once the download has started.',
+      message: renderName(nextItem),
+      links: [{ label: 'Open Site', action: (dismiss) => {
+        const { url } = nextItem;
+        onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
+          return resolveFunc(updatedLink, nextItem.name, nextItem.friendlyName)
+            .then(nextItem.res)
+            .catch(nextItem.rej)
+            .then(() => {
+              showDLQueue();
             });
-            opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?`
-                + `tab=files&file_id=${url.fileId}&nmm=1`)
-              .catch(() => null);
-          } }],
-        }, [
-          { label: 'Skip', action: () => rej(new UserCanceled()) },
-        ]);
-      });
-    }
+        });
+        opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`)
+          .catch(() => null);
+      } }],
+    }, [
+      { label: 'Cancel' },
+      { label: 'Skip' },
+    ], 'free-download-dialog')
+    .then(result => {
+      if (result.action === 'Cancel') {
+        const copy = freeDLQueue.slice(0);
+        copy.forEach(item => { item.rej(new UserCanceled(false)); });
+      } else {
+        nextItem.rej(new UserCanceled(true));
+      }
+      showDLQueue();
+    })
+    .catch(() => { /* nop */ });
+  };
 
+  function freeUserDownload(input: string, url: NXMUrl, name: string, friendlyName: string) {
+    // non-premium user trying to download a file with no id, have to send the user to the
+    // corresponding site to generate a proper link
+    return new Promise<IResolvedURL>((resolve, reject) => {
+      const res = (result: IResolvedURL) => {
+        if (resolve !== undefined) {
+          // just to make sure we remove the correct item, idx should always be 0
+          const idx = freeDLQueue.findIndex(iter => iter.input === input);
+          freeDLQueue.splice(idx, 1);
+          resolve(result);
+          reject = undefined;
+          resolve = undefined;
+        }
+      };
+      const rej = (err) => {
+        if (reject !== undefined) {
+          const idx = freeDLQueue.findIndex(iter => iter.input === input);
+          freeDLQueue.splice(idx, 1);
+          reject(err);
+          reject = undefined;
+          resolve = undefined;
+        }
+      };
+      freeDLQueue.push({ input, url, name, friendlyName, res, rej });
+      showDLQueue();
+    });
+  }
+
+  function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+    const state = api.getState();
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
@@ -1206,6 +1239,41 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
         return Promise.reject(err);
       });
+  }
+
+  const resolveFunc = (input: string,
+                       name?: string,
+                       friendlyName?: string)
+                       : Promise<IResolvedURL> => {
+    const state = api.store.getState();
+
+    let url: NXMUrl;
+    try {
+      url = new NXMUrl(input);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+
+    const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
+    if ((url.userId !== undefined) && (url.userId !== userInfo.userId)) {
+      const userName: string =
+        getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+      api.showErrorNotification('Invalid download links',
+        'The link was not created for this account ({{userName}}). '
+        + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
+        { allowReport: false, replace: { userName } });
+      return Promise.reject(new ProcessCanceled('Wrong user id'));
+    }
+
+    if ((!userInfo?.isPremium
+        && (url.type === 'mod')
+        && (url.gameId !== SITE_ID)
+        && (url.key === undefined))
+        || (process.env['FORCE_FREE_DOWNLOADS'] === 'yes')) {
+      return freeUserDownload(input, url, name, friendlyName);
+    } else {
+      return premiumUserDownload(input, url);
+    }
   };
 
   return resolveFunc;

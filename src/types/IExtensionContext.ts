@@ -655,6 +655,7 @@ export interface IExtensionApi {
    * will only return after all promises from handlers are returned.
    * Note that listeners should report all errors themselves, it is considered a bug if the listener
    * returns a rejected promise.
+   * If errors do need to be reported they have to be part of the resolved valued
    */
   onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
 

@@ -21,9 +21,9 @@ import {
   Modal, Radio,
 } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
+import ReactMarkdown from 'react-markdown';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import ReactMarkdown from 'react-markdown';
 
 const nop = () => undefined;
 
@@ -93,27 +93,41 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if ((newProps.dialogs.length > 0) &&
-      (newProps.dialogs[0].id !== this.state.currentDialogId)) {
-      let newState = update(this.state, {
-        currentDialogId: { $set: newProps.dialogs[0].id },
-        dialogState: { $set: newProps.dialogs[0].content },
-      });
+    if (newProps.dialogs.length > 0) {
+      if (newProps.dialogs[0].id !== this.state.currentDialogId) {
+        // dialog changed
+        let newState = update(this.state, {
+          currentDialogId: { $set: newProps.dialogs[0].id },
+          dialogState: { $set: newProps.dialogs[0].content },
+        });
 
-      const validationResults = this.validateContent(newState.dialogState);
-      if (validationResults !== undefined) {
-        newState = {...newState, conditionResults: validationResults};
+        const validationResults = this.validateContent(newState.dialogState);
+        if (validationResults !== undefined) {
+          newState = {...newState, conditionResults: validationResults};
+        }
+
+        this.setState(newState);
+
+        const window = remote.getCurrentWindow();
+        if (window.isMinimized()) {
+          window.restore();
+        }
+        window.setAlwaysOnTop(true);
+        window.show();
+        window.setAlwaysOnTop(false);
+      } else if (this.props.dialogs[0]?.content !== newProps.dialogs[0]?.content) {
+        // same dialog id but maybe the content changed?
+        let newState = update(this.state, {
+          dialogState: { $set: newProps.dialogs[0].content },
+        });
+
+        const validationResults = this.validateContent(newState.dialogState);
+        if (validationResults !== undefined) {
+          newState = {...newState, conditionResults: validationResults};
+        }
+
+        this.setState(newState);
       }
-
-      this.setState(newState);
-
-      const window = remote.getCurrentWindow();
-      if (window.isMinimized()) {
-        window.restore();
-      }
-      window.setAlwaysOnTop(true);
-      window.show();
-      window.setAlwaysOnTop(false);
     }
   }
 

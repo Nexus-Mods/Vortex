@@ -102,7 +102,7 @@ export class DownloadObserver {
   }
 
   private handleDownloadError(err: Error, id: string, downloadPath: string,
-                              callback?: (err: Error, id: string) => void) {
+                              callback?: (err: Error, id: string) => void): Promise<void> {
     const innerState: IState = this.mApi.getState();
     if (err instanceof DownloadIsHTML) {
       const filePath: string =
@@ -114,7 +114,7 @@ export class DownloadObserver {
         callback(err, id);
       }
       if (filePath !== undefined) {
-        fs.removeAsync(path.join(downloadPath, filePath))
+        return fs.removeAsync(path.join(downloadPath, filePath))
           .catch(innerErr => {
             this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
           });
@@ -128,7 +128,7 @@ export class DownloadObserver {
           .catch({ code: 'ENOENT' }, () => Promise.resolve())
         : Promise.resolve();
 
-      prom
+      return prom
         .catch(innerErr => {
           this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
         })
@@ -149,10 +149,12 @@ export class DownloadObserver {
       if (dlId !== undefined) {
         err.downloadId = dlId;
       }
-      this.handleUnknownDownloadError(err, id, callback);
+      return this.handleUnknownDownloadError(err, id, callback);
     } else {
-      this.handleUnknownDownloadError(err, id, callback);
+      return this.handleUnknownDownloadError(err, id, callback);
     }
+
+    return Promise.resolve();
   }
 
   private handleStartDownload(urls: string[],
@@ -208,6 +210,20 @@ export class DownloadObserver {
       ensureDownloadsDirectory(this.mApi)
         .then(() => this.mManager.enqueue(id, urls, fileName, processCB,
                                           downloadPath, downloadOptions))
+        .catch(AlreadyDownloaded, err => {
+          const downloads = this.mApi.getState().persistent.downloads.files;
+          const dlId = Object.keys(downloads)
+            .find(iter => downloads[iter].localPath === err.fileName);
+          if (dlId !== undefined) {
+            err.downloadId = dlId;
+            return Promise.reject(err);
+          } else {
+            // there is a file but with no meta data. force the download instead
+            downloadOptions.redownload = 'replace';
+            return this.mManager.enqueue(id, urls, fileName, processCB,
+                                         downloadPath, downloadOptions);
+          }
+        })
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { id, file: res.filePath });
           this.handleDownloadFinished(id, callback, res, allowInstall ?? true);
@@ -461,6 +477,7 @@ export class DownloadObserver {
         });
       }
     }
+    return Promise.resolve();
   }
 
   private getExtraDlOptions(modInfo: any, redownload: RedownloadMode): IDownloadOptions {

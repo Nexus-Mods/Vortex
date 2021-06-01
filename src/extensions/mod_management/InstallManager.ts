@@ -1,11 +1,13 @@
-import { addLocalDownload, setDownloadHashByFile, startActivity, stopActivity } from '../../actions';
+import { addLocalDownload, setDownloadHashByFile,
+         setDownloadModInfo,
+         startActivity, stopActivity } from '../../actions';
 import { showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
+import { fileMD5 } from '../../util/checksum';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled } from '../../util/CustomErrors';
-import { fileMD5 } from '../../util/checksum';
 import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
@@ -13,11 +15,12 @@ import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeProfile, downloadPathForGame } from '../../util/selectors';
+import { activeProfile, downloadPathForGame, knownGames } from '../../util/selectors';
 import { getSafe, setSafe } from '../../util/storeHelper';
 import { isPathValid, setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
+import { AlreadyDownloaded } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
 import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
 import getDownloadGames from '../download_management/util/getDownloadGames';
@@ -25,6 +28,7 @@ import getDownloadGames from '../download_management/util/getDownloadGames';
 import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
 import modName, { renderModReference } from '../mod_management/util/modName';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, removeModRule, setFileOverride, setModAttribute,
@@ -58,7 +62,6 @@ import * as semver from 'semver';
 import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
-import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -1342,16 +1345,21 @@ class InstallManager {
 
     return api.emitAndAwait('start-download-update',
       lookupResult.source, gameId, modId, fileId, pattern)
-      .then(dlIds => {
-        if (dlIds === undefined) {
+      .then((results: Array<{ error: Error, dlId: string }>) => {
+        if ((results === undefined) || (results.length === 0)) {
           return Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`));
         } else {
-          if (!truthy(dlIds[0])) {
+          if (!truthy(results[0])) {
             return Promise.reject(
               new ProcessCanceled('Download failed', { alreadyReported: true }));
           } else {
-            api.store.dispatch(setDownloadModInfo(dlIds[0], 'referenceTag', referenceTag));
-            return Promise.resolve(dlIds[0]);
+            const successResult = results.find(iter => iter.error === null);
+            if (successResult === undefined) {
+              return Promise.reject(results[0].error);
+            } else {
+              api.store.dispatch(setDownloadModInfo(results[0].dlId, 'referenceTag', referenceTag));
+              return Promise.resolve(results[0].dlId);
+            }
           }
         }
       });
@@ -1402,7 +1410,12 @@ class InstallManager {
     const state: IState = api.store.getState();
     const downloads = state.persistent.downloads.files;
 
+    let canceled: boolean = false;
+
     return Promise.map(dependencies, (dep: IDependency) => {
+      if (canceled) {
+        return Promise.reject(new UserCanceled());
+      }
       log('debug', 'installing as dependency', {
         ref: JSON.stringify(dep.reference),
         downloadRequired: dep.download === undefined,
@@ -1427,6 +1440,18 @@ class InstallManager {
         });
       }
       return dlPromise
+        .catch(AlreadyDownloaded, err => {
+          if (err.downloadId !== undefined) {
+            return Promise.resolve(err.downloadId);
+          } else {
+            const downloadId = Object.keys(downloads)
+              .find(dlId => downloads[dlId].localPath === err.fileName);
+            if (downloadId !== undefined) {
+              return Promise.resolve(downloadId);
+            }
+          }
+          return Promise.reject(new NotFound('Download not found'));
+        })
         .then((downloadId: string) => (dep.mod === undefined)
            ? this.withInstructions(api, renderModReference(dep.reference), dep.extra?.['instructions'], () =>
                 this.installModAsync(dep.reference, api, downloadId,
@@ -1465,7 +1490,12 @@ class InstallManager {
         })
         .catch(err => {
           if (err instanceof UserCanceled) {
-            return Promise.reject(err);
+            if (err.skipped) {
+              return Promise.resolve();
+            } else {
+              canceled = true;
+              return Promise.reject(err);
+            }
           }
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
@@ -1478,7 +1508,7 @@ class InstallManager {
           });
           return updatedDependency;
         });
-    // install/download up to 4 mods at once to allow Vortex to download one mod while another is
+    // install/download up to n mods at once to allow Vortex to download one mod while another is
     // being installed. Obviously Vortex isn't going to do the install for multiple mods at once
     // and the downloads are going to be limited by the number of download threads but still the
     // queue is going to stay utilized
@@ -1490,7 +1520,13 @@ class InstallManager {
           err.message, { allowReport: false });
         return [];
       })
-      .catch(UserCanceled, () => [])
+      .catch(UserCanceled, () => {
+        api.sendNotification({
+          type: 'info',
+          message: 'Installation of dependencies canceled',
+        });
+        return [];
+      })
       .catch(err => {
         api.showErrorNotification('Failed to install dependencies',
           err.message);
@@ -1640,29 +1676,37 @@ class InstallManager {
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, false);
 
+    let lastProgress = -1;
+
     const progress = (perc: number) => {
-      api.sendNotification({
-        id: notificationId,
-        type: 'activity',
-        title: 'Checking dependencies',
-        message: 'Resolving dependencies',
-        progress: perc * 100,
-      });
-      api.store.dispatch(startActivity('dependencies', 'gathering'));
+      // rounded to steps of 5%
+      const newProgress = Math.round(perc * 20) * 5;
+      if (newProgress !== lastProgress) {
+        lastProgress = newProgress;
+        api.sendNotification({
+          id: notificationId,
+          type: 'activity',
+          title: 'Checking dependencies',
+          message: 'Resolving dependencies',
+          progress: newProgress,
+        });
+      }
     };
 
     progress(0);
+    api.store.dispatch(startActivity('dependencies', 'gathering'));
 
     log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(filteredRules, api, false, progress)
       .then((dependencies: IDependency[]) => {
+        api.dismissNotification(notificationId);
         return this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
+        api.dismissNotification(notificationId);
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
-        api.dismissNotification(notificationId);
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         log('debug', 'done installing dependencies', { profile: profile.id, modId });
         api.events.emit('did-install-dependencies', profile.id, modId, false);
@@ -1684,7 +1728,7 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     api.store.dispatch(startActivity('dependencies', 'gathering'));
-    return gatherDependencies(rules, api, true)
+    return gatherDependencies(rules, api, true, undefined, modId)
       .then((dependencies: Dependency[]) => {
         if (dependencies.length === 0) {
           return Promise.resolve();
