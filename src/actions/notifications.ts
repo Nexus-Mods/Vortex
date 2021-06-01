@@ -134,9 +134,9 @@ export function addNotification(notification: INotification) {
     }
 
     if (noti.createdTime === undefined) {
-      noti.createdTime = Date.now();
+      noti.createdTime = Math.floor(Date.now() / 1000) * 1000;
     }
-    noti.updatedTime = Date.now();
+    noti.updatedTime = Math.floor(Date.now() / 1000) * 1000;
 
     notificationActions[noti.id] = noti.actions === undefined
       ? []

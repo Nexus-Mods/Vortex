@@ -1,4 +1,3 @@
-import { IDialogResult, setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
@@ -16,6 +15,7 @@ import {
   addLocalDownload,
   downloadProgress,
   removeDownload,
+  setDownloadHash,
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadModInfo,
@@ -43,6 +43,7 @@ import observe, { DownloadObserver } from './DownloadObserver';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
+import { genHash, IHashResult } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -808,15 +809,20 @@ function init(context: IExtensionContextExt): boolean {
           .catch(err => {
             log('warn', 'failed to look up mod info', err);
           });
-      });
+      })
+      .catch(() => null)
+      .then(() => null);
+      return null;
     });
 
     context.api.events.on('gamemode-activated', genGameModeActivated(context.api));
 
     context.api.events.on('filehash-calculated',
-      (filePath: string, fileMD5: string, fileSize: number) => {
+      (filePath: string, md5Hash: string, fileSize: number) => {
+        log('debug', 'file hash calculated',
+          { fileName: path.basename(filePath), md5Hash, fileSize });
         context.api.store.dispatch(setDownloadHashByFile(path.basename(filePath),
-                                   fileMD5, fileSize));
+                                   md5Hash, fileSize));
       });
 
     context.api.events.on('enable-download-watch', (enabled: boolean) => {

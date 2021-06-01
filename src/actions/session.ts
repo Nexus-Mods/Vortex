@@ -4,6 +4,10 @@ import safeCreateAction from './safeCreateAction';
 
 import * as reduxAct from 'redux-act';
 
+const uiOnlyMeta = (process.type === 'renderer')
+  ? () => ({ forward: false, scope: 'local' })
+  : undefined;
+
 /**
  * action to choose which item in a group to display (all other items in the
  * group will be hidden). the itemId can be undefined to hide them all.
@@ -21,10 +25,12 @@ export const setOpenMainPage = safeCreateAction('SET_OPEN_MAINPAGE',
   (page: string, secondary: boolean) => ({ page, secondary }));
 
 export const startActivity = safeCreateAction('START_ACTIVITY',
-  (group: string, activityId: string) => ({ group, activityId }));
+  (group: string, activityId: string) => ({ group, activityId }),
+  uiOnlyMeta);
 
 export const stopActivity = safeCreateAction('STOP_ACTIVITY',
-  (group: string, activityId: string) => ({ group, activityId }));
+  (group: string, activityId: string) => ({ group, activityId }),
+  uiOnlyMeta);
 
 export const setProgress = safeCreateAction('SET_PROGRESS',
   (group: string, progressId: string, text: string, percent: number) =>

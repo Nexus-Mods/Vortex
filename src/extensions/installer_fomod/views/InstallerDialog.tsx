@@ -491,7 +491,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       return ret({});
     }
     const { currentStep, installSteps } = props.installerState;
-    const selOption = installSteps[currentStep].optionalFileGroups.group[0].options
+
+    const selOption = (installSteps[currentStep]?.optionalFileGroups?.group?.[0]?.options ?? [])
       .find(opt => opt.selected);
     return ret(selOption || {});
   }

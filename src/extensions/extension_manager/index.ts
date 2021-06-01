@@ -307,8 +307,10 @@ function init(context: IExtensionContext) {
           });
       } else {
         context.api.sendNotification({
+          id: 'not-an-extension',
           type: 'warning',
-          message: 'Archive not recognized as a Vortex extension',
+          title: 'Archive not recognized as a Vortex extension.',
+          message: 'If this is a new extension it may not have been approved yet.',
         });
         return Promise.resolve();
       }

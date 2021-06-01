@@ -191,8 +191,6 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
       if (getSafe(mod.attributes, ['version'], undefined) === undefined) {
         dispatch(setModAttribute(gameId, mod.id, 'version', candidate.version));
       }
-      console.log('fileid now', mod.attributes['fileId']);
-      //  = candidate.file_id;
     }
   }
   const latestFileId = fileId;

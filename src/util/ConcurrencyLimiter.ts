@@ -85,9 +85,11 @@ class ConcurrencyLimiter {
           }
           this.process(cb, tries)
             .then(outerResolve)
-            .catch(outerReject);
+            .catch(outerReject)
+            .then(() => null);
           // this resolves immediately, so the next promise in the queue
           // gets paused
+          return Promise.resolve();
         }));
     });
   }
