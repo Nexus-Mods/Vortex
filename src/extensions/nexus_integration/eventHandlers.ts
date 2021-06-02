@@ -501,7 +501,7 @@ function sendCollection(nexus: Nexus,
         collectionSchemaId: 1,
       }, uuid);
   } else {
-    return nexus.updateCollection({
+    return nexus.createOrUpdateRevision({
         adultContent: false,
         collectionManifest: collectionInfo,
         collectionSchemaId: 1,
