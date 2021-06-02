@@ -50,7 +50,7 @@
     "leveldown": "^5.6.0",
     "levelup": "^4.4.0",
     "libxmljs": "TanninOne/libxmljs",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
