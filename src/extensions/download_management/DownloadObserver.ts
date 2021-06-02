@@ -272,8 +272,8 @@ export class DownloadObserver {
       return onceFinished();
     } else {
       finalizeDownload(this.mApi, id, res.filePath, allowInstall)
-        .then(() => callback(null, id))
-        .catch(err => callback(err, id))
+        .then(() => callback?.(null, id))
+        .catch(err => callback?.(err, id))
         .finally(() => onceFinished());
     }
   }
@@ -458,6 +458,16 @@ export class DownloadObserver {
           + 'AntiVirus, Firewall, VPN or proxy. '
           + 'You can try resuming the download to see if it was a temporary issue but also '
           + 'please check your network-related software for updates.', {
+          allowReport: false,
+        });
+      }
+    } else if (err instanceof TemporaryError) {
+      this.handlePauseDownload(downloadId);
+      if (callback !== undefined) {
+        callback(err, downloadId);
+      } else {
+        showError(this.mApi.store.dispatch, 'Download failed',
+          err.message, {
           allowReport: false,
         });
       }
