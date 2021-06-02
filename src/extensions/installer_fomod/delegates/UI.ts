@@ -39,12 +39,12 @@ class UI extends DelegateBase {
     this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
     try {
-      // if (!this.mUnattended) {
+      if (!this.mUnattended) {
         this.api.store.dispatch(startDialog({
           moduleName: info.moduleName,
           image: info.image,
         }));
-      // }
+      }
       callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'start installer dialog failed',
