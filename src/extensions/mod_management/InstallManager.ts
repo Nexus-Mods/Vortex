@@ -1457,6 +1457,12 @@ class InstallManager {
                 this.installModAsync(dep.reference, api, downloadId,
                                   { choices: dep.installerChoices }, dep.fileList,
                                   profile.gameId))
+                  .catch(err => {
+                    if (err instanceof UserCanceled) {
+                      err.skipped = true;
+                    }
+                    return Promise.reject(err);
+                  })
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
