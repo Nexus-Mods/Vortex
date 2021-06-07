@@ -54,6 +54,7 @@ import {IFileMerge} from './types/IFileMerge';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
+import {IRemoveModOptions} from './types/IRemoveModOptions';
 import {IResolvedMerger} from './types/IResolvedMerger';
 import {TestSupported} from './types/TestSupported';
 import { fallbackPurge, loadActivation,
@@ -1040,8 +1041,8 @@ function once(api: IExtensionApi) {
 
   api.events.on(
       'remove-mod',
-      (gameMode: string, modId: string, callback?: (error: Error) => void) =>
-          onRemoveMod(api, getAllActivators(), gameMode, modId, callback));
+      (gameMode: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
+          onRemoveMod(api, getAllActivators(), gameMode, modId, cb, options));
 
   api.events.on('create-mod',
       (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
