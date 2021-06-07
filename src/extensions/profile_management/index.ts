@@ -594,13 +594,13 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
 
   const { mods, profiles } = state.persistent;
   const profileIds = Object.keys(profiles)
-    .filter(profileId => profiles[profileId].gameId === gameId);
+    .filter(profileId => profiles[profileId]?.gameId === gameId);
 
   let message: string;
 
   if ((profileIds.length > 1)
-      || (profiles[profileIds[0]].name !== 'Default')) {
-    message = profileIds.map(id => profiles[id].name).join('\n');
+      || (profiles[profileIds[0]]?.name !== 'Default')) {
+    message = profileIds.map(id => profiles[id]?.name || id).join('\n');
   }
 
   return api.showDialog('info', 'Confirm Removal', {
