@@ -48,19 +48,26 @@ export function sanitizeExpression(fileName: string): string {
     .replace(/ \(\d+\)$/, '');
 }
 
-function isFuzzyVersion(input: string) {
+const fuzzyVersionCache: { [input: string]: boolean } = {};
+
+export function isFuzzyVersion(input: string) {
+  const cachedRes: boolean = fuzzyVersionCache[input];
+  if (cachedRes !== undefined) {
+    return cachedRes;
+  }
+
   if (!truthy(input)) {
-    return false;
+    fuzzyVersionCache[input] = false;
+  } else if (input.endsWith('+prefer')) {
+    // +prefer can be used with non-semver versions as well
+    fuzzyVersionCache[input] = true;
+  } else {
+    const valRange = semver.validRange(input);
+
+    fuzzyVersionCache[input] = (valRange !== null) && (valRange !== input);
   }
 
-  // +prefer can be used with non-semver versions as well
-  if (input.endsWith('+prefer')) {
-    return true;
-  }
-
-  const valRange = semver.validRange(input);
-
-  return (valRange !== null) && (valRange !== input);
+  return fuzzyVersionCache[input];
 }
 
 function hasIdentifyingMarker(mod: IModLookupInfo,
@@ -100,7 +107,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // if reference is by file hash and the match is not fuzzy, require the md5 to match
-  if ((ref.fileMD5 !== undefined)
+  if ((truthy(ref.fileMD5))
       && !fuzzyVersion
       && (mod.fileMD5 !== ref.fileMD5)) {
     return false;

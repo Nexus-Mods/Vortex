@@ -6,6 +6,7 @@ import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
 import { fileMD5 } from '../../util/checksum';
+import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport, didIgnoreError,
@@ -40,10 +41,10 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies, { isFuzzyVersion } from './util/dependencies';
+import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
-import { referenceEqual } from './util/testModReference';
+import { isFuzzyVersion, referenceEqual } from './util/testModReference';
 
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
@@ -126,10 +127,19 @@ class InstallManager {
   private mGetInstallPath: (gameId: string) => string;
   private mTask: Zip;
   private mQueue: Promise<void>;
+  private mDependencyInstalls: { [modId: string]: () => void } = {};
+  private mDependencyDownloadsLimit: ConcurrencyLimiter =
+    new ConcurrencyLimiter(3);
+  private mDependencyInstallsLimit: ConcurrencyLimiter =
+    new ConcurrencyLimiter(1);
 
-  constructor(installPath: (gameId: string) => string) {
+  constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
     this.mQueue = Promise.resolve();
+
+    api.events.on('cancel-dependency-install', (modId: string) => {
+      this.mDependencyInstalls[modId]?.();
+    });
   }
 
   /**
@@ -1371,9 +1381,8 @@ class InstallManager {
     lookupResult: IModInfoEx): Promise<string> {
     const referenceTag = requirement['tag'];
     if ((requirement.versionMatch !== undefined)
-      && (isNaN(parseInt(requirement.versionMatch[0], 16))
-        || (semver.validRange(requirement.versionMatch)
-          !== requirement.versionMatch))) {
+      && !requirement.versionMatch.endsWith('+prefer')
+      && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
                                    referenceTag)
@@ -1381,7 +1390,13 @@ class InstallManager {
           ? this.downloadURL(api, lookupResult, referenceTag)
           : res);
     } else {
-      return this.downloadURL(api, lookupResult, referenceTag);
+      return this.downloadURL(api, lookupResult, referenceTag)
+        .catch(() => {
+          // with +prefer versions, if the exact version isn't available, an update is acceptable
+          if (requirement.versionMatch.endsWith('+prefer')) {
+            return this.downloadMatching(api, lookupResult, requirement.versionMatch, referenceTag);
+          }
+        });
     }
   }
 
@@ -1412,7 +1427,46 @@ class InstallManager {
 
     let canceled: boolean = false;
 
-    return Promise.map(dependencies, (dep: IDependency) => {
+    const queueDownload = (dep: IDependency): Promise<string> => {
+      return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() =>
+        canceled
+          ? Promise.resolve<string>(undefined)
+          : this.downloadDependencyAsync(
+              dep.reference,
+              api,
+              dep.lookupResults[0].value)));
+    };
+
+    const resumeDownload = (dep: IDependency): Promise<string> => {
+      return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() =>
+        canceled
+          ? Promise.resolve(undefined)
+          : new Promise((resolve, reject) => {
+            api.events.emit('resume-download',
+              dep.download,
+              (err) => err !== null ? reject(err) : resolve(dep.download));
+          })));
+    };
+
+    const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
+      return Promise.resolve(this.mDependencyInstallsLimit.do(() =>
+        canceled
+          ? Promise.resolve(undefined)
+          : this.withInstructions(api,
+                              renderModReference(dep.reference),
+                              dep.extra?.['instructions'], () =>
+          this.installModAsync(dep.reference, api, downloadId,
+            { choices: dep.installerChoices }, dep.fileList,
+            profile.gameId))
+          .catch(err => {
+            if (err instanceof UserCanceled) {
+              err.skipped = true;
+            }
+            return Promise.reject(err);
+          })));
+    };
+
+    const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
       if (canceled) {
         return Promise.reject(new UserCanceled());
       }
@@ -1422,22 +1476,13 @@ class InstallManager {
       });
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
-        if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
-          dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
-        } else {
-          dlPromise = this.downloadDependencyAsync(
-            dep.reference,
-            api,
-            dep.lookupResults[0].value);
-        }
+        dlPromise = (dep.lookupResults[0]?.value?.sourceURI ?? '') === ''
+          ? Promise.reject(new ProcessCanceled('Failed to determine download url'))
+          : queueDownload(dep);
       } else if (dep.download === null) {
         dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
       } else if (downloads[dep.download].state === 'paused') {
-        dlPromise = new Promise((resolve, reject) => {
-          api.events.emit('resume-download',
-                          dep.download,
-                          (err) => err !== null ? reject(err) : resolve(dep.download));
-        });
+        dlPromise = resumeDownload(dep);
       }
       return dlPromise
         .catch(AlreadyDownloaded, err => {
@@ -1453,16 +1498,7 @@ class InstallManager {
           return Promise.reject(new NotFound('Download not found'));
         })
         .then((downloadId: string) => (dep.mod === undefined)
-           ? this.withInstructions(api, renderModReference(dep.reference), dep.extra?.['instructions'], () =>
-                this.installModAsync(dep.reference, api, downloadId,
-                                  { choices: dep.installerChoices }, dep.fileList,
-                                  profile.gameId))
-                  .catch(err => {
-                    if (err instanceof UserCanceled) {
-                      err.skipped = true;
-                    }
-                    return Promise.reject(err);
-                  })
+           ? installDownload(dep, downloadId)
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
@@ -1518,7 +1554,11 @@ class InstallManager {
     // being installed. Obviously Vortex isn't going to do the install for multiple mods at once
     // and the downloads are going to be limited by the number of download threads but still the
     // queue is going to stay utilized
-    }, { concurrency: 4 })
+    })
+      .finally(() => {
+        delete this.mDependencyInstalls[sourceModId];
+        log('info', 'done installing dependencies');
+      })
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
         // adequate to show an error but not as a bug in Vortex
@@ -1539,6 +1579,12 @@ class InstallManager {
         return [];
       })
       .filter(dep => dep !== undefined);
+
+    this.mDependencyInstalls[sourceModId] = () => {
+      canceled = true;
+    };
+
+    return res;
   }
 
   private updateRules(api: IExtensionApi, profile: IProfile, sourceModId: string,

@@ -16,30 +16,17 @@ import * as _ from 'lodash';
 import minimatch from 'minimatch';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 import * as semver from 'semver';
-import testModReference, { IModLookupInfo } from './testModReference';
-
-export function isFuzzyVersion(versionMatch: string) {
-  if (!truthy(versionMatch)) {
-    return false;
-  }
-
-  return isNaN(parseInt(versionMatch[0], 16))
-    || (semver.validRange(versionMatch)
-      !== versionMatch);
-}
+import testModReference, { IModLookupInfo, isFuzzyVersion } from './testModReference';
 
 interface IBrowserResult {
   url: string | (() => Promise<string>);
   referer?: string | (() => Promise<string>);
 }
 
-function findModByRef(reference: IModReference, state: IState, sourceModId: string): IMod {
-  const gameMode = activeGameId(state);
-  const mods = state.persistent.mods[gameMode];
-
+export function findModByRef(reference: IModReference, mods: { [modId: string]: IMod },
+                             source?: { gameId: string, modId: string }): IMod {
   if ((reference['idHint'] !== undefined)
-      && (testModReference(mods[reference['idHint']], reference,
-                           { gameId: gameMode, modId: sourceModId }))) {
+      && (testModReference(mods[reference['idHint']], reference, source))) {
     // fast-path if we have an id from a previous match
     return mods[reference['idHint']];
   }
@@ -53,7 +40,7 @@ function findModByRef(reference: IModReference, state: IState, sourceModId: stri
   }
 
   return Object.values(mods).find((mod: IMod): boolean =>
-    testModReference(mod, reference, { gameId: gameMode, modId: sourceModId }));
+    testModReference(mod, reference, source));
 }
 
 function newerSort(lhs: IDownload, rhs: IDownload): number {
@@ -193,9 +180,28 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   return Promise.resolve(temp.filter(iter => iter !== null).map(iter => iter.dep));
 }
 
-function findDownloadByRef(reference: IReference, state: IState): string {
-  const downloads = state.persistent.downloads.files;
+function lookupFromDownload(download: IDownload): IModLookupInfo {
+  const modId = download.modInfo?.meta?.details?.modId
+              ?? download.modInfo?.nexus?.ids?.modId;
 
+  const fileId = download.modInfo?.meta?.details?.fileId
+              ?? download.modInfo?.nexus?.ids?.fileId;
+
+  return {
+    fileMD5: download.fileMD5,
+    fileName: download.localPath,
+    fileSizeBytes: download.size,
+    version: download.modInfo?.version,
+    logicalFileName: download.modInfo?.name,
+    game: download.game,
+    source: download.modInfo?.source,
+    modId,
+    fileId,
+  };
+}
+
+export function findDownloadByRef(reference: IReference,
+                                  downloads: { [dlId: string]: IDownload }): string {
   if (isFuzzyVersion(reference.versionMatch)
     && (reference.fileMD5 !== undefined)
     && ((reference.logicalFileName !== undefined)
@@ -206,19 +212,7 @@ function findDownloadByRef(reference: IReference, state: IState): string {
   try {
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
-      const lookup: IModLookupInfo = {
-        fileMD5: download.fileMD5,
-        fileName: download.localPath,
-        fileSizeBytes: download.size,
-        version: getSafe(download, ['modInfo', 'version'], undefined),
-        logicalFileName: getSafe(download, ['modInfo', 'name'], undefined),
-        game: download.game,
-        source: download.modInfo?.source,
-        modId: download.modInfo?.meta?.details?.modId,
-        fileId: download.modInfo?.meta?.details?.fileId,
-      };
-
-      return testModReference(lookup, reference);
+      return testModReference(lookupFromDownload(download), reference);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];
@@ -241,7 +235,7 @@ function gatherDependenciesGraph(
 ): Promise<IDependencyNode> {
   const state = api.getState();
 
-  const download = findDownloadByRef(rule.reference, state);
+  const download = findDownloadByRef(rule.reference, state.persistent.downloads.files);
   if (download === undefined) {
     log('debug', 'no download found', { ref: JSON.stringify(rule.reference) });
   }
@@ -327,13 +321,15 @@ function gatherDependencies(
   progressCB?: (percent: number) => void,
   modId?: string,
 ): Promise<IDependency[]> {
-  const state = api.store.getState();
+  const state = api.getState();
+  const gameMode: string = activeGameId(state);
+  const source = { gameId: gameMode, modId };
   const requirements: IModRule[] =
     rules === undefined
       ? []
       : rules.filter((rule: IRule) =>
-            (rule.type === (recommendations ? 'recommends' : 'requires'))
-            && (findModByRef(rule.reference, state, modId) === undefined),
+          (rule.type === (recommendations ? 'recommends' : 'requires'))
+          && (findModByRef(rule.reference, state.persistent.mods[gameMode], source) === undefined),
         );
 
   let numCompleted = 0;

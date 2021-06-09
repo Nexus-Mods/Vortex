@@ -951,7 +951,7 @@ function once(api: IExtensionApi) {
   const store: Redux.Store<any> = api.store;
 
   if (installManager === undefined) {
-    installManager = new InstallManager(
+    installManager = new InstallManager(api,
         (gameId: string) => installPathForGame(store.getState(), gameId));
     installers.forEach((installer: IInstaller) => {
       installManager.addInstaller(installer.id, installer.priority, installer.testSupported,
