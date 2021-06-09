@@ -72,10 +72,9 @@ class MainWindow {
       return null;
     }, 500);
 
-    this.mMoveDebouncer = new Debouncer(() => {
-      if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
-        const pos: number[] = this.mWindow.getPosition();
-        store.dispatch(setWindowPosition({x: pos[0], y: pos[1]}));
+    this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
+      if ((this.mWindow !== null)) {
+        store.dispatch(setWindowPosition({x, y}));
         return null;
       }
       return null;
@@ -277,10 +276,15 @@ class MainWindow {
 
   private initEventHandlers(store: Redux.Store<IState>) {
     this.mWindow.on('closed', () => { this.mWindow = null; });
-    this.mWindow.on('maximize', () => { store.dispatch(setMaximized(true)); });
-    this.mWindow.on('unmaximize', () => { store.dispatch(setMaximized(false)); });
-    this.mWindow.on('resize', () => { this.mResizeDebouncer.schedule(); });
-    this.mWindow.on('move', () => { this.mMoveDebouncer.schedule(); });
+    this.mWindow.on('maximize', () => store.dispatch(setMaximized(true)));
+    this.mWindow.on('unmaximize', () => store.dispatch(setMaximized(false)));
+    this.mWindow.on('resize', () => this.mResizeDebouncer.schedule());
+    this.mWindow.on('move', () => {
+      if (this.mWindow?.isMaximized?.() === false) {
+        const pos: number[] = this.mWindow.getPosition();
+        this.mMoveDebouncer.schedule(undefined, pos[0], pos[1]);
+      }
+    });
   }
 }
 

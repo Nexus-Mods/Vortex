@@ -4,6 +4,7 @@ import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import Usage from '../../controls/Usage';
 import { IState } from '../../types/IState';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import { TFunction } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';
 import { getGame } from '../gamemode_management/util/getGame';
@@ -12,6 +13,7 @@ import { IHistoryEvent, IHistoryStack } from './types';
 interface IDialogProps {
   onClose: () => void;
   onReverted: (stack: string, event: IHistoryEvent) => void;
+  onError: (err: Error, stack: string, event: IHistoryEvent) => void;
   stackToShow: string;
   stacks: { [key: string]: IHistoryStack };
   events: IHistoryEvent[];
@@ -31,10 +33,11 @@ interface IHistoryItemProps {
   stackId: string;
   stack: IHistoryStack;
   onReverted: (stackId: string, evt: IHistoryEvent) => void;
+  onError: (err: Error, stack: string, event: IHistoryEvent) => void;
 }
 
 function HistoryItem(props: IHistoryItemProps) {
-  const { t, evt, onReverted, stack, stackId } = props;
+  const { t, evt, onReverted, onError, stack, stackId } = props;
 
   const classes = ['history-event-line'];
   const canRevert = evt.reverted ? 'invalid' : stack.canRevert(evt);
@@ -43,8 +46,9 @@ function HistoryItem(props: IHistoryItemProps) {
   }
 
   const onClick = React.useCallback(() => {
-    stack.revert(evt);
     onReverted(stackId, evt);
+    stack.revert(evt)
+      .catch(err => onError(err, stackId, evt));
   }, []);
 
   const game = getGame(evt.gameId);
@@ -72,7 +76,7 @@ function HistoryItem(props: IHistoryItemProps) {
 }
 
 function HistoryDialog(props: IDialogProps & WithTranslation) {
-  const { t, events, onClose, onReverted, stacks, stackToShow } = props;
+  const { t, events, onClose, onReverted, onError, stacks, stackToShow } = props;
 
   const stack = stacks[stackToShow];
 
@@ -95,6 +99,7 @@ function HistoryDialog(props: IDialogProps & WithTranslation) {
                   stack={stack}
                   stackId={stackToShow}
                   onReverted={onReverted}
+                  onError={onError}
                 />
               ))}
             </tbody>

@@ -254,8 +254,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       // In this case there is probably nothing to purge but if that's true
       // there will also be no manifest so we can just as easily try a fallback
       // purge just to be safe.
-      return fallbackPurgeType(api, activator, gameId, typeId, modPath, stagingPath)
-        .then(() => api.emitAndAwait('did-purge', profile.id));
+      return fallbackPurgeType(api, activator, gameId, typeId, modPath, stagingPath);
     }
 
     // TODO: we really should be using the deployment specified in the manifest,

@@ -1,9 +1,10 @@
 import { generate as shortid } from 'shortid';
 import { showDialog } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import local from '../../util/local';
 
-import { addHistoryEvent, markHistoryReverted, showHistory } from './actions';
+import { addHistoryEvent, markHistoryReverted, setHistoryEvent, showHistory } from './actions';
 import HistoryDialog from './HistoryDialog';
 import { persistentReducer, sessionReducer } from './reducers';
 import { IHistoryEvent, IHistoryStack } from './types';
@@ -47,6 +48,14 @@ function init(context: IExtensionContext): boolean {
       },
       onReverted: (stackId: string, evt: IHistoryEvent) => {
         context.api.store.dispatch(markHistoryReverted(stackId, evt));
+      },
+      onError: (err: Error, stackId: string, evt: IHistoryEvent) => {
+        const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
+        context.api.showErrorNotification('Failed to revert event', err, { allowReport });
+        if (evt.reverted) {
+          context.api.store.dispatch(setHistoryEvent(stackId, { ...evt, reverted: false }));
+        }
+        context.api.store.dispatch(showHistory(undefined));
       },
       stacks,
     };

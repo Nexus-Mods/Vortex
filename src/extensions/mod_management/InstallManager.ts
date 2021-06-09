@@ -333,7 +333,7 @@ class InstallManager {
                       enable = enable || wasEnabled;
                       resolve();
                     }
-                  });
+                  }, { willBeReplaced: true });
                 });
               }
             });
@@ -1262,7 +1262,7 @@ class InstallManager {
                   rules: mod.rules,
                 });
               }
-            });
+            }, { willBeReplaced: true });
           }
         });
     });

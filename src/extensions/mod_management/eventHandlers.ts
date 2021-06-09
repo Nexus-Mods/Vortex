@@ -45,6 +45,7 @@ import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import { RuleType } from 'modmeta-db';
 import * as path from 'path';
+import { IRemoveModOptions } from './types/IRemoveModOptions';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -527,7 +528,8 @@ export function onRemoveMod(api: IExtensionApi,
                             activators: IDeploymentMethod[],
                             gameMode: string,
                             modId: string,
-                            callback?: (error: Error) => void) {
+                            callback?: (error: Error) => void,
+                            options?: IRemoveModOptions) {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -622,7 +624,7 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modId}`));
 
-  api.emitAndAwait('will-remove-mod', gameMode, mod.id)
+  api.emitAndAwait('will-remove-mod', gameMode, mod.id, options)
   .then(() => undeployMod())
   .then(() => {
     if (truthy(mod) && truthy(mod.installationPath)) {
@@ -640,7 +642,8 @@ export function onRemoveMod(api: IExtensionApi,
     if (callback !== undefined) {
       callback(null);
     }
-    return api.emitAndAwait('did-remove-mod', gameMode, mod.id);
+    options = { ...(options || {}), modData: { ...mod } };
+    return api.emitAndAwait('did-remove-mod', gameMode, mod.id, options);
   })
   .catch(TemporaryError, (err) => {
     if (callback !== undefined) {

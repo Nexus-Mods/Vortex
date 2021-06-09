@@ -17,6 +17,11 @@ const persistentReducer: IReducerSpec<IHistoryPersistent> = {
       copy.push(payload.event);
       return setSafe(state, path, copy);
     }),
+    ...addReducer(actions.setHistoryEvent, (state, payload) => {
+      const idx = state.historyStacks[payload.stack].findIndex(evt => evt.id === payload.event.id);
+      const copy = setSafe(state, ['historyStacks', payload.stack, idx], payload.event);
+      return copy;
+    }),
     ...addReducer(actions.markHistoryReverted, (state, payload) => {
       const idx = state.historyStacks[payload.stack].findIndex(evt => evt.id === payload.event.id);
       const copy = setSafe(state, ['historyStacks', payload.stack, idx, 'reverted'], true);
