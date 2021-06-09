@@ -1218,8 +1218,9 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
             ({ urls: res.map(u => u.URI), meta: {}, updatedUrl: input }))
         : nexus.getRevisionGraph({ downloadLink: true }, url.revisionId)
           .then((res: Partial<IRevision>) =>
-            ({
-              urls: [res.downloadLink],
+            nexus.getCollectionDownloadLink(res.downloadLink))
+          .then(downloadUrls => ({
+              urls: downloadUrls.map(iter => iter.URI),
               updatedUrl: input,
               meta: {
                 nexus: {

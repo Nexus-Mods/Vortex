@@ -196,7 +196,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   const latestFileId = fileId;
   let fileUpdates: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
   // at this point there is the possibility that the latest file in the update
-  // chain has been deleted, so we have to travers _back_ through the chain to
+  // chain has been deleted, so we have to traverse _back_ through the chain to
   // the latest file that actually exists
 
   const isFileDeleted = (candidateId: number) => {
