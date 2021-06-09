@@ -145,15 +145,27 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
 
     let filtered = notifications.slice();
+    let nextTimeout = null;
+    const now = Date.now();
     if (!open) {
-      const now = Date.now();
-
       filtered = notifications.filter(item => {
         if (item.type === 'activity') {
           return true;
         }
         const displayTime = this.displayTime(item);
-        return (displayTime === null) || (item.updatedTime + displayTime > now);
+        if (displayTime === null) {
+          return true;
+        }
+
+        const timeout = item.updatedTime + displayTime;
+        if (timeout > now) {
+          if ((nextTimeout === null) || (timeout < nextTimeout)) {
+            nextTimeout = timeout;
+          }
+          return true;
+        }
+
+        return false;
       });
     }
 
@@ -166,7 +178,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           // should never happen
           clearTimeout(this.mUpdateTimer);
         }
-        this.mUpdateTimer = setTimeout(this.triggerFilter, 1000);
+        if (nextTimeout !== null) {
+          // if one of the displayed notifications has a timeout, refresh once that timeout expires
+          // (adding 100ms for good measure)
+          this.mUpdateTimer = setTimeout(this.triggerFilter, (nextTimeout - now) + 100);
+        }
       } else {
         this.mRef?.hide();
       }
