@@ -670,7 +670,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const attributes = this.mVisibleAttributes;
 
     const extraClasses = this.props.objects
-      .map(attr => attr.cssClass?.(data[rowId],this.getAttributeState(attr, attributeState).enabled))
+      .map(attr => attr.cssClass?.(data[rowId],
+                                   this.getAttributeState(attr, attributeState).enabled))
       .filter(cls => truthy(cls));
 
     extraClasses.push(sanitizeCSSId(rowId));
@@ -1114,6 +1115,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             && (oldState.data[rowId] === data[rowId])) {
           return Promise.resolve();
         }
+        if (attribute.calc === undefined) {
+          return Promise.resolve();
+        }
         return Promise.resolve(attribute.calc(data[rowId], t))
           .then(newValue => {
             if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
@@ -1121,7 +1125,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               delta[attribute.id] = newValue;
             }
             return null;
-          });
+          })
+          .catch(err => {
+            log('error', 'failed to calculate attribute value', {
+              attribute: attribute.id,
+              row: rowId,
+              error: err.message,
+            });
+          })
+          ;
       })
       .then(() => {
         if (Object.keys(delta).length > 0) {
@@ -1348,7 +1360,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const groupName = (groupAttribute.groupName !== undefined)
           ? groupAttribute.groupName(group)
           : group;
-        prev.push({ id: group, name: groupName, count: groupItems.length, rows: expanded ? groupItems : null });
+        prev.push({
+          id: group,
+          name: groupName,
+          count: groupItems.length,
+          rows: expanded ? groupItems : null,
+        });
       }
 
       return prev;

@@ -84,15 +84,26 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
       if (cellType === 'string') {
         return <span>{data}</span>;
       } else if (cellType === 'boolean') {
-        return (
-          <IconButton
-            className='btn-embed'
-            id={`toggle-${rowId}-${attribute.id}`}
-            tooltip={preT(t, attribute.name, undefined, true)}
-            icon={data ? 'checkbox-checked' : 'checkbox-unchecked'}
-            onClick={this.toggle}
-          />
-        );
+        if (attribute.edit.onChangeValue !== undefined) {
+          return (
+            <IconButton
+              className='btn-embed'
+              id={`toggle-${rowId}-${attribute.id}`}
+              tooltip={preT(t, attribute.name, undefined, true)}
+              icon={data ? 'checkbox-checked' : 'checkbox-unchecked'}
+              onClick={this.toggle}
+            />
+          );
+        } else {
+          return (
+            <IconButton
+              className='btn-embed'
+              icon={data ? 'toggle-enabled' : 'toggle-disabled'}
+              tooltip={preT(t, 'attribute.name, undefined, true')}
+              style={{ pointerEvents: 'none' }}
+            />
+          );
+        }
       } else if ((cellType === 'object') && (data instanceof Date)) {
         return (
           <span>
