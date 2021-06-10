@@ -285,7 +285,7 @@
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
-    "ws": "^7.2.0",
+    "ws": "^7.4.6",
     "xml2js": "^0.4.23"
   },
   "config": {
