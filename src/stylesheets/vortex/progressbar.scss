@@ -33,6 +33,8 @@
       > *:last-child {
         width: 4em;
         text-align: right;
+        // without this padding the last letter is cut off because of italic font
+        padding-right: 1px;
       }
     }
   }

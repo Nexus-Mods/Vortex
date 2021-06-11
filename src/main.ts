@@ -165,7 +165,9 @@ function main() {
   }
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
-  process.env.NODE_OPTIONS = NODE_OPTIONS + ` --max-http-header-size=${HTTP_HEADER_SIZE}`;
+  process.env.NODE_OPTIONS = NODE_OPTIONS
+    + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
+    + ' --no-force-async-hooks-checks';
 
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();

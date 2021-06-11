@@ -1,6 +1,10 @@
 import { genHash, IHashResult } from 'modmeta-db';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { finalizingDownload, finalizingProgress, finishDownload, setDownloadHash } from '../actions/state';
+import { finalizingDownload, finalizingProgress,
+         finishDownload, setDownloadHash } from '../actions/state';
+
+import { util } from 'vortex-api';
+import { fileMD5 } from 'vortexmt';
 
 export function finalizeDownload(api: IExtensionApi, id: string,
                                  filePath: string, allowInstall: boolean) {
@@ -15,7 +19,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     }
   };
 
-  return genHash(filePath, progressHash)
+  return util.toPromise(cb => (fileMD5 as any)(filePath, cb, progressHash))
     .then((md5Hash: IHashResult) => {
       api.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
     })

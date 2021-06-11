@@ -405,7 +405,8 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
       uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
-      uploader_url: input.download?.modInfo?.nexus?.modInfo?.uploaded_users_profile_url,
+      uploaderUrl: nexusModInfo?.uploaded_users_profile_url,
+      uploaderAvatar: nexusModInfo?.user?.avatar ?? nexusCollectionInfo?.collection?.user.avatar,
       category,
       pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage,
       description: nexusModInfo?.description
@@ -1416,6 +1417,11 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
       endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
+  const cmAttr = genEndorsedAttribute(context.api,
+    (gameId: string, modId: string, endorseStatus: string) =>
+      endorseModImpl(context.api, nexus, gameId, modId, endorseStatus));
+  cmAttr.isToggleable = false;
+  context.registerTableAttribute('collection-mods', cmAttr);
   context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));

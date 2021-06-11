@@ -1243,13 +1243,13 @@ class DownloadManager {
             return download.finalName
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
-              log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
               const received = download.chunks.filter(chunk => chunk.state === 'paused')
                 ? download.received
                 : download.size;
               download.progressCB(received, download.size, undefined,
                                   undefined, undefined, resolvedPath);
               if (download.tempName !== resolvedPath) {
+                log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
                 return fs.renameAsync(download.tempName, resolvedPath);
               } else {
                 return Promise.resolve();

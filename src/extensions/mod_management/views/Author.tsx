@@ -26,13 +26,13 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
   const [edit, setEdit] = React.useState(false);
   const [authorTemp, setAuthor] = React.useState(mod.attributes?.author);
   const [uploaderTemp, setUploader] = React.useState(mod.attributes?.uploader);
-  const [urlTemp, setURL] = React.useState(mod.attributes?.uploader_url);
+  const [urlTemp, setURL] = React.useState(mod.attributes?.uploaderUrl);
   const dispatch = useDispatch();
 
   const changeEdit = React.useCallback((doEdit: boolean = true) => {
     setAuthor(mod.attributes?.author);
     setUploader(mod.attributes?.uploader);
-    setURL(mod.attributes?.uploader_url);
+    setURL(mod.attributes?.uploaderUrl);
     setEdit(doEdit);
   }, [setEdit, mod, setAuthor, setUploader, setURL]);
 
@@ -48,7 +48,7 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
     dispatch(setModAttributes(gameId, mod.id, {
       author: authorTemp,
       uploader: uploaderTemp,
-      uploader_url: urlTemp,
+      uploaderUrl: urlTemp,
     }));
     changeEdit(false);
   }, [mod, dispatch, authorTemp, uploaderTemp, urlTemp, changeEdit]);
@@ -84,8 +84,8 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
       authors.push(mod.attributes.uploader);
     }
 
-    const authorP = (mod.attributes?.uploader_url !== undefined)
-      ? <a href={mod.attributes?.uploader_url}>{authors.join(' & ')}</a>
+    const authorP = (mod.attributes?.uploaderUrl !== undefined)
+      ? <a href={mod.attributes?.uploaderUrl}>{authors.join(' & ')}</a>
       : <p>{authors.join(' & ')}</p>;
 
     return (

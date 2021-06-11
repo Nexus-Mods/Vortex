@@ -244,6 +244,7 @@
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
+    "normalize-url": "^6.0.1",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
     "prop-types": "^15.7.2",
