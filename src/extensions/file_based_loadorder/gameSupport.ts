@@ -1,12 +1,8 @@
 import path from 'path';
 
-import * as types from '../../types/api';
 import { COMPANY_ID } from '../../util/constants';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { generate, Interface, parser } from './collections/loadOrder';
-
-import { ICollectionsGameSupportEntry } from './types/collections';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from './types/types';
 
 const gameSupport: ILoadOrderGameInfoExt[] = [];
@@ -37,23 +33,4 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
 
 export function findGameEntry(gameId: string): ILoadOrderGameInfoExt {
   return gameSupport.find(game => game.gameId === gameId);
-}
-
-export function initCollectionsSupport(api: types.IExtensionApi) {
-  if (api.ext.addGameSpecificCollectionsData !== undefined) {
-    for (const game of gameSupport) {
-      if (game.noCollectionGeneration === true) {
-        continue;
-      }
-      const collectionsSupportEntry: ICollectionsGameSupportEntry = {
-        gameId: game.gameId,
-        generator: (state, gameId, stagingPath, modIds, mods) =>
-          generate(api, state, gameId, stagingPath, modIds, mods),
-        parser,
-        interface: Interface,
-      };
-
-      api.ext.addGameSpecificCollectionsData(collectionsSupportEntry);
-    }
-  }
 }
