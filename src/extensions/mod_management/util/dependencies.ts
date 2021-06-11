@@ -15,6 +15,7 @@ import Promise from 'bluebird';
 import * as _ from 'lodash';
 import minimatch from 'minimatch';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
+import normalizeUrl from 'normalize-url';
 import * as semver from 'semver';
 import testModReference, { IModLookupInfo, isFuzzyVersion } from './testModReference';
 
@@ -87,9 +88,10 @@ function lookupDownloadHint(api: IExtensionApi,
   }
 
   if (input.mode === 'direct') {
-    return Promise.resolve({ url: input.url });
+    return Promise.resolve({ url: normalizeUrl(input.url, { defaultProtocol: 'https:' }) });
   } else if (input.mode === 'browse') {
-    return browseForDownload(api, input.url, input.instructions);
+    return browseForDownload(api,
+      normalizeUrl(input.url, { defaultProtocol: 'https:' }), input.instructions);
   } else {
     return Promise.reject(new ProcessCanceled(input.instructions));
   }
