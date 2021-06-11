@@ -13,6 +13,7 @@ import { alg, Graph } from 'graphlib';
 import * as _ from 'lodash';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
 import * as path from 'path';
+import { setModAttribute } from '../actions/mods';
 
 export class CycleError extends Error {
   private mCycles: string[][];
@@ -62,19 +63,24 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
       downloadGame = downloadGame[0];
     }
 
-    const state = api.store.getState();
+    const state = api.getState();
     const downloadPath = downloadPathForGame(state, downloadGame);
     const fileName = getSafe(mod.attributes, ['fileName'], undefined);
     const filePath = fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
+    const effectiveGameId = mod.attributes?.downloadGame || gameId;
 
     return api.lookupModMeta({
                 fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
                 fileSize: getSafe(mod.attributes, ['fileSize'], undefined),
                 filePath,
-                gameId: mod.attributes?.downloadGame || gameId,
+                gameId: effectiveGameId,
               })
         .catch(() => [])
         .then((metaInfo: ILookupResult[]) => {
+          if ((metaInfo.length > 0) && (mod.attributes.fileMD5 === undefined)) {
+            api.store.dispatch(
+              setModAttribute(gameId, mod.id, 'fileMD5', metaInfo[0].value.fileMD5));
+          }
           const rules = [].concat(
             getSafe(metaInfo, [0, 'value', 'rules'], []),
             mod.rules || []);

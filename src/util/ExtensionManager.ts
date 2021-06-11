@@ -1539,7 +1539,8 @@ class ExtensionManager {
           fileMD5,
           fileSize,
         });
-        this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
+        this.getApi().events.emit('filehash-calculated',
+          detail.filePath, fileMD5, fileSize, detail.gameId);
       })
       .catch(err => {
         log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
