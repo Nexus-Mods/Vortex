@@ -902,8 +902,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private setModState(profileId: string, modId: string, value: string) {
-    const { gameMode, onSetModEnabled } = this.props;
+  private setModState(profileId: string, modId: string, value: string,
+                      onSetModEnabled: (modId: string, value: boolean) => void)
+                      : Promise<void> {
+    const { gameMode } = this.props;
     const { modsWithState } = this.state;
     if (modsWithState[modId] === undefined) {
       return;
@@ -912,7 +914,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (value === 'uninstalled') {
       // selected "not installed"
       if (modsWithState[modId].state !== 'downloaded') {
-        removeMods(this.context.api, gameMode, [modId])
+        return removeMods(this.context.api, gameMode, [modId])
         .then(() => null)
         .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
@@ -937,17 +939,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else if (modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
-      this.context.api.events.emit('start-install-download', modId, false, (err, id) => {
-        if (value === 'enabled') {
-          onSetModEnabled(profileId, id, true);
-          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
-        }
+      return new Promise((resolve) => {
+        this.context.api.events.emit('start-install-download', modId, false, (err, id) => {
+          if (err !== null) {
+            this.context.api.showErrorNotification('failed to install download', err);
+          } else if (value === 'enabled') {
+            onSetModEnabled(id, true);
+            this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
+          }
+          resolve();
+        });
       });
     } else {
       // selected "enabled" or "disabled" from the other one
-      onSetModEnabled(profileId, modId, value === 'enabled');
+      onSetModEnabled(modId, value === 'enabled');
       this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
     }
+
+    return Promise.resolve();
   }
 
   private changeModEnabled = (mod: IModWithState, value: any) => {
@@ -962,7 +971,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (value === undefined) {
       this.cycleModState(profileId, mod.id, value);
     } else {
-      this.setModState(profileId, mod.id, value);
+      this.setModState(profileId, mod.id, value, (modId: string, enabled: boolean) =>
+        this.props.onSetModEnabled(profileId, modId, enabled));
     }
   }
 
@@ -1055,16 +1065,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private enableSelected = (modIds: string[]) => {
-    const { gameMode, profileId, modState, onSetModsEnabled } = this.props;
+    const { gameMode, profileId, mods, modState, onSetModsEnabled } = this.props;
 
-    modIds = modIds.filter(modId => modState[modId]?.enabled === false);
-    onSetModsEnabled(profileId, modIds, true);
-    this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
+    const filtered = modIds.filter(modId =>
+      (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
+
+    const modsToEnable: string[] = [];
+    Promise.all(filtered.map(modId => this.setModState(profileId, modId, 'enabled',
+      (modToEnable: string) => {
+        modsToEnable.push(modToEnable);
+      })))
+    .then(() => {
+      onSetModsEnabled(profileId, modsToEnable, true);
+      this.context.api.events.emit('mods-enabled', modsToEnable, true, gameMode);
+    });
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { gameMode, profileId, modState, onSetModsEnabled } = this.props;
-    modIds = modIds.filter(modId => modState[modId]?.enabled !== false);
+    const { gameMode, profileId, mods, modState, onSetModsEnabled } = this.props;
+    modIds = modIds.filter(modId =>
+      (mods[modId] !== undefined) && (modState[modId]?.enabled === true));
     onSetModsEnabled(profileId, modIds, false);
     this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
   }
