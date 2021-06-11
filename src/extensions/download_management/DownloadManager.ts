@@ -228,6 +228,10 @@ class DownloadWorker {
       return;
     }
 
+    if (referer === undefined) {
+      referer = job.options.referer;
+    }
+
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
     try {
