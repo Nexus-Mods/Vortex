@@ -182,7 +182,7 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   return Promise.resolve(temp.filter(iter => iter !== null).map(iter => iter.dep));
 }
 
-function lookupFromDownload(download: IDownload): IModLookupInfo {
+export function lookupFromDownload(download: IDownload): IModLookupInfo {
   const modId = download.modInfo?.meta?.details?.modId
               ?? download.modInfo?.nexus?.ids?.modId;
 
@@ -197,6 +197,7 @@ function lookupFromDownload(download: IDownload): IModLookupInfo {
     logicalFileName: download.modInfo?.name,
     game: download.game,
     source: download.modInfo?.source,
+    referenceTag: download.modInfo?.referenceTag,
     modId,
     fileId,
   };

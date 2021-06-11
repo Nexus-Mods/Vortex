@@ -14,7 +14,7 @@ import { getGame, getGames } from '../extensions/gamemode_management/util/getGam
 import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
-import { findDownloadByRef, findModByRef } from '../extensions/mod_management/util/dependencies';
+import { findDownloadByRef, findModByRef, lookupFromDownload } from '../extensions/mod_management/util/dependencies';
 import { getActivator,
          getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
@@ -103,6 +103,7 @@ export {
   isPathValid,
   LazyComponent,
   lazyRequire,
+  lookupFromDownload,
   makeModReference,
   makeNormalizingDict,
   makeQueue,
