@@ -2,6 +2,10 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
 
+import { ICollection } from './types/collections';
+
+import { generate, Interface, parser } from './collections/loadOrder';
+
 import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
@@ -13,7 +17,7 @@ import * as selectors from '../../util/selectors';
 import { log } from '../../util/log';
 import { setFBLoadOrder } from './actions/loadOrder';
 
-import { addGameEntry, findGameEntry, initCollectionsSupport } from './gameSupport';
+import { addGameEntry, findGameEntry } from './gameSupport';
 import { assertValidationResult, errorHandler } from './util';
 
 interface IDeployment {
@@ -217,9 +221,22 @@ export default function init(context: IExtensionContext) {
     addGameEntry(gameInfo, extPath);
   }) as any;
 
-  context.once(() =>  {
-    initCollectionsSupport(context.api);
+  context['registerCollectionFeature'](
+    'file_based_load_order_collection_data',
+    (gameId: string, includedMods: string[]) => {
+      const state = context.api.getState();
+      const stagingPath = selectors.installPathForGame(state, gameId);
+      const mods: { [modId: string]: types.IMod } =
+        util.getSafe(state, ['persistent', 'mods', gameId], {});
+      return generate(context.api, state, gameId, stagingPath, includedMods, mods);
+    },
+    (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
+    (t) => t('Load Order'),
+    (state: types.IState, gameId: string) => (findGameEntry(gameId) !== undefined),
+    Interface,
+  );
 
+  context.once(() =>  {
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
       (prev, current) => genToolsRunning(context.api, prev, current));
 
