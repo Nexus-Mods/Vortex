@@ -10,6 +10,7 @@ export interface IBar {
 
 export interface IBaseProps {
   data: IBar[];
+  className?: string;
   gap?: number;
   totalRadius: number;
   offset?: number;
@@ -35,10 +36,10 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { data, offset, style, totalRadius } = this.props;
+    const { className, data, offset, style, totalRadius } = this.props;
     const sideLength = (totalRadius + (offset || 0)) * 2;
     return (
-      <svg viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
+      <svg className={className} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
         {data.map(this.renderArc)}
       </svg>
     );

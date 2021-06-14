@@ -84,6 +84,10 @@
       "rmFill": true
     },
     "toggle-uninstalled": "{fa}/trash",
+    "warning": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
+      "rmFill": true
+    },
     "feedback-error": {
       "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
       "rmFill": true
@@ -333,6 +337,10 @@
     },
     "checkbox-unchecked": {
       "path": "{nucleo}/user interface/{nucleo_simple}_checkbox-btn",
+      "rmFill": true
+    },
+    "install": {
+      "path": "{nucleo}/ui/{nucleo_simple}_square-add-08",
       "rmFill": true
     },
     "start-install": {
