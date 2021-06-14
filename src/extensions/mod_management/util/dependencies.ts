@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
-import { IDownload, IState } from '../../../types/IState';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { IDownload } from '../../../types/IState';
+import { NotFound, ProcessCanceled } from '../../../util/CustomErrors';
 
 import { IDependency, ILookupResultEx } from '../types/IDependency';
 import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../types/IMod';
@@ -66,6 +66,9 @@ function browseForDownload(api: IExtensionApi,
       if (lookupResult === undefined) {
         lookupResult = api.emitAndAwait('browse-for-download', url, instruction)
           .then((resultList: string[]) => {
+            if (resultList.length === 0) {
+              return undefined;
+            }
             const [dlUrl, referer] = resultList[0].split('<');
             return { url: dlUrl, referer };
           });
@@ -91,7 +94,14 @@ function lookupDownloadHint(api: IExtensionApi,
     return Promise.resolve({ url: normalizeUrl(input.url, { defaultProtocol: 'https:' }) });
   } else if (input.mode === 'browse') {
     return browseForDownload(api,
-      normalizeUrl(input.url, { defaultProtocol: 'https:' }), input.instructions);
+      normalizeUrl(input.url, { defaultProtocol: 'https:' }), input.instructions)
+      .then(result => {
+        if (result === undefined) {
+          return Promise.reject(new NotFound('No download found browsing url'));
+        } else {
+          return Promise.resolve(result);
+        }
+      });
   } else {
     return Promise.reject(new ProcessCanceled(input.instructions));
   }

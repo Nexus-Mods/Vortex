@@ -812,6 +812,12 @@ class InstallManager {
             .catch(err => api.showErrorNotification('Failed to remove archive', err,
                                                     { allowReport: false }))
             .finally(() => {
+              const { files } = api.getState().persistent.downloads;
+              const dlId = Object.keys(files)
+                .find(iter => files[iter].localPath === path.basename(archivePath));
+              if (dlId !== undefined) {
+                api.store.dispatch(removeDownload(dlId));
+              }
               reject(new UserCanceled());
             });
         } },
@@ -1497,9 +1503,14 @@ class InstallManager {
           }
           return Promise.reject(new NotFound('Download not found'));
         })
-        .then((downloadId: string) => (dep.mod === undefined)
-           ? installDownload(dep, downloadId)
-           : Promise.resolve(dep.mod.id))
+        .then((downloadId: string) => {
+          if (downloadId === undefined) {
+            return Promise.reject(new NotFound('Download not found'));
+          }
+          return (dep.mod === undefined)
+            ? installDownload(dep, downloadId)
+            : Promise.resolve(dep.mod.id);
+        })
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
           this.applyExtraFromRule(api, profile, modId, dep.extra);
