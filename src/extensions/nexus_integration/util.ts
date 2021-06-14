@@ -105,7 +105,9 @@ function startDownloadCollection(api: IExtensionApi,
       if (!handleErrors) {
         return Promise.reject(err);
       }
-      api.showErrorNotification('Failed to download collection', err);
+      if (!(err instanceof UserCanceled)) {
+        api.showErrorNotification('Failed to download collection', err);
+      }
       return null;
     });
 }
