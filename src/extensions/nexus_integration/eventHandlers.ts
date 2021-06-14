@@ -501,11 +501,12 @@ function sendCollection(nexus: Nexus,
         collectionSchemaId: 1,
       }, uuid);
   } else {
-    return nexus.createOrUpdateRevision({
+    return nexus.editCollection(collectionId as any, collectionInfo.info.name)
+      .then(() => nexus.createOrUpdateRevision({
         adultContent: false,
         collectionManifest: collectionInfo,
         collectionSchemaId: 1,
-    }, uuid, collectionId);
+      }, uuid, collectionId));
   }
 }
 
