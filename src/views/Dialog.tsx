@@ -295,7 +295,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.links !== undefined) {
       controls.push((
         <div key='dialog-form-links'>
-          {content.links.map(this.renderLink)}
+          {content.links.map(content.options?.linksAsButtons ? this.renderButton : this.renderLink)}
         </div>
       ));
     }
@@ -382,6 +382,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
         : null}
       </FormGroup>
+    );
+  }
+
+  private renderButton = (link: ILink, idx: number) => {
+    return (
+      <div key={idx}>
+        <Button onClick={this.triggerLink} data-linkidx={idx}>{link.label}</Button>
+      </div>
     );
   }
 

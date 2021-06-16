@@ -99,6 +99,7 @@ export interface IDialogContent {
     hideMessage?: boolean;
     // context made available to bbcode tags
     bbcodeContext?: IBBCodeContext;
+    linksAsButtons?: boolean;
   };
 
   condition?: Condition;
