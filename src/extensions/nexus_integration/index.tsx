@@ -1143,13 +1143,15 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
 
     lastDisplayed = nextItem.input;
 
-    api.showDialog('info', 'About to open Nexus Mods', {
-      text: 'Since you\'re not a premium user, every download has to be started from the '
-          + 'website. Please click the button below to take you to the '
-          + 'appropriate site (in your default webbrowser).\n\n'
-          + 'This dialog will close automatically (or move to the next required file) '
-          + 'once the download has started.',
-      message: renderName(nextItem),
+    api.showDialog('info', 'Download {{modName}}', {
+      bbcode: 'You need to download {{modName}} from the Nexus Mods website. '
+          + 'The link below will open the mod page.<br/><br/>'
+          + 'You can enabled automatic downloads by upgrading your account to '
+          + `[url=${NEXUS_MEMBERSHIP_URL}]Premium[/url].`,
+      // message: renderName(nextItem),
+      parameters: {
+        modName: renderName(nextItem),
+      },
       links: [{ label: 'Open Site', action: (dismiss) => {
         const { url } = nextItem;
         onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
@@ -1163,9 +1165,12 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`)
           .catch(() => null);
       } }],
+      options: {
+        linksAsButtons: true,
+      },
     }, [
-      { label: 'Cancel' },
-      { label: 'Skip' },
+      { label: 'Stop installation' },
+      { label: 'Skip this mod' },
     ], 'free-download-dialog')
     .then(result => {
       if (result.action === 'Cancel') {

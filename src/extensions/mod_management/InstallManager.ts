@@ -1433,6 +1433,8 @@ class InstallManager {
     const state: IState = api.store.getState();
     let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
+    const sourceMod = state.persistent.mods[profile.gameId][sourceModId];
+
     let canceled: boolean = false;
 
     const queueDownload = (dep: IDependency): Promise<string> => {
@@ -1461,6 +1463,7 @@ class InstallManager {
         canceled
           ? Promise.resolve(undefined)
           : this.withInstructions(api,
+                              modName(sourceMod),
                               renderModReference(dep.reference),
                               dep.extra?.['instructions'], () =>
           this.installModAsync(dep.reference, api, downloadId,
@@ -1931,6 +1934,7 @@ class InstallManager {
   }
 
   private withInstructions<T>(api: IExtensionApi,
+                              sourceName: string,
                               title: string,
                               instructions: string,
                               cb: () => Promise<T>)
@@ -1939,9 +1943,16 @@ class InstallManager {
       return cb();
     }
 
-    return api.showDialog('info', 'Installation Instructions', {
-      text: 'There are instructions provided for the following mod installation.',
+    return api.showDialog('info', 'Installation notes for {{title}}', {
+      text: 'The curator of "{{sourceName}}" has provided additional instructions '
+          + 'for installing "{{title}}". You can view these instructions now or '
+          + 'check them later from the instructions column in the collections view.',
+      parameters: {
+        title,
+        sourceName,
+      },
     }, [
+      { label: 'Later' },
       { label: 'Show', action: () => {
         api.ext.showOverlay?.('install-instructions', title, instructions);
       } },
