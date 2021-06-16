@@ -26,8 +26,9 @@ interface IBrowserResult {
 
 export function findModByRef(reference: IModReference, mods: { [modId: string]: IMod },
                              source?: { gameId: string, modId: string }): IMod {
+  const fuzzy = isFuzzyVersion(reference.versionMatch);
   if ((reference['idHint'] !== undefined)
-      && (testModReference(mods[reference['idHint']], reference, source))) {
+      && (testModReference(mods[reference['idHint']], reference, source, fuzzy))) {
     // fast-path if we have an id from a previous match
     return mods[reference['idHint']];
   }
@@ -41,7 +42,7 @@ export function findModByRef(reference: IModReference, mods: { [modId: string]: 
   }
 
   return Object.values(mods).find((mod: IMod): boolean =>
-    testModReference(mod, reference, source));
+    testModReference(mod, reference, source, fuzzy));
 }
 
 function newerSort(lhs: IDownload, rhs: IDownload): number {
@@ -223,9 +224,11 @@ export function findDownloadByRef(reference: IReference,
   }
 
   try {
+    const fuzzy = isFuzzyVersion(reference.versionMatch);
+
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
-      return testModReference(lookupFromDownload(download), reference);
+      return testModReference(lookupFromDownload(download), reference, undefined, fuzzy);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];

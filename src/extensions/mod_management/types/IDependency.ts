@@ -1,5 +1,5 @@
 import Promise from 'bluebird';
-import {ILookupResult, IModInfo, IReference} from 'modmeta-db';
+import {ILookupResult, IModInfo} from 'modmeta-db';
 import { IFileListItem, IMod, IModReference } from './IMod';
 
 export interface IModInfoEx extends IModInfo {

@@ -6,7 +6,7 @@ import { downloadPathForGame } from '../../download_management/selectors';
 
 import { IMod } from '../types/IMod';
 
-import testModReference from './testModReference';
+import testModReference, { isFuzzyVersion } from './testModReference';
 
 import Promise from 'bluebird';
 import { alg, Graph } from 'graphlib';
@@ -29,7 +29,8 @@ export class CycleError extends Error {
 
 function findByRef(mods: IMod[], reference: IReference,
                    source: { gameId: string, modId: string }): IMod {
-  return mods.find((mod: IMod) => testModReference(mod, reference, source));
+  const fuzzy = isFuzzyVersion(reference.versionMatch);
+  return mods.find((mod: IMod) => testModReference(mod, reference, source, fuzzy));
 }
 
 let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } = {

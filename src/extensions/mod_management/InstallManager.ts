@@ -1,4 +1,4 @@
-import { addLocalDownload, setDownloadHashByFile,
+import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadModInfo,
          startActivity, stopActivity } from '../../actions';
 import { showDialog } from '../../actions/notifications';
@@ -41,7 +41,7 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies from './util/dependencies';
+import gatherDependencies, { findModByRef } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 import { isFuzzyVersion, referenceEqual } from './util/testModReference';
@@ -1397,10 +1397,12 @@ class InstallManager {
           : res);
     } else {
       return this.downloadURL(api, lookupResult, referenceTag)
-        .catch(() => {
+        .catch(err => {
           // with +prefer versions, if the exact version isn't available, an update is acceptable
           if (requirement.versionMatch.endsWith('+prefer')) {
             return this.downloadMatching(api, lookupResult, requirement.versionMatch, referenceTag);
+          } else {
+            return Promise.reject(err);
           }
         });
     }
@@ -1429,7 +1431,7 @@ class InstallManager {
                                 dependencies: IDependency[],
                                 recommended: boolean): Promise<IDependency[]> {
     const state: IState = api.store.getState();
-    const downloads = state.persistent.downloads.files;
+    let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
     let canceled: boolean = false;
 
@@ -1501,17 +1503,40 @@ class InstallManager {
               return Promise.resolve(downloadId);
             }
           }
-          return Promise.reject(new NotFound('Download not found'));
+          return Promise.reject(new NotFound(`download for ${renderModReference(dep.reference)}`));
         })
         .then((downloadId: string) => {
           if (downloadId === undefined) {
-            return Promise.reject(new NotFound('Download not found'));
+            return Promise.reject(
+              new NotFound(`download for ${renderModReference(dep.reference)}`));
+          }
+          downloads = api.getState().persistent.downloads.files;
+
+          if ((dep.reference.tag !== undefined)
+              && (downloads[downloadId].modInfo.referenceTag !== undefined)
+              && (downloads[downloadId].modInfo.referenceTag !== dep.reference.tag)) {
+            // we can't change the tag on the download because that might break
+            // dependencies on the other mod
+            dep.reference = {
+              ...dep.reference,
+              tag: downloads[downloadId].modInfo.referenceTag,
+            };
+
+            // now at this point there may in fact already be a mod for the updated reference tag
+            if (dep.mod === undefined) {
+              dep.mod = findModByRef(
+                dep.reference, api.getState().persistent.mods[profile.gameId]);
+              log('info', 'updated mod', JSON.stringify(dep.mod));
+            }
+          } else {
+            log('info', 'downloaded as dependency', { downloadId });
           }
           return (dep.mod === undefined)
             ? installDownload(dep, downloadId)
             : Promise.resolve(dep.mod.id);
         })
         .then((modId: string) => {
+          log('info', 'installed as dependency', { modId });
           api.store.dispatch(setModEnabled(profile.id, modId, true));
           this.applyExtraFromRule(api, profile, modId, dep.extra);
 
@@ -1602,7 +1627,7 @@ class InstallManager {
                       dependencies: IDependency[], recommended: boolean): Promise<void> {
     dependencies.map(dep => {
       const updatedRef: IModReference = { ...dep.reference };
-      updatedRef.id = dep.mod.id;
+      updatedRef.idHint = dep.mod.id;
       // if this is a fuzzy reference, drop the md5 hash because while that is useful to
       // find the mod in the repository, it will no longer be valid after updates.
       if (isFuzzyVersion(dep.reference.versionMatch)

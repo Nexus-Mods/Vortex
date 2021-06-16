@@ -1,3 +1,4 @@
+import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 
 import { IMod, IModReference } from '../types/IMod';
@@ -73,20 +74,22 @@ export function isFuzzyVersion(input: string) {
 function hasIdentifyingMarker(mod: IModLookupInfo,
                               modId: string,
                               ref: IModReference,
-                              fuzzyVersion: boolean): boolean {
+                              fuzzyVersion: boolean,
+                              allowTag: boolean): boolean {
   return ((ref.id !== undefined) && (modId !== undefined))
       || (!fuzzyVersion && (mod.fileMD5 !== undefined))
       || ((ref.fileExpression !== undefined) && (mod.fileName !== undefined))
       || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
       || ((ref.repo !== undefined) && (mod.source !== undefined))
-      || ((ref.tag !== undefined) && (mod.referenceTag !== undefined));
+      || (allowTag && (ref.tag !== undefined) && (mod.referenceTag !== undefined));
 }
 
 let onRefResolved: (gameId: string, modId: string,
                     reference: IModReference, refModId: string) => void;
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
-                 source?: { gameId: string, modId: string }): boolean {
+                 source?: { gameId: string, modId: string },
+                 fuzzyVersion?: boolean): boolean {
   // if an id is set, it has to match
   if ((ref.id !== undefined)
       && ((modId !== undefined) || idOnly(ref))
@@ -94,16 +97,28 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
     return false;
   }
 
-  const fuzzyVersion = isFuzzyVersion(ref.versionMatch);
+  // testing if a version is fuzzy can be quite expensive. When doing multiple comparisons
+  // for the same reference, the caller can calculate it once and pass it in
+  if (fuzzyVersion === undefined) {
+    fuzzyVersion = isFuzzyVersion(ref.versionMatch);
+  }
 
-  if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion)) {
+  if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion, true)) {
     // if the reference doesn't have any marker that _could_ match this mod,
     // return !false!, otherwise we might match any random mod that also has no matching marker
     return false;
   }
 
-  if ((ref.tag !== undefined) && (mod.referenceTag === ref.tag)) {
-    return true;
+  if (ref.tag !== undefined) {
+    if (mod.referenceTag === ref.tag) {
+      return true;
+    } else {
+      // tags differ. if the mod has no stricter attribute we have to refuse here, otherwise
+      // we'd match any kind of crap.
+      if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion, false)) {
+        return false;
+      }
+    }
   }
 
   // if reference is by file hash and the match is not fuzzy, require the md5 to match
@@ -190,16 +205,18 @@ export function setResolvedCB(
 }
 
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference,
-                                 source?: { gameId: string, modId: string }) {
+                                 source?: { gameId: string, modId: string },
+                                 fuzzyVersion?: boolean) {
   if (mod === undefined) {
     return false;
   }
 
   if ((mod as any).attributes) {
-    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id, reference, source);
+    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id,
+                   reference, source, fuzzyVersion);
   } else {
     const lookup = mod as IModLookupInfo;
-    return testRef(lookup, lookup.id, reference, source);
+    return testRef(lookup, lookup.id, reference, source, fuzzyVersion);
   }
 }
 
