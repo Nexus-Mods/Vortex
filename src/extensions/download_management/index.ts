@@ -611,6 +611,15 @@ function checkForUnfinalized(api: IExtensionApi,
                 return genHash(filePath)
                   .then((md5Hash: IHashResult) => {
                     api.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
+                  })
+                  .catch(err => {
+                    if (err.code === 'ENOENT') {
+                      // file doesn't exist, remove invalid download entry
+                      api.store.dispatch(removeDownload(id));
+                    } else {
+                      log('error', 'failed to calculate hash for download', {
+                        file: downloads[id].localPath, error: err.message });
+                    }
                   });
               }
             })
