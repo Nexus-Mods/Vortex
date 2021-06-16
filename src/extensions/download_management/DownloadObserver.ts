@@ -148,6 +148,7 @@ export class DownloadObserver {
       if (dlId !== undefined) {
         err.downloadId = dlId;
       }
+      this.mApi.store.dispatch(removeDownload(id));
       return this.handleUnknownDownloadError(err, id, callback);
     } else {
       return this.handleUnknownDownloadError(err, id, callback);
@@ -472,6 +473,8 @@ export class DownloadObserver {
       }
     } else {
       const message = this.translateError(err);
+
+      log('info', 'download failed', { downloadId, message });
 
       this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
         message,
