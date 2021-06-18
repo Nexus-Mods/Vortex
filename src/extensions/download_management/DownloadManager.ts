@@ -80,6 +80,15 @@ function isHTMLHeader(headers: http.IncomingHttpHeaders) {
     && (headers['content-type'].toString().startsWith('text/html'));
 }
 
+function contentTypeStr(input: string | contentType.RequestLike | contentType.ResponseLike) {
+  try {
+    return contentType.parse(input).type;
+  } catch (err) {
+    log('error', 'failed to parse content type', { input, error: err.message });
+    return 'application/octet-stream';
+  }
+}
+
 interface IHTTP {
   request: (options: https.RequestOptions | string | URL,
             callback?: (res: http.IncomingMessage) => void) => http.ClientRequest;
@@ -1257,7 +1266,7 @@ class DownloadManager {
             });
           } else if ((download.headers !== undefined)
                      && (download.headers['content-type'] !== undefined)
-                     && (contentType.parse(download.headers['content-type']).type === 'text/html')
+                     && (contentTypeStr(download.headers['content-type']) === 'text/html')
                      && !download.tempName.toLowerCase().endsWith('.html')) {
             // don't keep html files. It's possible handleHTML already deleted it though
             return fs.removeAsync(download.tempName)
