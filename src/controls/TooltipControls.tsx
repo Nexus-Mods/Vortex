@@ -53,6 +53,7 @@ export class Button extends React.PureComponent<ButtonProps, {}> {
 
 export interface IIconButtonExtraProps {
   icon: string;
+  set?: string;
   spin?: boolean;
   pulse?: boolean;
   stroke?: boolean;
@@ -66,7 +67,7 @@ export interface IIconButtonExtraProps {
 }
 
 const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'hollow', 'border', 'inverse',
-                               'flip', 'rotate', 'rotateId', 'vertical']);
+                               'flip', 'rotate', 'rotateId', 'vertical', 'set']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
@@ -75,7 +76,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
     const buttonProps = {};
     const iconProps = {};
     Object.keys(this.props).forEach(propKey => {
-      if (['tooltip', 'placement', 'icon'].indexOf(propKey) !== -1) {
+      if (['tooltip', 'placement', 'icon'].includes(propKey)) {
         return;
       }
       if (iconPropNames.has(propKey)) {
