@@ -33,7 +33,7 @@ import {
   profileById,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
+import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -1111,8 +1111,15 @@ function once(api: IExtensionApi) {
 
   cleanupIncompleteInstalls(api);
 
+  const cacheModRefActions: Redux.Action[] = [];
+  const cacheModRefDebouncer = new Debouncer(() => {
+    batchDispatch(api.store, cacheModRefActions);
+    return Promise.resolve();
+  }, 500);
+
   setResolvedCB((gameId: string, sourceModId: string, ref: IModReference, refModId: string) => {
-    api.store.dispatch(cacheModReference(gameId, sourceModId, ref, refModId));
+    cacheModRefActions.push(cacheModReference(gameId, sourceModId, ref, refModId));
+    cacheModRefDebouncer.schedule();
   });
 }
 

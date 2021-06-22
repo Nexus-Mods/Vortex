@@ -82,7 +82,7 @@ export const removeDownload = safeCreateAction('REMOVE_DOWNLOAD',
  * sets the current download speed in bytes/second
  */
 export const setDownloadSpeed = safeCreateAction(
-  'SET_DOWNLOAD_SPEED', speed => speed, () => ({ forward: false }));
+  'SET_DOWNLOAD_SPEED', speed => speed, () => ({ forward: false, scope: 'local' }));
 
 export const setDownloadSpeeds = safeCreateAction(
   'SET_DOWNLOAD_SPEEDS', speeds => speeds);
