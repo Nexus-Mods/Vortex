@@ -1308,6 +1308,8 @@ function init(context: IExtensionContext): boolean {
     return undefined;
   });
 
+  registerModSource('unsupported', 'Other');
+
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
 

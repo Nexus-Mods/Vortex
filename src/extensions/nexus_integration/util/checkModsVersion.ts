@@ -14,6 +14,7 @@ import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { TFunction } from 'i18next';
+import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
@@ -179,13 +180,19 @@ function setNoUpdateAttributes(dispatch: Redux.Dispatch<any>,
   update(dispatch, gameId, mod, 'lastUpdateTime', undefined);
 }
 
+function basename(input: string): string {
+  return path.basename(input, path.extname(input));
+}
+
 function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               gameId: string,
                               mod: IMod,
                               files: IModFiles) {
-  const fileId = getSafe(mod.attributes, ['fileId'], undefined);
+  const { fileId } = mod.attributes ?? {};
   if (fileId === undefined) {
-    const candidate = files.files.find(fileInfo => fileInfo.file_name === getSafe(mod.attributes, ['fileName'], undefined));
+    const candidate = files.files.find(fileInfo => (mod.attributes?.fileName !== undefined)
+      ? (fileInfo.file_name === mod.attributes?.fileName)
+      : (basename(fileInfo.file_name) === mod.attributes?.name));
     if (candidate !== undefined) {
       dispatch(setModAttribute(gameId, mod.id, 'fileId', candidate.file_id));
       if (getSafe(mod.attributes, ['version'], undefined) === undefined) {
