@@ -3,6 +3,7 @@ import { get as getHTTPS, request as requestHTTPS } from 'https';
 import { Readable } from 'stream';
 import * as url from 'url';
 import { DataInvalid } from './api';
+import { log } from './log';
 
 export interface IRequestOptions {
   expectedContentType?: RegExp;
@@ -100,11 +101,15 @@ export function request(method: Method,
 
 export function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
+    log('debug', 'uploading file', { targetUrl, dataSize });
+    const started = Date.now();
     const req = request('PUT', targetUrl, {
       'Content-Type': 'application/octet-stream',
       'Content-Length': dataSize.toString(),
     }, res => {
       const { statusCode } = res;
+      log('debug', 'upload complete',
+          { targetUrl, dataSize, statusCode, elapsed: Date.now() - started });
 
       let err: string;
       if (statusCode !== 200) {

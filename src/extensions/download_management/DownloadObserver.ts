@@ -63,9 +63,13 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
  * @class DownloadObserver
  */
 export class DownloadObserver {
+  // time we allow a download to be intercepted. If it's too short we may end up
+  // processing a download that was supposed to be canceled
+  private static INTERCEPT_TIMEOUT = 60000;
   private mApi: IExtensionApi;
   private mManager: DownloadManager;
   private mOnFinishCBs: { [dlId: string]: Array<() => Promise<void>> } = {};
+  private mInterceptedDownloads: Array<{ time: number, tag: string }> = [];
 
   constructor(api: IExtensionApi, manager: DownloadManager) {
     this.mApi = api;
@@ -83,6 +87,13 @@ export class DownloadObserver {
               (urls, modInfo, fileName?, callback?, redownload?, allowInstall?) =>
                   this.handleStartDownload(urls, modInfo, fileName, events, callback,
                                            redownload, allowInstall));
+    // this is a bit of a hack that lets callers intercept a queued download that was not started
+    // yet (e.g. it may be waiting to ensure the download dir exists)
+    // for this to work the modInfo of the download has to contain a referenceTag corresponding to
+    // the tag passed here
+    events.on('intercept-download', (tag) => {
+      this.mInterceptedDownloads.push({ time: Date.now(), tag });
+    });
   }
 
   // enqueues an operation to be run when a download finishes
@@ -90,6 +101,17 @@ export class DownloadObserver {
     return new Promise((resolve) => {
       setdefault(this.mOnFinishCBs, id, []).push(() => cb().then(resolve));
     });
+  }
+
+  private wasIntercepted(tag: string): boolean {
+    // maintenance
+    const now = Date.now();
+
+    this.mInterceptedDownloads = this.mInterceptedDownloads
+      .filter(iter => (now - iter.time) < DownloadObserver.INTERCEPT_TIMEOUT);
+
+    const intercept = this.mInterceptedDownloads.find(iter => iter.tag === tag);
+    return (intercept !== undefined);
   }
 
   private translateError(err: any): string {
@@ -109,9 +131,7 @@ export class DownloadObserver {
 
       this.mApi.store.dispatch(removeDownload(id));
       this.mApi.store.dispatch(showURL(err.url));
-      if (callback !== undefined) {
-        callback(err, id);
-      }
+      callback?.(err, id);
       if (filePath !== undefined) {
         return fs.removeAsync(path.join(downloadPath, filePath))
           .catch(innerErr => {
@@ -164,6 +184,16 @@ export class DownloadObserver {
                               callback?: (error: Error, id?: string) => void,
                               redownload?: RedownloadMode,
                               allowInstall?: boolean) {
+    let callbacked = false;
+
+    const origCallback = callback;
+    if (callback !== undefined) {
+      callback = (error: Error, idIn: string) => {
+        callbacked = true;
+        origCallback(error, idIn);
+      };
+    }
+
     const id = shortid();
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
@@ -208,15 +238,24 @@ export class DownloadObserver {
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
-        .then(() => this.mManager.enqueue(id, urls, fileName, processCB,
-                                          downloadPath, downloadOptions))
+        .then(() => {
+          if (this.wasIntercepted(modInfo.referenceTag)) {
+            return Promise.reject(new UserCanceled());
+          }
+
+          return this.mManager.enqueue(id, urls, fileName, processCB,
+                                       downloadPath, downloadOptions);
+          })
         .catch(AlreadyDownloaded, err => {
           const downloads = this.mApi.getState().persistent.downloads.files;
           const dlId = Object.keys(downloads)
             .find(iter => downloads[iter].localPath === err.fileName);
+          log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           if (dlId !== undefined) {
             err.downloadId = dlId;
             return Promise.reject(err);
+          } else if (this.wasIntercepted(modInfo.referenceTag)) {
+            return Promise.reject(new UserCanceled());
           } else {
             // there is a file but with no meta data. force the download instead
             downloadOptions.redownload = 'replace';
@@ -226,9 +265,14 @@ export class DownloadObserver {
         })
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { id, file: res.filePath });
-          this.handleDownloadFinished(id, callback, res, allowInstall ?? true);
+          return this.handleDownloadFinished(id, callback, res, allowInstall ?? true);
         })
-        .catch(err => this.handleDownloadError(err, id, downloadPath, callback)));
+        .catch(err => this.handleDownloadError(err, id, downloadPath, callback)))
+        .finally(() => {
+          if ((callback !== undefined) && !callbacked) {
+            callback(new ProcessCanceled('forgot to invoke the callback: ' + id));
+          }
+        });
   }
 
   private handleDownloadFinished(id: string,
@@ -240,6 +284,7 @@ export class DownloadObserver {
       // The only way for the download entry to be missing at this point
       //  is if the user had canceled the download which would mean it was
       //  removed from the state and the file no longer exists.
+      callback?.(new UserCanceled(), id);
       return;
     }
     const fileName = path.basename(res.filePath);
@@ -261,17 +306,16 @@ export class DownloadObserver {
 
     if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      callback?.(null, id);
       return onceFinished();
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
       this.mApi.store.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
       this.mApi.store.dispatch(finishDownload(id, 'redirect', {htmlFile: res.filePath}));
       this.mApi.events.emit('did-finish-download', id, 'redirect');
-      if (callback !== undefined) {
-        callback(new Error('html result'), id);
-      }
+      callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      finalizeDownload(this.mApi, id, res.filePath, allowInstall)
+      return finalizeDownload(this.mApi, id, res.filePath, allowInstall)
         .then(() => callback?.(null, id))
         .catch(err => callback?.(err, id))
         .finally(() => onceFinished());
@@ -301,8 +345,7 @@ export class DownloadObserver {
       log('warn', 'invalid download id');
       return;
     }
-    const download =
-        this.mApi.store.getState().persistent.downloads.files?.[downloadId];
+    const download = this.mApi.getState().persistent.downloads.files?.[downloadId];
     if (download === undefined) {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
@@ -348,8 +391,15 @@ export class DownloadObserver {
 
     if (['init', 'started'].includes(download.state)) {
       // need to cancel the download
-      this.mManager.stop(downloadId);
-      this.queueFinishCB(downloadId, () => onceStopped());
+      if (!this.mManager.stop(downloadId)) {
+        // error case, for some reason the manager didn't know about this download, maybe some
+        // delay?
+        this.mInterceptedDownloads.push(
+          { time: Date.now(), tag: download.modInfo.referenceTag });
+        onceStopped();
+      } else {
+        this.queueFinishCB(downloadId, () => onceStopped());
+      }
     } else {
       onceStopped();
     }
@@ -369,10 +419,14 @@ export class DownloadObserver {
     if (['init', 'started'].includes(download.state)) {
       log('debug', 'pausing download', { id: downloadId, oldState: download.state });
       const unfinishedChunks = this.mManager.pause(downloadId);
-      this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
-      if (callback !== undefined) {
-        callback(null);
+      if (unfinishedChunks === undefined) {
+        this.mInterceptedDownloads.push({
+          time: Date.now(),
+          tag: download.modInfo.referenceTag,
+        });
       }
+      this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
+      callback?.(null);
     }
   }
 
@@ -418,7 +472,7 @@ export class DownloadObserver {
                 this.genProgressCB(downloadId), extraInfo))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
-                this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
+                return this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           }

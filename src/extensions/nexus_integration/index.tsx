@@ -887,6 +887,69 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
   };
 }
 
+function checkDownloadsWithMissingMeta(api: IExtensionApi) {
+  const state = api.getState();
+  const downloads = state.persistent.downloads.files;
+
+  const missingInfo = Object.keys(downloads)
+    .filter(dlId => downloads[dlId].modInfo?.source === undefined);
+
+  if (missingInfo.length > 0) {
+    log('info', 'downloads missing meta information', { dlIds: missingInfo });
+    queryInfo(api, missingInfo, false);
+  } else {
+    log('debug', 'no missing meta information');
+  }
+}
+
+function checkModsWithMissingMeta(api: IExtensionApi) {
+  const state = api.getState();
+  const { mods } = state.persistent;
+  const downloads = state.persistent.downloads.files;
+
+  const actions: Action[] = [];
+
+  Object.keys(mods)
+    .forEach(gameId => Object.keys(mods[gameId])
+      .forEach(modId => {
+        const mod = mods[gameId][modId];
+        if ((mod.archiveId === undefined)
+            || (downloads[mod.archiveId] === undefined)) {
+          return;
+        }
+
+        const before = actions.length;
+
+        const { attributes } = mod ?? {};
+        const download = downloads[mod.archiveId];
+        let source = attributes.source;
+        if ((source === undefined) && (download.modInfo?.source === 'nexus')) {
+          actions.push(setModAttribute(gameId, modId, 'source', 'nexus'));
+          source = 'nexus';
+        }
+        if ((source === 'nexus') && (mod.archiveId !== undefined)) {
+          const ids = download.modInfo?.nexus?.ids ?? {};
+          if (!truthy(attributes.modId) && truthy(ids?.modId)) {
+            actions.push(setModAttribute(gameId, modId, 'modId', ids.modId));
+          }
+          if (!truthy(attributes.fileId) && truthy(ids?.fileId)) {
+            actions.push(setModAttribute(gameId, modId, 'fileId', ids.fileId));
+          }
+          if (!truthy(attributes.downloadGame) && truthy(ids?.gameId)) {
+            actions.push(setModAttribute(gameId, modId, 'downloadGame', ids.gameId));
+          }
+        }
+
+        if (actions.length !== before) {
+          log('info', 'mod meta updating', {
+            modId, mod: JSON.stringify(mod), meta: JSON.stringify(download.modInfo) });
+        }
+      }));
+
+  log('info', 'fixing mod meta info', { count: actions.length });
+  batchDispatch(api.store, actions);
+}
+
 function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
@@ -981,10 +1044,13 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       log('info', 'failed to determine newest Vortex version', { error: err.message });
     });
 
+  checkDownloadsWithMissingMeta(api);
+  checkModsWithMissingMeta(api);
+
   callbacks.forEach(cb => cb(nexus));
 }
 
-function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
+function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
   return () => {
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
@@ -1022,6 +1088,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
       // almost certainly dl.localPath is undefined with a bugged download
       return;
     }
+    // note: this may happen in addition to and in parallel to a separate mod meta lookup
+    //   triggered by the file being added to application state, but that should be fine because
+    //   the mod meta information is cached locally, as is the md5 hash if it's not available here
+    //   yet, so no work should be done redundantly
     return api.lookupModMeta({
       fileMD5: dl.fileMD5,
       filePath: path.join(downloadPath, dl.localPath),
@@ -1046,6 +1116,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
+          const dlNow = api.getState().persistent.downloads.files[dlId];
+          if (dlNow.modInfo?.source === undefined) {
+            setInfo('source', 'unknown');
+          }
         }
 
         setInfo('meta', info);
@@ -1104,6 +1178,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     url: NXMUrl;
     name: string;
     friendlyName: string;
+    canceled: boolean;
     res: (res: IResolvedURL) => void;
     rej: (err: Error) => void;
   }
@@ -1127,17 +1202,21 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
 
   let lastDisplayed: string;
 
+  const isDialogShown = (dialogId: string) =>
+    api.getState().session.notifications.dialogs.find(dialog => dialog.id === dialogId);
+
   const showDLQueue = () => {
     if (freeDLQueue.length === 0) {
-      api.closeDialog('free-download-dialog');
       return;
     }
 
-    const nextItem = freeDLQueue[0];
+    const nextItem = freeDLQueue.find(queue => !queue.canceled);
+
+    const dialogId = `free-download-dialog-${nextItem.name}`;
 
     // right now we only show the next item in the dialog. If that doesn't change, no need to
     // refresh the dialog
-    if (nextItem.input === lastDisplayed) {
+    if ((nextItem.input === lastDisplayed) && isDialogShown(dialogId)) {
       return;
     }
 
@@ -1159,6 +1238,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
             .then(nextItem.res)
             .catch(nextItem.rej)
             .then(() => {
+              dismiss();
               showDLQueue();
             });
         });
@@ -1171,11 +1251,12 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     }, [
       { label: 'Stop installation' },
       { label: 'Skip this mod' },
-    ], 'free-download-dialog')
+    ], dialogId)
     .then(result => {
-      if (result.action === 'Cancel') {
+      if (result.action === 'Stop installation') {
         const copy = freeDLQueue.slice(0);
-        copy.forEach(item => { item.rej(new UserCanceled(false)); });
+        copy.forEach(item => {
+          item.rej(new UserCanceled(false)); });
       } else {
         nextItem.rej(new UserCanceled(true));
       }
@@ -1187,7 +1268,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   function freeUserDownload(input: string, url: NXMUrl, name: string, friendlyName: string) {
     // non-premium user trying to download a file with no id, have to send the user to the
     // corresponding site to generate a proper link
-    return new Promise<IResolvedURL>((resolve, reject) => {
+    return new Promise<IResolvedURL>((resolve, reject, onCancel) => {
       const res = (result: IResolvedURL) => {
         if (resolve !== undefined) {
           // just to make sure we remove the correct item, idx should always be 0
@@ -1207,7 +1288,13 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           resolve = undefined;
         }
       };
-      freeDLQueue.push({ input, url, name, friendlyName, res, rej });
+      const queueItems = { input, url, name, friendlyName, res, rej, canceled: false };
+      onCancel(() => {
+        queueItems.canceled = true;
+        const idx = freeDLQueue.findIndex(iter => iter.input === input);
+        freeDLQueue.splice(idx, 1);
+      });
+      freeDLQueue.push(queueItems);
       showDLQueue();
     });
   }
@@ -1272,11 +1359,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(new ProcessCanceled('Wrong user id'));
     }
 
-    if ((!userInfo?.isPremium
+    if ((!userInfo?.isPremium || (process.env['FORCE_FREE_DOWNLOADS'] === 'yes'))
         && (url.type === 'mod')
         && (url.gameId !== SITE_ID)
-        && (url.key === undefined))
-        || (process.env['FORCE_FREE_DOWNLOADS'] === 'yes')) {
+        && (url.key === undefined)) {
       return freeUserDownload(input, url, name, friendlyName);
     } else {
       return premiumUserDownload(input, url);

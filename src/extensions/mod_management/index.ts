@@ -1030,7 +1030,11 @@ function once(api: IExtensionApi) {
     }
 
     Promise.map(modIds, modId => installManager.installRecommendations(api, profile, modId))
-      .catch(err => api.showErrorNotification('Failed to install recommendations', err));
+      .catch(err => {
+        if (!(err instanceof ProcessCanceled) && !(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to install recommendations', err);
+        }
+      });
   });
 
   api.events.on('mod-enabled', (profileId: string, modId: string) => {

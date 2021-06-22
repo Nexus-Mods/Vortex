@@ -41,7 +41,7 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies, { findModByRef } from './util/dependencies';
+import gatherDependencies, { findDownloadByRef, findModByRef } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 import { isFuzzyVersion, referenceEqual } from './util/testModReference';
@@ -137,8 +137,9 @@ class InstallManager {
     this.mGetInstallPath = installPath;
     this.mQueue = Promise.resolve();
 
-    api.events.on('cancel-dependency-install', (modId: string) => {
+    api.onAsync('cancel-dependency-install', (modId: string) => {
       this.mDependencyInstalls[modId]?.();
+      return Promise.resolve();
     });
   }
 
@@ -1314,6 +1315,7 @@ class InstallManager {
 
   private downloadURL(api: IExtensionApi,
                       lookupResult: IModInfoEx,
+                      wasCanceled: () => boolean,
                       referenceTag?: string): Promise<string> {
     const call = (input: string | (() => Promise<string>)): Promise<string> =>
       (input !== undefined) && (typeof(input) === 'function')
@@ -1325,35 +1327,39 @@ class InstallManager {
     return call(lookupResult.sourceURI).then(res => resolvedSource = res)
       .then(() => call(lookupResult.referer).then(res => resolvedReferer = res))
       .then(() => new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [resolvedSource], {
-        game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
-        source: lookupResult.source,
-        name: lookupResult.logicalFileName,
-        referer: resolvedReferer,
-        referenceTag,
-        ids: {
-          modId: getSafe(lookupResult, ['details', 'modId'], undefined),
-          fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
-        },
-      }, undefined,
-        (error, id) => {
-          if (error === null) {
-            resolve(id);
-          } else {
-            reject(error);
-          }
-        }, 'never', false)) {
-        reject(new Error('download manager not installed?'));
-      }
+        if (wasCanceled()) {
+          return reject(new UserCanceled(false));
+        }
+        if (!api.events.emit('start-download', [resolvedSource], {
+          game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
+          source: lookupResult.source,
+          name: lookupResult.logicalFileName,
+          referer: resolvedReferer,
+          referenceTag,
+          ids: {
+            modId: getSafe(lookupResult, ['details', 'modId'], undefined),
+            fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
+          },
+        }, undefined,
+          (error, id) => {
+            if (error === null) {
+              resolve(id);
+            } else {
+              reject(error);
+            }
+          }, 'never', false)) {
+          reject(new Error('download manager not installed?'));
+        }
     }));
   }
 
   private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
-                           pattern: string, referenceTag: string): Promise<string> {
+                           pattern: string, referenceTag: string,
+                           wasCanceled: () => boolean): Promise<string> {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
-      return this.downloadURL(api, lookupResult, referenceTag);
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag);
     }
 
     const gameId = convertGameIdReverse(knownGames(api.getState()),
@@ -1384,23 +1390,28 @@ class InstallManager {
   private downloadDependencyAsync(
     requirement: IReference,
     api: IExtensionApi,
-    lookupResult: IModInfoEx): Promise<string> {
+    lookupResult: IModInfoEx,
+    wasCanceled: () => boolean): Promise<string> {
     const referenceTag = requirement['tag'];
     if ((requirement.versionMatch !== undefined)
       && !requirement.versionMatch.endsWith('+prefer')
       && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-                                   referenceTag)
+                                   referenceTag, wasCanceled)
         .then(res => (res === undefined)
-          ? this.downloadURL(api, lookupResult, referenceTag)
+          ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag)
           : res);
     } else {
-      return this.downloadURL(api, lookupResult, referenceTag)
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag)
         .catch(err => {
+          if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
+            return Promise.reject(err);
+          }
           // with +prefer versions, if the exact version isn't available, an update is acceptable
           if (requirement.versionMatch.endsWith('+prefer')) {
-            return this.downloadMatching(api, lookupResult, requirement.versionMatch, referenceTag);
+            return this.downloadMatching(api, lookupResult, requirement.versionMatch,
+              referenceTag, wasCanceled);
           } else {
             return Promise.reject(err);
           }
@@ -1437,20 +1448,50 @@ class InstallManager {
 
     let canceled: boolean = false;
 
+    let queuedDownloads: IModReference[] = [];
+
+    const clearQueued = () => {
+      const downloadsNow = api.getState().persistent.downloads.files;
+      // cancel in reverse order so that canceling a running download doesn't
+      // trigger a previously pending download to start just to then be canceled too.
+      // Obviously this is probably not a robust way of achieving that but what is?
+      queuedDownloads.reverse().forEach(ref => {
+        const dlId = findDownloadByRef(ref, downloadsNow);
+        log('info', 'cancel dependency dl', { name: renderModReference(ref), dlId });
+        if (dlId !== undefined) {
+          api.events.emit('pause-download', dlId);
+        } else {
+          api.events.emit('intercept-download', ref);
+        }
+      });
+      queuedDownloads = [];
+    };
+
     const queueDownload = (dep: IDependency): Promise<string> => {
-      return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() =>
-        canceled
-          ? Promise.resolve<string>(undefined)
+      return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() => {
+        if (dep.reference.tag !== undefined) {
+          queuedDownloads.push(dep.reference);
+        }
+        return canceled
+          ? Promise.reject(new UserCanceled(false))
           : this.downloadDependencyAsync(
               dep.reference,
               api,
-              dep.lookupResults[0].value)));
+              dep.lookupResults[0].value,
+              () => canceled)
+              .then(dlId => {
+                const idx = queuedDownloads.indexOf(dep.reference);
+                queuedDownloads.splice(idx, 1);
+                return dlId;
+              })
+              .catch(err => Promise.reject(err));
+          }));
     };
 
     const resumeDownload = (dep: IDependency): Promise<string> => {
       return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() =>
         canceled
-          ? Promise.resolve(undefined)
+          ? Promise.reject(new UserCanceled(false))
           : new Promise((resolve, reject) => {
             api.events.emit('resume-download',
               dep.download,
@@ -1459,9 +1500,9 @@ class InstallManager {
     };
 
     const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
-      return Promise.resolve(this.mDependencyInstallsLimit.do(() =>
-        canceled
-          ? Promise.resolve(undefined)
+      return Promise.resolve(this.mDependencyInstallsLimit.do(() => {
+        return canceled
+          ? Promise.reject(new UserCanceled(false))
           : this.withInstructions(api,
                               modName(sourceMod),
                               renderModReference(dep.reference),
@@ -1474,7 +1515,8 @@ class InstallManager {
               err.skipped = true;
             }
             return Promise.reject(err);
-          })));
+          });
+        }));
     };
 
     const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
@@ -1514,6 +1556,11 @@ class InstallManager {
               new NotFound(`download for ${renderModReference(dep.reference)}`));
           }
           downloads = api.getState().persistent.downloads.files;
+
+          if (downloads[downloadId].state !== 'finished') {
+            // download not actually finished, may be paused
+            return Promise.reject(new UserCanceled(true));
+          }
 
           if ((dep.reference.tag !== undefined)
               && (downloads[downloadId].modInfo.referenceTag !== undefined)
@@ -1575,6 +1622,7 @@ class InstallManager {
               return Promise.resolve();
             } else {
               canceled = true;
+              clearQueued();
               return Promise.reject(err);
             }
           }
@@ -1589,10 +1637,6 @@ class InstallManager {
           });
           return updatedDependency;
         });
-    // install/download up to n mods at once to allow Vortex to download one mod while another is
-    // being installed. Obviously Vortex isn't going to do the install for multiple mods at once
-    // and the downloads are going to be limited by the number of download threads but still the
-    // queue is going to stay utilized
     })
       .finally(() => {
         delete this.mDependencyInstalls[sourceModId];
@@ -1606,21 +1650,23 @@ class InstallManager {
         return [];
       })
       .catch(UserCanceled, () => {
+        log('info', 'canceled out of dependency install');
         api.sendNotification({
+          id: 'dependency-installation-canceled',
           type: 'info',
           message: 'Installation of dependencies canceled',
         });
         return [];
       })
       .catch(err => {
-        api.showErrorNotification('Failed to install dependencies',
-          err.message);
+        api.showErrorNotification('Failed to install dependencies', err);
         return [];
       })
       .filter(dep => dep !== undefined);
 
     this.mDependencyInstalls[sourceModId] = () => {
       canceled = true;
+      clearQueued();
     };
 
     return res;
@@ -1631,14 +1677,6 @@ class InstallManager {
     dependencies.map(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod.id;
-      // if this is a fuzzy reference, drop the md5 hash because while that is useful to
-      // find the mod in the repository, it will no longer be valid after updates.
-      if (isFuzzyVersion(dep.reference.versionMatch)
-        && (dep.reference.fileMD5 !== undefined)
-        && ((dep.reference.logicalFileName !== undefined)
-            || (dep.reference.fileExpression !== undefined))) {
-        updatedRef.fileMD5 = undefined;
-      }
 
       const state: IState = api.store.getState();
       const rules: IModRule[] =
@@ -1790,15 +1828,16 @@ class InstallManager {
     log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(filteredRules, api, false, progress)
       .then((dependencies: IDependency[]) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.dismissNotification(notificationId);
         return this.doInstallDependencyList(api, profile, modId, dependencies, silent);
       })
       .catch((err) => {
         api.dismissNotification(notificationId);
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
-        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         log('debug', 'done installing dependencies', { profile: profile.id, modId });
         api.events.emit('did-install-dependencies', profile.id, modId, false);
       });
@@ -1821,6 +1860,7 @@ class InstallManager {
     api.store.dispatch(startActivity('dependencies', 'gathering'));
     return gatherDependencies(rules, api, true, undefined, modId)
       .then((dependencies: Dependency[]) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         if (dependencies.length === 0) {
           return Promise.resolve();
         }
@@ -1924,11 +1964,11 @@ class InstallManager {
           });
       })
       .catch((err) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
         api.dismissNotification(notificationId);
-        api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.events.emit('did-install-dependencies', profile.id, modId, true);
       });
   }
@@ -2053,9 +2093,19 @@ class InstallManager {
               const destPath = (dest.section === 'download')
                 ? path.join(dlPath, dest.dest)
                 : path.join(destinationPath, dest.dest);
-              return this.transferFile(sourcePath, destPath, idx === len - 1)
-                .then(() => {
-                  if (dest.section === 'download') {
+
+              return ((dest.section === 'download')
+                ? fs.statAsync(destPath)
+                  .then(() => false)
+                  .catch(err => (err.code === 'ENOENT')
+                    ? this.transferFile(sourcePath, destPath, idx === len - 1)
+                      .then(() => true)
+                    : Promise.reject(err))
+                : this.transferFile(sourcePath, destPath, idx === len - 1)
+                  .then(() => true)
+              )
+                .then(transferred => {
+                  if ((dest.section === 'download') && transferred) {
                     const archiveId = shortid();
                     let fileSize: number;
                     return fs.statAsync(destPath)

@@ -122,6 +122,18 @@ interface IRunningDownload {
 
 type FinishCallback = (paused: boolean) => void;
 
+const dummyJob: IDownloadJob = {
+  confirmedOffset: 0,
+  confirmedReceived: 0,
+  confirmedSize: 0,
+  offset: 0,
+  options: {},
+  received: 0,
+  size: 0,
+  state: 'init',
+  url: () => Promise.reject(new ProcessCanceled('dummy job')),
+};
+
 /**
  * a download worker. A worker is started to download one chunk of a file,
  * they are currently not reused.
@@ -129,6 +141,12 @@ type FinishCallback = (paused: boolean) => void;
  * @class DownloadWorker
  */
 class DownloadWorker {
+  public static dummy(onFinish: () => void): DownloadWorker {
+    const res = new DownloadWorker(dummyJob,  () => null, onFinish, () => null, '', () => null);
+    res.mEnded = true;
+    return res;
+  }
+
   private static BUFFER_SIZE = 256 * 1024;
   private static BUFFER_SIZE_CAP = 4 * 1024 * 1024;
   private mJob: IDownloadJob;
@@ -149,6 +167,7 @@ class DownloadWorker {
   private mStallResets: number = MAX_STALL_RESETS;
   private mRedirectsFollowed: number = 0;
   private mThrottle: () => stream.Transform;
+  private mURLResolve: Promise<void>;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -162,13 +181,16 @@ class DownloadWorker {
     this.mJob = job;
     this.mUserAgent = userAgent;
     this.mThrottle = throttle;
-    job.url()
+    this.mURLResolve = Promise.resolve(job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
         this.assignJob(job, jobUrl);
       })
       .catch(err => {
         this.handleError(err);
+      })
+      .finally(() => {
+        this.mURLResolve = undefined;
       });
   }
 
@@ -201,6 +223,10 @@ class DownloadWorker {
     }
   }
 
+  public ended() {
+    return this.mEnded;
+  }
+
   public cancel() {
     this.abort(false);
   }
@@ -220,6 +246,11 @@ class DownloadWorker {
   }
 
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
+    if (this.mEnded) {
+      // worker was canceled while the url was still being resolved
+      return;
+    }
+
     let parsed: url.UrlWithStringQuery;
     let referer: string;
     try {
@@ -364,6 +395,10 @@ class DownloadWorker {
   }
 
   private abort(paused: boolean): boolean {
+    if (this.mURLResolve !== undefined) {
+      this.mURLResolve.cancel();
+      this.mURLResolve = undefined;
+    }
     if (this.mEnded) {
      return false;
     }
@@ -730,7 +765,7 @@ class DownloadManager {
           this.tickQueue();
         }))
       .finally(() => {
-        if ((download !== undefined) && (download.assembler !== undefined)) {
+        if (download?.assembler !== undefined) {
           download.assembler.close()
             .catch(() => null);
         }
@@ -795,15 +830,17 @@ class DownloadManager {
    * sends the signal to stop it
    *
    * @param {string} id
+   * @returns true if the download was stopped, false if something went wrong. In this case
+   *               the caller should not expect a callback about the download being terminated
    *
    * @memberOf DownloadManager
    */
-  public stop(id: string) {
+  public stop(id: string): boolean {
     const download: IRunningDownload = this.mQueue.find(
       (value: IRunningDownload) => value.id === id);
     if (download === undefined) {
       log('warn', 'failed to cancel download, not found', { id });
-      return;
+      return false;
     }
     log('info', 'stopping download', { id });
 
@@ -826,6 +863,8 @@ class DownloadManager {
     // remove from queue
     this.mQueue = this.mQueue.filter(
       (value: IRunningDownload) => value.id !== id);
+
+    return true;
   }
 
   public pause(id: string) {
@@ -1037,7 +1076,19 @@ class DownloadManager {
 
     job.dataCB = this.makeDataCB(download);
 
+    let stopped: boolean = false;
+
+    // reserve the spot so we're not starting another download while the file gets created
+    this.mBusyWorkers[job.workerId] = DownloadWorker.dummy(() => {
+      stopped = true;
+    });
+
     return download.assemblerProm.then(assembler => {
+      if (stopped) {
+        // throwing usercanceled here, assuming that the dummy, since it doesn't do anything,
+        // could only have ended if it was canceled so only way we get here is if it was canceled
+        return Promise.reject(new UserCanceled(true));
+      }
       download.assembler = assembler;
 
       log('debug', 'start download worker',
