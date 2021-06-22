@@ -1,0 +1,44 @@
+import i18next, { TFunction } from 'i18next';
+import * as React from 'react';
+import { Button } from 'react-bootstrap';
+
+import FlexLayout from '../../../controls/FlexLayout';
+import Icon from '../../../controls/Icon';
+import opn from '../../../util/opn';
+import { NEXUS_DOMAIN } from '../constants';
+
+const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships`;
+
+export interface IPremiumNagBanner {
+  t: TFunction;
+  onDownload: () => void;
+}
+
+function goGetPremium() {
+  opn(NEXUS_MEMBERSHIP_URL).catch(() => null);
+}
+
+function PremiumNagBanner(props: IPremiumNagBanner) {
+  const { t, onDownload } = props;
+
+  return (
+    <div className='nexus-premium-banner'>
+      <FlexLayout type='row' className='nexus-premium-text'>
+        <FlexLayout.Fixed>
+          <Icon name='download-speed' />
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex className=''>
+          <span>{t('Fewer clicks and higher download speeds when you go ')}</span>
+          <span className='nexus-premium-highlight'>Premium</span>
+        </FlexLayout.Flex>
+      </FlexLayout>
+
+      <div className='flex-spread'>
+        <Button bsStyle='ghost' onClick={goGetPremium}>{t('Go Premium & Download Fast')}</Button>
+        <Button onClick={onDownload}>{t('Download')}</Button>
+      </div>
+    </div>
+  );
+}
+
+export default PremiumNagBanner;

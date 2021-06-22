@@ -13,3 +13,9 @@ export const setLoginError = safeCreateAction('SET_LOGIN_ERROR', error => error)
 export const setLastUpdateCheck = safeCreateAction('SET_LAST_UPDATE_CHECK',
   (gameId: string, time: number, range: number, updateList: IUpdateEntry[]) =>
     ({ gameId, time, range, updateList }));
+
+export const addFreeUserDLItem = safeCreateAction('ADD_FREEUSER_DLITEM',
+  (url: string) => url);
+
+export const removeFreeUserDLItem = safeCreateAction('REMOVE_FREEUSER_DLITEM',
+  (url: string) => url);

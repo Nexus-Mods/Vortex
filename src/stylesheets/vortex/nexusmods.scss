@@ -65,3 +65,66 @@
     }
   }
 }
+
+.nexus-premium-banner {
+  margin: 0 $half-gutter $half-gutter;
+  height: 100%;
+
+  border-top: $border-width solid $border-color;
+
+  > .layout-container {
+    align-items: center;
+    margin: 0.5em 0;
+    font-size: larger;
+  }
+
+  .icon {
+    width: 2em;
+    height: 2em;
+    margin-right: 0.5em;
+    fill: $brand-primary;
+  }
+
+  .nexus-premium-highlight {
+    color: $brand-primary;
+  }
+}
+
+.flex-spread {
+  display: flex;
+  justify-content: space-between;
+}
+
+.padding-hg {
+  padding: $half-gutter;
+}
+
+.margin-top-hg {
+  margin-top: $half-gutter;
+}
+
+.free-user-dl-image {
+  max-width: 220px;
+  max-height: 120px;
+  width: auto;
+  height: auto;
+  margin-right: $half-gutter;
+}
+
+.free-user-dl-name {
+  font-weight: bold;
+  font-size: larger;
+  font-family: $font-family-headings;
+}
+
+.free-user-dl-uploader {
+  font-family: $font-family-headings;
+  img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.free-user-dl-summary {
+
+}
