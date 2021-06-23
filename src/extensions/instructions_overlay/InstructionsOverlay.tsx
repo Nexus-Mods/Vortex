@@ -2,22 +2,29 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import { FlexLayout, Icon, MainContext, tooltip, types } from 'vortex-api';
-import { IOverlay } from '../../types/IState';
+import { IOverlay, IPosition } from '../../types/IState';
 
 interface IInstructionsOverlayProps {
   t: types.TFunction;
   overlayId: string;
   overlay: IOverlay;
+  position?: IPosition;
   onClose: (id: string) => void;
 }
 
 function InstructionsOverlay(props: IInstructionsOverlayProps) {
-  const { t, overlay, overlayId } = props;
+  const { t, overlay, overlayId, position } = props;
   const context = React.useContext(MainContext);
   const [open, setOpen] = React.useState(true);
-  const [pos, setPos]  = React.useState({ x: 80, y: 10 });
-
   const ref = React.useRef<HTMLDivElement>(null);
+  const menuLayer: HTMLDivElement = context['menuLayer'];
+  const startPos = (position !== undefined)
+    ? {
+        x: (position.x / menuLayer.clientWidth) * 100,
+        y: (position.y / menuLayer.clientHeight) * 100,
+      }
+    : { x: 80, y: 10 };
+  const [pos, setPos] = React.useState(startPos);
 
   const toggle = React.useCallback(() => {
     setOpen(old => !old);
@@ -31,8 +38,6 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   }, []);
 
   const endDrag = React.useCallback((evt) => {
-    const menuLayer: HTMLDivElement = context['menuLayer'];
-
     menuLayer.removeEventListener('mousemove', updatePos);
     menuLayer.removeEventListener('mouseup', endDrag);
     const { left, top } = ref.current.style;
@@ -43,7 +48,6 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   }, [setPos]);
 
   const startDrag = React.useCallback((evt: React.DragEvent<HTMLDivElement>) => {
-    const menuLayer: HTMLDivElement = context['menuLayer'];
     menuLayer.style.pointerEvents = 'initial';
     menuLayer.addEventListener('mousemove', updatePos);
     menuLayer.addEventListener('mouseup', endDrag);

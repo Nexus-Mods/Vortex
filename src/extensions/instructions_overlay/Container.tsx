@@ -2,7 +2,7 @@ import React from 'react';
 import Redux from 'redux';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector, useStore } from 'react-redux';
-import { IOverlay, IState } from '../../types/IState';
+import { IOverlay, IPosition, IState } from '../../types/IState';
 import MainPage from '../../views/MainPage';
 import InstructionsOverlay from './InstructionsOverlay';
 import { dismissOverlay } from './actions';
@@ -24,6 +24,7 @@ function Container(props: {  }) {
           t={t}
           overlay={overlays[id]}
           overlayId={id}
+          position={overlays[id]?.position}
           onClose={closeOverlay}
         />
       ))}
