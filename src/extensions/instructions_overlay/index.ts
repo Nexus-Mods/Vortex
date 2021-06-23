@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/IExtensionContext'
+import { IExtensionContext } from '../../types/IExtensionContext';
 import { dismissOverlay, showOverlay } from './actions';
 import Container from './Container';
 import Reducer from './reducer';
