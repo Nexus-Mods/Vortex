@@ -1,12 +1,13 @@
 import { addReducer, IReducerSpec } from '../../types/IExtensionContext';
 import { IOverlaysState } from '../../types/IState';
-import { deleteOrNop, pushSafe, removeValue, setSafe } from '../../util/storeHelper';
+import { deleteOrNop, setSafe } from '../../util/storeHelper';
 import * as actions from './actions';
 
 const sessionReducer: IReducerSpec<IOverlaysState> = {
   reducers: {
     ...addReducer(actions.showOverlay, (state, payload) =>
-      setSafe(state, ['overlays', payload.id], { title: payload.title, text: payload.instructions })),
+      setSafe(state, ['overlays', payload.id],
+        { title: payload.title, text: payload.instructions, position: payload.pos })),
     ...addReducer(actions.dismissOverlay, (state, payload) =>
       deleteOrNop(state, ['overlays', payload])),
   },
@@ -16,4 +17,3 @@ const sessionReducer: IReducerSpec<IOverlaysState> = {
 };
 
 export default sessionReducer;
-
