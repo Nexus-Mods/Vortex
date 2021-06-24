@@ -111,9 +111,10 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       ? (
         <ReactMarkdown
           className='license-text-own'
-          disallowedTypes={['link']}
-          source={ownLicenseText}
-        />
+          disallowedElements={['link']}
+        >
+          {ownLicenseText}
+        </ReactMarkdown>
       ) : (
         <div className='third-party-box'><div><h4>{t('Third-party libraries')}</h4></div>
         <div className='about-panel'>
@@ -208,9 +209,10 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       : (
         <ReactMarkdown
           className='license-text'
-          disallowedTypes={['link']}
-          source={licenseText || ''}
-        />
+          disallowedElements={['link']}
+        >
+        {licenseText || ''}
+        </ReactMarkdown>
       );
     return (
       <div key={mod.key}>

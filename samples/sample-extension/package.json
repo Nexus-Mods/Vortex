@@ -17,12 +17,12 @@
     ]
   },
   "devDependencies": {
+    "7z-bin": "Nexus-Mods/7z-bin",
     "@types/i18next": "^12.1.0",
     "@types/node": "^12.0.10",
     "@types/react": "^16.8.22",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
-    "7z-bin": "Nexus-Mods/7z-bin",
     "bluebird": "^3.5.5",
     "electron": "11.3.0",
     "i18next": "^17.0.4",
