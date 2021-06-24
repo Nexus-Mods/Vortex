@@ -22,6 +22,7 @@ function Container(props: {  }) {
       {Object.keys(overlays).map((id) => (
         <InstructionsOverlay
           t={t}
+          key={id}
           overlay={overlays[id]}
           overlayId={id}
           position={overlays[id]?.position}
@@ -29,7 +30,7 @@ function Container(props: {  }) {
         />
       ))}
     </div>
-  )
+  );
 }
 
 export default Container;

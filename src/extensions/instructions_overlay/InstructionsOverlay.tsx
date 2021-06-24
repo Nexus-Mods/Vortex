@@ -51,49 +51,55 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     menuLayer.style.pointerEvents = 'initial';
     menuLayer.addEventListener('mousemove', updatePos);
     menuLayer.addEventListener('mouseup', endDrag);
+    updatePos(evt);
   }, [setPos]);
 
   const onClose = React.useCallback(() => {
     props.onClose(overlayId);
   }, [props.onClose, overlayId]);
 
-  return ReactDOM.createPortal(
-    [
-      <div ref={ref} className='collection-instructions' style={{
-        left: `${pos.x}%`,
-        top: `${pos.y}%`,
-      }}>
-        <FlexLayout type='column'>
-          <FlexLayout.Fixed>
-            <FlexLayout className='collection-instructions-header' type='row'>
-              <FlexLayout.Fixed draggable onDragStart={startDrag}>
-                <Icon name='drag-handle' />
-              </FlexLayout.Fixed>
-              <FlexLayout.Flex onClick={toggle}>
-                <h4>{overlay.title}</h4>
-              </FlexLayout.Flex>
-              <FlexLayout.Fixed>
-                <tooltip.IconButton
-                  className='btn-embed'
-                  icon='close'
-                  tooltip={t('Close')}
-                  onClick={onClose}
-                />
-              </FlexLayout.Fixed>
-            </FlexLayout>
-          </FlexLayout.Fixed>
-          <FlexLayout.Fixed>
-            {open
-              ? (
-                <ReactMarkdown
-                  className='collection-instructions-content'
-                  source={overlay.text}
-                />
-              )
-              : null}
-          </FlexLayout.Fixed>
-        </FlexLayout>
-      </div>
+  return ReactDOM.createPortal([
+    <div
+      key={overlay.title}
+      ref={ref}
+      className='collection-instructions'
+      style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+    >
+      <FlexLayout type='column'>
+        <FlexLayout.Fixed style={{ height: '5%' }}>
+          <FlexLayout className='collection-instructions-header' type='row'>
+            <FlexLayout.Fixed className='drag-icon-container' draggable onDragStart={startDrag}>
+              <Icon name='drag-handle' />
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex className='collection-instructions-title' onClick={toggle}>
+              <Icon name='dialog-info' />
+              <h4>{t('Instructions')}</h4>
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed className='cllection-instructions-close'>
+              <tooltip.IconButton
+                className='btn-embed'
+                icon='close'
+                tooltip={t('Close')}
+                onClick={onClose}
+              />
+            </FlexLayout.Fixed>
+          </FlexLayout>
+        </FlexLayout.Fixed>
+        <FlexLayout.Fixed className='collection-instructions-title'>
+          <h3>{overlay.title}</h3>
+        </FlexLayout.Fixed>
+        <FlexLayout.Fixed style={{ overflowY: 'auto' }}>
+          {open
+            ? (
+              <ReactMarkdown
+                className='collection-instructions-content'
+                source={overlay.text}
+              />
+            )
+            : null}
+        </FlexLayout.Fixed>
+      </FlexLayout>
+    </div>,
     ],
     context['menuLayer'],
   );
