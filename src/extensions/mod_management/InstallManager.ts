@@ -58,7 +58,7 @@ import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
-import * as semver from 'semver';
+import * as url from 'url';
 
 import * as modMetaT from 'modmeta-db';
 
@@ -1316,7 +1316,8 @@ class InstallManager {
   private downloadURL(api: IExtensionApi,
                       lookupResult: IModInfoEx,
                       wasCanceled: () => boolean,
-                      referenceTag?: string): Promise<string> {
+                      referenceTag?: string,
+                      campaign?: string): Promise<string> {
     const call = (input: string | (() => Promise<string>)): Promise<string> =>
       (input !== undefined) && (typeof(input) === 'function')
       ? input() : Promise.resolve(input as string);
@@ -1330,9 +1331,14 @@ class InstallManager {
         if (wasCanceled()) {
           return reject(new UserCanceled(false));
         }
-        if (!api.events.emit('start-download', [resolvedSource], {
+        const parsedUrl = new URL(resolvedSource);
+        if ((campaign !== undefined) && (parsedUrl.protocol === 'nxm:')) {
+          parsedUrl.searchParams.set('campaign', campaign);
+        }
+
+        if (!api.events.emit('start-download', [url.format(parsedUrl)], {
           game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
-          source: lookupResult.source,
+          source: url.format(parsedUrl),
           name: lookupResult.logicalFileName,
           referer: resolvedReferer,
           referenceTag,
@@ -1355,7 +1361,7 @@ class InstallManager {
 
   private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
                            pattern: string, referenceTag: string,
-                           wasCanceled: () => boolean): Promise<string> {
+                           wasCanceled: () => boolean, campaign: string): Promise<string> {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
@@ -1366,7 +1372,7 @@ class InstallManager {
                                         lookupResult.domainName || lookupResult.gameId);
 
     return api.emitAndAwait('start-download-update',
-      lookupResult.source, gameId, modId, fileId, pattern)
+      lookupResult.source, gameId, modId, fileId, pattern, campaign)
       .then((results: Array<{ error: Error, dlId: string }>) => {
         if ((results === undefined) || (results.length === 0)) {
           return Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`));
@@ -1388,22 +1394,24 @@ class InstallManager {
   }
 
   private downloadDependencyAsync(
-    requirement: IReference,
+    requirement: IModReference,
     api: IExtensionApi,
     lookupResult: IModInfoEx,
     wasCanceled: () => boolean): Promise<string> {
     const referenceTag = requirement['tag'];
+    const { campaign } = requirement['repo'] ?? {};
+
     if ((requirement.versionMatch !== undefined)
       && !requirement.versionMatch.endsWith('+prefer')
       && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-                                   referenceTag, wasCanceled)
+                                   referenceTag, wasCanceled, campaign)
         .then(res => (res === undefined)
-          ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag)
+          ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign)
           : res);
     } else {
-      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag)
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign)
         .catch(err => {
           if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
             return Promise.reject(err);
@@ -1411,7 +1419,7 @@ class InstallManager {
           // with +prefer versions, if the exact version isn't available, an update is acceptable
           if (requirement.versionMatch.endsWith('+prefer')) {
             return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-              referenceTag, wasCanceled);
+              referenceTag, wasCanceled, campaign);
           } else {
             return Promise.reject(err);
           }

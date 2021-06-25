@@ -25,7 +25,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   }
 
   private goBuyPremium = () => {
-    opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
+    opn(NEXUS_MEMBERSHIP_URL + `&pk_campaign=Dashboard-Ad`).catch(err => undefined);
   }
 }
 

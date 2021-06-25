@@ -42,7 +42,7 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships`;
+const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships?pk_source=vortex&pk_campaign=Downloads-Ad`;
 const MB = 1024 * 1024;
 
 interface IConnectedProps {

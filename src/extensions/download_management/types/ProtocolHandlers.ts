@@ -13,5 +13,6 @@ export interface IResolvedURLs {
 }
 
 export interface IProtocolHandlers {
-  [schema: string]: (inputUrl: string, name: string, friendlyName: string) => Promise<IResolvedURL>;
+  [schema: string]: (inputUrl: string, name: string, friendlyName: string)
+    => Promise<IResolvedURL>;
 }

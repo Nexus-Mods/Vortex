@@ -60,7 +60,7 @@ export interface IModReference extends IReference {
   // downloaded archive in the same way id helps find a locally installed mod
   archiveId?: string;
   // using a set of ids identifying the mod on a specific repository
-  repo?: { repository: string } & IModRepoId;
+  repo?: { repository: string, campaign?: string } & IModRepoId;
   // optional parameter used to display the reference in a user-friendly way if available.
   // This is only used when the mod isn't installed, otherwise we always try to use the name
   // the user chose for the mod.

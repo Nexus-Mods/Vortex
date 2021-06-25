@@ -1041,15 +1041,22 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
         <div>{t('Uncapped downloads, no adverts')}</div>
         <div>{t('Support Nexus Mods')}</div>
         <div className='right-center'>
-          <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
+          <Button
+            bsStyle='ad'
+            data-campaign='Header-Ad'
+            onClick={goBuyPremium}
+          >
+            {t('Go Premium')}
+          </Button>
         </div>
       </div>
     );
   };
 }
 
-function goBuyPremium() {
-  opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
+function goBuyPremium(evt: React.MouseEvent<any>) {
+  const campaign = evt.currentTarget.getAttribute('data-campaign');
+  opn(NEXUS_MEMBERSHIP_URL + `&pk_campaign=${campaign}`).catch(err => undefined);
 }
 
 function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boolean) {
@@ -1424,7 +1431,13 @@ function init(context: IExtensionContextExt): boolean {
       <div className='nexus-download-banner'>
         {t('Nexus downloads are capped at 1-2MB/s - '
           + 'Go Premium for uncapped download speeds')}
-        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
+        <Button
+          bsStyle='ad'
+          data-campaign='Downloads-Ad'
+          onClick={goBuyPremium}
+        >
+          {t('Go Premium')}
+        </Button>
       </div>
     );
   }, {

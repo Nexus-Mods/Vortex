@@ -59,6 +59,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     state.session['nexus'].freeUserDLQueue);
 
   const [fileInfo, setFileInfo] = React.useState<Partial<IModFile>>(null);
+  const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
   React.useEffect(() => {
@@ -67,6 +68,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
       onUpdated();
       setFileInfo(null);
+      setCampaign(url.getParam('campaign'));
 
       try {
         const fileInfoList = await nexus.modFilesByUid(FILE_QUERY,
@@ -132,7 +134,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
                 ) : null}
             </FlexLayout.Flex>
           </FlexLayout>
-          <PremiumNagBanner t={t} onDownload={download} />
+          <PremiumNagBanner t={t} onDownload={download} campaign={campaign} />
         </Panel>
       </Modal.Body>
       <Modal.Footer>

@@ -911,7 +911,10 @@ class DownloadManager {
     return unfinishedChunks;
   }
 
-  private resolveUrl(input: string, name: string, friendlyName: string): Promise<IResolvedURL> {
+  private resolveUrl(input: string,
+                     name: string,
+                     friendlyName: string)
+                     : Promise<IResolvedURL> {
     if ((this.mResolveCache[input] !== undefined)
       && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
       const cache = this.mResolveCache[input];

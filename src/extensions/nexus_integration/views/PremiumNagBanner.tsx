@@ -7,19 +7,23 @@ import Icon from '../../../controls/Icon';
 import opn from '../../../util/opn';
 import { NEXUS_DOMAIN } from '../constants';
 
-const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships`;
+const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships?pk_source=vortex`;
 
 export interface IPremiumNagBanner {
   t: TFunction;
   onDownload: () => void;
-}
-
-function goGetPremium() {
-  opn(NEXUS_MEMBERSHIP_URL).catch(() => null);
+  campaign: string;
 }
 
 function PremiumNagBanner(props: IPremiumNagBanner) {
-  const { t, onDownload } = props;
+  const { t, campaign, onDownload } = props;
+
+  const goGetPremium = React.useCallback(() => {
+    const suffix = campaign !== undefined
+      ? `&pk_campaign=${campaign}`
+      : '';
+    opn(NEXUS_MEMBERSHIP_URL + suffix).catch(() => null);
+  }, [campaign]);
 
   return (
     <div className='nexus-premium-banner'>

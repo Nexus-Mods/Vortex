@@ -32,6 +32,7 @@ import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
+import { format as urlFormat } from 'url';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -397,7 +398,8 @@ export function onDownloadUpdate(api: IExtensionApi,
                                  nexus: Nexus)
                                  : (...args: any[]) => Promise<IDownloadResult> {
   return (source: string, gameId: string, modId: string,
-          fileId: string, versionPattern: string): Promise<IDownloadResult> => {
+          fileId: string, versionPattern: string,
+          campaign: string): Promise<IDownloadResult> => {
     if (source !== 'nexus') {
       return Promise.resolve(undefined);
     }
@@ -442,7 +444,10 @@ export function onDownloadUpdate(api: IExtensionApi,
           updateFileId = fileIdNum;
         }
 
-        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`;
+        const urlParsed = new URL(`nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`);
+        if (campaign !== undefined) {
+          urlParsed.searchParams.set('campaign', campaign);
+        }
         const state: IState = api.store.getState();
         const downloads = state.persistent.downloads.files;
         // check if the file is already downloaded. If not, download before starting the install
@@ -460,7 +465,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           }
         }
 
-        return startDownload(api, nexus, url, 'never', undefined, false, false)
+        return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false)
           .then(dlId => ({ error: null, dlId }))
           .catch(err => {
             return { error: err };
@@ -470,8 +475,11 @@ export function onDownloadUpdate(api: IExtensionApi,
         if (err instanceof UserCanceled) {
           // there is a really good chance that the download will fail
           log('warn', 'failed to fetch mod file list', err.message);
-          const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
-          return startDownload(api, nexus, url, 'never', undefined, false, false)
+          const urlParsed = new URL(`nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`);
+          if (campaign !== undefined) {
+            urlParsed.searchParams.set('campaign', campaign);
+          }
+          return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false)
             .then(dlId => ({ error: null, dlId }))
             .catch(innerErr => ({ error: innerErr }));
         } else {
