@@ -177,6 +177,11 @@ export function startDownload(api: IExtensionApi,
         return err.downloadId;
       } else if (err instanceof UserCanceled) {
         // nop
+      } else if (err.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'Certificate validation failed',
+        }, { allowReport: false });
       } else {
         const allowReport = (err['nativeCode'] === undefined)
                          || ([225].indexOf(err['nativeCode']) === -1);
