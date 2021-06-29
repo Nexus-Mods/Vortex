@@ -30,6 +30,10 @@ export type DialogActions = IDialogAction[];
 export type Condition = (content: IDialogContent) => ConditionResults;
 
 export interface IDialog {
+  // id of the dialog
+  // Note: surprisingly, at the time of writing, this id does not enforce the dialog to be
+  //   _unique_ so creating a dialog with an id that's already queued does not drop that previous
+  //   dialog.
   id: string;
   type: DialogType;
   title: string;

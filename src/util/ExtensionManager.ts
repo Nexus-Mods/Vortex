@@ -1514,6 +1514,13 @@ class ExtensionManager {
 
   private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
       : Promise<ILookupResult[]> => {
+    if ((detail.fileName !== undefined) && (detail.fileSize === 0)) {
+      log('error', 'trying to calculate hash for an empty file', {
+        name: detail.fileName,
+        trace: (new Error()).stack,
+      });
+      return Promise.reject(new ProcessCanceled('trying to calculate hash for an empty file'));
+    }
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
       return Promise.resolve([]);
     }

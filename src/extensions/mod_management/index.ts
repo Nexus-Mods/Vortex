@@ -1238,6 +1238,7 @@ function init(context: IExtensionContext): boolean {
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     activity: modsActivity,
+    priority: 50,
     props: () => ({ modSources }),
   });
 
