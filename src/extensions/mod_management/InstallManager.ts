@@ -1338,7 +1338,7 @@ class InstallManager {
 
         if (!api.events.emit('start-download', [url.format(parsedUrl)], {
           game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
-          source: url.format(parsedUrl),
+          source: lookupResult.source,
           name: lookupResult.logicalFileName,
           referer: resolvedReferer,
           referenceTag,
@@ -2053,6 +2053,9 @@ class InstallManager {
       .then(() => this.fixDestination(source, destination))
       .then(fixedDest => move
         ? fs.renameAsync(source, fixedDest)
+          .catch(err => (err.code === 'EXDEV')
+            ? fs.copyAsync(source, fixedDest, { noSelfCopy: true })
+            : Promise.reject(err))
         : fs.copyAsync(source, fixedDest, { noSelfCopy: true }));
   }
 
