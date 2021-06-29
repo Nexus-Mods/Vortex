@@ -12,6 +12,7 @@ import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { TFunction } from '../util/i18n';
+import { MutexWrapper } from '../util/MutexContext';
 
 import { remote } from 'electron';
 import update from 'immutability-helper';
@@ -154,30 +155,32 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ? 'wide'
       : 'regular';
     return (
-      <Modal
-        id={dialog.id}
-        className={`common-dialog-${type}`}
-        show={dialog !== undefined}
-        onHide={nop}
-        onKeyPress={this.handleKeyPress}
-      >
-        <Modal.Header>
-          <Modal.Title>{this.iconForType(dialog.type)}{' '}{
-            t(dialog.title, { replace: dialog.content.parameters })
-          }</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ErrorBoundary visible={true}>
-            {this.renderContent(dialogState)}
-          </ErrorBoundary>
-        </Modal.Body>
-        <Modal.Footer>
-          {
-            dialog.actions.map((action) =>
-              this.renderAction(action, action === dialog.defaultAction))
-          }
-        </Modal.Footer>
-      </Modal>
+      <MutexWrapper show={dialog !== undefined}>
+        <Modal
+          id={dialog.id}
+          className={`common-dialog-${type}`}
+          show={dialog !== undefined}
+          onHide={nop}
+          onKeyPress={this.handleKeyPress}
+        >
+          <Modal.Header>
+            <Modal.Title>{this.iconForType(dialog.type)}{' '}{
+              t(dialog.title, { replace: dialog.content.parameters })
+            }</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <ErrorBoundary visible={true}>
+              {this.renderContent(dialogState)}
+            </ErrorBoundary>
+          </Modal.Body>
+          <Modal.Footer>
+            {
+              dialog.actions.map((action) =>
+                this.renderAction(action, action === dialog.defaultAction))
+            }
+          </Modal.Footer>
+        </Modal>
+      </MutexWrapper>
     );
   }
 

@@ -20,6 +20,7 @@ import { connect, extend } from '../util/ComponentEx';
 import { IRegisteredExtension } from '../util/ExtensionManager';
 import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
+import { createQueue, MutexProvider } from '../util/MutexContext';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 import Dialog from './Dialog';
@@ -115,6 +116,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private sidebarRef: HTMLElement = null;
   private sidebarTimer: NodeJS.Timer;
+  private mutexQueue = createQueue();
 
   constructor(props: IProps) {
     super(props);
@@ -239,22 +241,26 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
         <MainContext.Provider value={contextValue}>
-          <div
-            key='main'
-            className={classes.join(' ')}
-          >
-            <div className='menu-layer' ref={this.setMenuLayer} />
-            <FlexLayout id='main-window-content' type='column'>
-              {this.renderToolbar(switchingProfile)}
-              {customTitlebar ? <div className='dragbar' /> : null}
-              {switchingProfile ? this.renderWait() : this.renderBody()}
-            </FlexLayout>
-            <Dialog />
-            <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-            <OverlayContainer />
-            {customTitlebar ? <WindowControls /> : null}
-          </div>
-          {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
+          <MutexProvider value={this.mutexQueue}>
+            <div
+              key='main'
+              className={classes.join(' ')}
+            >
+              <div className='menu-layer' ref={this.setMenuLayer} />
+              <FlexLayout id='main-window-content' type='column'>
+                {this.renderToolbar(switchingProfile)}
+                {customTitlebar ? <div className='dragbar' /> : null}
+                {switchingProfile ? this.renderWait() : this.renderBody()}
+              </FlexLayout>
+              <Dialog />
+              <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+              <OverlayContainer />
+              {customTitlebar ? <WindowControls /> : null}
+            </div>
+            {(uiBlocker !== undefined)
+              ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker])
+              : null}
+          </MutexProvider>
         </MainContext.Provider>
       </React.Suspense>
     );

@@ -1,4 +1,5 @@
 import { addNotification } from '../../../actions';
+import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import Webview from '../../../controls/Webview';
@@ -16,7 +17,7 @@ import Promise from 'bluebird';
 import {  WebviewTag } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Breadcrumb, Button, Modal } from 'react-bootstrap';
+import { Breadcrumb, Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
