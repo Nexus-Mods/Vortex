@@ -16,7 +16,7 @@ import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeProfile, downloadPathForGame, knownGames } from '../../util/selectors';
+import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
 import { getSafe, setSafe } from '../../util/storeHelper';
 import { isPathValid, setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
@@ -1350,6 +1350,8 @@ class InstallManager {
           (error, id) => {
             if (error === null) {
               resolve(id);
+            } else if (error instanceof AlreadyDownloaded) {
+              resolve(error.downloadId);
             } else {
               reject(error);
             }
@@ -1449,10 +1451,11 @@ class InstallManager {
                                 sourceModId: string,
                                 dependencies: IDependency[],
                                 recommended: boolean): Promise<IDependency[]> {
-    const state: IState = api.store.getState();
+    const state: IState = api.getState();
     let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
     const sourceMod = state.persistent.mods[profile.gameId][sourceModId];
+    const stagingPath = installPathForGame(state, profile.gameId);
 
     let canceled: boolean = false;
 
@@ -1537,9 +1540,21 @@ class InstallManager {
       });
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
-        dlPromise = (dep.lookupResults[0]?.value?.sourceURI ?? '') === ''
-          ? Promise.reject(new ProcessCanceled('Failed to determine download url'))
-          : queueDownload(dep);
+        if (dep.extra.localPath !== undefined) {
+          // the archive is shipped with the mod that has the dependency
+          dlPromise = new Promise((resolve, reject) => {
+            api.events.emit('import-downloads',
+              [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
+              (dlIds: string[]) => {
+                api.store.dispatch(setDownloadModInfo(dlIds[0], 'referenceTag', dep.reference.tag));
+                resolve(dlIds[0]);
+            });
+          });
+        } else {
+          dlPromise = (dep.lookupResults[0]?.value?.sourceURI ?? '') === ''
+            ? Promise.reject(new ProcessCanceled('Failed to determine download url'))
+            : queueDownload(dep);
+        }
       } else if (dep.download === null) {
         dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
       } else if (downloads[dep.download].state === 'paused') {
