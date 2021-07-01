@@ -21,7 +21,7 @@ class MutexContextValue implements IMutexContextValue {
   public add(newItem: string): void {
     const idx = this.mQueue.indexOf(newItem);
     if (idx === -1) {
-      this.mQueue.push(newItem);
+      this.mQueue.unshift(newItem);
     }
   }
 
