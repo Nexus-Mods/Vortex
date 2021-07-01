@@ -1066,6 +1066,8 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
 
   const state: IState = api.store.getState();
 
+  const actions: Action[] = [];
+
   Promise.map(instanceIds, dlId => {
     const dl = state.persistent.downloads.files[dlId];
     if (dl === undefined) {
@@ -1091,10 +1093,9 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
         const info = modInfo[0].value;
-        const { store } = api;
 
         const setInfo = (key: string, value: any) => {
-          if (value !== undefined) { store.dispatch(setDownloadModInfo(dlId, key, value)); }
+          if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
         };
 
         try {
@@ -1118,6 +1119,9 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
     .catch(err => {
       log('warn', 'failed to look up mod meta info', { message: err.message });
     });
+  })
+  .finally(() => {
+    batchDispatch(api.store, actions);
   })
   .then(() => {
     log('debug', 'done querying info', { archiveIds: instanceIds });
