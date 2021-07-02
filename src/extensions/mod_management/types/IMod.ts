@@ -101,4 +101,6 @@ export interface IModRule extends IRule {
   // customize/improve its presentation or used to add details to a mod
   // after/if it got installed through this rule.
   extra?: { [key: string]: any };
+  // if true, the rule is deactivated and will not have an effect
+  ignored?: boolean;
 }

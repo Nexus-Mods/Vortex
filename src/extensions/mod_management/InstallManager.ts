@@ -1819,7 +1819,8 @@ class InstallManager {
                                   silent: boolean)
                                   : Promise<void> {
     const filteredRules = (rules ?? []).filter(
-          (rule: IModRule) => ['recommends', 'requires'].includes(rule.type));
+          (rule: IModRule) => ['recommends', 'requires'].includes(rule.type)
+                           && !rule.ignored);
 
     if (filteredRules.length === 0) {
       return Promise.resolve();
