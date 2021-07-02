@@ -744,6 +744,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
 function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
   const query: Partial<IModFileQuery> = {
     name: true,
+    categoryId: true,
     description: true,
     size: true,
     version: true,
@@ -818,6 +819,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
             sourceURI: `nxm://${repoInfo.gameId}/mods/${modId}/files/${fileId}`,
             source: 'nexus',
             logicalFileName: modFileInfo.name,
+            archived: modFileInfo.categoryId === 7,
             rules: [],
             details: {
               modId: repoInfo.modId,

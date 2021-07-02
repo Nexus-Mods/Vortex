@@ -21,6 +21,7 @@ export interface IModLookupData {
   source?: string;
   // mod rules (load before/after, dependencies, incompatibilities)
   rules?: IRule[];
+  archived?: boolean;
   // additional details, further fields may be returned but will not currently be used anywhere
   details?: {
     homepage?: string;

@@ -1404,7 +1404,7 @@ class InstallManager {
     const { campaign } = requirement['repo'] ?? {};
 
     if ((requirement.versionMatch !== undefined)
-      && !requirement.versionMatch.endsWith('+prefer')
+      && (!requirement.versionMatch.endsWith('+prefer') || lookupResult.archived)
       && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,

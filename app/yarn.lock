@@ -2330,9 +2330,9 @@ mkdirp@^1.0.3, mkdirp@^1.0.4:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.7.0"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/e9a1ae850568a732dab4673a69dfa380f8d8e7a7"
+"modmeta-db@git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#collections":
+  version "0.8.0-r3"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#c205bef07e18410a0c0e1c216fc2d78dea4a2713"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"

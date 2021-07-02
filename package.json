@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "11.4.0"
+    "electron": "12.0.12"
   },
   "scripts": {
     "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
@@ -239,7 +239,7 @@
     "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.4",
-    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "modmeta-db": "git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#collections",
     "msgpack": "^1.0.3",
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
