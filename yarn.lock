@@ -1500,8 +1500,8 @@
     cross-spawn "^7.0.1"
 
 "@nexusmods/nexus-api@git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs":
-  version "1.1.0-dev34"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#cb5bccc68bf11bc38e0eaada469a4f97a14e5eab"
+  version "1.1.0-dev35"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#fa2cfddaff32ef0ad84c1b86f5c77f4d19cfcd1b"
   dependencies:
     string-template "^1.0.0"
 
@@ -13565,8 +13565,8 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.0.13"
 
 vortexmt@Nexus-Mods/node-vortexmt:
-  version "0.2.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/0da56ca32e8587b4bf163fb282c52c0d07ce21ae"
+  version "0.2.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/dbe0dc9243ac4bed546fbe74adf71760e036f5e3"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^3.1.0"
