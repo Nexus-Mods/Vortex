@@ -89,6 +89,7 @@ export class APIDisabled extends Error {
 // functions in the nexus api that don't trigger requests but instead are
 // management functions to control the our api connection
 const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits', 'setLogger']);
+const revalidateFuncs = new Set(['getCollectionGraph', 'getRevisionGraph', 'getCollectionDownloadLink', 'getModInfo', 'getFileInfo']);
 
 class Disableable {
   private mDisabled = false;
@@ -121,12 +122,14 @@ class Disableable {
         }
         return obj[prop](hash, gameId);
       };
-    } else {
+    } else if (revalidateFuncs.has(prop)) {
       // tslint:disable-next-line:no-this-assignment
       const that = this;
       // tslint:disable-next-line:only-arrow-functions
       return function(...args) {
-        if (Date.now() > that.mLastValidation + REVALIDATION_FREQUENCY) {
+        const now = Date.now();
+        if (now > that.mLastValidation + REVALIDATION_FREQUENCY) {
+          this.mLastValidation = now;
           return obj.revalidate()
             .then((userInfo) => {
               that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
@@ -136,6 +139,8 @@ class Disableable {
           return obj[prop](...args);
         }
       };
+    } else {
+      return obj[prop];
     }
   }
 }
