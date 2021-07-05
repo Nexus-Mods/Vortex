@@ -169,7 +169,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const discovered = discoveredGames[gameId];
 
     const iconPath = (gameIconCache[gameId].icon !== undefined)
-      ? pathToFileURL(gameIconCache[gameId].icon).href
+      ? pathToFileURL(gameIconCache[gameId].icon).href.replace('\'', '%27')
       : undefined;
     const game = gameIconCache[gameId].game;
 
