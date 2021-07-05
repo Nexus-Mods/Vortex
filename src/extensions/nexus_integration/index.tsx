@@ -26,7 +26,7 @@ import { IResolvedURL } from '../download_management/types/ProtocolHandlers';
 import { SITE_ID } from '../gamemode_management/constants';
 
 import { setUserAPIKey } from './actions/account';
-import { setNewestVersion } from './actions/persistent';
+import { setNewestVersion, setUserInfo } from './actions/persistent';
 import { addFreeUserDLItem, removeFreeUserDLItem, setLoginError, setLoginId } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
@@ -51,12 +51,14 @@ import {
   genEndorsedAttribute,
   genGameAttribute,
   genModIdAttribute } from './attributes';
-import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
+import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
+         NEXUS_MEMBERSHIP_URL, REVALIDATION_FREQUENCY } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
          processErrorMessage, startDownload, updateKey } from './util';
+import transformUserInfo from './util/transformUserInfo';
 
 import NexusT, { IDateTime, IDownloadURL, IFileInfo,
   IModFile,
@@ -90,13 +92,14 @@ const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits', 's
 
 class Disableable {
   private mDisabled = false;
+  private mLastValidation: number = Date.now();
   private mApi: IExtensionApi;
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
   }
 
-  public get(obj, prop) {
+  public get(obj: NexusT, prop) {
     const state: IState = this.mApi.store.getState();
     const { networkConnected } = state.session.base;
     if (prop === 'disable') {
@@ -119,7 +122,20 @@ class Disableable {
         return obj[prop](hash, gameId);
       };
     } else {
-      return obj[prop];
+      // tslint:disable-next-line:no-this-assignment
+      const that = this;
+      // tslint:disable-next-line:only-arrow-functions
+      return function(...args) {
+        if (Date.now() > that.mLastValidation + REVALIDATION_FREQUENCY) {
+          return obj.revalidate()
+            .then((userInfo) => {
+              that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+              return obj[prop](...args);
+            });
+        } else {
+          return obj[prop](...args);
+        }
+      };
     }
   }
 }

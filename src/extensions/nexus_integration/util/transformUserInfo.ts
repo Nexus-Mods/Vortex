@@ -6,8 +6,8 @@ import {IValidateKeyResponse} from '@nexusmods/nexus-api';
 function transformUserInfo(input: IValidateKeyResponse): IValidateKeyData {
   return ({
     email: input.email,
-    isPremium: input['is_premium?'],
-    isSupporter: input['is_supporter?'],
+    isPremium: input.is_premium,
+    isSupporter: input.is_supporter,
     name: input.name,
     profileUrl: input.profile_url,
     userId: input.user_id,

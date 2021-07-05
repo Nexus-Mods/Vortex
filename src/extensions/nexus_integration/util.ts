@@ -774,6 +774,8 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
   return Promise.resolve(nexus.setKey(key))
     .then(userInfo => {
       if (userInfo !== null) {
+        userInfo['is_premium?'] = userInfo.is_premium = false;
+        userInfo['is_supporter?'] = userInfo.is_supporter = false;
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
         retrieveNexusGames(nexus);
       }
