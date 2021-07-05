@@ -474,16 +474,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private install = (downloadIds: string[]) => {
     const { api } = this.context;
     downloadIds.forEach((dlId: string) => {
-      api.events.emit('start-install-download', dlId, undefined, (err: Error, id: string) => {
-        if (err instanceof UserCanceled) {
-          // nop
-        } else if (err !== null) {
-          api.showErrorNotification('Failed to install', err, {
-            allowReport: !((err instanceof ProcessCanceled)
-                        || (err instanceof ServiceTemporarilyUnavailable)),
-          });
-        }
-      });
+      // not reporting errors here, mod install errors are handled by the InstallManager
+      api.events.emit('start-install-download', dlId, undefined, undefined);
     });
   }
 

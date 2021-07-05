@@ -190,6 +190,11 @@ class InstallManager {
     let installGameId: string;
     let installContext: InstallContext;
 
+    const oldCallback = callback;
+    callback = (err: Error, id: string) => {
+      oldCallback?.(err, id);
+    };
+
     this.mQueue = this.mQueue
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
@@ -353,9 +358,7 @@ class InstallManager {
             }
           }
         }
-        if (callback !== undefined) {
-          callback(null, modId);
-        }
+        callback?.(null, modId);
         return null;
       })
       .catch(err => {
@@ -390,15 +393,11 @@ class InstallManager {
 
         if (err === undefined) {
           return prom.then(() => {
-            if (callback !== undefined) {
-              callback(new Error('unknown error'), null);
-            }
+            callback?.(new Error('unknown error'), null);
           });
         } else if (canceled) {
           return prom.then(() => {
-            if (callback !== undefined) {
-              callback(err, null);
-            }
+            callback?.(err, null);
           });
         } else if (err instanceof ArchiveBrokenError) {
           return prom
@@ -478,9 +477,7 @@ class InstallManager {
                   ? installContext.reportError('Installation failed', err, undefined, replace)
                   : installContext.reportError('Installation failed', browserAssistantMsg, false);
               }
-              if (callback !== undefined) {
-                callback(err, modId);
-              }
+              callback?.(err, modId);
             });
         }
       })

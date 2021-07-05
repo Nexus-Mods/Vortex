@@ -508,7 +508,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
       state = api.store.getState();
 
       const discovered = state.settings.gameMode.discovered[gameId];
-      if ((discovered === undefined) || (discovered.path === undefined)) {
+      if (discovered?.path === undefined) {
         // this probably means the "manually set location" was canceled
         return Promise.resolve();
       }
