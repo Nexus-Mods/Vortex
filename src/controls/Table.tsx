@@ -194,10 +194,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
     });
     this.mMounted = true;
+    window.addEventListener('resize', this.onResize);
   }
 
   public componentWillUnmount() {
     this.context.api.events.removeAllListeners(this.props.tableId + '-scroll-to');
+    window.removeEventListener('resize', this.onResize);
     this.mMounted = false;
   }
 
@@ -1069,6 +1071,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
       this.mNoShrinkColumns[colId].updateWidth();
     });
+  }
+
+  private onResize = () => {
+    this.mHeaderUpdateDebouncer.schedule();
   }
 
   private mainPaneRef = (ref) => {
