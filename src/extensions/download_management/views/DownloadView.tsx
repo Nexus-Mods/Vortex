@@ -374,6 +374,16 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         err.message, {
         allowReport: false,
       });
+    } else if (err.code === 'EPROTO') {
+      log('error', title, err.message);
+      this.context.api.showErrorNotification(title,
+        'The download failed due to a SSL protocol error. Protocol errors '
+          + 'are generally due to a connectivity issue between your system and '
+          + 'the Nexus Mods servers (usually a temporary issue). If this is '
+          + 'happening consistently throughout an extensive period of time, '
+          + 'please report this to the Nexus Mods web team or support@nexusmods.com '
+          + '(NOT Vortex support).',
+        { allowReport: false });
     } else if (err['code'] === 'ERR_UNESCAPED_CHARACTERS') {
       this.context.api.showErrorNotification(title,
         err.message, {
