@@ -56,6 +56,11 @@ function getText(id: string, t: TFunction) {
         'Thus "1.2.5" should definitively be more stable than "1.2.4". "1.3.0" should have all ' +
         'the bugfixes of "1.2.x" so far but it also adds features so there could be new bugs.\n' +
         'These dots are NOT decimal marks, version 1.10.0 is (much) newer than 1.3.0.');
+    case 'archivename':
+      return t(
+        'The file name of the archive which was used to install this mod. If this field is ' +
+        'empty, the mod is no longer paired with an archive, probably because the archive was ' +
+        'deleted.');
     case 'variant':
       return t(
         'If you have multiple copies of the same mod installed ' +

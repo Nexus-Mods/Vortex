@@ -147,6 +147,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
+  private modArchiveNameAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
   private mUpdateDebouncer: Debouncer;
@@ -269,6 +270,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modNameAttribute,
       this.modVersionAttribute,
       this.modAuthorAttribute,
+      this.modArchiveNameAttribute,
       this.modVersionDetailAttribute,
       this.modVariantDetailAttribute,
       INSTALL_TIME(() => this.context.api.locale()),
@@ -685,6 +687,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         { value: false, label: this.props.t('Disabled') },
         { value: undefined, label: this.props.t('Uninstalled') },
       ], true),
+    };
+
+    this.modArchiveNameAttribute = {
+      id: 'archiveName',
+      name: 'Archive Name',
+      description: 'The name of the archive used to install this mod',
+      help: getText('archivename', this.props.t),
+      calc: (mod: IModWithState) => {
+        const download = this.props.downloads[mod.archiveId];
+        return (download?.localPath !== undefined) ? download.localPath : '';
+      },
+      placement: 'both',
+      isToggleable: true,
+      isGroupable: true,
+      isDefaultVisible: false,
+      isSortable: true,
+      filter: new TextFilter(true),
+      edit: {},
     };
 
     this.modVersionDetailAttribute = {
