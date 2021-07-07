@@ -391,6 +391,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           + 'please report this to the Nexus Mods web team or support@nexusmods.com '
           + '(NOT Vortex support).',
         { allowReport: false });
+    } else if (err.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      this.context.api.showErrorNotification(title,
+        'Nexus Mods does not use self-signed certificates. This error signifies that '
+          + 'your network connection seems to be proxied, either by malware or '
+          + 'a badly developed firewall, AV, VPN, http proxy; causing valid SSL '
+          + 'certificates to not be recognized. Please review your system and its '
+          + 'network connection before trying again.', { allowReport: false });
     } else if (err['code'] === 'ERR_UNESCAPED_CHARACTERS') {
       this.context.api.showErrorNotification(title,
         err.message, {
