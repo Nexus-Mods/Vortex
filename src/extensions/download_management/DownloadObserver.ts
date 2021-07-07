@@ -373,8 +373,12 @@ export class DownloadObserver {
           if (download.state === 'failed') {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.enqueue(downloadId, download.urls,
-                                         path.basename(fullPath), this.genProgressCB(downloadId),
-                                         undefined, 'replace'))
+                path.basename(fullPath), this.genProgressCB(downloadId),
+                undefined, 'replace'))
+              .then(res => {
+                log('debug', 'download finished (re-tried)', { file: res.filePath });
+                return this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
+              })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           } else {
             return ensureDownloadsDirectory(this.mApi)

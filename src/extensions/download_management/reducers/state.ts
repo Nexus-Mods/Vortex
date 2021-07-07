@@ -115,9 +115,10 @@ export const stateReducer: IReducerSpec = {
       fileTime: payload.time,
     }),
     [action.pauseDownload as any]: (state, payload) => {
-      if (['finished', 'failed'].indexOf(
-          getSafe(state, [ 'files', payload.id, 'state' ], undefined)) !== -1) {
-        // only allow pause for downloads that are active
+      if (['finished'].includes(getSafe(state, [ 'files', payload.id, 'state' ], undefined))) {
+        // only allow pause for downloads that are active. Failed downloads
+        //  can still be "resumed"/"started over" if the user chooses to
+        //  retry a download.
         return state;
       }
       if (payload.chunks !== undefined) {
