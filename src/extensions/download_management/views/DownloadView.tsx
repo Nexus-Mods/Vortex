@@ -19,6 +19,7 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
@@ -143,6 +144,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: 'Retry',
         action: this.resume,
         condition: this.retryable,
+      },
+      {
+        icon: 'refresh',
+        title: 'Restart',
+        action: this.restart,
+        condition: this.restartable,
       },
       {
         icon: 'delete',
@@ -574,6 +581,60 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private inspectable = (downloadId: string) => {
     const download = this.getDownload(downloadId);
     return ['failed', 'redirect'].includes(download.state);
+  }
+
+  private extractIds(download: IDownload) {
+    if (download === undefined) {
+      return undefined;
+    }
+    const isValid = (ids) => (ids?.fileId !== undefined
+                           && ids?.gameId !== undefined
+                           && ids?.modId !== undefined);
+    let ids = getSafe(download.modInfo, ['nexus', 'ids'], undefined);
+    if (isValid(ids)) {
+      return ids;
+    }
+    const meta = getSafe(download.modInfo, ['meta', 'details'], undefined);
+    if (meta?.fileId !== undefined) {
+      ids = { fileId: meta.fileId, modId: meta.modId, gameId: download.game[0] };
+      if (isValid(ids)) {
+        return ids;
+      }
+    }
+    return undefined;
+  }
+
+  private restart = (dlIds: string[]) => {
+    for (const downloadId of dlIds) {
+      const dl = this.getDownload(downloadId);
+      const ids = this.extractIds(dl);
+      if (ids === undefined) {
+        const err = {
+          name: 'InsufficientMetadataError',
+          message: 'The paused/failed download you\'re trying to restart has insufficient '
+                 + 'metadata which is blocking Vortex from generating a link to the relevant file.',
+          archiveFileName: dl?.localPath,
+          modInfo: dl?.modInfo !== undefined
+            ? JSON.stringify(dl.modInfo, undefined, 2)
+            : undefined,
+        };
+        this.props.onShowError('Failed to open download page', err, undefined, false);
+        log('debug', 'failed to restart download due to insufficient metadata',
+          );
+        continue;
+      }
+      const url = path.join('www.nexusmods.com', ids.gameId,
+        'mods', ids.modId.toString()) + `?tab=files&file_id=${ids.fileId}&nmm=1`;
+      opn(url).catch(err =>
+        this.props.onShowError('Failed to open download page', url, undefined, false));
+    }
+  }
+
+  private restartable = (downloadIds: string[]) => {
+    const restartableDownload = downloadIds.find((downloadId: string) =>
+      ['failed', 'paused'].includes(this.getDownload(downloadId).state));
+    const ids = this.extractIds(this.getDownload(restartableDownload));
+    return restartableDownload !== undefined && ids !== undefined;
   }
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {
