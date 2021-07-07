@@ -641,6 +641,13 @@ class DownloadManager {
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)
+      .then(() => (redownload === 'replace')
+        ? fs.removeAsync(path.join(destPath, nameTemplate))
+            .catch(err => {
+              log('debug', 'failed to remove archive expected to be replaced', err);
+              return Promise.resolve();
+            })
+        : Promise.resolve())
       .then(() => this.unusedName(destPath, nameTemplate || 'deferred', redownload))
       .then((filePath: string) =>
         new Promise<IDownloadResult>((resolve, reject) => {
