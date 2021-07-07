@@ -376,24 +376,24 @@ function toTimestamp(time?: IDateTime | string): number {
 }
 
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
-  const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
+  const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
-  const modName = decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
-                                                'modInfo', 'name'], undefined));
-  const fileName = decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
-                                                'fileInfo', 'name'], undefined));
+  const modName = decodeHTML(input.download?.modInfo?.nexus?.modInfo?.name);
+  const fileName = decodeHTML(input.download?.modInfo?.nexus?.fileInfo?.name);
   const fuzzRatio = ((modName !== undefined) && (fileName !== undefined))
     ? fuzz.ratio(modName, fileName)
     : 100;
 
   let fetchPromise: Promise<IRemoteInfo> = Promise.resolve(undefined);
 
-  const gameId = getSafe(input, ['download', 'modInfo', 'game'], undefined);
-  if ((getSafe(input, ['download', 'modInfo', 'nexus'], undefined) === undefined)
-      && (getSafe(input, ['download', 'modInfo', 'source'], undefined) === 'nexus')) {
-    const modId = getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined);
-    const fileId = getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined);
-    const revisionId = getSafe(input, ['download', 'modInfo', 'ids', 'revisionId'], undefined);
+  const gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
+
+  if ((input.download?.modInfo?.nexus?.modInfo === undefined)
+      && (input.download?.modInfo?.source === 'nexus')) {
+    const modId = input.download?.modInfo?.ids?.modId ?? input.download?.modInfo?.nexus?.ids?.modId;
+    const fileId = input.download?.modInfo?.ids?.fileId
+                ?? input.download?.modInfo?.nexus?.ids?.fileId;
+    const revisionId = input.download?.modInfo?.ids?.revisionId;
 
     if (!quick) {
       if (truthy(gameId) && truthy(modId) && truthy(fileId)) {
