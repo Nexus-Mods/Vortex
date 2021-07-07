@@ -13,7 +13,7 @@ import { IAttachment } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -26,7 +26,7 @@ import MainPage from '../../../views/MainPage';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
-import { setDownloadTime } from '../actions/state';
+import { finishDownload, setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 import getDownloadGames from '../util/getDownloadGames';
 
@@ -60,6 +60,8 @@ interface IConnectedProps {
   maxBandwidth: number;
 }
 
+type DownloadFinishState = 'finished' | 'failed' | 'redirect';
+
 interface IActionProps {
   onSetAttribute: (id: string, time: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
@@ -69,6 +71,7 @@ interface IActionProps {
                 attachments?: IAttachment[]) => void;
   onShowDropzone: (show: boolean) => void;
   onShowGraph: (show: boolean) => void;
+  onFinishDownload: (dlId: string, dlState: DownloadFinishState, failReason: string) => void;
 }
 
 export type IDownloadViewProps =
@@ -146,12 +149,6 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         condition: this.retryable,
       },
       {
-        icon: 'refresh',
-        title: 'Restart',
-        action: this.restart,
-        condition: this.restartable,
-      },
-      {
         icon: 'delete',
         title: 'Delete',
         action: this.remove,
@@ -161,7 +158,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       {
         icon: 'stop',
         title: 'Cancel',
-        action: this.remove,
+        action: this.cancel,
         condition: this.cancelable,
       },
       {
@@ -437,6 +434,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
+          this.openModPage(downloadId);
           this.reportDownloadError(err, true);
         }
       });
@@ -486,6 +484,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     return downloadIds.find((downloadId: string) => (
       match.includes(this.getDownload(downloadId).state)
     )) !== undefined;
+  }
+
+  private cancel = (downloadIds: string[]) => {
+    const { t, onFinishDownload } = this.props;
+    const paused = downloadIds.filter(dlId => this.getDownload(dlId)?.state === 'paused');
+    const nonPaused = downloadIds.filter(dlId => this.getDownload(dlId)?.state !== 'paused');
+    paused.forEach(dlId => onFinishDownload(dlId, 'failed',
+      t('Download was canceled by the user')));
+    if (nonPaused.length > 0) {
+      this.remove(nonPaused);
+    }
   }
 
   private cancelable = (downloadIds: string[]) => {
@@ -611,37 +620,16 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     return undefined;
   }
 
-  private restart = (dlIds: string[]) => {
-    for (const downloadId of dlIds) {
-      const dl = this.getDownload(downloadId);
-      const ids = this.extractIds(dl);
-      if (ids === undefined) {
-        const err = {
-          name: 'InsufficientMetadataError',
-          message: 'The paused/failed download you\'re trying to restart has insufficient '
-                 + 'metadata which is blocking Vortex from generating a link to the relevant file.',
-          archiveFileName: dl?.localPath,
-          modInfo: dl?.modInfo !== undefined
-            ? JSON.stringify(dl.modInfo, undefined, 2)
-            : undefined,
-        };
-        this.props.onShowError('Failed to open download page', err, undefined, false);
-        log('debug', 'failed to restart download due to insufficient metadata',
-          );
-        continue;
-      }
-      const url = path.join('www.nexusmods.com', ids.gameId,
-        'mods', ids.modId.toString()) + `?tab=files&file_id=${ids.fileId}&nmm=1`;
-      opn(url).catch(err =>
-        this.props.onShowError('Failed to open download page', url, undefined, false));
+  private openModPage = (dlId: string) => {
+    const dl = this.getDownload(dlId);
+    const ids = this.extractIds(dl);
+    if (ids === undefined) {
+      return;
     }
-  }
-
-  private restartable = (downloadIds: string[]) => {
-    const restartableDownload = downloadIds.find((downloadId: string) =>
-      ['failed', 'paused'].includes(this.getDownload(downloadId).state));
-    const ids = this.extractIds(this.getDownload(restartableDownload));
-    return restartableDownload !== undefined && ids !== undefined;
+    const url = path.join('www.nexusmods.com', ids.gameId,
+      'mods', ids.modId.toString()) + `?tab=files&file_id=${ids.fileId}&nmm=1`;
+    opn(url).catch(err => null);
+    return;
   }
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {
@@ -679,6 +667,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       showError(dispatch, message, details, { id: notificationId, allowReport }),
     onShowDropzone: (show: boolean) => dispatch(setShowDLDropzone(show)),
     onShowGraph: (show: boolean) => dispatch(setShowDLGraph(show)),
+    onFinishDownload: (dlId: string, dlState: DownloadFinishState, failReason: string) =>
+      dispatch(finishDownload(dlId, dlState, { message: failReason })),
   };
 }
 
