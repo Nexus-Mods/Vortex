@@ -115,21 +115,23 @@ export const stateReducer: IReducerSpec = {
       fileTime: payload.time,
     }),
     [action.pauseDownload as any]: (state, payload) => {
-      if (['finished'].includes(getSafe(state, [ 'files', payload.id, 'state' ], undefined))) {
-        // only allow pause for downloads that are active. Failed downloads
-        //  can still be "resumed"/"started over" if the user chooses to
-        //  retry a download.
+      const { id, paused, chunks } = payload;
+      const oldDLState = state.files?.[id]?.state;
+      if (['finished', 'finalizing', undefined].includes(oldDLState)
+          || ((oldDLState === 'failed') && paused)) {
+        // failed downloads can be retried, otherwise we only allow resuming paused and pausing
+        // active downloads
         return state;
       }
-      if (payload.chunks !== undefined) {
-        state = setOrNop(state, ['files', payload.id, 'chunks'], payload.chunks);
+      if (chunks !== undefined) {
+        state = setOrNop(state, ['files', id, 'chunks'], chunks);
       }
-      const newState = payload.paused
+      const newState = paused
         ? 'paused'
-        : (getSafe(state, ['files', payload.id, 'received'], 0) > 0)
+        : ((state.files?.[id]?.received ?? 0) > 0)
           ? 'started'
           : 'init';
-      return setOrNop(state, [ 'files', payload.id, 'state' ], newState);
+      return setOrNop(state, [ 'files', id, 'state' ], newState);
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
       const temp = setSafe(state, ['speed'], payload);
