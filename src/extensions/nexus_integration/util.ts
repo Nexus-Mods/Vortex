@@ -10,7 +10,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -108,7 +108,13 @@ export function startDownload(api: IExtensionApi,
           actions: [
             {
               title: 'Install All', action: dismiss => {
-                api.events.emit('start-install-download', downloadId);
+                api.events.emit('start-install-download', downloadId, undefined,
+                  (err: any, id: string) => {
+                    if (err) {
+                      processInstallError(api, err,
+                        downloadId, fileName ?? nexusFileInfo.file_name);
+                    }
+                  });
                 dismiss();
               },
             },
@@ -354,6 +360,26 @@ export function endorseModImpl(
       store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
       reportEndorseError(api, err, gameId, nexusModId, version);
     });
+}
+
+function processInstallError(api: IExtensionApi,
+                             error: any,
+                             downloadId: string,
+                             archiveName: string) {
+  // This installation error handling function is intended to be used to
+  //  handle installation errors that are obfuscated for some reason, and
+  //  the installManager's error handling is not sufficient or is unable
+  //  to relay certain pieces of information to the user.
+  if (error instanceof DataInvalid) {
+    const downloadExists = api.getState().persistent.downloads.files[downloadId] !== undefined;
+    if (!downloadExists) {
+      error['message'] = 'Vortex attempted to install a mod archive which is no longer available '
+        + 'in its internal state - this usually happens if the archive was scheduled '
+        + 'to be installed but was removed before the installation was able to start.';
+      error['archiveName'] = archiveName;
+      api.showErrorNotification('Install Failed', error, { allowReport: false });
+    }
+  }
 }
 
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
