@@ -393,7 +393,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         'The download failed due to an SSL certificate expiring. The Nexus Mods certificate '
           + 'is renewed regularly weeks or months before expiration and is not the '
           + 'cause of this error. Please review the infrastructure (VPN, Proxy, etc) '
-          + 'through which you are connecting to our servers and try again once. Please '
+          + 'through which you are connecting to our servers and try again. Please '
           + 'note that some AntiVirus companies hijack the certificate chain as part of their '
           + '"protection" suite - which could also cause this error if their certificate expired',
         { allowReport: false });
