@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as util from 'util';
 import * as winstonT from 'winston';
 
-export function circularReplacer() {
+export function valueReplacer() {
   const known = new Map();
 
   return (key: string, value: any) => {
@@ -17,6 +17,9 @@ export function circularReplacer() {
       }
 
       known.set(value, true);
+    } else if (typeof(value) === 'bigint') {
+      // BigInt values are not serialized in JSON by default.
+      return value.toString();
     }
 
     return value;
@@ -39,7 +42,7 @@ if ((process as any).type === 'renderer') {
   IPCTransport.prototype.log =
     (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
       ipcRenderer.send('log-message', level, message,
-                       meta !== undefined ? JSON.stringify(meta, circularReplacer()) : undefined);
+                       meta !== undefined ? JSON.stringify(meta, valueReplacer()) : undefined);
       callback(null);
   };
 
