@@ -388,6 +388,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           + 'please report this to the Nexus Mods web team or support@nexusmods.com '
           + '(NOT Vortex support).',
         { allowReport: false });
+    } else if (err.code === 'CERT_HAS_EXPIRED') {
+      this.context.api.showErrorNotification(title,
+        'The download failed due to an SSL certificate expiring. The Nexus Mods certificate '
+          + 'is renewed regularly weeks or months before expiration and is not the '
+          + 'cause of this error. Please review the infrastructure (VPN, Proxy, etc) '
+          + 'through which you are connecting to our servers and try again once. Please '
+          + 'note that some AntiVirus companies hijack the certificate chain as part of their '
+          + '"protection" suite - which could also cause this error if their certificate expired',
+        { allowReport: false });
     } else if (err.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
       this.context.api.showErrorNotification(title,
         'Nexus Mods does not use self-signed certificates. This error signifies that '
