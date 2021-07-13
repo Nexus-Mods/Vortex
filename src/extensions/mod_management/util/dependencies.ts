@@ -194,11 +194,16 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
 }
 
 export function lookupFromDownload(download: IDownload): IModLookupInfo {
+  // depending on where Vortex got the id (metadb, rest api or graph api and in which version,
+  // the modid/fileid may be stored in differenent places).
+  // Newer versions should be more consistent but existing downloads may still be messy
   const modId = download.modInfo?.meta?.details?.modId
-              ?? download.modInfo?.nexus?.ids?.modId;
+              ?? download.modInfo?.nexus?.ids?.modId
+              ?? download.modInfo?.ids?.modId;
 
   const fileId = download.modInfo?.meta?.details?.fileId
-              ?? download.modInfo?.nexus?.ids?.fileId;
+              ?? download.modInfo?.nexus?.ids?.fileId
+              ?? download.modInfo?.ids?.fileId;
 
   return {
     fileMD5: download.fileMD5,
