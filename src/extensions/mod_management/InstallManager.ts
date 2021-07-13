@@ -1317,7 +1317,8 @@ class InstallManager {
                       lookupResult: IModInfoEx,
                       wasCanceled: () => boolean,
                       referenceTag?: string,
-                      campaign?: string): Promise<string> {
+                      campaign?: string,
+                      fileName?: string): Promise<string> {
     const call = (input: string | (() => Promise<string>)): Promise<string> =>
       (input !== undefined) && (typeof(input) === 'function')
       ? input() : Promise.resolve(input as string);
@@ -1342,11 +1343,8 @@ class InstallManager {
           name: lookupResult.logicalFileName,
           referer: resolvedReferer,
           referenceTag,
-          ids: {
-            modId: getSafe(lookupResult, ['details', 'modId'], undefined),
-            fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
-          },
-        }, undefined,
+          meta: lookupResult,
+        }, fileName,
           (error, id) => {
             if (error === null) {
               resolve(id);
@@ -1363,11 +1361,12 @@ class InstallManager {
 
   private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
                            pattern: string, referenceTag: string,
-                           wasCanceled: () => boolean, campaign: string): Promise<string> {
+                           wasCanceled: () => boolean, campaign: string,
+                           fileName?: string): Promise<string> {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
-      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag);
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, fileName);
     }
 
     const gameId = convertGameIdReverse(knownGames(api.getState()),
@@ -1399,7 +1398,8 @@ class InstallManager {
     requirement: IModReference,
     api: IExtensionApi,
     lookupResult: IModInfoEx,
-    wasCanceled: () => boolean): Promise<string> {
+    wasCanceled: () => boolean,
+    fileName: string): Promise<string> {
     const referenceTag = requirement['tag'];
     const { campaign } = requirement['repo'] ?? {};
 
@@ -1408,12 +1408,12 @@ class InstallManager {
       && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-                                   referenceTag, wasCanceled, campaign)
+                                   referenceTag, wasCanceled, campaign, fileName)
         .then(res => (res === undefined)
-          ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign)
+          ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign, fileName)
           : res);
     } else {
-      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign)
+      return this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign, fileName)
         .catch(err => {
           if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
             return Promise.reject(err);
@@ -1421,7 +1421,7 @@ class InstallManager {
           // with +prefer versions, if the exact version isn't available, an update is acceptable
           if (requirement.versionMatch.endsWith('+prefer')) {
             return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-              referenceTag, wasCanceled, campaign);
+              referenceTag, wasCanceled, campaign, fileName);
           } else {
             return Promise.reject(err);
           }
@@ -1489,7 +1489,8 @@ class InstallManager {
               dep.reference,
               api,
               dep.lookupResults[0].value,
-              () => canceled)
+              () => canceled,
+              dep.extra?.fileName)
               .then(dlId => {
                 const idx = queuedDownloads.indexOf(dep.reference);
                 queuedDownloads.splice(idx, 1);

@@ -1156,16 +1156,16 @@ class DownloadManager {
     if (chunkable || (download.chunkable === null) || (download.chunkable === undefined)) {
       download.chunkable = chunkable;
     }
-
-}
+  }
 
   private updateDownload(download: IRunningDownload, fileSize: number,
                          fileName: string, chunkable: boolean) {
     if ((fileName !== undefined)
         && (fileName !== download.origName)
         && (download.finalName === undefined)) {
-      const newName = this.unusedName(
-        path.dirname(download.tempName), fileName, download.options.redownload);
+      // when the download has already been started we ignore the redownload option
+      // to determine the correct name
+      const newName = this.unusedName(path.dirname(download.tempName), fileName, 'always');
       download.finalName = newName;
       newName.then(resolvedName => {
         if (!download.assembler.isClosed()) {
@@ -1187,7 +1187,8 @@ class DownloadManager {
         }
       })
       .catch(err => {
-        log('error', 'failed to update download name', err.message);
+        log('error', 'failed to update download name',
+            { error: err.message, fileName, old: download.origName });
       });
     }
 
