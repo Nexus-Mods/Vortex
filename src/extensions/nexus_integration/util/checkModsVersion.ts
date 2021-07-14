@@ -1,7 +1,7 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import { batchDispatch, truthy } from '../../../util/util';
 import { nexusGameId } from './convertGameId';
 
 import { gameById } from '../../gamemode_management/selectors';
@@ -144,17 +144,25 @@ function updateModAttributes(dispatch: Redux.Dispatch<any>,
                              gameId: string,
                              mod: IMod,
                              modInfo: IModInfo) {
+  const actions: Redux.Action[] = [];
+  const disp: Redux.Dispatch = (action: any) => {
+    actions.push(action);
+    return action;
+  };
+
   if (modInfo.endorsement !== undefined) {
-    update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
+    update(disp, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
   }
-  update(dispatch, gameId, mod, 'allowRating', (modInfo as any).allow_rating);
+  update(disp, gameId, mod, 'allowRating', (modInfo as any).allow_rating);
   if (getSafe(mod.attributes, ['category'], undefined) === undefined) {
-    update(dispatch, gameId, mod, 'category', modInfo.category_id);
+    update(disp, gameId, mod, 'category', modInfo.category_id);
   }
-  update(dispatch, gameId, mod, 'shortDescription', modInfo.summary);
-  update(dispatch, gameId, mod, 'description', modInfo.description);
-  update(dispatch, gameId, mod, 'pictureUrl', modInfo.picture_url);
-  update(dispatch, gameId, mod, 'author', modInfo.author);
+  update(disp, gameId, mod, 'shortDescription', modInfo.summary);
+  update(disp, gameId, mod, 'description', modInfo.description);
+  update(disp, gameId, mod, 'pictureUrl', modInfo.picture_url);
+  update(disp, gameId, mod, 'author', modInfo.author);
+
+  batchDispatch(dispatch, actions);
 }
 
 function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
