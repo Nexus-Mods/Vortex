@@ -76,8 +76,9 @@ export function useRandomId() {
   return ref.current;
 }
 
-export function MutexWrapper(props: { show: boolean, children: React.ReactNode }): JSX.Element {
-  const primary = useMutex(props.show);
+export function MutexWrapper(props: { show: boolean, children: React.ReactNode }) {
+  // const primary = useMutex(props.show);
 
-  return primary ? React.createElement('div', undefined, props.children) : null;
+  // return primary ? React.createElement('div', undefined, props.children) : null;
+  return React.createElement('div', undefined, props.children);
 }
