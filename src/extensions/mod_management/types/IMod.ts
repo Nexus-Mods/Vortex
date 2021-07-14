@@ -51,6 +51,9 @@ export interface IModReference extends IReference {
   // will check against that mod first. It will still have to fulfill all other attributes but if it
   // does, no more check gets done.
   idHint?: string;
+  // this can be used in combination with a fuzzy version match. If a file with this md5 hash
+  // exists, it gets used
+  md5Hint?: string;
   // if a tag is set and a mod or archive has a referenceTag that is identical, that item will be
   // used, no other attribute will be checked.
   // When downloading/installing mods from dependencies, this tag is passed along and stored with
