@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "11.4.0"
+    "electron": "13.1.6"
   },
   "scripts": {
     "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
@@ -162,7 +162,7 @@
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
-    "electron": "^11.4.9",
+    "electron": "^13.1.6",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "rwwagner90/electron-devtools-installer",
     "electron-download-tf": "^4.3.4",
@@ -235,14 +235,13 @@
     "json-socket": "foi/node-json-socket",
     "leveldown": "^5.6.0",
     "levelup": "^4.4.0",
-    "libxmljs": "TanninOne/libxmljs",
+    "libxmljs": "sambacha/libxmljs",
     "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
     "msgpack": "^1.0.3",
     "native-errors": "Nexus-Mods/node-native-errors",
-    "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
