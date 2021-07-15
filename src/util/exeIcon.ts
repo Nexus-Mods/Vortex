@@ -7,7 +7,7 @@ const app = remote !== undefined ? remote.app : appIn;
 function extractExeIcon(exePath: string, destPath: string): Promise<void> {
   if (process.platform === 'win32') {
     // app.getFileIcon generates broken output as of electron 11.0.4, afaik this
-    // is limited to windows
+    // is limited to windows (see https://github.com/electron/electron/issues/26918)
     return new Promise((resolve, reject) => {
       iconExtract.extractIconToFile(exePath, destPath, error => {
         if (error !== null) {
