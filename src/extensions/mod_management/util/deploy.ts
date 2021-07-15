@@ -107,7 +107,29 @@ export function purgeMods(api: IExtensionApi,
         const deployedActivator = getActivator(manifest?.deploymentMethod);
         return purgeModsImpl(api, deployedActivator, profile);
       } else {
-        return purgeModsImpl(api, undefined, profile);
+        return purgeModsImpl(api, undefined, profile)
+          .catch(err => {
+            // If the user is unmanaging the game and the purge was unable to find any
+            //  of the game's mods path during the purge, that suggests that the user
+            //  has uninstalled the game and is trying to "unmanage" the game.
+            if (['ENOENT'].includes(err.code) && isUnmanaging) {
+              const game = getGame(gameId);
+              const discovery = getSafe(state,
+                ['settings', 'gameMode', 'discovered', gameId], undefined);
+              if ((game === undefined) || (discovery?.path === undefined)) {
+                return Promise.reject(err);
+              }
+              const modTypePaths = game.getModPaths(discovery.path);
+              const modPaths = Object.keys(modTypePaths).map(modType => modTypePaths[modType]);
+              if (modPaths.includes(err.path)) {
+                // This confirms it - the mods folder is missing - user removed it.
+                //  In this case we still want to allow the removal.
+                return Promise.resolve();
+              }
+            } else {
+              return Promise.reject(err);
+            }
+          });
       }
     });
 }
