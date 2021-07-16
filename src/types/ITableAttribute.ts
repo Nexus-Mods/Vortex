@@ -56,6 +56,11 @@ export interface ITableFilter {
    */
   raw: string | boolean;
   component: React.ComponentType<IFilterProps>;
+  /**
+   * specifies which property of the object to filter on, meaning that obj[dataId] will be passed
+   * to the "matches" function as the value to filter by.
+   * This can be $ (a single dollar sign) to get the object itself
+   */
   dataId?: string;
 }
 

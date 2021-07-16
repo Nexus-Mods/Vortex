@@ -1,11 +1,12 @@
-import { setModAttribute } from '../../actions';
-import { IconButton } from '../../controls/TooltipControls';
-import { IExtensionApi, IMod, ITableAttribute } from '../../types/api';
+import { setDownloadModInfo, setModAttribute } from '../../actions';
+import { IExtensionApi, IMod, IState, ITableAttribute } from '../../types/api';
 import { laterT } from '../../util/i18n';
-import { activeGameId, currentGame, gameById, knownGames } from '../../util/selectors';
+import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { IModWithState } from '../mod_management/types/IModProps';
+import NXMUrl from './NXMUrl';
 import { nexusGames } from './util';
+import { checkModVersion } from './util/checkModsVersion';
 import { convertGameIdReverse, nexusGameId } from './util/convertGameId';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
@@ -13,31 +14,78 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 
 import Nexus from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
+import { useSelector } from 'react-redux';
 import * as Redux from 'redux';
+import { batchDispatch } from '../../util/util';
+
+interface INexusIdProps {
+  api: IExtensionApi;
+  nexus: () => Nexus;
+  mod: IModWithState;
+  t: TFunction;
+}
 
 // TODO: the field names in this object will be shown to the user, hence the capitalization
-function renderNexusModIdDetail(
-  store: Redux.Store<any>,
-  mod: IModWithState,
-  t: TFunction) {
-  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-  const fileName: string =
-    getSafe(mod.attributes, ['fileName'],
-      getSafe(mod.attributes, ['name'], undefined));
-  const gameMode = activeGameId(store.getState());
-  const fileGameId = getSafe(mod.attributes, ['downloadGame'], undefined)
-                  || gameMode;
+function NexusId(props: INexusIdProps) {
+  const { api, nexus, mod, t } = props;
+
+  const fileName: string = mod.attributes?.fileName ?? mod.attributes?.name;
+
+  const gameMode = useSelector(activeGameId);
+  const downloadPath = useSelector((state: IState) => downloadPathForGame(state, gameMode));
+  const downloads = useSelector((state: IState) => state.persistent.downloads.files);
+
+  const hasArchive = (mod.archiveId !== undefined)
+                  && (downloads[mod.archiveId] !== undefined);
+
+  const updateByMD5 = React.useCallback(() => {
+    api.lookupModMeta({
+      fileMD5: mod.attributes?.fileMD5,
+      fileName,
+      fileSize: mod.attributes?.fileSize,
+      filePath: path.join(downloadPath, mod.installationPath),
+    }, true)
+    .then(lookupResults => {
+      if (lookupResults.length > 0) {
+        const info = lookupResults[0].value;
+        const nxmUrl = new NXMUrl(info.sourceURI);
+        if (mod.state === 'installed') {
+          batchDispatch(api.store, [
+            setModAttribute(gameMode, mod.id, 'modId', nxmUrl.modId),
+            setModAttribute(gameMode, mod.id, 'fileId', nxmUrl.fileId),
+          ]);
+        }
+        if (hasArchive) {
+          batchDispatch(api.store, [
+            setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.modId),
+            setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.fileId),
+          ]);
+        }
+      }
+    });
+  }, [mod]);
+
+  const checkForUpdate = React.useCallback(() => {
+    checkModVersion(api.store, nexus(), gameMode, mod);
+  }, []);
+
   return (
     <NexusModIdDetail
+      t={t}
       modId={mod.id}
-      nexusModId={nexusModId}
+      nexusModId={mod.attributes?.modId}
+      nexusFileId={mod.attributes?.fileId}
+      fileHash={mod.attributes?.fileMD5}
+      archiveId={hasArchive ? mod.archiveId : undefined}
       activeGameId={gameMode}
-      fileGameId={fileGameId}
+      fileGameId={mod.attributes?.downloadGame || gameMode}
       fileName={fileName}
       isDownload={mod.state === 'downloaded'}
-      t={t}
-      store={store}
+      store={api.store}
+      onUpdateByMD5={updateByMD5}
+      onCheckForUpdate={checkForUpdate}
     />
   );
 }
@@ -120,15 +168,17 @@ export function genEndorsedAttribute(api: IExtensionApi,
   };
 }
 
-export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
+export function genModIdAttribute(api: IExtensionApi,
+                                  nexus: () => Nexus)
+                                  : ITableAttribute<IModWithState> {
   return {
     id: 'nexusModId',
-    name: laterT('Nexus Mod ID'),
+    name: laterT('Nexus Mods IDs'),
     description: laterT('Internal ID used by www.nexusmods.com'),
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
       const res = ((mod.attributes?.source === 'nexus') && (mod.type !== 'collection'))
-        ? renderNexusModIdDetail(api.store, mod, t)
+        ? <NexusId t={t} api={api} nexus={nexus} mod={mod} />
         : null;
       return res;
     },
@@ -143,7 +193,7 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   };
 }
 
-export function genCollectionIdAttribute(api: IExtensionApi): ITableAttribute {
+export function genCollectionIdAttribute(api: IExtensionApi, nexus: () => Nexus): ITableAttribute {
   return {
     id: 'nexusCollectionId',
     name: laterT('Nexus Collection ID'),
@@ -151,7 +201,7 @@ export function genCollectionIdAttribute(api: IExtensionApi): ITableAttribute {
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
       const res = ((mod.attributes?.source ?? 'nexus') && (mod.type === 'collection'))
-        ? renderNexusModIdDetail(api.store, mod, t)
+        ? (mod.attributes?.collectionId ?? t('Not published'))
         : null;
       return res;
     },

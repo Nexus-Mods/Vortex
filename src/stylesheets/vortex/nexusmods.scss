@@ -128,3 +128,24 @@
 .free-user-dl-summary {
 
 }
+
+.modid-detail {
+  table {
+    margin-bottom: 1em;
+  }
+  th {
+    margin-right: 1em;
+  }
+}
+
+.nexus-id-valid {
+  color: $brand-success;
+}
+
+.nexus-id-invalid {
+  color: $brand-warning;
+}
+
+.modid-detail-control {
+  vertical-align: top;
+}

@@ -5,7 +5,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { IDownload } from '../../download_management/types/IDownload';
 
 import { IModWithState } from '../types/IModProps';
-import { UpdateState } from '../util/modUpdateState';
+import { isIdValid, UpdateState } from '../util/modUpdateState';
 
 import { TFunction } from 'i18next';
 import * as React from 'react';
@@ -31,8 +31,9 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { mod, state } = this.props;
 
-    const tooltip = this.getStateTooltip(state);
-    const icon = this.getStateIcon(state);
+    const valid = isIdValid(mod);
+    const tooltip = this.getStateTooltip(state, valid);
+    const icon = this.getStateIcon(state, valid);
 
     if (icon === undefined) {
       return null;
@@ -49,8 +50,14 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     );
   }
 
-  private getStateTooltip(state: UpdateState) {
+  private getStateTooltip(state: UpdateState, valid: boolean) {
     const { t, mod } = this.props;
+
+    if (!valid) {
+      return t('This mod is missing identification information. Without this some '
+              + 'features like checking for updates or adding this mod to collections '
+              + 'will not work.');
+    }
 
     const newVersion = getSafe(mod.attributes, ['newestVersion'], '?');
 
@@ -71,7 +78,11 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     }
   }
 
-  private getStateIcon(state: UpdateState) {
+  private getStateIcon(state: UpdateState, valid: boolean) {
+    if (!valid) {
+      return 'feedback-warning';
+    }
+
     switch (state) {
       case 'bug-update': return 'bug';
       case 'bug-disable': return 'ban';

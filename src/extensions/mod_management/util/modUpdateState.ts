@@ -1,7 +1,15 @@
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
+import { IModWithState } from '../types/IModProps';
 
 import versionClean from './versionClean';
+
+export function isIdValid(mod: IModWithState) {
+  return (mod.state !== 'installed')
+      || (mod.attributes.source === 'unsupported')
+      || (mod.type === 'collection')
+      || ((mod.attributes?.fileId !== undefined) || (mod.attributes?.revisionId));
+}
 
 export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |

@@ -1,6 +1,6 @@
 import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 
-import updateState from './modUpdateState';
+import updateState, { isIdValid } from './modUpdateState';
 
 import * as React from 'react';
 import Select from 'react-select';
@@ -11,6 +11,7 @@ export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
 
     const options = [
       { value: 'has-update', label: t('Update available') },
+      { value: 'missing-meta', label: t('Missing Meta ID') },
     ];
     return (
       <Select
@@ -37,12 +38,14 @@ export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
 class VersionFilter implements ITableFilter {
   public component = VersionFilterComponent;
   public raw = true;
-  public dataId = 'attributes';
+  public dataId = '$';
 
   public matches(filter: any, value: any): boolean {
     if (value !== undefined) {
-      if (filter === 'has-update') {
-        const state = updateState(value);
+      if (filter === 'missing-meta') {
+        return !isIdValid(value);
+      } else if (filter === 'has-update') {
+        const state = updateState(value.attributes);
         return state !== 'current';
       } else {
         return true;

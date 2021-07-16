@@ -46,6 +46,10 @@
 }
 
 .mod-update {
+  &.invalid {
+    color: $brand-warning;
+  }
+
   &.warning {
     color: $brand-warning;
   }

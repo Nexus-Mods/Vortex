@@ -36,7 +36,7 @@ import combineMods from '../util/combine';
 import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
-import modUpdateState, { UpdateState } from '../util/modUpdateState';
+import modUpdateState, { isIdValid, UpdateState } from '../util/modUpdateState';
 import { removeMods } from '../util/removeMods';
 import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
@@ -546,7 +546,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ) : null;
 
     return (
-      <div className={'mod-update ' + this.updateClass(updateState)}>
+      <div className={'mod-update ' + this.updateClass(updateState, isIdValid(mod))}>
         {alternatives.length === 1 ? getSafe(mod.attributes, ['version'], null) : null}
         <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
@@ -568,7 +568,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private updateClass(state: UpdateState) {
+  private updateClass(state: UpdateState, valid: boolean) {
+    if (!valid) {
+      return 'invalid';
+    }
+
     switch (state) {
       case 'bug-update': return 'bug';
       case 'bug-update-site': return 'bug';

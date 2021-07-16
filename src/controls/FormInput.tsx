@@ -1,5 +1,6 @@
 import { ValidationState } from '../types/ITableAttribute';
 import Debouncer from '../util/Debouncer';
+import { isFunction } from '../util/util';
 
 import { IconButton } from './TooltipControls';
 
@@ -19,7 +20,7 @@ export interface IProps {
   type?: string;
   readOnly?: boolean;
   placeholder?: string;
-  validate?: (value: any) => ValidationState;
+  validate?: ValidationState | ((value: any) => ValidationState);
   debounceTimer?: number;
   clearable?: boolean;
 }
@@ -46,10 +47,9 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       cachedValue: props.value,
     };
     this.mDebouncer = new Debouncer(newValue => {
-      const { onChange, validate } = this.props;
+      const { onChange } = this.props;
       this.mLastCommitted = newValue;
-      if ((validate === undefined)
-    || (validate(newValue) !== 'error')) {
+      if (this.validateRes(newValue) !== 'error') {
         onChange(newValue, props.id);
       }
       return null;
@@ -89,7 +89,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     );
 
     if (validate) {
-      const validationState = validate(cachedValue);
+      const validationState = this.validateRes(cachedValue);
 
       return (
         <FormGroup
@@ -102,6 +102,18 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     } else {
       return content;
     }
+  }
+
+  private validateRes(value: any): ValidationState {
+    const { validate } = this.props;
+    if (validate === undefined) {
+      return null;
+    }
+    let validateRes = validate;
+    if (isFunction(validate)) {
+      validateRes = (validate as any)(value);
+    }
+    return validateRes as ValidationState;
   }
 
   private renderClear() {
