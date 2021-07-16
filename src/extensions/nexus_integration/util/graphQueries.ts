@@ -8,8 +8,10 @@ const revisionInfo: IRevisionQuery = {
   updatedAt: true,
   downloadLink: true,
   fileSize: true,
-  rating: true,
-  votes: true,
+  rating: {
+    average: true,
+    total: true,
+  },
   status: true,
   modFiles: {
     file: {

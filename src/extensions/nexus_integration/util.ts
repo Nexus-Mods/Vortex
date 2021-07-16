@@ -150,8 +150,10 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
     updatedAt: true,
     installationInfo: true,
     revision: true,
-    rating: true,
-    votes: true,
+    rating: {
+      average: true,
+      total: true,
+    },
   }, revisionId))
     .then(revision => ({ revisionInfo: revision }));
 }

@@ -448,7 +448,6 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
       rating: nexusCollectionInfo?.rating,
-      votes: nexusCollectionInfo?.votes,
     };
   });
 }
@@ -1505,8 +1504,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('collection-mods', cmAttr);
   context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
-  context.registerTableAttribute('mods', genModIdAttribute(context.api));
-  context.registerTableAttribute('mods', genCollectionIdAttribute(context.api));
+  context.registerTableAttribute('mods', genModIdAttribute(context.api, () => nexus));
+  context.registerTableAttribute('mods', genCollectionIdAttribute(context.api, () => nexus));
 
   context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner,
                           undefined, undefined, {

@@ -1500,8 +1500,8 @@
     cross-spawn "^7.0.1"
 
 "@nexusmods/nexus-api@git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs":
-  version "1.1.0-dev35"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#fa2cfddaff32ef0ad84c1b86f5c77f4d19cfcd1b"
+  version "1.1.0-dev36"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#9c75da6ea0652346465a23b8fef56375681a548d"
   dependencies:
     string-template "^1.0.0"
 
