@@ -232,7 +232,13 @@ export default function init(context: IExtensionContext) {
     },
     (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
     (t) => t('Load Order'),
-    (state: types.IState, gameId: string) => (findGameEntry(gameId) !== undefined),
+    (state: types.IState, gameId: string) => {
+      const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
+      if (gameEntry === undefined) {
+        return false;
+      }
+      return !(gameEntry.noCollectionGeneration ?? false);
+    },
     Interface,
   );
 
