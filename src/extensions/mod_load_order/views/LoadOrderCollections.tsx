@@ -62,7 +62,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
           <h4>{t('Load Order')}</h4>
           <p>
           {t('This tab aims to display a preview of the load order for the mods that ' +
-             'are included in the current collection. If you wish to modify the load ' +
+             'are included in the current collection. If you wish to modify the load order ' +
              'please do so by opening the Load Order page; any changes made there ' +
              'will be reflected in this collection.')
           }
