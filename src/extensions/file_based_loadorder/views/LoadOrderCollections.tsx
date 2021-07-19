@@ -4,7 +4,7 @@ import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
-import { EmptyPlaceholder, FlexLayout } from '../../../controls/api';
+import { EmptyPlaceholder, FlexLayout, Icon } from '../../../controls/api';
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
@@ -32,23 +32,42 @@ class LoadOrderCollections extends ComponentEx<IProps, {}> {
         <div style={{ overflow: 'auto' }}>
           <h4>{t('Load Order')}</h4>
           <p>
-          {t('This tab displays the current state of the load order file which this game uses. ' +
-             'If you wish to modify the order/entries please do so by opening the Load Order ' +
-             'page; any changes made there will be reflected in this collection once the ' +
-             'changes are saved to the file. ')
-          }
+          {t('This is a snapshot of the load order information that '
+           + 'will be exported with this collection.')}
           </p>
-          <p>
-          {t('Please note: the game you\'ve created this collection for relies on a load order ' +
-             'file which the game extension creates when deploying your mods - to ensure that ' +
-             'the correct load order is published alongside this collection, please remember to ' +
-             'deploy your mods!')}
-        </p>
+          {this.renderLoadOrderEditInfo()}
           <ListGroup id='collections-load-order-list'>
             {loadOrder.map(this.renderModEntry)}
           </ListGroup>
         </div>
     ) : this.renderPlaceholder();
+  }
+
+  private renderLoadOrderEditInfo = () => {
+    const { t } = this.props;
+    return (
+      <FlexLayout type='row' id='collection-edit-loadorder-edit-info-container'>
+        <FlexLayout.Fixed className='loadorder-edit-info-icon'>
+          <Icon name='dialog-info'/>
+        </FlexLayout.Fixed>
+        <FlexLayout.Fixed className='collection-edit-loadorder-edit-info'>
+          {t('You can make changes to this data from the ')}
+          <a
+            className='fake-link'
+            onClick={this.openLoadOrderPage}
+            title={t('Go to Load Order Page')}
+          >
+            {t('Load Order page.')}
+          </a>
+          {t(' If you believe a load order entry is missing, please ensure the '
+            + 'relevant mod is enabled and has been added to the collection.')}
+          {t(' Note that the game you\'ve created this collection for relies on a load order ' +
+            'file which the game extension creates when deploying your mods - to ensure that ' +
+            'the correct load order is published alongside this collection, please remember to ' +
+            'deploy your mods!')}
+        </FlexLayout.Fixed>
+      </FlexLayout>
+    );
   }
 
   private openLoadOrderPage = () => {

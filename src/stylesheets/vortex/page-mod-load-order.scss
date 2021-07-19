@@ -117,3 +117,25 @@
     border: 1px solid $brand-secondary;
   }
 }
+
+#collection-edit-loadorder-edit-info-container {
+  border: 2px solid $brand-info;
+  box-sizing: border-box;
+  border-radius: 10px;
+  padding: 1em;
+  margin-bottom: 15px;
+  height: auto;
+
+  .loadorder-edit-info-icon {
+    color: $brand-info;
+    size: 3em;
+    margin-right: 20px;
+  }
+
+  .collection-edit-loadorder-edit-info {
+    letter-spacing: 0.25px;
+    a {
+      color: $link-color;
+    }
+  }
+}
