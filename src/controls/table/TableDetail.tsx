@@ -364,6 +364,8 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
   private setFormRef = (ref: HTMLFormElement) => {
     const oldRef = this.mFormRef;
     this.mFormRef = ref;
+    // this seeems - needlessly complicated. The hover on the form controls the styling
+    // on containers higher up so that they provide enough space and controls don't get cut off.
     if (ref !== null) {
       ref.addEventListener('mouseenter', this.startHover);
       ref.addEventListener('mouseleave', this.stopHover);

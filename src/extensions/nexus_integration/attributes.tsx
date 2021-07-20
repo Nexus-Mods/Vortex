@@ -201,7 +201,7 @@ export function genCollectionIdAttribute(api: IExtensionApi, nexus: () => Nexus)
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
       const res = ((mod.attributes?.source ?? 'nexus') && (mod.type === 'collection'))
-        ? (mod.attributes?.collectionId ?? t('Not published'))
+        ? <p>{(mod.attributes?.collectionId ?? t('Not published'))}</p>
         : null;
       return res;
     },

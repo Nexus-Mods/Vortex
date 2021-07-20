@@ -89,7 +89,14 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
       : <p>{authors.join(' & ')}</p>;
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          maxWidth: '20em',
+        }}
+      >
         {authorP}
         {' '}
         {

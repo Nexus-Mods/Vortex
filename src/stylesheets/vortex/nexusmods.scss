@@ -133,6 +133,9 @@
   table {
     margin-bottom: 1em;
   }
+  tr {
+    border-top: 0.5em solid transparent;
+  }
   th {
     margin-right: 1em;
   }
@@ -148,4 +151,11 @@
 
 .modid-detail-control {
   vertical-align: top;
+}
+
+.no-margin {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
 }

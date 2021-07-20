@@ -10,6 +10,8 @@ import FormFeedback from './FormFeedback';
 
 export interface IProps {
   className?: string;
+  groupClass?: string;
+  style?: any;
   value: string | number;
   min?: number;
   max?: number;
@@ -65,11 +67,11 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { className, clearable, id, label, min, max,
-            placeholder, readOnly, type, validate } = this.props;
+    const { className, clearable, groupClass, id, label, min, max,
+            placeholder, readOnly, style, type, validate } = this.props;
     const { cachedValue } = this.state;
     const content = (
-      <div className={className}>
+      <div className={className} style={style}>
         <input
           className={'form-control'}
           type={type ?? 'text'}
@@ -93,6 +95,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
 
       return (
         <FormGroup
+          className={groupClass}
           validationState={validationState}
         >
           {content}

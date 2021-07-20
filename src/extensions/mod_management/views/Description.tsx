@@ -46,7 +46,7 @@ class Description extends React.Component<IProps, IComponentState> {
 
     const popover = (
       <Popover id='popover-mod-description'>
-        <div style={{ maxHeight: 700, overflowY: 'auto' }}>{this.mLongBB}</div>
+        <div>{this.mLongBB}</div>
         {truthy(source)
           ? (
             <a

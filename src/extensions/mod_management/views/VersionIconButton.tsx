@@ -54,9 +54,15 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     const { t, mod } = this.props;
 
     if (!valid) {
-      return t('This mod is missing identification information. Without this some '
-              + 'features like checking for updates or adding this mod to collections '
-              + 'will not work.');
+      if (mod.attributes?.source === undefined) {
+        return t('This mod has no source assigned. The source tells Vortex where the mod '
+                + 'came from and, if applicable, where to check for updates. '
+                + 'You can set the source to "Other" to disable this warning.');
+      } else {
+        return t('This mod is missing identification information. Without this some '
+                + 'features like checking for updates or adding this mod to collections '
+                + 'will not work.');
+      }
     }
 
     const newVersion = getSafe(mod.attributes, ['newestVersion'], '?');
