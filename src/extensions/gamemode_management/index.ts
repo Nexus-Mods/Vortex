@@ -681,6 +681,8 @@ function init(context: IExtensionContext): boolean {
         return prev;
       }, {})));
 
+    // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
+    //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
@@ -691,6 +693,8 @@ function init(context: IExtensionContext): boolean {
               }
             });
         }));
+    context.api.onAsync('discover-tools', (gameId: string) =>
+      $.gameModeManager.startToolDiscovery(gameId));
     events.on('start-discovery', () => {
       try {
         const state = context.api.getState();

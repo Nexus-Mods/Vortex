@@ -266,13 +266,15 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private quickDiscovery = () => {
+    const { gameMode } = this.props;
     this.nextState.discovering = true;
     const start = Date.now();
-    this.context.api.events.emit('start-quick-discovery', () => {
-      setTimeout(() => {
-        this.nextState.discovering = false;
-      }, 1000 - (Date.now() - start));
-    });
+    this.context.api.emitAndAwait('discover-tools', gameMode)
+      .then(() => {
+        setTimeout(() => {
+          this.nextState.discovering = false;
+        }, 1000 - (Date.now() - start));
+      });
   }
 
   private generateToolStarters(props: IStarterProps): StarterInfo[] {

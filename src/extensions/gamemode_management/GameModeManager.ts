@@ -27,7 +27,7 @@ import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
-import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
+import { discoverRelativeTools, quickDiscovery, quickDiscoveryTools, searchDiscovery } from './util/discovery';
 import { getGame } from './util/getGame';
 
 import Promise from 'bluebird';
@@ -201,6 +201,15 @@ class GameModeManager {
         this.onDiscoveredGame, this.onDiscoveredTool))
       .tap(() => this.postDiscovery())
       ;
+  }
+
+  public startToolDiscovery(gameId: string) {
+    const game = this.mKnownGames.find(iter => iter.id === gameId);
+    if (game !== undefined) {
+      return quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool);
+    } else {
+      return Promise.reject(new Error('unknown game id: ' + gameId));
+    }
   }
 
   public isSearching(): boolean {

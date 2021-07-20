@@ -32,21 +32,24 @@ interface IFileEntry {
   application: ITool;
 }
 
-function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: DiscoveredToolCB) {
+export function quickDiscoveryTools(gameId: string,
+                                    tools: ITool[],
+                                    onDiscoveredTool: DiscoveredToolCB)
+                                    : Promise<void> {
   if (tools === undefined) {
-    return;
+    return Promise.resolve();
   }
 
-  for (const tool of tools) {
+  return Promise.map(tools, tool => {
     if (tool.queryPath === undefined) {
-      continue;
+      return Promise.resolve();
     }
 
     try {
       const toolPath = tool.queryPath();
       if (typeof(toolPath) === 'string') {
         if (toolPath) {
-          autoGenIcon(tool, toolPath, gameId)
+          return autoGenIcon(tool, toolPath, gameId)
             .then(() => {
               onDiscoveredTool(gameId, {
                 ...tool,
@@ -58,32 +61,35 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
             });
         } else {
           log('debug', 'tool not found', tool.id);
+          return Promise.resolve();
         }
       } else {
-        (toolPath as Promise<string>)
-            .then((resolvedPath) => {
-              if (resolvedPath) {
-                autoGenIcon(tool, resolvedPath, gameId)
-                  .then(() => {
-                    onDiscoveredTool(gameId, {
-                      ...tool,
-                      path: path.join(resolvedPath, tool.executable(resolvedPath)),
-                      hidden: false,
-                      parameters: tool.parameters || [],
-                      custom: false,
-                    });
+        return (toolPath as Promise<string>)
+          .then((resolvedPath) => {
+            if (resolvedPath) {
+              return autoGenIcon(tool, resolvedPath, gameId)
+                .then(() => {
+                  onDiscoveredTool(gameId, {
+                    ...tool,
+                    path: path.join(resolvedPath, tool.executable(resolvedPath)),
+                    hidden: false,
+                    parameters: tool.parameters || [],
+                    custom: false,
                   });
-              }
-              return null;
-            })
-            .catch((err) => {
-              log('debug', 'tool not found', {id: tool.id, err: err.message});
-            });
+                });
+            }
+            return Promise.resolve();
+          })
+          .catch((err) => {
+            log('debug', 'tool not found', {id: tool.id, err: err.message});
+          });
       }
     } catch (err) {
       log('error', 'failed to determine tool setup', err);
+      return Promise.resolve();
     }
-  }
+  })
+  .then(() => null);
 }
 
 /**
@@ -98,54 +104,56 @@ export function quickDiscovery(knownGames: IGame[],
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Promise<string[]> {
   return Promise.map(knownGames, game => new Promise<string>((resolve, reject) => {
-    quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool);
-    if (game.queryPath === undefined) {
-      return resolve();
-    }
-    // don't override manually set game location
-    if (getSafe(discoveredGames, [game.id, 'pathSetManually'], false)) {
-      return resolve();
-    }
-    try {
-      const gamePath = game.queryPath();
-      const prom = (typeof (gamePath) === 'string')
-        ? Promise.resolve(gamePath)
-        : gamePath;
+    return quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool)
+      .then(() => {
+        if (game.queryPath === undefined) {
+          return resolve();
+        }
+        // don't override manually set game location
+        if (getSafe(discoveredGames, [game.id, 'pathSetManually'], false)) {
+          return resolve();
+        }
+        try {
+          const gamePath = game.queryPath();
+          const prom = (typeof (gamePath) === 'string')
+            ? Promise.resolve(gamePath)
+            : gamePath;
 
-      prom
-        .then(resolvedPath => assertToolDir(game, resolvedPath))
-        .then(resolvedPath => {
-          if (!truthy(resolvedPath)) {
-            return resolve(undefined);
-          }
-          log('info', 'found game', { name: game.name, location: resolvedPath });
-          const exe = game.executable(resolvedPath);
-          const disco: IDiscoveryResult = {
-            path: resolvedPath,
-            executable: (exe !== game.executable()) ? exe : undefined,
-          };
-          onDiscoveredGame(game.id, disco);
-          return getNormalizeFunc(resolvedPath)
-            .then(normalize =>
-              discoverRelativeTools(game, resolvedPath, discoveredGames,
-                                    onDiscoveredTool, normalize))
-            .then(() => resolve(game.id));
-        })
-        .catch((err) => {
-          if (err.message !== undefined) {
-            log('debug', 'game not found',
-              { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
-          } else {
-            log('warn', 'game not found - invalid exception', { id: game.id, err });
-          }
-          resolve();
-        });
-    } catch (err) {
-      log('error', 'failed to use game support plugin',
-          { id: game.id, err: err.message, stack: err.stack });
-      // don't escalate exception because a single game shouldn't break everything
-      return resolve();
-    }
+          prom
+            .then(resolvedPath => assertToolDir(game, resolvedPath))
+            .then(resolvedPath => {
+              if (!truthy(resolvedPath)) {
+                return resolve(undefined);
+              }
+              log('info', 'found game', { name: game.name, location: resolvedPath });
+              const exe = game.executable(resolvedPath);
+              const disco: IDiscoveryResult = {
+                path: resolvedPath,
+                executable: (exe !== game.executable()) ? exe : undefined,
+              };
+              onDiscoveredGame(game.id, disco);
+              return getNormalizeFunc(resolvedPath)
+                .then(normalize =>
+                  discoverRelativeTools(game, resolvedPath, discoveredGames,
+                                        onDiscoveredTool, normalize))
+                .then(() => resolve(game.id));
+            })
+            .catch((err) => {
+              if (err.message !== undefined) {
+                log('debug', 'game not found',
+                  { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+              } else {
+                log('warn', 'game not found - invalid exception', { id: game.id, err });
+              }
+              resolve();
+            });
+        } catch (err) {
+          log('error', 'failed to use game support plugin',
+              { id: game.id, err: err.message, stack: err.stack });
+          // don't escalate exception because a single game shouldn't break everything
+          return resolve();
+        }
+      });
   }))
   .then(gameNames => gameNames.filter(name => name !== undefined))
   ;
