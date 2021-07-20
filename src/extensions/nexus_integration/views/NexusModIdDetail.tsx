@@ -11,25 +11,29 @@ import { guessFromFileName } from '../util/guessModID';
 
 import { TFunction } from 'i18next';
 import * as React from 'react';
-import { FormControl, FormGroup } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import * as Redux from 'redux';
 import { Button, Icon, IconButton } from '../../../controls/TooltipControls';
 
 function validateNum(value: string): ValidationState {
-  return !truthy(value) || isNaN(Number(value)) ? 'error' : 'success';
+  return !truthy(value)
+      || isNaN(Number(value))
+      || (parseInt(value, 10) < 1)
+      ? 'error' : 'success';
 }
 
 interface IInputProps {
   value: string;
   validate: ValidationState | ((value: any) => ValidationState);
   onChange?: (newValue: string) => void;
+  placeholder: string;
 }
 
 function Input(props: IInputProps) {
   return (
     <FormInput
-      placeholder='i.e. 1337'
+      groupClass='no-margin'
+      placeholder={props.placeholder}
       value={props.value ?? ''}
       validate={props.validate}
       readOnly={props.onChange === undefined}
@@ -89,15 +93,15 @@ function NexusModIdDetail(props: IProps) {
   const [fileMD5Temp, setFileMD5] = React.useState(fileHash);
   const dispatch = useDispatch();
 
-  React.useEffect(() => { setFileId(fileHash); }, [fileHash]);
-  React.useEffect(() => { setFileId(nexusModId); }, [nexusModId]);
+  React.useEffect(() => { setFileMD5(fileHash); }, [fileHash]);
+  React.useEffect(() => { setModId(nexusModId); }, [nexusModId]);
   React.useEffect(() => {
     setFileId(nexusFileId);
-  }, [nexusFileId]);
+  }, [setFileId, nexusFileId]);
 
   const setFileIdWrap = React.useCallback((fileId: any) => {
     setFileId(fileId);
-  }, []);
+  }, [setFileId]);
 
   const changeEdit = React.useCallback((doEdit: boolean = true) => {
     setModId(nexusModId);
@@ -145,7 +149,7 @@ function NexusModIdDetail(props: IProps) {
 
   if (edit) {
     const haveHash = !!fileHash;
-    const hashValidation = !!fileMD5Temp ? true : !!fileIdTemp ? null : false;
+    const hashValidation = !!fileMD5Temp ? 'success' : !!fileIdTemp ? null : 'error';
     return (
       <div className='modid-detail'>
         <table>
@@ -161,7 +165,12 @@ function NexusModIdDetail(props: IProps) {
                 </More>
               </th>
               <td>
-                <Input value={fileMD5Temp} validate={hashValidation ? 'success' : 'error'} />
+                <Input
+                  value={fileMD5Temp}
+                  validate={hashValidation}
+                  placeholder={t('e.g. {{sample}}',
+                                 { replace: { sample: '14758f1afd44c09b7992073ccf00b43d' }})}
+                />
               </td>
               <td className='modid-detail-control'>
                 {(archiveId !== undefined) && !haveHash ? (
@@ -185,12 +194,16 @@ function NexusModIdDetail(props: IProps) {
                 </More>
               </th>
               <td>
-                <Input value={modIdTemp} onChange={setModId} validate={validNum} />
+                <Input
+                  value={modIdTemp ?? ''}
+                  onChange={setModId}
+                  validate={validNum}
+                  placeholder={t('e.g. {{sample}}', { replace: { sample: '1337' }})}
+                />
               </td>
               <td className='modid-detail-control'>
                 {haveHash ? (
                   <Button
-                    disabled={!!fileIdTemp}
                     onClick={onUpdateByMD5}
                     tooltip={t('Look up by file hash')}
                   >
@@ -217,14 +230,14 @@ function NexusModIdDetail(props: IProps) {
               </th>
               <td>
                 <Input
-                  value={fileIdTemp}
+                  value={fileIdTemp ?? ''}
                   onChange={setFileIdWrap}
                   validate={validNum}
+                  placeholder={t('e.g. {{sample}}', { replace: { sample: '1337' }})}
                 />
               </td>
               <td className='modid-detail-control'>
                 <Button
-                  disabled={!!fileIdTemp}
                   onClick={fetchFileId}
                   tooltip={haveHash
                     ? t('Look up')

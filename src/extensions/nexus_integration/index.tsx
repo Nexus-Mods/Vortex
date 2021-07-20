@@ -1489,6 +1489,7 @@ function init(context: IExtensionContextExt): boolean {
       });
   }, {
     icon: 'nexus',
+    supportsModId: true,
   });
 
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',

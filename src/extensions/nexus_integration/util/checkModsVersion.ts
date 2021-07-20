@@ -192,15 +192,27 @@ function basename(input: string): string {
   return path.basename(input, path.extname(input));
 }
 
+function noExt(input: string): string {
+  const dotIdx = input.indexOf('.');
+  if (dotIdx !== -1) {
+    return input.slice(0, dotIdx);
+  } else {
+    return input;
+  }
+}
+
 function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               gameId: string,
                               mod: IMod,
                               files: IModFiles) {
   const { fileId } = mod.attributes ?? {};
   if (fileId === undefined) {
+    // mod.attributes.name may include a counter (.1, .2) at the end that would confuse
+    // the following comparison against fileInfo.file_name so we're cutting off all extension.
+    // This is under the assumption that nexus mods file names never include a dot.
     const candidate = files.files.find(fileInfo => (mod.attributes?.fileName !== undefined)
       ? (fileInfo.file_name === mod.attributes?.fileName)
-      : (basename(fileInfo.file_name) === mod.attributes?.name));
+      : (noExt(fileInfo.file_name) === noExt(mod.attributes?.name)));
     if (candidate !== undefined) {
       dispatch(setModAttribute(gameId, mod.id, 'fileId', candidate.file_id));
       if (getSafe(mod.attributes, ['version'], undefined) === undefined) {

@@ -98,6 +98,7 @@ export interface IModSourceOptions {
    */
   condition?: () => boolean;
   icon?: string;
+  supportsModId?: boolean;
 }
 
 export interface IMainPageOptions {

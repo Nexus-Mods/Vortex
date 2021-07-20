@@ -17,7 +17,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
-import { laterT } from '../../util/i18n';
+import { laterT, TFunction } from '../../util/i18n';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -79,6 +79,7 @@ import {} from './views/ExternalChangeDialog';
 import {} from './views/FixDeploymentDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
+import URLInput from './views/URLInput';
 import Workarounds from './views/Workarounds';
 
 import { DEPLOY_BLACKLIST } from './constants';
@@ -93,6 +94,7 @@ import getText from './texts';
 import Promise from 'bluebird';
 import minimatch from 'minimatch';
 import * as path from 'path';
+import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
 
@@ -110,6 +112,10 @@ const installers: IInstaller[] = [];
 const modSources: IModSource[] = [];
 
 const mergers: IFileMerge[] = [];
+
+export function getModSource(id: string): IModSource {
+  return modSources.find(iter => iter.id === id);
+}
 
 class BlacklistSet extends Set<string> {
   private mPatterns: string[];
@@ -711,6 +717,31 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   };
 }
 
+function genWebsiteAttribute(api: IExtensionApi): ITableAttribute<IMod> {
+  return {
+    id: 'sourceURL',
+    name: laterT('Source website'),
+    description: laterT('URL this mod can be downloaded from'),
+    icon: 'external-link',
+    customRenderer: (mod: IMod, detail: boolean, t: TFunction) => {
+      if (mod.attributes?.source !== 'website') {
+        return null;
+      }
+
+      const gameId = activeGameId(api.getState());
+      return React.createElement(URLInput, { t, mod, gameId }, []);
+    },
+    calc: (mod: IMod) => (mod.attributes?.source === 'website')
+        ? (mod.attributes?.url ?? null)
+        : undefined,
+    placement: 'detail',
+    isToggleable: false,
+    edit: {},
+    isSortable: false,
+    isVolatile: true,
+  };
+}
+
 function genValidActivatorCheck(api: IExtensionApi) {
   return () => new Promise<ITestResult>((resolve, reject) => {
     const state = api.store.getState();
@@ -1277,6 +1308,7 @@ function init(context: IExtensionContext): boolean {
     });
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
+  context.registerTableAttribute('mods', genWebsiteAttribute(context.api));
 
   context.registerTest('validate-staging-folder', 'gamemode-activated',
     () => checkStagingFolder(context.api));
@@ -1309,6 +1341,8 @@ function init(context: IExtensionContext): boolean {
     return undefined;
   });
 
+  registerModSource('user-generated', 'User-Generated');
+  registerModSource('website', 'Website');
   registerModSource('unsupported', 'Other');
 
   registerAttributeExtractor(150, attributeExtractor);

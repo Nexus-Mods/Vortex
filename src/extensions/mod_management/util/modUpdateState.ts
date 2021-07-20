@@ -1,12 +1,21 @@
+import { getModSource } from '..';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
+import { IModSource } from '../types/IModSource';
 
 import versionClean from './versionClean';
 
 export function isIdValid(mod: IModWithState) {
+  if (mod.attributes?.source === undefined) {
+    return false;
+  }
+
+  const source: IModSource = getModSource(mod.attributes?.source);
+
   return (mod.state !== 'installed')
-      || (mod.attributes.source === 'unsupported')
+      // if the source doesn't support identifying individual mods (versions of mods)
+      || (source?.options?.supportsModId !== true)
       || (mod.type === 'collection')
       || ((mod.attributes?.fileId !== undefined) || (mod.attributes?.revisionId));
 }
