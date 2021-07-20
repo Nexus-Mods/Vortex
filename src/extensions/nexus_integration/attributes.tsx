@@ -259,7 +259,7 @@ export function genCollectionIdAttribute(api: IExtensionApi, nexus: () => Nexus)
     description: laterT('Internal ID used by www.nexusmods.com'),
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
-      const res = ((mod.attributes?.source ?? 'nexus') && (mod.type === 'collection'))
+      const res = ((mod.attributes?.source === 'nexus') && (mod.type === 'collection'))
         ? <p>{(mod.attributes?.collectionId ?? t('Not published'))}</p>
         : null;
       return res;
