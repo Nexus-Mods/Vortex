@@ -1475,6 +1475,11 @@
     semver "^7.3.2"
     tar "^6.0.5"
 
+"@msgpack/msgpack@^2.7.0":
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.7.0.tgz#3a0fbe4e0406f6576895f990857e19da97376f18"
+  integrity sha512-mlRYq9FSsOd4m+3wZWatemn3hGFZPWNJ4JQOdrir4rrMK2PyIk26idKBoUWrqF3HJJHl+5GpRU+M0wEruJwecg==
+
 "@nexusmods/nexus-api@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.1.3.tgz#836d6109be4add06b9c6808a66f1162d26bab877"
@@ -2055,11 +2060,6 @@
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
-
-"@types/msgpack@^0.0.30":
-  version "0.0.30"
-  resolved "https://registry.yarnpkg.com/@types/msgpack/-/msgpack-0.0.30.tgz#9c3cc2fad1ccd6675849879d1390a9596fed2ca8"
-  integrity sha512-ehT/a2KQeQhMwMxvzvoZ/MFjwmOa9km5mL6G8XQPwF+z6DG1mJYhOvZACys9+Rd0zh0TxIHs1K3lKSImJGl0dg==
 
 "@types/node-uuid@^0.0.28":
   version "0.0.28"
@@ -9454,13 +9454,6 @@ msbuild@1.1.2:
     async "*"
     colors "*"
     events "*"
-
-msgpack@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/msgpack/-/msgpack-1.0.3.tgz#4106369ef1691a23884098c6217c4c07b95aa2f9"
-  integrity sha512-FX88+Pexuh+UItdqg68WhNPGPhqs57RlXAYyXNZ8eTQC/Tx5lzeIoxTxA2qAd7qU5a/crON5F0ADf4l6k2b7Jw==
-  dependencies:
-    nan "^2.14.0"
 
 mute-stream@0.0.8:
   version "0.0.8"

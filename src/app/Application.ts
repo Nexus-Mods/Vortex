@@ -31,12 +31,12 @@ import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
+import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
 import crashDumpT from 'crash-dump';
 import {app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
-import * as msgpackT from 'msgpack';
 import * as path from 'path';
 import { allow } from 'permissions';
 import * as semver from 'semver';
@@ -814,9 +814,10 @@ class Application {
         let sendState: Buffer;
 
         (global as any).getReduxStateMsgpack = (idx: number) => {
-          const msgpack: typeof msgpackT = require('msgpack');
+          const msgpack: typeof msgpackT = require('@msgpack/msgpack');
           if ((sendState === undefined) || (idx === 0)) {
-            sendState = msgpack.pack(replaceRecursive(this.mStore.getState(), undefined, '__UNDEFINED__'));
+            sendState = Buffer.from(msgpack.encode(
+              replaceRecursive(this.mStore.getState(), undefined, '__UNDEFINED__')));
           }
           const res = sendState.slice(idx * STATE_CHUNK_SIZE, (idx + 1) * STATE_CHUNK_SIZE);
           return res.toString('base64');

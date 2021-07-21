@@ -69,13 +69,13 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
+import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
-import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
+import { forwardToMain, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as I18next from 'i18next';
-import * as msgpackT from 'msgpack';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
 import { DndProvider } from 'react-dnd';
@@ -159,7 +159,7 @@ function initialState(): any {
 
       const msgpack: typeof msgpackT = require('msgpack');
 
-      return replaceRecursive(msgpack.unpack(stateSerialized), '__UNDEFINED__', undefined);
+      return replaceRecursive(msgpack.decode(stateSerialized), '__UNDEFINED__', undefined);
     }
   }
 }
