@@ -57,6 +57,7 @@ export interface IProps {
   t: TFunction;
   store: Redux.Store<any>;
 
+  onOpenURL: () => void;
   onUpdateByMD5: () => void;
   onCheckForUpdate: () => void;
 }
@@ -85,7 +86,7 @@ function saveFileId(dispatch: Redux.Dispatch<any>, isDownload: boolean,
 function NexusModIdDetail(props: IProps) {
   const { t, activeGameId, archiveId, fileHash, fileName, isDownload, modId,
           nexusFileId, nexusModId,
-          onCheckForUpdate, onUpdateByMD5 } = props;
+          onCheckForUpdate, onOpenURL, onUpdateByMD5 } = props;
 
   const [edit, setEdit] = React.useState(false);
   const [modIdTemp, setModId] = React.useState(nexusModId);
@@ -270,6 +271,12 @@ function NexusModIdDetail(props: IProps) {
         />
         <div>{valid === true ? `M: ${nexusModId}, F: ${nexusFileId}` : valid}</div>
         <IconButton icon='edit' tooltip={t('Edit')} onClick={startEdit} className='btn-embed' />
+        <IconButton
+          icon='open-in-browser'
+          tooltip={t('Open on Nexus Mods')}
+          onClick={onOpenURL}
+          className='btn-embed'
+        />
       </div>
     );
   }

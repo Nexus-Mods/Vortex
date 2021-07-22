@@ -1,9 +1,8 @@
-import { setDownloadModInfo, setModAttribute } from '../../actions';
-import { IExtensionApi, ILookupResult, IMod, IState, ITableAttribute } from '../../types/api';
+import { setModAttribute } from '../../actions';
+import { IExtensionApi, IMod, IState, ITableAttribute } from '../../types/api';
 import { laterT } from '../../util/i18n';
 import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { batchDispatch } from '../../util/util';
 import { IModWithState } from '../mod_management/types/IModProps';
 import NXMUrl from './NXMUrl';
 import { nexusGames } from './util';
@@ -14,58 +13,17 @@ import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
 
 import Nexus from '@nexusmods/nexus-api';
-import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 import { useSelector } from 'react-redux';
 import * as Redux from 'redux';
+import { fillNexusIdByMD5, queryResetSource } from './util/guessModID';
 
 interface INexusIdProps {
   api: IExtensionApi;
   nexus: () => Nexus;
   mod: IModWithState;
   t: TFunction;
-}
-
-function queryLookupResult(api: IExtensionApi, lookupResult: ILookupResult[]): Bluebird<number> {
-  const t = api.translate;
-  return api.showDialog('question', 'Multiple results', {
-    text: 'There are multiple potential matches. This usually happens when the same file '
-        + 'has been uploaded multiple times. If possible, please select the one you actually '
-        + 'downloaded.',
-    choices: lookupResult.map(iter => iter.value).map((result, idx) => ({
-      id: idx.toString(),
-      text: t('{{fileName}} (Version {{version}}) (Mod {{modId}}, File {{fileId}})', { replace: {
-        fileName: result.fileName,
-        version: result.fileVersion,
-        modId: result.details.modId,
-        fileId: result.details.fileId,
-      } }),
-      value: idx === 0,
-    })),
-  }, [
-    { label: 'Continue' },
-  ])
-  .then(result => {
-    return Object.keys(result.input).findIndex(iter => result.input[iter]);
-  });
-}
-
-function queryResetSource(api: IExtensionApi, gameId: string, mod: IMod) {
-  return api.showDialog('info', 'Mod not found', {
-      text: 'This mod wasn\'t found on the Nexus Mods servers, maybe it was modified? '
-          + 'To avoid warnings going forward you may want to change the "source" for '
-          + 'this mod so Vortex doesn\'t treat it as a Nexus Mods mod any more.',
-    }, [
-      { label: 'Cancel' },
-      { label: 'Reset source' },
-    ])
-    .then(result => {
-      if (result.action !== 'Cancel') {
-        api.store.dispatch(setModAttribute(gameId, mod.id, 'source', 'unsupported'));
-      }
-    });
 }
 
 // TODO: the field names in this object will be shown to the user, hence the capitalization
@@ -82,42 +40,12 @@ function NexusId(props: INexusIdProps) {
                   && (downloads[mod.archiveId] !== undefined);
 
   const updateByMD5 = React.useCallback(() => {
-    api.lookupModMeta({
-      fileMD5: mod.attributes?.fileMD5,
-      fileName,
-      fileSize: mod.attributes?.fileSize,
-      filePath: path.join(downloadPath, mod.installationPath),
-    }, true)
-    .then(lookupResults => {
-      const applicable = lookupResults.filter(iter => !!iter.value.sourceURI);
-      if (applicable.length > 0) {
-        const idxProm = (applicable.length === 1)
-                  ? Bluebird.resolve(0)
-                  : queryLookupResult(api, applicable);
-
-        return idxProm
-          .then(idx => {
-            const info = lookupResults[idx].value;
-            const nxmUrl = new NXMUrl(info.sourceURI);
-            if (mod.state === 'installed') {
-              batchDispatch(api.store, [
-                setModAttribute(gameMode, mod.id, 'modId', nxmUrl.modId),
-                setModAttribute(gameMode, mod.id, 'fileId', nxmUrl.fileId),
-              ]);
-            }
-            if (hasArchive) {
-              batchDispatch(api.store, [
-                setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.modId),
-                setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.fileId),
-              ]);
-            }
-          })
-          .catch(err => api.showErrorNotification('Failed to update mod ids', err));
-      } else {
-        return queryResetSource(api, gameMode, mod);
-      }
-    });
+    fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
   }, [mod]);
+
+  const openURL = React.useCallback(() => {
+    api.events.emit('open-mod-page', gameMode, mod.attributes?.modId, mod.attributes.source);
+  }, []);
 
   const checkForUpdate = React.useCallback(() => {
     checkModVersion(api.store, nexus(), gameMode, mod)
@@ -143,6 +71,7 @@ function NexusId(props: INexusIdProps) {
       fileName={fileName}
       isDownload={mod.state === 'downloaded'}
       store={api.store}
+      onOpenURL={openURL}
       onUpdateByMD5={updateByMD5}
       onCheckForUpdate={checkForUpdate}
     />

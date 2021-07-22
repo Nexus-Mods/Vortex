@@ -1,12 +1,13 @@
 import { getModSource } from '..';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import { IModWithState } from '../types/IModProps';
+import { IDownload } from '../../download_management/types/IDownload';
+import { IMod } from '../types/IMod';
 import { IModSource } from '../types/IModSource';
 
 import versionClean from './versionClean';
 
-export function isIdValid(mod: IModWithState) {
+export function isIdValid(mod: IMod) {
   if (mod.attributes?.source === undefined) {
     return false;
   }
@@ -17,7 +18,22 @@ export function isIdValid(mod: IModWithState) {
       // if the source doesn't support identifying individual mods (versions of mods)
       || (source?.options?.supportsModId !== true)
       || (mod.type === 'collection')
-      || ((mod.attributes?.fileId !== undefined) || (mod.attributes?.revisionId));
+      || (mod.attributes?.fileId !== undefined)
+      || (mod.attributes?.revisionId !== undefined);
+}
+
+export function isDownloadIdValid(download: IDownload) {
+  if (download?.modInfo?.source === undefined) {
+    return false;
+  }
+
+  const source: IModSource = getModSource(download.modInfo.source);
+
+  return (download.state !== 'finished')
+      // if the source doesn't support identifying individual mods (versions of mods)
+      || (source?.options?.supportsModId !== true)
+      || (download.modInfo.ids?.modId !== undefined)
+      || (download.modInfo.nexus?.ids?.revisionId !== undefined);
 }
 
 export type UpdateState =

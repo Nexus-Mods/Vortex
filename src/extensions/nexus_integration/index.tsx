@@ -20,10 +20,10 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IMod, IModRepoId } from '../mod_management/types/IMod';
 
-import { DownloadState } from '../download_management/types/IDownload';
+import { DownloadState, IDownload } from '../download_management/types/IDownload';
 import { IResolvedURL } from '../download_management/types/ProtocolHandlers';
-
 import { SITE_ID } from '../gamemode_management/constants';
+import { isDownloadIdValid, isIdValid } from '../mod_management/util/modUpdateState';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion, setUserInfo } from './actions/persistent';
@@ -34,7 +34,7 @@ import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
-import { guessFromFileName } from './util/guessModID';
+import { fillNexusIdByMD5, guessFromFileName } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
 import { getPageURL } from './util/sso';
 import Tracking from './util/tracking';
@@ -1150,18 +1150,39 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
   });
 }
 
-function guessIds(api: IExtensionApi, instanceIds: string[]) {
+function idValid(thingId: string,
+                 mods: { [modId: string]: IMod },
+                 downloads: { [dlId: string]: IDownload }) {
+  return (mods[thingId] !== undefined)
+      ? isIdValid(mods[thingId])
+      : isDownloadIdValid(downloads[thingId]);
+}
+
+function includesMissingMetaId(api: IExtensionApi, instanceIds: string[]): boolean {
+  const state: IState = api.getState();
+  const gameMode = activeGameId(state);
+  const mods = state.persistent.mods[gameMode];
+  const downloads = state.persistent.downloads.files;
+
+  return instanceIds.find(instanceId => !idValid(instanceId, mods, downloads)) !== undefined;
+}
+
+function fixIds(api: IExtensionApi, instanceIds: string[]) {
   const { store } = api;
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
   const downloads = state.persistent.downloads.files;
-  instanceIds.forEach(id => {
+  return Promise.all(instanceIds.map(id => {
+    if (idValid(id, mods, downloads)) {
+      return Promise.resolve();
+    }
+
     let fileName: string;
 
     let isDownload = false;
-    if (getSafe(mods, [id], undefined) !== undefined) {
-      const mod = mods[id];
+    const mod = mods[id];
+    if (mod !== undefined) {
       fileName = getSafe(mod.attributes, ['fileName'],
         getSafe(mod.attributes, ['name'], undefined));
     } else if (getSafe(downloads, [id], undefined) !== undefined) {
@@ -1170,20 +1191,27 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
       fileName = download.localPath;
     }
 
-    if (fileName === undefined) {
-      return;
-    }
-
-    const guessed = guessFromFileName(fileName);
-    if (guessed !== undefined) {
-      if (isDownload) {
-        store.dispatch(setDownloadModInfo(id, 'nexus.ids.modId', guessed));
-      } else {
-        store.dispatch(setModAttribute(gameMode, id, 'source', 'nexus'));
-        store.dispatch(setModAttribute(gameMode, id, 'modId', guessed));
+    if (fileName !== undefined) {
+      const guessed = guessFromFileName(fileName);
+      if (guessed !== undefined) {
+        if (isDownload) {
+          store.dispatch(setDownloadModInfo(id, 'nexus.ids.modId', guessed));
+        } else {
+          store.dispatch(setModAttribute(gameMode, id, 'source', 'nexus'));
+          store.dispatch(setModAttribute(gameMode, id, 'modId', guessed));
+        }
       }
     }
-  });
+
+    if (mod !== undefined) {
+      const downloadPath = downloadPathForGame(state, gameMode);
+      const hasArchive = (mod.archiveId !== undefined)
+                      && (downloads[mod.archiveId] !== undefined);
+      return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
+    }
+    return Promise.resolve();
+  }))
+  .then(() => null);
 }
 
 type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
@@ -1361,10 +1389,12 @@ function init(context: IExtensionContextExt): boolean {
 
   const tracking = new Tracking(context.api);
 
-  context.registerAction('mods-action-icons', 300, 'smart', {}, 'Guess ID',
-                         instanceIds => guessIds(context.api, instanceIds));
-  context.registerAction('mods-multirow-actions', 300, 'smart', {}, 'Guess IDs',
-                         instanceIds => guessIds(context.api, instanceIds));
+  context.registerAction('mods-action-icons', 300, 'smart', {}, 'Fix missing IDs',
+                         instanceIds => { fixIds(context.api, instanceIds); },
+                         instanceIds => includesMissingMetaId(context.api, instanceIds));
+  context.registerAction('mods-multirow-actions', 300, 'smart', {}, 'Fix missing IDs',
+                         instanceIds => { fixIds(context.api, instanceIds); },
+                         instanceIds => includesMissingMetaId(context.api, instanceIds));
   context.registerAction('mods-multirow-actions', 250, 'track', {}, 'Track',
     instanceIds => {
       tracking.trackMods(instanceIds);
