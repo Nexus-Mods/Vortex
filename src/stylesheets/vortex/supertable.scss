@@ -190,6 +190,11 @@
   overflow-x: hidden;
   height: 100%;
 
+  .table-form-details {
+    height: 100%;
+    overflow-y: auto;
+  }
+
   &.table-details-hovered {
     padding-left: 50vw;
     margin-left: -50vw;
