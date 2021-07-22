@@ -142,10 +142,12 @@ class InstallContext implements IInstallContext {
 
     Promise.delay(500)
     .then(() => {
-      this.mAddNotification(
-        this.outcomeNotification(
+      const noti = this.outcomeNotification(
           this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
-          mod !== undefined ? getModName(mod) : this.mIndicatorId, mod));
+          mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
+      if (noti !== null) {
+        this.mAddNotification(noti);
+      }
     });
   }
 
@@ -241,6 +243,11 @@ class InstallContext implements IInstallContext {
       : 'Mod';
     switch (outcome) {
       case 'success':
+        // TODO: bit of a hack, I'd prefer if we controlled this from the collections
+        //   extension
+        if (mod.type === 'collection') {
+          return null;
+        }
         return {
           id: `may-enable-${id}`,
           type: 'success',
