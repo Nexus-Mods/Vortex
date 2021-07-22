@@ -71,7 +71,7 @@ import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
-import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
+import { forwardToMain, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as I18next from 'i18next';

@@ -572,8 +572,14 @@ class InstallManager {
     this.repairRules(api, mod, profile.gameId);
 
     const installPath = this.mGetInstallPath(profile.gameId);
+    log('info', 'start installing dependencies');
+    api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules,
-                                        installPath, silent);
+                                        installPath, silent)
+      .finally(() => {
+        log('info', 'done installing dependencies');
+        api.store.dispatch(stopActivity('installing_dependencies', mod.id));
+      });
   }
 
   public installRecommendations(api: IExtensionApi,
@@ -590,8 +596,14 @@ class InstallManager {
     this.repairRules(api, mod, profile.gameId);
 
     const installPath = this.mGetInstallPath(profile.gameId);
+    log('info', 'start installing recommendations');
+    api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
-                                           mod.rules, installPath);
+                                           mod.rules, installPath)
+      .finally(() => {
+        log('info', 'done installing recommendations');
+        api.store.dispatch(stopActivity('installing_dependencies', mod.id));
+      });
   }
 
   private hasFuzzyReference(ref: IModReference): boolean {
@@ -1875,15 +1887,25 @@ class InstallManager {
                                      rules: IRule[],
                                      installPath: string)
                                      : Promise<void> {
+    // TODO a lot of code duplication with installDependenciesImpl
+    const filteredRules = (rules ?? []).filter(
+          (rule: IModRule) => ['recommends', 'requires'].includes(rule.type)
+                           && !rule.ignored);
+
+    if (filteredRules.length === 0) {
+      return Promise.resolve();
+    }
+
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, true);
+
     api.sendNotification({
       id: notificationId,
       type: 'activity',
       message: 'Checking dependencies',
     });
     api.store.dispatch(startActivity('dependencies', 'gathering'));
-    return gatherDependencies(rules, api, true, undefined, modId)
+    return gatherDependencies(filteredRules, api, true, undefined, modId)
       .then((dependencies: Dependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         if (dependencies.length === 0) {

@@ -776,6 +776,9 @@ export interface IModTypeOptions {
   // I have to admit this is fairly specific to collections, not sure if this flag is useful in
   // any other context
   customDependencyManagement?: boolean;
+  // if set (the default), the deployment method will not be available if this mod type can't be
+  // deployed with it. Otherwise the user would only get a warning notification informing them
+  // that some features might not work but continue otherwise.
   deploymentEssential?: boolean;
   noConflicts?: boolean;
 }

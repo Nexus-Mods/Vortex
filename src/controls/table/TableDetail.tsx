@@ -122,7 +122,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
       ) : null;
 
     return content !== null ? (
-      <FormGroup key={key}>
+      <FormGroup className={`table-detail-${attribute.id}`} key={key}>
         { attribute.name !== undefined ? (
           <ControlLabel title={preT(t, attribute.description)}>
             {preT(t, attribute.name)}{helpIcon}
