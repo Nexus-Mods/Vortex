@@ -904,7 +904,18 @@ class Application {
     }
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
-    this.mMainWindow.show(maximized, startMinimized);
+    try {
+      this.mMainWindow.show(maximized, startMinimized);
+    } catch (err) {
+      if (this.mMainWindow === null) {
+        // It's possible for the user to forcefully close Vortex just
+        //  as it attempts to show the main window and obviously cause
+        //  the app to crash if we don't handle the exception.
+        log('error', 'failed to show main window', err);
+      } else {
+        throw err;
+      }
+    }
     setWindow(this.mMainWindow.getHandle());
   }
 
