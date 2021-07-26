@@ -912,6 +912,8 @@ class Application {
         //  as it attempts to show the main window and obviously cause
         //  the app to crash if we don't handle the exception.
         log('error', 'failed to show main window', err);
+        app.exit();
+        return;
       } else {
         throw err;
       }
