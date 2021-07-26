@@ -241,7 +241,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(stats => {
         const queryReset = (stats !== undefined)
-          ? Promise.resolve()
+          ? Promise.resolve(false)
           : onShowDialog('question', 'Missing staging folder', {
             bbcode: 'Vortex is unable to find your current mods staging folder. '
               + 'This can happen when: <br />'
@@ -261,10 +261,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             ])
             .then(result => (result.action === 'Cancel')
               ? Promise.reject(new UserCanceled())
-              : Promise.resolve());
+              : Promise.resolve(true));
 
         return queryReset
-          .then(() => {
+          .then((didReset) => {
             onSetTransfer(gameMode, newPath);
             return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
               log('debug', 'transfer staging', { from, to });
@@ -276,7 +276,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 this.nextState.progressFile = path.basename(from);
               }
             })
-            .catch({ code: 'ENOENT' }, () => Promise.resolve());
+            .catch({ code: 'ENOENT' }, (err) => didReset
+              ? Promise.resolve()
+              : Promise.reject(err));
           });
       }));
   }
