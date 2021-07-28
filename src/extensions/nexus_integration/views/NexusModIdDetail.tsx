@@ -151,6 +151,10 @@ function NexusModIdDetail(props: IProps) {
   if (edit) {
     const haveHash = !!fileHash;
     const hashValidation = !!fileMD5Temp ? 'success' : !!fileIdTemp ? null : 'error';
+
+    const changeMade = ((nexusModId ?? '') !== (modIdTemp ?? '')
+                    || (nexusFileId ?? '') !== (fileIdTemp ?? ''));
+
     return (
       <div className='modid-detail'>
         <table>
@@ -252,7 +256,9 @@ function NexusModIdDetail(props: IProps) {
         </table>
         <Button onClick={cancel} tooltip={t('Close')}>{t('Close')}</Button>
         {' '}
-        <Button onClick={save} tooltip={t('Save changes')}>{t('Apply')}</Button>
+        <Button disabled={!changeMade} onClick={save} tooltip={t('Save changes')}>
+          {t('Apply')}
+        </Button>
       </div>
     );
   } else {
@@ -271,12 +277,15 @@ function NexusModIdDetail(props: IProps) {
         />
         <div>{valid === true ? `M: ${nexusModId}, F: ${nexusFileId}` : valid}</div>
         <IconButton icon='edit' tooltip={t('Edit')} onClick={startEdit} className='btn-embed' />
-        <IconButton
-          icon='open-in-browser'
-          tooltip={t('Open on Nexus Mods')}
-          onClick={onOpenURL}
-          className='btn-embed'
-        />
+        {(nexusModId !== undefined)
+          ? (
+            <IconButton
+              icon='open-in-browser'
+              tooltip={t('Open on Nexus Mods')}
+              onClick={onOpenURL}
+              className='btn-embed'
+            />
+          ) : null}
       </div>
     );
   }

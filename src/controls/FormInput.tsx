@@ -49,11 +49,9 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       cachedValue: props.value,
     };
     this.mDebouncer = new Debouncer(newValue => {
-      const { onChange } = this.props;
+      const { onChange, value } = this.props;
       this.mLastCommitted = newValue;
-      if (this.validateRes(newValue) !== 'error') {
-        onChange(newValue, props.id);
-      }
+      onChange(newValue, props.id);
       return null;
     }, this.props.debounceTimer || 1000);
   }
