@@ -57,7 +57,14 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   game: {
     domainName: true,
   },
+  createdAt: true,
+  updatedAt: true,
+  tileImage: {
+    url: true,
+  },
   currentRevision: revisionInfo,
+  description: true,
+  summary: true,
 };
 
 export const FULL_REVISION_INFO: IRevisionQuery = {

@@ -431,10 +431,10 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       uploaderUrl: nexusModInfo?.uploaded_users_profile_url,
       uploaderAvatar: nexusModInfo?.user?.avatar ?? nexusCollectionInfo?.collection?.user.avatar,
       category,
-      pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage,
+      pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage?.url,
       description: nexusModInfo?.description
-                ?? nexusCollectionInfo?.collection?.metadata?.description,
-      shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.metadata?.summary,
+                ?? nexusCollectionInfo?.collection?.description,
+      shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.summary,
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,
