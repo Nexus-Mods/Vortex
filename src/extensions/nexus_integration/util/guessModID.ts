@@ -78,7 +78,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
     fileMD5: mod.attributes?.fileMD5,
     fileName,
     fileSize: mod.attributes?.fileSize,
-    filePath: path.join(downloadPath, mod.installationPath),
+    filePath: path.join(downloadPath, fileName),
   }, true)
     .then(lookupResults => {
       const applicable = lookupResults.filter(iter => !!iter.value.sourceURI);
@@ -100,7 +100,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
             if (hasArchive) {
               batchDispatch(api.store, [
                 setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.modId),
-                setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.fileId),
+                setDownloadModInfo(mod.archiveId, 'nexus.ids.fileId', nxmUrl.fileId),
               ]);
             }
           })
