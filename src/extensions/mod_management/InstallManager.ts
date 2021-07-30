@@ -137,6 +137,31 @@ class InstallManager {
     this.mGetInstallPath = installPath;
     this.mQueue = Promise.resolve();
 
+    api.onAsync('install-from-dependencies',
+        (dependentId: string, rules: IModRule[], recommended: boolean) => {
+      const profile = activeProfile(api.getState());
+      const { mods } = api.getState().persistent;
+      const collection = mods[profile.gameId]?.[dependentId];
+
+      if (collection === undefined) {
+        return Promise.resolve();
+      }
+
+      const instPath = this.mGetInstallPath(profile.gameId);
+
+      const filtered = rules.filter(iter =>
+        collection.rules.find(rule => _.isEqual(iter, rule)) !== undefined);
+
+      if (recommended) {
+        return this.installRecommendationsImpl(api, profile, dependentId,
+          modName(collection), filtered, instPath, true);
+      } else {
+        return this.installDependenciesImpl(api, profile, dependentId,
+          modName(collection), filtered, instPath, true);
+      }
+
+    });
+
     api.onAsync('cancel-dependency-install', (modId: string) => {
       this.mDependencyInstalls[modId]?.();
       return Promise.resolve();
@@ -599,7 +624,7 @@ class InstallManager {
     log('info', 'start installing recommendations');
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
-                                           mod.rules, installPath)
+                                           mod.rules, installPath, false)
       .finally(() => {
         log('info', 'done installing recommendations');
         api.store.dispatch(stopActivity('installing_dependencies', mod.id));
@@ -1885,7 +1910,8 @@ class InstallManager {
                                      modId: string,
                                      name: string,
                                      rules: IRule[],
-                                     installPath: string)
+                                     installPath: string,
+                                     silent: boolean)
                                      : Promise<void> {
     // TODO a lot of code duplication with installDependenciesImpl
     const filteredRules = (rules ?? []).filter(
@@ -1983,7 +2009,10 @@ class InstallManager {
           ]
           : [ { label: 'Close' } ];
 
-        return api.store.dispatch(
+        let queryProm: Promise<IDialogResult> = Promise.resolve(null);
+
+        if (!silent || (error.length > 0)) {
+          queryProm = api.store.dispatch(
           showDialog('question', 'Install Recommendations', {
             bbcode,
             checkboxes,
@@ -1992,16 +2021,22 @@ class InstallManager {
               count: dependencies.length,
               dlCount: requiredDownloads,
             },
-          }, actions)).then(result => {
-            if (result.action === 'Install') {
-              const selected = new Set(Object.keys(result.input)
-                .filter(key => result.input[key]));
+          }, actions));
+        }
+
+        return queryProm.then(result => {
+            if ((result === null) || (result.action === 'Install')) {
+              const selected = (result !== null)
+                ? new Set(Object.keys(result.input).filter(key => result.input[key]))
+                : undefined;
 
               return this.doInstallDependencies(
                 api,
                 profile,
                 modId,
-                success.filter((dep, idx) => selected.has(idx.toString())),
+                (result !== null)
+                  ? success.filter((dep, idx) => selected.has(idx.toString()))
+                  : success,
                 true)
                 .then(updated => this.updateRules(api, profile, modId,
                   [].concat(existing, updated), true));
