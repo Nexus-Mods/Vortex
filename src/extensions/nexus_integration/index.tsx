@@ -422,8 +422,10 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
     const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
 
     return {
-      modId: input.download?.modInfo?.nexus?.ids?.modId,
-      fileId: input.download?.modInfo?.nexus?.ids?.fileId,
+      modId: input.download?.modInfo?.nexus?.ids?.modId
+          ?? input.download?.modInfo?.meta?.details?.modId,
+      fileId: input.download?.modInfo?.nexus?.ids?.fileId
+          ?? input.download?.modInfo?.meta?.details?.fileId,
       collectionId: input.download?.modInfo?.nexus?.ids?.collectionId,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
@@ -1280,7 +1282,18 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
           .then((res: IDownloadURL[]) =>
-            ({ urls: res.map(u => u.URI), meta: {}, updatedUrl: input }))
+            ({
+              urls: res.map(u => u.URI),
+              updatedUrl: input,
+              meta: {
+                nexus: {
+                  ids: {
+                    modId: url.modId,
+                    fileId: url.fileId,
+                  },
+                },
+              } as any,
+          }))
         : nexus.getRevisionGraph({ downloadLink: true }, url.revisionId)
           .then((res: Partial<IRevision>) =>
             nexus.getCollectionDownloadLink(res.downloadLink))
@@ -1294,7 +1307,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                     revisionId: url.revisionId,
                   },
                 },
-              },
+              } as any,
             })))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);

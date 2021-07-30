@@ -7,7 +7,7 @@ import {log} from '../../util/log';
 import {renderError, showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { setdefault, truthy } from '../../util/util';
+import { flatten, setdefault, truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
 
@@ -18,6 +18,7 @@ import {
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
+  setDownloadModInfo,
   setDownloadPausable,
 } from './actions/state';
 import {IChunk} from './types/IChunk';
@@ -316,7 +317,13 @@ export class DownloadObserver {
       return onceFinished();
     } else {
       return finalizeDownload(this.mApi, id, res.filePath, allowInstall)
-        .then(() => callback?.(null, id))
+        .then(() => {
+          const flattened = flatten(res.metaInfo ?? {});
+          Object.keys(flattened).forEach(key =>
+              this.mApi.store.dispatch(setDownloadModInfo(id, key, flattened[key])));
+
+          callback?.(null, id);
+        })
         .catch(err => callback?.(err, id))
         .finally(() => onceFinished());
     }
