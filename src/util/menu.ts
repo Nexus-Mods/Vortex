@@ -52,21 +52,35 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
     const viewMenu: Electron.MenuItemConstructorOptions[] = [];
 
+    const alreadyAssigned = new Set<string>();
+
     // main pages
     extensions.apply('registerMainPage',
       (icon: string, title: string, element: any, options: IMainPageOptions) => {
-        viewMenu.push({
-          label: title,
-          visible: (options.visible === undefined) || options.visible(),
-          accelerator:
-            options.hotkeyRaw !== undefined ? options.hotkeyRaw :
-              options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined,
-          click(item, focusedWindow) {
-            if ((options.visible === undefined) || options.visible()) {
-              extensions.getApi().events.emit('show-main-page', options.id || title);
+        if ((options.visible === undefined) || options.visible()) {
+          let accelerator = options.hotkeyRaw !== undefined ? options.hotkeyRaw :
+            options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined;
+
+          if (options.hotkey !== undefined) {
+            if (alreadyAssigned.has(options.hotkey)) {
+              log('warn', 'hotkey already used', { icon, title, options });
+              accelerator = undefined;
+            } else {
+              alreadyAssigned.add(options.hotkey);
             }
-          },
-        });
+          }
+
+          viewMenu.push({
+            label: title,
+            visible: true,
+            accelerator,
+            click(item, focusedWindow) {
+              if ((options.visible === undefined) || options.visible()) {
+                extensions.getApi().events.emit('show-main-page', options.id || title);
+              }
+            },
+          });
+        }
       });
 
     viewMenu.push({
