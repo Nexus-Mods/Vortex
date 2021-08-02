@@ -83,7 +83,7 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
       <a className='version-option'>
         <div>
           {getSafe(mod.attributes, ['version'], '')}
-          {variant !== undefined ? ` (${variant})` : ''}
+          {variant !== undefined ? ` (${variant})` : ` (${t('default')})`}
         </div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
@@ -536,7 +536,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           className='dropdown-version'
           title={
             (getSafe(mod.attributes, ['version'], undefined) || '')
-            + (variant !== undefined ? ` (${variant})` : '')
+            + (variant !== undefined ? ` (${variant})` : ` (${t('default')})`)
           }
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}

@@ -90,4 +90,6 @@
 
 .table-detail-installer ul {
   max-width: 20em;
+  margin-left: $half-gutter;
+  text-indent: calc(#{$half-gutter} * -1);
 }
