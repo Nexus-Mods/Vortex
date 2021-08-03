@@ -157,7 +157,7 @@ function initialState(): any {
         stateSerialized = Buffer.concat([stateSerialized, Buffer.from(newData, 'base64')]);
       }
 
-      const msgpack: typeof msgpackT = require('msgpack');
+      const msgpack: typeof msgpackT = require('@msgpack/msgpack');
 
       return replaceRecursive(msgpack.decode(stateSerialized), '__UNDEFINED__', undefined);
     }

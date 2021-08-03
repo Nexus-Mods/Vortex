@@ -43,7 +43,7 @@
     semver "^7.3.2"
     tar "^6.0.5"
 
-"@msgpack/msgpack@2.7.0":
+"@msgpack/msgpack@^2.7.0":
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.7.0.tgz#3a0fbe4e0406f6576895f990857e19da97376f18"
   integrity sha512-mlRYq9FSsOd4m+3wZWatemn3hGFZPWNJ4JQOdrir4rrMK2PyIk26idKBoUWrqF3HJJHl+5GpRU+M0wEruJwecg==
