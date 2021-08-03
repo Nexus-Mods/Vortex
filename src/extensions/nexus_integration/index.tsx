@@ -34,7 +34,7 @@ import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
-import { fillNexusIdByMD5, guessFromFileName } from './util/guessModID';
+import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
 import { getPageURL } from './util/sso';
 import Tracking from './util/tracking';
@@ -58,6 +58,7 @@ import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
          processErrorMessage, startDownload, updateKey } from './util';
+import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
 import NexusT, { IDateTime, IDownloadURL, IFileInfo,
@@ -423,9 +424,9 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
 
     return {
       modId: input.download?.modInfo?.nexus?.ids?.modId
-          ?? input.download?.modInfo?.meta?.details?.modId,
+          ?? input.meta?.details?.modId,
       fileId: input.download?.modInfo?.nexus?.ids?.fileId
-          ?? input.download?.modInfo?.meta?.details?.fileId,
+          ?? input.meta?.details?.fileId,
       collectionId: input.download?.modInfo?.nexus?.ids?.collectionId,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
@@ -1209,7 +1210,19 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
       const downloadPath = downloadPathForGame(state, gameMode);
       const hasArchive = (mod.archiveId !== undefined)
                       && (downloads[mod.archiveId] !== undefined);
-      return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
+
+      if (mod.attributes.fileMD5 !== undefined) {
+        return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
+      } else {
+        return checkModVersion(api.store, nexus, gameMode, mod)
+          .catch(err => {
+            if (err.statusCode === 403) {
+              return queryResetSource(api, gameMode, mod);
+            } else {
+              api.showErrorNotification('Query failed', err, { allowReport: false });
+            }
+          });
+      }
     }
     return Promise.resolve();
   }))

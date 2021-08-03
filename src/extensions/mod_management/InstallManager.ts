@@ -256,8 +256,12 @@ class InstallManager {
       .tap(() => genHash(archivePath).then(hash => {
         archiveMD5 = hash.md5sum;
         archiveSize = hash.numBytes;
-        setSafe(fullInfo, ['download', 'fileMD5'], archiveMD5);
-        setSafe(fullInfo, ['download', 'size'], archiveSize);
+        _.merge(fullInfo, {
+          download: {
+            fileMD5: archiveMD5,
+            size: archiveSize,
+          },
+        });
       }).catch(() => null))
       .then(gameId => {
         installGameId = gameId;
