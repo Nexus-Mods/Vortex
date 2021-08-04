@@ -1197,7 +1197,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
       }
     });
-    this.updateState(update(this.mNextState, { rowState: changes }), this.onRowStateChanged);
+    if (!_.isEqual(this.mNextState.rowState, changes)) {
+      this.updateState(update(this.mNextState, { rowState: changes }), this.onRowStateChanged);
+    }
   }
 
   private standardSort(lhs: any, rhs: any): number {
