@@ -41,7 +41,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import FormInput from '../../../controls/FormInput';
 
-const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
+const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/account/billing/premium';
 const MB = 1024 * 1024;
 
 interface IConnectedProps {
