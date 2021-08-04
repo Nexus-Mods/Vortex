@@ -168,7 +168,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
     const performanceMenu: Electron.MenuItemConstructorOptions[] = [{
       label: 'Start/Stop Profiling',
-      accelerator: 'CmdOrCtrl+Shift+P',
+      accelerator: 'CmdOrCtrl+Shift+Alt+P',
       click() {
         if (!profiling) {
           const defaultTraceCategories: Readonly<string[]> = [
@@ -193,7 +193,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
               type: 'activity',
               noDismiss: true,
               actions: [{
-                title: 'Stop (Ctrl+Shift+P)',
+                title: 'Stop (Ctrl+Shift+Alt+P)',
                 action: () => {
                   stopProfiling();
                 },
