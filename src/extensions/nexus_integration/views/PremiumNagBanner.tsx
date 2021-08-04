@@ -5,9 +5,7 @@ import { Button } from 'react-bootstrap';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import opn from '../../../util/opn';
-import { NEXUS_DOMAIN } from '../constants';
-
-const NEXUS_MEMBERSHIP_URL = `https://users.${NEXUS_DOMAIN}/register/memberships?pk_source=vortex`;
+import { NEXUS_MEMBERSHIP_URL } from '../constants';
 
 export interface IPremiumNagBanner {
   t: TFunction;
