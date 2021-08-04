@@ -601,6 +601,17 @@ export function makeUnique<T>(input: T[]): T[] {
   return Array.from(new Set(input));
 }
 
+/**
+ * create a list with only "unique" items, using a key function to determine uniqueness.
+ * in case of collisions the last item with a key is kept
+ * @param input the input list of items
+ * @param key key function
+ * @returns a list with duplicates removed
+ */
+export function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[] {
+  return Object.values(input.reduce((prev, item) => { prev[key(item)] = item; return prev; }, {}));
+}
+
 export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {

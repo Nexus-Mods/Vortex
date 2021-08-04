@@ -34,6 +34,7 @@ import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupporte
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate, withContext as withErrorContext } from './errorHandling';
+import extractExeIcon from './exeIcon';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, writeFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
@@ -52,8 +53,8 @@ import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
-         makeQueue, objDiff, pad, sanitizeCSSId, sanitizeFilename, semverCoerce, setdefault,
-         toPromise, unique } from './util';
+         makeQueue, makeUnique, makeUniqueByKey, objDiff, pad, sanitizeCSSId, sanitizeFilename,
+         semverCoerce, setdefault, toPromise, unique } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -81,6 +82,7 @@ export {
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
   extend,
+  extractExeIcon,
   fileMD5,
   findDownloadByRef,
   findModByRef,
@@ -110,6 +112,8 @@ export {
   makeNormalizingDict,
   makeQueue,
   makeReactive,
+  makeUnique,
+  makeUniqueByKey,
   MissingInterpreter,
   nexusGameId,
   Normalize,

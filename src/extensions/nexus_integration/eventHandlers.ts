@@ -335,7 +335,9 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
     }
     return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, collectionId))
       .catch(err => {
-        api.showErrorNotification('Failed to get collection info', err);
+        if (err.code !== 'NOT_FOUND') {
+          api.showErrorNotification('Failed to get collection info', err);
+        }
         return Promise.resolve(undefined);
       });
   };
@@ -371,7 +373,9 @@ export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
     }
     return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
       .catch(err => {
-        api.showErrorNotification('Failed to get nexus revision info', err);
+        if (err.code !== 'NOT_FOUND') {
+          api.showErrorNotification('Failed to get nexus revision info', err);
+        }
         return Promise.resolve(undefined);
       });
   };
