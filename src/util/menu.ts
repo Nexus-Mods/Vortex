@@ -156,14 +156,16 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     let profiling: boolean = false;
     const stopProfiling = () => {
       const outPath = path.join(app.getPath('temp'), 'profile.dat');
-      contentTracing.stopRecording(outPath).then(() => {
-        extensions.getApi().sendNotification({
-          id: 'profiling',
-          message: 'Profiling done',
-          type: 'success',
-        });
-        profiling = false;
-      });
+      contentTracing.stopRecording(outPath)
+        .then(() => {
+          extensions.getApi().sendNotification({
+            id: 'profiling',
+            message: 'Profiling done',
+            type: 'success',
+          });
+          profiling = false;
+        })
+        .catch(() => null);
     };
 
     const performanceMenu: Electron.MenuItemConstructorOptions[] = [{
