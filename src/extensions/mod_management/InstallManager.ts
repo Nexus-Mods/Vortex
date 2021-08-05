@@ -1760,6 +1760,7 @@ class InstallManager {
   private doInstallDependencyList(api: IExtensionApi,
                                   profile: IProfile,
                                   modId: string,
+                                  name: string,
                                   dependencies: IDependency[],
                                   silent: boolean) {
     if (dependencies.length === 0) {
@@ -1896,7 +1897,7 @@ class InstallManager {
       .then((dependencies: IDependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.dismissNotification(notificationId);
-        return this.doInstallDependencyList(api, profile, modId, dependencies, silent);
+        return this.doInstallDependencyList(api, profile, modId, name, dependencies, silent);
       })
       .catch((err) => {
         api.dismissNotification(notificationId);

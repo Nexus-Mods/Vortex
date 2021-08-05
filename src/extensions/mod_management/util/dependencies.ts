@@ -7,7 +7,7 @@ import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../
 
 import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
 import {log} from '../../../util/log';
-import {activeGameId} from '../../../util/selectors';
+import {activeGameId, lastActiveProfileForGame} from '../../../util/selectors';
 import {getSafe} from '../../../util/storeHelper';
 import { semverCoerce, truthy } from '../../../util/util';
 
@@ -269,6 +269,7 @@ interface IDependencyNode extends IDependency {
 function gatherDependenciesGraph(
   rule: IModRule,
   api: IExtensionApi,
+  gameMode: string,
   recommendations: boolean,
 ): Promise<IDependencyNode> {
   const state = api.getState();
@@ -277,6 +278,9 @@ function gatherDependenciesGraph(
   if (download === undefined) {
     log('debug', 'no download found', { ref: JSON.stringify(rule.reference) });
   }
+
+  const mod = findModByRef(rule.reference, state.persistent.mods[gameMode]);
+
   let lookupResults: ILookupResult[];
 
   let urlFromHint: IBrowserResult;
@@ -297,11 +301,13 @@ function gatherDependenciesGraph(
       const rules = details?.[0]?.value?.rules || [];
 
       return Promise.all(rules
-          .map(subRule => limit.do(() => gatherDependenciesGraph(subRule, api, recommendations))));
+        .map(subRule => limit.do(() =>
+          gatherDependenciesGraph(subRule, api, gameMode, recommendations))));
     })
     .then(nodes => {
       const res: IDependencyNode = {
         download,
+        mod,
         reference: rule.reference,
         lookupResults: (lookupResults.length > 0)
           ? lookupResults.map(iter => makeLookupResult(iter, urlFromHint))
@@ -365,10 +371,21 @@ function gatherDependencies(
   const requirements: IModRule[] =
     rules === undefined
       ? []
-      : rules.filter((rule: IRule) =>
-          (rule.type === (recommendations ? 'recommends' : 'requires'))
-          && (findModByRef(rule.reference, state.persistent.mods[gameMode], source) === undefined),
-        );
+      : rules.filter((rule: IRule) => {
+        if (rule.type !== (recommendations ? 'recommends' : 'requires')) {
+          // wrong type
+          return false;
+        }
+        const mod = findModByRef(rule.reference, state.persistent.mods[gameMode], source);
+        if (mod === undefined) {
+          // mod not installed, it's required
+          return true;
+        }
+
+        const profile = lastActiveProfileForGame(state, gameMode);
+        // mod installed, but is it enabled?
+        return !state.persistent.profiles[profile].modState[mod.id].enabled;
+      });
 
   let numCompleted = 0;
   const onProgress = () => {
@@ -384,7 +401,8 @@ function gatherDependencies(
   return Promise.all(
     requirements
       .map((rule: IModRule) =>
-        Promise.resolve(limit.do(() => gatherDependenciesGraph(rule, api, recommendations)))
+        Promise.resolve(limit.do(() =>
+          gatherDependenciesGraph(rule, api, gameMode, recommendations)))
         .then((node: IDependencyNode) => {
           onProgress();
           return node;
