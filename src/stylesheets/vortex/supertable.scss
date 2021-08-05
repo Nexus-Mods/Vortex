@@ -191,8 +191,7 @@
   height: 100%;
 
   .table-form-details {
-    height: 100%;
-    overflow-y: auto;
+    // we can't set overflow-y on the form or it breaks horizontal overflow for some reason
   }
 
   &.table-details-hovered {
