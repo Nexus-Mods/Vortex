@@ -32,7 +32,7 @@ function applyFileActions(api: IExtensionApi,
                           outputPath: string,
                           lastDeployment: IDeployedFile[],
                           fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
-  if (fileActions === undefined) {
+  if (fileActions === undefined || fileActions.length === 0) {
     return Promise.resolve(lastDeployment);
   }
 
@@ -92,10 +92,17 @@ function applyFileActions(api: IExtensionApi,
     })
     .then(() => {
       const affectedMods = new Set<string>();
-
+      const testFileOverrides: { [modId: string]: string[] } = {};
       fileActions.forEach(action => {
         if (['import', 'newest', 'nop', 'delete', 'drop'].indexOf(action.action) !== -1) {
           affectedMods.add(action.source);
+        }
+
+        if (action.type === 'srcdeleted' && action.action === 'drop') {
+          // A file has been deleted from the staging folder - we need to check whether
+          //  the user had set a file override for it.
+          const current = testFileOverrides[action.source] || [];
+          testFileOverrides[action.source] = current.concat(action.filePath);
         }
       });
 
@@ -111,6 +118,10 @@ function applyFileActions(api: IExtensionApi,
 
       if (gameId === undefined) {
         gameId = activeGameId(state);
+      }
+
+      if (Object.keys(testFileOverrides).length > 0) {
+        api.events.emit('check-file-override-redundancies', gameId, testFileOverrides);
       }
 
       affectedMods.forEach(affected => {
