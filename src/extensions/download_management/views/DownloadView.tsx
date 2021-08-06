@@ -373,6 +373,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         + 'network or disk access). This is very likely a '
         + 'temporary problem, please try resuming at a later time.',
         undefined, false);
+    } else if (err.code === 'ERR_SSL_WRONG_VERSION_NUMBER') {
+      this.props.onShowError(title,
+        'Vortex is pre-configured to meet the minimum required security protocol version '
+          + 'when connecting to the Nexus Mods servers. This error signifies that somewhere along the '
+          + 'network infrastructure your computer uses to connect to the servers, there '
+          + 'was a security protocol version mismatch, which can only happen if the infrastructure is using '
+          + 'outdated protocols - if you are connecting through a proxy server or via VPN, make '
+          + 'sure they support the latest security protocols (TLS 1.2 at a minimum). '
+          + 'If the issue persists - please contact our web development team directly as we '
+          + '(Vortex support) cannot assist you in this matter.',
+        undefined, false);
     } else if (err.message.match(/Protocol .* not supported/) !== null) {
       this.context.api.showErrorNotification(title,
         err.message, {
