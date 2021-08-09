@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { IMod, IState } from '../../types/IState';
 import { activeGameId, installPathForGame } from '../../util/selectors';
 import { modLoadOrderReducer } from './reducers/loadOrder';
 import { loadOrderSettingsReducer } from './reducers/settings';
@@ -12,7 +13,6 @@ import { getSafe } from '../../util/storeHelper';
 import { generate, Interface, parser } from './collections/loadOrder';
 
 import { addGameEntry, findGameEntry } from './gameSupport';
-import { types } from '../..';
 
 export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
@@ -39,18 +39,19 @@ export default function init(context: IExtensionContext) {
     addGameEntry(gameEntry);
   };
 
-  context['registerCollectionFeature'](
+  context.optional.registerCollectionFeature(
     'generic_load_order_collection_data',
     (gameId: string, includedMods: string[]) => {
       const state = context.api.getState();
       const stagingPath = installPathForGame(state, gameId);
-      const mods: { [modId: string]: types.IMod } =
+      const mods: { [modId: string]: IMod } =
         getSafe(state, ['persistent', 'mods', gameId], {});
       return generate(context.api, state, gameId, stagingPath, includedMods, mods);
     },
     (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
+    () => Promise.resolve(),
     (t) => t('Load Order'),
-    (state: types.IState, gameId: string) => {
+    (state: IState, gameId: string) => {
       const gameEntry: IGameLoadOrderEntry = findGameEntry(gameId);
       if (gameEntry === undefined) {
         return false;

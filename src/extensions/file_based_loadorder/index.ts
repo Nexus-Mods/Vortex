@@ -221,7 +221,7 @@ export default function init(context: IExtensionContext) {
     addGameEntry(gameInfo, extPath);
   }) as any;
 
-  context['registerCollectionFeature'](
+  context.optional.registerCollectionFeature(
     'file_based_load_order_collection_data',
     (gameId: string, includedMods: string[]) => {
       const state = context.api.getState();
@@ -231,6 +231,7 @@ export default function init(context: IExtensionContext) {
       return generate(context.api, state, gameId, stagingPath, includedMods, mods);
     },
     (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
+    () => Promise.resolve(),
     (t) => t('Load Order'),
     (state: types.IState, gameId: string) => {
       const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
