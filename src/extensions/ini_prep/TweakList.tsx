@@ -1,3 +1,5 @@
+import { setDeploymentNecessary } from '../../actions';
+import Spinner from '../../controls/Spinner';
 import Toggle from '../../controls/Toggle';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
@@ -11,31 +13,30 @@ import { installPath } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { activeGameId } from '../profile_management/selectors';
 
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import * as Redux from 'redux';
-import { ThunkDispatch } from '../../../node_modules/redux-thunk';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IBaseProps {
   modId: string;
+  tweaks: string[];
 }
 
 interface IConnectedProps {
   gameMode: string;
-  modsPath: string;
   mod: IMod;
 }
 
 interface IActionProps {
   onSetINITweakEnabled: (gameId: string, modId: string, tweak: string, enabled: boolean) => void;
+  onSetDeploymentNecessary: (gameId: string, required: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
-
-interface IComponentState {
-  tweaks: string[];
-}
 
 interface ITweakProps {
   fileName: string;
@@ -65,31 +66,9 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
   }
 }
 
-class TweakList extends ComponentEx<IProps, IComponentState> {
-  constructor(props: IProps) {
-    super(props);
-
-    this.initState({
-      tweaks: [],
-    });
-  }
-
-  public componentDidMount() {
-    const { mod, modsPath } = this.props;
-
-    if ((mod !== undefined) && (mod.installationPath !== undefined)) {
-      // TODO: cache this!
-      fs.readdirAsync(path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH))
-        .then((files: string[]) => {
-          this.nextState.tweaks = files;
-        })
-        .catch(() => undefined);
-    }
-  }
-
+class TweakList extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t } = this.props;
-    const { tweaks } = this.state;
+    const { t, tweaks } = this.props;
 
     if (tweaks.length === 0) {
       return null;
@@ -107,7 +86,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
 
   private renderTweak = (fileName: string): JSX.Element => {
     const { mod } = this.props;
-    const isEnabled = getSafe(mod, ['enabledINITweaks'], []).indexOf(fileName) !== -1;
+    const isEnabled = (mod.enabledINITweaks ?? []).includes(fileName);
     return (
       <Tweak
         key={`tweak-${fileName}`}
@@ -119,8 +98,9 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggle = (fileName: string, enabled: boolean) => {
-    const { gameMode, mod, onSetINITweakEnabled } = this.props;
+    const { gameMode, mod, onSetDeploymentNecessary, onSetINITweakEnabled } = this.props;
     onSetINITweakEnabled(gameMode, mod.id, fileName, enabled);
+    onSetDeploymentNecessary(gameMode, true);
   }
 }
 
@@ -128,8 +108,7 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
     gameMode,
-    modsPath: installPath(state),
-    mod: getSafe(state, ['persistent', 'mods', gameMode, ownProps.modId], undefined),
+    mod: state.persistent.mods[gameMode]?.[ownProps.modId],
   };
 }
 
@@ -139,6 +118,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
     (gameId: string, modId: string, tweak: string, enabled: boolean) => {
       dispatch(setINITweakEnabled(gameId, modId, tweak, enabled));
     },
+    onSetDeploymentNecessary: (gameId: string, required: boolean) => {
+      dispatch(setDeploymentNecessary(gameId, required));
+    },
   };
 }
 
@@ -146,8 +128,55 @@ const TweakListConnected = translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     TweakList)) as React.ComponentClass<IBaseProps>;
 
-function renderINITweaks(mod: IMod): JSX.Element {
-  return <TweakListConnected modId={mod.id} />;
+interface ITweakListWrapProps {
+  modId: string;
+  getTweaks: (modsPath: string, mod: IMod) => Bluebird<string[]>;
 }
+
+function TweakListWrap(props: ITweakListWrapProps) {
+  const { modId, getTweaks } = props;
+
+  const [curTweaks, setCurTweaks] = React.useState<string[]>(null);
+
+  const gameMode = useSelector<IState, string>(activeGameId);
+  const modsPath = useSelector<IState, string>(installPath);
+  const mod = useSelector<IState, IMod>(state => state.persistent.mods[gameMode]?.[modId]);
+
+  React.useEffect(() => {
+    getTweaks(modsPath, mod)
+      .then(tweakList => {
+        setCurTweaks(tweakList);
+      });
+  }, [modId, modsPath, getTweaks]);
+
+  if (curTweaks === null) {
+    return <Spinner />;
+  } else {
+    return <TweakListConnected modId={modId} tweaks={curTweaks} />;
+  }
+}
+
+const renderINITweaks = (() => {
+  const tweakLists: { [modId: string]: Bluebird<string[]> } = {};
+
+  const getTweakList = (modsPath: string, mod: IMod) => {
+    if (mod?.installationPath === undefined) {
+      return Bluebird.resolve([]);
+    }
+
+    if ((tweakLists[mod.id] === undefined)
+        && (mod?.installationPath !== undefined)) {
+      const tweaksPath = path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
+      tweakLists[mod.id] = fs.readdirAsync(tweaksPath)
+        .catch(() => []);
+    }
+
+    return tweakLists[mod.id];
+  };
+
+  return (mod: IMod): JSX.Element => {
+    return <TweakListWrap modId={mod.id} getTweaks={getTweakList} />;
+  };
+})();
 
 export default renderINITweaks;

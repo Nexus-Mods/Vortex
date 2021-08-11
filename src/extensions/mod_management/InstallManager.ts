@@ -1866,6 +1866,7 @@ class InstallManager {
                            && !rule.ignored);
 
     if (filteredRules.length === 0) {
+      api.events.emit('did-install-dependencies', profile.id, modId, false);
       return Promise.resolve();
     }
 

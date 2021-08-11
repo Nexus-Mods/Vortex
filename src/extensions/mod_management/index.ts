@@ -84,7 +84,7 @@ import Workarounds from './views/Workarounds';
 
 import { DEPLOY_BLACKLIST } from './constants';
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
-         onRemoveMod, onStartInstallDownload } from './eventHandlers';
+         onRemoveMod, onRemoveMods, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
 import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
@@ -1128,6 +1128,12 @@ function once(api: IExtensionApi) {
       'remove-mod',
       (gameMode: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
           onRemoveMod(api, getAllActivators(), gameMode, modId, cb, options));
+
+  api.events.on('remove-mods',
+       (gameMode: string, modIds: string[], cb?: (error: Error) => void,
+        options?: IRemoveModOptions) => {
+      onRemoveMods(api, getAllActivators(), gameMode, modIds, cb, options);
+    });
 
   api.events.on('create-mod',
       (gameMode: string, mod: IMod, callback: (error: Error) => void) => {

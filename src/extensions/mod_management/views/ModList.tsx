@@ -123,6 +123,7 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
+  onRemoveMods: (gameMode: string, modIds: string[]) => void;
   onShowDropzone: (show: boolean) => void;
 }
 
@@ -1167,7 +1168,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeSelectedImpl(modIds: string[], doRemoveMods: boolean, removeArchives: boolean) {
-    const { gameMode, onRemoveMod } = this.props;
+    const { gameMode, onRemoveMods } = this.props;
     const wereInstalled = modIds
       .filter(key => (this.state.modsWithState[key] !== undefined)
             && (this.state.modsWithState[key].state === 'installed'));
@@ -1179,7 +1180,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (doRemoveMods
         ? removeMods(this.context.api, gameMode, wereInstalled)
-          .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
+          .then(() => onRemoveMods(gameMode, wereInstalled))
         : Promise.resolve())
       .then(() => {
         if (removeArchives) {
@@ -1388,6 +1389,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
+    onRemoveMods: (gameMode: string, modIds: string[]) =>
+      batchDispatch(dispatch, modIds.map(modId => removeMod(gameMode, modId))),
     onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),
   };
 }

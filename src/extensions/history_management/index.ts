@@ -1,8 +1,11 @@
+import { Action } from 'redux';
 import { generate as shortid } from 'shortid';
 import { showDialog } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import Debouncer from '../../util/Debouncer';
 import local from '../../util/local';
+import { batchDispatch } from '../../util/util';
 
 import { addHistoryEvent, markHistoryReverted, setHistoryEvent, showHistory } from './actions';
 import HistoryDialog from './HistoryDialog';
@@ -20,8 +23,16 @@ function registerHistoryStack(id: string, options: IHistoryStack) {
 }
 
 function makeAddToHistory(api: IExtensionApi) {
+  let actions: Action[] = [];
+
+  const debouncer = new Debouncer(() => {
+    batchDispatch(api.store, actions);
+    actions = [];
+    return Promise.resolve();
+  }, 100, false, false);
+
   return (stack: string, entry: IHistoryEvent) => {
-    api.store.dispatch(addHistoryEvent(stack, {
+    actions.push(addHistoryEvent(stack, {
       ...entry,
       reverted: false,
       id: shortid(),

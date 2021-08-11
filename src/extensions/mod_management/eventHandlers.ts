@@ -10,7 +10,7 @@ import { log } from '../../util/log';
 import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import {truthy} from '../../util/util';
+import {batchDispatch, truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
@@ -458,7 +458,7 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
 function undeploy(api: IExtensionApi,
                   activators: IDeploymentMethod[],
                   gameMode: string,
-                  mod: IMod): Promise<void> {
+                  mods: IMod[]): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -479,7 +479,8 @@ function undeploy(api: IExtensionApi,
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 
-  log('debug', 'undeploying single mod', { game: gameMode, modId: mod.id });
+  log('debug', 'undeploying single mod',
+    { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
 
   const activatorId: string =
     getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
@@ -494,33 +495,190 @@ function undeploy(api: IExtensionApi,
 
   const stagingPath = installPathForGame(state, gameMode);
 
-  const subdir = genSubDirFunc(game, getModType(mod.type));
-  const deployPath = modPaths[mod.type || ''];
-  if (deployPath === undefined) {
-    return Promise.resolve();
+  const byModTypes: { [typeId: string]: IMod[] } = mods.reduce((prev, mod: IMod) => {
+    if (prev[mod.type] === undefined) {
+      prev[mod.type] = [];
+    }
+    prev[mod.type].push(mod);
+    return prev;
+  }, {});
+
+  return Promise.all(Object.keys(byModTypes).map(typeId => {
+    const subdir = genSubDirFunc(game, getModType(typeId));
+    const deployPath = modPaths[typeId || ''];
+    if (deployPath === undefined) {
+      return Promise.resolve();
+    }
+    let normalize: Normalize;
+    return getNormalizeFunc(deployPath)
+      .then(norm => {
+        normalize = norm;
+        return loadActivation(api, gameMode, typeId, deployPath, stagingPath, activator);
+      })
+      .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
+      .then(() => Promise.all(byModTypes[typeId].map(mod =>
+        activator.deactivate(path.join(stagingPath, mod.installationPath),
+                             subdir(mod), mod.installationPath))))
+      .tapCatch(() => {
+        if (activator.cancel !== undefined) {
+          activator.cancel(gameMode, deployPath, stagingPath);
+        }
+      })
+      .then(() => activator.finalize(gameMode, deployPath, stagingPath))
+      .then(newActivation =>
+        saveActivation(gameMode, typeId, state.app.instanceId, deployPath,
+                       stagingPath, newActivation, activator.id));
+  }))
+  .finally(() => {
+    log('debug', 'done undeploying single mod',
+      { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
+  })
+  .then(() => Promise.resolve());
+}
+
+function undeployMods(api: IExtensionApi,
+                      activators: IDeploymentMethod[],
+                      gameId: string,
+                      mods: IMod[]) {
+  // don't try to undeploy a mod that has no installation path (it can't be deployed
+  // anyway)
+  mods = mods.filter(mod => mod.installationPath !== undefined);
+
+  return undeploy(api, activators, gameId, mods)
+    .catch((err) => {
+      if (!['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+        return Promise.reject(err);
+      }
+      return api.showDialog('error', 'Mod not found', {
+        text: 'The mod you\'re removing has already been deleted on disk.\n'
+          + 'This makes it impossible for Vortex to cleanly undeploy the mod '
+          + 'so you may be left with files left over in your game directory.\n'
+          + 'You should allow Vortex to do a full deployment now to try and '
+          + 'clean up as best as possible.\n'
+          + 'The mod will be removed after deployment is finished.',
+      }, [
+        { label: 'Ignore' },
+        { label: 'Deploy' },
+      ])
+        .then(result => {
+          if (result.action === 'Deploy') {
+            return new Promise<void>((resolve, reject) => {
+              api.events.emit('deploy-mods', (deployErr) => {
+                if (deployErr !== null) {
+                  return reject(deployErr);
+                }
+                return resolve();
+              });
+            });
+          } else {
+            return Promise.resolve();
+          }
+        });
+    });
+}
+
+export function onRemoveMods(api: IExtensionApi,
+                             activators: IDeploymentMethod[],
+                             gameMode: string,
+                             modIds: string[],
+                             callback?: (error: Error) => void,
+                             options?: IRemoveModOptions) {
+  const store = api.store;
+  const state: IState = store.getState();
+
+  log('debug', 'removing mods', { game: gameMode, mods: modIds });
+
+  // reject trying to remove mods that are actively being installed/downloaded
+  const notInstalled = modIds.find(modId => {
+    const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
+    return !['downloaded', 'installed'].includes(modState);
+  });
+
+  if (notInstalled !== undefined) {
+    if (callback !== undefined) {
+      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+    }
+    return;
   }
-  let normalize: Normalize;
-  return getNormalizeFunc(deployPath)
-    .then(norm => {
-      normalize = norm;
-      return loadActivation(api, gameMode, mod.type, deployPath, stagingPath, activator);
-    })
-    .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
-    .then(() => (mod !== undefined)
-      ? activator.deactivate(path.join(stagingPath, mod.installationPath),
-                             subdir(mod), mod.installationPath)
-      : Promise.resolve())
-    .tapCatch(() => {
-      if (activator.cancel !== undefined) {
-        activator.cancel(gameMode, deployPath, stagingPath);
+
+  const profileId = state.settings.profiles.lastActiveProfile[gameMode];
+
+  // is it even a plausible scenario that there is no profile active?
+  if (profileId !== undefined) {
+    batchDispatch(store,
+      modIds.map(modId => setModEnabled(profileId, modId, false)));
+  }
+
+  // undeploy mods, otherwise we'd leave orphaned links in the game directory
+  const installationPath = installPathForGame(state, gameMode);
+
+  const mods = state.persistent.mods[gameMode];
+  const removeMods: IMod[] = modIds
+    .map(modId => mods[modId])
+    .filter(mod => mod !== undefined);
+
+  // TODO: no indication anything is happening until undeployment was successful.
+  //   we used to remove the mod right away but then if undeployment failed the mod was gone
+  //   anyway
+
+  store.dispatch(startActivity('mods', `removing_${modIds[0]}`));
+
+  api.emitAndAwait('will-remove-mods', gameMode, removeMods, options)
+    .then(() => undeployMods(api, activators, gameMode, removeMods))
+    .then(() => Promise.mapSeries(removeMods, mod => {
+      return api.emitAndAwait('will-remove-mod', gameMode, mod.id, options)
+      .then(() => {
+        if (truthy(mod) && truthy(mod.installationPath)) {
+          const fullModPath = path.join(installationPath, mod.installationPath);
+          log('debug', 'removing files for mod',
+              { game: gameMode, mod: mod.id });
+          return fs.removeAsync(fullModPath)
+            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
+            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        store.dispatch(removeMod(gameMode, mod.id));
+        if (callback !== undefined) {
+          callback(null);
+        }
+        options = { ...(options || {}), modData: { ...mod } };
+        return api.emitAndAwait('did-remove-mod', gameMode, mod.id, options);
+      });
+    }))
+    .catch(TemporaryError, (err) => {
+      if (callback !== undefined) {
+        callback(err);
+      } else {
+        api.showErrorNotification('Failed to undeploy mod, please try again',
+          err.message, { allowReport: false });
       }
     })
-    .then(() => activator.finalize(gameMode, deployPath, stagingPath))
-    .then(newActivation =>
-      saveActivation(gameMode, mod.type, state.app.instanceId, deployPath,
-                     stagingPath, newActivation, activator.id))
+    .catch(ProcessCanceled, (err) => {
+      if (callback !== undefined) {
+        callback(err);
+      } else {
+        api.showErrorNotification('Failed to remove mod', err, { allowReport: false });
+      }
+    })
+    .catch(UserCanceled, err => {
+      if (callback !== undefined) {
+        callback(err);
+      }
+    })
+    .catch(err => {
+      if (callback !== undefined) {
+        callback(err);
+      } else {
+        api.showErrorNotification('Failed to remove mod', err);
+      }
+    })
     .finally(() => {
-      log('debug', 'done undeploying single mod', { game: gameMode, modId: mod.id });
+      log('debug', 'done removing mods', { game: gameMode, mods: modIds });
+      store.dispatch(stopActivity('mods', `removing_${modIds[0]}`));
+      return api.emitAndAwait('did-remove-mods', gameMode, removeMods, options);
     });
 }
 
@@ -530,152 +688,7 @@ export function onRemoveMod(api: IExtensionApi,
                             modId: string,
                             callback?: (error: Error) => void,
                             options?: IRemoveModOptions) {
-  const store = api.store;
-  const state: IState = store.getState();
-
-  log('debug', 'removing mod', { game: gameMode, mod: modId });
-
-  const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
-  if (['downloaded', 'installed'].indexOf(modState) === -1) {
-    if (callback !== undefined) {
-      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
-    }
-    return;
-  }
-
-  // we need to remove the mod from activation, otherwise me might leave orphaned
-  // links in the mod directory
-  let profileId: string;
-  const lastActive = getSafe(state,
-    ['settings', 'profiles', 'lastActiveProfile', gameMode], undefined);
-  if (lastActive !== undefined) {
-    profileId = (typeof(lastActive) === 'string')
-      ? lastActive
-      : lastActive.profileId;
-  }
-
-  store.dispatch(setModEnabled(profileId, modId, false));
-
-  const installationPath = installPathForGame(state, gameMode);
-
-  let mod: IMod;
-
-  try {
-    const mods = state.persistent.mods[gameMode];
-    mod = mods[modId];
-  } catch (err) {
-    if (callback !== undefined) {
-      callback(err);
-    } else {
-      api.showErrorNotification('Failed to remove mod (not found)', err);
-    }
-    return;
-  }
-
-  if (mod === undefined) {
-    if (callback !== undefined) {
-      callback(null);
-    }
-    return;
-  }
-
-  // TODO: no indication anything is happening until undeployment was successful.
-  //   we used to remove the mod right away but then if undeployment failed the mod was gone
-  //   anyway
-
-  const undeployMod = () => {
-    if (mod.installationPath === undefined) {
-      // don't try to undeploy a mod that has no installation path (it can't be deployed
-      // anyway)
-      return Promise.resolve();
-    }
-    return undeploy(api, activators, gameMode, mod)
-      .catch((err) => {
-        if (!['ENOENT', 'ENOTFOUND'].includes(err.code)) {
-          return Promise.reject(err);
-        }
-        return api.showDialog('error', 'Mod not found', {
-          text: 'The mod you\'re removing has already been deleted on disk.\n'
-              + 'This makes it impossible for Vortex to cleanly undeploy the mod '
-              + 'so you may be left with files left over in your game directory.\n'
-              + 'You should allow Vortex to do a full deployment now to try and '
-              + 'clean up as best as possible.\n'
-              + 'The mod will be removed after deployment is finished.',
-        }, [
-          { label: 'Ignore' },
-          { label: 'Deploy' },
-        ])
-          .then(result => {
-            if (result.action === 'Deploy') {
-              return new Promise<void>((resolve, reject) => {
-                api.events.emit('deploy-mods', (deployErr) => {
-                  if (deployErr !== null) {
-                    return reject(deployErr);
-                  }
-                  return resolve();
-                });
-              });
-            } else {
-              return Promise.resolve();
-            }
-          });
-      });
-    };
-
-  store.dispatch(startActivity('mods', `removing_${modId}`));
-
-  api.emitAndAwait('will-remove-mod', gameMode, mod.id, options)
-  .then(() => undeployMod())
-  .then(() => {
-    if (truthy(mod) && truthy(mod.installationPath)) {
-      const fullModPath = path.join(installationPath, mod.installationPath);
-      log('debug', 'removing files for mod', { game: gameMode, mod: modId });
-      return fs.removeAsync(fullModPath)
-        .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-        .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
-    } else {
-      return Promise.resolve();
-    }
-  })
-  .then(() => {
-    store.dispatch(removeMod(gameMode, mod.id));
-    if (callback !== undefined) {
-      callback(null);
-    }
-    options = { ...(options || {}), modData: { ...mod } };
-    return api.emitAndAwait('did-remove-mod', gameMode, mod.id, options);
-  })
-  .catch(TemporaryError, (err) => {
-    if (callback !== undefined) {
-      callback(err);
-    } else {
-      api.showErrorNotification('Failed to undeploy mod, please try again',
-        err.message, { allowReport: false });
-    }
-  })
-  .catch(ProcessCanceled, (err) => {
-    if (callback !== undefined) {
-      callback(err);
-    } else {
-      api.showErrorNotification('Failed to remove mod', err, { allowReport: false });
-    }
-  })
-  .catch(UserCanceled, err => {
-    if (callback !== undefined) {
-      callback(err);
-    }
-  })
-  .catch(err => {
-    if (callback !== undefined) {
-      callback(err);
-    } else {
-      api.showErrorNotification('Failed to remove mod', err);
-    }
-  })
-  .finally(() => {
-    log('debug', 'done removing mod', { game: gameMode, mod: modId });
-    store.dispatch(stopActivity('mods', `removing_${modId}`));
-  });
+  return onRemoveMods(api, activators, gameMode, [modId], callback, options);
 }
 
 export function onAddMod(api: IExtensionApi, gameId: string,

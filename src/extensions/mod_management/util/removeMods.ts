@@ -1,7 +1,7 @@
 import Promise from 'bluebird';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { INotification } from '../../../types/INotification';
-import { IState } from '../../../types/IState';
+import { toPromise } from '../../../util/util';
 
 export function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -29,23 +29,9 @@ export function removeMods(api: IExtensionApi, gameId: string, modIds: string[])
 
   notiParams.id = api.sendNotification({
     ...notiParams,
-    progress: 0,
   });
 
-  return Promise
-    .mapSeries(modIds, (modId: string, idx: number, length: number) => {
-      api.sendNotification({
-        ...notiParams,
-        message: modId,
-        progress: (idx * 100) / length,
-      });
-
-      if (mods[modId]?.state === 'installed') {
-        return removeMod(api, gameId, modId);
-      } else {
-        return Promise.resolve();
-      }
-    })
+  return toPromise(cb => api.events.emit('remove-mods', gameId, modIds, cb))
     .then(() => {
       api.events.emit('mods-enabled', modIds, false, gameId);
     })
