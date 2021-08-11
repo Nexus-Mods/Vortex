@@ -19,7 +19,7 @@ function testSupported(): Promise<ISupportedResult> {
 
 function makeXXHash64() {
   // using seed 0
-  let xxh64 = new XXHash64();
+  const xxh64 = new XXHash64();
   return (filePath: string): Promise<string> => {
     return fs.readFileAsync(filePath)
       .then(data => {
@@ -42,7 +42,8 @@ function makeListInstaller(extractList: IFileListItem[],
   let idxId = 'md5';
 
   // TODO: this is awkward. We expect the entire list to use the same checksum algorithm
-  if (extractList.find(iter => (iter.md5 !== undefined) || (iter.xxh64 === undefined)) === undefined) {
+  if (extractList.find(iter =>
+        (iter.md5 !== undefined) || (iter.xxh64 === undefined)) === undefined) {
     lookupFunc = makeXXHash64();
     idxId = 'xxh64';
   }
