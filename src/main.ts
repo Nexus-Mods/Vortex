@@ -37,14 +37,21 @@ sourceMapSupport.install();
 import requireRemap from './util/requireRemap';
 requireRemap();
 
+function setEnv(key: string, value: string) {
+  process.env[key] = value;
+}
+
 if (process.env.NODE_ENV !== 'development') {
-  // see renderer.ts for why this is so ugly
-  const key = 'NODE_ENV';
-  process.env[key] = 'production';
+  setEnv('NODE_ENV', 'production');
 } else {
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
+}
+
+{
+  setEnv('NEXUS_NEXT_URL', 'https://next.nexusmods.com');
+  setEnv('IGNORE_UPDATES', 'yes');
 }
 
 if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {

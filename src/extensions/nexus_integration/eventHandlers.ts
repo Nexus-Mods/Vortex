@@ -23,7 +23,7 @@ import { nexusGameId, toNXMId } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
-import { NEXUS_BASE_URL } from './constants';
+import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
@@ -158,7 +158,7 @@ export function onOpenCollectionPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn([NEXUS_BASE_URL,
+    opn([NEXUS_NEXT_URL,
       nexusGameId(game) || gameId, 'collections', collectionId,
     ].join('/')).catch(err => undefined);
   };
