@@ -340,7 +340,13 @@ export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
  * take any input string and sanitize it into a valid css id
  */
 export function sanitizeCSSId(input: string) {
-  return input.toLowerCase().replace(/[ .#]/g, '-');
+  let res = input.toLowerCase()
+    .replace(/[ .#()]/g, '-');
+  if (res.endsWith('-')) {
+    res += '_';
+  }
+
+  return res;
 }
 
 /**
@@ -687,11 +693,9 @@ export function semverCoerce(input: string): semver.SemVer {
   let res = semver.coerce(removeLeadingZeros(input));
 
   if (res === null) {
-    if (input === '') {
-      res = new semver.SemVer('0.0.0');
-    } else {
-      res = new semver.SemVer(`0.0.0-${input}`);
-    }
+    res = (input === '')
+      ? new semver.SemVer('0.0.0')
+      : new semver.SemVer(`0.0.0-${input}`);
   }
 
   return res;

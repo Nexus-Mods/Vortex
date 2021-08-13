@@ -1933,7 +1933,9 @@ class ExtensionManager {
   // tslint:disable-next-line:member-ordering
   private highlightCSS = (() => {
     let highlightCSS: CSSStyleRule;
+    let highlightCSSAlt: CSSStyleRule;
     let highlightAfterCSS: CSSStyleRule;
+    let highlightBeforeCSSAlt: CSSStyleRule;
 
     const initCSS = () => {
       if (highlightCSS !== undefined) {
@@ -1949,17 +1951,25 @@ class ExtensionManager {
           rules.forEach((rule: CSSStyleRule) => {
             if (rule.selectorText === '#highlight-control-dummy') {
               highlightCSS = rule;
+            } else if (rule.selectorText === '#highlight-control-dummy-alt') {
+              highlightCSSAlt = rule;
             } else if (rule.selectorText === '#highlight-control-dummy::after') {
               highlightAfterCSS = rule;
+            } else if (rule.selectorText === '#highlight-control-dummy-alt::before') {
+              highlightBeforeCSSAlt = rule;
             }
           });
         }
       }
     };
 
-    return (selector: string, text?: string) => {
+    return (selector: string, text?: string, altStyle?: boolean) => {
       initCSS();
       let result = '';
+
+      const css = altStyle ? highlightCSSAlt :  highlightCSS;
+      const afterCSS = highlightAfterCSS;
+      const dummySelector = altStyle ? '#highlight-control-dummy-alt' : '#highlight-control-dummy';
 
       // adding a new css rule matching the selector when we could just as well add
       // the highlight class to the control.
@@ -1973,9 +1983,12 @@ class ExtensionManager {
           result += `${selector}::after { color: var(--brand-danger); content: "${text}" }\n`;
         }
       } else {
-        result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
+        result += css.cssText.replace(dummySelector, selector);
+        if (altStyle) {
+          result += highlightBeforeCSSAlt.cssText.replace(dummySelector, selector);
+        }
         if (text !== undefined) {
-          result += highlightAfterCSS.cssText
+          result += afterCSS.cssText
             .replace('#highlight-control-dummy', selector)
             .replace('__contentPlaceholder', text);
         }
@@ -1985,12 +1998,13 @@ class ExtensionManager {
     };
   })();
 
-  private highlightControl = (selector: string, duration: number, text?: string) => {
+  private highlightControl =
+      (selector: string, duration: number, text?: string, altStyle?: boolean) => {
     const id = shortid();
     const style = document.createElement('style');
     style.id = `highlight_${id}`;
     style.type = 'text/css';
-    style.innerHTML = this.highlightCSS(selector, text);
+    style.innerHTML = this.highlightCSS(selector, text, altStyle);
 
     const head = document.getElementsByTagName('head')[0];
     const highlightNode = head.appendChild(style);

@@ -754,6 +754,22 @@ $other: (
   margin: calc((4px + #{$border-width}) * -1) ! important;
 }
 
+#highlight-control-dummy-alt {
+  position: relative;
+}
+
+#highlight-control-dummy-alt::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-width: $border-width !important;
+  border-style: solid !important;
+  animation: highlightPulse 1s infinite alternate !important;
+}
+
 #highlight-control-dummy::after {
   animation: highlightColorPulse 1s infinite alternate;
   content: "__contentPlaceholder";

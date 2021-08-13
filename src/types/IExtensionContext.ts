@@ -670,8 +670,15 @@ export interface IExtensionApi {
    * highlight a control for a short time to direct the users attention to it.
    * The control (or controls) is identified by a css selector.
    * A text can be added, but no promise that it actually looks good in practice
+   *
+   * Usually the css style used to draw the outline contains a bit of hackery to offset the
+   * padding and border width it adds so that the contents doesn't get moved around.
+   * If altStyle is set we use absolute positioning to get the same effect. This requires
+   * us to make the target item "position: relative" though which is more intrusive and can
+   * break the styling of the contents more severely.
    */
-  highlightControl: (selector: string, durationMS: number, text?: string) => void;
+  highlightControl:
+    (selector: string, durationMS: number, text?: string, altStyle?: boolean) => void;
 
   /**
    * returns a promise that resolves once the ui has been displayed.
