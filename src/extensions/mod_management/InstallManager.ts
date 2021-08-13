@@ -1628,6 +1628,13 @@ class InstallManager {
           return Promise.reject(new NotFound(`download for ${renderModReference(dep.reference)}`));
         })
         .then((downloadId: string) => {
+          if ((downloadId !== undefined) && (downloads[downloadId]?.state === 'paused')) {
+            return resumeDownload(dep);
+          } else {
+            return Promise.resolve(downloadId);
+          }
+        })
+        .then((downloadId: string) => {
           if (downloadId === undefined) {
             return Promise.reject(
               new NotFound(`download for ${renderModReference(dep.reference)}`));
