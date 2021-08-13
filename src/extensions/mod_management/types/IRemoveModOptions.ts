@@ -10,4 +10,7 @@ export interface IRemoveModOptions {
   //  not contain the removed mod information when listening to
   //  'did-remove-mod' - which is where this becomes handy.
   modData?: IMod;
+
+  // called to signal progress to the caller
+  progressCB?: (numRemoved: number, numTotal: number, name: string) => void;
 }

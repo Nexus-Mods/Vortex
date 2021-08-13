@@ -31,8 +31,10 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
 import { IInstallOptions } from './types/IInstallOptions';
+import { IRemoveModOptions } from './types/IRemoveModOptions';
 import allTypesSupported from './util/allTypesSupported';
 import { genSubDirFunc, purgeMods } from './util/deploy';
+import modName from './util/modName';
 import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
@@ -45,7 +47,6 @@ import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import { RuleType } from 'modmeta-db';
 import * as path from 'path';
-import { IRemoveModOptions } from './types/IRemoveModOptions';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -623,10 +624,13 @@ export function onRemoveMods(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modIds[0]}`));
 
-  api.emitAndAwait('will-remove-mods', gameMode, removeMods, options)
+  api.emitAndAwait('will-remove-mods', gameMode, removeMods)
     .then(() => undeployMods(api, activators, gameMode, removeMods))
-    .then(() => Promise.mapSeries(removeMods, mod => {
-      return api.emitAndAwait('will-remove-mod', gameMode, mod.id, options)
+    .then(() => Promise.mapSeries(removeMods,
+        (mod: IMod, idx: number, length: number) => {
+      options?.progressCB?.(idx, length, modName(mod));
+      const forwardOptions = { ...(options || {}), modData: { ...mod } };
+      return api.emitAndAwait('will-remove-mod', gameMode, mod.id, forwardOptions)
       .then(() => {
         if (truthy(mod) && truthy(mod.installationPath)) {
           const fullModPath = path.join(installationPath, mod.installationPath);
@@ -641,13 +645,14 @@ export function onRemoveMods(api: IExtensionApi,
       })
       .then(() => {
         store.dispatch(removeMod(gameMode, mod.id));
-        if (callback !== undefined) {
-          callback(null);
-        }
-        options = { ...(options || {}), modData: { ...mod } };
-        return api.emitAndAwait('did-remove-mod', gameMode, mod.id, options);
+        return api.emitAndAwait('did-remove-mod', gameMode, mod.id, forwardOptions);
       });
     }))
+    .then(() => {
+      if (callback !== undefined) {
+        callback(null);
+      }
+    })
     .catch(TemporaryError, (err) => {
       if (callback !== undefined) {
         callback(err);
@@ -678,7 +683,7 @@ export function onRemoveMods(api: IExtensionApi,
     .finally(() => {
       log('debug', 'done removing mods', { game: gameMode, mods: modIds });
       store.dispatch(stopActivity('mods', `removing_${modIds[0]}`));
-      return api.emitAndAwait('did-remove-mods', gameMode, removeMods, options);
+      return api.emitAndAwait('did-remove-mods', gameMode, removeMods);
     });
 }
 
