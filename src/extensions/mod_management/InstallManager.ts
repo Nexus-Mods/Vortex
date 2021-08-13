@@ -63,6 +63,7 @@ import * as url from 'url';
 import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
+import { selectors } from 'vortex-api';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -1584,14 +1585,25 @@ class InstallManager {
       if (dep.download === undefined) {
         if (dep.extra.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
-          dlPromise = new Promise((resolve, reject) => {
-            api.events.emit('import-downloads',
-              [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
-              (dlIds: string[]) => {
-                api.store.dispatch(setDownloadModInfo(dlIds[0], 'referenceTag', dep.reference.tag));
-                resolve(dlIds[0]);
-            });
-          });
+          const downloadPath = selectors.downloadPathForGame(state, profile.gameId);
+          const fileName = path.basename(dep.extra.localPath);
+          const targetPath = path.join(downloadPath, fileName);
+          dlPromise = fs.statAsync(targetPath)
+            .then(() => Object.keys(downloads)
+                .find(dlId => downloads[dlId].localPath === fileName))
+            .catch(err => new Promise((resolve, reject) => {
+              api.events.emit('import-downloads',
+                [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
+                (dlIds: string[]) => {
+                  if (dlIds.length > 0) {
+                    api.store.dispatch(setDownloadModInfo(
+                      dlIds[0], 'referenceTag', dep.reference.tag));
+                    resolve(dlIds[0]);
+                  } else {
+                    resolve();
+                  }
+              });
+            }));
         } else {
           dlPromise = (dep.lookupResults[0]?.value?.sourceURI ?? '') === ''
             ? Promise.reject(new ProcessCanceled('Failed to determine download url'))
