@@ -185,7 +185,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     this.updateSelection(this.props);
-    this.context.api.events.on(this.props.tableId + '-scroll-to', this.scrollTo);
+    const { api } = this.context;
+    api.events.on(this.props.tableId + '-scroll-to', this.scrollTo);
+    api.events.on(this.props.tableId + '-select-item', this.selectItem);
     this.props.objects.forEach(object => {
       if (object.externalData !== undefined) {
         object.externalData(() => {
@@ -490,6 +492,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           { id, tableId: this.props.tableId, error: err.message });
       }
     }
+  }
+
+  private selectItem = (id: string, openDetails: boolean) => {
+    this.scrollTo(id);
+    this.setGroup(undefined);
+    this.selectOnly(id, undefined, false);
+    this.updateState(update(this.mNextState, {
+      detailsOpen: { $set: openDetails },
+    }), this.onRowStateChanged);
   }
 
   private getGroupOptions(props: IProps,
