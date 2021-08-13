@@ -1,7 +1,7 @@
 import * as types from '../../types/api';
 import * as util from '../../util/api';
 import { findGameEntry } from './gameSupport';
-import { ILoadOrderGameInfoExt, IValidationResult,
+import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
@@ -11,6 +11,31 @@ export function isModInCollection(collection: types.IMod, mod: types.IMod) {
 
   return collection.rules.find(rule =>
     util.testModReference(mod, rule.reference)) !== undefined;
+}
+
+export async function genCollectionLoadOrder(api: types.IExtensionApi,
+                                             gameEntry: ILoadOrderGameInfoExt,
+                                             mods: { [modId: string]: types.IMod },
+                                             profileId: string,
+                                             collection?: types.IMod): Promise<LoadOrder> {
+  const state = api.getState();
+  let loadOrder: LoadOrder = [];
+  try {
+    const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    loadOrder = await gameEntry.deserializeLoadOrder();
+    loadOrder = loadOrder.filter(entry => (collection !== undefined)
+      ? isValidMod(mods[entry.modId]) && (isModInCollection(collection, mods[entry.modId]))
+      : isValidMod(mods[entry.modId]));
+    const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
+    assertValidationResult(validRes);
+    if (validRes !== undefined) {
+      throw new LoadOrderValidationError(validRes, loadOrder);
+    }
+  } catch (err) {
+    return Promise.reject(err);
+  }
+
+  return Promise.resolve(loadOrder);
 }
 
 export function isValidMod(mod: types.IMod) {
