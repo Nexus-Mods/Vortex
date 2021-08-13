@@ -13,7 +13,16 @@ import * as selectors from '../../../util/selectors';
 import { IGameSpecificInterfaceProps } from '../types/collections';
 import { ILoadOrderEntry, LoadOrder } from '../types/types';
 
+import { genCollectionLoadOrder, isModInCollection, isValidMod } from '../util';
+
+import { findGameEntry } from '../gameSupport';
+
 const NAMESPACE: string = 'generic-load-order-extension';
+
+interface IBaseState {
+  loadOrder: LoadOrder;
+  filteredModIds: string[];
+}
 
 interface IConnectedProps {
   gameId: string;
@@ -24,9 +33,30 @@ interface IConnectedProps {
 
 type IProps = IGameSpecificInterfaceProps & IConnectedProps;
 
-class LoadOrderCollections extends ComponentEx<IProps, {}> {
+class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
+  public static getDerivedStateFromProps(newProps: IProps, prevState: IBaseState) {
+    const { mods, collection } = newProps;
+    const filtered = newProps.loadOrder.filter(entry => (collection !== undefined)
+      ? isValidMod(mods[entry.modId]) && (isModInCollection(collection, mods[entry.modId]))
+      : isValidMod(mods[entry.modId]))
+    .map(entry => entry.modId);
+    if (filtered !== prevState.filteredModIds) {
+      return { filteredModIds: filtered };
+    }
+
+    return null;
+  }
+  constructor(props: IProps) {
+    super(props);
+    this.initState({
+      loadOrder: [],
+      filteredModIds: [],
+    });
+  }
+
   public render(): JSX.Element {
-    const { t, loadOrder } = this.props;
+    const { t } = this.props;
+    const { loadOrder } = this.state;
     return (!!loadOrder && Object.keys(loadOrder).length !== 0)
       ? (
         <div style={{ overflow: 'auto' }}>
@@ -41,6 +71,24 @@ class LoadOrderCollections extends ComponentEx<IProps, {}> {
           </ListGroup>
         </div>
     ) : this.renderPlaceholder();
+  }
+
+  public componentDidMount() {
+    this.genLoadOrder();
+  }
+
+  public componentDidUpdate(prevProps: IProps) {
+    const currentRules = JSON.stringify(this.props.collection.rules);
+    const prevRules = JSON.stringify(prevProps.collection.rules);
+    if (currentRules !== prevRules) {
+      this.genLoadOrder();
+    }
+  }
+
+  private async genLoadOrder() {
+    const gameEntry = findGameEntry(this.props.gameId);
+    this.nextState.loadOrder = await genCollectionLoadOrder(this.context.api,
+      gameEntry, this.props.mods, this.props.profile.id, this.props.collection);
   }
 
   private renderLoadOrderEditInfo = () => {
@@ -97,7 +145,7 @@ class LoadOrderCollections extends ComponentEx<IProps, {}> {
   }
 
   private renderModEntry = (loEntry: ILoadOrderEntry) => {
-    const { loadOrder } = this.props;
+    const { loadOrder } = this.state;
     const idx: number = loadOrder.indexOf(loEntry);
     const key = loEntry.id + JSON.stringify(loEntry);
     const name = util.renderModName(this.props.mods[loEntry.id]);

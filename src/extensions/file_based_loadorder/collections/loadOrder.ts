@@ -1,43 +1,20 @@
 import React = require('react');
 import * as types from '../../../types/api';
-import * as util from '../../../util/api';
 import * as selectors from '../../../util/selectors';
 
 import { setFBLoadOrder } from '../actions/loadOrder';
 
 import {
-  CollectionGenerateError, CollectionParseError, ICollection, ICollectionLoadOrder, IGameSpecificInterfaceProps
+  CollectionGenerateError, CollectionParseError, ICollection,
+  ICollectionLoadOrder, IGameSpecificInterfaceProps,
 } from '../types/collections';
 
-import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder, LoadOrderValidationError } from '../types/types';
+import { ILoadOrderGameInfoExt, IValidationResult, LoadOrderValidationError } from '../types/types';
 
 import { findGameEntry } from '../gameSupport';
-import { assertValidationResult, errorHandler } from '../util';
+import { genCollectionLoadOrder } from '../util';
 
 import LoadOrderCollections from '../views/LoadOrderCollections';
-
-async function genCollectionLoadOrder(api: types.IExtensionApi,
-                                      gameEntry: ILoadOrderGameInfoExt,
-                                      mods: { [modId: string]: types.IMod },
-                                      profileId: string,
-                                      collection?: types.IMod): Promise<LoadOrder> {
-  const state = api.getState();
-  let loadOrder: LoadOrder = [];
-  try {
-    const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
-    loadOrder = await gameEntry.deserializeLoadOrder();
-    loadOrder = loadOrder.filter(entry => mods[entry.id]?.type !== 'collection');
-    const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
-    assertValidationResult(validRes);
-    if (validRes !== undefined) {
-      throw new LoadOrderValidationError(validRes, loadOrder);
-    }
-  } catch (err) {
-    return Promise.reject(err);
-  }
-
-  return Promise.resolve(loadOrder);
-}
 
 export async function generate(api: types.IExtensionApi,
                                state: types.IState,
