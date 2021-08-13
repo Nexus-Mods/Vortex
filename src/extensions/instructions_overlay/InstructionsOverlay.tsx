@@ -62,20 +62,20 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     <div
       key={overlay.title}
       ref={ref}
-      className='collection-instructions'
+      className='instructions-overlay'
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
     >
       <FlexLayout type='column'>
         <FlexLayout.Fixed style={{ height: '5%' }}>
-          <FlexLayout className='collection-instructions-header' type='row'>
+          <FlexLayout className='instructions-overlay-header' type='row'>
             <FlexLayout.Fixed className='drag-icon-container' draggable onDragStart={startDrag}>
               <Icon name='drag-handle' />
             </FlexLayout.Fixed>
-            <FlexLayout.Flex className='collection-instructions-title' onClick={toggle}>
+            <FlexLayout.Flex className='instructions-overlay-title' onClick={toggle}>
               <Icon name='dialog-info' />
               <h4>{t('Instructions')}</h4>
             </FlexLayout.Flex>
-            <FlexLayout.Fixed className='cllection-instructions-close'>
+            <FlexLayout.Fixed className='instructions-overlay-close'>
               <tooltip.IconButton
                 className='btn-embed'
                 icon='close'
@@ -85,14 +85,14 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             </FlexLayout.Fixed>
           </FlexLayout>
         </FlexLayout.Fixed>
-        <FlexLayout.Fixed className='collection-instructions-mod-name'>
+        <FlexLayout.Fixed className='instructions-overlay-mod-name'>
           <h3>{overlay.title}</h3>
         </FlexLayout.Fixed>
         <FlexLayout.Fixed style={{ overflowY: 'auto' }}>
           {open
             ? (
               <ReactMarkdown
-                className='collection-instructions-content'
+                className='instructions-overlay-content'
                 source={overlay.text}
               />
             )
