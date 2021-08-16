@@ -119,16 +119,18 @@
 }
 
 .free-user-dl-uploader {
+  display: flex;
+  align-items: center;
   font-family: $font-family-headings;
   img {
-    width: 32px;
-    height: 32px;
+    width: 1.5em;
+    height: 1.5em;
     margin-right: 0.5em;
   }
 }
 
 .free-user-dl-summary {
-
+  margin-top: 0.5em;
 }
 
 .modid-detail {

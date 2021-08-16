@@ -3,13 +3,15 @@ import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { util } from '../../..';
 import FlexLayout from '../../../controls/FlexLayout';
 import Image from '../../../controls/Image';
 import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
-import { FALLBACK_AVATAR } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 import NXMUrl from '../NXMUrl';
 import { makeFileUID } from '../util/UIDs';
 import PremiumNagBanner from './PremiumNagBanner';
@@ -24,6 +26,7 @@ interface IFreeUserDLDialogProps {
 }
 
 const FILE_QUERY: IModFileQuery = {
+  modId: true,
   mod: {
     summary: true,
     name: true,
@@ -33,19 +36,43 @@ const FILE_QUERY: IModFileQuery = {
       avatar: true,
     },
   },
+  game: {
+    domainName: true,
+  },
   name: true,
+  owner: {
+    memberId: true,
+  } as any,
 };
 
-const makeUnknown: (t: TFunction, url: NXMUrl) => Partial<IModFile> =
+type RecursivePartial<T> = {
+  [P in keyof T]?:
+    T[P] extends Array<(infer U)> ? Array<RecursivePartial<U>> :
+    T[P] extends object ? RecursivePartial<T[P]> :
+    T[P];
+};
+
+const makeUnknown: (t: TFunction, url: NXMUrl) => RecursivePartial<IModFile> =
     (t: TFunction, url: NXMUrl) => {
   return {
+    modId: undefined,
     mod: {
-      author: t('N/A'),
       summary: t('N/A'),
       name: t('Mod with id {{modId}}', { modId: url.modId }),
       pictureUrl: null,
+      uploader: {
+        name: t('N/A'),
+        avatar: undefined,
+      },
     },
-  } as any;
+    game: {
+      domainName: undefined,
+    },
+    name: t('N/A'),
+    owner: {
+      member_id: undefined,
+    } as any,
+  };
 };
 
 function nop() {
@@ -58,7 +85,8 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
 
-  const [fileInfo, setFileInfo] = React.useState<Partial<IModFile>>(null);
+  // const [fileInfo, setFileInfo] = React.useState<Partial<IModFile>>(null);
+  const [fileInfo, setFileInfo] = React.useState<any>(null);
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
@@ -102,6 +130,14 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     onSkip(urls[0]);
   }, [onSkip, urls]);
 
+  const openModPage = React.useCallback(() => {
+    util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`);
+  }, [fileInfo]);
+
+  const openAuthorPage = React.useCallback(() => {
+    util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
+  }, [fileInfo]);
+
   return (
     <Modal show={urls.length > 0} onHide={nop}>
       <Modal.Header>
@@ -124,10 +160,22 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
             <FlexLayout.Flex>
               {(fileInfo !== null) ? (
                 <FlexLayout type='column'>
-                  <div className='free-user-dl-name'>{fileInfo.mod.name}</div>
+                  <div className='free-user-dl-name'>
+                    {fileInfo.mod.name}
+                    {' '}
+                    <IconButton
+                      icon='open-in-browser'
+                      className='btn-embed'
+                      tooltip={t('Open mod page')}
+                      onClick={openModPage}
+                    />
+                  </div>
                   <div className='free-user-dl-uploader'>
-                    <Image srcs={[fileInfo.mod.uploader.avatar, FALLBACK_AVATAR]} />
-                    {fileInfo.mod.uploader.name}
+                    <Image
+                      circle
+                      srcs={[fileInfo.mod.uploader.avatar, FALLBACK_AVATAR]}
+                    />
+                    <a onClick={openAuthorPage}>{fileInfo.mod.uploader.name}</a>
                   </div>
                   <div className='free-user-dl-summary'>{fileInfo.mod.summary}</div>
                 </FlexLayout>
