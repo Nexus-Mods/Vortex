@@ -1514,7 +1514,7 @@ class InstallManager {
         if (dlId !== undefined) {
           api.events.emit('pause-download', dlId);
         } else {
-          api.events.emit('intercept-download', ref);
+          api.events.emit('intercept-download', ref.tag);
         }
       });
       queuedDownloads = [];
