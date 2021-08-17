@@ -34,6 +34,10 @@ export interface ILoadOrderEntry<T = any> {
   locked?: LockedState;
 
   // The id of the mod to which this LO entry belongs.
+  //  It's extremely important to set this property for entries
+  //  generated from mods that are actively managed by Vortex; forgetting
+  //  to do so can result in unexpected behaviour (such as entries not
+  //  being included in a collection)
   //  can be left undefined if the entry is not managed by Vortex.
   modId?: string;
 
