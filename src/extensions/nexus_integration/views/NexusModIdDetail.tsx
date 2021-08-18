@@ -64,11 +64,12 @@ export interface IProps {
 
 function saveModId(dispatch: Redux.Dispatch<any>, isDownload: boolean,
                    gameId: string, archiveId: string, modId: string, newNexusModId: string) {
+  const numId = !newNexusModId ? undefined : parseInt(newNexusModId, 10);
   if (archiveId !== undefined) {
-    dispatch(setDownloadModInfo(archiveId, 'nexus.ids.modId', parseInt(newNexusModId, 10)));
+    dispatch(setDownloadModInfo(archiveId, 'nexus.ids.modId', numId));
   }
   if (!isDownload) {
-    dispatch(setModAttribute(gameId, modId, 'modId', parseInt(newNexusModId, 10)));
+    dispatch(setModAttribute(gameId, modId, 'modId', numId));
   }
 }
 
