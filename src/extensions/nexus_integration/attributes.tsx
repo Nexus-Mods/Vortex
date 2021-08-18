@@ -40,7 +40,10 @@ function NexusId(props: INexusIdProps) {
                   && (downloads[mod.archiveId] !== undefined);
 
   const updateByMD5 = React.useCallback(() => {
-    fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
+    fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive)
+      .catch(err => {
+        api.showErrorNotification('Query failed', err, { allowReport: false });
+      });
   }, [mod]);
 
   const openURL = React.useCallback(() => {

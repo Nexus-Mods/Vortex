@@ -1212,7 +1212,10 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
                       && (downloads[mod.archiveId] !== undefined);
 
       if (mod.attributes.fileMD5 !== undefined) {
-        return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive);
+        return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive)
+          .catch(err => {
+            api.showErrorNotification('Query failed', err, { allowReport: false });
+          });
       } else {
         return checkModVersion(api.store, nexus, gameMode, mod)
           .catch(err => {
