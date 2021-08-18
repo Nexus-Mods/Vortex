@@ -726,7 +726,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const attributeState = this.getAttributeState(attribute);
 
     const filt = (attribute.filter !== undefined) && (filter !== undefined)
-      ? (filter[attribute.id] || null)
+      ? (filter[attribute.id] ?? null)
       : undefined;
 
     if (attributeState.enabled) {
@@ -1255,7 +1255,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             : (data[rowId][attribute.filter.raw] || {})[dataId]
           : calculatedValues[rowId][dataId];
 
-        return truthy(filter[attribute.id])
+        return ((filter[attribute.id] !== undefined) && (filter[attribute.id] !== null))
           && !attribute.filter.matches(filter[attribute.id], value,
                                        this.context.api.store.getState());
       }) === undefined);

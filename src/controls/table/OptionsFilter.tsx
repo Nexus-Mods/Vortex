@@ -54,7 +54,8 @@ class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
 
   private changeFilter = (filter: { value: any, label: string }) => {
     const { attributeId, onSetFilter } = this.props;
-    onSetFilter(attributeId, truthy(filter) ? filter.value : undefined);
+    onSetFilter(attributeId,
+      ((filter !== undefined) && (filter !== null)) ? filter.value : undefined);
   }
 }
 
