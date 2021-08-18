@@ -1696,6 +1696,7 @@ class InstallManager {
         })
         .catch(NotFound, err => {
           api.showErrorNotification('Failed to install dependency', err, {
+            message: renderModReference(dep.reference, undefined),
             allowReport: false,
           });
           return Promise.resolve(undefined);
@@ -1709,6 +1710,14 @@ class InstallManager {
               clearQueued();
               return Promise.reject(err);
             }
+          } else if ([403, 404].includes(err['statusCode'])) {
+            api.showErrorNotification(
+              'Failed to install dependency',
+              'The mod seems to have been deleted and can no longer be downloaded.', {
+              message: renderModReference(dep.reference, undefined),
+              allowReport: false,
+            });
+            return Promise.resolve();
           }
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
