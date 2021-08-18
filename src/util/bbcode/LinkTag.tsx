@@ -36,6 +36,10 @@ class LinkTag extends Tag {
       linkUrl = `mailto:${linkUrl}`;
     }
 
+    const title = linkUrl.startsWith('cb:')
+      ? undefined
+      : linkUrl;
+
     const {callbacks, allowLocal} = this.renderer.options;
     return (
       <ErrorContext.Consumer>
@@ -46,7 +50,7 @@ class LinkTag extends Tag {
               // tslint:disable-next-line:jsx-no-lambda
               onClick={context.safeCB((evt) => this.clicked(evt, callbacks, allowLocal),
                                       [this.renderer.options])}
-              title={linkUrl}
+              title={title}
             >
               {this.getComponents()}
             </a>
