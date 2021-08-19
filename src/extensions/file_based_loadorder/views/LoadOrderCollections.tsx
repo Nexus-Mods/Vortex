@@ -80,7 +80,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   public componentDidUpdate(prevProps: IProps) {
     const currentRules = JSON.stringify(this.props.collection.rules);
     const prevRules = JSON.stringify(prevProps.collection.rules);
-    if (currentRules !== prevRules) {
+    const currentLO = JSON.stringify(this.props.loadOrder);
+    const prevLO = JSON.stringify(prevProps.loadOrder);
+    if (currentRules !== prevRules || currentLO !== prevLO) {
       this.genLoadOrder();
     }
   }
