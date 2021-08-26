@@ -1583,7 +1583,7 @@ class InstallManager {
       });
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
-        if (dep.extra.localPath !== undefined) {
+        if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
           const downloadPath = selectors.downloadPathForGame(state, profile.gameId);
           const fileName = path.basename(dep.extra.localPath);
