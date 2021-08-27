@@ -1389,8 +1389,13 @@ function init(context: IExtensionContextExt): boolean {
       const gameId = mod.attributes?.downloadGame !== undefined
         ? mod.attributes?.downloadGame
         : gameMode;
-      context.api.events.emit('open-mod-page',
+      if (mod.type === 'collection') {
+        context.api.events.emit('open-collection-page',
+                              gameId, mod.attributes?.collectionId, mod.attributes?.source);
+      } else {
+        context.api.events.emit('open-mod-page',
                               gameId, mod.attributes?.modId, mod.attributes?.source);
+      }
     } else {
       const ids = getSafe(state.persistent.downloads,
                           ['files', instanceIds[0], 'modInfo', 'nexus', 'ids'],
