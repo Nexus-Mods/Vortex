@@ -323,8 +323,9 @@ class InstallManager {
       })
       .then(modInfo => {
         const fileId = modInfo.fileId ?? modInfo.revisionId;
+        const isCollection = modInfo.revisionId !== undefined;
         const oldMod = (fileId !== undefined)
-          ? this.findPreviousVersionMod(fileId, api.store, installGameId)
+          ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
           : undefined;
 
         if ((oldMod !== undefined) && (fullInfo.choices === undefined)) {
@@ -1188,10 +1189,19 @@ class InstallManager {
   }
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
-                                 gameMode: string): IMod {
+                                 gameMode: string, isCollection: boolean): IMod {
     const mods = store.getState().persistent.mods[gameMode] || {};
+    // This is not great, but we need to differentiate between revisionIds and fileIds
+    //  as it's perfectly possible for a collection's revision id to match a regular
+    //  mod's fileId resulting in false positives and therefore mashed up metadata.
+    const filterFunc = (modId: string) => (isCollection)
+      ? mods[modId].type === 'collection'
+      : mods[modId].type !== 'collection';
     let mod: IMod;
-    Object.keys(mods).forEach(key => {
+    Object.keys(mods).filter(filterFunc).forEach(key => {
+      // TODO: fileId/revisionId can potentially be more up to date than the last
+      //  known "newestFileId" property if the curator/mod author has released a new
+      //  version of his collection/mod since the last time the user checked for updates
       const newestFileId: number = mods[key].attributes?.newestFileId;
       const currentFileId: number =
         mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
