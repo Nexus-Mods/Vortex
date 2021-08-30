@@ -68,9 +68,9 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
 
 class TweakList extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, tweaks } = this.props;
+    const { t, tweaks, mod } = this.props;
 
-    if (tweaks.length === 0) {
+    if (tweaks.length === 0 || mod === undefined) {
       return null;
     }
 
