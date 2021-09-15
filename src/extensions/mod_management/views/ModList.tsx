@@ -616,6 +616,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       description: 'Name of the mod',
       icon: 'quote-left',
       calc: (mod) => modName(mod),
+      isExtensible: true,
       placement: 'both',
       isToggleable: false,
       edit: {

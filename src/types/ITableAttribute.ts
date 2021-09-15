@@ -167,6 +167,11 @@ export interface ITableAttribute<T = any> {
    */
   isVolatile?: boolean;
   /**
+   * if true, the rendered control will be extensible with wrappers (see registerControlWrapper),
+   * with a name that is generated from <tableid>-<columnid>
+   */
+  isExtensible?: boolean;
+  /**
    * Never shrink the column while scrolling, it can still grow though
    */
   noShrink?: boolean;
@@ -254,14 +259,14 @@ export interface ITableAttribute<T = any> {
      * if set, this function determines if the attribute is editable. If "edit" is an empty
      * object, the attribute is readonly. If "edit" is non-empty and "readonly" is
      * undefined, the attribute is editable.
-     * 
+     *
      * @note: This currently only affects controls in the sidebar, not the ones in the table
      */
     readOnly?: (object: any) => boolean;
 
     /**
      * allow inline editing of this cell for attribute with "choices".
-     * 
+     *
      * @note This does not work as described if choices is undefined, boolean attributes for example
      *       become read-only if this attribute is set and strings and dates don't get rendered
      *       properly any more.

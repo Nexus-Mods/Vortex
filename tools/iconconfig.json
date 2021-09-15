@@ -620,6 +620,14 @@
     "onoff": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_button-power",
       "rmFill": true
+    },
+    "filter-dependencies": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_layers",
+      "rmFill": true
+    },
+    "turn-s": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_turn-s",
+      "rmFill": true
     }
   }
 }

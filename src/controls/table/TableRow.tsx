@@ -4,6 +4,7 @@ import { preT, TFunction } from '../../util/i18n';
 import ContextMenu from '../ActionContextMenu';
 import ActionDropdown from '../ActionDropdown';
 import Dropdown, { DummyMenu } from '../Dropdown';
+import ExtensibleControl from '../ExtensibleControl';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import SelectUpDown from '../SelectUpDown';
@@ -56,22 +57,39 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { t, attribute, data, language, onHighlight,
-            rawData, rowId } = this.props;
+    const { t, attribute, onHighlight, rawData, rowId, tableId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
     // otherwise rowData is the calculated value of this cell
 
+    let content = null;
+
     if (attribute.customRenderer !== undefined) {
       const attrControl = attribute.customRenderer(rawData, false, t, {
         onHighlight }) || null;
-      return attrControl !== null ? (
+      content = attrControl !== null ? (
         <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
           {attrControl}
         </ExtensionGate>
       ) : null;
+    } else {
+      content = this.renderDefault();
     }
+
+    return attribute.isExtensible
+      ? (
+        <ExtensibleControl
+          group={`${tableId}-${attribute.id}`}
+          wrapperProps={{ rowId }}
+        >
+          {content}
+        </ExtensibleControl>
+      ) : content;
+  }
+
+  private renderDefault(): JSX.Element {
+    const { t, attribute, data, language, rowId } = this.props;
 
     if ((data === undefined) || (data === null)) {
       return <span>{' '}</span>;

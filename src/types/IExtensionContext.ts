@@ -85,6 +85,9 @@ export type RegisterAction =
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
    condition?: (instanceIds?: string[]) => boolean | string) => void;
 
+export type RegisterControlWrapper =
+   (group: string, priority: number, wrapper: React.ComponentType<any>) => void;
+
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
@@ -872,6 +875,12 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerAction: RegisterAction;
+
+  /**
+   * register a wrapper for an existing control. Only controls designed for extension can
+   * be used.
+   */
+  registerControlWrapper: RegisterControlWrapper;
 
   /**
    * registers a page for the main content area

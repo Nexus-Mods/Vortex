@@ -21,44 +21,49 @@ interface IBoundProps {
 
 const dummy = '__undefined_BJL9vbThZ';
 
-class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
-  public render(): JSX.Element {
-    const { t, filter, multi } = this.props;
+function OptionsFilterComponent(props: IProps & IBoundProps) {
+  const { t, attributeId, filter, multi, onSetFilter } = props;
 
-    let options = this.props.options;
-    if (!Array.isArray(options)) {
-      options = options();
+  const [options, setOptions] = React.useState([]);
+
+  React.useEffect(() => {
+    if (Array.isArray(props.options)) {
+      setOptions(props.options);
     }
+  }, [props.options]);
 
-    // can't use undefined as a value in Select
-    const optionsSane = options.map(
-      opt => opt.value === undefined ? { label: opt.label, value: dummy } : opt);
+  const changeFilterMulti = React.useCallback((newFilter: Array<{ value: any, label: string }>) => {
+    onSetFilter(attributeId, newFilter.map(val => val.value));
+  }, [attributeId, onSetFilter]);
 
-    return (
-      <Select
-        multi={multi}
-        className='select-compact'
-        options={optionsSane}
-        value={filter}
-        onChange={multi ? this.changeFilterMulti : this.changeFilter}
-        autosize={false}
-        placeholder={t('Select...')}
-      />
-    );
-  }
-
-  private changeFilterMulti = (filter: Array<{ value: any, label: string }>) => {
-    const { attributeId, onSetFilter } = this.props;
-    onSetFilter(attributeId, filter.map(val => val.value));
-  }
-
-  private changeFilter = (filter: { value: any, label: string }) => {
-    const { attributeId, onSetFilter } = this.props;
+  const changeFilter = React.useCallback((newFilter: { value: any, label: string }) => {
     onSetFilter(attributeId,
-      ((filter !== undefined) && (filter !== null)) ? filter.value : undefined);
-  }
-}
+      ((newFilter !== undefined) && (newFilter !== null)) ? newFilter.value : undefined);
+  }, [attributeId, onSetFilter]);
 
+  const updateOptions = React.useCallback(() => {
+    if (!Array.isArray(props.options)) {
+      setOptions(props.options());
+    }
+  }, [props.options]);
+
+  // can't use undefined as a value in Select
+  const optionsSane = options.map(
+    opt => opt.value === undefined ? { label: opt.label, value: dummy } : opt);
+
+  return (
+    <Select
+      multi={multi}
+      className='select-compact'
+      options={optionsSane}
+      value={filter}
+      onChange={multi ? changeFilterMulti : changeFilter}
+      autosize={false}
+      placeholder={t('Select...')}
+      onOpen={updateOptions}
+    />
+  );
+}
 class OptionsFilter implements ITableFilter {
   public static EMPTY = '__empty';
   public component: React.ComponentClass<any>;

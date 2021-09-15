@@ -5,6 +5,7 @@ import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/st
 import * as action from '../actions/state';
 
 import * as _ from 'lodash';
+import { inspect } from 'util';
 
 export const NUM_SPEED_DATA_POINTS = 30;
 
@@ -165,7 +166,9 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
       }),
     [action.setDownloadModInfo as any]: (state, payload) => {
-      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
+      if (typeof(payload.id) !== 'string') {
+        throw new Error('invalid download id: ' + inspect(payload.id));
+      }
       if (state.files[payload.id] === undefined) {
         return state;
       }
