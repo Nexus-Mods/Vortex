@@ -170,3 +170,24 @@ describe('sanitizeFilename', () => {
     expect(util.sanitizeFilename('foobar.')).toBe('foobar._');
   });
 });
+
+describe('nexusModsURL', () => {
+  it('creates basic urls', () => {
+    expect(util.nexusModsURL(['foo', 'bar'])).toBe('https://www.nexusmods.com/foo/bar');
+  });
+  it('supports different subdomains', () => {
+    expect(util.nexusModsURL(['foo', 'bar'], { section: util.Section.Users }))
+      .toBe('https://users.nexusmods.com/foo/bar');
+  });
+  it('supports tracking campaigns', () => {
+    expect(util.nexusModsURL(['foo', 'bar'], { campaign: util.Campaign.ViewCollection }))
+      .toBe('https://www.nexusmods.com/foo/bar?pk_campaign=ViewCollection&pk_source=vortex');
+  });
+  it('supports additional parameters', () => {
+    expect(util.nexusModsURL(['foo', 'bar'], {
+      campaign: util.Campaign.ViewCollection,
+      parameters: ['foo=bar'],
+    }))
+      .toBe('https://www.nexusmods.com/foo/bar?foo=bar&pk_campaign=ViewCollection&pk_source=vortex');
+  });
+});

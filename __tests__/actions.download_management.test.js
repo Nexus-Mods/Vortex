@@ -91,7 +91,15 @@ describe('setDownloadSpeed', () => {
   it('creates the action', () => {
     let action = actions.setDownloadSpeed(42);
     expect(action).toEqual(
-      { error: false, type: 'SET_DOWNLOAD_SPEED', payload: 42, meta: { forward: false } }
+      {
+        error: false,
+        type: 'SET_DOWNLOAD_SPEED',
+        payload: 42,
+        meta: {
+          forward: false,
+          scope: 'local'
+        },
+      }
     );
   });
 });

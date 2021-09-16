@@ -5,22 +5,23 @@ import { Button } from 'react-bootstrap';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import opn from '../../../util/opn';
-import { NEXUS_MEMBERSHIP_URL } from '../constants';
+import { Campaign, nexusModsURL, Section } from '../../../util/util';
+import { PREMIUM_PATH } from '../constants';
 
 export interface IPremiumNagBanner {
   t: TFunction;
   onDownload: () => void;
-  campaign: string;
+  campaign: string | Campaign;
 }
 
 function PremiumNagBanner(props: IPremiumNagBanner) {
   const { t, campaign, onDownload } = props;
 
   const goGetPremium = React.useCallback(() => {
-    const suffix = campaign !== undefined
-      ? `&pk_campaign=${campaign}`
-      : '';
-    opn(NEXUS_MEMBERSHIP_URL + suffix).catch(() => null);
+    opn(nexusModsURL(PREMIUM_PATH, {
+      section: Section.Users,
+      campaign,
+    })).catch(() => null);
   }, [campaign]);
 
   return (

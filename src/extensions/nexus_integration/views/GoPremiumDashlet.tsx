@@ -2,11 +2,12 @@ import Dashlet from '../../../controls/Dashlet';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
 
-import { NEXUS_MEMBERSHIP_URL } from '../constants';
+import { PREMIUM_PATH } from '../constants';
 
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
+import { Campaign, nexusModsURL, Section } from '../../../util/util';
 
 class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {
@@ -25,7 +26,10 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   }
 
   private goBuyPremium = () => {
-    opn(NEXUS_MEMBERSHIP_URL + `&pk_campaign=Dashboard-Ad`).catch(err => undefined);
+    opn(nexusModsURL(PREMIUM_PATH, {
+      section: Section.Users,
+      campaign: Campaign.DashboardAd }))
+      .catch(err => undefined);
   }
 }
 

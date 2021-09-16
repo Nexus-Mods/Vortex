@@ -53,8 +53,9 @@ import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
-         makeQueue, makeUnique, makeUniqueByKey, objDiff, pad, sanitizeCSSId, sanitizeFilename,
-         semverCoerce, setdefault, toPromise, unique } from './util';
+         makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
+         sanitizeFilename, semverCoerce, setdefault, toPromise, unique } from './util';
+import { Campaign, Section } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -69,6 +70,7 @@ export {
   bbcodeToHTML,
   bbcodeToReact,
   bytesToString,
+  Campaign,
   checksum,
   convertGameIdReverse,
   copyFileAtomic,
@@ -116,6 +118,7 @@ export {
   makeUniqueByKey,
   MissingInterpreter,
   nexusGameId,
+  nexusModsURL,
   Normalize,
   NotFound,
   NotSupportedError,
@@ -136,6 +139,7 @@ export {
   runThreaded,
   sanitizeCSSId,
   sanitizeFilename,
+  Section,
   semverCoerce,
   setdefault,
   SetupError,

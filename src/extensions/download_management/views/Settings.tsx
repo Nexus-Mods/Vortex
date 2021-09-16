@@ -21,9 +21,10 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
-import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
+import { Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
+         nexusModsURL, Section } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
-import { NEXUS_DOMAIN } from '../../nexus_integration/constants';
+import { PREMIUM_PATH } from '../../nexus_integration/constants';
 import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
@@ -42,8 +43,6 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-const NEXUS_MEMBERSHIP_URL =
-  `https://users.${NEXUS_DOMAIN}/account/billing/premium?pk_source=vortex&pk_campaign=Downloads-Ad`;
 const MB = 1024 * 1024;
 
 interface IConnectedProps {
@@ -356,7 +355,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private goBuyPremium = () => {
-    opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
+    opn(nexusModsURL(PREMIUM_PATH, {
+      section: Section.Users,
+      campaign: Campaign.DownloadsAd }))
+      .catch(() => null);
   }
 
   private setDownloadPath = (newPath: string) => {

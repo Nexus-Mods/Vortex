@@ -13,6 +13,8 @@ import * as Redux from 'redux';
 import { batch } from 'redux-act';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
+import * as url from 'url';
+import { NEXUS_DOMAIN, NEXUS_PROTOCOL } from '../extensions/nexus_integration/constants';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -686,7 +688,7 @@ export function replaceRecursive(input: any, from: any, to: any) {
 }
 
 function removeLeadingZeros(input: string): string {
-  return input.split('.').map(seg => seg.replace(/^0+(\d+$)/,'$1')).join('.');
+  return input.split('.').map(seg => seg.replace(/^0+(\d+$)/, '$1')).join('.');
 }
 
 export function semverCoerce(input: string): semver.SemVer {
@@ -765,4 +767,51 @@ export function wrapExtCBSync<ArgT extends any[], ResT>(
       throw err;
     }
   };
+}
+
+export enum Section {
+  Mods,
+  Collections,
+  Users,
+}
+
+export enum Campaign {
+  ViewCollection = 'ViewCollection',
+  Collections = 'Collections',
+  DownloadsAd = 'Downloads-Ad',
+  DashboardAd = 'Dashboard-Ad',
+}
+
+export interface INexusURLOptions {
+  section?: Section;
+  campaign?: Campaign | string;
+  parameters?: string[];
+}
+
+function sectionHost(section?: Section) {
+  switch (section) {
+    case Section.Collections: return `next.${NEXUS_DOMAIN}`;
+    case Section.Users: return `users.${NEXUS_DOMAIN}`;
+    default: return `www.${NEXUS_DOMAIN}`;
+  }
+}
+
+export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
+  const parameters = options?.parameters ?? [];
+  if (options?.campaign !== undefined) {
+    parameters.push(`pk_campaign=${options.campaign.toString()}`);
+    parameters.push('pk_source=vortex');
+  }
+  const urlParameters: url.UrlObject = {
+    protocol: NEXUS_PROTOCOL,
+    host: sectionHost(options?.section),
+  };
+  if (reqPath.length > 0) {
+    urlParameters.pathname = '/' + reqPath.join('/');
+  }
+  if (parameters.length > 0) {
+    urlParameters.search = '?' + parameters.join('&');
+  }
+
+  return url.format(urlParameters);
 }

@@ -55,7 +55,8 @@
       "json",
       "jsx",
       "ts",
-      "tsx"
+      "tsx",
+      "node"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>setupTests.js"

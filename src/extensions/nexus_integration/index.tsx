@@ -13,7 +13,7 @@ import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { batchDispatch, decodeHTML, truthy } from '../../util/util';
+import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -52,7 +52,7 @@ import {
   genGameAttribute,
   genModIdAttribute } from './attributes';
 import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
-         NEXUS_MEMBERSHIP_URL, REVALIDATION_FREQUENCY } from './constants';
+         PREMIUM_PATH, REVALIDATION_FREQUENCY } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
@@ -1081,7 +1081,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 
 function goBuyPremium(evt: React.MouseEvent<any>) {
   const campaign = evt.currentTarget.getAttribute('data-campaign');
-  opn(NEXUS_MEMBERSHIP_URL + `&pk_campaign=${campaign}`).catch(err => undefined);
+  opn(nexusModsURL(PREMIUM_PATH, { section: Section.Users, campaign })).catch(err => undefined);
 }
 
 function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boolean) {
