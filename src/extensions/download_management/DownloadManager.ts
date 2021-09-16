@@ -456,7 +456,7 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302, 307, 308].indexOf(response.statusCode) !== -1)
+      if (([301, 302, 307, 308].includes(response.statusCode))
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
@@ -472,11 +472,10 @@ class DownloadWorker {
           // any data we may have gotten with the old reply is useless
           this.mJob.size += this.mJob.received;
           this.mJob.confirmedSize = this.mJob.size;
-          this.mJob.received
-            = this.mJob.offset
-            = this.mJob.confirmedReceived
-            = this.mJob.confirmedOffset
-            = 0;
+          this.mJob.offset -= this.mJob.received;
+          this.mJob.confirmedOffset -= this.mJob.confirmedReceived;
+
+          this.mJob.received = this.mJob.confirmedReceived = 0;
           this.mJob.state = 'running';
           this.mEnded = false;
           this.assignJob(this.mJob, newUrl);
