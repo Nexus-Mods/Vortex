@@ -133,7 +133,9 @@ class Disableable {
           this.mLastValidation = now;
           return obj.revalidate()
             .then((userInfo) => {
-              that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+              if (userInfo !== null) {
+                that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+              }
               return obj[prop](...args);
             });
         } else {
