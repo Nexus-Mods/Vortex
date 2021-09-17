@@ -299,7 +299,9 @@ function init(context: IExtensionContext) {
       const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find(iter => iter.modId === modId);
       const isInstalled = Object.values(state.session.extensions.installed).find(inst =>
-        (inst.modId === ext?.modId) && (inst.version === ext?.version)) !== undefined;
+        (!!inst?.modId) // Corrupt state ? (#9935)
+          && (inst.modId === ext?.modId)
+          && (inst.version === ext?.version)) !== undefined;
       if (isInstalled) {
         context.api.sendNotification({
           id: 'extension-already-installed',
