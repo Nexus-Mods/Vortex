@@ -264,6 +264,7 @@ interface IDependencyNode extends IDependency {
   redundant: boolean;
   fileList?: IFileListItem[];
   installerChoices?: any;
+  reresolveDownloadHint?: () => void;
 }
 
 function gatherDependenciesGraph(
@@ -322,6 +323,9 @@ function gatherDependenciesGraph(
               fileMD5: rule.reference.fileMD5,
               sourceURI: urlFromHint.url,
               referer: urlFromHint.referer,
+              details: {
+                homepage: rule.downloadHint.url,
+              },
             },
           }]
           : [],
@@ -331,6 +335,19 @@ function gatherDependenciesGraph(
         installerChoices: rule.installerChoices,
         fileList: rule.fileList,
       };
+      if ((urlFromHint !== undefined) && (rule.downloadHint?.mode === 'browse')) {
+        // user might have selected the wrong download link which we'll only notice
+        // once the file has actually been downloaded - which may be hours from now.
+        // This gives us a way to re-query the download url
+        res.reresolveDownloadHint = () => {
+          return lookupDownloadHint(api, rule.downloadHint)
+            .then(dlHintRes => {
+              res.lookupResults[0].value.sourceURI = dlHintRes.url;
+              res.lookupResults[0].value.referer = dlHintRes.referer;
+              return Promise.resolve();
+            });
+        };
+      }
       return res;
     })
     .catch(err => {

@@ -1583,15 +1583,9 @@ class InstallManager {
         }));
     };
 
-    const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
-      if (canceled) {
-        return Promise.reject(new UserCanceled());
-      }
-      log('debug', 'installing as dependency', {
-        ref: JSON.stringify(dep.reference),
-        downloadRequired: dep.download === undefined,
-      });
+    const doDownload = (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
+
       if (dep.download === undefined) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
@@ -1675,10 +1669,58 @@ class InstallManager {
           } else {
             log('info', 'downloaded as dependency', { downloadId });
           }
+
+          let queryWrongMD5 = Promise.resolve();
+          if ((dep.mod === undefined)
+              && (dep.lookupResults.length === 1)
+              && (dep.lookupResults[0].key === 'from-download-hint')
+              && (dep.lookupResults[0].value.fileMD5 !== undefined)
+              && (dep.lookupResults[0].value.fileMD5 !== downloads[downloadId].fileMD5)) {
+            queryWrongMD5 = api.showDialog('question', 'Wrong MD5', {
+              text: 'The file you downloaded from "{{url}}" for mod "{{name}}" '
+                  + 'is not the expected file. This might be because the file has been '
+                  + 'updated or you clicked the wrong download link.',
+              parameters: {
+                url: dep.lookupResults[0].value.details?.homepage,
+                name: renderModReference(dep.reference, dep.mod),
+              },
+            }, [
+              { label: 'Retry' },
+              { label: 'Use file anyway' },
+            ])
+            .then(result => (result.action === 'Retry')
+              ? Promise.reject(new ProcessCanceled('retry invalid download'))
+              : Promise.resolve());
+          }
+
           return (dep.mod === undefined)
-            ? installDownload(dep, downloadId)
+            ? queryWrongMD5
+                .then(() => installDownload(dep, downloadId))
+                .catch(err => {
+                  if (dep['reresolveDownloadHint'] === undefined) {
+                    return Promise.reject(err);
+                  }
+                  const download = downloads[downloadId];
+                  const fullPath: string =
+                    path.join(downloadPathForGame(state, download.game[0]), download.localPath);
+                  return fs.removeAsync(fullPath)
+                    .then(() => dep['reresolveDownloadHint']())
+                    .then(() => doDownload(dep));
+                })
             : Promise.resolve(dep.mod.id);
-        })
+        });
+    };
+
+    const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
+      if (canceled) {
+        return Promise.reject(new UserCanceled());
+      }
+      log('debug', 'installing as dependency', {
+        ref: JSON.stringify(dep.reference),
+        downloadRequired: dep.download === undefined,
+      });
+
+      doDownload(dep)
         .then((modId: string) => {
           log('info', 'installed as dependency', { modId });
           api.store.dispatch(setModEnabled(profile.id, modId, true));
