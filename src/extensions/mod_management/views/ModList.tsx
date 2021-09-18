@@ -114,6 +114,7 @@ interface IConnectedProps extends IModProps {
   installPath: string;
   downloadPath: string;
   showDropzone: boolean;
+  autoInstall: boolean;
 }
 
 interface IActionProps {
@@ -1317,7 +1318,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private dropMod = (type: DropType, values: string[]) => {
-    this.context.api.events.emit('import-downloads', values);
+    const { autoInstall } = this.props;
+    this.context.api.events.emit('import-downloads', values, (dlIds: string[]) => {
+      if (autoInstall) {
+        dlIds.forEach(dlId => {
+          this.context.api.events.emit('start-install-download', dlId);
+        });
+      }
+    });
   }
 
   private conditionNotInstalled = (instanceId: string | string[]) => {
@@ -1346,6 +1354,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     installPath: selectors.installPath(state),
     downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
+    autoInstall: state.settings.automation.install,
   };
 }
 
