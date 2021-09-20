@@ -45,7 +45,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
             // relies on an old version at the time of writing
             const translateMatch =
               args.props.style.transform.match(/translate3d\((\w+), (\w+), 0\)/);
-            if (translateMatch !== undefined) {
+            if ((translateMatch !== undefined) && (translateMatch !== null)) {
               args.props.style.top = translateMatch[2];
               args.props.style.left = translateMatch[1];
               delete args.props.style.transform;
