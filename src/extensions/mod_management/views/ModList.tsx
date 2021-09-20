@@ -192,6 +192,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'delete',
         title: 'Remove related',
         action: this.removeRelated,
+        condition: () => this.state.groupedMods !== undefined,
         singleRowAction: true,
         multiRowAction: false,
       },
@@ -1073,6 +1074,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeRelated = (modIds: string[]) => {
+    if (this.state.groupedMods === undefined) {
+      return;
+    }
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
       .filter(mod => mod?.attributes !== undefined)
