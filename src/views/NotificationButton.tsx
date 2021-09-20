@@ -44,7 +44,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       expand: undefined,
-      open: false,
+      open: !props.hide,
       filtered: [],
     });
 
