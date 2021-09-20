@@ -1720,7 +1720,7 @@ class InstallManager {
         downloadRequired: dep.download === undefined,
       });
 
-      doDownload(dep)
+      return doDownload(dep)
         .then((modId: string) => {
           log('info', 'installed as dependency', { modId });
           api.store.dispatch(setModEnabled(profile.id, modId, true));
