@@ -52,10 +52,11 @@ class InstallContext implements IInstallContext {
   private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
   private mIsDownload: (archiveId: string) => boolean;
+  private mSilent: boolean = false;
 
   private mLastProgress: number = 0;
 
-  constructor(gameMode: string, api: IExtensionApi) {
+  constructor(gameMode: string, api: IExtensionApi, silent: boolean) {
     const store = api.store;
     const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
@@ -115,18 +116,21 @@ class InstallContext implements IInstallContext {
           && (getSafe(state, ['persistent', 'downloads', 'files', archiveId],
                       undefined) !== undefined);
     };
+    this.mSilent = silent ?? false;
   }
 
   public startIndicator(id: string): void {
     log('info', 'start mod install', { id });
     this.mLastProgress = 0;
-    this.mAddNotification({
-      id: 'install_' + id,
-      title: 'Installing {{ id }}',
-      message: 'Preparing',
-      replace: { id },
-      type: 'activity',
-    });
+    if (!this.mSilent) {
+      this.mAddNotification({
+        id: 'install_' + id,
+        title: 'Installing {{ id }}',
+        message: 'Preparing',
+        replace: { id },
+        type: 'activity',
+      });
+    }
     this.mIndicatorId = id;
     this.mInstallOutcome = undefined;
     this.mStartActivity(`installing_${id}`);
@@ -245,7 +249,7 @@ class InstallContext implements IInstallContext {
       case 'success':
         // TODO: bit of a hack, I'd prefer if we controlled this from the collections
         //   extension
-        if (mod.type === 'collection') {
+        if ((mod.type === 'collection') || this.mSilent) {
           return null;
         }
         return {

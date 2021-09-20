@@ -118,6 +118,10 @@ const archiveExtLookup = new Set<string>([
 // exe is a self-extracting archive and we would be able to handle it
 const FILETYPES_AVOID = ['.dll'];
 
+function nop() {
+  // nop
+}
+
 /**
  * central class for the installation process
  *
@@ -211,6 +215,9 @@ class InstallManager {
    *                                   directly, ignoring any installer scripts
    * @param {boolean} unattended if set and there is an option preset, the installation
    *                             will happen automatically without user interaction
+   * @param {boolean} forceInstaller if set, this should be the id of an installer
+   *                                 (registerInstaller) to be used, instead of going through
+   *                                 the auto-detection.
    */
   public install(
     archiveId: string,
@@ -224,7 +231,8 @@ class InstallManager {
     forceGameId?: string,
     fileList?: IFileListItem[],
     unattended?: boolean,
-    forceInstaller?: string): void {
+    forceInstaller?: string,
+    silent?: boolean): void {
 
     if (this.mTask === undefined) {
       this.mTask = new Zip();
@@ -275,7 +283,7 @@ class InstallManager {
           return api.emitAndAwait('install-extension-from-download', archiveId)
             .then(() => Promise.reject(new UserCanceled()));
         }
-        installContext = new InstallContext(gameId, api);
+        installContext = new InstallContext(gameId, api, silent);
         installContext.startIndicator(baseName);
         let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
         if (Array.isArray(dlGame)) {
@@ -1502,7 +1510,8 @@ class InstallManager {
                                 profile: IProfile,
                                 sourceModId: string,
                                 dependencies: IDependency[],
-                                recommended: boolean): Promise<IDependency[]> {
+                                recommended: boolean,
+                                silent: boolean): Promise<IDependency[]> {
     const state: IState = api.getState();
     let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
@@ -1563,7 +1572,8 @@ class InstallManager {
           })));
     };
 
-    const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
+    const installDownload = (dep: IDependency, downloadId: string)
+        : Promise<string> => {
       return Promise.resolve(this.mDependencyInstallsLimit.do(() => {
         return canceled
           ? Promise.reject(new UserCanceled(false))
@@ -1573,7 +1583,7 @@ class InstallManager {
                               dep.extra?.['instructions'], () =>
           this.installModAsync(dep.reference, api, downloadId,
             { choices: dep.installerChoices }, dep.fileList,
-            profile.gameId))
+            profile.gameId, silent))
           .catch(err => {
             if (err instanceof UserCanceled) {
               err.skipped = true;
@@ -1871,7 +1881,7 @@ class InstallManager {
       { count: success.length, errors: error.length });
 
     if (silent && (error.length === 0)) {
-      return this.doInstallDependencies(api, profile, modId, success, false)
+      return this.doInstallDependencies(api, profile, modId, success, false, silent)
         .then(updated => this.updateRules(api, profile, modId,
           [].concat(existing, updated), false));
     }
@@ -1923,7 +1933,7 @@ class InstallManager {
         },
       }, actions)).then(result => {
         if (result.action === 'Install') {
-          return this.doInstallDependencies(api, profile, modId, success, false)
+          return this.doInstallDependencies(api, profile, modId, success, false, silent)
             .then(updated => this.updateRules(api, profile, modId,
               [].concat(existing, updated), false));
         } else {
@@ -1955,7 +1965,7 @@ class InstallManager {
 
     let lastProgress = -1;
 
-    const progress = (perc: number) => {
+    const progress = silent ? nop : (perc: number) => {
       // rounded to steps of 5%
       const newProgress = Math.round(perc * 20) * 5;
       if (newProgress !== lastProgress) {
@@ -2123,7 +2133,7 @@ class InstallManager {
                 (result !== null)
                   ? success.filter((dep, idx) => selected.has(idx.toString()))
                   : success,
-                true)
+                true, silent)
                 .then(updated => this.updateRules(api, profile, modId,
                   [].concat(existing, updated), true));
             } else {
@@ -2173,7 +2183,8 @@ class InstallManager {
                           downloadId: string,
                           modInfo?: any,
                           fileList?: IFileListItem[],
-                          forceGameId?: string): Promise<string> {
+                          forceGameId?: string,
+                          silent?: boolean): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -2190,7 +2201,7 @@ class InstallManager {
           } else {
             reject(error);
           }
-        }, forceGameId, fileList, true);
+        }, forceGameId, fileList, true, undefined, silent);
     });
   }
 
