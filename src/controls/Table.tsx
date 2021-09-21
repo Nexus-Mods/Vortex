@@ -1126,7 +1126,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const delta: any = {};
 
       return Promise.map(objects, (attribute: ITableAttribute) => {
-        // avoid recalculating if the source data hasn't changed
+        // avoid recalculating if the source data hasn't changed. To support
+        // isVolatile we still go through each attribute even if the entire row didn't change
         if (!attribute.isVolatile
             && (attribute.id !== forceUpdateId)
             && (oldState.data[rowId] === data[rowId])) {

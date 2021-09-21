@@ -81,9 +81,9 @@ function calc(props) {
   const {state, received, size, verified} = download;
 
   if (state === 'started') {
-    return (received / Math.max(size, 1));
+    return Math.floor(received / Math.max(size, 1) * 100.0) / 100.0;
   } else if (state === 'finalizing') {
-    return (verified / Math.max(size, 1));
+    return Math.floor(verified / Math.max(size, 1) * 100.0) / 100.0;
   } else {
     return state;
   }

@@ -36,6 +36,7 @@ import DownloadGraph from './DownloadGraph';
 
 import Promise from 'bluebird';
 import { TFunction } from 'i18next';
+import _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
@@ -92,6 +93,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private mColumns: Array<ITableAttribute<IDownload>>;
   private mTableActions: IActionDefinition[];
   private mHeaderRendered: boolean = false;
+  private mLastFiltered: { [dlId: string]: IDownload };
 
   constructor(props: IDownloadViewProps) {
     super(props);
@@ -198,8 +200,6 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     let content = null;
 
     let filteredIds = Object.keys(downloads);
-    // TODO: proposed but ultimately rejected, that may change in the future
-    // .filter(dlId => downloads[dlId].modInfo?.internal !== true);
 
     if ((filteredIds.length === 0) && (gameMode !== undefined)) {
       content = this.renderDropzone();
@@ -211,6 +211,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         prev[dlId] = downloads[dlId];
         return prev;
       }, {});
+
+      if (!_.isEqual(filtered, this.mLastFiltered)) {
+        this.mLastFiltered = filtered;
+      }
+
       content = (
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
@@ -237,7 +242,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                   <FlexLayout.Flex>
                     <SuperTable
                       tableId='downloads'
-                      data={filtered}
+                      data={this.mLastFiltered}
                       staticElements={this.mColumns}
                       actions={this.actions}
                     />
