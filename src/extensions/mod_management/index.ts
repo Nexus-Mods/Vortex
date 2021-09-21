@@ -1,5 +1,6 @@
 import { dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
+import { setAutoDeployment } from '../settings_interface/actions/automation';
 import {
   IExtensionApi,
   IExtensionContext,
@@ -947,32 +948,62 @@ function onDeploySingleMod(api: IExtensionApi) {
 }
 
 function onNeedToDeploy(api: IExtensionApi, current: any) {
+  const deploy = () => {
+    api.events.emit('deploy-mods', onceCB((err) => {
+      if (err !== null) {
+        if (err instanceof UserCanceled) {
+          // Nothing to see here, move along.
+          return;
+        } else if (err instanceof NoDeployment) {
+          showError(api.store.dispatch,
+            'You need to select a deployment method in settings',
+            undefined, { allowReport: false });
+        } else {
+          showError(api.store.dispatch, 'Failed to activate mods', err);
+        }
+      }
+    }));
+  };
+
+  const autoDeploy = api.getState().settings.automation.deploy;
+  const deployAction = {
+    title: 'Deploy', action: (dismiss) => {
+      dismiss();
+      deploy();
+    },
+  };
+  const moreAction = {
+    title: 'More', action: (dismiss) => {
+      api.showDialog('question', 'Deployment necessary', {
+        text: 'Recent changes to the active mods are currently pending, '
+            + 'a deployment must be run to apply the latest changes to your game.',
+        checkboxes: [
+          { id: 'enable-auto-deployment', text: 'Enable automatic deployment', value: false },
+        ],
+      }, [
+        { label: 'Later' },
+        { label: 'Deploy' },
+      ])
+      .then((res) => {
+        if (res.input['enable-auto-deployment']) {
+          api.store.dispatch(setAutoDeployment(true));
+        }
+        if (res.action === 'Deploy') {
+          dismiss();
+          deploy();
+        }
+      });
+    },
+  };
+  const actions = autoDeploy
+    ? [deployAction]
+    : [deployAction, moreAction];
   if (current) {
     api.sendNotification({
       id: 'deployment-necessary',
       type: 'info',
       message: 'Deployment necessary',
-      actions: [
-        {
-          title: 'Deploy', action: (dismiss) => {
-            dismiss();
-            api.events.emit('deploy-mods', onceCB((err) => {
-              if (err !== null) {
-                if (err instanceof UserCanceled) {
-                  // Nothing to see here, move along.
-                  return;
-                } else if (err instanceof NoDeployment) {
-                  showError(api.store.dispatch,
-                    'You need to select a deployment method in settings',
-                    undefined, { allowReport: false });
-                } else {
-                  showError(api.store.dispatch, 'Failed to activate mods', err);
-                }
-              }
-            }));
-          },
-        },
-      ],
+      actions,
     });
   } else {
     api.dismissNotification('deployment-necessary');
