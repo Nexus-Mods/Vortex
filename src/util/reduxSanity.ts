@@ -11,7 +11,7 @@ export class StateError extends Error {
   }
 }
 
-export type SanityCheck = (state: any, action: Redux.Action) => string;
+export type SanityCheck = (state: any, action: Redux.Action) => string | false;
 
 const sanityChecks: { [type: string]: SanityCheck[] } = {};
 
@@ -22,7 +22,9 @@ export function reduxSanity(callback: (err: StateError) => void) {
         let invalid: boolean = false;
         (sanityChecks[action.type as string] || []).forEach(check => {
           const res = check(store.getState(), action);
-          if (res !== undefined) {
+          if (res === false) {
+            invalid = true;
+          } else if (res !== undefined) {
             callback(new StateError(action, res));
             invalid = true;
           }
