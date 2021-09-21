@@ -518,6 +518,9 @@ class InstallManager {
                   ],
                 });
               }
+              if (callback !== undefined) {
+                callback(err, null);
+              }
             });
         } else if (err instanceof SetupError) {
           return prom
@@ -530,6 +533,9 @@ class InstallManager {
                     installerPath: path.basename(archivePath),
                     message: err.message,
                   });
+              }
+              if (callback !== undefined) {
+                callback(err, null);
               }
             });
         } else if (err instanceof DataInvalid) {
@@ -544,6 +550,9 @@ class InstallManager {
                     installerPath: path.basename(archivePath),
                     message: err.message,
                   });
+              }
+              if (callback !== undefined) {
+                callback(err, null);
               }
             });
         } else if (err['code'] === 'MODULE_NOT_FOUND') {
@@ -560,6 +569,9 @@ class InstallManager {
               location,
               message: err.message.split('\n')[0],
             });
+          if (callback !== undefined) {
+            callback(err, null);
+          }
         } else {
           return prom
             .then(() => genHash(archivePath).catch(() => ({})))
