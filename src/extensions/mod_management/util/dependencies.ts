@@ -342,8 +342,11 @@ function gatherDependenciesGraph(
         res.reresolveDownloadHint = () => {
           return lookupDownloadHint(api, rule.downloadHint)
             .then(dlHintRes => {
-              res.lookupResults[0].value.sourceURI = dlHintRes.url;
-              res.lookupResults[0].value.referer = dlHintRes.referer;
+              res.lookupResults[0].value = {
+                ...res.lookupResults[0].value,
+                sourceURI: dlHintRes.url,
+                referer: dlHintRes.referer,
+              };
               return Promise.resolve();
             });
         };
