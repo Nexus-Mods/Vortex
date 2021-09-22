@@ -77,7 +77,7 @@ class TrayIcon {
 
   private showNotification(title: string, content: string) {
     const icon = path.join(getVortexPath('assets'), 'images', 'vortex.png');
-    if (!truthy(title) || !truthy(content)) {
+    if (!truthy(title) || !truthy(content) || this.mTrayIcon.isDestroyed()) {
       return;
     }
     log('debug', 'showing balloon', { title, content });

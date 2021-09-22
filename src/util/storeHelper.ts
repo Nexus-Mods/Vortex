@@ -29,7 +29,9 @@ function clone<T>(input: T): T {
 export function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T {
   let current = state;
   for (const segment of path) {
-    if ((current === undefined) || (current === null) || !current.hasOwnProperty(segment)) {
+    if ((current === undefined)
+        || (current === null)
+        || !Object.hasOwnProperty.call(current, segment)) {
       return fallback;
     } else {
       current = current[segment];
@@ -77,7 +79,7 @@ export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: a
   if (path.length === 1) {
     state[firstElement] = value;
   } else {
-    if (!state.hasOwnProperty(firstElement)) {
+    if (!Object.hasOwnProperty.call(state, firstElement)) {
       state[firstElement] = {};
     }
     mutateSafe(state[firstElement], path.slice(1), value);
@@ -107,7 +109,7 @@ export function setSafe<T extends object>(state: T, path: Array<(string | number
   if (path.length === 1) {
     copy[firstElement] = value;
   } else {
-    if (!copy.hasOwnProperty(firstElement)) {
+    if (!Object.hasOwnProperty.call(copy, firstElement)) {
       copy[firstElement] = {};
     }
     copy[firstElement] = setSafe(copy[firstElement], path.slice(1), value);
@@ -134,7 +136,7 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
     result = { ...(state as any) };
     result[firstElement] = value;
   } else {
-    if (state.hasOwnProperty(firstElement)) {
+    if (Object.hasOwnProperty.call(state, firstElement)) {
       const temp = setOrNop(result[firstElement], path.slice(1), value);
       if (temp !== result[firstElement]) {
         result = clone(result);
@@ -160,12 +162,12 @@ export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: 
   const firstElement: string | number = path[0];
   let result = state;
   if (path.length === 1) {
-    if (state.hasOwnProperty(firstElement)) {
+    if (Object.hasOwnProperty.call(state, firstElement)) {
       result = { ...(state as any) };
       result[firstElement] = value;
     }
   } else {
-    if (state.hasOwnProperty(firstElement)) {
+    if (Object.hasOwnProperty.call(state, firstElement)) {
       const temp = changeOrNop(result[firstElement], path.slice(1), value);
       if (temp !== result[firstElement]) {
         result = clone(result);
@@ -192,12 +194,12 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
     if (Array.isArray(state)) {
       result = [].concat(state);
       result.splice(firstElement as number, 1);
-    } else if (state.hasOwnProperty(firstElement)) {
+    } else if (Object.hasOwnProperty.call(state, firstElement)) {
       result = { ...(state as any) };
       delete result[firstElement];
     }
   } else {
-    if (result.hasOwnProperty(firstElement)) {
+    if (Object.hasOwnProperty.call(result, firstElement)) {
       const temp = deleteOrNop(result[firstElement], path.slice(1));
       if (temp !== result[firstElement]) {
         result = clone(result);
@@ -220,11 +222,13 @@ export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fal
       ? copy
       : fallback as any;
   } else if (path.length === 1) {
-    copy[firstElement] = (!copy.hasOwnProperty(firstElement) || !Array.isArray(copy[firstElement]))
+    copy[firstElement] = (!Object.hasOwnProperty.call(copy, firstElement)
+                          || !Array.isArray(copy[firstElement]))
       ? fallback
       : copy[firstElement].slice();
   } else {
-    if (!copy.hasOwnProperty(firstElement) || (typeof(copy[firstElement]) !== 'object')) {
+    if (!Object.hasOwnProperty.call(copy, firstElement)
+        || (typeof(copy[firstElement]) !== 'object')) {
       copy[firstElement] = {};
     }
     copy[firstElement] = setDefaultArray(copy[firstElement], path.slice(1), fallback);

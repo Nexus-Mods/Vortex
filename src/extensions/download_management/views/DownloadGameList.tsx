@@ -96,14 +96,17 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     const validGameEntries = currentGames.filter(game => !!game);
     if ((validGameEntries.length === 0)
      || (currentGames[0] !== validGameEntries[0])) {
+      const api = this.context.api;
       return this.moveDownload(gameId)
         .tap(() =>
-          this.context.api.sendNotification({
+            api.sendNotification({
             type: 'success',
             title: 'Download moved',
             message: fileName,
         }))
-        .then(() => onSetCompatibleGames([].concat(validGameEntries, [gameId])));
+        .then(() => onSetCompatibleGames([].concat(validGameEntries, [gameId])))
+        .catch(err => api.showErrorNotification('Failed to move download', err,
+          { allowReport: false }));
     } else {
       onSetCompatibleGames([].concat(validGameEntries, [gameId]));
     }

@@ -1,7 +1,7 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -363,6 +363,26 @@ function queryReplace(api: IExtensionApi, destination: string) {
     : removeArchive(api.store, destination));
 }
 
+function processInstallError(api: IExtensionApi,
+                             error: any,
+                             downloadId: string,
+                             archiveName: string) {
+  // This installation error handling function is intended to be used to
+  //  handle installation errors that are obfuscated for some reason, and
+  //  the installManager's error handling is not sufficient or is unable
+  //  to relay certain pieces of information to the user.
+  if (error instanceof DataInvalid) {
+    const downloadExists = api.getState().persistent.downloads.files[downloadId] !== undefined;
+    if (!downloadExists) {
+      error['message'] = 'Vortex attempted to install a mod archive which is no longer available '
+        + 'in its internal state - this usually happens if the archive was scheduled '
+        + 'to be installed but was removed before the installation was able to start.';
+      error['archiveName'] = archiveName;
+      api.showErrorNotification('Install Failed', error, { allowReport: false });
+    }
+  }
+}
+
 function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
@@ -410,7 +430,11 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
         actions: [
           {
             title: 'Install All', action: dismiss => {
-              api.events.emit('start-install-download', dlId);
+              api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
+                if (err) {
+                  processInstallError(api, err, dlId, fileName);
+                }
+              });
               dismiss();
             },
           },

@@ -94,7 +94,7 @@ function getTableAttributes(context: IAttributesContext):
       icon: 'star',
       calc: extension => extension.endorsed,
       customRenderer: (extension: IExtensionWithState, detail: boolean, t: TFunction) =>
-        (extension.modId !== undefined)
+        (!!extension.modId)
           ? createEndorsedIcon(extension, context.onEndorseMod, t)
           : null,
       placement: 'table',

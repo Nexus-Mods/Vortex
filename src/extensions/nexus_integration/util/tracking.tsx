@@ -158,6 +158,11 @@ class Tracking {
       const allowReport = !(err instanceof RateLimitError)
                         && !(err instanceof ProcessCanceled)
                         && !(err instanceof TimeoutError)
+                        && (err.name !== 'ProtocolError')
+                        // TODO: ProtocolError is not currently being exported by the
+                        //  node-nexus-api once the npm module gets updated - remove the
+                        //  top binary expression and uncomment the below one.
+                        // && !(err instanceof ProtocolError)
                         && !(err instanceof NexusError);
       this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
         allowReport,

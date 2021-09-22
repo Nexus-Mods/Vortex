@@ -114,6 +114,7 @@ interface IConnectedProps extends IModProps {
   installPath: string;
   downloadPath: string;
   showDropzone: boolean;
+  autoInstall: boolean;
 }
 
 interface IActionProps {
@@ -150,6 +151,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modVersionDetailAttribute: ITableAttribute;
   private modRevisionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
+  private modArchiveNameAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
   private mUpdateDebouncer: Debouncer;
@@ -193,6 +195,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'delete',
         title: 'Remove related',
         action: this.removeRelated,
+        condition: () => this.state.groupedMods !== undefined,
         singleRowAction: true,
         multiRowAction: false,
       },
@@ -272,6 +275,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modNameAttribute,
       this.modVersionAttribute,
       this.modAuthorAttribute,
+      this.modArchiveNameAttribute,
       this.modVersionDetailAttribute,
       this.modRevisionDetailAttribute,
       this.modVariantDetailAttribute,
@@ -705,6 +709,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ], true),
     };
 
+    this.modArchiveNameAttribute = {
+      id: 'archiveName',
+      name: 'Archive Name',
+      description: 'The name of the archive used to install this mod',
+      help: getText('archivename', this.props.t),
+      calc: (mod: IModWithState) => {
+        const download = this.props.downloads[mod.archiveId];
+        return (download?.localPath !== undefined) ? download.localPath : '';
+      },
+      placement: 'both',
+      isToggleable: true,
+      isGroupable: true,
+      isDefaultVisible: false,
+      isSortable: true,
+      filter: new TextFilter(true),
+      edit: {},
+    };
+
     this.modVersionDetailAttribute = {
       id: 'versionDetail',
       name: 'Version',
@@ -1096,6 +1118,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeRelated = (modIds: string[]) => {
+    if (this.state.groupedMods === undefined) {
+      return;
+    }
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
       .filter(mod => mod?.attributes !== undefined)
@@ -1344,7 +1369,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private dropMod = (type: DropType, values: string[]) => {
-    this.context.api.events.emit('import-downloads', values);
+    const { autoInstall } = this.props;
+    this.context.api.events.emit('import-downloads', values, (dlIds: string[]) => {
+      if (autoInstall) {
+        dlIds.forEach(dlId => {
+          this.context.api.events.emit('start-install-download', dlId);
+        });
+      }
+    });
   }
 
   private conditionNotInstalled = (instanceId: string | string[]) => {
@@ -1373,6 +1405,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     installPath: selectors.installPath(state),
     downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
+    autoInstall: state.settings.automation.install,
   };
 }
 

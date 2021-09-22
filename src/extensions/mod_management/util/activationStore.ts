@@ -19,8 +19,8 @@ import {IDeployedFile, IDeploymentMethod} from '../types/IDeploymentMethod';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
 import format_1 from './manifest_formats/format_1';
 
+import msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
-import msgpackT from 'msgpack';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';
 
@@ -69,11 +69,11 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
     return undefined;
   }
 
-  const msgpack: typeof msgpackT = require('msgpack');
+  const msgpack: typeof msgpackT = require('@msgpack/msgpack');
 
   let parsed = (typeof data === 'string')
     ? JSON.parse(deBOM(data))
-    : msgpack.unpack(data);
+    : msgpack.decode(data);
 
   let lastVersion = 0;
   while (lastVersion < CURRENT_VERSION) {
@@ -405,8 +405,8 @@ export function saveActivation(gameId: string, modType: string, instance: string
   if (activation.length > 0) {
     // write backup synchronously
     try {
-      const msgpack: typeof msgpackT = require('msgpack');
-      writeAtomicSync(tagBackupPath, Buffer.from(msgpack.pack(dataRaw)));
+      const msgpack: typeof msgpackT = require('@msgpack/msgpack');
+      writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
     } catch (err) {
       log('error', 'Failed to write manifest backup', err.message);
     }

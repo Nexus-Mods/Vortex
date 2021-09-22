@@ -2,7 +2,7 @@ import { startActivity, stopActivity } from '../../actions/session';
 import { IDialogResult } from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IProfile, IState} from '../../types/IState';
-import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { setErrorContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -722,11 +722,17 @@ export function onStartInstallDownload(api: IExtensionApi,
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
   if (download === undefined) {
-    api.showErrorNotification('Unknown Download',
-      'Sorry, I was unable to identify the archive this mod was installed from. '
-      + 'Please reinstall by installing the file from the downloads tab.', {
-        allowReport: false,
-      });
+    if (callback !== undefined) {
+      callback(new DataInvalid('Unknown Download'), undefined);
+    } else {
+      api.showErrorNotification('Unknown Download',
+        'Vortex attempted to install a mod archive which is no longer available '
+        + 'in its internal state - this usually happens if the archive was scheduled '
+        + 'to be installed but was removed before the installation was able to start. '
+        + 'Given that the archive is gone, information such as file name, mod name, etc is not '
+        + 'available either - sorry.',
+      { allowReport: false });
+    }
     return Promise.resolve();
   }
 

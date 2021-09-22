@@ -93,8 +93,9 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             ? (
               <ReactMarkdown
                 className='instructions-overlay-content'
-                source={overlay.text}
-              />
+              >
+                {overlay.text}
+              </ReactMarkdown>
             )
             : null}
         </FlexLayout.Fixed>

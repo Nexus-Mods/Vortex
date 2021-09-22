@@ -469,8 +469,12 @@ export class DownloadObserver {
           if (download.state === 'failed') {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.enqueue(downloadId, download.urls,
-                                         path.basename(fullPath), this.genProgressCB(downloadId),
-                                         undefined, { redownload: 'replace' }))
+                path.basename(fullPath), this.genProgressCB(downloadId),
+                undefined, { redownload: 'replace' }))
+              .then(res => {
+                log('debug', 'download finished (re-tried)', { file: res.filePath });
+                return this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
+              })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           } else {
             return ensureDownloadsDirectory(this.mApi)
@@ -507,11 +511,12 @@ export class DownloadObserver {
           allowReport: false,
         });
       }
-    } else if (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY') {
+    } else if ((err.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
+               || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
       // may be resumable
       this.handlePauseDownload(downloadId);
       if (callback !== undefined) {
-        callback(new TemporaryError('Certificate Error'), downloadId);
+        callback(new TemporaryError('SSL Error'), downloadId);
       } else {
         showError(this.mApi.store.dispatch, 'Download failed',
           'The download failed due to a https certificate error. '

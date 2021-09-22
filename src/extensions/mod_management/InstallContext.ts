@@ -53,6 +53,7 @@ class InstallContext implements IInstallContext {
   private mIsEnabled: (modId: string) => boolean;
   private mIsDownload: (archiveId: string) => boolean;
   private mSilent: boolean = false;
+  private mDidReportError: boolean = false;
 
   private mLastProgress: number = 0;
 
@@ -69,8 +70,9 @@ class InstallContext implements IInstallContext {
       dispatch(dismissNotification(id));
     this.mStartActivity = (activity: string) => dispatch(startActivity('mods', 'installing'));
     this.mStopActivity = (activity: string) => dispatch(stopActivity('mods', 'installing'));
-    this.mShowError = (message, details?, allowReport?, replace?) =>
-      showError(dispatch, message, details, { allowReport, replace, attachments: [
+    this.mShowError = (message, details?, allowReport?, replace?) => {
+      this.mDidReportError = true;
+      return showError(dispatch, message, details, { allowReport, replace, attachments: [
         {
           id: 'log',
           type: 'file',
@@ -78,6 +80,7 @@ class InstallContext implements IInstallContext {
           description: 'Vortex Log',
         },
       ] });
+    };
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {
@@ -146,11 +149,14 @@ class InstallContext implements IInstallContext {
 
     Promise.delay(500)
     .then(() => {
-      const noti = this.outcomeNotification(
-          this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
-          mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
-      if (noti !== null) {
-        this.mAddNotification(noti);
+      if (!this.mDidReportError) {
+        this.mDidReportError = true;
+        const noti = this.outcomeNotification(
+            this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
+            mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
+        if (noti !== null) {
+          this.mAddNotification(noti);
+        }
       }
     });
   }

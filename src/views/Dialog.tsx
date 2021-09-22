@@ -226,7 +226,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.md !== undefined) {
       controls.push((
         <div key='dialog-content-markdown' className='dialog-content-markdown'>
-          <ReactMarkdown source={t(content.md, { replace: content.parameters })} />
+          <ReactMarkdown>{t(content.md, { replace: content.parameters })}</ReactMarkdown>
         </div>
       ));
     }
