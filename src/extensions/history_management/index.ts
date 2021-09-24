@@ -40,6 +40,7 @@ function makeAddToHistory(api: IExtensionApi) {
     },
       stacks[stack].size,
     ));
+    debouncer.schedule();
   };
 }
 
