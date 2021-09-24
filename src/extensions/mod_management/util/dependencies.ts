@@ -293,6 +293,9 @@ function gatherDependenciesGraph(
               : lookupDownloadHint(api, rule.downloadHint))
     .then(res => {
       urlFromHint = truthy(res) ? res : undefined;
+      if (res !== undefined) {
+        log('info', 'url from dependency', { urlFromHint, md5: rule.reference.fileMD5 });
+      }
 
       return api.lookupModReference(rule.reference, { requireURL: true });
     })
@@ -310,31 +313,33 @@ function gatherDependenciesGraph(
         download,
         mod,
         reference: rule.reference,
-        lookupResults: (lookupResults.length > 0)
-          ? lookupResults.map(iter => makeLookupResult(iter, urlFromHint))
-          : (urlFromHint !== undefined)
-          ? [{
-            key: 'from-download-hint', value: {
-              fileName: rule.reference.logicalFileName,
-              fileSizeBytes: rule.reference.fileSize,
-              gameId: rule.reference.gameId,
-              domainName: rule.reference.gameId,
-              fileVersion: undefined,
-              fileMD5: rule.reference.fileMD5,
-              sourceURI: urlFromHint.url,
-              referer: urlFromHint.referer,
-              details: {
-                homepage: rule.downloadHint.url,
-              },
-            },
-          }]
-          : [],
+        lookupResults: lookupResults.map(iter => makeLookupResult(iter, urlFromHint)),
         dependencies: nodes.filter(node => node !== null),
         redundant: false,
         extra: rule.extra,
         installerChoices: rule.installerChoices,
         fileList: rule.fileList,
       };
+
+      if (urlFromHint) {
+        // if we had the user browse a website or if the dependency specifies a direct download,
+        // definitiviely do use it
+        res.lookupResults.unshift({
+          key: 'from-download-hint', value: {
+            fileName: rule.reference.logicalFileName,
+            fileSizeBytes: rule.reference.fileSize,
+            gameId: rule.reference.gameId,
+            domainName: rule.reference.gameId,
+            fileVersion: undefined,
+            fileMD5: rule.reference.fileMD5,
+            sourceURI: urlFromHint.url,
+            referer: urlFromHint.referer,
+            details: {
+              homepage: rule.downloadHint.url,
+            },
+          },
+        });
+      }
       if ((urlFromHint !== undefined) && (rule.downloadHint?.mode === 'browse')) {
         // user might have selected the wrong download link which we'll only notice
         // once the file has actually been downloaded - which may be hours from now.

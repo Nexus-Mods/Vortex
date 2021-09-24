@@ -1398,7 +1398,7 @@ class InstallManager {
     return call(lookupResult.sourceURI).then(res => resolvedSource = res)
       .then(() => call(lookupResult.referer).then(res => resolvedReferer = res))
       .then(() => new Promise<string>((resolve, reject) => {
-        if (wasCanceled()) {
+        if (wasCanceled() || !truthy(resolvedSource)) {
           return reject(new UserCanceled(false));
         }
         const parsedUrl = new URL(resolvedSource);
@@ -1691,16 +1691,16 @@ class InstallManager {
 
           let queryWrongMD5 = Promise.resolve();
           if ((dep.mod === undefined)
-              && (dep.lookupResults.length === 1)
-              && (dep.lookupResults[0].key === 'from-download-hint')
+              && (dep.lookupResults.length > 0)
               && (dep.lookupResults[0].value.fileMD5 !== undefined)
               && (dep.lookupResults[0].value.fileMD5 !== downloads[downloadId].fileMD5)) {
-            queryWrongMD5 = api.showDialog('question', 'Wrong MD5', {
-              text: 'The file you downloaded from "{{url}}" for mod "{{name}}" '
-                  + 'is not the expected file. This might be because the file has been '
-                  + 'updated or you clicked the wrong download link.',
+            queryWrongMD5 = api.showDialog('question', 'Unrecognized file {{name}}', {
+              text: 'The signature for the file you selected to download for "{{name}}" does '
+                  + 'not match the expected value. This is commonly caused by either '
+                  + 'an incorrect selection or the required file having been updated or '
+                  + 'modified since the dependency was set.\n\n'
+                  + 'Would you like to keep the file you have downloaded or retry?',
               parameters: {
-                url: dep.lookupResults[0].value.details?.homepage,
                 name: renderModReference(dep.reference, dep.mod),
               },
             }, [
