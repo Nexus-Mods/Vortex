@@ -250,6 +250,9 @@ export function findDownloadByRef(reference: IReference,
 
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
+      if (download.state === 'failed') {
+        return false;
+      }
       return testModReference(lookupFromDownload(download), reference, undefined, fuzzy);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
