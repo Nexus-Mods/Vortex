@@ -252,7 +252,7 @@ export class DownloadObserver {
           const dlId = Object.keys(downloads)
             .find(iter => downloads[iter].localPath === err.fileName);
           log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
-          if (dlId !== undefined) {
+          if ((dlId !== undefined) && (downloads[dlId].state !== 'failed')) {
             err.downloadId = dlId;
             return Promise.reject(err);
           } else if (this.wasIntercepted(modInfo.referenceTag)) {
