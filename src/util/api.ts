@@ -19,6 +19,7 @@ import { getActivator,
          getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
 import { makeModReference } from '../extensions/mod_management/util/modReference';
+import { getModSource, getModSources } from '../extensions/mod_management/util/modSource';
 import { removeMods } from '../extensions/mod_management/util/removeMods';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
@@ -96,6 +97,8 @@ export {
   getGame,
   getGames,
   getManifest,
+  getModSource,
+  getModSources,
   getModType,
   getNormalizeFunc,
   getReduxLog,

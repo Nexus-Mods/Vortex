@@ -1,6 +1,5 @@
 import { dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
-import { setAutoDeployment } from '../settings_interface/actions/automation';
 import {
   IExtensionApi,
   IExtensionContext,
@@ -8,7 +7,7 @@ import {
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
-import {IGame, IModType} from '../../types/IGame';
+import {IGame} from '../../types/IGame';
 import { INotification } from '../../types/INotification';
 import {IDiscoveryResult, IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -35,6 +34,7 @@ import {
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
+import { setAutoDeployment } from '../settings_interface/actions/automation';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -55,7 +55,6 @@ import {IDeployedFile, IDeploymentMethod, IUnavailableReason} from './types/IDep
 import {IFileMerge} from './types/IFileMerge';
 import { IInstallOptions } from './types/IInstallOptions';
 import {IMod, IModReference} from './types/IMod';
-import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {IRemoveModOptions} from './types/IRemoveModOptions';
 import {IResolvedMerger} from './types/IResolvedMerger';
@@ -72,6 +71,7 @@ import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
 import ModHistory from './util/ModHistory';
 import renderModName from './util/modName';
+import { getModSources, registerModSource } from './util/modSource';
 import sortMods, { CycleError } from './util/sort';
 import { setResolvedCB } from './util/testModReference';
 import ActivationButton from './views/ActivationButton';
@@ -110,13 +110,7 @@ interface IInstaller {
 
 const installers: IInstaller[] = [];
 
-const modSources: IModSource[] = [];
-
 const mergers: IFileMerge[] = [];
-
-export function getModSource(id: string): IModSource {
-  return modSources.find(iter => iter.id === id);
-}
 
 class BlacklistSet extends Set<string> {
   private mPatterns: string[];
@@ -143,13 +137,6 @@ function registerInstaller(id: string,
     testSupported: wrapExtCBAsync(testSupported, ext),
     install: wrapExtCBAsync(install, ext),
   });
-}
-
-function registerModSource(id: string,
-                           name: string,
-                           onBrowse?: () => void,
-                           options?: IModSourceOptions) {
-  modSources.push({ id, name, onBrowse, options });
 }
 
 function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
@@ -685,11 +672,11 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       if (mod.attributes === undefined) {
         return 'None';
       }
-      const source = modSources.find(iter => iter.id === mod.attributes['source']);
+      const source = getModSources().find(iter => iter.id === mod.attributes['source']);
       return source !== undefined ? source.name : 'None';
     },
     edit: {
-      choices: () => modSources
+      choices: () => getModSources()
         .filter(source => {
           if ((source.options === undefined) || (source.options.condition === undefined)) {
             return true;
@@ -1307,7 +1294,7 @@ function init(context: IExtensionContext): boolean {
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     activity: modsActivity,
     priority: 50,
-    props: () => ({ modSources }),
+    props: () => ({ modSources: getModSources() }),
   });
 
   context.registerAction('mod-icons', 105, ActivationButton, {}, () => ({

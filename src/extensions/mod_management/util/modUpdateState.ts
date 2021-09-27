@@ -1,9 +1,9 @@
-import { getModSource } from '..';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IDownload } from '../../download_management/types/IDownload';
 import { IMod } from '../types/IMod';
 import { IModSource } from '../types/IModSource';
+import { getModSource } from '../util/modSource';
 
 import versionClean from './versionClean';
 
