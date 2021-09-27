@@ -210,7 +210,23 @@ export function bundleAttachment(options?: IErrorOptions): Promise<string> {
     return Promise.resolve(undefined);
   }
 
-  return Promise.map(options.attachments, serializeAttachments)
+  return Promise.reduce(options.attachments, (accum: string[], iter: IAttachment) => {
+    if (iter.type === 'file') {
+      return fs.statAsync(iter.data)
+        .then(() => serializeAttachments(iter))
+        .then((fileName) => {
+          accum.push(fileName)
+          return accum;
+        })
+        .catch(err => accum);
+    } else {
+      return serializeAttachments(iter)
+        .then(fileName => {
+          accum.push(fileName)
+          return accum;
+        })
+    }
+  }, [])
     .then(fileNames => zipFiles(fileNames));
 }
 
@@ -274,12 +290,20 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   if ((details?.['attachLogOnReport'] === true)
       && (((options.attachments ?? []).find(iter => iter.id === 'log') === undefined))) {
-    setdefault(options, 'attachments', []).push({
-      id: 'log',
-      type: 'file',
-      data: path.join(getVortexPath('userData'), 'vortex.log'),
-      description: 'Vortex Log',
-    });
+    options.attachments = setdefault(options, 'attachments', []).concat([
+      {
+        id: 'log',
+        type: 'file',
+        data: path.join(getVortexPath('userData'), 'vortex.log'),
+        description: 'Vortex Log',
+      },
+      {
+        id: 'log2',
+        type: 'file',
+        data: path.join(getVortexPath('userData'), 'vortex1.log'),
+        description: 'Vortex Log 2',
+      },
+    ]);
   }
 
   if ((options.attachments !== undefined)
