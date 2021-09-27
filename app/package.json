@@ -87,7 +87,7 @@
     "rimraf": "TanninOne/rimraf",
     "sass": "^1.26.9",
     "semver": "^6.3.0",
-    "shortid": "^2.2.15",
+    "shortid": "2.2.8",
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
