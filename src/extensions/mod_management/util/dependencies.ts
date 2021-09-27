@@ -305,9 +305,10 @@ function gatherDependenciesGraph(
     .then((details: ILookupResult[]) => {
       lookupResults = details;
 
-      const rules = details?.[0]?.value?.rules || [];
+      const subRules = [].concat(rule.extra['rules'] ?? [], details?.[0]?.value?.rules ?? [])
+        .filter(iter => (iter.type === recommendations ? 'recommends' : 'requires'));
 
-      return Promise.all(rules
+      return Promise.all(subRules
         .map(subRule => limit.do(() =>
           gatherDependenciesGraph(subRule, api, gameMode, recommendations))));
     })
@@ -322,6 +323,7 @@ function gatherDependenciesGraph(
         extra: rule.extra,
         installerChoices: rule.installerChoices,
         fileList: rule.fileList,
+        phase: rule.extra?.['phase'] ?? 0,
       };
 
       if (urlFromHint) {

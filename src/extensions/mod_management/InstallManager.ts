@@ -18,7 +18,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
 import { getSafe, setSafe } from '../../util/storeHelper';
-import { isPathValid, setdefault, truthy } from '../../util/util';
+import { isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
@@ -64,6 +64,7 @@ import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
 import { selectors } from 'vortex-api';
+import deployMods from './modActivation';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -1515,6 +1516,113 @@ class InstallManager {
     }
   }
 
+  private doInstallDependenciesPhase(api: IExtensionApi,
+                                     dependencies: IDependency[],
+                                     profile: IProfile,
+                                     sourceModId: string,
+                                     downloadAndInstall: (dep: IDependency) => Promise<string>,
+                                     abort: AbortController)
+                                     : Promise<IDependency[]> {
+    const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
+      if (abort.signal.aborted) {
+        return Promise.reject(new UserCanceled());
+      }
+      log('debug', 'installing as dependency', {
+        ref: JSON.stringify(dep.reference),
+        downloadRequired: dep.download === undefined,
+      });
+
+      return downloadAndInstall(dep)
+        .then((modId: string) => {
+          log('info', 'installed as dependency', { modId });
+          api.store.dispatch(setModEnabled(profile.id, modId, true));
+          this.applyExtraFromRule(api, profile, modId, dep.extra);
+
+          const mods = api.store.getState().persistent.mods[profile.gameId];
+          return { ...dep, mod: mods[modId] };
+        })
+        // don't cancel the whole process if one dependency fails to install
+        .catch(ProcessCanceled, err => {
+          if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
+            return Promise.resolve(undefined);
+          }
+          api.showErrorNotification('Failed to install dependency',
+            '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
+            + 'be available. You may want to install a current version of the specified mod '
+            + 'and update or remove the dependency for the old one.', {
+            allowReport: false,
+            message: renderModReference(dep.reference, undefined),
+            replace: {
+              errorMessage: err.message,
+            },
+          });
+          return Promise.resolve(undefined);
+        })
+        .catch(NotFound, err => {
+          api.showErrorNotification('Failed to install dependency', err, {
+            message: renderModReference(dep.reference, undefined),
+            allowReport: false,
+          });
+          return Promise.resolve(undefined);
+        })
+        .catch(err => {
+          if (err instanceof UserCanceled) {
+            if (err.skipped) {
+              return Promise.resolve();
+            } else {
+              abort.abort();
+              return Promise.reject(err);
+            }
+          } else if ([403, 404].includes(err['statusCode'])) {
+            api.showErrorNotification(
+              'Failed to install dependency',
+              'The mod seems to have been deleted and can no longer be downloaded.', {
+              message: renderModReference(dep.reference, undefined),
+              allowReport: false,
+            });
+            return Promise.resolve();
+          }
+          api.showErrorNotification('Failed to install dependency', err, {
+            message: renderModReference(dep.reference, undefined),
+          });
+          return Promise.resolve(undefined);
+        })
+        .then((updatedDependency: IDependency) => {
+          log('debug', 'done installing dependency', {
+            ref: JSON.stringify(dep.reference),
+          });
+          return updatedDependency;
+        });
+    })
+      .finally(() => {
+        delete this.mDependencyInstalls[sourceModId];
+        log('info', 'done installing dependencies');
+      })
+      .catch(ProcessCanceled, err => {
+        // This indicates an error in the dependency rules so it's
+        // adequate to show an error but not as a bug in Vortex
+        api.showErrorNotification('Failed to install dependencies',
+          err.message, { allowReport: false });
+        return [];
+      })
+      .catch(UserCanceled, () => {
+        log('info', 'canceled out of dependency install');
+        api.sendNotification({
+          id: 'dependency-installation-canceled',
+          type: 'info',
+          message: 'Installation of dependencies canceled',
+        });
+        return [];
+      })
+      .catch(err => {
+        api.showErrorNotification('Failed to install dependencies', err);
+        return [];
+      })
+      .filter(dep => dep !== undefined);
+
+    return res;
+  }
+
   private doInstallDependencies(api: IExtensionApi,
                                 profile: IProfile,
                                 sourceModId: string,
@@ -1526,8 +1634,6 @@ class InstallManager {
 
     const sourceMod = state.persistent.mods[profile.gameId][sourceModId];
     const stagingPath = installPathForGame(state, profile.gameId);
-
-    let canceled: boolean = false;
 
     let queuedDownloads: IModReference[] = [];
 
@@ -1553,13 +1659,13 @@ class InstallManager {
         if (dep.reference.tag !== undefined) {
           queuedDownloads.push(dep.reference);
         }
-        return canceled
+        return abort.signal.aborted
           ? Promise.reject(new UserCanceled(false))
           : this.downloadDependencyAsync(
               dep.reference,
               api,
               dep.lookupResults[0].value,
-              () => canceled,
+              () => abort.signal.aborted,
               dep.extra?.fileName)
               .then(dlId => {
                 const idx = queuedDownloads.indexOf(dep.reference);
@@ -1572,7 +1678,7 @@ class InstallManager {
 
     const resumeDownload = (dep: IDependency): Promise<string> => {
       return Promise.resolve(this.mDependencyDownloadsLimit.do<string>(() =>
-        canceled
+        abort.signal.aborted
           ? Promise.reject(new UserCanceled(false))
           : new Promise((resolve, reject) => {
             api.events.emit('resume-download',
@@ -1584,7 +1690,7 @@ class InstallManager {
     const installDownload = (dep: IDependency, downloadId: string)
         : Promise<string> => {
       return Promise.resolve(this.mDependencyInstallsLimit.do(() => {
-        return canceled
+        return abort.signal.aborted
           ? Promise.reject(new UserCanceled(false))
           : this.withInstructions(api,
                               modName(sourceMod),
@@ -1730,107 +1836,35 @@ class InstallManager {
         });
     };
 
-    const res: Promise<IDependency[]> = Promise.map(dependencies, (dep: IDependency) => {
-      if (canceled) {
-        return Promise.reject(new UserCanceled());
-      }
-      log('debug', 'installing as dependency', {
-        ref: JSON.stringify(dep.reference),
-        downloadRequired: dep.download === undefined,
-      });
+    const phases: { [phase: number]: IDependency[] } = {};
 
-      return doDownload(dep)
-        .then((modId: string) => {
-          log('info', 'installed as dependency', { modId });
-          api.store.dispatch(setModEnabled(profile.id, modId, true));
-          this.applyExtraFromRule(api, profile, modId, dep.extra);
+    dependencies.forEach(dep => setdefault(phases, dep.phase ?? 0, []).push(dep));
 
-          const mods = api.store.getState().persistent.mods[profile.gameId];
-          return { ...dep, mod: mods[modId] };
-        })
-        // don't cancel the whole process if one dependency fails to install
-        .catch(ProcessCanceled, err => {
-          if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
-            return Promise.resolve(undefined);
-          }
-          api.showErrorNotification('Failed to install dependency',
-            '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
-            + 'be available. You may want to install a current version of the specified mod '
-            + 'and update or remove the dependency for the old one.', {
-            allowReport: false,
-            message: renderModReference(dep.reference, undefined),
-            replace: {
-              errorMessage: err.message,
-            },
-          });
-          return Promise.resolve(undefined);
-        })
-        .catch(NotFound, err => {
-          api.showErrorNotification('Failed to install dependency', err, {
-            message: renderModReference(dep.reference, undefined),
-            allowReport: false,
-          });
-          return Promise.resolve(undefined);
-        })
-        .catch(err => {
-          if (err instanceof UserCanceled) {
-            if (err.skipped) {
-              return Promise.resolve();
-            } else {
-              canceled = true;
-              clearQueued();
-              return Promise.reject(err);
+    const abort = new AbortController();
+
+    abort.signal.onabort = () => clearQueued();
+
+    const phaseList = Object.values(phases);
+
+    const res: Promise<IDependency[]> = Promise.reduce(phaseList,
+      (prev: IDependency[], depList: IDependency[], idx: number) => {
+        if (depList.length === 0) {
+          return prev;
+        }
+        return this.doInstallDependenciesPhase(api, depList, profile, sourceModId,
+                                                doDownload, abort)
+          .then((updated: IDependency[]) => {
+            if (idx === phaseList.length - 1) {
+              return Promise.resolve(updated);
             }
-          } else if ([403, 404].includes(err['statusCode'])) {
-            api.showErrorNotification(
-              'Failed to install dependency',
-              'The mod seems to have been deleted and can no longer be downloaded.', {
-              message: renderModReference(dep.reference, undefined),
-              allowReport: false,
-            });
-            return Promise.resolve();
-          }
-          api.showErrorNotification('Failed to install dependency', err, {
-            message: renderModReference(dep.reference, undefined),
-          });
-          return Promise.resolve(undefined);
-        })
-        .then((updatedDependency: IDependency) => {
-          log('debug', 'done installing dependency', {
-            ref: JSON.stringify(dep.reference),
-          });
-          return updatedDependency;
-        });
-    })
-      .finally(() => {
-        delete this.mDependencyInstalls[sourceModId];
-        log('info', 'done installing dependencies');
-      })
-      .catch(ProcessCanceled, err => {
-        // This indicates an error in the dependency rules so it's
-        // adequate to show an error but not as a bug in Vortex
-        api.showErrorNotification('Failed to install dependencies',
-          err.message, { allowReport: false });
-        return [];
-      })
-      .catch(UserCanceled, () => {
-        log('info', 'canceled out of dependency install');
-        api.sendNotification({
-          id: 'dependency-installation-canceled',
-          type: 'info',
-          message: 'Installation of dependencies canceled',
-        });
-        return [];
-      })
-      .catch(err => {
-        api.showErrorNotification('Failed to install dependencies', err);
-        return [];
-      })
-      .filter(dep => dep !== undefined);
+            return toPromise(cb => api.events.emit('deploy-mods', cb))
+              .then(() => updated);
+          })
+          .then((updated: IDependency[]) => [].concat(prev, updated));
+    }, []);
 
     this.mDependencyInstalls[sourceModId] = () => {
-      canceled = true;
-      clearQueued();
+      abort.abort();
     };
 
     return res;

@@ -19,6 +19,7 @@ export interface IDependency {
   installerChoices?: any;
   mod?: IMod;
   extra?: { [key: string]: any };
+  phase?: number;
 }
 
 export interface IDependencyError {
