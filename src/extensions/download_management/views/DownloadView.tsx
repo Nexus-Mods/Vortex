@@ -2,7 +2,6 @@ import { showDialog } from '../../../actions/notifications';
 import Banner from '../../../controls/Banner';
 import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
-import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -13,7 +12,7 @@ import { IAttachment } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -24,6 +23,7 @@ import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+import { IInstallOptions } from '../../mod_management/types/IInstallOptions';
 
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { finishDownload, setDownloadTime } from '../actions/state';
@@ -539,7 +539,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private installAsIs = (downloadIds: string[]) => {
     downloadIds.forEach((downloadId: string) => {
-      this.context.api.events.emit('start-install-download', downloadId, undefined, undefined, 'fallback');
+      const options: IInstallOptions = {
+        forceInstaller: 'fallback',
+      };
+      this.context.api.events.emit(
+        'start-install-download', downloadId, options, undefined);
     });
   }
 

@@ -29,6 +29,7 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
 import { setShowModDropzone } from '../actions/settings';
+import { IInstallOptions } from '../types/IInstallOptions';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import { IModSource } from '../types/IModSource';
@@ -1295,11 +1296,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private installAsIs = (archiveIds: string | string[]) => {
+    const options: IInstallOptions = {
+      forceInstaller: 'fallback',
+    };
     if (Array.isArray(archiveIds)) {
       archiveIds.forEach(archiveId =>
-        this.context.api.events.emit('start-install-download', archiveId, undefined, undefined, 'fallback'));
+        this.context.api.events.emit('start-install-download', archiveId, options, undefined));
     } else {
-      this.context.api.events.emit('start-install-download', archiveIds, undefined, undefined, 'fallback');
+      this.context.api.events.emit('start-install-download', archiveIds, options, undefined);
     }
   }
 
