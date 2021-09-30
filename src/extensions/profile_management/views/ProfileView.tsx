@@ -39,7 +39,7 @@ interface IConnectedProps {
   games: IGameStored[];
   discoveredGames: { [gameId: string]: IDiscoveryResult };
   activity: string[];
-  mods: { [modId: string]: IMod };
+  mods: { [gameId: string]: { [modId: string]: IMod } };
 }
 
 interface IActionProps {
@@ -168,12 +168,18 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = (discovered !== undefined) && (discovered.path !== undefined);
 
-    return (profileId === this.state.edit) ? null : (
+    if (profileId === this.state.edit) {
+      return null;
+    }
+
+    const profile = profiles[profileId];
+
+    return (
       <ProfileItem
         t={t}
         key={profileId}
-        profile={profiles[profileId]}
-        mods={mods}
+        profile={profile}
+        mods={mods[profile.gameId]}
         features={features}
         active={currentProfile === profileId}
         available={available}
@@ -401,7 +407,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     currentProfile: state.settings.profiles.activeProfileId,
     profiles: state.persistent.profiles,
     language: state.settings.interface.language,
-    mods: state.persistent.mods[gameId] || emptyObject,
+    mods: state.persistent.mods || emptyObject,
     games: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     activity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
