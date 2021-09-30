@@ -41,6 +41,7 @@ const revisionInfo: IRevisionQuery = {
       owner: {
         name: true,
         avatar: true,
+        memberId: true,
       },
     },
   },
@@ -53,6 +54,7 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   user: {
     name: true,
     avatar: true,
+    memberId: true,
   },
   game: {
     domainName: true,

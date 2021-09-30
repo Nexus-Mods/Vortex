@@ -435,6 +435,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
       uploaderUrl: nexusModInfo?.uploaded_users_profile_url,
       uploaderAvatar: nexusModInfo?.user?.avatar ?? nexusCollectionInfo?.collection?.user.avatar,
+      uploaderId: nexusModInfo?.user?.member_id ?? nexusCollectionInfo?.collection?.user.memberId,
       category,
       pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage?.url,
       description: nexusModInfo?.description
