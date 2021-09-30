@@ -13,6 +13,7 @@ import { Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 
 export interface IBaseProps {
   id: string;
+  // force-hide. In this mode notifications are never shown
   hide: boolean;
 }
 
@@ -44,7 +45,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       expand: undefined,
-      open: !props.hide,
+      open: false,
       filtered: [],
     });
 
@@ -121,10 +122,10 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
 
     return {
-      warning: 30000,
-      error: 30000,
-      success: 10000,
-      info: 10000,
+      warning: 10000,
+      error: 10000,
+      success: 5000,
+      info: 5000,
       activity: null,
     }[item.type] || 10000;
   }
@@ -149,9 +150,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const now = Date.now();
     if (!open) {
       filtered = notifications.filter(item => {
-        if (item.type === 'activity') {
-          return true;
-        }
         const displayTime = this.displayTime(item);
         if (displayTime === null) {
           return true;
