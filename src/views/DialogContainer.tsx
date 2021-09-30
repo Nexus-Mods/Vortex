@@ -38,6 +38,7 @@ class DialogContainer extends React.Component<IProps, {}> {
       <ErrorBoundary
         key={dialog.id}
         className='errorboundary-dialog'
+        canDisplayError={false}
         visible={dialog.id === visibleDialog}
         onHide={onHideDialog}
       >

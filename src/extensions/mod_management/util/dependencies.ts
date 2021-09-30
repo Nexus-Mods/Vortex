@@ -35,7 +35,7 @@ export function findModByRef(reference: IModReference, mods: { [modId: string]: 
 
   if (reference['md5Hint'] !== undefined) {
     const result = Object.keys(mods)
-      .find(dlId => mods[dlId].attributes.fileMD5 === reference['md5Hint']);
+      .find(dlId => mods[dlId].attributes?.fileMD5 === reference['md5Hint']);
     if (result !== undefined) {
       return mods[result];
     }

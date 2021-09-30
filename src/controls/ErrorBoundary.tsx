@@ -1,6 +1,7 @@
 import { ComponentEx, translate } from '../util/ComponentEx';
 import { didIgnoreError, isOutdated } from '../util/errorHandling';
 import { genHash } from '../util/genHash';
+import { renderError } from '../util/message';
 
 import Icon from './Icon';
 import { IconButton } from './TooltipControls';
@@ -25,6 +26,7 @@ export interface IErrorBoundaryProps extends WithTranslation {
   visible?: boolean;
   onHide?: () => void;
   className?: string;
+  canDisplayError?: boolean;
 }
 
 interface IErrorBoundaryState {
@@ -56,11 +58,36 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (this.props.canDisplayError === false) {
+      this.context.api.sendNotification({
+        type: 'error',
+        message: 'Failed to render',
+        actions: [
+          { title: 'More', action: () => {
+            const rendered = renderError(error);
+            this.context.api.showDialog('error', 'Failed to render', {
+              message: rendered.message,
+              text: rendered.text,
+              options: {
+                wrap: rendered.wrap,
+                translated: rendered.translated,
+              },
+              parameters: {
+                ...(rendered.parameters || {}),
+              },
+            }, [
+              { label: 'Close' },
+            ]);
+          } },
+          { title: 'Retry', action: () => { this.retryRender(); } },
+          { title: 'Report', action: () => { this.report(); } },
+        ]});
+    }
     this.setState({ error, errorInfo });
   }
 
   public render(): React.ReactNode {
-    const { t, className, onHide, visible } = this.props;
+    const { t, className, canDisplayError, onHide, visible } = this.props;
     const { error } = this.state;
 
     if (error === undefined) {
@@ -69,6 +96,8 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
           {React.Children.only(this.props.children)}
         </ErrorContext.Provider>
       );
+    } else if (canDisplayError === false) {
+      return null;
     }
 
     const classes = (className || '').split(' ');

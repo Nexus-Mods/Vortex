@@ -139,6 +139,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean = false;
   private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
   private mDefaultFilterRef: HTMLElement = null;
+  private mLastScrollLeft: number = 0;
+  private mLastOnTop: boolean = true;
 
   constructor(props: IProps) {
     super(props);
@@ -512,6 +514,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     let arrays: boolean = false;
 
+    let compare: (lhs: any, rhs: any) => number;
+
     const groupOptions = makeUnique(
       sortedRows.reduce((prev, rowId) => {
         if (data[rowId] === undefined) {
@@ -525,14 +529,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           prev.push(value);
         }
         return prev;
-      }, [])).sort((lhs: string, rhs: string) => {
-        if ((sortAttribute !== undefined)
-          && (sortAttribute.id === groupAttribute.id)
-          && (attributeState[sortAttribute.id]?.sortDirection === 'desc')) {
-          return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
-        } else {
-          return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
+      }, [])).sort((lhs: any, rhs: any) => {
+        if (compare === undefined) {
+          const desc = (sortAttribute !== undefined)
+                    && (sortAttribute.id === groupAttribute.id)
+                    && (attributeState[sortAttribute.id]?.sortDirection === 'desc');
+
+          if (typeof(lhs) === 'number') {
+            compare = desc ? (l, r) => r - l : (l, r) => l - r;
+          } else {
+            compare = desc
+              ? (l, r) => r.toLowerCase().localeCompare(l.toLowerCase())
+              : (l, r) => l.toLowerCase().localeCompare(r.toLowerCase());
+          }
         }
+
+        return compare(lhs, rhs);
       });
     if (arrays) {
       groupOptions.push(EMPTY_ID);
@@ -1070,15 +1082,23 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mDelayedVisibilityTimer = setTimeout(() =>
         this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     }
-    window.requestAnimationFrame(() => {
-      if (truthy(this.mPinnedRef)) {
-        this.mPinnedRef.className =
-          event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
-      }
-      if (truthy(this.mHeaderRef)) {
-        this.mHeaderRef.style.left = `-${event.target.scrollLeft}px`;
-      }
-    });
+    const ele: Element = event.target;
+
+    const atTop = ele.scrollTop === 0;
+    if (((ele.scrollLeft !== this.mLastScrollLeft) && truthy(this.mHeaderRef))
+        || ((atTop !== this.mLastOnTop) && truthy(this.mPinnedRef))) {
+      this.mLastOnTop = atTop;
+      this.mLastScrollLeft = ele.scrollLeft;
+
+      window.requestAnimationFrame(() => {
+        if (truthy(this.mPinnedRef)) {
+          this.mPinnedRef.className = atTop ? 'table-pinned' : 'table-pinned-hidden';
+        }
+        if (truthy(this.mHeaderRef)) {
+          this.mHeaderRef.style.left = `-${ele.scrollLeft}px`;
+        }
+      });
+    }
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
       this.mNoShrinkColumns[colId].updateWidth();
     });
@@ -1088,7 +1108,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeaderUpdateDebouncer.schedule();
   }
 
-  private mainPaneRef = (ref) => {
+  private mainPaneRef = (ref: HTMLElement) => {
     if (ref === null) {
       return;
     }
@@ -1549,10 +1569,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     let groupBy = this.props.groupBy;
+    // if the grouping attribute was provided by an extension it might have become unavailable
+    const groupAttribute = groupBy !== undefined
+      ? objects.find((attribute: ITableAttribute) => attribute.id === groupBy)
+      : undefined;
 
-    const groupByState = (groupBy !== undefined)
-      ? this.getAttributeState(objects.find(
-          (attribute: ITableAttribute) => attribute.id === groupBy))
+    const groupByState = (groupAttribute !== undefined)
+      ? this.getAttributeState(groupAttribute)
       : undefined;
 
     if ((groupBy !== undefined) && !groupByState?.enabled) {
