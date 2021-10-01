@@ -129,7 +129,7 @@ export interface ITableAttribute<T = any> {
    * the user (this affects only the group headers, not filters)
    * You probably want to use this if you have a customRenderer on a column that is groupable
    */
-  groupName?: (id: string) => string;
+  groupName?: (value: any) => string;
   /**
    * if set, the table can be filtered by this attribute using the specified control
    */

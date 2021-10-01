@@ -540,8 +540,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             compare = desc ? (l, r) => r - l : (l, r) => l - r;
           } else {
             compare = desc
-              ? (l, r) => r.toLowerCase().localeCompare(l.toLowerCase())
-              : (l, r) => l.toLowerCase().localeCompare(r.toLowerCase());
+              ? (l, r) => r.toString().toLowerCase().localeCompare(l.toString().toLowerCase())
+              : (l, r) => l.toString().toLowerCase().localeCompare(r.toString().toLowerCase());
           }
         }
 
