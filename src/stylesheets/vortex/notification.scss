@@ -91,9 +91,16 @@
 
 #notifications-button {
   position: relative;
-  .svg {
+  svg {
     width: 2.5em;
     height: 2.5em;
+  }
+  .notifications-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
   }
   .badge {
     padding: 1px 3px;

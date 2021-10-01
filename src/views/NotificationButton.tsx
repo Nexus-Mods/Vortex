@@ -5,6 +5,7 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import Icon from '../controls/Icon';
+import RadialProgress, { IBar } from '../controls/RadialProgress';
 import Debouncer from '../util/Debouncer';
 import Notification from './Notification';
 
@@ -99,6 +100,19 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     // TODO: current typings don't expose "shouldUpdatePosition" but it's there
     const MyOverlayTrigger: any = OverlayTrigger;
 
+    const combinedProgress: IBar[] = [];
+
+    const progress = notifications.filter(iter => iter.progress !== undefined);
+    if (progress.length > 0) {
+      const percentages = Math.min(...progress.map(iter => iter.progress));
+      combinedProgress.push({
+        class: 'running',
+        min: 0,
+        max: 100,
+        value: percentages,
+      });
+    }
+
     return (
       <MyOverlayTrigger
         ref={this.setRef}
@@ -110,6 +124,12 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       >
         <Button id='notifications-button' onClick={this.toggle}>
           <Icon name='notifications' />
+          <RadialProgress
+            className='notifications-progress'
+            data={combinedProgress}
+            offset={8}
+            totalRadius={8}
+          />
           {notifications.length === 0 ? null : <Badge>{notifications.length}</Badge>}
         </Button>
       </MyOverlayTrigger>
@@ -155,7 +175,8 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           return true;
         }
 
-        const timeout = item.updatedTime + displayTime;
+        const timeout = (item.type === 'activity' ? item.createdTime : item.updatedTime)
+                      + displayTime;
         if (timeout > now) {
           if ((nextTimeout === null) || (timeout < nextTimeout)) {
             nextTimeout = timeout;
