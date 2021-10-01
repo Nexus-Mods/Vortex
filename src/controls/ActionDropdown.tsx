@@ -5,6 +5,7 @@ import { log } from '../util/log';
 import { truthy } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
+import ContextMenu from './ContextMenu';
 import Icon from './Icon';
 import PortalMenu from './PortalMenu';
 
@@ -26,6 +27,10 @@ export interface IBaseProps {
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
 
+function nop() {
+  // nop
+}
+
 function genTooltip(show: boolean | string): string {
   return typeof (show) === 'string'
     ? show
@@ -40,32 +45,55 @@ interface IMenuActionProps {
   onSelect?: () => void;
 }
 
-class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
-  public render(): JSX.Element {
-    const { t, action, id } = this.props;
-    return (
-      <MenuItem
-        eventKey={id}
-        onSelect={this.trigger}
-        disabled={action.show !== true}
-        title={genTooltip(action.show)}
-      >
-        <Icon name={action.icon} />
-        <div className='button-text'>{t(action.title)}</div>
-      </MenuItem>
-    );
-  }
+function MenuAction(props: IMenuActionProps) {
+  const { t, action, instanceId, onSelect, id } = props;
 
-  private trigger = () => {
-    const { action, instanceId, onSelect } = this.props;
+  const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+  const [open, setOpen] = React.useState(false);
 
-    action.action(instanceIds);
-    if (truthy(onSelect)) {
-      onSelect();
+  const setOpenFalse = React.useCallback(() => { setOpen(false); }, [ setOpen ]);
+
+  const itemRef = React.useRef<HTMLElement>();
+
+  const trigger = React.useCallback(() => {
+    action.action?.(instanceIds, action.data);
+    if (action.subMenus !== undefined) {
+      setOpen(old => !old);
+    } else {
+      onSelect?.();
     }
-  }
+  }, [instanceId, action, onSelect, setOpen]);
+
+  const setItemRef = (ref) => {
+    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
+  };
+
+  return (
+    <MenuItem
+      eventKey={id}
+      onSelect={trigger}
+      disabled={action.show !== true}
+      ref={setItemRef}
+      title={genTooltip(action.show)}
+    >
+      <Icon name={action.icon} />
+      <div className='button-text'>{t(action.title)}</div>
+      {action.subMenus !== undefined ? (
+        <>
+          <ContextMenu
+            instanceId={instanceId[0]}
+            visible={open}
+            anchor={itemRef.current}
+            onHide={setOpenFalse}
+            actions={props.action.subMenus}
+
+          />
+          <Icon className='menu-more-icon' name='showhide-right' />
+        </>
+      ) : null}
+    </MenuItem>
+  );
 }
 
 /**
@@ -135,7 +163,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
           open={this.state.open}
           target={this.mRef}
           onClose={this.close}
-          onClick={this.close}
+          onClick={nop}
           bsRole='menu'
         >
           {rest.map((iter, idx) => this.renderMenuItem(iter, idx))}
@@ -158,7 +186,7 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
   }
 
   private renderMenuItem =
-    (action: IActionDefinition & { show: boolean | string }, index: number) => {
+    (action: IActionDefinitionEx, index: number) => {
     const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;

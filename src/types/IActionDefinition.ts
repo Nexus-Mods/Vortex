@@ -6,6 +6,8 @@ export interface IActionOptions {
   hollowIcon?: boolean;
 }
 
+export type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
+
 /**
  * interface of an action within one of the icon bars
  *
@@ -19,6 +21,7 @@ export interface IActionDefinition {
   component?: React.ComponentType<any>;
   props?: () => any;
   action?: (instanceId: string | string[], data?: any) => void;
+  subMenus?: IActionDefinition[] | ActionFunc;
   // condition under which the action is displayed.
   // returning false hides the action entirely. Returning a string shows
   // the action disabled and grayed out, with the returned string as a tooltip

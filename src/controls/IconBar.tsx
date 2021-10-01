@@ -195,7 +195,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   private renderMenuItem =
-    (icon: IActionDefinition & { show: boolean | string }, index: number) => {
+    (icon: IActionDefinitionEx, index: number) => {
     const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;

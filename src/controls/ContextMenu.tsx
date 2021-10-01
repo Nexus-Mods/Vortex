@@ -1,50 +1,33 @@
+import { ComponentEx } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
+
 import { IActionDefinitionEx } from './ActionControl';
 import Dropdown from './Dropdown';
 import Icon from './Icon';
 
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
+import ReactDOM from 'react-dom';
 import { Portal } from 'react-overlays';
-import { ComponentEx } from '../util/ComponentEx';
-import { TFunction } from '../util/i18n';
 
 export interface IMenuActionProps {
   t: TFunction;
   id: string;
   action: IActionDefinitionEx;
-  instanceId: string | string[];
+  instanceId: string;
 }
 
-class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
-  public render(): JSX.Element {
-    const { t, action, id } = this.props;
-    return (
-      <MenuItem
-        eventKey={id}
-        onSelect={this.trigger}
-        disabled={action.show !== true}
-        title={typeof(action.show) === 'string' ? t(action.show) : undefined}
-      >
-        {(action.component !== undefined)
-          ? this.renderCustom()
-          : (<>
-              {action.icon !== undefined ? <Icon name={action.icon} /> : null}
-              <div className='button-text'>{t(action.title)}</div>
-            </>)}
-      </MenuItem>
-    );
-  }
+function MenuAction(props: IMenuActionProps) {
+  const { t, action, id, instanceId } = props;
 
-  private renderCustom() {
-    const { action, id } = this.props;
-
+  const renderCustom = React.useCallback(() => {
     const knownProps = ['condition', 'className', 'group', 't', 'i18nLoadedAt',
       'objects', 'children'];
-    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+    const unknownProps = Object.keys(props).reduce((prev: any, current: string) => {
       if (knownProps.indexOf(current) === -1) {
         return {
           ...prev,
-          [current]: this.props[current],
+          [current]: props[current],
         };
       } else {
         return prev;
@@ -61,15 +44,57 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
     } else {
       return <action.component {...staticProps} parentType='context' />;
     }
-  }
+  }, [props]);
 
-  private trigger = () => {
-    const { action, instanceId } = this.props;
+  // stuff for submenus
+  const [open, setOpen] = React.useState(false);
 
+  const setOpenFalse = React.useCallback(() => { setOpen(false); }, [ setOpen ]);
+
+  const itemRef = React.useRef<HTMLElement>();
+
+  const trigger = React.useCallback(() => {
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     action.action?.(instanceIds, action.data);
-  }
+    if (action.subMenus !== undefined) {
+      setOpen(old => !old);
+    }
+  }, [instanceId, action, setOpen]);
+
+  const setItemRef = (ref) => {
+    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
+  };
+
+  return (
+    <MenuItem
+      eventKey={id}
+      onSelect={trigger}
+      disabled={action.show !== true}
+      ref={setItemRef}
+      title={typeof (action.show) === 'string' ? t(action.show) : undefined}
+    >
+      {(action.component !== undefined)
+        ? renderCustom()
+        : (<>
+          {action.icon !== undefined ? <Icon name={action.icon} /> : null}
+          <div className='button-text'>{t(action.title)}</div>
+        </>)}
+      {action.subMenus !== undefined ? (
+        <>
+          <ContextMenu
+            instanceId={instanceId}
+            visible={open}
+            anchor={itemRef.current}
+            onHide={setOpenFalse}
+            actions={props.action.subMenus}
+
+          />
+          <Icon className='menu-more-icon' name='showhide-right' />
+        </>
+      ) : null}
+    </MenuItem>
+  );
 }
 
 class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
@@ -102,6 +127,7 @@ export interface IContextPosition {
 export interface IContextMenuProps {
   t?: TFunction;
   position?: IContextPosition;
+  anchor?: HTMLElement;
   visible: boolean;
   onHide: () => void;
   instanceId: string;
@@ -116,13 +142,20 @@ interface IComponentState {
   bottom?: number;
 }
 
+function nop() {
+  // nop
+}
+
 class ContextMenu extends ComponentEx<IProps, IComponentState> {
   private mMenuRef: HTMLDivElement = null;
 
   constructor(props: IProps) {
     super(props);
 
-    this.initState({});
+    this.initState({
+      right: 0,
+      bottom: 0,
+    });
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -167,7 +200,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
               style={{ display: 'block', position: 'initial' }}
               open={true}
               onClose={onHide}
-              onClick={onHide}
+              onClick={nop}
             >
               {(actions || []).map(this.renderMenuItem)}
             </Dropdown.Menu>
@@ -209,16 +242,29 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    const rect: ClientRect = this.mMenuRef.getBoundingClientRect();
-    const outer: ClientRect = (this.context.menuLayer as any).getBoundingClientRect();
+    const rect = this.mMenuRef.getBoundingClientRect();
+    const outer = (this.context.menuLayer as any).getBoundingClientRect();
 
-    this.nextState.bottom = ((position.y + rect.height) > outer.bottom)
-      ? outer.bottom - position.y
-      : undefined;
+    if (position !== undefined) {
+      this.nextState.bottom = ((position.y + rect.height) > outer.bottom)
+        ? outer.bottom - position.y
+        : undefined;
 
-    this.nextState.right = ((position.x + rect.width) > outer.right)
-      ? outer.right - position.x
-      : undefined;
+      this.nextState.right = ((position.x + rect.width) > outer.right)
+        ? outer.right - position.x
+        : undefined;
+    } else if (!!this.props.anchor) {
+      const bbrect = this.props.anchor.getBoundingClientRect();
+      this.nextState.bottom = Math.max(0, outer.bottom - bbrect.y - rect.height);
+      let right = outer.right - bbrect.right - rect.width;
+      if (right < 0) {
+        right = outer.right - bbrect.left;
+      }
+      this.nextState.right = right;
+    } else {
+      this.nextState.bottom = 0;
+      this.nextState.right = 0;
+    }
   }
 }
 

@@ -38,6 +38,7 @@ export interface ITableRowAction extends IActionDefinition {
   singleRowAction?: boolean;
   multiRowAction?: boolean;
   hotKey?: { code: number, shift?: boolean, alt?: boolean, ctrl?: boolean };
+  subMenus?: ITableRowAction[];
 }
 
 export interface IBaseProps {

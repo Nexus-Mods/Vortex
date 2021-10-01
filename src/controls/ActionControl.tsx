@@ -1,4 +1,4 @@
-import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
+import { ActionFunc, IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { IRegisteredExtension } from '../util/ExtensionManager';
 import { extend } from '../util/ExtensionProvider';
 
@@ -31,6 +31,7 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
 
 export interface IActionDefinitionEx extends IActionDefinition {
   show: boolean | string;
+  subMenus?: IActionDefinitionEx[];
 }
 
 /**
@@ -85,14 +86,26 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
       }
     };
 
-    return objects
-      .map((iter): IActionDefinition & { show: boolean | string } => ({
-          ...iter,
-          show: checkCondition(iter),
-        }))
-      .filter(iter => showAll || (iter.show !== false))
-      .filter(iter => (filter === undefined) || filter(iter))
-      .sort(iconSort);
+    const transformActions = (items: IActionDefinition[] | ActionFunc): IActionDefinitionEx[] => {
+      if (!Array.isArray(items)) {
+        items = items(instanceId);
+      }
+      return items
+        .map(convert)
+        .filter(iter => showAll || (iter.show !== false))
+        .filter(iter => (filter === undefined) || filter(iter))
+        .sort(iconSort);
+    };
+
+    const convert = (input: IActionDefinition): IActionDefinitionEx => ({
+      ...input,
+      show: checkCondition(input),
+      subMenus: input.subMenus === undefined
+        ? undefined
+        : transformActions(input.subMenus),
+    });
+
+    return transformActions(objects);
   }
 }
 
