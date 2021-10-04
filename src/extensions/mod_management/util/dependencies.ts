@@ -141,7 +141,8 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
       && ((fileMD5 === undefined) || (fileMD5 === value.fileMD5))
       && ((fileSize === undefined) || (fileSize === value.fileSizeBytes))
       && ((logicalFileName === undefined) || (logicalFileName === value.logicalFileName))
-      && ((fileExpression === undefined) || minimatch(value.fileName, fileExpression))
+      && ((fileExpression === undefined)
+          || ((value.fileName !== undefined) && minimatch(value.fileName, fileExpression)))
       && ((versionMatch === undefined)
           || semver.satisfies(semver.coerce(value.fileVersion), versionMatch));
 }
