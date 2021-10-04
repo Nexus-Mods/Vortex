@@ -48,6 +48,12 @@
 
   .progressbar {
     margin: 8px 0px;
+
+    .progressbar-labels {
+      > *:first-child {
+        width: 0;
+      }
+    }
   }
 }
 
