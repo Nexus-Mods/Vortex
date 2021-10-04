@@ -30,7 +30,7 @@ import * as zlib from 'zlib';
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
 // don't follow redirects arbitrarily long
-const MAX_REDIRECT_FOLLOW = 2;
+const MAX_REDIRECT_FOLLOW = 5;
 // if we receive no data for this amount of time, reset the connection
 const STALL_TIMEOUT = 15 * 1000;
 const MAX_STALL_RESETS = 2;
@@ -131,6 +131,7 @@ const dummyJob: IDownloadJob = {
   received: 0,
   size: 0,
   state: 'init',
+  extraCookies: [],
   url: () => Promise.reject(new ProcessCanceled('dummy job')),
 };
 
@@ -212,7 +213,6 @@ class DownloadWorker {
       remote.getCurrentWebContents().session.cookies.get({ url: jobUrl })
         .then(cookies => {
           this.startDownload(job, jobUrl, cookies);
-
         })
         .catch(err => {
           log('error', 'failed to retrieve cookies', err.message);
@@ -245,7 +245,7 @@ class DownloadWorker {
     this.mRestart = true;
   }
 
-  private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
+  private startDownload(job: IDownloadJob, jobUrl: string, electronCookies: Electron.Cookie[]) {
     if (this.mEnded) {
       // worker was canceled while the url was still being resolved
       return;
@@ -274,12 +274,16 @@ class DownloadWorker {
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
+    const allCookies = (electronCookies || [])
+      .map(cookie => `${cookie.name}=${cookie.value}`)
+      .concat(this.mJob.extraCookies);
+
     try {
       const headers = {
           Range: `bytes=${job.offset}-${job.offset + job.size}`,
           'User-Agent': this.mUserAgent,
           'Accept-Encoding': 'gzip, deflate',
-          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+          Cookie: allCookies,
         };
       if (referer !== undefined) {
         headers['Referer'] = referer;
@@ -462,6 +466,11 @@ class DownloadWorker {
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
         this.mJob.url = () => Promise.resolve(newUrl);
         this.mRedirected = true;
+
+        if (response.headers['set-cookie'] !== undefined) {
+          this.mJob.extraCookies = this.mJob.extraCookies
+            .concat(response.headers['set-cookie']);
+        }
 
         // delay the new request a bit to ensure the old request is completely settled
         // TODO: this is ugly and shouldn't be necessary if we made sure no state was neccessary to
@@ -1003,6 +1012,7 @@ class DownloadManager {
       received: 0,
       size: this.mMinChunkSize,
       options: download.options,
+      extraCookies: [],
       errorCB: (err) => { this.cancelDownload(download, err); },
       responseCB: (size: number, fileName: string, chunkable: boolean) =>
         this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
@@ -1224,6 +1234,11 @@ class DownloadManager {
 
       let offset = this.mMinChunkSize + 1;
       while (offset < fileSize) {
+        const previousChunk = download.chunks.find(chunk => chunk.extraCookies.length > 0);
+        const extraCookies = (previousChunk !== undefined)
+          ? previousChunk.extraCookies
+          : [];
+
         const minSize = Math.min(chunkSize, fileSize - offset);
         download.chunks.push({
           confirmedReceived: 0,
@@ -1234,6 +1249,7 @@ class DownloadManager {
           size: minSize,
           state: 'init',
           options: download.options,
+          extraCookies,
           url: () => download.resolvedUrls().then(resolved => resolved.urls[0]),
         });
         offset += chunkSize;
@@ -1274,6 +1290,7 @@ class DownloadManager {
       size: chunk.size,
       received: chunk.received,
       options: download.options,
+      extraCookies: [],
       responseCB: first
         ? (size: number, fileName: string, chunkable: boolean) =>
             this.updateDownload(download, size, fileName || fileNameFromURL, chunkable)
