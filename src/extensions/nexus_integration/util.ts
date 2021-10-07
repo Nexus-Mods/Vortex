@@ -3,13 +3,14 @@ import Nexus, {
   IRevision, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
-import { app as appIn, ipcRenderer, remote } from 'electron';
+import { app as appIn, ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
+import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
@@ -34,8 +35,6 @@ import transformUserInfo from './util/transformUserInfo';
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const GAMES_JSON_URL = 'https://data.nexusmods.com/file/nexus-data/games.json';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export function startDownload(api: IExtensionApi,
                               nexus: Nexus,
@@ -812,7 +811,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       }
       return github.fetchConfig('api')
         .then(configObj => {
-          const currentVer = app.getVersion();
+          const currentVer = getApplication().version;
           if ((currentVer !== '0.0.1')
             && (semver.lt(currentVer, configObj.minversion))) {
             (nexus as any).disable();

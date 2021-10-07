@@ -39,8 +39,8 @@ import { modPathsForGame } from '../selectors';
 import { STAGING_DIR_TAG } from '../stagingDirectory';
 import getText from '../texts';
 
+import * as remote from '@electron/remote';
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
 import {

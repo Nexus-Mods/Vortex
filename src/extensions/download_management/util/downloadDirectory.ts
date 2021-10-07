@@ -1,18 +1,16 @@
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../../types/IDialog';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IDownload, IState } from '../../../types/IState';
+import { getApplication } from '../../../util/application';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { truthy } from '../../../util/util';
 import { setDownloadPath } from '../actions/settings';
 import { removeDownload } from '../actions/state';
 import getDownloadPath from './getDownloadPath';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export const DOWNLOADS_DIR_TAG = '__vortex_downloads_folder';
 
@@ -168,7 +166,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
       return queryDownloadFolderInvalid(api, err, dirExists, currentDownloadPath)
         .then(result => {
         if (result.action === 'Quit Vortex') {
-          app.exit(0);
+          getApplication().quit(0);
           return Promise.reject(new UserCanceled());
         } else if (result.action === 'Reinitialize') {
           const id = shortid();

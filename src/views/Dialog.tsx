@@ -14,7 +14,7 @@ import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { TFunction } from '../util/i18n';
 import { MutexWrapper } from '../util/MutexContext';
 
-import { remote } from 'electron';
+import * as RemoteT from '@electron/remote';
 import update from 'immutability-helper';
 import * as React from 'react';
 import {
@@ -25,6 +25,9 @@ import * as ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import lazyRequire from '../util/lazyRequire';
+
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 const nop = () => undefined;
 

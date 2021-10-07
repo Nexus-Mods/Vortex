@@ -8,14 +8,21 @@ import { truthy } from '../../util/util';
 
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 
-import {app as appIn, dialog as dialogIn, ipcMain, remote} from 'electron';
+import {app as appIn, dialog as dialogIn, ipcMain} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
 import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
+import { getApplication } from '../../util/application';
 
-const app = remote !== undefined ? remote.app : appIn;
-const dialog = remote !== undefined ? remote.dialog : dialogIn;
+let app = appIn;
+let dialog = dialogIn;
+if (process.type === 'renderer') {
+  // tslint:disable-next-line:no-var-requires
+  const remote = require('@electron/remote');
+  app = remote.app;
+  dialog = remote.dialog;
+}
 
 const appName = 'com.nexusmods.vortex';
 const ELECTRON_BUILDER_NS_UUID = '50e065bc-3134-11e6-9bab-38c9862bdaf3';
@@ -138,7 +145,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
     log('info', 'found update available', info.version);
-    const installedVersion = semver.parse(app.getVersion());
+    const installedVersion = semver.parse(getApplication().version);
     const version = semver.parse(info.version);
 
     const channel = channelOverride ?? api.getState().settings.update.channel;
@@ -184,7 +191,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       }
     }
     log('info', 'update available', {
-      current: app.getVersion(),
+      current: getApplication().version,
       update: info.version,
       instPath,
     });

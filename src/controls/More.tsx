@@ -121,7 +121,7 @@ class More extends ComponentEx<IProps, IComponentState> {
     this.setState({ open: false });
   }
 
-  private getBounds = (): ClientRect => {
+  private getBounds = (): DOMRect => {
     const { container } = this.props;
 
     return container !== undefined ? container.getBoundingClientRect() : {
@@ -131,7 +131,7 @@ class More extends ComponentEx<IProps, IComponentState> {
       height: window.innerHeight,
       right: window.innerWidth,
       bottom: window.innerHeight,
-    };
+    } as any;
   }
 }
 

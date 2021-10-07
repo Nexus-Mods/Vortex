@@ -26,7 +26,7 @@ class MainPageHeader extends React.Component<IProps, {}> {
     page: PropTypes.string,
   };
 
-  public context: IComponentContext;
+  public declare context: IComponentContext;
 
   public shouldComponentUpdate() {
     return true;

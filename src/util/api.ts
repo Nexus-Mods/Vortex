@@ -25,6 +25,7 @@ import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { convertGameIdReverse, nexusGameId } from '../extensions/nexus_integration/util/convertGameId';
 import GameStoreHelper from '../util/GameStoreHelper';
+import { getApplication } from './application';
 import { Archive } from './archives';
 import bbcodeToReact, { bbcodeToHTML } from './bbcode';
 import { checksum, fileMD5 } from './checksum';
@@ -92,6 +93,7 @@ export {
   GameNotFound,
   GameStoreHelper,
   getActivator,
+  getApplication,
   getCurrentActivator,
   getCurrentLanguage,
   getGame,

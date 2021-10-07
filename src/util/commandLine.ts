@@ -1,6 +1,7 @@
 import program from 'commander';
 import { app, ipcMain, ipcRenderer } from 'electron';
 import * as process from 'process';
+import { getApplication } from './application';
 import startupSettings from './startupSettings';
 
 export interface IParameters {
@@ -99,7 +100,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   let version: string = '1.0.0';
   try {
     // won't happen in regular operation but lets us test this function outside vortex
-    version = app.getVersion();
+    version = getApplication().version;
   } catch (err) {
     // nop
   }

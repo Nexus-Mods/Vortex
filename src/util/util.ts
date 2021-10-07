@@ -5,7 +5,6 @@ import { log } from './log';
 
 import Bluebird from 'bluebird';
 import { spawn } from 'child_process';
-import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as process from 'process';
@@ -324,7 +323,7 @@ export function isReservedDirectory(dirPath: string, normalize?: Normalize): boo
     ? normalized.slice(0, -1)
     : normalized;
 
-  const vortexAppData = remote.app.getPath('userData');
+  const vortexAppData = getVortexPath('userData');
   const invalidDirs = ['blob_storage', 'Cache', 'Code Cache', 'Dictionaries',
     'extensions', 'GPUCache', 'metadb', 'Partitions', 'plugins', 'Session Storage',
     'shared_proto_db', 'state.v2', 'temp', 'VideoDecodeStats']

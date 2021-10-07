@@ -31,7 +31,7 @@ class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: 
     menuLayer: PropTypes.object,
   };
 
-  public context: { menuLayer: JSX.Element };
+  public declare context: { menuLayer: JSX.Element };
 
   constructor(props) {
     super(props);

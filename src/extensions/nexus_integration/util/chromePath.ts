@@ -1,11 +1,9 @@
 import * as fs from '../../../util/fs';
+import getVortexPath from '../../../util/getVortexPath';
 import { deBOM, truthy } from '../../../util/util';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-
-const app = appIn || remote.app;
 
 /**
  * return the path where chrome stores its settings regarding disabled schemes
@@ -13,7 +11,7 @@ const app = appIn || remote.app;
  * @returns
  */
 function chromePath(): Promise<string> {
-  const appPath = remote.app.getPath('appData');
+  const appPath = getVortexPath('appData');
   if (process.platform === 'win32') {
     const userData = process.env.LOCALAPPDATA !== undefined
       ? path.join(process.env.LOCALAPPDATA, 'Google', 'Chrome', 'User Data')

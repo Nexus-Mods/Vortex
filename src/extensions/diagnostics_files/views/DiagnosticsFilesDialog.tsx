@@ -4,13 +4,14 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { didIgnoreError, isOutdated } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
+import getVortexPath from '../../../util/getVortexPath';
 import { showError } from '../../../util/message';
 
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
+import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as os from 'os';
 import * as path from 'path';
@@ -21,6 +22,9 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import lazyRequire from '../../../util/lazyRequire';
+
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 export interface IBaseProps {
   visible: boolean;
@@ -303,7 +307,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { onShowError } = this.props;
     const { logSessions, sessionIdx } = this.state;
 
-    const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp');
+    const nativeCrashesPath = path.join(getVortexPath('userData'), 'temp');
     const fullLog: string = logSessions[sessionIdx].logs
       .map(line => `${line.time} - ${line.type}: ${line.text}`)
       .join(os.EOL);

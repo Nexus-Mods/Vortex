@@ -14,7 +14,6 @@ import { checkAssemblies, getNetVersion } from './util/netVersion';
 
 import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
-import { app as appIn, remote } from 'electron';
 import { createIPC } from 'harmony-patcher';
 import * as net from 'net';
 import path from 'path';
@@ -26,8 +25,6 @@ import { IPatchConfig } from './types/injector';
 
 import { fs } from '../..';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-
-const app = appIn !== undefined ? appIn : remote.app;
 
 function transformError(err: any): Error {
   let result: Error;
@@ -74,7 +71,7 @@ function transformError(err: any): Error {
                         + 'characters. This usually means that your mod staging path is too long.');
   } else if ((err.name === 'System.IO.IOException')
              && (err.stack.indexOf('System.IO.Path.InternalGetTempFileName'))) {
-    const tempDir = app.getPath('temp');
+    const tempDir = getVortexPath('temp');
     result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '

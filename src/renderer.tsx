@@ -5,7 +5,7 @@
 const earlyErrHandler = (evt) => {
   const {error} = evt;
   // tslint:disable-next-line:no-shadowed-variable
-  const { remote } = require('electron');
+  const remote = require('@electron/remote');
   remote.dialog.showErrorBox('Unhandled error', error.stack);
   remote.app.exit(1);
 };
@@ -55,6 +55,7 @@ import * as path from 'path';
 
 import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
+import './util/application.electron';
 import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionContext } from './util/ExtensionProvider';
@@ -69,9 +70,10 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
+import * as remote from '@electron/remote';
 import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
-import { ipcRenderer, remote, webFrame } from 'electron';
+import { ipcRenderer, webFrame } from 'electron';
 import { forwardToMain, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
@@ -99,7 +101,7 @@ import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
 
-log('debug', 'renderer process started', { pid: process.pid });
+log('debug', 'renderer process started', { pid: process['pid'] });
 
 function fetchReduxState(tries: number = 5) {
   // using implicit structured clone algorithm

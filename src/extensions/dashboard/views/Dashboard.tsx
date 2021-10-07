@@ -10,11 +10,14 @@ import { IDashletProps } from '../types/IDashletProps';
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
 
-import { remote } from 'electron';
+import * as remoteT from '@electron/remote';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import lazyRequire from '../../../util/lazyRequire';
+
+const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 const UPDATE_FREQUENCY_MS = 1000;
 

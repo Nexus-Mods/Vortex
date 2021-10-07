@@ -3,11 +3,14 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IState } from '../../types/IState';
+import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled,
          ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import LazyComponent from '../../util/LazyComponent';
+import lazyRequire from '../../util/lazyRequire';
 import { log, LogLevel } from '../../util/log';
 import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
@@ -61,12 +64,12 @@ import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, ne
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
+import * as RemoteT from '@electron/remote';
 import NexusT, { IDateTime, IDownloadURL, IFileInfo,
   IModFile,
   IModFileQuery,
   IModInfo, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
 import * as path from 'path';
@@ -76,7 +79,7 @@ import { Action } from 'redux';
 import {} from 'uuid';
 import WebSocket from 'ws';
 
-const app = remote !== undefined ? remote.app : appIn;
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 let nexus: NexusT;
 
@@ -173,7 +176,7 @@ function framePos(frame: any) {
 
 const requestLog = {
   requests: [],
-  logPath: path.join(app.getPath('userData'), 'network.log'),
+  logPath: path.join(getVortexPath('userData'), 'network.log'),
   debouncer: new Debouncer(() => {
     // TODO: why does "this" not point to the right object here?
     const reqs = requestLog.requests;
@@ -998,7 +1001,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     nexus = new Proxy(
       new Proxy(
-        new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000),
+        new Nexus('Vortex', getApplication().version, gameMode, 30000),
         requestLog),
       new Disableable(api));
 

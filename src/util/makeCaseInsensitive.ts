@@ -1,4 +1,4 @@
-function normalize(key: PropertyKey): PropertyKey {
+function normalize(key: string | symbol): string | symbol {
   return typeof(key) === 'string' ? key.toLowerCase() : key;
 }
 
@@ -13,15 +13,15 @@ function makeInsensitive(input: any): any {
     return prev;
   }, {});
   return new Proxy(inputL, {
-    has: (target: any, key: PropertyKey) =>
+    has: (target: any, key: string | symbol) =>
       Reflect.has(target, key) || Reflect.has(target, normalize(key)),
-    get: (target: any, key: PropertyKey) =>
+    get: (target: any, key: string | symbol) =>
       target[key] !== undefined
       ? target[key]
       : Reflect.get(target, normalize(key)),
-    set: (target: any, key: PropertyKey, value, receiver) =>
+    set: (target: any, key: string | symbol, value, receiver) =>
       Reflect.set(target, normalize(key), value, receiver),
-    getOwnPropertyDescriptor: (target: any, key: PropertyKey) =>
+    getOwnPropertyDescriptor: (target: any, key: string | symbol) =>
       Reflect.getOwnPropertyDescriptor(target, key)
       || Reflect.getOwnPropertyDescriptor(target, normalize(key)),
     ownKeys: (target: any) =>

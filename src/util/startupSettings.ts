@@ -1,5 +1,5 @@
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
+import { getApplication } from './application';
 
 import { IParameters } from './commandLine';
 import Debouncer from './Debouncer';
@@ -8,9 +8,8 @@ import { writeFileAtomic } from './fsAtomic';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-const app = remote !== undefined ? remote.app : appIn;
-
-const startupPath = () => path.join(getVortexPath('appData'), app.name, 'startup.json');
+const startupPath = () =>
+  path.join(getVortexPath('appData'), getApplication().name, 'startup.json');
 
 function read(): IParameters {
   try {

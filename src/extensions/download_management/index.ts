@@ -1,6 +1,7 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
+import { getApplication } from '../../util/application';
 import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -40,16 +41,17 @@ import SpeedOMeter from './views/SpeedOMeter';
 import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
+import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import { genHash, IHashResult } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import winapi from 'winapi-bindings';
+import lazyRequire from '../../util/lazyRequire';
 
-const app = remote !== undefined ? remote.app : appIn;
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 let observer: DownloadObserver;
 let manager: DownloadManager;
@@ -922,7 +924,7 @@ function init(context: IExtensionContextExt): boolean {
               }
               powerTimer = setTimeout(stopTimer, 60000);
             }
-          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers,
+          }, `Nexus Client v2.${getApplication().version}`, protocolHandlers,
           () => context.api.getState().settings.downloads.maxBandwidth * 8);
       manager.setFileExistsCB(fileName => {
         return context.api.showDialog('question', 'File already exists', {

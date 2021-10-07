@@ -48,7 +48,7 @@ import { isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptions,
-         remote, WebContents } from 'electron';
+         WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as fuzz from 'fuzzball';
@@ -64,16 +64,37 @@ import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import stringFormat from 'string-template';
 import { dynreq, runElevated } from 'vortex-run';
+import { getApplication } from './application';
+import makeRemoteCall from './electronRemote';
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
 let app = appIn;
-let dialog = dialogIn;
+// let dialog = dialogIn;
 
-if (remote !== undefined) {
+if (process.type === 'renderer') {
+  // tslint:disable-next-line:no-var-requires
+  const remote = require('@electron/remote');
   app = remote.app;
-  dialog = remote.dialog;
 }
+
+const showOpenDialog = makeRemoteCall('show-open-dialog',
+  (electron, contents, options: Electron.OpenDialogOptions) => {
+    const window = electron.BrowserWindow.fromWebContents(contents);
+    return electron.dialog.showOpenDialog(window, options);
+  });
+
+const showErrorBox = makeRemoteCall('show-error-box',
+  (electron, contents, title: string, content: string) => {
+    electron.dialog.showErrorBox(title, content);
+    return undefined;
+  });
+
+const showMessageBox = makeRemoteCall('show-message-box',
+  (electron, contents, options: Electron.MessageBoxOptions) => {
+    const window = electron.BrowserWindow.fromWebContents(contents);
+    return electron.dialog.showMessageBox(window, options);
+  });
 
 export interface IRegisteredExtension {
   name: string;
@@ -410,7 +431,9 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     this.getCalls('requireVersion').forEach(call => {
       if ((process.env.NODE_ENV !== 'development')
-          && !semver.satisfies(app.getVersion(), call.arguments[0], { includePrerelease: true })) {
+          && !semver.satisfies(getApplication().version,
+                               call.arguments[0],
+                               { includePrerelease: true })) {
         setdefault(incompatibleExtensions, call.extension, []).push(
           { id: 'unsupported-version' });
       }
@@ -422,7 +445,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       this.mInitCalls = this.mInitCalls.filter((call: IInitCall) =>
         incompatibleExtensions[call.extension] === undefined);
     } else {
-      if (remote !== undefined) {
+      if (process.type === 'renderer') {
         log('debug', 'all extensions compatible');
       }
     }
@@ -640,7 +663,7 @@ class ExtensionManager {
     // only the first extension with a specific name is loaded, so
     // load the bundled ones last so a user can replace them
     return [
-      { path: path.join(app.getPath('userData'), 'plugins'), bundled: false },
+      { path: path.join(getVortexPath('userData'), 'plugins'), bundled: false },
       { path: getVortexPath('bundledPlugins'), bundled: true },
     ];
   }
@@ -732,13 +755,13 @@ class ExtensionManager {
       // and everything in this phase of startup is synchronous anyway
       try {
         const disableExtensions =
-            fs.readdirSync(app.getPath('temp'))
+            fs.readdirSync(getVortexPath('temp'))
                 .filter(name => name.startsWith('__disable_'));
         disableExtensions.forEach(ext => {
           const extId = ext.substr(10);
           log('info', 'disabling extension that caused a crash before', { extId });
           initStore.dispatch(setExtensionEnabled(extId, false));
-          fs.unlinkSync(path.join(app.getPath('temp'), ext));
+          fs.unlinkSync(path.join(getVortexPath('temp'), ext));
         });
       } catch (err) {
         // an ENOENT will happen on the first start where the dir doesn't
@@ -749,7 +772,7 @@ class ExtensionManager {
       }
 
       this.mExtensionState = initStore.getState().app.extensions;
-      const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+      const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
@@ -766,7 +789,7 @@ class ExtensionManager {
     } else {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
     }
-    if (remote !== undefined) {
+    if (process.type === 'renderer') {
       this.mStyleManager = new StyleManager(this.mApi);
     }
     this.mExtensions = this.prepareExtensions();
@@ -1008,7 +1031,8 @@ class ExtensionManager {
    * once.
    */
   public doOnce(): Promise<void> {
-    const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
+    const calls = this.mContextProxyHandler.getCalls(
+      process.type === 'renderer' ? 'once' : 'onceMain');
 
     const reportError = (err: Error, call: IInitCall, allowReport: boolean = true) => {
       log('warn', 'failed to call once',
@@ -1069,7 +1093,7 @@ class ExtensionManager {
   }
 
   public get numOnce() {
-    const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
+    const calls = this.mContextProxyHandler.getCalls(process.type === 'renderer' ? 'once' : 'onceMain');
     return calls.length;
   }
 
@@ -1094,7 +1118,7 @@ class ExtensionManager {
   }
 
   private queryLoadTimeout(extension: string): Promise<boolean> {
-    return Promise.resolve(dialog.showMessageBox(getVisibleWindow(), {
+    return Promise.resolve(showMessageBox({
       type: 'warning',
       title: 'Extension slow',
       message: `An extension (${extension}) is taking unusually long to load. `
@@ -1169,7 +1193,7 @@ class ExtensionManager {
   }
 
   private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
-    const dbPath = path.join(app.getPath('userData'), 'metadb');
+    const dbPath = path.join(getVortexPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
       gameId, this.getMetaServerList(), log)
@@ -1183,7 +1207,7 @@ class ExtensionManager {
         ])
           .then(result => {
             if (result.action === 'Quit') {
-              app.quit();
+              getApplication().quit();
               return Promise.reject(new ProcessCanceled('meta db locked'));
             }
             return this.connectMetaDB(gameId, apiKey);
@@ -1242,9 +1266,9 @@ class ExtensionManager {
 
   private showErrorBox = (message: string, details: string | Error | any) => {
     if (typeof (details) === 'string') {
-      dialog.showErrorBox(message, details);
+      showErrorBox(message, details);
     } else {
-      dialog.showErrorBox(message, details.message);
+      showErrorBox(message, details.message);
     }
   }
 
@@ -1259,7 +1283,7 @@ class ExtensionManager {
     this.mContextProxyHandler = new ContextProxyHandler(context);
     const contextProxy = new Proxy(context, this.mContextProxyHandler);
     this.mExtensions.forEach(ext => {
-      if (remote !== undefined) {
+      if (process.type === 'renderer') {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name, path: ext.path});
       }
@@ -1299,8 +1323,7 @@ class ExtensionManager {
       this.mApi.ext[key] = func;
     });
 
-    if (remote !== undefined) {
-      // renderer process
+    if (process.type === 'renderer') {
       log('info', 'all extensions initialized');
     }
   }
@@ -1353,7 +1376,7 @@ class ExtensionManager {
   }
 
   private getPath(name: string) {
-    return app.getPath(name as any);
+    return getVortexPath(name as any);
   }
 
   private selectFile(options: IOpenOptions): Promise<string> {
@@ -1364,8 +1387,7 @@ class ExtensionManager {
     if (options.create === true) {
       fullOptions.properties.push('promptToCreate');
     }
-    const win = remote !== undefined ? remote.getCurrentWindow() : null;
-    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+    return Promise.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1383,8 +1405,7 @@ class ExtensionManager {
         { name: 'Python', extensions: ['py'] },
       ],
     };
-    const win = remote !== undefined ? remote.getCurrentWindow() : null;
-    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+    return Promise.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1395,8 +1416,7 @@ class ExtensionManager {
       ..._.omit(options, ['create']),
       properties: ['openDirectory'],
     };
-    const win = remote !== undefined ? remote.getCurrentWindow() : null;
-    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+    return Promise.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);

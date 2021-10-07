@@ -157,9 +157,9 @@ class MainWindow {
       }
     });
 
-    this.mWindow.webContents.on('new-window', (event, url, frameName, disposition) => {
-      if (disposition === 'background-tab') {
-        event.preventDefault();
+    this.mWindow.webContents.setWindowOpenHandler((details) => {
+      if (details.disposition === 'background-tab') {
+        return { action: 'deny' };
       }
     });
 
@@ -268,7 +268,6 @@ class MainWindow {
         nodeIntegrationInWorker: true,
         webviewTag: true,
         enableWebSQL: false,
-        enableRemoteModule: true,
         contextIsolation: false,
       },
     };

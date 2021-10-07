@@ -1,6 +1,5 @@
 import { log } from '../util/log';
 
-import { WebviewTag } from 'electron';
 import { omit } from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -30,15 +29,15 @@ export interface IWebviewProps {
 }
 
 class Webview extends React.Component<IWebviewProps & IWebView, {}> {
-  private mNode: WebviewTag;
+  private mNode: HTMLElement;
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this) as WebviewTag;
+    this.mNode = ReactDOM.findDOMNode(this) as HTMLElement;
     this.mNode.addEventListener('did-start-loading', this.startLoad);
     this.mNode.addEventListener('did-stop-loading', this.stopLoad);
     this.mNode.addEventListener('dom-ready', () => {
       // this.mNode.insertCSS('body { background-color: red !important }');
-      // this.mNode.openDevTools();
+      // (this.mNode as any).openDevTools();
     });
     this.mNode.addEventListener('console-message', this.logMessage);
     this.mNode.addEventListener('new-window', this.newWindow);

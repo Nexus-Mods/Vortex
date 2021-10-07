@@ -2,6 +2,7 @@ import { startActivity, stopActivity } from '../../actions/session';
 import { IDialogResult } from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IProfile, IState} from '../../types/IState';
+import { getApplication } from '../../util/application';
 import { DataInvalid, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { setErrorContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
@@ -43,12 +44,9 @@ import {currentActivator, installPath, installPathForGame} from './selectors';
 import { ensureStagingDirectory } from './stagingDirectory';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import { RuleType } from 'modmeta-db';
 import * as path from 'path';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 function checkStagingGame(api: IExtensionApi, gameId: string, manifestGameId: string)
   : Promise<boolean> {
@@ -120,7 +118,7 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
         ])
           .then((result: IDialogResult) => {
             if (result.action === 'Quit Vortex') {
-              app.exit();
+              getApplication().quit();
               // resolve never
               return new Promise(() => null);
             } else if ((result.action === 'Use selected')

@@ -1,14 +1,12 @@
 import { IGame } from '../../../types/IGame';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { IState } from '../../../types/IState';
-
-const app = appIn || remote.app;
+import getVortexPath from '../../../util/getVortexPath';
 
 function bethIni(gamePath: string, iniName: string) {
-  return path.join(app.getPath('documents'), 'My Games', gamePath, iniName + '.ini');
+  return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
 }
 
 function toWordExp(input: string): string {

@@ -4,10 +4,7 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
-import { dialog as dialogIn, remote } from 'electron';
 import * as React from 'react';
-
-const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 export interface IBaseProps {
   buttonType: ButtonType;
@@ -39,19 +36,18 @@ class InstallButton extends ComponentEx<IProps, {}> {
       properties: ['openFile'],
     };
 
-    dialog.showOpenDialog(remote.getCurrentWindow(), options)
+    this.context.api.selectFile(options)
     .then(result => {
-      const { filePaths } = result;
       const { api } = this.context;
-      if ((filePaths !== undefined) && (filePaths.length > 0)) {
+      if (result !== undefined) {
         if (this.props.copyOnIFF) {
-          api.events.emit('import-downloads', [filePaths[0]], (dlIds: string[]) => {
+          api.events.emit('import-downloads', [result], (dlIds: string[]) => {
             dlIds.forEach(dlId => {
               api.events.emit('start-install-download', dlId);
             });
           });
         } else {
-          api.events.emit('start-install', filePaths[0]);
+          api.events.emit('start-install', result);
         }
       }
     });

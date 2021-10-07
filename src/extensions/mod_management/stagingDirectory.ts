@@ -1,10 +1,10 @@
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { getApplication } from '../../util/application';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -13,8 +13,6 @@ import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export const STAGING_DIR_TAG = '__vortex_staging_folder';
 
@@ -140,7 +138,7 @@ export function ensureStagingDirectory(api: IExtensionApi,
       return queryStagingFolderInvalid(api, err, dirExists, instPath)
         .then(dialogResult => {
           if (dialogResult.action === 'Quit Vortex') {
-            app.exit(0);
+            getApplication().quit(0);
             return Promise.reject(new UserCanceled());
           } else if (dialogResult.action === 'Reinitialize') {
             const id = shortid();

@@ -4,8 +4,8 @@ import {LogLevel} from '../../../util/log';
 import { ILog, ISession } from '../types/ISession';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
+import getVortexPath from '../../../util/getVortexPath';
 
 const lineRE = /^([^-]*) - ([a-z]*): (.*)\r?$/;
 
@@ -24,7 +24,7 @@ function parseLine(line: string, idx: number): ILog {
 }
 
 export function loadVortexLogs(): Promise<ISession[]> {
-  const logPath = remote.app.getPath('userData');
+  const logPath = getVortexPath('userData');
 
   return Promise.resolve(fs.readdirAsync(logPath))
     .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)

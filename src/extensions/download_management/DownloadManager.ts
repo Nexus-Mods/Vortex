@@ -1,5 +1,6 @@
 import { DataInvalid, HTTPError, ProcessCanceled,
          StalledError, UserCanceled } from '../../util/CustomErrors';
+import makeRemoteCall from '../../util/electronRemote';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, INVALID_FILENAME_RE, truthy } from '../../util/util';
@@ -18,7 +19,6 @@ import SpeedCalculator from './SpeedCalculator';
 import Promise from 'bluebird';
 import * as contentDisposition from 'content-disposition';
 import * as contentType from 'content-type';
-import { remote } from 'electron';
 import * as http from 'http';
 import * as https from 'https';
 import * as _ from 'lodash';
@@ -26,6 +26,11 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as url from 'url';
 import * as zlib from 'zlib';
+
+const getCookies = makeRemoteCall('get-cookies',
+  (electron, webContents, filter: Electron.CookiesGetFilter) => {
+    return webContents.session.cookies.get(filter);
+});
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -210,7 +215,7 @@ class DownloadWorker {
     }
 
     try {
-      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl })
+      getCookies({ url: jobUrl })
         .then(cookies => {
           this.startDownload(job, jobUrl, cookies);
         })

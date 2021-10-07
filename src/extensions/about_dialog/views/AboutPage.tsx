@@ -6,21 +6,23 @@ import MainPage from '../../../views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 
-import { remote } from 'electron';
 import * as fs from 'fs';
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Image, Media, Panel } from 'react-bootstrap';
 import ReactMarkdown from 'react-markdown';
+import { getApplication } from '../../../util/application';
+import getVortexPath from '../../../util/getVortexPath';
 
 let modules = {};
 let ownLicenseText: string = '';
-if (remote !== undefined) {
+if (process.type === 'renderer') {
   try {
-    const modulesPath = path.join(remote.app.getAppPath(), 'assets', 'modules.json');
+    const modulesPath = path.join(getVortexPath('assets'), 'modules.json');
     modules = JSON.parse(fs.readFileSync(modulesPath, { encoding: 'utf8' }));
-    ownLicenseText = fs.readFileSync(path.join(remote.app.getAppPath(), 'LICENSE.md')).toString();
+    ownLicenseText = fs.readFileSync(
+      path.join(getVortexPath('package_unpacked'), 'LICENSE.md')).toString();
   } catch (err) {
     // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
     // won't care anyway.
@@ -46,7 +48,6 @@ type IProps = IBaseProps;
 class AboutPage extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean;
   private mVersion: string;
-  private mAppPath: string;
   constructor(props) {
     super(props);
     this.mMounted = false;
@@ -59,8 +60,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       tag: undefined,
     });
 
-    this.mVersion = remote.app.getVersion();
-    this.mAppPath = remote.app.getAppPath();
+    this.mVersion = getApplication().version;
   }
 
   public componentDidMount() {
@@ -103,7 +103,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
 
     const moduleList = Object.keys(modules).map(key => ({ key, ...modules[key] }));
 
-    const imgPath = path.resolve(this.mAppPath, 'assets', 'images', 'vortex.png');
+    const imgPath = path.resolve(getVortexPath('assets'), 'images', 'vortex.png');
 
     let body = null;
 
@@ -186,8 +186,8 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const mod: ILicense = modules[modKey];
     const license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
     const licenseFile = mod.licenseFile !== undefined
-      ? path.join(this.mAppPath, mod.licenseFile)
-      : path.join(this.mAppPath, 'assets', 'licenses', license + '.md');
+      ? path.resolve(getVortexPath('modules'), '..', mod.licenseFile)
+      : path.join(getVortexPath('assets'), 'licenses', license + '.md');
     fs.readFile(licenseFile, { }, (err, licenseText) => {
       if (!this.mMounted) {
         return;

@@ -34,7 +34,6 @@ import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 import getText from '../texts';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as process from 'process';
 import * as React from 'react';
@@ -42,6 +41,7 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import getVortexPath from '../../../util/getVortexPath';
 
 const MB = 1024 * 1024;
 
@@ -267,12 +267,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
     const { modsInstallPath } = this.props;
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
 
     if (modsInstallPath !== undefined) {
       const normalizedInstallPath = path.normalize(modsInstallPath.toLowerCase());
@@ -293,7 +287,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       };
     }
 
-    if (isChildPath(input, vortexPath)) {
+    if (isChildPath(input, getVortexPath('application'))) {
       return {
         state: 'error',
         reason: 'Download folder can\'t be a subdirectory of the Vortex application folder.',
@@ -388,12 +382,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
 
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
+    const vortexPath = getVortexPath('application');
 
     try {
       const statNew = fs.statSync(newPath, { bigint: true });

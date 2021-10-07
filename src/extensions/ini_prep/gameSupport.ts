@@ -1,11 +1,9 @@
+import getVortexPath from '../../util/getVortexPath';
 import { getSafe } from '../../util/storeHelper';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format from 'string-template';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-
-const app = appIn || remote.app;
 
 const gameSupportGamePass = {
   skyrimse: {
@@ -112,7 +110,7 @@ function isXboxPath(discoveryPath: string) {
 }
 
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
-  const mygames = path.join(app.getPath('documents'), 'My Games');
+  const mygames = path.join(getVortexPath('documents'), 'My Games');
 
   if ((gameSupportGamePass[gameMode] !== undefined) && (discovery?.path !== undefined)) {
     if (isXboxPath(discovery.path)) {

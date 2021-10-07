@@ -21,7 +21,7 @@ import { decodeSystemError } from './nativeErrors';
 import { truthy } from './util';
 
 import PromiseBB from 'bluebird';
-import { dialog as dialogIn, remote } from 'electron';
+import { dialog as dialogIn } from 'electron';
 import * as fs from 'fs-extra';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
@@ -34,7 +34,10 @@ import * as tmp from 'tmp';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';
 
-const dialog = remote !== undefined ? remote.dialog : dialogIn;
+const dialog = (process.type === 'renderer')
+  // tslint:disable-next-line:no-var-requires
+  ? require('@electron/remote').dialog
+  : dialogIn;
 
 export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 

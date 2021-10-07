@@ -13,14 +13,13 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
+import * as RemoteT from '@electron/remote';
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import {
-  app as appIn,
   BrowserWindow,
   dialog as dialogIn,
   ipcRenderer,
-  remote,
 } from 'electron';
 import * as fs from 'fs-extra';
 import I18next from 'i18next';
@@ -29,6 +28,10 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
+import { getApplication } from './application';
+import lazyRequire from './lazyRequire';
+
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -111,8 +114,7 @@ ${error.stack}
 
 export function createErrorReport(type: string, error: IError, context: IErrorContext,
                                   labels: string[], state: any, sourceProcess?: string) {
-  const app = appIn || remote.app;
-  const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
+  const reportPath = path.join(getVortexPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
     type, error, labels: labels || [], context,
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
@@ -124,14 +126,13 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
                      context: IErrorContext, apiKey: string, reporterProcess: string,
                      sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
-  const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))
+  return Promise.resolve(Nexus.create(apiKey, 'Vortex', getApplication().version, undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
-      createReport(type, error, context, app.getVersion(), reporterProcess, sourceProcess),
+      createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess),
       attachment,
       apiKey === undefined,
       hash,
@@ -157,8 +158,7 @@ export function setOutdated(api: IExtensionApi) {
     return;
   }
   const state = api.store.getState();
-  const app = appIn || remote.app;
-  const version = app.getVersion();
+  const version = getApplication().version;
   if (state.persistent.nexus?.newestVersion !== undefined) {
     try {
       outdated = semver.lt(version, state.persistent.nexus.newestVersion);
@@ -221,9 +221,9 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
                            reporterId: string, reporterProcess: string,
                            sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+  const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
-    const dialog = dialogIn || remote.dialog;
     const fullMessage = error.title !== undefined
       ? error.message + `\n(${error.title})`
       : error.message;
@@ -248,9 +248,20 @@ export function getWindow(): BrowserWindow {
   return defaultWindow;
 }
 
+let currentWindow: BrowserWindow;
+
+function getCurrentWindow() {
+  if (currentWindow === undefined) {
+    currentWindow = process.type === 'renderer'
+      ? remote.getCurrentWindow() : null;
+  }
+
+  return currentWindow;
+}
+
 export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
   if (!truthy(win)) {
-    win = remote !== undefined ? remote.getCurrentWindow() : getWindow();
+    win = getCurrentWindow() ?? getWindow();
   }
 
   return ((win !== null) && !win.isDestroyed() && win.isVisible())
@@ -268,9 +279,8 @@ export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
  * @param {ITermination} error
  */
 export function terminate(error: IError, state: any, allowReport?: boolean, source?: string) {
-  const app = appIn || remote.app;
-  const dialog = dialogIn || remote.dialog;
-  let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
+  const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
+  let win = process.type === 'renderer' ? remote.getCurrentWindow() : defaultWindow;
   if (truthy(win) && (win.isDestroyed() || !win.isVisible())) {
     win = null;
   }
@@ -349,7 +359,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         });
         // can't access the store at this point because we won't be waiting for the store
         // to be persisted
-        fs.writeFileSync(path.join(app.getPath('temp'), '__disable_' + error.extension), '');
+        fs.writeFileSync(path.join(getVortexPath('temp'), '__disable_' + error.extension), '');
       }
     }
   } catch (err) {
@@ -361,7 +371,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       'issue tracker (github)');
   }
 
-  app.exit(1);
+  getApplication().quit(1);
   throw new UserCanceled();
 }
 

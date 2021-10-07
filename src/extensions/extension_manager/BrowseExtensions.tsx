@@ -6,6 +6,7 @@ import Spinner from '../../controls/Spinner';
 import { IconButton } from '../../controls/TooltipControls';
 import ZoomableImage from '../../controls/ZoomableImage';
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
+
 import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
@@ -15,10 +16,10 @@ import { largeNumToString } from '../../util/util';
 import { IAvailableExtension, IExtension, ISelector } from './types';
 import { downloadAndInstallExtension, selectorMatch } from './util';
 
-import { app, remote } from 'electron';
 import * as React from 'react';
 import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
 import * as semver from 'semver';
+import { getApplication } from '../../util/application';
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 const GITHUB_BASE_URL: string = 'https://www.github.com';
@@ -66,8 +67,7 @@ const version = (() => {
 
   return () => {
     if (result === undefined) {
-      const electronApp = remote !== undefined ? remote.app : app;
-      result = electronApp.getVersion();
+      result = getApplication().version;
     }
 
     return result;

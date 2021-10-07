@@ -6,11 +6,11 @@ import { didIgnoreError, isOutdated } from '../util/errorHandling';
 import { genHash } from '../util/genHash';
 import { log } from '../util/log';
 
-import { remote } from 'electron';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, Button, Jumbotron } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
+import { getApplication } from '../util/application';
 
 export interface IBaseProps {
   page: IMainPage;
@@ -114,7 +114,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
     const { error, errorInfo } = this.state;
     events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
 
-Vortex Version: ${remote.app.getVersion()},
+Vortex Version: ${getApplication().version},
 
 ${error.stack}
 

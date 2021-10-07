@@ -7,7 +7,7 @@ import { log } from './log';
 
 export interface IRequestOptions {
   expectedContentType?: RegExp;
-  encoding?: string;
+  encoding?: BufferEncoding;
 }
 
 export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string | Buffer> {

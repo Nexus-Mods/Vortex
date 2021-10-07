@@ -6,7 +6,6 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import getText from './texts';
 
-import { remote } from 'electron';
 import * as React from 'react';
 import { Alert, Button, FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';

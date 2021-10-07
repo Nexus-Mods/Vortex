@@ -3,6 +3,7 @@ import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IMod } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
@@ -13,7 +14,7 @@ import { IProfileFeature } from '../types/IProfileFeature';
 
 import TransferIcon from './TransferIcon';
 
-import { nativeImage, remote } from 'electron';
+import { nativeImage } from 'electron';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -60,7 +61,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       hasProfileImage: false,
       counter: 0,
     });
-    this.mUserData = remote.app.getPath('userData');
+    this.mUserData = getVortexPath('userData');
   }
 
   public componentDidMount() {

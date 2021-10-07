@@ -5,6 +5,7 @@ import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import { disableErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -24,9 +25,6 @@ import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
-
-import { app as appIn, remote } from 'electron';
-const app = appIn || remote.app;
 
 function ensureIniBackups(t: TFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -239,14 +237,14 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
     //  the documents path. This may be related to:
     // tslint:disable-next-line:max-line-length
     // https://forums.asp.net/t/1889407.aspx?GetFolderPath+Environment+GetFolderPath+Environment+SpecialFolder+MyDocuments+returning+blank+when+hosted+on+IIS
-    writablePath = app.getPath('documents');
+    writablePath = getVortexPath('documents');
   } catch (err) {
     // We can't retrieve the documents path, but for the purpose of completing this
     //  test, we can simply query a different folder which is also guaranteed to trigger
     //  folder protection functionality.
     // tslint:disable-next-line
     log('error', 'Unable to get path to my documents folder - user environment is misconfigured!', err);
-    writablePath = app.getPath('home');
+    writablePath = getVortexPath('home');
   }
 
   const canary = path.join(writablePath, '__vortex_canary.tmp');

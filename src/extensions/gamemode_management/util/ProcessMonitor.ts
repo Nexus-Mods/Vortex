@@ -8,7 +8,7 @@ import { currentGame, currentGameDiscovery } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { setdefault } from '../../../util/util';
 
-import { BrowserWindow, remote } from 'electron';
+import { BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as winapi from 'winapi-bindings';
@@ -38,8 +38,8 @@ class ProcessMonitor {
       clearTimeout(this.mTimer);
     }
 
-    if (remote !== undefined) {
-      this.mWindow = remote.getCurrentWindow();
+    if (process.type === 'renderer') {
+      this.mWindow = require('@electron/remote').getCurrentWindow();
     }
 
     log('debug', 'start process monitor');

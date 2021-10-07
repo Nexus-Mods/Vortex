@@ -2,6 +2,7 @@
  * entry point for the main process
  */
 
+import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 
 import { app, dialog } from 'electron';
@@ -132,8 +133,6 @@ const handleError = (error: any) => {
 };
 
 function main() {
-  app.allowRendererProcessReuse = false;
-
   const mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
@@ -141,6 +140,9 @@ function main() {
       app.quit();
     });
   }
+
+  // tslint:disable-next-line:no-submodule-imports
+  require('@electron/remote/main').initialize();
 
   let fixedT = require('i18next').getFixedT('en');
   try {

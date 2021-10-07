@@ -6,12 +6,11 @@ import {log} from './log';
 import { sanitizeCSSId } from './util';
 
 import Promise from 'bluebird';
-import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
+import { ipcMain, ipcRenderer } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as sassT from 'sass';
-
-const app = appIn || remote.app;
+import { getApplication } from './application';
 
 function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
@@ -68,7 +67,7 @@ if (ipcMain !== undefined) {
       }).join('\n');
 
     // development builds are always versioned as 0.0.1
-    const isDevel: boolean = app.getVersion() === '0.0.1';
+    const isDevel: boolean = getApplication().version === '0.0.1';
 
     const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
     const modulesPath = getVortexPath('modules_unpacked');

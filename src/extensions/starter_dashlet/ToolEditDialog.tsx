@@ -19,7 +19,7 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 import ToolIcon from './ToolIcon';
 
 import Promise from 'bluebird';
-import { nativeImage, remote } from 'electron';
+import { nativeImage } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
@@ -28,8 +28,6 @@ import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal, ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-
-const {app} = remote;
 
 interface IEnvButtonProps {
   t: TFunction;
@@ -199,7 +197,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     api: PropTypes.object.isRequired,
   };
 
-  public context: IComponentContext;
+  public declare context: IComponentContext;
   private mUpdateImageDebouncer: Debouncer;
 
   constructor(props: IProps) {

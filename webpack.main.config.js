@@ -52,15 +52,14 @@ module.exports = {
   optimization: {
     minimizer: [
       new TerserPlugin({
-        cache: true,
         parallel: true,
-        sourceMap: true,
         terserOptions: {
           compress: {},
           output: {
             max_line_len: 256,
           },
           mangle: false,
+          sourceMap: true,
           keep_fnames: true, // required atm, name mangling breaks extensions
         }
       })

@@ -9,7 +9,6 @@
     "bundledPlugins",
     "lib/modinstaller",
     "node_modules/7z-bin",
-    "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
@@ -20,6 +19,7 @@
   ],
   "afterSign": "./createMD5List.js",
   "appId": "com.nexusmods.vortex",
+  "includeSubNodeModules": true,
   "win": {
     "target": "nsis",
     "publish": [
@@ -69,6 +69,7 @@
     "!**/*.js.map",
     "!**/*.iobj",
     "!**/*.ipdb",
+    "!**/*.ilk",
     "!**/*.vcxproj",
     "!**/*.vcxproj.filters",
     "!**/Makefile",

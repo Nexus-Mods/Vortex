@@ -1,11 +1,15 @@
-import { app as appIn, remote } from 'electron';
+import { app as appIn } from 'electron';
 import * as path from 'path';
 
-const app = remote !== undefined ? remote.app : appIn;
+const app = process.type === 'browser'
+  ? appIn
+  // tslint:disable-next-line:no-var-requires
+  : require('@electron/remote').app;
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
-                    | 'bundledPlugins' | 'locales' | 'package' | 'application'
-                    | 'userData' | 'appData' | 'localAppData' | 'temp' | 'home' | 'documents';
+                    | 'bundledPlugins' | 'locales' | 'package' | 'package_unpacked' | 'application'
+                    | 'userData' | 'appData' | 'localAppData' | 'temp' | 'home' | 'documents'
+                    | 'exe' | 'desktop';
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -60,10 +64,17 @@ function getLocalesPath(): string {
 /**
  * path to the directory containing package.json file
  */
-function getPackagePath(): string {
-  return isDevelopment
-    ? applicationPath
-    : basePath;
+function getPackagePath(unpacked: boolean): string {
+  if (isDevelopment) {
+    return applicationPath;
+  }
+
+  let res = basePath;
+  if (unpacked && (path.basename(res) === 'app.asar')) {
+    res = path.join(path.dirname(res), 'app.asar.unpacked');
+  }
+
+  return res;
 }
 
 const cachedAppPath = (() => {
@@ -97,20 +108,41 @@ const localAppData = (() => {
  */
 function getVortexPath(id: AppPath): string {
   switch (id) {
+    // c:\users\<username>\appdata\roaming\vortex
     case 'userData': return cachedAppPath('userData');
+    // c:\users\<username>\appdata\roaming\vortex\temp
     case 'temp': return cachedAppPath('temp');
+    // c:\users\<username>\appdata\roaming
     case 'appData': return cachedAppPath('appData');
+    // c:\users\<username>\appdata\local
     case 'localAppData': return localAppData();
+    // C:\Users\Tannin
     case 'home': return cachedAppPath('home');
+    // C:\Users\Tannin\Documents
     case 'documents': return cachedAppPath('documents');
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\Vortex.exe
+    case 'exe': return cachedAppPath('exe');
+    // C:\Users\Tannin\Desktop
+    case 'desktop': return cachedAppPath('desktop');
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar
     case 'base': return basePath;
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex
     case 'application': return applicationPath;
-    case 'package': return getPackagePath();
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar
+    case 'package': return getPackagePath(false);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar.unpacked
+    case 'package_unpacked': return getPackagePath(true);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar\assets
     case 'assets': return getAssets(false);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar.unpacked\assets
     case 'assets_unpacked': return getAssets(true);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar\node_modules
     case 'modules': return getModulesPath(false);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar.unpacked\node_modules
     case 'modules_unpacked': return getModulesPath(true);
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\app.asar.unpacked\bundledPlugins
     case 'bundledPlugins': return getBundledPluginsPath();
+    // C:\Program Files\Black Tree Gaming Ltd\Vortex\resources\locales
     case 'locales': return getLocalesPath();
   }
 }

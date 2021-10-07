@@ -13,15 +13,10 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-
-const app = appIn || remote.app;
+import getVortexPath from '../../util/getVortexPath';
 
 class DeploymendMethod extends LinkingDeployment {
-  public id: string;
-  public name: string;
-  public description: string;
   public compatible: string[] = ['symlink_activator_elevated'];
 
   public priority: number = 10;
@@ -217,7 +212,7 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   private ensureAdmin(): boolean {
-    const userData = app.getPath('userData');
+    const userData = getVortexPath('userData');
     // any file we know exists
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');

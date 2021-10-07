@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 
+import { getApplication } from '../../../util/application';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
 import { currentGame } from '../../../util/selectors';
@@ -15,14 +16,11 @@ import { getGame } from '../../gamemode_management/util/getGame';
 import DelegateBase from './DelegateBase';
 
 import Promise from 'bluebird';
-import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 
 import { IPatcherDetails } from '../types/injector';
-
-const app = appIn || remote.app;
 
 export class Context extends DelegateBase {
   private mGameId: string;
@@ -56,7 +54,7 @@ export class Context extends DelegateBase {
   public getAppVersion =
       (dummy: any, callback: (err, res: string) => void) => {
         log('debug', '[Harmony-Injector] getAppVersion called');
-        return callback(null, app.getVersion());
+        return callback(null, getApplication().version);
       }
 
   public getCurrentGameVersion =

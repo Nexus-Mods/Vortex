@@ -41,7 +41,7 @@ class SelectUpDown extends React.Component<IProps, ISelectUpDownState> {
     );
   }
 
-  private get bounds(): ClientRect {
+  private get bounds(): DOMRect {
     return this.props.container
       ? this.props.container.getBoundingClientRect()
       : {
@@ -51,7 +51,7 @@ class SelectUpDown extends React.Component<IProps, ISelectUpDownState> {
         right: window.innerWidth,
         height: window.innerHeight,
         width: window.innerWidth,
-      };
+      } as any;
   }
 
   private onMenuOpen = () => {

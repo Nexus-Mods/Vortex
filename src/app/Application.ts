@@ -3,6 +3,7 @@ import { NEXUS_DOMAIN } from '../extensions/nexus_integration/constants';
 import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
+import { getApplication } from '../util/application';
 import commandLine, {IParameters, relaunch} from '../util/commandLine';
 import { DataInvalid, DocumentsPathMissing, ProcessCanceled,
          UserCanceled } from '../util/CustomErrors';
@@ -202,6 +203,8 @@ class Application {
     });
 
     app.on('web-contents-created', (event: Electron.Event, contents: Electron.WebContents) => {
+      // tslint:disable-next-line:no-submodule-imports
+      require('@electron/remote/main').enable(contents);
       contents.on('will-attach-webview', this.attachWebView);
     });
   }
@@ -215,7 +218,6 @@ class Application {
     delete webPreferences.preloadURL;
 
     webPreferences.nodeIntegration = false;
-    webPreferences.enableRemoteModule = false;
   }
 
   private genHandleError() {
@@ -257,7 +259,7 @@ class Application {
         .catch(() => null)
         .tap(() => {
           log('info', '--------------------------');
-          log('info', 'Vortex Version', app.getVersion());
+          log('info', 'Vortex Version', getApplication().version);
           log('info', 'Parameters', process.argv.join(' '));
         })
         .then(() => this.testUserEnvironment())
@@ -468,7 +470,7 @@ class Application {
   }
 
   private checkUpgrade(): Promise<void> {
-    const currentVersion = app.getVersion();
+    const currentVersion = getApplication().version;
     return this.migrateIfNecessary(currentVersion)
       .then(() => {
         this.mStore.dispatch(setApplicationVersion(currentVersion));
@@ -676,7 +678,7 @@ class Application {
     // In development of 1.4 I assumed we had a case where this was necessary.
     // Turned out it wasn't, still feel it's sensible to have this
     // information available asap
-    startupSettings.storeVersion = app.getVersion();
+    startupSettings.storeVersion = getApplication().version;
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
@@ -720,7 +722,7 @@ class Application {
           log('info', 'all further logging will happen in', path.join(dataPath, 'vortex.log'));
           setLogPath(dataPath);
           log('info', '--------------------------');
-          log('info', 'Vortex Version', app.getVersion());
+          log('info', 'Vortex Version', getApplication().version);
           return LevelPersist.create(
             path.join(dataPath, currentStatePath),
             undefined,

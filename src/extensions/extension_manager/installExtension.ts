@@ -3,6 +3,7 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { DataInvalid } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { INVALID_FILENAME_RE } from '../../util/util';
 
@@ -12,14 +13,11 @@ import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
 import rimraf from 'rimraf';
 import { dynreq } from 'vortex-run';
-
-const app = appIn || remote.app;
 
 const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
 
@@ -242,7 +240,7 @@ function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionT
 function installExtension(api: IExtensionApi,
                           archivePath: string,
                           info?: IExtension): Promise<void> {
-  const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+  const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
   let destPath: string;
   const tempPath = path.join(extensionsPath, path.basename(archivePath)) + '.installing';
 
