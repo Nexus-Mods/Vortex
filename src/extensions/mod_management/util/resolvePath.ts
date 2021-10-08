@@ -1,11 +1,9 @@
+import getVortexPath from '../../../util/getVortexPath';
 import makeCI from '../../../util/makeCaseInsensitive';
 import { getSafe } from '../../../util/storeHelper';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format from 'string-template';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export type PathKey = 'base' | 'download' | 'install';
 
@@ -15,25 +13,14 @@ export const pathDefaults = {
     install: path.join('{base}', 'mods'),
   };
 
-let userData;
-
 function resolvePath(key: PathKey, paths: {[gameId: string]: any},
                      gameMode: string): string {
   if (gameMode === undefined) {
     return undefined;
   }
 
-  if (userData === undefined) {
-    // if called in the renderer process, app.getPath requires an ipc.
-    // since this function may be called a lot and userData does't change after
-    // startup, caching it makes sense.
-    // (userData _may_ change during startup though so caching during inital loading of this
-    //  module would be unsafe!)
-    userData = app.getPath('userData');
-  }
-
   const formatKeys = makeCI({
-    userdata: userData,
+    userdata: getVortexPath('userData'),
     game: gameMode,
     base: undefined,
   });

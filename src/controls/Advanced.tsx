@@ -51,4 +51,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(Advanced);
+export default connect(mapStateToProps)(Advanced) as React.ComponentType<{}>;

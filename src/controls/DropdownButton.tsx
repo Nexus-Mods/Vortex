@@ -47,7 +47,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
     );
   }
 
-  private get bounds(): ClientRect {
+  private get bounds(): DOMRect {
     return this.props.container
       ? this.props.container.getBoundingClientRect()
       : {
@@ -57,7 +57,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
         right: window.innerWidth,
         height: window.innerHeight,
         width: window.innerWidth,
-      };
+      } as any;
   }
 
   private onToggle = (isOpen: boolean) => {

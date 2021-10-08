@@ -6,11 +6,11 @@ import { renderError } from '../util/message';
 import Icon from './Icon';
 import { IconButton } from './TooltipControls';
 
-import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
+import { getApplication } from '../util/application';
 
 export type CBFunction = (...args: any[]) => void;
 
@@ -137,7 +137,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
       onHide();
     }
     let errMessage = 'Component rendering error\n\n'
-                   + `Vortex Version: ${remote.app.getVersion()}\n\n`
+                   + `Vortex Version: ${getApplication().version}\n\n`
                    + `${error.stack}`;
 
     if (errorInfo !== undefined) {

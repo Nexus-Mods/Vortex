@@ -1,8 +1,11 @@
-import { app as appIn, remote } from 'electron';
+import { app } from 'electron';
 import * as iconExtract from 'icon-extract';
 import * as fs from './fs';
 
-const app = remote !== undefined ? remote.app : appIn;
+const getFileIcon = (process.type === 'renderer')
+  // tslint:disable-next-line:no-var-requires
+  ? require('@electron/remote').app.getFileIcon
+  : app.getFileIcon;
 
 function extractExeIcon(exePath: string, destPath: string): Promise<void> {
   if (process.platform === 'win32') {
@@ -18,8 +21,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void> {
       });
     });
   } else {
-    app
-      .getFileIcon(exePath, { size: 'normal' })
+    getFileIcon(exePath, { size: 'normal' })
       .then(icon => fs.writeFileAsync(destPath, icon.toPNG()));
   }
 }

@@ -1,5 +1,4 @@
 import Bluebird from 'bluebird';
-import { remote } from 'electron';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -9,6 +8,8 @@ import * as url from 'url';
 import { addNotification } from '../../actions/notifications';
 import { IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { getApplication } from '../../util/application';
+import { DataInvalid } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
@@ -26,7 +27,6 @@ import { IAnnouncement, ISurveyInstance,
   ParserError } from './types';
 
 import { matchesGameMode, matchesVersion } from './util';
-import { DataInvalid } from '../../util/api';
 
 const ANNOUNCEMENT_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
@@ -106,7 +106,7 @@ function updateSurveys(store: Redux.Store<IState>) {
       }
 
       // Ugly but needed.
-      const validSurveys = res.filter(iter => 
+      const validSurveys = res.filter(iter =>
         (!!iter.endDate) && (!!iter.id) && (!!iter.link));
 
       if (validSurveys.length !== res.length) {
@@ -152,7 +152,7 @@ function showSurveyNotification(context) {
     return surveyCutoffDateMS <= now;
   };
 
-  const appVersion = remote.app.getVersion();
+  const appVersion = getApplication().version;
 
   const filtered = surveys.filter(survey => {
     const isSuppressed = (suppressedIds.includes(survey.id) && (suppressed[survey.id] === true));

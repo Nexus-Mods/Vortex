@@ -89,7 +89,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     menuLayer: PropTypes.object,
   };
 
-  public context: { menuLayer: JSX.Element };
+  public declare context: { menuLayer: JSX.Element };
 
   private portalTargetRef: Element;
   private mBackgroundClick: (evt: React.MouseEvent<ButtonGroup>) => void;

@@ -24,7 +24,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
     menuLayer: PropTypes.object,
   };
 
-  public context: { menuLayer: JSX.Element };
+  public declare context: { menuLayer: JSX.Element };
 
   constructor(props: IPortalMenuProps) {
     super(props);

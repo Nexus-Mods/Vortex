@@ -1,11 +1,9 @@
 import makeCI from '../../../util/makeCaseInsensitive';
 
-import { app as appIn, remote } from 'electron';
 import * as os from 'os';
 import * as path from 'path';
 import format from 'string-template';
-
-const app = remote !== undefined ? remote.app : appIn;
+import getVortexPath from '../../../util/getVortexPath';
 
 let userData: string;
 
@@ -16,7 +14,7 @@ export function getDownloadPathPattern(pattern: string): string {
 function getDownloadPath(pattern: string, gameId?: string): string {
   if (userData === undefined) {
     // cached to avoid ipcs from renderer -> main process
-    userData = app.getPath('userData');
+    userData = getVortexPath('userData');
   }
   const formatKeys = makeCI({
     userdata: userData,
@@ -33,7 +31,7 @@ function getDownloadPath(pattern: string, gameId?: string): string {
       || ((process.platform === 'win32')
           && ((result[0] === '\\') && (result[1] !== '\\'))
               || (result[0] === '/') && (result[1] !== '/'))) {
-    result = path.resolve(app.getPath('userData'), result);
+    result = path.resolve(getVortexPath('userData'), result);
   }
 
   return result;

@@ -4,11 +4,15 @@ import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
-import { remote, webFrame } from 'electron';
+import * as RemoteT from '@electron/remote';
+import { webFrame } from 'electron';
 import * as path from 'path';
 import { setZoomFactor } from '../actions/window';
+import { getApplication } from './application';
+import getVortexPath from './getVortexPath';
+import lazyRequire from './lazyRequire';
 
-const { app, Menu, clipboard, contentTracing } = remote;
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 /**
  * initializes the application menu and with it, hotkeys
@@ -42,7 +46,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     {
       label: 'Close',
       click() {
-        remote.app.quit();
+        getApplication().quit();
       },
     },
   ];
@@ -129,7 +133,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({
         label: 'Copy missing translations to clipboard',
         click(item, focusedWindow) {
-          clipboard.writeText(JSON.stringify(getMissingTranslations(), undefined, 2));
+          remote.clipboard.writeText(JSON.stringify(getMissingTranslations(), undefined, 2));
         },
       });
       viewMenu[copyTranslationsIdx].enabled = false;
@@ -157,8 +161,8 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
     let profiling: boolean = false;
     const stopProfiling = () => {
-      const outPath = path.join(app.getPath('temp'), 'profile.dat');
-      contentTracing.stopRecording(outPath)
+      const outPath = path.join(getVortexPath('temp'), 'profile.dat');
+      remote.contentTracing.stopRecording(outPath)
         .then(() => {
           extensions.getApi().sendNotification({
             id: 'profiling',
@@ -187,9 +191,9 @@ export function initApplicationMenu(extensions: ExtensionManager) {
             categoryFilter: defaultTraceCategories.join(','),
             traceOptions: 'record-until-full,enable-sampling',
             options: 'sampling-frequency=10000',
-          }
+          };
 
-          contentTracing.startRecording(options).then(() => {
+          remote.contentTracing.startRecording(options).then(() => {
             console.log('Tracing started');
             extensions.getApi().sendNotification({
               id: 'profiling',
@@ -211,12 +215,12 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       },
     }];
 
-    const menu = Menu.buildFromTemplate([
+    const menu = remote.Menu.buildFromTemplate([
       { label: 'File', submenu: fileMenu },
       { label: 'View', submenu: viewMenu },
       { label: 'Performance', submenu: performanceMenu },
     ]);
-    Menu.setApplicationMenu(menu);
+    remote.Menu.setApplicationMenu(menu);
   };
   refresh();
   return refresh;

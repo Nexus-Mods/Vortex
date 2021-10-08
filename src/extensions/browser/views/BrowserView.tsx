@@ -14,7 +14,6 @@ import Notification from '../../../views/Notification';
 import { closeBrowser } from '../actions';
 
 import Promise from 'bluebird';
-import {  WebviewTag } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Breadcrumb, Button } from 'react-bootstrap';
@@ -61,7 +60,7 @@ function nop() {
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mRef: Webview = null;
-  private mWebView: WebviewTag = null;
+  private mWebView = null;
   private mCallbacks: { [event: string]: (...args: any[]) => void };
   private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
   private mLoadingDebouncer: Debouncer;
@@ -89,7 +88,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     this.mCallbacks = {
       'did-finish-load': () => {
-        const newUrl: string = (this.mWebView as any).getURL();
+        const newUrl: string = this.mWebView.getURL();
         this.nextState.url = newUrl;
         this.props.onEvent(this.props.subscriber, 'navigate', newUrl);
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {

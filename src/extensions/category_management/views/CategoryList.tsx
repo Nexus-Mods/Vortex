@@ -72,7 +72,7 @@ type IProps = IConnectedProps & IActionProps;
  *
  */
 class CategoryList extends ComponentEx<IProps, IComponentState> {
-  public context: IComponentContext;
+  public declare context: IComponentContext;
   private mButtons: IActionDefinition[];
 
   constructor(props) {

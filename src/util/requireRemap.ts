@@ -2,6 +2,8 @@
 const Module = require('module');
 
 import * as path from 'path';
+import * as electron from './electron';
+import * as libxmljs from './libxmljs';
 
 // when spawning a binary, the code doing the spawning will be baked by webpack
 // in release builds and thus reside in the app.asar file.
@@ -30,6 +32,12 @@ function patchedLoad(orig) {
         && ((parent.filename.indexOf('graceful-fs') !== -1)
             || (parent.filename.indexOf('rimraf') !== -1))) {
       request = 'original-fs';
+    } else if (request === 'electron') {
+      return electron;
+    } else if ((request === '@electron/remote') && (process.type !== 'renderer')) {
+      return undefined;
+    } else if (request === 'libxmljs') {
+      return libxmljs;
     }
 
     let res = orig.apply(this, [request, parent, ...rest]);

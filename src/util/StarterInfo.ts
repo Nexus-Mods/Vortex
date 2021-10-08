@@ -14,15 +14,24 @@ import { getGame } from '../extensions/gamemode_management/util/getGame';
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
+import { getApplication } from './application';
 import { MissingDependency, MissingInterpreter,
          ProcessCanceled, UserCanceled } from './CustomErrors';
+import getVortexPath from './getVortexPath';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GameEntryNotFound } from '../types/IGameStore';
 import { GameNotFound } from './Steam';
+
+function getCurrentWindow() {
+  if (process.type === 'renderer') {
+    return require('@electron/remote').getCurrentWindow();
+  } else {
+    return undefined;
+  }
+}
 
 export interface IStarterInfo {
   id: string;
@@ -44,16 +53,6 @@ export interface IStarterInfo {
   logoName: string;
 }
 
-const userDataPath = ((): () => string => {
-  let cache: string;
-  return () => {
-    if (cache === undefined) {
-      cache = remote.app.getPath('userData');
-    }
-    return cache;
-  };
-})();
-
 type OnShowErrorFunc =
   (message: string, details?: string | Error | any, allowReport?: boolean) => void;
 
@@ -72,7 +71,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   public static toolIconRW(gameId: string, toolId: string) {
-    return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
+    return path.join(getVortexPath('userData'), gameId, 'icons', toolId + '.png');
   }
 
   public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
@@ -103,9 +102,9 @@ class StarterInfo implements IStarterInfo {
             // to the launcher
             api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
             if (['hide', 'hide_recover'].includes(info.onStart)) {
-              remote.getCurrentWindow().hide();
+              getCurrentWindow().hide();
             } else if (info.onStart === 'close') {
-              remote.app.quit();
+              getApplication().quit();
             }
           })
           .catch(GameNotFound, () => {
@@ -151,9 +150,9 @@ class StarterInfo implements IStarterInfo {
     const spawned = () => {
       onSpawned();
       if (['hide', 'hide_recover'].includes(info.onStart)) {
-        remote.getCurrentWindow().hide();
+        getCurrentWindow().hide();
       } else if (info.onStart === 'close') {
-        remote.app.quit();
+        getApplication().quit();
       }
     };
 
@@ -219,8 +218,8 @@ class StarterInfo implements IStarterInfo {
     })
     .then(() => {
       if ((info.onStart === 'hide_recover')
-          && !remote.getCurrentWindow().isVisible()) {
-        remote.getCurrentWindow().show();
+          && !getCurrentWindow().isVisible()) {
+        getCurrentWindow().show();
       }
     });
   }
@@ -252,7 +251,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   private static gameIconRW(gameId: string) {
-    return path.join(userDataPath(), gameId, 'icon.png');
+    return path.join(getVortexPath('userData'), gameId, 'icon.png');
   }
 
   private static toolIcon(gameId: string, extensionPath: string,

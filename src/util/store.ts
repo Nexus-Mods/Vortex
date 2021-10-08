@@ -12,8 +12,8 @@ import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import Promise from 'bluebird';
-import { app as appIn, dialog, ipcMain, remote } from 'electron';
-import { forwardToRenderer, replayActionMain } from 'electron-redux';
+import { dialog, ipcMain } from 'electron';
+import { forwardToRenderer } from 'electron-redux';
 import encode from 'encoding-down';
 import * as leveldownT from 'leveldown';
 import levelup from 'levelup';
@@ -22,12 +22,11 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
+import getVortexPath from './getVortexPath';
 
 let basePersistor: ReduxPersistor<IState>;
 
 const IMPORTED_TAG = 'imported__do_not_delete.txt';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export const currentStatePath = 'state.v2';
 export const FULL_BACKUP_PATH = 'state_backups_full';
@@ -67,9 +66,11 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   ipcMain.on('redux-action', (event, payload) => {
     try {
       const action = JSON.parse(payload);
+      /*
       if (process.env.NODE_ENV === 'development') {
         log('info', 'forwarded action', payload);
       }
+      */
       // TODO: this code is required for redux-batched-actions
       //   we may end up not using this for batched actions in which case this
       //   code is obsolete but not harmful
@@ -225,7 +226,7 @@ export function createFullStateBackup(backupName: string,
     return Promise.reject(new DataInvalid('Failed to create state backup'));
   }
 
-  const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
+  const basePath = path.join(getVortexPath('userData'), 'temp', FULL_BACKUP_PATH);
 
   const backupFilePath = path.join(basePath, backupName + '.json');
 

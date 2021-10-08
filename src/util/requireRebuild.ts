@@ -2,14 +2,12 @@ import { log } from './log';
 
 import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { createHash } from 'crypto';
-import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra';
 import {} from 'module';
 import * as os from 'os';
 import * as path from 'path';
 import * as reqResolve from 'resolve';
-
-const app = appIn || remote.app;
+import getVortexPath from './getVortexPath';
 
 // tslint:disable-next-line:no-var-requires
 const Module = require('module');
@@ -34,7 +32,7 @@ const loggingHandler = {
 // e.g. const modulesToLog = new Set(['https']);
 const modulesToLog = new Set([]);
 
-const cachePath = path.join(app.getPath('temp'), 'native_cache');
+const cachePath = path.join(getVortexPath('temp'), 'native_cache');
 fs.ensureDirSync(cachePath);
 
 // whitelist of native libraries that we know should load correctly.
@@ -48,6 +46,7 @@ const nativeLibs = [
   'msgpack',
   'native-errors',
   'permissions',
+  'vortexmt',
   'windump',
 ];
 

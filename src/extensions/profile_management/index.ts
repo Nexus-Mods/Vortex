@@ -57,7 +57,6 @@ import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } fr
 import { syncFromProfile, syncToProfile } from './sync';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
@@ -67,8 +66,6 @@ const profileFiles: { [gameId: string]: string[] } = {};
 const profileFeatures: IProfileFeature[] = [];
 
 function profilePath(profile: IProfile): string {
-  const app = appIn || remote.app;
-
   return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 

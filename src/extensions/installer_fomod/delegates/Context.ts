@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
+import { getApplication } from '../../../util/application';
 import {ProcessCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
@@ -12,14 +13,11 @@ import {getGame} from '../../gamemode_management/util/getGame';
 import DelegateBase from './DelegateBase';
 
 import Promise from 'bluebird';
-import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import minimatch from 'minimatch';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
-
-const app = appIn || remote.app;
 
 function extenderForGame(gameId: string) {
   return {
@@ -55,7 +53,7 @@ export class Context extends DelegateBase {
   public getAppVersion =
       (dummy: any, callback: (err, res: string) => void) => {
         log('debug', 'getAppVersion called');
-        return callback(null, app.getVersion());
+        return callback(null, getApplication().version);
       }
 
   public getCurrentGameVersion =

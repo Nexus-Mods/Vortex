@@ -10,6 +10,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IRunningTool } from '../../types/IState';
 import { ComponentEx, connect } from '../../util/ComponentEx';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -34,14 +35,16 @@ import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT;
 
+import * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as React from 'react';
 import { Media, MenuItem } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
+
+const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;

@@ -53,7 +53,6 @@ import GameModeManager, { IGameStub } from './GameModeManager';
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -204,14 +203,10 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 
   return new Promise<void>((resolve, reject) => {
     if ((discovery !== undefined) && (discovery.path !== undefined)) {
-      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-        properties: ['openDirectory'],
-        defaultPath: discovery.path,
-      })
+      api.selectDir({ defaultPath: discovery.path })
       .then(result => {
-        const { filePaths } = result;
-        if ((filePaths !== undefined) && truthy(filePaths[0])) {
-          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles))
+        if (result !== undefined) {
+          findGamePath(game, result, 0, searchDepth(game.requiredFiles))
             .then((corrected: string) => {
               api.store.dispatch(setGamePath(game.id, corrected));
               resolve();
@@ -233,13 +228,10 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
         }
       });
     } else {
-      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-        properties: ['openDirectory'],
-      })
+      api.selectDir({})
       .then(result => {
-        const { filePaths } = result;
-        if ((filePaths !== undefined) && (filePaths.length > 0)) {
-          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles || []))
+        if (result !== undefined) {
+          findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
             .then((corrected: string) => {
               const exe = game.executable(corrected);
               api.store.dispatch(addDiscoveredGame(game.id, {
@@ -652,11 +644,9 @@ function init(context: IExtensionContext): boolean {
       $.gameModeManager.startSearchDiscovery(paths);
     },
     onSelectPath: (basePath: string): Promise<string> => {
-      return Promise.resolve(remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-        properties: ['openDirectory'],
+      return Promise.resolve(context.api.selectDir({
         defaultPath: basePath,
-      })
-      .then(result => result.filePaths[0]));
+      }));
     },
   }));
 

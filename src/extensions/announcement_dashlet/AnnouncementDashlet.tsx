@@ -1,4 +1,3 @@
-import { remote } from 'electron';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
@@ -8,6 +7,7 @@ import { matchesGameMode, matchesVersion } from './util';
 
 import Dashlet from '../../controls/Dashlet';
 import { Icon, IconButton } from '../../controls/TooltipControls';
+import { getApplication } from '../../util/application';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import * as selectors from '../../util/selectors';
@@ -26,7 +26,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
   constructor(props: IProps) {
     super(props);
-    this.mAppVersion = remote.app.getVersion();
+    this.mAppVersion = getApplication().version;
   }
 
   public render(): JSX.Element {

@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
+import { getApplication } from '../../../util/application';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
@@ -8,10 +9,7 @@ import { setModArchiveId } from '../actions/mods';
 import {IMod} from '../types/IMod';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -119,7 +117,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
           })
             .then(() => onRemoveMods(removedMods));
         } else {
-          app.quit();
+          getApplication().quit();
         }
       });
     })

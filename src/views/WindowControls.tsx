@@ -1,6 +1,9 @@
-import { remote } from 'electron';
+import * as RemoteT from '@electron/remote';
 import * as React from 'react';
 import { IconButton } from '../controls/TooltipControls';
+import lazyRequire from '../util/lazyRequire';
+
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 const window = (() => {
   let res: Electron.BrowserWindow;

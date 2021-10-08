@@ -18,7 +18,6 @@ import { ExtensionType, IAvailableExtension, IExtension,
          IExtensionDownloadInfo, IExtensionManifest, ISelector } from './types';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as _ from 'lodash';
 import SevenZip from 'node-7z';
 import * as path from 'path';
@@ -135,7 +134,7 @@ export function readExtensions(force: boolean): Promise<{ [extId: string]: IExte
 
 function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   const bundledPath = getVortexPath('bundledPlugins');
-  const extensionsPath = path.join(remote.app.getPath('userData'), 'plugins');
+  const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
   return Promise.all([readExtensionDir(bundledPath, true),
                       readExtensionDir(extensionsPath, false)])
@@ -170,7 +169,7 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
 
 function doFetchAvailableExtensions(forceDownload: boolean)
                                     : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
-  const cachePath = path.join(remote.app.getPath('temp'), EXTENSION_FILENAME);
+  const cachePath = path.join(getVortexPath('temp'), EXTENSION_FILENAME);
   let time = new Date();
 
   const checkCache = forceDownload

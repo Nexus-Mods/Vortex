@@ -92,7 +92,7 @@ function MountTrigger(props: { cb: () => void }) {
 }
 
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
-  public context: IComponentContext;
+  public declare context: IComponentContext;
   private actions: ITableRowAction[];
   private mColumns: Array<ITableAttribute<IDownload>>;
   private mTableActions: IActionDefinition[];

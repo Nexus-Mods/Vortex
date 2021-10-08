@@ -1,12 +1,12 @@
 import FormFeedback from './FormFeedback';
 import { IconButton } from './TooltipControls';
 
-import { remote } from 'electron';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Checkbox, Col, ControlLabel,
          FormControl, FormGroup,
          InputGroup } from 'react-bootstrap';
+import { ComponentEx } from '../util/ComponentEx';
 
 export interface IFormItemProps {
   t: TFunction;
@@ -93,7 +93,7 @@ export interface IFormPathProps extends IFormItemProps {
   extensions?: string[];
 }
 
-export class FormPathItem extends React.Component<IFormPathProps, {}> {
+export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
   public render(): JSX.Element {
     const { t, controlId, label, placeholder, readOnly, style, value } = this.props;
 
@@ -149,16 +149,16 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
 
   private handleChangePath = () => {
     const {directory, extensions, onChangeValue, stateKey, value} = this.props;
-    remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+    const func = directory ? this.context.api.selectDir : this.context.api.selectFile;
+
+    func({
       defaultPath: value,
-      properties: [ directory ? 'openDirectory' : 'openFile' ],
       filters: extensions !== undefined ? [
         { name: 'Files', extensions },
       ] : [],
     }).then(result => {
-      const { filePaths } = result;
-      if ((filePaths !== undefined) && (filePaths.length > 0)) {
-        onChangeValue(stateKey, filePaths[0]);
+      if (result !== undefined) {
+        onChangeValue(stateKey, result);
       }
     });
   }

@@ -4,7 +4,6 @@ import * as fs from './fs';
 import { log } from './log';
 import { getSafeCI } from './storeHelper';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
 import * as winapi from 'winapi-bindings';
@@ -13,8 +12,7 @@ import { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from '..
 import opn from './opn';
 
 import { IExtensionApi } from '../types/IExtensionContext';
-
-const app = (remote !== undefined) ? remote.app : appIn;
+import getVortexPath from './getVortexPath';
 
 const STORE_ID = 'steam';
 const STEAM_EXEC = 'Steam.exe';
@@ -58,7 +56,7 @@ class Steam implements IGameStore {
           this.mBaseFolder = Promise.resolve(undefined);
         }
     } else {
-      this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
+      this.mBaseFolder = Promise.resolve(path.resolve(getVortexPath('home'), '.steam', 'steam'));
     }
   }
 

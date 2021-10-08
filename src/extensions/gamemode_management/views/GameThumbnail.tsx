@@ -229,7 +229,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private lowPriorityButtons = (action: IActionDefinition) =>
     action.position >= 100
 
-  private getWindowBounds = (): ClientRect => {
+  private getWindowBounds = (): DOMRect => {
     return {
       top: 0,
       left: 0,
@@ -237,7 +237,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       width: window.innerWidth,
       bottom: window.innerHeight,
       right: window.innerWidth,
-    };
+    } as any;
   }
 
   private setRef = ref => {

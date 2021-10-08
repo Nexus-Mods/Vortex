@@ -5,11 +5,14 @@ import { log } from '../../util/log';
 import { makeQueue } from '../../util/util';
 
 import Promise from 'bluebird';
-import { dialog as dialogIn, remote } from 'electron';
+import { dialog as dialogIn } from 'electron';
 import * as fsFast from 'fs-extra';
 import * as path from 'path';
 
-const dialog = remote !== undefined ? remote.dialog : dialogIn;
+const dialog = (process.type === 'renderer')
+  // tslint:disable-next-line:no-var-requires
+  ? require('@electron/remote').dialog
+  : dialogIn;
 
 /**
  * assembles a file received in chunks.

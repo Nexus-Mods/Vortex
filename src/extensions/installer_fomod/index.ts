@@ -6,8 +6,9 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 import {delayed, toPromise, truthy} from '../../util/util';
@@ -29,15 +30,12 @@ import InstallerDialog from './views/InstallerDialog';
 
 import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
-import { app as appIn, remote } from 'electron';
 import { createIPC } from 'fomod-installer';
 import * as net from 'net';
 import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
-
-const app = appIn !== undefined ? appIn : remote.app;
 
 function transformError(err: any): Error {
   let result: Error;
@@ -91,7 +89,7 @@ function transformError(err: any): Error {
                         + 'characters. This usually means that your mod staging path is too long.');
   } else if ((err.name === 'System.IO.IOException')
              && (err.stack.indexOf('System.IO.Path.InternalGetTempFileName'))) {
-    const tempDir = app.getPath('temp');
+    const tempDir = getVortexPath('temp');
     result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '
@@ -146,7 +144,7 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
       .then((data: Buffer) => {
         let offset = 0;
-        let encoding = 'utf8';
+        let encoding: BufferEncoding = 'utf8';
         if (data.readUInt16LE(0) === 0xFEFF) {
           encoding = 'utf16le';
           offset = 2;

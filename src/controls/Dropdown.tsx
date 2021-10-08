@@ -61,7 +61,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
       );
   }
 
-  private get bounds(): ClientRect {
+  private get bounds(): DOMRect {
     return this.props.container
       ? this.props.container.getBoundingClientRect()
       : {
@@ -71,7 +71,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
         right: window.innerWidth,
         height: window.innerHeight,
         width: window.innerWidth,
-      };
+      } as any;
   }
 
   private onToggle = (isOpen: boolean) => {

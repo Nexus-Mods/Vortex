@@ -89,7 +89,7 @@ function nop() {
  * @class GamePicker
  */
 class GamePicker extends ComponentEx<IProps, IComponentState> {
-  public context: IComponentContext;
+  public declare context: IComponentContext;
 
   private buttons: IActionDefinition[];
   private mRef: HTMLElement;

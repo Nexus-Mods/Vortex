@@ -3,6 +3,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult,
 import { IMod, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { activeGameId, lastActiveProfileForGame } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
@@ -19,7 +20,7 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
-import { remote, shell } from 'electron';
+import { shell } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -179,7 +180,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         t={t}
         key={profileId}
         profile={profile}
-        mods={mods[profile.gameId]}
+        mods={mods[profile.gameId] ?? emptyObject}
         features={features}
         active={currentProfile === profileId}
         available={available}
@@ -210,10 +211,10 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { t, profiles } = this.props;
     const profile = profiles[profileId];
     const appDir = (process.env.NODE_ENV !== 'development')
-      ? path.dirname(remote.app.getPath('exe'))
+      ? path.dirname(getVortexPath('exe'))
       : 'C:/Program Files/Black Tree Gaming Ltd/Vortex';
 
-    const desktopLocation = remote.app.getPath('desktop');
+    const desktopLocation = getVortexPath('desktop');
     const shortcutPath = path.join(desktopLocation, `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`);
     const created = shell.writeShortcutLink(shortcutPath, 'create', {
       target: path.join(appDir, 'Vortex.exe'),
@@ -394,7 +395,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 }
 
 function profilePath(profile: IProfile): string {
-  return path.join(remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id);
+  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 const emptyArray = [];

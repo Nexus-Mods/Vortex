@@ -6,6 +6,7 @@ import ActionDropdown from '../ActionDropdown';
 import Dropdown, { DummyMenu } from '../Dropdown';
 import ExtensibleControl from '../ExtensibleControl';
 import ExtensionGate from '../ExtensionGate';
+import FormInput from '../FormInput';
 import Icon from '../Icon';
 import SelectUpDown from '../SelectUpDown';
 import {ITableRowAction} from '../Table';
@@ -101,6 +102,17 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
       const cellType = typeof(data);
       if (cellType === 'string') {
         return <span>{data}</span>;
+      } else if ((cellType === 'number') && (attribute.edit.onChangeValue !== undefined)) {
+        return (
+          <FormInput
+            value={data}
+            onChange={this.onChangeNumValue}
+            type='number'
+            validate={attribute.edit.validate}
+            min={attribute.edit.min}
+            max={attribute.edit.max}
+          />
+        );
       } else if (cellType === 'boolean') {
         if (attribute.edit.onChangeValue !== undefined) {
           return (
@@ -259,6 +271,12 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         {t(choice.text)}
       </MenuItem>
     );
+  }
+
+  private onChangeNumValue = (newValue: string) => {
+    const { attribute, rawData } = this.props;
+
+    attribute.edit.onChangeValue(rawData, parseInt(newValue, 10));
   }
 
   private toggle = () => {

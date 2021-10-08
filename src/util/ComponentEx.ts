@@ -6,6 +6,7 @@ import { deleteOrNop, setSafe } from './storeHelper';
 
 import * as PropTypes from 'prop-types';
 import { WithTranslation, withTranslation } from 'react-i18next';
+import { clearImmediate, setImmediate } from 'timers';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
 
@@ -129,7 +130,7 @@ export class ComponentEx<P, S extends object>
     getModifiers: PropTypes.func,
   };
 
-  public context: IComponentContext;
+  public declare context: IComponentContext;
 
   public nextState: S;
 
@@ -150,7 +151,7 @@ export class PureComponentEx<P, S extends object>
     getModifiers: PropTypes.func,
   };
 
-  public context: IComponentContext;
+  public declare context: IComponentContext;
 
   public nextState: S;
 

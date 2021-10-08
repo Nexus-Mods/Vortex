@@ -23,8 +23,9 @@ import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLe
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
+import * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
-import { app, remote } from 'electron';
+import { app } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -32,6 +33,9 @@ import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import lazyRequire from '../../util/lazyRequire';
+
+const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 interface ILanguage {
   key: string;
@@ -405,7 +409,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       //  bug reports.
       onSetStartMinimized(false);
     }
-    const uniApp = app || remote.app;
+    const uniApp = (process.type === 'renderer') ? remote.app : app;
     uniApp.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
@@ -417,7 +421,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const { autoStart, startMinimized, onSetStartMinimized } = this.props;
     const isMinimized = ((!startMinimized) === true);
     onSetStartMinimized(isMinimized);
-    const uniApp = app || remote.app;
+    const uniApp = (process.type === 'renderer') ? remote.app : app;
     uniApp.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
@@ -471,7 +475,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private readLocales(props: IProps) {
     const { extensions } = props;
     const bundledLanguages = getVortexPath('locales');
-    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
+    const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
 
     const translationExts = extensions.filter(ext => ext.type === 'translation');
 

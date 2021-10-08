@@ -1,5 +1,4 @@
 import PromiseBB from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
@@ -9,6 +8,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { DialogActions, DialogType, ICheckbox, IDialogContent, IDialogResult, showDialog } from '../../actions';
 import { IState } from '../../types/IState';
+import { getApplication } from '../../util/application';
 import { ComponentEx } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -168,7 +168,7 @@ class Settings extends ComponentEx<IProps, {}> {
         ]);
         if (confirm.action === 'Confirm') {
           spawnSelf(['--restore', filePath]);
-          remote.app.exit();
+          getApplication().quit();
         }
       }
     } catch (err) {

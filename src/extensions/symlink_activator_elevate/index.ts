@@ -25,7 +25,6 @@ import Settings from './Settings';
 import walk from './walk';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import { TFunction } from 'i18next';
 import JsonSocket from 'json-socket';
 import * as net from 'net';
@@ -40,8 +39,6 @@ import { enableUserSymlinks } from './actions';
 const TASK_NAME = 'Vortex Symlink Deployment';
 const SCRIPT_NAME = 'vortexSymlinkService.js';
 const IPC_ID = 'vortex_elevate_symlink';
-
-const app = appIn || remote.app;
 
 function monitorConsent(onDisappeared: () => void): () => void {
   if (process.platform !== 'win32') {
@@ -94,9 +91,6 @@ function startIPCServer(ipcPath: string, onMessage: OnMessageCB): net.Server {
 }
 
 class DeploymentMethod extends LinkingDeployment {
-  public id: string;
-  public name: string;
-  public description: string;
   public compatible: string[] = ['symlink_activator'];
 
   public priority: number = 20;
@@ -336,7 +330,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private ensureAdmin(): boolean {
-    const userData = app.getPath('userData');
+    const userData = getVortexPath('userData');
     // any file we know exists
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');
@@ -731,7 +725,7 @@ function installTask(scriptPath: string) {
 }
 
 function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
-  const scriptPath = path.join(app.getPath('userData'), SCRIPT_NAME);
+  const scriptPath = path.join(getVortexPath('userData'), SCRIPT_NAME);
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
     .then(() => {
