@@ -32,7 +32,7 @@ function NexusId(props: INexusIdProps) {
 
   const fileName: string = mod.attributes?.fileName ?? mod.attributes?.name;
 
-  const gameMode = useSelector(activeGameId);
+  const gameMode = mod.attributes?.downloadGame ?? useSelector(activeGameId);
   const downloadPath = useSelector((state: IState) => downloadPathForGame(state, gameMode));
   const downloads = useSelector((state: IState) => state.persistent.downloads.files);
 
