@@ -36,6 +36,8 @@ function NexusId(props: INexusIdProps) {
   const downloadPath = useSelector((state: IState) => downloadPathForGame(state, gameMode));
   const downloads = useSelector((state: IState) => state.persistent.downloads.files);
 
+  const fileGameId = mod.attributes?.downloadGame || gameMode;
+
   const hasArchive = (mod.archiveId !== undefined)
                   && (downloads[mod.archiveId] !== undefined);
 
@@ -47,14 +49,14 @@ function NexusId(props: INexusIdProps) {
   }, [mod]);
 
   const openURL = React.useCallback(() => {
-    api.events.emit('open-mod-page', gameMode, mod.attributes?.modId, mod.attributes.source);
+    api.events.emit('open-mod-page', fileGameId, mod.attributes?.modId, mod.attributes.source);
   }, []);
 
   const checkForUpdate = React.useCallback(() => {
-    checkModVersion(api.store, nexus(), gameMode, mod)
+    checkModVersion(api.store, nexus(), fileGameId, mod)
       .catch(err => {
         if (err.statusCode === 403) {
-          return queryResetSource(api, gameMode, mod);
+          return queryResetSource(api, fileGameId, mod);
         } else {
           api.showErrorNotification('Query failed', err, { allowReport: false });
         }
@@ -70,7 +72,7 @@ function NexusId(props: INexusIdProps) {
       fileHash={mod.attributes?.fileMD5}
       archiveId={hasArchive ? mod.archiveId : undefined}
       activeGameId={gameMode}
-      fileGameId={mod.attributes?.downloadGame || gameMode}
+      fileGameId={fileGameId}
       fileName={fileName}
       isDownload={mod.state === 'downloaded'}
       store={api.store}
