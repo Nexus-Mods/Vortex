@@ -1,3 +1,5 @@
+import { NEXUS_DOMAIN, NEXUS_PROTOCOL } from '../extensions/nexus_integration/constants';
+
 import { TimeoutError } from './CustomErrors';
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
@@ -13,7 +15,6 @@ import { batch } from 'redux-act';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
 import * as url from 'url';
-import { NEXUS_DOMAIN, NEXUS_PROTOCOL } from '../extensions/nexus_integration/constants';
 
 /**
  * count the elements in an array for which the predicate matches

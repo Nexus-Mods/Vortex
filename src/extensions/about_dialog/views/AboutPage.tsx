@@ -135,7 +135,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                   Vortex {this.mVersion}
                   {(tag !== undefined) ? ' ' + tag : ''}
                 </h2>
-                <p>&#169;2020 Black Tree Gaming Ltd.</p>
+                <p>&#169;2021 Black Tree Gaming Ltd.</p>
                 <p>
                   {t('Released under')}
                   {' '}<a onClick={this.showOwnLicense}>GPL-3</a>{' '}

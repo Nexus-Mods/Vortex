@@ -1800,6 +1800,10 @@ class InstallManager {
               && (dep.lookupResults.length > 0)
               && (dep.lookupResults[0].value.fileMD5 !== undefined)
               && (dep.lookupResults[0].value.fileMD5 !== downloads[downloadId].fileMD5)) {
+            log('info', 'mismatch md5', {
+              expected: dep.lookupResults[0].value.fileMD5,
+              got: downloads[downloadId].fileMD5,
+            });
             queryWrongMD5 = api.showDialog('question', 'Unrecognized file {{name}}', {
               text: 'The signature for the file you selected to download for "{{name}}" does '
                   + 'not match the expected value. This is commonly caused by either '

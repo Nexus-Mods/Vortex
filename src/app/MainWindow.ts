@@ -7,6 +7,7 @@ import { terminate } from '../util/errorHandling';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
 import opn from '../util/opn';
+import { downloadPath } from '../util/selectors';
 import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
 
@@ -61,8 +62,10 @@ class MainWindow {
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
   private mInspector: boolean;
+  private mStore: Redux.Store<IState>;
 
   constructor(store: Redux.Store<IState>, inspector: boolean) {
+    this.mStore = store;
     this.mInspector = inspector === true;
     this.mResizeDebouncer = new Debouncer(() => {
       if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
@@ -85,6 +88,7 @@ class MainWindow {
     if (this.mWindow !== null) {
       return Promise.resolve(undefined);
     }
+
     const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     this.mWindow = new BrowserWindow(this.getWindowSettings(store.getState().settings.window));

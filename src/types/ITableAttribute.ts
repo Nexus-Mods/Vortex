@@ -281,6 +281,16 @@ export interface ITableAttribute<T = any> {
     actions?: boolean,
 
     /**
+     * minimum value, minus infinity by default
+     */
+    min?: number,
+
+    /**
+     * maximum value, infinity by default
+     */
+    max?: number,
+
+    /**
      * if set, this is called to determine the placeholder to be displayed when the input box is
      * empty. Has no effect if this edit config doesn't generate an input box
      */

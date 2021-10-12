@@ -31,7 +31,7 @@ import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
-import { getVisibleWindow, isOutdated } from './errorHandling';
+import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n, TString } from './i18n';
 import lazyRequire from './lazyRequire';
@@ -47,14 +47,13 @@ import { isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync 
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
-import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptions,
-         WebContents } from 'electron';
+import { app as appIn, ipcMain, ipcRenderer, OpenDialogOptions, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as fuzz from 'fuzzball';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
-import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as net from 'net';
@@ -70,7 +69,6 @@ import makeRemoteCall from './electronRemote';
 const ERROR_OUTPUT_CUTOFF = 3;
 
 let app = appIn;
-// let dialog = dialogIn;
 
 if (process.type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
