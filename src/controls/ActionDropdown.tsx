@@ -5,6 +5,7 @@ import { log } from '../util/log';
 import { truthy } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
+import { HOVER_DELAY } from './constants';
 import ContextMenu from './ContextMenu';
 import Icon from './Icon';
 import PortalMenu from './PortalMenu';
@@ -55,8 +56,13 @@ function MenuAction(props: IMenuActionProps) {
   const setOpenFalse = React.useCallback(() => { setOpen(false); }, [ setOpen ]);
 
   const itemRef = React.useRef<HTMLElement>();
+  const hideTimer = React.useRef<NodeJS.Timeout>();
 
   const trigger = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+
     action.action?.(instanceIds, action.data);
     if (action.subMenus !== undefined) {
       setOpen(old => !old);
@@ -64,6 +70,24 @@ function MenuAction(props: IMenuActionProps) {
       onSelect?.();
     }
   }, [instanceId, action, onSelect, setOpen]);
+
+  const show = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+    hideTimer.current = setTimeout(() => {
+      setOpen(true);
+    }, HOVER_DELAY);
+  }, [setOpen, hideTimer.current]);
+
+  const hide = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+    hideTimer.current = setTimeout(() => {
+      setOpen(false);
+    }, HOVER_DELAY);
+  }, [setOpen]);
 
   const setItemRef = (ref) => {
     itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
@@ -73,6 +97,8 @@ function MenuAction(props: IMenuActionProps) {
     <MenuItem
       eventKey={id}
       onSelect={trigger}
+      onMouseEnter={action.subMenus !== undefined ? show : undefined}
+      onMouseLeave={action.subMenus !== undefined ? hide : undefined}
       disabled={action.show !== true}
       ref={setItemRef}
       title={genTooltip(action.show)}

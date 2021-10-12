@@ -2,6 +2,7 @@ import { ComponentEx } from '../util/ComponentEx';
 import { TFunction } from '../util/i18n';
 
 import { IActionDefinitionEx } from './ActionControl';
+import { HOVER_DELAY } from './constants';
 import Dropdown from './Dropdown';
 import Icon from './Icon';
 
@@ -9,6 +10,7 @@ import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
 import ReactDOM from 'react-dom';
 import { Portal } from 'react-overlays';
+import { clearTimeout } from 'timers';
 
 export interface IMenuActionProps {
   t: TFunction;
@@ -54,6 +56,10 @@ function MenuAction(props: IMenuActionProps) {
   const itemRef = React.useRef<HTMLElement>();
 
   const trigger = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     action.action?.(instanceIds, action.data);
@@ -61,6 +67,26 @@ function MenuAction(props: IMenuActionProps) {
       setOpen(old => !old);
     }
   }, [instanceId, action, setOpen]);
+
+  const hideTimer = React.useRef<NodeJS.Timeout>();
+
+  const show = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+    hideTimer.current = setTimeout(() => {
+      setOpen(true);
+    }, HOVER_DELAY);
+  }, [setOpen, hideTimer.current]);
+
+  const hide = React.useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+    hideTimer.current = setTimeout(() => {
+      setOpen(false);
+    }, HOVER_DELAY);
+  }, [setOpen]);
 
   const setItemRef = (ref) => {
     itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
@@ -70,6 +96,8 @@ function MenuAction(props: IMenuActionProps) {
     <MenuItem
       eventKey={id}
       onSelect={trigger}
+      onMouseEnter={action.subMenus !== undefined ? show : undefined}
+      onMouseLeave={action.subMenus !== undefined ? hide : undefined}
       disabled={action.show !== true}
       ref={setItemRef}
       title={typeof (action.show) === 'string' ? t(action.show) : undefined}
