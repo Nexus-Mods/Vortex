@@ -144,16 +144,28 @@ class MainWindow {
       log('error', 'failed to load page', { code, description, url });
     });
 
-    this.mWindow.webContents.session.on('will-download', (event, item) => {
-      event.preventDefault();
-      // unfortunately we have to deal with these events in the main process even though
-      // we'll do the work in the renderer
+    const signalUrl = (item: Electron.DownloadItem) => {
       if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
         try {
           this.mWindow.webContents.send('received-url', item.getURL(), item.getFilename());
         } catch (err) {
           log('warn', 'starting download failed', err.message);
         }
+      }
+    };
+
+    this.mWindow.webContents.session.on('will-download', (event, item) => {
+      // unfortunately we have to deal with these events in the main process even though
+      // we'll do the work in the renderer
+      if (item.getURL().startsWith('blob:')) {
+        const dlPath = downloadPath(this.mStore.getState());
+        item.setSavePath(path.join(dlPath, item.getFilename() + '.tmp'));
+        item.once('done', () => {
+          signalUrl(item);
+        });
+      } else {
+        event.preventDefault();
+        signalUrl(item);
       }
     });
 

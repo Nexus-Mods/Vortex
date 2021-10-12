@@ -125,7 +125,7 @@ interface IRunningDownload {
   failedCB: (err) => void;
 }
 
-type FinishCallback = (paused: boolean) => void;
+type FinishCallback = (paused: boolean, replaceFileName?: string) => void;
 
 const dummyJob: IDownloadJob = {
   confirmedOffset: 0,
@@ -190,7 +190,17 @@ class DownloadWorker {
     this.mURLResolve = Promise.resolve(job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
-        this.assignJob(job, jobUrl);
+        if (jobUrl.startsWith('blob:')) {
+          // in the case of blob downloads (meaning: javascript already placed the entire file
+          // in local storage) the main process has already downloaded this file, we just have
+          // to use it now
+          job.received = job.size;
+          job.size = 0;
+          const [ignore, fileName] = jobUrl.split('|');
+          finishCB(false, fileName);
+        } else {
+          this.assignJob(job, jobUrl);
+        }
       })
       .catch(err => {
         this.handleError(err);
@@ -246,7 +256,7 @@ class DownloadWorker {
 
   public restart() {
     this.mResponse.removeAllListeners('error');
-    this.mRequest.abort();
+    this.mRequest.destroy();
     this.mRestart = true;
   }
 
@@ -332,7 +342,7 @@ class DownloadWorker {
             if (!this.mRedirected) {
               this.handleComplete(str);
             }
-            this.mRequest.abort();
+            this.mRequest.destroy();
           });
       });
 
@@ -589,7 +599,7 @@ class DownloadWorker {
     return res;
   }
 
-  private writeBuffer(str: stream.Readable): Promise<void> {
+  private writeBuffer(str?: stream.Readable): Promise<void> {
     if (this.mBuffers.length === 0) {
       return Promise.resolve();
     }
@@ -1004,8 +1014,10 @@ class DownloadManager {
             download.urls = resolved.updatedUrls;
           }
           if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
-            const urlIn = resolved.urls[0].split('<')[0];
-            fileNameFromURL = decodeURI(path.basename(url.parse(urlIn).pathname));
+            const [urlIn, fileName] = resolved.urls[0].split('<')[0].split('|');
+            fileNameFromURL = (fileName !== undefined)
+              ? fileName
+              : decodeURI(path.basename(url.parse(urlIn).pathname));
           }
           return resolved.urls[0];
         }),
@@ -1039,6 +1051,7 @@ class DownloadManager {
   private tickQueue() {
     let freeSpots: number = this.mMaxWorkers - Object.keys(this.mBusyWorkers).length;
     let idx = 0;
+    log('info', 'tick dl queue', { freeSpots, queue: this.mQueue.length });
     while ((freeSpots > 0) && (idx < this.mQueue.length)) {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
@@ -1119,7 +1132,9 @@ class DownloadManager {
         { name: download.tempName, workerId: job.workerId, size: job.size, offset: job.offset });
 
       this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
-        (pause) => this.finishChunk(download, job, pause),
+        (pause, replaceFileName) => replaceFileName !== undefined
+          ? this.useExistingFile(download, job, replaceFileName)
+          : this.finishChunk(download, job, pause),
         (headers) => download.headers = headers,
         this.mUserAgent,
         this.mThrottle);
@@ -1308,6 +1323,40 @@ class DownloadManager {
         this.updateDownload(download, size, fileName, chunkable);
     }
     return job;
+  }
+
+  private useExistingFile(download: IRunningDownload, job: IDownloadJob, fileName: string) {
+    this.stopWorker(job.workerId);
+    log('debug', 'using existing file for download',
+        { download: download.id, fileName, oldName: download.tempName });
+    job.state = 'finished';
+    const downloadPath = path.dirname(download.tempName);
+    const filePath = path.join(downloadPath, fileName);
+    download.assembler.close()
+      .then(() => fs.removeAsync(download.tempName)
+        .catch(err => (err.code !== 'ENOENT')
+          ? Promise.reject(err)
+          : Promise.resolve()))
+      .then(() => fs.statAsync(filePath + '.tmp'))
+      .then(stat => {
+        download.progressCB(stat.size, stat.size, undefined, false, undefined, filePath);
+        return fs.renameAsync(filePath + '.tmp', filePath)
+          .then(() => stat.size);
+      })
+      .then((size: number) => {
+        download.finishCB({
+          filePath,
+          headers: download.headers,
+          unfinishedChunks: [],
+          hadErrors: download.error,
+          size,
+          metaInfo: {},
+        });
+      })
+      .catch(err => {
+        download.failedCB(err);
+      });
+    this.tickQueue();
   }
 
   /**

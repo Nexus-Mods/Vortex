@@ -14,6 +14,7 @@ import Notification from '../../../views/Notification';
 import { closeBrowser } from '../actions';
 
 import Promise from 'bluebird';
+import { clipboard } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Breadcrumb, Button } from 'react-bootstrap';
@@ -152,7 +153,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { instructions } = this.props;
+    const { t, instructions } = this.props;
     const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
     const referrer = (history.length > 0)
       ? history[historyIdx - 1]
@@ -163,6 +164,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         <Modal.Header>
           {this.renderNav()}{this.renderUrl(history[historyIdx])}
           {loading ? <Spinner /> : null}
+          <IconButton
+            icon='clipboard'
+            tooltip={t('Copy URL to clipboard')}
+            onClick={this.copyUrlToClipboard}
+          />
         </Modal.Header>
         <Modal.Body>
           {(instructions !== undefined) ? <p id='browser-instructions'>{instructions}</p> : null}
@@ -242,9 +248,13 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           >
             {seg}
           </Item>)}
-        <Item  active>{parsed.search}</Item>
+        <Item active>{parsed.search}</Item>
       </Breadcrumb>
     );
+  }
+
+  private copyUrlToClipboard = () => {
+    clipboard.writeText(this.props.url);
   }
 
   private renderConfirm() {
@@ -320,16 +330,22 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private newWindow = (url: string, disposition: string) => {
+  private newWindow = (newUrl: string, disposition: string) => {
     const { onEvent, subscriber } = this.props;
 
+    const urlParsed = nodeUrl.parse(newUrl);
+    if (urlParsed.hostname === 'drive.google.com') {
+      this.nextState.url = newUrl;
+      return;
+    }
+
     // currently we try to download any url that isn't opened in the same window
-    const res = onEvent(subscriber, 'download-url', url);
+    const res = onEvent(subscriber, 'download-url', newUrl);
     if (res === 'close') {
       this.props.onClose();
     } else if (res === 'continue') {
       // no handler for download-url? Then lets try to open the link
-      this.nextState.url = url;
+      this.nextState.url = newUrl;
     }
   }
 

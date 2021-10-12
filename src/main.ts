@@ -97,6 +97,8 @@ import { sendReportFile, terminate, toError } from './util/errorHandling';
 import {} from './util/extensionRequire';
 import './util/monkeyPatching';
 import { truthy } from './util/util';
+// required for the side-effect!
+import './util/webview';
 
 import * as child_processT from 'child_process';
 

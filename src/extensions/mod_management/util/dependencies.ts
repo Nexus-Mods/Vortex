@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IDownload } from '../../../types/IState';
-import { NotFound, ProcessCanceled } from '../../../util/CustomErrors';
+import { NotFound, ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 
 import { IDependency, ILookupResultEx } from '../types/IDependency';
 import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../types/IMod';
@@ -102,13 +102,20 @@ function lookupDownloadHint(api: IExtensionApi,
   if (input.mode === 'direct') {
     return Promise.resolve({ url: normalizeUrl(input.url, { defaultProtocol: 'https:' }) });
   } else if (input.mode === 'browse') {
-    return browseForDownload(api,
-      normalizeUrl(input.url, { defaultProtocol: 'https:' }), input.instructions)
+    const urlNorm = normalizeUrl(input.url, { defaultProtocol: 'https:' });
+    return browseForDownload(api, urlNorm, input.instructions)
       .then(result => {
         if (result === undefined) {
           return Promise.reject(new NotFound('No download found browsing url'));
         } else {
           return Promise.resolve(result);
+        }
+      })
+      .catch(err => {
+        if (err instanceof UserCanceled) {
+          return Promise.reject(new UserCanceled(true));
+        } else {
+          return Promise.reject(err);
         }
       });
   } else {
@@ -346,7 +353,8 @@ function gatherDependenciesGraph(
           },
         });
       }
-      if ((urlFromHint !== undefined) && (rule.downloadHint?.mode === 'browse')) {
+      if ((urlFromHint !== undefined)
+          && (rule.downloadHint?.mode === 'browse')) {
         // user might have selected the wrong download link which we'll only notice
         // once the file has actually been downloaded - which may be hours from now.
         // This gives us a way to re-query the download url

@@ -23,7 +23,7 @@ const subscriptions: {
 } = {};
 
 function subscribe(subscriber: string, eventId: string,
-                   callback: (value: any) => SubscriptionResult) {
+                   callback: (...args: any[]) => SubscriptionResult) {
   setdefault(setdefault(subscriptions, subscriber, {}), eventId, []).push(callback);
 }
 
@@ -31,12 +31,12 @@ function unsubscribeAll(subscriber: string) {
   delete subscriptions[subscriber];
 }
 
-function triggerEvent(subscriber: string, eventId: string, value: any): SubscriptionResult {
+function triggerEvent(subscriber: string, eventId: string, ...args: any): SubscriptionResult {
   let res: SubscriptionResult = 'continue';
 
   getSafe(subscriptions, [subscriber, eventId], []).forEach(sub => {
     if (res === 'continue') {
-      res = sub(value);
+      res = sub(...args);
     }
   });
 
@@ -69,11 +69,7 @@ function init(context: IExtensionContext): boolean {
           return 'continue';
         });
         subscribe(subscriptionId, 'download-url', (download: string) => {
-          if (lastURL !== undefined) {
-            resolve(download + '<' + lastURL);
-          } else {
-            resolve(download);
-          }
+          resolve(download);
           return 'close';
         });
 
@@ -102,6 +98,9 @@ function init(context: IExtensionContext): boolean {
       if (url.parse(dlUrl).pathname === null) {
         // invalid url, not touching this
         return;
+      }
+      if (dlUrl.startsWith('blob:')) {
+        dlUrl += '|' + fileName;
       }
       if (lastURL !== undefined) {
         dlUrl += '<' + lastURL;
