@@ -27,7 +27,7 @@ import { convertGameIdReverse, nexusGameId } from '../extensions/nexus_integrati
 import GameStoreHelper from '../util/GameStoreHelper';
 import { getApplication } from './application';
 import { Archive } from './archives';
-import bbcodeToReact, { bbcodeToHTML } from './bbcode';
+import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from './bbcode';
 import { checksum, fileMD5 } from './checksum';
 import ConcurrencyLimiter from './ConcurrencyLimiter';
 import copyRecursive from './copyRecursive';
@@ -69,6 +69,7 @@ export {
   Archive,
   ArgumentInvalid,
   batchDispatch,
+  bbcodePreProcess,
   bbcodeToHTML,
   bbcodeToReact,
   bytesToString,

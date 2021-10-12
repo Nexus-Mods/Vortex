@@ -66,7 +66,7 @@ function transformSymbol(fullMatch, symbol: string): string {
   return convertDiv.innerText;
 }
 
-function preProcess(input: string): string {
+export function preProcess(input: string): string {
   return input
       .replace(/<br *\/?>/g, '[br][/br]')
       .replace(/(&[^;]+;)/g, transformSymbol);
