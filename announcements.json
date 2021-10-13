@@ -76,5 +76,11 @@
   "severity": "information",
   "gamemode": "*",
 	"version": "<=1.3.22"
+  }, {
+  "date": "2021-10-13T08:00:00",
+  "description": "Several game extension updates have been released to all Vortex users and will be downloaded automatically. Since these updates may affect the correct detection of these games, they will be installed even if the game was not found on your system.",
+  "severity": "information",
+  "gamemode": "*",
+  "version": "<=1.4.16"
   }
 ]
