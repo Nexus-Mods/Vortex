@@ -45,6 +45,7 @@ import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import { genHash, IHashResult } from 'modmeta-db';
+import Zip = require('node-7z');
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -385,41 +386,20 @@ function processInstallError(api: IExtensionApi,
   }
 }
 
-function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
+function postImport(api: IExtensionApi, destination: string,
+                    fileSize: number): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
-  if (gameMode === undefined) {
-    return Promise.reject(new Error('can\'t import archives when no game is active'));
-  }
-
-  const notiId = api.sendNotification({
-    type: 'activity',
-    title: 'Importing file',
-    message: path.basename(destination),
-  });
   const dlId = shortid();
-  let fileSize: number;
   const fileName = path.basename(destination);
-  addLocalInProgress.add(fileName);
+
+  log('debug', 'import local download', destination);
+  // do this after copy is completed, otherwise code watching for the event may be
+  // trying to access the file already
+  store.dispatch(addLocalDownload(dlId, gameMode, fileName, fileSize));
   return fs.statAsync(destination)
-    .catch(() => undefined)
-    .then((stats: fs.Stats) => {
-      if (stats !== undefined) {
-        fileSize = stats.size;
-      }
-      return stats !== undefined ? queryReplace(api, destination) : null;
-    })
-    .then(() => fs.copyAsync(source, destination))
-    .then(() => {
-      log('debug', 'import local download', destination);
-      // do this after copy is completed, otherwise code watching for the event may be
-      // trying to access the file already
-      store.dispatch(addLocalDownload(dlId, gameMode, fileName, fileSize));
-    })
-    .then(() => fs.statAsync(destination))
     .then(stats => {
-      api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-downloads', [dlId]);
 
@@ -446,12 +426,63 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       return dlId;
     })
     .catch(err => {
-      api.dismissNotification(notiId);
       store.dispatch(removeDownload(dlId));
+      log('info', 'failed to copy', {error: err.message});
+      return undefined;
+    });
+}
+
+function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
+  const notiId = api.sendNotification({
+    type: 'activity',
+    title: 'Importing file',
+    message: path.basename(destination),
+  });
+  let fileSize: number;
+  const fileName = path.basename(destination);
+  addLocalInProgress.add(fileName);
+  return fs.statAsync(destination)
+    .catch(() => undefined)
+    .then((stats: fs.Stats) => {
+      if (stats !== undefined) {
+        fileSize = stats.size;
+      }
+      return stats !== undefined ? queryReplace(api, destination) : null;
+    })
+    .then(() => fs.copyAsync(source, destination))
+    .then(() => postImport(api, destination, fileSize))
+    .catch(err => {
       log('info', 'failed to copy', {error: err.message});
       return undefined;
     })
     .finally(() => {
+      api.dismissNotification(notiId);
+      addLocalInProgress.delete(fileName);
+    });
+}
+
+function importDirectory(api: IExtensionApi, source: string, destination: string) {
+  const zipper = new Zip();
+
+  const notiId = api.sendNotification({
+    type: 'activity',
+    title: 'Importing file',
+    message: path.basename(destination),
+  });
+
+  const fileName = path.basename(destination);
+  addLocalInProgress.add(fileName);
+
+  return fs.readdirAsync(source)
+    .then(files => zipper.add(destination, files.map(name => path.join(source, name))))
+    .then(() => fs.statAsync(destination))
+    .then((stat: fs.Stats) => postImport(api, destination, stat.size))
+    .catch(err => {
+      log('info', 'failed to copy', {error: err.message});
+      return undefined;
+    })
+    .finally(() => {
+      api.dismissNotification(notiId);
       addLocalInProgress.delete(fileName);
     });
 }
@@ -468,28 +499,18 @@ function genImportDownloadsHandler(api: IExtensionApi) {
 
     log('debug', 'importing download(s)', downloadPaths);
     const downloadPath = selectors.downloadPathForGame(state, gameMode);
-    let hadDirs = false;
     Promise.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
-      const destination = path.join(downloadPath, fileName);
+      const destination = path.join(downloadPath, fileName) + '.7z';
       return fs.statAsync(dlPath)
-        .then(stats => {
+        .then((stats: fs.Stats) => {
           if (stats.isDirectory()) {
-            hadDirs = true;
-            return Promise.resolve(undefined);
+            return importDirectory(api, dlPath, destination);
           } else {
             return move(api, dlPath, destination);
           }
         })
         .tap((dlId: string) => {
-          if (hadDirs) {
-            api.sendNotification({
-              type: 'warning',
-              title: 'Can\'t import directories',
-              message:
-                'You can drag mod archives here, directories are not supported',
-            });
-          }
           log('info', 'imported archives', { count: downloadPaths.length });
           return dlId;
         })

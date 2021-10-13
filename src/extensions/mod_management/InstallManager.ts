@@ -1716,7 +1716,12 @@ class InstallManager {
           // the archive is shipped with the mod that has the dependency
           const downloadPath = selectors.downloadPathForGame(state, profile.gameId);
           const fileName = path.basename(dep.extra.localPath);
-          const targetPath = path.join(downloadPath, fileName);
+          let targetPath = path.join(downloadPath, fileName);
+          // backwards compatibility: during alpha testing the bundles were 7zipped inside
+          // the collection
+          if (path.extname(fileName) !== '.7z') {
+            targetPath += '.7z';
+          }
           dlPromise = fs.statAsync(targetPath)
             .then(() => Object.keys(downloads)
                 .find(dlId => downloads[dlId].localPath === fileName))
