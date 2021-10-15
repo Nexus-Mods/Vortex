@@ -3,7 +3,7 @@ import { DataInvalid } from '../../util/CustomErrors';
 import { URL } from 'url';
 
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
-const sCollectionUrlExpression = /\/collections\/(\d+)\/revisions\/(\d+)/i;
+const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+)/i;
 
 class NXMUrl {
   private mGameId: string;
@@ -11,6 +11,8 @@ class NXMUrl {
   private mFileId: number;
   private mCollectionId: number;
   private mRevisionId: number;
+  private mCollectionSlug: string;
+  private mRevisionNumber: number;
   private mKey: string;
   private mExpires: number;
   private mUserId: number;
@@ -44,8 +46,14 @@ class NXMUrl {
         throw new DataInvalid('invalid nxm url "' + input + '"');
       }
 
+      // TODO: legacy, drop after alpha phase
       this.mCollectionId = parseInt(collMatches[1], 10);
-      this.mRevisionId = parseInt(collMatches[2], 10);
+      if (!isNaN(this.mCollectionId)) {
+        this.mRevisionId = parseInt(collMatches[2], 10);
+      } else {
+        this.mCollectionSlug = collMatches[1];
+        this.mRevisionNumber = parseInt(collMatches[2], 10);
+      }
     } else {
       throw new DataInvalid(`invalid nxm url "${input}"`);
     }
@@ -65,7 +73,9 @@ class NXMUrl {
   }
 
   public get type(): 'mod' | 'collection' {
-    return this.mCollectionId === undefined ? 'mod' : 'collection';
+    return ((this.mCollectionId === undefined) && (this.mCollectionSlug === undefined))
+      ? 'mod'
+      : 'collection';
   }
 
   public get gameId(): string {
@@ -86,6 +96,14 @@ class NXMUrl {
 
   public get revisionId(): number {
     return this.mRevisionId;
+  }
+
+  public get collectionSlug(): string {
+    return this.mCollectionSlug;
+  }
+
+  public get revisionNumber(): number {
+    return this.mRevisionNumber;
   }
 
   /**

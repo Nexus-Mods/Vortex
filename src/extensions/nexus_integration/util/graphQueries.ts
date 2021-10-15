@@ -49,6 +49,7 @@ const revisionInfo: IRevisionQuery = {
 
 export const FULL_COLLECTION_INFO: ICollectionQuery = {
   id: true,
+  slug: true,
   name: true,
   endorsements: true,
   user: {
@@ -67,7 +68,7 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   currentRevision: revisionInfo,
   description: true,
   summary: true,
-};
+} as any;
 
 export const FULL_REVISION_INFO: IRevisionQuery = {
   ...revisionInfo,

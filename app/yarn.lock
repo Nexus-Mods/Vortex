@@ -69,8 +69,8 @@
   integrity sha512-mlRYq9FSsOd4m+3wZWatemn3hGFZPWNJ4JQOdrir4rrMK2PyIk26idKBoUWrqF3HJJHl+5GpRU+M0wEruJwecg==
 
 "@nexusmods/nexus-api@git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs":
-  version "1.1.0-dev38"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#59c5f09362fe47492668aa419fbdaff544047819"
+  version "1.1.0-dev40"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#761ba1a5d57f5db119d358a14803a114ce6906cf"
   dependencies:
     string-template "^1.0.0"
 

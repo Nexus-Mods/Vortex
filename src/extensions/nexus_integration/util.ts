@@ -93,7 +93,13 @@ function startDownloadCollection(api: IExtensionApi,
         source: 'nexus',
         name: revisionInfo.collection?.name,
         nexus: {
-          ids: { gameId: pageId, collectionId: url.collectionId, revisionId: url.revisionId },
+          ids: {
+            gameId: pageId,
+            collectionId: revisionInfo.collectionId,
+            revisionId: revisionInfo.id,
+            collectionSlug: url.collectionSlug,
+            revisionNumber: url.revisionNumber,
+          },
           revisionInfo,
         },
       }, (revisionInfo as any).file_name, cb, undefined, false))
@@ -131,18 +137,18 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
         id: true,
         name: true,
       },
+      id: true,
+      slug: true,
       createdAt: true,
       endorsements: true,
       name: true,
+      summary: true,
+      description: true,
       user: {
         name: true,
       },
       tileImage: {
         url: true,
-      },
-      metadata: {
-        summary: true,
-        description: true,
       },
     },
     createdAt: true,
@@ -622,7 +628,7 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         revision: true,
         id: true,
       },
-    }, parseInt(mods[modId].attributes?.collectionId, 10))
+    }, mods[modId].attributes?.collectionSlug)
       .then(collection => {
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
         if (collection.currentRevision.id !== mods[modId].attributes?.revisionId) {

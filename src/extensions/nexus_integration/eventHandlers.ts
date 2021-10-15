@@ -328,12 +328,15 @@ export function onNexusDownload(api: IExtensionApi,
 }
 
 export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number) => Promise<ICollection> {
-  return (collectionId: number): Promise<ICollection> => {
+    : (collectionId: number, slug: string) => Promise<ICollection> {
+  return (collectionId: number, slug: string): Promise<ICollection> => {
     if (!Number.isFinite(collectionId)) {
       return Promise.reject(new Error('invalid parameter, collectionId has to be a number'));
     }
-    return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, collectionId))
+
+    return Promise.resolve((slug !== undefined)
+        ? (nexus as any).getCollectionGraph(FULL_COLLECTION_INFO, slug)
+        : (nexus as any).getCollectionGraphLegacy(FULL_COLLECTION_INFO, collectionId))
       .catch(err => {
         if (err.code !== 'NOT_FOUND') {
           api.showErrorNotification('Failed to get collection info', err);
