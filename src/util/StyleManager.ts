@@ -23,7 +23,7 @@ function cachePath() {
 if (ipcMain !== undefined) {
   let initial = true;
 
-  const renderSASSCB = (evt, stylesheets: string[], requested: boolean) => {
+  const renderSASSCB = (evt: Electron.IpcMainEvent, stylesheets: string[], requested: boolean) => {
     let cache: { stylesheets: string[], css: string };
     if (requested) {
       try {
@@ -114,7 +114,7 @@ if (ipcMain !== undefined) {
     }, requested ? 0 : 2000);
   };
 
-  ipcMain.on('__renderSASS', (evt, stylesheets: string[]) =>
+  ipcMain.on('__renderSASS', (evt: Electron.IpcMainEvent, stylesheets: string[]) =>
     renderSASSCB(evt, stylesheets, true));
 }
 

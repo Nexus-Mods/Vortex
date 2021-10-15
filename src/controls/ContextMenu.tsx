@@ -49,7 +49,19 @@ function MenuAction(props: IMenuActionProps) {
   }, [props]);
 
   // stuff for submenus
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpenMenu] = React.useState(false);
+  const [subMenus, setSubMenus] = React.useState([]);
+
+  const setOpen = React.useCallback((value: React.SetStateAction<boolean>) => {
+    if (subMenus.length === 0) {
+      if (Array.isArray(action.subMenus)) {
+        setSubMenus(action.subMenus);
+      } else {
+        setSubMenus(action.subMenus());
+      }
+    }
+    setOpenMenu(value);
+  }, [setOpenMenu, action.subMenus]);
 
   const setOpenFalse = React.useCallback(() => { setOpen(false); }, [ setOpen ]);
 
@@ -115,7 +127,7 @@ function MenuAction(props: IMenuActionProps) {
             visible={open}
             anchor={itemRef.current}
             onHide={setOpenFalse}
-            actions={props.action.subMenus}
+            actions={subMenus}
 
           />
           <Icon className='menu-more-icon' name='showhide-right' />

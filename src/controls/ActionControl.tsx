@@ -31,7 +31,7 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
 
 export interface IActionDefinitionEx extends IActionDefinition {
   show: boolean | string;
-  subMenus?: IActionDefinitionEx[];
+  subMenus?: IActionDefinitionEx[] | (() => IActionDefinitionEx[]);
 }
 
 /**
@@ -102,7 +102,7 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
       show: checkCondition(input),
       subMenus: input.subMenus === undefined
         ? undefined
-        : transformActions(input.subMenus),
+        : () => transformActions(input.subMenus),
     });
 
     return transformActions(objects);

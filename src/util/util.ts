@@ -338,12 +338,14 @@ export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
   return (lhs ?? '').localeCompare((rhs ?? ''), locale, { sensitivity: 'accent' }) === 0;
 }
 
+const sanitizeRE = /[ .#()]/g;
+
 /**
  * take any input string and sanitize it into a valid css id
  */
 export function sanitizeCSSId(input: string) {
   let res = input.toLowerCase()
-    .replace(/[ .#()]/g, '-');
+    .replace(sanitizeRE, '-');
   if (res.endsWith('-')) {
     res += '_';
   }
