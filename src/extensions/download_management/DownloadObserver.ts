@@ -322,6 +322,11 @@ export class DownloadObserver {
           Object.keys(flattened).forEach(key =>
               this.mApi.store.dispatch(setDownloadModInfo(id, key, flattened[key])));
 
+          const state = this.mApi.getState();
+          if (state.settings.automation?.install && allowInstall) {
+            this.mApi.events.emit('start-install-download', id);
+          }
+
           callback?.(null, id);
         })
         .catch(err => callback?.(err, id))

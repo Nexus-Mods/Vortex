@@ -27,9 +27,5 @@ export function finalizeDownload(api: IExtensionApi, id: string,
       // hash
       api.store.dispatch(finishDownload(id, 'finished', undefined));
       api.events.emit('did-finish-download', id, 'finished');
-      const state = api.getState();
-      if (state.settings.automation?.install && allowInstall) {
-        api.events.emit('start-install-download', id);
-      }
     });
 }

@@ -504,12 +504,13 @@ class InstallManager {
                   title: 'Installation failed, archive is damaged',
                   message: path.basename(archivePath),
                   actions: [
-                    { title: 'Delete', action: () => {
-                      api.events.emit('remove-download', archiveId); } },
+                    { title: 'Delete', action: dismiss => {
+                      api.events.emit('remove-download', archiveId, dismiss); } },
                     { title: 'Delete & Redownload', action: dismiss => {
                       const state: IState = api.store.getState();
                       const download = state.persistent.downloads.files[archiveId];
                       api.events.emit('remove-download', archiveId, () => {
+                        dismiss();
                         api.events.emit('start-download', download.urls, info.download,
                           path.basename(archivePath));
                       });
