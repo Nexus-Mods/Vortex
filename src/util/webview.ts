@@ -60,3 +60,9 @@ export const updateViewURL = makeRemoteCall('update-view-url',
   extraWebViews[content.id]?.[viewId]?.webContents.loadURL(newURL);
   return Promise.resolve();
   });
+
+export function closeAllViews(window: BrowserWindow) {
+    Object.keys(extraWebViews[window.webContents.id] ?? {}).forEach(viewId => {
+      window.removeBrowserView(extraWebViews[window.webContents.id][viewId]);
+    });
+}

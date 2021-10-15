@@ -61,13 +61,14 @@ function nop() {
 }
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
-  private mRef: any = null;
+  private mRef: WebviewOverlay | WebviewEmbed;
   private mWebView = null;
   private mCallbacks: { [event: string]: (...args: any[]) => void };
   private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
   private mLoadingDebouncer: Debouncer;
   private mUpdateTimer: NodeJS.Timeout = undefined;
   private mMounted: boolean = false;
+  private mCurrentUrl: string;
 
   constructor(props: IProps) {
     super(props);
@@ -81,6 +82,8 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       filtered: [],
     });
 
+    this.mCurrentUrl = props.url;
+
     this.mLoadingDebouncer = new Debouncer((loading: boolean) => {
       if (loading !== this.state.loading) {
         this.nextState.loading = loading;
@@ -90,7 +93,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     this.mCallbacks = {
       'did-finish-load': () => {
-        const newUrl: string = this.mWebView.getURL();
+        const newUrl: string = this.mCurrentUrl;
         this.nextState.url = newUrl;
         this.props.onEvent(this.props.subscriber, 'navigate', newUrl);
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {
@@ -99,10 +102,17 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         }
       },
       'did-navigate': (evt) => {
-        this.navigate(evt.url);
+        this.mCurrentUrl = (typeof(evt) === 'string')
+          ? evt
+          : evt.url;
+
+        this.navigate(this.mCurrentUrl);
       },
       'did-navigate-in-page': (evt) => {
-        this.navigate(evt.url);
+        this.mCurrentUrl = (typeof(evt) === 'string')
+          ? evt
+          : evt.url;
+        this.navigate(this.mCurrentUrl);
       },
     };
   }
@@ -136,7 +146,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           this.nextState.historyIdx = 0;
         }
       }
-      this.nextState.url = newProps.url;
+      this.nextState.url = this.mCurrentUrl = newProps.url;
     }
   }
 
@@ -180,10 +190,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
               <Webview
                 id='browser-webview'
                 src={url}
-                ref={this.setRef}
+                ref={this.setRef as any}
                 httpreferrer={referrer}
                 onLoading={this.loading}
                 onNewWindow={this.newWindow}
+                events={this.mCallbacks}
               />
             )
             : this.renderConfirm()}
@@ -352,7 +363,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private setRef = (ref: any) => {
+  private setRef = (ref: WebviewOverlay | WebviewEmbed) => {
     this.mRef = ref;
     if (ref !== null) {
       this.mWebView = ReactDOM.findDOMNode(this.mRef) as any;
@@ -377,7 +388,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     // this.nextState.url = history[newPos];
     if (truthy(this.mWebView)) {
       try {
-        this.mWebView.loadURL(history[newPos]);
+        this.mRef.loadURL(history[newPos]);
       } catch (err) {
         log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
       }
@@ -391,7 +402,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     // this.nextState.url = history[newPos];
     if (truthy(this.mWebView)) {
       try {
-        this.mWebView.loadURL(history[newPos]);
+        this.mRef.loadURL(history[newPos]);
       } catch (err) {
         log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
       }
@@ -404,7 +415,8 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     }
 
     const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
-    const parsed = nodeUrl.parse(this.mWebView.getURL());
+    // const parsed = nodeUrl.parse(this.mWebView.getURL());
+    const parsed = nodeUrl.parse(this.mCurrentUrl);
     parsed.pathname = (parsed.pathname ?? '').split('/').slice(0, idx + 2).join('/');
     parsed.path = undefined;
     parsed.href = undefined;
@@ -413,7 +425,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const nextUrl = nodeUrl.format(parsed);
     this.addToHistory(nextUrl);
     try {
-      this.mWebView.loadURL(nextUrl);
+      this.mRef.loadURL(nextUrl);
     } catch (err) {
       log('warn', 'failed to navigate', { url: nextUrl, error: err.message });
     }

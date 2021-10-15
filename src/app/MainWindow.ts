@@ -10,6 +10,7 @@ import opn from '../util/opn';
 import { downloadPath } from '../util/selectors';
 import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
+import { closeAllViews } from '../util/webview';
 
 import Promise from 'bluebird';
 import { ipcMain, screen } from 'electron';
@@ -290,6 +291,9 @@ class MainWindow {
   }
 
   private initEventHandlers(store: Redux.Store<IState>) {
+    this.mWindow.on('close', () => {
+      closeAllViews(this.mWindow);
+    });
     this.mWindow.on('closed', () => { this.mWindow = null; });
     this.mWindow.on('maximize', () => store.dispatch(setMaximized(true)));
     this.mWindow.on('unmaximize', () => store.dispatch(setMaximized(false)));

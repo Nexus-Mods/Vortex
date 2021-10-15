@@ -45,6 +45,7 @@ export interface IWebviewProps {
   onLoading?: (loading: boolean) => void;
   onNewWindow?: (url: string, disposition: string) => void;
   onFullscreen?: (fullscreen: boolean) => void;
+  events?: { [evtId: string]: (...args: any[]) => void };
 }
 
 interface IBrowserViewProps {
@@ -118,11 +119,25 @@ function BrowserView(props: IBrowserViewProps) {
   );
 }
 
-export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, {}> {
+export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { src: string }> {
+  constructor(props: IWebviewProps & IWebView) {
+    super(props);
+
+    this.state = {
+      src: props.src,
+    };
+  }
+
+  public UNSAFE_componentWillReceiveProps(newProps: IWebviewProps & IWebView) {
+    if (this.props.src !== newProps.src) {
+      this.setState({ src: newProps.src });
+    }
+  }
+
   public render(): JSX.Element {
     return truthy(this.props.src) ? (
       <BrowserView
-        src={this.props.src}
+        src={this.state.src}
         events={{
           'did-start-loading': this.startLoad,
           'did-stop-loading': this.stopLoad,
@@ -130,9 +145,14 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, {}
           'new-window': this.newWindow,
           'enter-html-full-screen': this.enterFullscreen,
           'leave-html-full-screen': this.leaveFullscreen,
+          ...(this.props.events ?? {}),
         }}
       />
     ) : null;
+  }
+
+  public loadURL(newUrl: string) {
+    this.setState({ src: newUrl });
   }
 
   private startLoad = () => {
@@ -180,10 +200,10 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, {}
 }
 
 export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> {
-  private mNode: HTMLElement;
+  private mNode: HTMLWebViewElement;
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this) as HTMLElement;
+    this.mNode = ReactDOM.findDOMNode(this) as HTMLWebViewElement;
     this.mNode.addEventListener('did-start-loading', this.startLoad);
     this.mNode.addEventListener('did-stop-loading', this.stopLoad);
     this.mNode.addEventListener('dom-ready', () => {
@@ -211,6 +231,10 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
 
   public render(): JSX.Element {
     return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen']));
+  }
+
+  public loadURL(newUrl: string) {
+    this.mNode['loadURL'](newUrl);
   }
 
   private startLoad = () => {
