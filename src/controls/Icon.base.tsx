@@ -96,16 +96,22 @@ class Icon extends React.Component<IIconProps, {}> {
         : `scale(1, -1)`);
     }
 
+    const effectiveStyle = { ...style };
+
     if (this.props.rotate) {
       // narf... I can't use css transform for the rotation because that somehow
       // messes up the z-ordering of items.
       // with svg transforms we have to provide the center of rotation ourselves
       // and we can't use relative units.
+      /*
       if (this.mCurrentSize !== undefined) {
         const { width, height } = this.mCurrentSize;
         transforms.push(
           `rotate(${this.props.rotate}, ${Math.floor(width / 2)}, ${Math.floor(height / 2)})`);
       }
+      */
+      effectiveStyle.transform = `rotateZ(${this.props.rotate}deg)`;
+      effectiveStyle.transformStyle = 'preserve-3d';
     }
 
     if (this.props.className !== undefined) {
@@ -116,8 +122,8 @@ class Icon extends React.Component<IIconProps, {}> {
       <svg
         preserveAspectRatio='xMidYMid meet'
         className={classes.join(' ')}
-        style={style}
-        ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
+        style={effectiveStyle}
+        ref={/*this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : */undefined}
         onContextMenu={this.props.onContextMenu}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
