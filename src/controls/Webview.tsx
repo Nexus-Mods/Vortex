@@ -1,9 +1,25 @@
+/**
+ * Two implementations of embedding web content, both have drawbacks.
+ * WebViewOverlay uses the electron BrowserView api, sized automatically to be positioned inside
+ * a div in the DOM.
+ * Browser functionality seems to be perfect, but it is rendered as a fully separate view on top
+ * of the rest of Vortex and can thus not be overlayed. As such it will also not disappear until
+ * unmounted (or set to an empty url).
+ * Thus care has to be taken how this is utilized or it will appear broken and janky
+ *
+ * WebviewEmbed uses the chrome <webview> component which integrates better but doesn't seem to
+ * forward all events correcty. Specifically we were not able to handle any event when clicking
+ * the download button on google drive. (as of Electron 15.1.1)
+ */
+
 import { log } from '../util/log';
 import { truthy } from '../util/util';
 import { closeBrowserView, makeBrowserView, positionBrowserView, updateViewURL } from '../util/webview';
 
 import { ipcRenderer } from 'electron';
+import { omit } from 'lodash';
 import * as React from 'react';
+import ReactDOM from 'react-dom';
 
 const RESIZE_EVENTS = ['scroll', 'resize'];
 
@@ -41,7 +57,7 @@ function BrowserView(props: IBrowserViewProps) {
   const container = React.useRef<HTMLDivElement>();
 
   const updateViewBounds = React.useCallback(() => {
-    if (container.current !== undefined) {
+    if (truthy(container.current)) {
       const rect = container.current.getBoundingClientRect();
 
       const bounds: Electron.Rectangle = {
@@ -102,7 +118,7 @@ function BrowserView(props: IBrowserViewProps) {
   );
 }
 
-class Webview extends React.Component<IWebviewProps & IWebView, {}> {
+export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, {}> {
   public render(): JSX.Element {
     return truthy(this.props.src) ? (
       <BrowserView
@@ -163,4 +179,82 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
   }
 }
 
-export default Webview;
+export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> {
+  private mNode: HTMLElement;
+
+  public componentDidMount() {
+    this.mNode = ReactDOM.findDOMNode(this) as HTMLElement;
+    this.mNode.addEventListener('did-start-loading', this.startLoad);
+    this.mNode.addEventListener('did-stop-loading', this.stopLoad);
+    this.mNode.addEventListener('dom-ready', () => {
+      // TODO as of electron 15.1.1 (since 14.?.?), webview doesn't support transparent
+      //   background, so it won't properly embed in the page. This at least makes the
+      //   pages readable
+      (this.mNode as any).insertCSS(
+        'body.mediawiki, #content, #mw-pages > table { background-color: #4c4c4c !important }');
+      // (this.mNode as any).openDevTools();
+    });
+    this.mNode.addEventListener('console-message', this.logMessage);
+    this.mNode.addEventListener('new-window', this.newWindow);
+    this.mNode.addEventListener('enter-html-full-screen', this.enterFullscreen);
+    this.mNode.addEventListener('leave-html-full-screen', this.leaveFullscreen);
+  }
+
+  public componentWillUnmount() {
+    this.mNode.removeEventListener('did-start-loading', this.startLoad);
+    this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
+    this.mNode.removeEventListener('console-message', this.logMessage);
+    this.mNode.removeEventListener('new-window', this.newWindow);
+    this.mNode.removeEventListener('enter-html-full-screen', this.enterFullscreen);
+    this.mNode.removeEventListener('leave-html-full-screen', this.leaveFullscreen);
+  }
+
+  public render(): JSX.Element {
+    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen']));
+  }
+
+  private startLoad = () => {
+    const { onLoading } = this.props;
+    if (onLoading !== undefined) {
+      onLoading(true);
+    }
+  }
+
+  private stopLoad = () => {
+    const { onLoading } = this.props;
+    if (onLoading !== undefined) {
+      onLoading(false);
+    }
+  }
+
+  private newWindow = (evt) => {
+    const { onNewWindow } = this.props;
+    if (onNewWindow !== undefined) {
+      onNewWindow(evt.url, evt.disposition);
+    }
+  }
+
+  private enterFullscreen = (evt) => {
+    const { onFullscreen } = this.props;
+
+    if (onFullscreen !== undefined) {
+      onFullscreen(true);
+    }
+  }
+
+  private leaveFullscreen = (evt) => {
+    const { onFullscreen } = this.props;
+
+    if (onFullscreen !== undefined) {
+      onFullscreen(false);
+    }
+  }
+
+  private logMessage = (evt) => {
+    if (evt.level > 2) {
+      log('info', 'from embedded page', { level: evt.level, message: evt.message });
+    }
+  }
+}
+
+export default WebviewEmbed;

@@ -2,7 +2,7 @@ import { addNotification } from '../../../actions';
 import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
-import Webview from '../../../controls/Webview';
+import { WebviewEmbed, WebviewOverlay } from '../../../controls/Webview';
 import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -29,6 +29,7 @@ export interface IBaseProps {
   onHide: () => void;
   onNavigate: (url: string) => void;
   onEvent: (subscriber: string, eventId: string, value: any) => SubscriptionResult;
+  overlay: boolean;
 }
 
 interface IConnectedProps {
@@ -60,7 +61,7 @@ function nop() {
 }
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
-  private mRef: Webview = null;
+  private mRef: any = null;
   private mWebView = null;
   private mCallbacks: { [event: string]: (...args: any[]) => void };
   private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
@@ -153,11 +154,13 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, instructions } = this.props;
+    const { t, overlay, instructions } = this.props;
     const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
     const referrer = (history.length > 0)
       ? history[historyIdx - 1]
       : undefined;
+
+    const Webview = overlay ? WebviewOverlay : WebviewEmbed;
 
     return (
       <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
