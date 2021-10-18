@@ -264,8 +264,14 @@ class InstallManager {
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
         : queryGameId(api.store, downloadGameIds, modId))
-      .tap(() =>
-        api.emitAndAwait('will-install-mod', currentProfile.gameId, archiveId, modId, fullInfo))
+      .tap(gameId => {
+        installGameId = gameId;
+        if (installGameId === undefined) {
+          return Promise.reject(
+            new ProcessCanceled('You need to select a game before installing this mod'));
+        }
+        return api.emitAndAwait('will-install-mod', gameId, archiveId, modId, fullInfo);
+      })
       // calculate the md5 hash here so we can store it with the mod meta information later,
       // otherwise we'd not remember the hash when installing from external file
       .tap(() => genHash(archivePath).then(hash => {
@@ -279,11 +285,6 @@ class InstallManager {
         });
       }).catch(() => null))
       .then(gameId => {
-        installGameId = gameId;
-        if (installGameId === undefined) {
-          return Promise.reject(
-            new ProcessCanceled('You need to select a game before installing this mod'));
-        }
         if (installGameId === 'site') {
           // install an already-downloaded extension
           return api.emitAndAwait('install-extension-from-download', archiveId)
@@ -454,7 +455,7 @@ class InstallManager {
           */
         }
         callback?.(null, modId);
-        api.events.emit('did-install-mod', currentProfile.gameId, archiveId, modId, modInfo);
+        api.events.emit('did-install-mod', installGameId, archiveId, modId, modInfo);
         return null;
       })
       .catch(err => {
@@ -1276,7 +1277,7 @@ class InstallManager {
         return resolve({
           id: modId,
           variant: '',
-          enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
+          enable: getSafe(currentProfile, ['modState', modId, 'enabled'], false),
           attributes: {},
           rules: [],
         });
