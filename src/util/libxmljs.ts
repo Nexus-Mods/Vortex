@@ -28,6 +28,10 @@ const finReg = (process.type === 'renderer') ? new FinalizationRegistry(heldValu
  */
 class XMLProxy implements ProxyHandler<IProxyRef> {
   public get(target: IProxyRef, p: string | symbol, receiver: any): any {
+    if (p === 'then') {
+      // hack: we're certainly not a promise...
+      return undefined;
+    }
     if ((target.proxy === undefined)
         || ((typeof p === 'string') && !target.props.includes(p))) {
       return (...args) => {
