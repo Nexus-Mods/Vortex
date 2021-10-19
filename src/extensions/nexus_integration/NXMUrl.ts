@@ -48,7 +48,7 @@ class NXMUrl {
 
       // TODO: legacy, drop after alpha phase
       this.mCollectionId = parseInt(collMatches[1], 10);
-      if (!isNaN(this.mCollectionId)) {
+      if ((collMatches[1].length) < 6 && !isNaN(this.mCollectionId)) {
         this.mRevisionId = parseInt(collMatches[2], 10);
       } else {
         this.mCollectionSlug = collMatches[1];
