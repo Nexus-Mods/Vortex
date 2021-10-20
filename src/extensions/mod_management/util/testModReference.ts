@@ -25,7 +25,7 @@ export interface IModLookupInfo {
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
-function idOnly(ref: IModReference) {
+export function idOnlyRef(ref: IModReference) {
   return (ref.id !== undefined)
     && (Object.keys(_.omit(ref, ['archiveId', 'versionMatch', 'idHint'])).length === 1);
 }
@@ -34,7 +34,7 @@ function idOnly(ref: IModReference) {
 const REFERENCE_FIELDS = ['fileMD5', 'logicalFileName', 'fileExpression', 'versionMatch', 'repo'];
 export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean {
   // the id is only used if it's the only matching field (apart from the archive id)
-  if (idOnly(lhs) || idOnly(rhs)) {
+  if (idOnlyRef(lhs) || idOnlyRef(rhs)) {
     return lhs.id === rhs.id;
   }
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
@@ -92,7 +92,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
                  fuzzyVersion?: boolean): boolean {
   // if an id is set, it has to match
   if ((ref.id !== undefined)
-      && ((modId !== undefined) || idOnly(ref))
+      && ((modId !== undefined) || idOnlyRef(ref))
       && (ref.id !== modId)) {
     return false;
   }

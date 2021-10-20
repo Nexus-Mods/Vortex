@@ -623,12 +623,15 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
     .filter(modId => mods[modId].attributes?.collectionId !== undefined);
 
   return Promise.all(collectionIds.map(modId => {
-    return nexus.getCollectionGraph({
+    const query = {
       currentRevision: {
         revision: true,
         id: true,
       },
-    }, mods[modId].attributes?.collectionSlug)
+    };
+    return ((mods[modId].attributes?.collectionSlug !== undefined)
+      ? nexus.getCollectionGraph(query, mods[modId].attributes?.collectionSlug)
+      : nexus.getCollectionGraphLegacy(query, mods[modId].attributes?.collectionId))
       .then(collection => {
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
         if (collection.currentRevision.id !== mods[modId].attributes?.revisionId) {
