@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setUpdateAnalytics } from './updateAnalytics.action';
+import { setAnalytics } from './analytics.action';
 
 import update from 'immutability-helper';
 
@@ -9,10 +9,10 @@ import update from 'immutability-helper';
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [setUpdateAnalytics as any]: (state, payload) => update(state, { enabled: { $set: payload } }),
+    [setAnalytics as any]: (state, payload) => update(state, { enabled: { $set: payload } }),
   },
   defaults: {
-    enabled: true, // TODO, set me to false
+    enabled: undefined, // TODO, set me to false
   },
 };
 
