@@ -16,6 +16,7 @@ import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import Analytics from "../app/Analytics";
 
 const startupSettings =
   lazyRequire<typeof startupSettingsT>(() => require('../util/startupSettings'), 'default');
@@ -144,6 +145,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private setCurrentPage = (page) => {
+    Analytics.trackNavigation(`settings/${page}`)
     this.props.onSetPage(page);
   }
 
