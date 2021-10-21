@@ -44,7 +44,6 @@ import { Button as ReactButton, Nav } from 'react-bootstrap';
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import Analytics from "../app/Analytics";
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -83,7 +82,6 @@ export interface IConnectedProps {
   notifications: INotification[];
   APIKey: string;
   uiBlockers: { [id: string]: IUIBlocker };
-  instanceId: string;
   profiles: { [key: string]: IProfile };
 }
 
@@ -144,7 +142,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.applicationButtons = [];
 
     this.props.api.events.on('show-main-page', pageId => {
-      Analytics.trackNavigation(pageId)
       this.setMainPage(pageId, false);
     });
 
@@ -153,42 +150,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     });
 
     this.props.api.events.on('show-modal', id => {
-      Analytics.trackNavigation(`modal/${id}`)
       this.updateState({
         showLayer: { $set: id },
       });
     });
-
-    // Analytics Code
-
-    props.api.onStateChange(['persistent.nexus.userInfo'], (previous, current)=> {
-      // On change of the nexus.userInfo turn off or on the Analytics
-      if (!previous && current) {
-        Analytics.setUser(props.instanceId)  
-      } else if (previous && !current) {
-        Analytics.unsetUser()
-      }
-    })
-
-    if (props.userInfo && props.userInfo.userId) {
-      Analytics.setUser(props.instanceId)
-    }
-
-    /**
-     * This Is used to trigger a navigation tracking from an extension
-     */
-    this.props.api.events.on('trackNavigation', pageId => {
-      Analytics.trackNavigation(pageId)
-    });
-    
-    /**
-     * This Is used to trigger an event tracking from an extension
-     */
-    this.props.api.events.on('trackEvent', (category, action, label?, value?) => {
-      Analytics.trackEvent(category, action, label, value)
-    });
-
-    // Analytics Code
   }
 
   public getChildContext(): IComponentContext {
@@ -572,7 +537,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private handleClickPage = (evt: React.MouseEvent<any>) => {
-    Analytics.trackNavigation(evt.currentTarget.id)
     if (this.props.mainPage !== evt.currentTarget.id) {
       this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
     } else {
@@ -647,7 +611,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
     uiBlockers: state.session.base.uiBlockers,
-    instanceId: state.app.instanceId,
   };
 }
 
