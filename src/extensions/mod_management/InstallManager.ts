@@ -18,7 +18,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
 import { getSafe, setSafe } from '../../util/storeHelper';
-import { isPathValid, setdefault, toPromise, truthy } from '../../util/util';
+import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
@@ -41,10 +41,10 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies, { findDownloadByRef, findModByRef } from './util/dependencies';
+import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
-import { isFuzzyVersion, referenceEqual } from './util/testModReference';
+import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
@@ -64,7 +64,6 @@ import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
 import { selectors } from 'vortex-api';
-import deployMods from './modActivation';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
