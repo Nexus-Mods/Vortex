@@ -16,7 +16,7 @@ class Analytics {
    * Sets and Initializes the Universal Analytics tracking
    */
   public setUser(uuidV4) {
-    if (this.user ?? false) {
+    if (!this.user) {
       this.user = ua('UA-210527049-1', uuidV4);
     }
   }
