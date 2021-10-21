@@ -260,6 +260,8 @@ class InstallManager {
       oldCallback?.(err, id);
     };
 
+    let existingMod: IMod;
+
     this.mQueue = this.mQueue
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
@@ -339,44 +341,70 @@ class InstallManager {
       .then(modInfo => {
         const fileId = modInfo.fileId ?? modInfo.revisionId;
         const isCollection = modInfo.revisionId !== undefined;
-        const oldMod = (fileId !== undefined)
+
+        existingMod = (fileId !== undefined)
           ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
           : undefined;
 
-        if ((oldMod !== undefined) && (fullInfo.choices === undefined)) {
-          fullInfo.choices = getSafe(oldMod, ['attributes', 'installerChoices'], undefined);
+        const mods = api.getState().persistent.mods[installGameId];
+        const dependentRule: { [modId: string]: { owner: string, rule: IModRule } } =
+            Object.keys(mods)
+            .reduce((prev: { [modId: string]: { owner: string, rule: IModRule } }, iter) => {
+              const depRule = (mods[iter].rules ?? [])
+                .find(rule => (rule.type === 'requires')
+                           && testModReference(existingMod, rule.reference));
+              if (depRule !== undefined) {
+                prev[iter] = { owner: iter, rule: depRule };
+              }
+              return prev;
+            }, {});
+        const download = api.getState().persistent.downloads.files[archiveId];
+        const lookup = lookupFromDownload(download);
+        const broken = Object.keys(dependentRule)
+          .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
+                          && !testModReference(lookup, dependentRule[iter].rule.reference)));
+        if (broken.length > 0) {
+          return this.queryIgnoreDependent(
+            api.store, installGameId, broken.map(id => dependentRule[id]));
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        if ((existingMod !== undefined) && (fullInfo.choices === undefined)) {
+          fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
         }
 
-        if ((oldMod !== undefined) && (currentProfile !== undefined)) {
-          const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
-          return this.userVersionChoice(oldMod, api.store)
+        if ((existingMod !== undefined) && (currentProfile !== undefined)) {
+          const wasEnabled = getSafe(currentProfile.modState, [existingMod.id, 'enabled'], false);
+          return this.userVersionChoice(existingMod, api.store)
             .then((action: string) => {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
-                  api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
+                  api.store.dispatch(setModEnabled(currentProfile.id, existingMod.id, false));
+                  api.events.emit('mods-enabled', [existingMod.id], false, currentProfile.gameId);
                 }
-                rules = oldMod.rules || [];
-                overrides = oldMod.fileOverrides;
-                fullInfo.previous = oldMod.attributes;
+                rules = existingMod.rules || [];
+                overrides = existingMod.fileOverrides;
+                fullInfo.previous = existingMod.attributes;
                 return Promise.resolve();
               } else if (action === REPLACE_ACTION) {
-                rules = oldMod.rules || [];
-                overrides = oldMod.fileOverrides;
-                fullInfo.previous = oldMod.attributes;
+                rules = existingMod.rules || [];
+                overrides = existingMod.fileOverrides;
+                fullInfo.previous = existingMod.attributes;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
                 return new Promise<void>((resolve, reject) => {
-                  api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
+                  api.events.emit('remove-mod', currentProfile.gameId, existingMod.id,
                                   (error: Error) => {
                     if (error !== null) {
                       reject(error);
                     } else {
                       // use the same mod id as the old version so that all profiles
                       // keep using it.
-                      modId = oldMod.id;
+                      modId = existingMod.id;
                       enable = enable || wasEnabled;
                       resolve();
                     }
@@ -1232,6 +1260,43 @@ class InstallManager {
     });
 
     return mod;
+  }
+
+  private queryIgnoreDependent(store: ThunkStore<any>, gameId: string,
+                               dependents: Array<{ owner: string, rule: IModRule }>)
+                               : Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      store.dispatch(showDialog(
+          'question', 'Updating may break dependencies',
+          {
+            text:
+            'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
+            + 'be compatible (according to the dependency information). '
+            + 'If you continue we have to disable these dependencies, otherwise you\'ll '
+            + 'continually get warnings about it.',
+            options: { wrap: true },
+          },
+          [
+            { label: 'Cancel' },
+            { label: 'Ignore' },
+          ]))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Cancel') {
+            reject(new UserCanceled());
+          } else {
+            const ruleActions = dependents.reduce((prev, dep) => {
+              prev.push(removeModRule(gameId, dep.owner, dep.rule));
+              prev.push(addModRule(gameId, dep.owner, {
+                ...dep.rule,
+                ignored: true,
+              }));
+              return prev;
+            }, []);
+            batchDispatch(store, ruleActions);
+            resolve();
+          }
+        });
+    });
   }
 
   private userVersionChoice(oldMod: IMod, store: ThunkStore<any>): Promise<string> {
