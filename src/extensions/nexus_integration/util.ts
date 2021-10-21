@@ -75,7 +75,12 @@ function startDownloadCollection(api: IExtensionApi,
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
   let revisionInfo: Partial<IRevision>;
 
-  return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, url.revisionId))
+  return Promise.resolve(
+    (url.collectionSlug !== undefined)
+      ? nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
+                                         url.collectionSlug,
+                                         url.revisionNumber)
+      : nexus.getRevisionGraph(FULL_REVISION_INFO, url.revisionId))
     .then(revision => {
       revisionInfo = revision;
       api.sendNotification({

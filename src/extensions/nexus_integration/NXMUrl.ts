@@ -51,6 +51,7 @@ class NXMUrl {
       if ((collMatches[1].length) < 6 && !isNaN(this.mCollectionId)) {
         this.mRevisionId = parseInt(collMatches[2], 10);
       } else {
+        this.mCollectionId = undefined;
         this.mCollectionSlug = collMatches[1];
         this.mRevisionNumber = parseInt(collMatches[2], 10);
       }
