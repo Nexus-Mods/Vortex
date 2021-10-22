@@ -202,6 +202,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private openMore = (evt: React.MouseEvent<any>) => {
+    this.context.api.events.emit('analytics-track-click-event', 'Dashboard', `View ${this.props.title}`);
     evt.preventDefault();
     opn(evt.currentTarget.href).catch(err => undefined);
   }

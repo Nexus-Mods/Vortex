@@ -311,6 +311,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     this.setState(update(this.state, {
       edit: { $set: '__new' },
     }));
+    this.context.api.events.emit('analytics-track-click-event', 'Profile', `Add new profile`);
   }
 
   private onCloneProfile = (profileId: string) => {

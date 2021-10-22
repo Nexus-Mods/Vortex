@@ -1,6 +1,8 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { truthy } from '../../util/util';
+import { getApplication } from '../../util/application';
 import Analytics from './Analytics';
+import { ClickEventsListeners, ClickStateListeners } from './analytics/events';
+import { NavigationEventListeners, NavigationStateListners } from './analytics/navigation';
 import { setAnalytics } from './reducers/analytics.action';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
@@ -18,8 +20,12 @@ function init(context: IExtensionContext): boolean {
     const analyticsSettings = ['settings', 'analytics', 'enabled'];
     context.api.onStateChange(analyticsSettings, (oldEnabled: boolean, newEnabled: boolean) => {
       if (newEnabled) {
-        Analytics.setUser(instanceId);
+        initializeAnalytics();
+        setTimeout(() => {
+          Analytics.trackClickEvent('Tracking', 'Allow - Settings');
+        }, 500);
       } else {
+        Analytics.trackClickEvent('Tracking', 'Deny - Settings');
         Analytics.unsetUser();
       }
     });
@@ -36,48 +42,38 @@ function init(context: IExtensionContext): boolean {
       }
     });
 
-    // Check for navigation in the main menu, EG: opening the settings
-    // or externally triggered EG: opening the feedback page
-    context.api.onStateChange(['session', 'base', 'mainPage'], (previous, current) => {
-      Analytics.trackNavigation(current);
-    });
-
-    // Check for when the user uses the secondayPageFeature
-    context.api.onStateChange(['session', 'base', 'secondaryPage'], (previous, current) => {
-      if (truthy(current)) {
-        Analytics.trackNavigation(`secondaryPage/${current}`);
-      } else {
-        Analytics.trackNavigation(`secondaryPageClosed/${previous}`);
-      }
-    });
-
-    // Check for navigation in the settings tabs
-    context.api.onStateChange(['session', 'base', 'settingsPage'], (previous, current) => {
-      Analytics.trackNavigation(current);
-    });
-
-    // Check for navigation in dialogs
-    context.api.onStateChange(['session', 'base', 'visibleDialog'], (previous, current) => {
-      if (truthy(current)) {
-        Analytics.trackNavigation(`dialog/${current}`);
-      }
-    });
-
-    // Check for modal opening
-    context.api.events.on('show-modal', modalId => {
-      Analytics.trackNavigation(`modal/${modalId}`);
-    });
-
     // Extra listener in case I need to set a custom navigation,
     // eg: Custom Modals or custom tabs in the extensions
     context.api.events.on('analytics-track-navigation', pageId => {
       Analytics.trackNavigation(pageId);
     });
 
-    // Extra listener in case I need to set a custom event tracking
+    // Custom event for event tracking
     context.api.events.on('analytics-track-event', (category, action, label?, value?) => {
       Analytics.trackEvent(category, action, label, value);
     });
+
+    // Custom event for event tracking
+    context.api.events.on('analytics-track-click-event', (category, label?, value?) => {
+      Analytics.trackClickEvent(category, label, value);
+    });
+
+    // All state listeners
+    const stateListners = [...NavigationStateListners, ...ClickStateListeners];
+    for (const stateListner of stateListners) {
+      context.api.onStateChange(stateListner.path, stateListner.callback);
+    }
+
+    // All event listeners
+    const eventListners = [...NavigationEventListeners, ...ClickEventsListeners];
+    for (const eventListner of eventListners) {
+      context.api.events.on(eventListner.event, eventListner.callback);
+    }
+
+    function initializeAnalytics() {
+      Analytics.setUser(instanceId);
+      Analytics.trackEvent('Vortex', 'Version', getApplication().version);
+    }
 
     function showConsentDialog() {
       context.api.showDialog('question', 'Diagnostics & usage data',
@@ -94,8 +90,11 @@ function init(context: IExtensionContext): boolean {
       )
         .then(result => {
           if (result.action === 'Allow') {
-            Analytics.setUser(instanceId);
+            initializeAnalytics();
             context.api.store.dispatch(setAnalytics(true));
+            setTimeout(() => {
+              Analytics.trackClickEvent('Tracking', 'Allow');
+            }, 500);
           } else if (result.action === 'Deny') {
             context.api.store.dispatch(setAnalytics(false));
           }
@@ -109,9 +108,7 @@ function init(context: IExtensionContext): boolean {
     }
 
     if (enabled()) {
-      // Notify developer that Analytics is enabled
-      // tslint:disable-next-line: no-console
-      console.log('Analytics is enabled');
+      initializeAnalytics();
     }
   });
 

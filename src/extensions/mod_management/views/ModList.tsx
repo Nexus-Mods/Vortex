@@ -432,11 +432,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       return source.options.condition();
     });
 
+    const onGetMoreMods = () => {
+      this.context.api.events.emit('analytics-track-click-event', 'Mods', 'Get more mods');
+      if (filtered.length === 1) {
+        filtered[0].onBrowse();
+      }
+    };
+
     if (filtered.length === 1) {
       return (
         <Button
           id='btn-more-mods'
-          onClick={filtered[0].onBrowse}
+          onClick={onGetMoreMods}
           bsStyle='ghost'
         >
           {this.sourceIcon(filtered[0])}
@@ -450,6 +457,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         id='btn-more-mods'
         title={t('Get more mods')}
         container={this.mRef}
+        onClick={onGetMoreMods}
         bsStyle='ghost'
       >
         {filtered.map(this.renderModSource)}

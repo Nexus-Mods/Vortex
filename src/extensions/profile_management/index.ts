@@ -699,7 +699,12 @@ function init(context: IExtensionContext): boolean {
         : manageGameUndiscovered;
 
       checkOverridden(context.api, gameId)
-        .then(() => manageFunc(context.api, gameId))
+        .then(() => {
+          manageFunc(context.api, gameId);
+          this.context.api.events.emit(
+            'analytics-track-click-event', 'Games', 'Start managing game',
+          );
+        })
         .catch(err => {
           if (!(err instanceof UserCanceled)) {
             context.api.showErrorNotification('Failed to manage game', err);
@@ -713,7 +718,12 @@ function init(context: IExtensionContext): boolean {
     const gameId = instanceIds[0];
 
     checkOverridden(context.api, gameId)
-      .then(() => manageGameUndiscovered(context.api, gameId))
+      .then(() => {
+        manageGameUndiscovered(context.api, gameId);
+        this.context.api.events.emit(
+          'analytics-track-click-event', 'Games', 'Start managing game',
+        );
+      })
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
           context.api.showErrorNotification('Failed to manage game', err);
@@ -726,7 +736,12 @@ function init(context: IExtensionContext): boolean {
   }, 'Activate', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
     checkOverridden(context.api, gameId)
-      .then(() => activateGame(context.api.store, gameId))
+      .then(() => {
+        activateGame(context.api.store, gameId);
+        this.context.api.events.emit(
+          'analytics-track-click-event', 'Games', 'Activate game',
+        );
+      })
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
           context.api.showErrorNotification('Failed to activate game', err);
