@@ -21,7 +21,7 @@ import { getSafe, setSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
-import { AlreadyDownloaded } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
 import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
 import getDownloadGames from '../download_management/util/getDownloadGames';
@@ -345,7 +345,7 @@ class InstallManager {
           ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
           : undefined;
 
-        const mods = api.getState().persistent.mods[installGameId];
+        const mods = api.getState().persistent.mods[installGameId] ?? {};
         const dependentRule: { [modId: string]: { owner: string, rule: IModRule } } =
             Object.keys(mods)
             .reduce((prev: { [modId: string]: { owner: string, rule: IModRule } }, iter) => {
@@ -1489,7 +1489,7 @@ class InstallManager {
             } else {
               reject(error);
             }
-          }, 'never', false)) {
+          }, 'never', { allowInstall: false, allowOpenHTML: false })) {
           reject(new Error('download manager not installed?'));
         }
     }));
@@ -1624,6 +1624,14 @@ class InstallManager {
           });
           return Promise.resolve(undefined);
         })
+        .catch(DownloadIsHTML, () => {
+          api.showErrorNotification('Failed to install dependency',
+            'The direct download URL for this file is not valid or didn\'t lead to a file. '
+            + 'This may be a setup error in the collection or the file has been moved.', {
+              allowReport: false,
+              message: renderModReference(dep.reference, undefined),
+            });
+        })
         .catch(NotFound, err => {
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
@@ -1737,8 +1745,7 @@ class InstallManager {
                 const idx = queuedDownloads.indexOf(dep.reference);
                 queuedDownloads.splice(idx, 1);
                 return dlId;
-              })
-              .catch(err => Promise.reject(err));
+              });
           }));
     };
 
@@ -1749,7 +1756,8 @@ class InstallManager {
           : new Promise((resolve, reject) => {
             api.events.emit('resume-download',
               dep.download,
-              (err) => err !== null ? reject(err) : resolve(dep.download));
+              (err) => err !== null ? reject(err) : resolve(dep.download),
+              { allowOpenHTML: false });
           })));
     };
 

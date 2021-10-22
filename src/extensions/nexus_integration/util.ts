@@ -202,7 +202,7 @@ function startDownloadMod(api: IExtensionApi,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
           : resolve(downloadId)),
-        redownload, allowInstall);
+        redownload, { allowInstall });
       });
     })
     .tap(() => {

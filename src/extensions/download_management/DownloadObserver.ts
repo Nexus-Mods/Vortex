@@ -58,6 +58,13 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   }
 }
 
+export interface IStartDownloadOptions {
+  // whether the download may be auto-installed if the user has that set up for mods (default: true)
+  allowInstall?: boolean;
+  // whether the url should be opened in the embedded browser if it's html (default: true)
+  allowOpenHTML?: boolean;
+}
+
 /**
  * connect the download manager with the main application through events
  *
@@ -82,12 +89,12 @@ export class DownloadObserver {
     events.on('pause-download',
               (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
-              (downloadId, callback?, allowInstall?) =>
-                  this.handleResumeDownload(downloadId, callback, allowInstall));
+              (downloadId, callback?, options?) =>
+                  this.handleResumeDownload(downloadId, callback, options));
     events.on('start-download',
-              (urls, modInfo, fileName?, callback?, redownload?, allowInstall?) =>
+              (urls, modInfo, fileName?, callback?, redownload?, options?) =>
                   this.handleStartDownload(urls, modInfo, fileName, events, callback,
-                                           redownload, allowInstall));
+                                           redownload, options));
     // this is a bit of a hack that lets callers intercept a queued download that was not started
     // yet (e.g. it may be waiting to ensure the download dir exists)
     // for this to work the modInfo of the download has to contain a referenceTag corresponding to
@@ -124,6 +131,7 @@ export class DownloadObserver {
   }
 
   private handleDownloadError(err: Error, id: string, downloadPath: string,
+                              allowOpenHTML: boolean,
                               callback?: (err: Error, id: string) => void): Promise<void> {
     const innerState: IState = this.mApi.getState();
     if (err instanceof DownloadIsHTML) {
@@ -131,7 +139,9 @@ export class DownloadObserver {
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
 
       this.mApi.store.dispatch(removeDownload(id));
-      this.mApi.store.dispatch(showURL(err.url));
+      if (allowOpenHTML) {
+        this.mApi.store.dispatch(showURL(err.url));
+      }
       callback?.(err, id);
       if (filePath !== undefined) {
         return fs.removeAsync(path.join(downloadPath, filePath))
@@ -184,7 +194,7 @@ export class DownloadObserver {
                               events: NodeJS.EventEmitter,
                               callback?: (error: Error, id?: string) => void,
                               redownload?: RedownloadMode,
-                              allowInstall?: boolean) {
+                              options?: IStartDownloadOptions) {
     let callbacked = false;
 
     const origCallback = callback;
@@ -266,9 +276,10 @@ export class DownloadObserver {
         })
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { id, file: res.filePath });
-          return this.handleDownloadFinished(id, callback, res, allowInstall ?? true);
+          return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
-        .catch(err => this.handleDownloadError(err, id, downloadPath, callback)))
+        .catch(err => this.handleDownloadError(err, id, downloadPath,
+                                               options?.allowOpenHTML ?? true, callback)))
         .finally(() => {
           if ((callback !== undefined) && !callbacked) {
             callback(new ProcessCanceled('forgot to invoke the callback: ' + id));
@@ -444,7 +455,7 @@ export class DownloadObserver {
 
   private handleResumeDownload(downloadId: string,
                                callback?: (error: Error, id: string) => void,
-                               allowInstall?: boolean) {
+                               options?: IStartDownloadOptions) {
     try {
       const download: IDownload =
         this.mApi.store.getState().persistent.downloads.files[downloadId];
@@ -478,9 +489,11 @@ export class DownloadObserver {
                 undefined, { redownload: 'replace' }))
               .then(res => {
                 log('debug', 'download finished (re-tried)', { file: res.filePath });
-                return this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
+                return this.handleDownloadFinished(downloadId, callback, res,
+                                                   options?.allowInstall ?? true);
               })
-              .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
+              .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
+                                                     options?.allowOpenHTML ?? true, callback));
           } else {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.resume(downloadId, fullPath, download.urls,
@@ -488,9 +501,11 @@ export class DownloadObserver {
                 this.genProgressCB(downloadId), extraInfo))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
-                return this.handleDownloadFinished(downloadId, callback, res, allowInstall ?? true);
+                return this.handleDownloadFinished(downloadId, callback, res,
+                                                   options?.allowInstall ?? true);
               })
-              .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
+              .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
+                                                     options?.allowOpenHTML ?? true, callback));
           }
         });
       }

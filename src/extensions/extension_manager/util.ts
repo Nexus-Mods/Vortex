@@ -340,7 +340,7 @@ export function downloadGithubRelease(api: IExtensionApi,
       } else {
         return resolve([dlId]);
       }
-    }, 'always', false);
+    }, 'always', { allowInstall: false });
   })
   .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
     const state = api.getState();
