@@ -1431,7 +1431,7 @@ class InstallManager {
             })
             : this.getInstaller(fileList, gameId, offset + 1);
       });
- }
+  }
 
   /**
    * determine the mod name (on disk) from the archive path

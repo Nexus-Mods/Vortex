@@ -1,9 +1,9 @@
 import ErrorBoundary from '../controls/ErrorBoundary';
+import ExtensionGate from '../controls/ExtensionGate';
 import {PropsCallback} from '../types/IExtensionContext';
 import {extend} from '../util/ComponentEx';
 
 import * as React from 'react';
-import ExtensionGate from '../controls/ExtensionGate';
 
 interface IExtDialog {
   id: string;
@@ -31,6 +31,7 @@ class DialogContainer extends React.Component<IProps, {}> {
       </div>
     );
   }
+
   private renderDialog(dialog: IExtDialog): JSX.Element {
     const { onHideDialog, visibleDialog } = this.props;
     const props = dialog.props !== undefined ? dialog.props() : {};
