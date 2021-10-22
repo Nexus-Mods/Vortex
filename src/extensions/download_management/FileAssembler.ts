@@ -143,10 +143,9 @@ class FileAssembler {
           defaultId: 1,
           noLink: true,
         }) === 1)
-          ? Promise.resolve(this.addChunk(offset, data))
+          ? this.addChunk(offset, data)
           : Promise.reject(new UserCanceled());
       })
-      .catch(err => Promise.reject(err))
     , false);
   }
 

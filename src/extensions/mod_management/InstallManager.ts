@@ -18,10 +18,10 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
 import { getSafe, setSafe } from '../../util/storeHelper';
-import { isPathValid, setdefault, toPromise, truthy } from '../../util/util';
+import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
-import { AlreadyDownloaded } from '../download_management/DownloadManager';
+import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
 import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
 import getDownloadGames from '../download_management/util/getDownloadGames';
@@ -41,10 +41,10 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies, { findDownloadByRef, findModByRef } from './util/dependencies';
+import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
-import { isFuzzyVersion, referenceEqual } from './util/testModReference';
+import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
@@ -64,7 +64,6 @@ import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
 import { selectors } from 'vortex-api';
-import deployMods from './modActivation';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -260,6 +259,8 @@ class InstallManager {
       oldCallback?.(err, id);
     };
 
+    let existingMod: IMod;
+
     this.mQueue = this.mQueue
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
@@ -339,44 +340,70 @@ class InstallManager {
       .then(modInfo => {
         const fileId = modInfo.fileId ?? modInfo.revisionId;
         const isCollection = modInfo.revisionId !== undefined;
-        const oldMod = (fileId !== undefined)
+
+        existingMod = (fileId !== undefined)
           ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
           : undefined;
 
-        if ((oldMod !== undefined) && (fullInfo.choices === undefined)) {
-          fullInfo.choices = getSafe(oldMod, ['attributes', 'installerChoices'], undefined);
+        const mods = api.getState().persistent.mods[installGameId] ?? {};
+        const dependentRule: { [modId: string]: { owner: string, rule: IModRule } } =
+            Object.keys(mods)
+            .reduce((prev: { [modId: string]: { owner: string, rule: IModRule } }, iter) => {
+              const depRule = (mods[iter].rules ?? [])
+                .find(rule => (rule.type === 'requires')
+                           && testModReference(existingMod, rule.reference));
+              if (depRule !== undefined) {
+                prev[iter] = { owner: iter, rule: depRule };
+              }
+              return prev;
+            }, {});
+        const download = api.getState().persistent.downloads.files[archiveId];
+        const lookup = lookupFromDownload(download);
+        const broken = Object.keys(dependentRule)
+          .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
+                          && !testModReference(lookup, dependentRule[iter].rule.reference)));
+        if (broken.length > 0) {
+          return this.queryIgnoreDependent(
+            api.store, installGameId, broken.map(id => dependentRule[id]));
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        if ((existingMod !== undefined) && (fullInfo.choices === undefined)) {
+          fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
         }
 
-        if ((oldMod !== undefined) && (currentProfile !== undefined)) {
-          const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
-          return this.userVersionChoice(oldMod, api.store)
+        if ((existingMod !== undefined) && (currentProfile !== undefined)) {
+          const wasEnabled = getSafe(currentProfile.modState, [existingMod.id, 'enabled'], false);
+          return this.userVersionChoice(existingMod, api.store)
             .then((action: string) => {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
-                  api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
+                  api.store.dispatch(setModEnabled(currentProfile.id, existingMod.id, false));
+                  api.events.emit('mods-enabled', [existingMod.id], false, currentProfile.gameId);
                 }
-                rules = oldMod.rules || [];
-                overrides = oldMod.fileOverrides;
-                fullInfo.previous = oldMod.attributes;
+                rules = existingMod.rules || [];
+                overrides = existingMod.fileOverrides;
+                fullInfo.previous = existingMod.attributes;
                 return Promise.resolve();
               } else if (action === REPLACE_ACTION) {
-                rules = oldMod.rules || [];
-                overrides = oldMod.fileOverrides;
-                fullInfo.previous = oldMod.attributes;
+                rules = existingMod.rules || [];
+                overrides = existingMod.fileOverrides;
+                fullInfo.previous = existingMod.attributes;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
                 return new Promise<void>((resolve, reject) => {
-                  api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
+                  api.events.emit('remove-mod', currentProfile.gameId, existingMod.id,
                                   (error: Error) => {
                     if (error !== null) {
                       reject(error);
                     } else {
                       // use the same mod id as the old version so that all profiles
                       // keep using it.
-                      modId = oldMod.id;
+                      modId = existingMod.id;
                       enable = enable || wasEnabled;
                       resolve();
                     }
@@ -1234,6 +1261,43 @@ class InstallManager {
     return mod;
   }
 
+  private queryIgnoreDependent(store: ThunkStore<any>, gameId: string,
+                               dependents: Array<{ owner: string, rule: IModRule }>)
+                               : Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      store.dispatch(showDialog(
+          'question', 'Updating may break dependencies',
+          {
+            text:
+            'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
+            + 'be compatible (according to the dependency information). '
+            + 'If you continue we have to disable these dependencies, otherwise you\'ll '
+            + 'continually get warnings about it.',
+            options: { wrap: true },
+          },
+          [
+            { label: 'Cancel' },
+            { label: 'Ignore' },
+          ]))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Cancel') {
+            reject(new UserCanceled());
+          } else {
+            const ruleActions = dependents.reduce((prev, dep) => {
+              prev.push(removeModRule(gameId, dep.owner, dep.rule));
+              prev.push(addModRule(gameId, dep.owner, {
+                ...dep.rule,
+                ignored: true,
+              }));
+              return prev;
+            }, []);
+            batchDispatch(store, ruleActions);
+            resolve();
+          }
+        });
+    });
+  }
+
   private userVersionChoice(oldMod: IMod, store: ThunkStore<any>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       store.dispatch(showDialog(
@@ -1367,7 +1431,7 @@ class InstallManager {
             })
             : this.getInstaller(fileList, gameId, offset + 1);
       });
- }
+  }
 
   /**
    * determine the mod name (on disk) from the archive path
@@ -1425,7 +1489,7 @@ class InstallManager {
             } else {
               reject(error);
             }
-          }, 'never', false)) {
+          }, 'never', { allowInstall: false, allowOpenHTML: false })) {
           reject(new Error('download manager not installed?'));
         }
     }));
@@ -1560,6 +1624,14 @@ class InstallManager {
           });
           return Promise.resolve(undefined);
         })
+        .catch(DownloadIsHTML, () => {
+          api.showErrorNotification('Failed to install dependency',
+            'The direct download URL for this file is not valid or didn\'t lead to a file. '
+            + 'This may be a setup error in the collection or the file has been moved.', {
+              allowReport: false,
+              message: renderModReference(dep.reference, undefined),
+            });
+        })
         .catch(NotFound, err => {
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
@@ -1673,8 +1745,7 @@ class InstallManager {
                 const idx = queuedDownloads.indexOf(dep.reference);
                 queuedDownloads.splice(idx, 1);
                 return dlId;
-              })
-              .catch(err => Promise.reject(err));
+              });
           }));
     };
 
@@ -1685,7 +1756,8 @@ class InstallManager {
           : new Promise((resolve, reject) => {
             api.events.emit('resume-download',
               dep.download,
-              (err) => err !== null ? reject(err) : resolve(dep.download));
+              (err) => err !== null ? reject(err) : resolve(dep.download),
+              { allowOpenHTML: false });
           })));
     };
 

@@ -20,6 +20,7 @@ import { ipcRenderer } from 'electron';
 import { omit } from 'lodash';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
+import { clearInterval } from 'timers';
 
 const RESIZE_EVENTS = ['scroll', 'resize'];
 
@@ -56,20 +57,46 @@ interface IBrowserViewProps {
 function BrowserView(props: IBrowserViewProps) {
   const viewId = React.useRef<string>();
   const container = React.useRef<HTMLDivElement>();
+  const bounds = React.useRef<Electron.Rectangle>();
 
   const updateViewBounds = React.useCallback(() => {
     if (truthy(container.current)) {
       const rect = container.current.getBoundingClientRect();
 
-      const bounds: Electron.Rectangle = {
+      bounds.current = {
         x: Math.round(rect.left),
         y: Math.round(rect.top),
         width: Math.round(rect.width),
         height: Math.round(rect.height),
       };
 
-      positionBrowserView(viewId.current, bounds);
+      positionBrowserView(viewId.current, bounds.current);
     }
+
+  }, []);
+
+  React.useEffect(() => {
+    let wasVisible: boolean = true;
+    const overlapTest = setInterval(() => {
+      if (bounds.current !== null) {
+        // janky way of estimating a position that would be overlapped
+        const x = bounds.current.x + bounds.current.width / 2;
+        const y1 = bounds.current.y + (bounds.current.height * 0.33);
+        const y2 = bounds.current.y + (bounds.current.height * 0.66);
+        const ele1 = document.elementFromPoint(x, y1);
+        const ele2 = document.elementFromPoint(x, y2);
+        const isVisible = (ele1 === container.current) && (ele2 === container.current);
+        if (wasVisible !== isVisible) {
+          positionBrowserView(viewId.current, isVisible
+            ? bounds.current
+            : { x: 0, y: 0, width: 0, height: 0 });
+          wasVisible = isVisible;
+        }
+      }
+    }, 1000);
+    return () => {
+      clearInterval(overlapTest);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -119,6 +146,8 @@ function BrowserView(props: IBrowserViewProps) {
   );
 }
 
+const emptyObject = {};
+
 export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { src: string }> {
   constructor(props: IWebviewProps & IWebView) {
     super(props);
@@ -135,6 +164,7 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
   }
 
   public render(): JSX.Element {
+    const {events} = this.props;
     return truthy(this.props.src) ? (
       <BrowserView
         src={this.state.src}
@@ -145,7 +175,7 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
           'new-window': this.newWindow,
           'enter-html-full-screen': this.enterFullscreen,
           'leave-html-full-screen': this.leaveFullscreen,
-          ...(this.props.events ?? {}),
+          ...(events ?? emptyObject),
         }}
       />
     ) : null;

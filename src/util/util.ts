@@ -143,6 +143,13 @@ function restackErr(error: Error, stackErr: Error): Error {
   return error;
 }
 
+interface IQueueItem {
+  func: () => Bluebird<any>;
+  stackErr: Error;
+  resolve: (value: any) => void;
+  reject: (err: Error) => void;
+}
+
 /**
  * create a "queue".
  * Returns an enqueue function such that that the callback passed to it
@@ -150,24 +157,32 @@ function restackErr(error: Error, stackErr: Error): Error {
  * and with the promise that nothing else in the queue is run in parallel.
  */
 export function makeQueue<T>() {
-  let queue = Bluebird.resolve();
-  let atEnd = true;
+  const pending: IQueueItem[] =  [];
+  let processing: IQueueItem;
+
+  const tick = () => {
+    processing = pending.shift();
+    if (processing !== undefined) {
+      processing.func()
+        .then(processing.resolve)
+        .catch(err => processing.reject(restackErr(err, processing.stackErr)))
+        .finally(() => {
+          tick();
+        });
+    }
+  };
+
   return (func: () => Bluebird<T>, tryOnly: boolean) => {
     const stackErr = new Error();
+
     return new Bluebird<T>((resolve, reject) => {
-      if (tryOnly && !atEnd) {
+      if (tryOnly && (processing !== undefined)) {
         return resolve();
       }
-      queue = queue
-        .then(() => {
-          atEnd = false;
-          return func().then(resolve).catch(err => {
-            reject(restackErr(err, stackErr));
-          });
-        })
-        .finally(() => {
-          atEnd = true;
-        });
+      pending.push({ func, stackErr, resolve, reject });
+      if (processing === undefined) {
+        tick();
+      }
     });
   };
 }

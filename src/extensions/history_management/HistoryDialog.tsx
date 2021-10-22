@@ -4,7 +4,6 @@ import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import Usage from '../../controls/Usage';
 import { IState } from '../../types/IState';
-import { ProcessCanceled } from '../../util/CustomErrors';
 import { TFunction } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';
 import { getGame } from '../gamemode_management/util/getGame';

@@ -58,7 +58,10 @@ export function extractToken(error: IError): string {
 
   let hashStack = error.stack.split('\n');
 
-  const messageLineCount = hashStack.findIndex(line => line.startsWith(' '));
+  let messageLineCount = hashStack.findIndex(line => line.startsWith(' '));
+  if (messageLineCount === -1) {
+    messageLineCount = 1;
+  }
 
   hashStack = [
     removeQuoted(sanitizeKnownMessages(hashStack.slice(0, messageLineCount).join(' '))),

@@ -332,7 +332,7 @@ export function onNexusDownload(api: IExtensionApi,
 export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
     : (collectionId: number, slug: string) => Promise<ICollection> {
   return (collectionId: number, slug: string): Promise<ICollection> => {
-    if (!Number.isFinite(collectionId)) {
+    if ((slug === undefined) && !Number.isFinite(collectionId)) {
       return Promise.reject(new Error('invalid parameter, collectionId has to be a number'));
     }
 

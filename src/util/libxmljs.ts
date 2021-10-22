@@ -82,6 +82,9 @@ function packProperty(res) {
 }
 
 function serializeResult(res) {
+  if ((res === undefined) || (res === null)) {
+    return { result: res };
+  }
   return (Array.isArray(res))
     ? { results: res.map(i => packProperty(i)) }
     : packProperty(res);
