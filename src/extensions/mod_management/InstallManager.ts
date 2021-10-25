@@ -244,7 +244,9 @@ class InstallManager {
     let destinationPath: string;
     let tempPath: string;
 
-    api.dismissNotification(`ready-to-install-${archiveId}`);
+    const dummyArchiveId = shortid();
+
+    api.dismissNotification(`ready-to-install-${archiveId ?? dummyArchiveId}`);
 
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const currentProfile = activeProfile(api.store.getState());
@@ -357,11 +359,15 @@ class InstallManager {
               }
               return prev;
             }, {});
-        const download = api.getState().persistent.downloads.files[archiveId];
-        const lookup = lookupFromDownload(download);
-        const broken = Object.keys(dependentRule)
-          .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
-                          && !testModReference(lookup, dependentRule[iter].rule.reference)));
+
+        let broken: string[] = [];
+        if (archiveId !== null) {
+          const download = api.getState().persistent.downloads.files[archiveId];
+          const lookup = lookupFromDownload(download);
+          broken = Object.keys(dependentRule)
+            .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
+                            && !testModReference(lookup, dependentRule[iter].rule.reference)));
+        }
         if (broken.length > 0) {
           return this.queryIgnoreDependent(
             api.store, installGameId, broken.map(id => dependentRule[id]));
