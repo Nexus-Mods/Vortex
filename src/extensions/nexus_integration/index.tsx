@@ -133,7 +133,7 @@ class Disableable {
       return function(...args) {
         const now = Date.now();
         if (now > that.mLastValidation + REVALIDATION_FREQUENCY) {
-          this.mLastValidation = now;
+          that.mLastValidation = now;
           return obj.revalidate()
             .then((userInfo) => {
               if (userInfo !== null) {
