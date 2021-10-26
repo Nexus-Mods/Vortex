@@ -1082,6 +1082,13 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 }
 
 function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
+  const trackAndGoToPremium = (e) => {
+    this.context.api.events.emit(
+      'analytics-track-click-event',
+      'Go Premium',
+      'Header');
+    goBuyPremium(e);
+  };
   return () => {
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
@@ -1092,7 +1099,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
           <Button
             bsStyle='ad'
             data-campaign='Header-Ad'
-            onClick={goBuyPremium}
+            onClick={trackAndGoToPremium}
           >
             {t('Go Premium')}
           </Button>
@@ -1561,6 +1568,13 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
+    const trackAndGoToPremium = (e) => {
+      this.context.api.events.emit(
+        'analytics-track-click-event',
+        'Go Premium',
+        'Downloads');
+      goBuyPremium(e);
+    };
     return (
       <div className='nexus-download-banner'>
         {t('Nexus downloads are capped at 1-2MB/s - '
@@ -1568,7 +1582,7 @@ function init(context: IExtensionContextExt): boolean {
         <Button
           bsStyle='ad'
           data-campaign='Downloads-Ad'
-          onClick={goBuyPremium}
+          onClick={trackAndGoToPremium}
         >
           {t('Go Premium')}
         </Button>

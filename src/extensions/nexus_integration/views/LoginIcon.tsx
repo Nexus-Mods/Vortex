@@ -117,6 +117,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   private showLoginLayer = () => {
     const { userInfo } = this.props;
     if (!this.isLoggedIn()) {
+      this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
       this.setDialogVisible(true);
     } else {
       opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(err => undefined);
