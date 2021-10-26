@@ -35,6 +35,7 @@
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
+    "buildext": " node ./tools/buildScripts/buildSingleExtension.js",
     "forge_package": "electron-forge package",
     "forge_start": "electron-forge start",
     "forge_make": "electron-forge make"
