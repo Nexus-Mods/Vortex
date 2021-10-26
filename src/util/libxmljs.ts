@@ -32,11 +32,15 @@ class XMLProxy implements ProxyHandler<IProxyRef> {
       // hack: we're certainly not a promise...
       return undefined;
     }
+    if (p === '__target') {
+      return target;
+    }
     if ((target.proxy === undefined)
         || ((typeof p === 'string') && !target.props.includes(p))) {
       return (...args) => {
+        const effectiveArgs = args.map(arg => arg?.__target ?? arg);
         return this.deserializeResult(
-          ipcRenderer.sendSync('__libxmljs_invoke', p, target?.['proxy'], args));
+          ipcRenderer.sendSync('__libxmljs_invoke', p, target?.['proxy'], effectiveArgs));
       };
     } else {
       return this.deserializeResult(
@@ -105,9 +109,14 @@ if (process['type'] === 'renderer') {
           error: `Element of type ${type} has no property ${func}` };
         return;
       }
+
+      const effectiveArgs = args.map(arg => (arg.proxy !== undefined)
+        ? knownObjects[arg.proxy]
+        : arg);
+
       const res = (obj === undefined)
-        ? libxmljs[func](...args)
-        : knownObjects[obj][func](...args);
+        ? libxmljs[func](...effectiveArgs)
+        : knownObjects[obj][func](...effectiveArgs);
 
       event.returnValue = serializeResult(res);
     } catch (err) {
