@@ -361,12 +361,14 @@ class InstallManager {
             }, {});
 
         let broken: string[] = [];
-        if (archiveId !== null) {
+        if (truthy(archiveId)) {
           const download = api.getState().persistent.downloads.files[archiveId];
-          const lookup = lookupFromDownload(download);
-          broken = Object.keys(dependentRule)
-            .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
-                            && !testModReference(lookup, dependentRule[iter].rule.reference)));
+          if (download !== undefined) {
+            const lookup = lookupFromDownload(download);
+            broken = Object.keys(dependentRule)
+              .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
+                && !testModReference(lookup, dependentRule[iter].rule.reference)));
+          }
         }
         if (broken.length > 0) {
           return this.queryIgnoreDependent(

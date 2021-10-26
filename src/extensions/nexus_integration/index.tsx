@@ -1548,7 +1548,9 @@ function init(context: IExtensionContextExt): boolean {
     },
     onSkip: (inputUrl: string) => {
       const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
-      queueItem.rej(new UserCanceled(true));
+      if (queueItem !== undefined) {
+        queueItem.rej(new UserCanceled(true));
+      }
     },
     onCancel: (inputUrl: string) => {
       const copy = freeDLQueue.slice(0);
