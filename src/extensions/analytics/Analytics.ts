@@ -34,12 +34,12 @@ class Analytics {
    * generic event tracking function
    */
   public trackEvent(category, action, label?, value?) {
-    // tslint:disable-next-line: no-console
-    console.log({
-      category,
-      action,
-      label,
-    });
+    // // tslint:disable-next-line: no-console
+    // console.log({
+    //   category,
+    //   action,
+    //   label,
+    // });
     if (!this.isUserSet()) { return; }
     this.user.event({
       ec: category,

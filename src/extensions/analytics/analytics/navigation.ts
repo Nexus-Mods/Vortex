@@ -24,7 +24,7 @@ export const NavigationStateListners: StateListners = [
     // Check for navigation in the settings tabs
     path: ['session', 'base', 'settingsPage'],
     callback: (previous, current) => {
-      Analytics.trackNavigation(current);
+      Analytics.trackNavigation(`settings/${current}`);
     },
   },
   {
