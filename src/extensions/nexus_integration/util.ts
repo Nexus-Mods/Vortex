@@ -134,8 +134,10 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
     .then(([ modInfo, fileInfo ]) => ({ modInfo, fileInfo }));
 }
 
-export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRemoteInfo> {
-  return Promise.resolve(nexus.getRevisionGraph({
+export function getCollectionInfo(nexus: Nexus,
+                                  collectionSlug: string, revisionNumber: number,
+                                  revisionId: number): Promise<IRemoteInfo> {
+  const query = {
     adultContent: true,
     collection: {
       category: {
@@ -164,7 +166,10 @@ export function getCollectionInfo(nexus: Nexus, revisionId: number): Promise<IRe
       average: true,
       total: true,
     },
-  }, revisionId))
+  };
+  return Promise.resolve(collectionSlug !== undefined
+      ? nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber)
+      : nexus.getRevisionGraph(query, revisionId))
     .then(revision => ({ revisionInfo: revision }));
 }
 

@@ -133,7 +133,7 @@ class Disableable {
       return function(...args) {
         const now = Date.now();
         if (now > that.mLastValidation + REVALIDATION_FREQUENCY) {
-          this.mLastValidation = now;
+          that.mLastValidation = now;
           return obj.revalidate()
             .then((userInfo) => {
               if (userInfo !== null) {
@@ -399,8 +399,12 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
     const modId = input.download?.modInfo?.ids?.modId ?? input.download?.modInfo?.nexus?.ids?.modId;
     const fileId = input.download?.modInfo?.ids?.fileId
                 ?? input.download?.modInfo?.nexus?.ids?.fileId;
+    const collectionSlug = input.download?.modInfo?.ids?.collectionSlug
+                        ?? input.download?.modInfo?.nexus?.ids?.collectionSlug;
     const revisionId = input.download?.modInfo?.ids?.revisionId
                     ?? input.download?.modInfo?.nexus?.ids?.revisionId;
+    const revisionNumber = input.download?.modInfo?.ids?.revisionNumber
+                        ?? input.download?.modInfo?.nexus?.ids?.revisionNumber;
 
     if (!quick) {
       if (truthy(gameId) && truthy(modId) && truthy(fileId)) {
@@ -411,8 +415,8 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
               { gameId, modId, fileId, error: err.message });
             return undefined;
           });
-      } else if (truthy(revisionId)) {
-        fetchPromise = getCollectionInfo(nexus, revisionId);
+      } else if (truthy(revisionNumber) || truthy(revisionId)) {
+        fetchPromise = getCollectionInfo(nexus, collectionSlug, revisionNumber, revisionId);
       }
     }
   }
@@ -1014,8 +1018,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     nexus = new Proxy(
       new Proxy(
         new Nexus('Vortex', getApplication().version, gameMode, 30000),
-        requestLog),
-      new Disableable(api));
+        new Disableable(api),
+       ),
+       requestLog);
 
     nexus['setLogger']?.((level: LogLevel, message: string, meta: any) =>
       log(level, message, meta));
@@ -1543,7 +1548,9 @@ function init(context: IExtensionContextExt): boolean {
     },
     onSkip: (inputUrl: string) => {
       const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
-      queueItem.rej(new UserCanceled(true));
+      if (queueItem !== undefined) {
+        queueItem.rej(new UserCanceled(true));
+      }
     },
     onCancel: (inputUrl: string) => {
       const copy = freeDLQueue.slice(0);

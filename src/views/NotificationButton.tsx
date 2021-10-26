@@ -213,7 +213,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   private toggle = () => {
     if (!this.state.open) {
-      this.mRef?.show();
+      this.mRef?.show?.();
       this.nextState.filtered = this.props.notifications.slice();
     }
     this.nextState.open = !this.state.open;

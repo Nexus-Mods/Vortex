@@ -133,6 +133,9 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     const { events } = this.context.api;
     const { onHide } = this.props;
     const { error, errorInfo } = this.state;
+    if ((error === undefined) || (errorInfo === undefined)) {
+      return;
+    }
     if (onHide !== undefined) {
       onHide();
     }
