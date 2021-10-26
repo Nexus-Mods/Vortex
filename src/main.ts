@@ -52,7 +52,8 @@ if (process.env.NODE_ENV !== 'development') {
 
 {
   setEnv('NEXUS_NEXT_URL', 'https://next.nexusmods.com');
-  setEnv('IGNORE_UPDATES', 'yes');
+  // setEnv('IGNORE_UPDATES', 'yes');
+  setEnv('FORCE_UPDATE_CHANNEL', 'next');
 }
 
 if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
