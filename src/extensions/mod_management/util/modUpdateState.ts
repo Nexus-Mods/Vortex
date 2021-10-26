@@ -33,7 +33,9 @@ export function isDownloadIdValid(download: IDownload) {
       // if the source doesn't support identifying individual mods (versions of mods)
       || (source?.options?.supportsModId !== true)
       || (download.modInfo.ids?.modId !== undefined)
-      || (download.modInfo.nexus?.ids?.revisionId !== undefined);
+      || (download.modInfo.meta?.details?.modId !== undefined)
+      // collections always come from nexus mods
+      || (download.modInfo.nexus?.ids?.collectionSlug !== undefined);
 }
 
 export type UpdateState =
