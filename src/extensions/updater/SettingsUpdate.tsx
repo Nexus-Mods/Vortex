@@ -10,12 +10,18 @@ import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-boots
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+export const UPDATE_CHANNELS = ['stable', 'beta', 'next', 'none'] as const;
+
+type ValuesOf<T extends readonly any[]>= T[number];
+
+export type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
+
 interface IConnectedProps {
-  updateChannel: 'stable' | 'beta' | 'none';
+  updateChannel: UpdateChannel;
 }
 
 interface IActionProps {
-  onSetUpdateChannel: (channel: 'stable' | 'beta' | 'none') => void;
+  onSetUpdateChannel: (channel: UpdateChannel) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -39,6 +45,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           >
             <option value='stable'>{t('Stable')}</option>
             <option value='beta'>{t('Beta')}</option>
+            <option value='next'>{t('Next (Preview)')}</option>
             <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
           <ControlLabel>
@@ -62,7 +69,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
 
   private selectChannel = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    if (['stable', 'beta', 'none'].indexOf(target.value) !== -1) {
+    if (UPDATE_CHANNELS.includes(target.value as any)) {
       this.props.onSetUpdateChannel(target.value as any);
     } else {
       log('error', 'invalid channel', target.value);
@@ -78,7 +85,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onSetUpdateChannel: (channel: 'stable' | 'beta'): void => {
+    onSetUpdateChannel: (channel: UpdateChannel): void => {
         dispatch(setUpdateChannel(channel));
     },
   };

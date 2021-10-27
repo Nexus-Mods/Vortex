@@ -1037,7 +1037,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('get-nexus-collection', eh.onGetNexusCollection(api, nexus));
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
   api.onAsync('resolve-collection-url', eh.onResolveCollectionUrl(api, nexus));
-  api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
+  api.onAsync('get-nexus-revision', eh.onGetNexusRevision(api, nexus));
+  api.onAsync('get-nexus-collection-revision', eh.onGetNexusCollectionRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));

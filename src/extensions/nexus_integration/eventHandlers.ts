@@ -373,10 +373,29 @@ export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
   return (revisionId: number): Promise<IRevision> => {
     if (!Number.isFinite(revisionId)) {
       return Promise.reject(
-        new Error('invalid parameter, collectionId and revisionId have to be numbers, '
+        new Error('invalid parameter, revisionId has to be a number, '
                   + `got: ${revisionId}`));
     }
     return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
+      .catch(err => {
+        if (err.code !== 'NOT_FOUND') {
+          api.showErrorNotification('Failed to get nexus revision info', err);
+        }
+        return Promise.resolve(undefined);
+      });
+  };
+}
+
+export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
+    : (collectionSlug: string, revisionNumber: number) => Promise<IRevision> {
+  return (collectionSlug: string, revisionNumber: number): Promise<IRevision> => {
+    if (!Number.isFinite(revisionNumber)) {
+      return Promise.reject(
+        new Error('invalid parameter, revisionNumber has to be a number, '
+                  + `got: ${revisionNumber}`));
+    }
+    return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
+                                                            collectionSlug, revisionNumber))
       .catch(err => {
         if (err.code !== 'NOT_FOUND') {
           api.showErrorNotification('Failed to get nexus revision info', err);

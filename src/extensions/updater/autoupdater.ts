@@ -14,6 +14,7 @@ import * as semver from 'semver';
 import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
+import { UPDATE_CHANNELS, UpdateChannel } from './SettingsUpdate';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -69,7 +70,15 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
-  let channelOverride: 'beta';
+  let channelOverride: UpdateChannel =
+    UPDATE_CHANNELS.includes(process.env['FORCE_UPDATE_CHANNEL'] as any)
+    ? process.env['FORCE_UPDATE_CHANNEL'] as UpdateChannel
+    : undefined;
+
+  if (channelOverride !== undefined) {
+    log('info', 'channel override active', channelOverride);
+    api.store.dispatch(setUpdateChannel(channelOverride));
+  }
 
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
@@ -133,7 +142,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   autoUpdater.on('update-not-available', () => {
     if (channelOverride !== undefined) {
-      log('info', 'installed version seems to be a beta, switching update channel');
+      log('info', 'installed version seems to be a non-stable release, switching update channel');
       api.store.dispatch(setUpdateChannel(channelOverride));
       api.sendNotification({
         type: 'info',
@@ -151,6 +160,7 @@ function setupAutoUpdate(api: IExtensionApi) {
     const channel = channelOverride ?? api.getState().settings.update.channel;
 
     if ((channel === 'stable')
+      && (channelOverride === undefined)
       && ((version.major < installedVersion.major)
         || (version.minor < installedVersion.minor))) {
       log('info', 'installed version newer than the available update, check if this is a beta');
@@ -258,6 +268,15 @@ function setupAutoUpdate(api: IExtensionApi) {
     log('info', 'checking for vortex update');
     const didOverride = channelOverride !== undefined;
     autoUpdater.allowPrerelease = channel === 'beta';
+    if (channel === 'next') {
+      autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'Nexus-Mods',
+        repo: 'Vortex-Next',
+        private: false,
+        publisherName: ['Black Tree Gaming Limited'],
+      });
+    }
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
     autoUpdater.checkForUpdates()
