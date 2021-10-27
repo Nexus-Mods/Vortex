@@ -190,7 +190,7 @@
   branch = master
 [submodule "extensions/gamebryo-archive-check"]
 	path = extensions/gamebryo-archive-check
-	url = https://github.com/Pickysaurus/bethesda-archive-check
+	url = https://github.com/Nexus-Mods/bethesda-archive-check.git
 	branch = master
 [submodule "extensions/modtype-bepinex"]
 	path = extensions/modtype-bepinex
