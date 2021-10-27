@@ -20,7 +20,7 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public start(uuidV4) {
+  public start(uuidV4: string) {
     if (!this.user) {
       this.user = ua(UA_KEY, uuidV4);
     }
@@ -36,13 +36,8 @@ class Analytics {
   /**
    * generic event tracking function
    */
-  public trackEvent(category, action, label?, value?) {
-    // // tslint:disable-next-line: no-console
-    // console.log({
-    //   category,
-    //   action,
-    //   label,
-    // });
+  public trackEvent(category: string, action: string, label?: string, value?: number) {
+
     if (!this.isUserSet()) { 
       return; 
     }

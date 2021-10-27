@@ -588,10 +588,11 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<v
 function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Promise<void> {
   const state = api.getState();
   const game = getGame(gameId);
-
   const { mods, profiles } = state.persistent;
   const profileIds = Object.keys(profiles)
     .filter(profileId => profiles[profileId]?.gameId === gameId);
+
+  api.events.emit('analytics-track-event', 'Games', 'Stop managing', gameId);
 
   let message: string;
 
@@ -697,13 +698,15 @@ function init(context: IExtensionContext): boolean {
       const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
         ? manageGameDiscovered
         : manageGameUndiscovered;
+      
+      context.api.events.emit(
+        'analytics-track-event', 'Games', 'Start managing', gameId,
+      );
 
       checkOverridden(context.api, gameId)
         .then(() => {
           manageFunc(context.api, gameId);
-          this.context.api.events.emit(
-            'analytics-track-click-event', 'Games', 'Start managing game',
-          );
+          
         })
         .catch(err => {
           if (!(err instanceof UserCanceled)) {
@@ -717,12 +720,13 @@ function init(context: IExtensionContext): boolean {
   }, 'Manage', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
 
+    context.api.events.emit(
+      'analytics-track-event', 'Games', 'Start managing' , gameId,
+    );
+
     checkOverridden(context.api, gameId)
       .then(() => {
         manageGameUndiscovered(context.api, gameId);
-        this.context.api.events.emit(
-          'analytics-track-click-event', 'Games', 'Start managing game',
-        );
       })
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
@@ -735,12 +739,15 @@ function init(context: IExtensionContext): boolean {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
+
+    context.api.events.emit(
+      'analytics-track-event', 'Games', 'Activate' , gameId,
+    );
+
     checkOverridden(context.api, gameId)
       .then(() => {
         activateGame(context.api.store, gameId);
-        this.context.api.events.emit(
-          'analytics-track-click-event', 'Games', 'Activate game',
-        );
+        
       })
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
