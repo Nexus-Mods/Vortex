@@ -1,11 +1,13 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
-import Analytics from './Analytics';
-import { ClickEventsListeners, ClickStateListeners } from './analytics/events';
-import { NavigationEventListeners, NavigationStateListners } from './analytics/navigation';
-import { setAnalytics } from './reducers/analytics.action';
+import Analytics from './analytics/Analytics';
+import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
+import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
+import { setAnalytics } from './actions/analytics.action';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
+
+let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'analytics'], settingsReducer);
@@ -19,14 +21,16 @@ function init(context: IExtensionContext): boolean {
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ['settings', 'analytics', 'enabled'];
     context.api.onStateChange(analyticsSettings, (oldEnabled: boolean, newEnabled: boolean) => {
+      if (ignoreNextAnalyticsStateChange) {
+        ignoreNextAnalyticsStateChange = false;
+        return;
+      }
       if (newEnabled) {
         initializeAnalytics();
-        setTimeout(() => {
-          Analytics.trackClickEvent('Tracking', 'Allow - Settings');
-        }, 500);
+        Analytics.trackClickEvent('Tracking', 'Allow - Settings');
       } else {
         Analytics.trackClickEvent('Tracking', 'Deny - Settings');
-        Analytics.unsetUser();
+        Analytics.stop();
       }
     });
 
@@ -37,7 +41,7 @@ function init(context: IExtensionContext): boolean {
         showConsentDialog();
       } else if (!current) {
         // If I'm logging out disable tracking
-        Analytics.unsetUser();
+        Analytics.stop();
         context.api.store.dispatch(setAnalytics(undefined));
       }
     });
@@ -59,19 +63,25 @@ function init(context: IExtensionContext): boolean {
     });
 
     // All state listeners
-    const stateListners = [...NavigationStateListners, ...ClickStateListeners];
+    const stateListners = [
+      ...NAVIGATION_STATE_LISTENERS, 
+      ...EVENTS_STATE_LISTENERS
+    ];
     for (const stateListner of stateListners) {
       context.api.onStateChange(stateListner.path, stateListner.callback);
     }
 
     // All event listeners
-    const eventListners = [...NavigationEventListeners, ...ClickEventsListeners];
+    const eventListners = [
+      ...NAVIGATION_EVENT_LISTENERS, 
+      ...EVENTS_EVENT_LISTENERS
+    ];
     for (const eventListner of eventListners) {
       context.api.events.on(eventListner.event, eventListner.callback);
     }
 
     function initializeAnalytics() {
-      Analytics.setUser(instanceId);
+      Analytics.start(instanceId);
       Analytics.trackEvent('Vortex', 'Version', getApplication().version);
     }
 
@@ -91,10 +101,9 @@ function init(context: IExtensionContext): boolean {
         .then(result => {
           if (result.action === 'Allow') {
             initializeAnalytics();
+            Analytics.trackClickEvent('Tracking', 'Allow');
+            ignoreNextAnalyticsStateChange = true;
             context.api.store.dispatch(setAnalytics(true));
-            setTimeout(() => {
-              Analytics.trackClickEvent('Tracking', 'Allow');
-            }, 500);
           } else if (result.action === 'Deny') {
             context.api.store.dispatch(setAnalytics(false));
           }

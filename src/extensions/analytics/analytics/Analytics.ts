@@ -1,5 +1,8 @@
 import ua from 'universal-analytics';
 
+const UA_KEY = 'UA-3620483-23'
+const UA_PATH = 'https://VortexCollections.com'
+
 class Analytics {
   public user: ua.Visitor;
 
@@ -17,16 +20,16 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public setUser(uuidV4) {
+  public start(uuidV4) {
     if (!this.user) {
-      this.user = ua('UA-3620483-23', uuidV4);
+      this.user = ua(UA_KEY, uuidV4);
     }
   }
 
   /**
    * Disable tracking for not logged in user and/or opt-out user
    */
-  public unsetUser() {
+  public stop() {
     this.user = null;
   }
 
@@ -40,7 +43,9 @@ class Analytics {
     //   action,
     //   label,
     // });
-    if (!this.isUserSet()) { return; }
+    if (!this.isUserSet()) { 
+      return; 
+    }
     this.user.event({
       ec: category,
       ea: action,
@@ -63,7 +68,7 @@ class Analytics {
   public trackNavigation(path = 'Missing Path') {
     if (!this.isUserSet()) { return; }
     const newPath = `/${path.split(' ').join('-').toLowerCase()}`;
-    this.user.pageview(newPath, 'https://VortexCollections.com').send();
+    this.user.pageview(newPath, UA_PATH).send();
   }
 }
 

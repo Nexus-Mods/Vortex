@@ -4,7 +4,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Toggle } from '../../..';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { setAnalytics } from '../reducers/analytics.action';
+import { setAnalytics } from '../actions/analytics.action';
 
 interface IConnectedProps {
   analytics: boolean;
@@ -17,7 +17,7 @@ interface IActionProps {
 
 type IProps = IActionProps & IConnectedProps;
 
-class SettingsUpdate extends ComponentEx<IProps, {}> {
+class SettingsAnalytics extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, analytics, userInfo } = this.props;
     return (
@@ -33,7 +33,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           </Toggle>
           <HelpBlock>
             {t('This information is sent to our team entirely anonymously and only with your express consent')}
-            <a style={{ marginLeft: '4px' }} href='https://help.nexusmods.com/article/121-diagnostics-usage-data-vortex'>
+            <a style={{ marginLeft: '0.25rem' }} href='https://help.nexusmods.com/article/121-diagnostics-usage-data-vortex'>
               {t('More about the data we track.')}
             </a>
           </HelpBlock>
@@ -65,4 +65,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 export default
   translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
-      SettingsUpdate)) as React.ComponentClass<{}>;
+      SettingsAnalytics)) as React.ComponentClass<{}>;

@@ -1,8 +1,8 @@
 import { truthy } from '../../../util/util';
-import Analytics from '../Analytics';
-import { EventListners, StateListners } from '../types';
+import Analytics from './Analytics';
+import { EventListeners, StateListeners } from '../types';
 
-export const NavigationStateListners: StateListners = [
+export const NAVIGATION_STATE_LISTENERS: StateListeners = [
   {
     // Check for navigation in the main menu, EG: opening the settings
     // or externally triggered EG: opening the feedback page
@@ -38,7 +38,7 @@ export const NavigationStateListners: StateListners = [
   },
 ];
 
-export const NavigationEventListeners: EventListners = [
+export const NAVIGATION_EVENT_LISTENERS: EventListeners = [
   {
     // Check for modal opening
     event: 'show-modal',

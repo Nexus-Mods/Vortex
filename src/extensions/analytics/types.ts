@@ -1,2 +1,2 @@
-export type StateListners = { path: string[], callback: (previous, current) => void }[]
-export type EventListners = { event: string, callback: (event) => void }[]
+export type StateListeners = { path: string[], callback: (previous, current) => void }[]
+export type EventListeners = { event: string, callback: (event) => void }[]

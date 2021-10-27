@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setAnalytics } from './analytics.action';
+import { setAnalytics } from '../actions/analytics.action';
 
 import update from 'immutability-helper';
 

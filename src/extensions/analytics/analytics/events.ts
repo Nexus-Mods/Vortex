@@ -1,12 +1,12 @@
-import Analytics from '../Analytics';
-import { EventListners, StateListners } from '../types';
+import Analytics from './Analytics';
+import { EventListeners, StateListeners } from '../types';
 
-export const ClickStateListeners: StateListners = [
+export const EVENTS_STATE_LISTENERS: StateListeners = [
   {
     path: ['session', 'extensions', 'installed'],
     callback: (previous, current) => {
-      const previousCount = Object.keys(previous || []);
-      const currentCount = Object.keys(current || []);
+      const previousCount = Object.keys(previous || {}).length;
+      const currentCount = Object.keys(current || {}).length;
       if (previousCount < currentCount) {
         Analytics.trackClickEvent('Extensions', 'Install');
       }
@@ -24,32 +24,32 @@ export const ClickStateListeners: StateListners = [
     },
   },
   {
-    path: ['settings', 'interface', 'deploy'],
+    path: ['settings', 'automation', 'deploy'],
     callback: (_, current) => {
       Analytics.trackClickEvent('Settings', `Deploy Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
-    path: ['settings', 'interface', 'install'],
+    path: ['settings', 'automation', 'install'],
     callback: (_, current) => {
       Analytics.trackClickEvent('Settings', `Install Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
-    path: ['settings', 'interface', 'enable'],
+    path: ['settings', 'automation', 'enable'],
     callback: (_, current) => {
       Analytics.trackClickEvent('Settings', `Enable Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
-    path: ['settings', 'interface', 'start'],
+    path: ['settings', 'automation', 'start'],
     callback: (_, current) => {
       Analytics.trackClickEvent('Settings', `Run on startup ${current ? 'ON' : 'OFF'}`);
     },
   },
 ];
 
-export const ClickEventsListeners: EventListners = [
+export const EVENTS_EVENT_LISTENERS: EventListeners = [
   {
     event: 'activate-game',
     callback: () => {
