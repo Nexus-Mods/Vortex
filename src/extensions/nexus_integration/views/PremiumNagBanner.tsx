@@ -18,6 +18,7 @@ function PremiumNagBanner(props: IPremiumNagBanner) {
   const { t, campaign, onDownload } = props;
 
   const goGetPremium = React.useCallback(() => {
+    this.context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign,

@@ -520,6 +520,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (browseable !== undefined) {
       browseable.onBrowse();
     }
+    this.context.api.events.emit('analytics-track-click-event', 'Collections', 'Add mods - empty');
   }
 
   private calcVersion = (mod: IModWithState): string => {
