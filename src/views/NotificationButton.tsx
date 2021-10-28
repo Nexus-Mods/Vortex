@@ -216,6 +216,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       this.mRef?.show?.();
       this.nextState.filtered = this.props.notifications.slice();
     }
+    this.context.api.events.emit(
+      'analytics-track-click-event',
+      'Notifications',
+      `${this.state.open ? 'Close' : 'Open'} Notifications`,
+    );
     this.nextState.open = !this.state.open;
   }
 
@@ -323,6 +328,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private dismissAll = (notificationId: string) => {
     const { notifications, onDismiss } = this.props;
     const noti = notifications.find(iter => iter.id === notificationId);
+    this.context.api.events.emit('analytics-track-click-event', 'Notifications', 'Dismiss');
     if (noti === undefined) {
       return;
     }

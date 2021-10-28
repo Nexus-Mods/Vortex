@@ -2251,6 +2251,7 @@ class ExtensionManager {
       'file_preview',
       'tool_variables_base',
       'history_management',
+      'analytics',
     ];
 
     require('./extensionRequire').default(() => this.extensions);

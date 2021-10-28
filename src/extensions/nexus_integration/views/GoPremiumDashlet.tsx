@@ -26,6 +26,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   }
 
   private goBuyPremium = () => {
+    this.context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Dashlet');
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.DashboardAd }))

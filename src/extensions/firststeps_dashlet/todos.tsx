@@ -87,6 +87,7 @@ function todos(api: IExtensionApi): IToDo[] {
       value: (t: TFunction, props: any) => winapi.GetVolumePathName(props.dlPath),
       action: () => {
         openSettingsPage('Download');
+        api.events.emit('analytics-track-click-event', 'Dashboard', 'Download drive');
         api.highlightControl('#settings-tab-pane-Download #download-path-form', 5000,
           api.translate('You can change the download location here'));
       },
@@ -111,6 +112,7 @@ function todos(api: IExtensionApi): IToDo[] {
       },
       action: () => {
         openSettingsPage('Mods');
+        api.events.emit('analytics-track-click-event', 'Dashboard', 'Staged drive');
         api.highlightControl('#settings-tab-pane-Mods #install-path-form', 5000,
           api.translate('You can change the mod staging location here'));
       },

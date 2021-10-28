@@ -237,6 +237,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
+    this.context.api.events.emit('analytics-track-click-event', 'Header', 'Play game');
     StarterInfo.run(starter, this.context.api, onShowError);
   }
 

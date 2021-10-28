@@ -418,7 +418,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
   private addNewTool = () => {
     const { gameMode, discoveredGames, knownGames } = this.props;
-
     const game: IGameStored = knownGames.find(ele => ele.id === gameMode);
     const empty = new StarterInfo(game, discoveredGames[gameMode], undefined, {
       id: shortid(),
@@ -433,6 +432,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       shell: false,
     });
     this.nextState.editTool = empty;
+
+    this.context.api.events.emit('analytics-track-click-event', 'Dashboard', 'Add tool');
   }
 
   private editTool = (starter: StarterInfo) => {

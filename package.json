@@ -35,6 +35,7 @@
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
+    "buildext": " node ./tools/buildScripts/buildSingleExtension.js",
     "forge_package": "electron-forge package",
     "forge_start": "electron-forge start",
     "forge_make": "electron-forge make"
@@ -143,6 +144,7 @@
     "@types/semver": "^6.2.0",
     "@types/shortid": "^0.0.29",
     "@types/tmp": "^0.1.0",
+    "@types/universal-analytics": "^0.4.5",
     "@types/uuid": "^3.4.6",
     "@types/webpack": "^4.41.0",
     "@types/winreg": "^1.2.30",
@@ -279,6 +281,7 @@
     "string-template": "^1.0.0",
     "tmp": "^0.1.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
+    "universal-analytics": "^0.4.23",
     "uuid": "^3.3.3",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:src/util/vortex-run",

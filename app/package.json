@@ -94,6 +94,7 @@
     "string-template": "^1.0.0",
     "tmp": "^0.1.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
+    "universal-analytics": "^0.4.23",
     "uuid": "^3.3.3",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:../src/util/vortex-run",

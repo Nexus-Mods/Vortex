@@ -289,6 +289,9 @@ function installGameExtenstion(api: IExtensionApi,
         if (result.action === 'Install') {
           return api.emitAndAwait('install-extension', dlInfo);
         } else if (result.action === 'Stop managing') {
+          this.context.api.events.emit(
+            'analytics-track-click-event', 'Games', 'Stop managing game',
+          );
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
           return Promise.resolve(false);
