@@ -107,7 +107,7 @@ function startDownloadCollection(api: IExtensionApi,
           },
           revisionInfo,
         },
-      }, (revisionInfo as any).file_name, cb, undefined, false))
+      }, (revisionInfo as any).file_name, cb, undefined, { allowInstall: false }))
       .catch(err => Promise.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId))
