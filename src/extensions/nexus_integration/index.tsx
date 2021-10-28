@@ -1083,14 +1083,15 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 }
 
 function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
-  const trackAndGoToPremium = (e) => {
-    this.context.api.events.emit(
-      'analytics-track-click-event',
-      'Go Premium',
-      'Header');
-    goBuyPremium(e);
-  };
   return () => {
+    const context = React.useContext<IComponentContext>(MainContext);
+    const trackAndGoToPremium = (e) => {
+      context.api.events.emit(
+        'analytics-track-click-event',
+        'Go Premium',
+        'Header');
+      goBuyPremium(e);
+    };
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
         <div>{t('Go Premium')}</div>

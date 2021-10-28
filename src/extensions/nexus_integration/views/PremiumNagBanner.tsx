@@ -4,8 +4,10 @@ import { Button } from 'react-bootstrap';
 
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
+import { IComponentContext } from '../../../types/IComponentContext';
 import opn from '../../../util/opn';
 import { Campaign, nexusModsURL, Section } from '../../../util/util';
+import { MainContext } from '../../../views/MainWindow';
 import { PREMIUM_PATH } from '../constants';
 
 export interface IPremiumNagBanner {
@@ -17,8 +19,10 @@ export interface IPremiumNagBanner {
 function PremiumNagBanner(props: IPremiumNagBanner) {
   const { t, campaign, onDownload } = props;
 
+  const context = React.useContext<IComponentContext>(MainContext);
+
   const goGetPremium = React.useCallback(() => {
-    this.context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
+    context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign,

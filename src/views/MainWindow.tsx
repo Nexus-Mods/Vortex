@@ -94,7 +94,11 @@ export interface IActionProps {
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
 
-export const MainContext = React.createContext({});
+export const MainContext = React.createContext<IComponentContext>({
+  api: undefined,
+  getModifiers: undefined,
+  menuLayer: undefined,
+});
 
 export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
