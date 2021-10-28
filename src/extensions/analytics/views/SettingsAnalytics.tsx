@@ -5,6 +5,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Toggle } from '../../..';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setAnalytics } from '../actions/analytics.action';
+import { HELP_ARTICLE } from '../constants';
 
 interface IConnectedProps {
   analytics: boolean;
@@ -33,7 +34,7 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
           </Toggle>
           <HelpBlock>
             {t('This information is sent to our team entirely anonymously and only with your express consent')}
-            <a style={{ marginLeft: '0.25rem' }} href='https://help.nexusmods.com/article/121-diagnostics-usage-data-vortex'>
+            <a style={{ marginLeft: '0.25rem' }} href={HELP_ARTICLE}>
               {t('More about the data we track.')}
             </a>
           </HelpBlock>

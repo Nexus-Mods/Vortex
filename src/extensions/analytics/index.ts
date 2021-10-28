@@ -1,9 +1,10 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
+import { setAnalytics } from './actions/analytics.action';
 import Analytics from './analytics/Analytics';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
-import { setAnalytics } from './actions/analytics.action';
+import { HELP_ARTICLE } from './constants';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
 
@@ -64,8 +65,8 @@ function init(context: IExtensionContext): boolean {
 
     // All state listeners
     const stateListners = [
-      ...NAVIGATION_STATE_LISTENERS, 
-      ...EVENTS_STATE_LISTENERS
+      ...NAVIGATION_STATE_LISTENERS,
+      ...EVENTS_STATE_LISTENERS,
     ];
     for (const stateListner of stateListners) {
       context.api.onStateChange(stateListner.path, stateListner.callback);
@@ -73,8 +74,8 @@ function init(context: IExtensionContext): boolean {
 
     // All event listeners
     const eventListners = [
-      ...NAVIGATION_EVENT_LISTENERS, 
-      ...EVENTS_EVENT_LISTENERS
+      ...NAVIGATION_EVENT_LISTENERS,
+      ...EVENTS_EVENT_LISTENERS,
     ];
     for (const eventListner of eventListners) {
       context.api.events.on(eventListner.event, eventListner.callback);
@@ -91,7 +92,7 @@ function init(context: IExtensionContext): boolean {
           bbcode:
             `Help us provide you with the best modding experience possible![br][/br]
           With your permission, Vortex can automatically collect analytics information and send it to our team to help us improve quality and performance.[br][/br]
-          This information is sent to our team entirely anonymously and only with your express consent. [url=https://help.nexusmods.com/article/121-diagnostics-usage-data-vortex]More about the data we track.[/url]`,
+          This information is sent to our team entirely anonymously and only with your express consent. [url=${HELP_ARTICLE}]More about the data we track.[/url]`,
         },
         [
           { label: 'Deny' },

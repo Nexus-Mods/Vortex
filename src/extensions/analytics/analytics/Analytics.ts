@@ -1,7 +1,7 @@
 import ua from 'universal-analytics';
 
-const UA_KEY = 'UA-3620483-23'
-const UA_PATH = 'https://VortexCollections.com'
+const UA_KEY = 'UA-3620483-23';
+const UA_PATH = 'https://VortexCollections.com';
 
 class Analytics {
   public user: ua.Visitor;
@@ -38,8 +38,8 @@ class Analytics {
    */
   public trackEvent(category: string, action: string, label?: string, value?: number) {
 
-    if (!this.isUserSet()) { 
-      return; 
+    if (!this.isUserSet()) {
+      return;
     }
     this.user.event({
       ec: category,
