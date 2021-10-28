@@ -70,14 +70,11 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
-  let channelOverride: UpdateChannel =
-    UPDATE_CHANNELS.includes(process.env['FORCE_UPDATE_CHANNEL'] as any)
-    ? process.env['FORCE_UPDATE_CHANNEL'] as UpdateChannel
-    : undefined;
+  let channelOverride: UpdateChannel;
+  if (process.env['FORCE_UPDATE_CHANNEL'] !== undefined) {
+    log('info', 'update channel enforced', process.env['FORCE_UPDATE_CHANNEL']);
+    api.store.dispatch(setUpdateChannel(process.env['FORCE_UPDATE_CHANNEL']));
 
-  if (channelOverride !== undefined) {
-    log('info', 'channel override active', channelOverride);
-    api.store.dispatch(setUpdateChannel(channelOverride));
   }
 
   const queryUpdate = (version: string): Promise<void> => {
@@ -267,16 +264,14 @@ function setupAutoUpdate(api: IExtensionApi) {
     }
     log('info', 'checking for vortex update');
     const didOverride = channelOverride !== undefined;
-    autoUpdater.allowPrerelease = channel === 'beta';
-    if (channel === 'next') {
-      autoUpdater.setFeedURL({
-        provider: 'github',
-        owner: 'Nexus-Mods',
-        repo: 'Vortex-Next',
-        private: false,
-        publisherName: ['Black Tree Gaming Limited'],
-      });
-    }
+    autoUpdater.allowPrerelease = channel !== 'stable';
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'Nexus-Mods',
+      repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
+      private: false,
+      publisherName: ['Black Tree Gaming Limited'],
+    });
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
     autoUpdater.checkForUpdates()
