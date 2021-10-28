@@ -1573,7 +1573,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
     const trackAndGoToPremium = (e) => {
-      this.context.api.events.emit(
+      context.api.events.emit(
         'analytics-track-click-event',
         'Go Premium',
         'Downloads');
