@@ -78,6 +78,8 @@ import { Button } from 'react-bootstrap';
 import { Action } from 'redux';
 import {} from 'uuid';
 import WebSocket from 'ws';
+import { IComponentContext } from '../../types/IComponentContext';
+import { MainContext } from '../../views/MainWindow';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
