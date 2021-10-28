@@ -93,7 +93,7 @@ export class DownloadObserver {
                   this.handleResumeDownload(downloadId, callback, options));
     events.on('start-download',
               (urls, modInfo, fileName?, callback?, redownload?, options?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, events, callback,
+                  this.handleStartDownload(urls, modInfo, fileName, callback,
                                            redownload, options));
     // this is a bit of a hack that lets callers intercept a queued download that was not started
     // yet (e.g. it may be waiting to ensure the download dir exists)
@@ -191,7 +191,6 @@ export class DownloadObserver {
   private handleStartDownload(urls: string[],
                               modInfo: any,
                               fileName: string,
-                              events: NodeJS.EventEmitter,
                               callback?: (error: Error, id?: string) => void,
                               redownload?: RedownloadMode,
                               options?: IStartDownloadOptions) {

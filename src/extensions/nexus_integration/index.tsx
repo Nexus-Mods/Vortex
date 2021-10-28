@@ -1022,7 +1022,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
        ),
        requestLog);
 
-    nexus['setLogger']?.((level: LogLevel, message: string, meta: any) =>
+    nexus.setLogger((level: LogLevel, message: string, meta: any) =>
       log(level, message, meta));
 
     updateKey(api, nexus, apiKey);

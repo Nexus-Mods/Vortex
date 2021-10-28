@@ -47,6 +47,8 @@ const nativeLibs = [
   'native-errors',
   'permissions',
   'vortexmt',
+  'winapi-bindings',
+  'icon-extract',
   'windump',
 ];
 
@@ -106,11 +108,14 @@ function makeRebuildFunc(orig) {
     log('info', 'rebuilding ', { moduleName, process: process.type });
 
     const gypArgs: string[] = [
+      /*
       'rebuild',
       '--target=' + (process.versions as any).electron,
       '--arch=' + process.arch,
       `--dist-url=${headerURL}`,
       '--build-from-source',
+      */
+     'install',
     ];
     const spawnOptions: SpawnSyncOptions = {
       cwd: modulePath,
@@ -126,20 +131,26 @@ function makeRebuildFunc(orig) {
       },
     };
 
-    let nodeGyp = path.join(nodeModules, '.bin', 'node-gyp');
+    // let nodeGyp = path.join(nodeModules, '.bin', 'node-gyp');
+    let nodeGyp = 'yarn';
     if (process.platform === 'win32') {
       nodeGyp = nodeGyp + '.cmd';
     }
 
     const proc = spawnSync(nodeGyp, gypArgs, spawnOptions);
+    log('info', 'stdout', proc.stdout);
+    log('error', 'stderr', proc.stderr);
+
     if (proc.error) {
-      log('info', 'stdout', proc.stdout);
-      log('error', 'stderr', proc.stderr);
       throw proc.error;
     }
 
     if (nodeFile === undefined) {
-      nodeFile = fs.readdirSync(buildPath).find(fileName => fileName.endsWith('.node'));
+      try {
+        nodeFile = fs.readdirSync(buildPath).find(fileName => fileName.endsWith('.node'));
+      } catch (err) {
+        log('warn', 'not found', { buildPath });
+      }
     }
     if (nodeFile === undefined) {
       return false;
