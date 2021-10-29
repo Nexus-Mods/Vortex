@@ -387,7 +387,7 @@ function processInstallError(api: IExtensionApi,
 }
 
 function postImport(api: IExtensionApi, destination: string,
-                    fileSize: number): Promise<string> {
+                    fileSize: number, silent: boolean): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
@@ -403,25 +403,27 @@ function postImport(api: IExtensionApi, destination: string,
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-downloads', [dlId]);
 
-      api.sendNotification({
-        id: `ready-to-install-${dlId}`,
-        type: 'success',
-        title: 'File imported',
-        group: 'download-finished',
-        message: fileName,
-        actions: [
-          {
-            title: 'Install All', action: dismiss => {
-              api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
-                if (err) {
-                  processInstallError(api, err, dlId, fileName);
-                }
-              });
-              dismiss();
+      if (!silent) {
+        api.sendNotification({
+          id: `ready-to-install-${dlId}`,
+          type: 'success',
+          title: 'File imported',
+          group: 'download-finished',
+          message: fileName,
+          actions: [
+            {
+              title: 'Install All', action: dismiss => {
+                api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
+                  if (err) {
+                    processInstallError(api, err, dlId, fileName);
+                  }
+                });
+                dismiss();
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      }
 
       return dlId;
     })
@@ -432,8 +434,10 @@ function postImport(api: IExtensionApi, destination: string,
     });
 }
 
-function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
-  const notiId = api.sendNotification({
+function move(api: IExtensionApi,
+              source: string, destination: string,
+              silent: boolean): Promise<string> {
+  const notiId = silent ? undefined : api.sendNotification({
     type: 'activity',
     title: 'Importing file',
     message: path.basename(destination),
@@ -450,21 +454,25 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       return stats !== undefined ? queryReplace(api, destination) : null;
     })
     .then(() => fs.copyAsync(source, destination))
-    .then(() => postImport(api, destination, fileSize))
+    .then(() => postImport(api, destination, fileSize, silent))
     .catch(err => {
       log('info', 'failed to copy', {error: err.message});
       return undefined;
     })
     .finally(() => {
-      api.dismissNotification(notiId);
+      if (notiId !== undefined) {
+        api.dismissNotification(notiId);
+      }
       addLocalInProgress.delete(fileName);
     });
 }
 
-function importDirectory(api: IExtensionApi, source: string, destination: string) {
+function importDirectory(api: IExtensionApi,
+                         source: string, destination: string,
+                         silent: boolean) {
   const zipper = new Zip();
 
-  const notiId = api.sendNotification({
+  const notiId = silent ? undefined : api.sendNotification({
     type: 'activity',
     title: 'Importing file',
     message: path.basename(destination),
@@ -476,19 +484,21 @@ function importDirectory(api: IExtensionApi, source: string, destination: string
   return fs.readdirAsync(source)
     .then(files => zipper.add(destination, files.map(name => path.join(source, name))))
     .then(() => fs.statAsync(destination))
-    .then((stat: fs.Stats) => postImport(api, destination, stat.size))
+    .then((stat: fs.Stats) => postImport(api, destination, stat.size, silent))
     .catch(err => {
       log('info', 'failed to copy', {error: err.message});
       return undefined;
     })
     .finally(() => {
-      api.dismissNotification(notiId);
+      if (notiId !== undefined) {
+        api.dismissNotification(notiId);
+      }
       addLocalInProgress.delete(fileName);
     });
 }
 
 function genImportDownloadsHandler(api: IExtensionApi) {
-  return (downloadPaths: string[], cb?: (dlIds: string[]) => void) => {
+  return (downloadPaths: string[], cb?: (dlIds: string[]) => void, silent?: boolean) => {
     const state = api.getState();
     const gameMode = selectors.activeGameId(state);
 
@@ -501,13 +511,14 @@ function genImportDownloadsHandler(api: IExtensionApi) {
     const downloadPath = selectors.downloadPathForGame(state, gameMode);
     Promise.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
-      const destination = path.join(downloadPath, fileName) + '.7z';
+      let destination = path.join(downloadPath, fileName);
       return fs.statAsync(dlPath)
         .then((stats: fs.Stats) => {
           if (stats.isDirectory()) {
-            return importDirectory(api, dlPath, destination);
+            destination += '.7z';
+            return importDirectory(api, dlPath, destination, silent ?? false);
           } else {
-            return move(api, dlPath, destination);
+            return move(api, dlPath, destination, silent ?? false);
           }
         })
         .tap((dlId: string) => {

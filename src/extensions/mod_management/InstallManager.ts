@@ -1818,7 +1818,7 @@ class InstallManager {
                   } else {
                     resolve();
                   }
-              });
+              }, true);
             }));
         } else {
           dlPromise = (dep.lookupResults[0]?.value?.sourceURI ?? '') === ''
