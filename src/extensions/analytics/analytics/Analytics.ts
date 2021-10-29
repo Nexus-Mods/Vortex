@@ -71,15 +71,15 @@ class Analytics {
 const ANALYTICS_KEYS = {
   stable: {
     key: 'UA-3620483-22',
-    path: 'https://VortexRelease.com'
+    path: 'http://VortexRelease.com'
   },
   beta: {
-    key: '',
-    path: ''
+    key: 'UA-3620483-24',
+    path: 'http://vortexbeta.com'
   },
   next: {
     key: 'UA-3620483-23',
-    path: 'https://VortexCollections.com'
+    path: 'http://VortexCollections.com'
   },
 }
 
