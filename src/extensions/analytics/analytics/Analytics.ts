@@ -21,7 +21,7 @@ class Analytics {
    * Sets and Initializes the Universal Analytics tracking
    */
   public start(uuidV4: string, updateChannel: string) {
-    const keys = ANALYTICS_KEYS[updateChannel]
+    const keys = ANALYTICS_KEYS[updateChannel] ?? ANALYTICS_KEYS.stable
     if (!this.user && keys) {
       this.user = ua(UA_KEY, uuidV4);
     }
