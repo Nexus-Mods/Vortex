@@ -1,7 +1,7 @@
 import ua from 'universal-analytics';
 
 const UA_KEY = 'UA-3620483-23';
-const UA_PATH = 'https://VortexCollections.com';
+const UA_PATH = '';
 
 class Analytics {
   public user: ua.Visitor;
@@ -20,8 +20,9 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public start(uuidV4: string) {
-    if (!this.user) {
+  public start(uuidV4: string, updateChannel: string) {
+    const keys = ANALYTICS_KEYS[updateChannel]
+    if (!this.user && keys) {
       this.user = ua(UA_KEY, uuidV4);
     }
   }
@@ -65,6 +66,21 @@ class Analytics {
     const newPath = `/${path.split(' ').join('-').toLowerCase()}`;
     this.user.pageview(newPath, UA_PATH).send();
   }
+}
+
+const ANALYTICS_KEYS = {
+  stable: {
+    key: 'UA-3620483-22',
+    path: 'https://VortexRelease.com'
+  },
+  beta: {
+    key: '',
+    path: ''
+  },
+  next: {
+    key: 'UA-3620483-23',
+    path: 'https://VortexCollections.com'
+  },
 }
 
 const analytics = new Analytics();
