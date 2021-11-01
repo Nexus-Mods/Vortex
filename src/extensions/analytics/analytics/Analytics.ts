@@ -61,7 +61,7 @@ class Analytics {
    */
   public trackNavigation(path = 'Missing Path') {
     if (!this.isUserSet()) { return; }
-    const newPath = `/${path.split(' ').join('-').toLowerCase()}`;
+    const newPath = `/${path.replace(/\s+/g,' ').replace(/[^a-zA-Z0-9 /-]/g, "").replaceAll(' ', '-').toLocaleLowerCase()}`;
     this.user.pageview(newPath, this.key.path).send();
   }
 }
