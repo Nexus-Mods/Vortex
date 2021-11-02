@@ -16,6 +16,7 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const instanceId = context.api.store.getState().app.instanceId;
+    const updateChannel = context.api.store.getState().settings.update.channel;
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const userInfo = () => context.api.store.getState().persistent.nexus.userInfo;
 
@@ -82,7 +83,7 @@ function init(context: IExtensionContext): boolean {
     }
 
     function initializeAnalytics() {
-      Analytics.start(instanceId);
+      Analytics.start(instanceId, updateChannel);
       Analytics.trackEvent('Vortex', 'Version', getApplication().version);
     }
 

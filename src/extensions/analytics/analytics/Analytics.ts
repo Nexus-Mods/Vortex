@@ -1,10 +1,8 @@
 import ua from 'universal-analytics';
 
-const UA_KEY = 'UA-3620483-23';
-const UA_PATH = 'https://VortexCollections.com';
-
 class Analytics {
   public user: ua.Visitor;
+  public key: { key: string, path: string }
 
   constructor() {
     // Not used right now
@@ -20,9 +18,10 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public start(uuidV4: string) {
-    if (!this.user) {
-      this.user = ua(UA_KEY, uuidV4);
+  public start(uuidV4: string, updateChannel: string) {
+    this.key = ANALYTICS_KEYS[updateChannel] ?? ANALYTICS_KEYS.stable
+    if (!this.user && this.key) {
+      this.user = ua(this.key.key, uuidV4);
     }
   }
 
@@ -47,7 +46,7 @@ class Analytics {
       el: label,
       ev: value,
     })
-    .send();
+      .send();
   }
 
   /**
@@ -62,9 +61,24 @@ class Analytics {
    */
   public trackNavigation(path = 'Missing Path') {
     if (!this.isUserSet()) { return; }
-    const newPath = `/${path.split(' ').join('-').toLowerCase()}`;
-    this.user.pageview(newPath, UA_PATH).send();
+    const newPath = `/${path.replace(/\s+/g,' ').replace(/[^a-zA-Z0-9 /-]/g, "").replaceAll(' ', '-').toLocaleLowerCase()}`;
+    this.user.pageview(newPath, this.key.path).send();
   }
+}
+
+const ANALYTICS_KEYS = {
+  stable: {
+    key: 'UA-3620483-22',
+    path: 'http://VortexRelease.com'
+  },
+  beta: {
+    key: 'UA-3620483-24',
+    path: 'http://vortexbeta.com'
+  },
+  next: {
+    key: 'UA-3620483-23',
+    path: 'http://VortexCollections.com'
+  },
 }
 
 const analytics = new Analytics();
