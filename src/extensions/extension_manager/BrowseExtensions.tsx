@@ -228,7 +228,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       return true;
     }
 
-    return semver.satisfies(version(), ext.dependencies['vortex']);
+    return semver.satisfies(version(), ext.dependencies['vortex'], { includePrerelease: true });
   }
 
   private isInstalled(ext: IAvailableExtension): boolean {
