@@ -13,7 +13,7 @@ import { truthy } from '../util/util';
 import { closeAllViews } from '../util/webview';
 
 import Promise from 'bluebird';
-import { ipcMain, screen } from 'electron';
+import { ipcMain, screen, webContents } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { pathToFileURL } from 'url';
@@ -202,6 +202,13 @@ class MainWindow {
           resolve(this.mWindow.webContents);
           resolve = undefined;
         }
+      });
+      ipcMain.on('webview-dom-ready', (evt, id) => {
+        const contents = webContents.fromId(id);
+        contents.setWindowOpenHandler(({ url, disposition }) => {
+          evt.sender.send('webview-open-url', id, url, disposition);
+          return { action: 'deny' };
+        });
       });
     });
   }

@@ -237,6 +237,13 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
     this.mNode.addEventListener('did-start-loading', this.startLoad);
     this.mNode.addEventListener('did-stop-loading', this.stopLoad);
     this.mNode.addEventListener('dom-ready', () => {
+      const id = this.mNode['getWebContentsId']();
+      ipcRenderer.send('webview-dom-ready', id);
+      ipcRenderer.on('webview-open-url', (_, idInner, url, disposition) => {
+        if (id === idInner) {
+          this.props.onNewWindow(url, disposition);
+        }
+      });
       // TODO as of electron 15.1.1 (since 14.?.?), webview doesn't support transparent
       //   background, so it won't properly embed in the page. This at least makes the
       //   pages readable
@@ -245,7 +252,7 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
       // (this.mNode as any).openDevTools();
     });
     this.mNode.addEventListener('console-message', this.logMessage);
-    this.mNode.addEventListener('new-window', this.newWindow);
+    // this.mNode.addEventListener('new-window', this.newWindow);
     this.mNode.addEventListener('enter-html-full-screen', this.enterFullscreen);
     this.mNode.addEventListener('leave-html-full-screen', this.leaveFullscreen);
   }
@@ -254,13 +261,16 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
     this.mNode.removeEventListener('did-start-loading', this.startLoad);
     this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
     this.mNode.removeEventListener('console-message', this.logMessage);
-    this.mNode.removeEventListener('new-window', this.newWindow);
+    // this.mNode.removeEventListener('new-window', this.newWindow);
     this.mNode.removeEventListener('enter-html-full-screen', this.enterFullscreen);
     this.mNode.removeEventListener('leave-html-full-screen', this.leaveFullscreen);
   }
 
   public render(): JSX.Element {
-    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen']));
+    return React.createElement('webview', {
+      ...omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen', 'events']),
+      allowpopups: 'true',
+    });
   }
 
   public loadURL(newUrl: string) {

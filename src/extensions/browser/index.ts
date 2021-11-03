@@ -49,7 +49,7 @@ function init(context: IExtensionContext): boolean {
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
     onNavigate: (navUrl: string) => { lastURL = navUrl; },
-    overlay: true,
+    overlay: false,
   }));
 
   context.once(() => {
