@@ -541,6 +541,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                              dataPath: string,
                              key: string,
                              restoreBackup: boolean): Promise<void> {
+    if (this.mContext.previousDeployment[key] === undefined) {
+      return Promise.reject(new Error(`failed to remove "${key}"`));
+    }
     const outputPath = path.join(dataPath,
       this.mContext.previousDeployment[key].target || '',
       this.mContext.previousDeployment[key].relPath);
