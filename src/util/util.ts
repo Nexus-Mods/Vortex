@@ -287,7 +287,7 @@ const PROP_BLACKLIST = ['constructor',
   '__proto__',
   'toLocaleString' ];
 
-export function getAllPropertyNames(obj: object) {
+export function getAllPropertyNames(obj: object): string[] {
   let props: string[] = [];
 
   while (obj !== null) {

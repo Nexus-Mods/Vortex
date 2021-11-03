@@ -423,7 +423,7 @@ function gatherDependencies(
 
         const profile = lastActiveProfileForGame(state, gameMode);
         // mod installed, but is it enabled?
-        return !state.persistent.profiles[profile].modState[mod.id]?.enabled;
+        return !state.persistent.profiles[profile].modState?.[mod.id]?.enabled;
       });
 
   let numCompleted = 0;

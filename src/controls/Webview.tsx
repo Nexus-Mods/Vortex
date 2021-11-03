@@ -78,7 +78,7 @@ function BrowserView(props: IBrowserViewProps) {
   React.useEffect(() => {
     let wasVisible: boolean = true;
     const overlapTest = setInterval(() => {
-      if (bounds.current !== null) {
+      if (truthy(bounds.current)) {
         // janky way of estimating a position that would be overlapped
         const x = bounds.current.x + bounds.current.width / 2;
         const y1 = bounds.current.y + (bounds.current.height * 0.33);

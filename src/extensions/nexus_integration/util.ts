@@ -167,7 +167,7 @@ export function getCollectionInfo(nexus: Nexus,
       total: true,
     },
   };
-  return Promise.resolve(collectionSlug !== undefined
+  return Promise.resolve((collectionSlug !== undefined)
       ? nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber)
       : nexus.getRevisionGraph(query, revisionId))
     .then(revision => ({ revisionInfo: revision }));
