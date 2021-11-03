@@ -10,7 +10,7 @@ import Debouncer from '../util/Debouncer';
 import Notification from './Notification';
 
 import * as React from 'react';
-import { Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Badge, Button, Overlay, Popover } from 'react-bootstrap';
 
 export interface IBaseProps {
   id: string;
@@ -36,7 +36,7 @@ interface IComponentState {
 }
 
 class NotificationButton extends ComponentEx<IProps, IComponentState> {
-  private mRef: any = null;
+  private mButtonRef = React.createRef<Button>();
   private mUpdateTimer: NodeJS.Timeout = undefined;
   private mUpdateDebouncer: Debouncer;
   private mMounted: boolean = false;
@@ -97,9 +97,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       </Popover>
     );
 
-    // TODO: current typings don't expose "shouldUpdatePosition" but it's there
-    const MyOverlayTrigger: any = OverlayTrigger;
-
     const combinedProgress: IBar[] = [];
 
     const progress = notifications.filter(iter => iter.progress !== undefined);
@@ -114,15 +111,8 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <MyOverlayTrigger
-        ref={this.setRef}
-        overlay={popover}
-        trigger='click'
-        placement='bottom'
-        shouldUpdatePosition={true}
-        onExit={this.unExpand}
-      >
-        <Button id='notifications-button' onClick={this.toggle}>
+      <div style={{ display: 'inline-block' }}>
+        <Button id='notifications-button' onClick={this.toggle} ref={this.mButtonRef}>
           <Icon name='notifications' />
           <RadialProgress
             className='notifications-progress'
@@ -132,7 +122,18 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           />
           {notifications.length === 0 ? null : <Badge>{notifications.length}</Badge>}
         </Button>
-      </MyOverlayTrigger>
+
+        <Overlay
+          placement='bottom'
+          rootClose={false}
+          onExit={this.unExpand}
+          show={items.length > 0}
+          target={this.mButtonRef.current}
+          shouldUpdatePosition={true}
+        >
+          {popover}
+        </Overlay>
+      </div>
     );
   }
 
@@ -192,7 +193,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     if (!open) {
       if (filtered.length > 0) {
-        this.mRef?.show();
         if (this.mUpdateTimer !== undefined) {
           // should never happen
           clearTimeout(this.mUpdateTimer);
@@ -202,26 +202,21 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           // (adding 100ms for good measure)
           this.mUpdateTimer = setTimeout(this.triggerFilter, (nextTimeout - now) + 100);
         }
-      } else {
-        this.mRef?.hide();
       }
-    } else {
-      // if open, make sure it gets displayed, just to be sure
-      this.mRef?.show();
     }
   }
 
-  private toggle = () => {
-    if (!this.state.open) {
-      this.mRef?.show?.();
-      this.nextState.filtered = this.props.notifications.slice();
-    }
+  private toggle = (evt: React.MouseEvent<any>) => {
+    evt.preventDefault();
     this.context.api.events.emit(
       'analytics-track-click-event',
       'Notifications',
       `${this.state.open ? 'Close' : 'Open'} Notifications`,
     );
     this.nextState.open = !this.state.open;
+    setTimeout(() => {
+      this.mUpdateDebouncer.runNow(() => null);
+    }, 0);
   }
 
   private groupNotifications = (previous: INotification[],
@@ -245,17 +240,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   private unExpand = () => {
     this.nextState.expand = undefined;
-  }
-
-  private setRef = ref => {
-    this.mRef = ref;
-    if (ref !== null) {
-      if (this.props.notifications.length > 0) {
-        this.mRef.show();
-      } else {
-        this.mRef.hide();
-      }
-    }
   }
 
   private inverseSort(lhs: INotification, rhs: INotification) {
