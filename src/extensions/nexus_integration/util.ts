@@ -1,6 +1,6 @@
 import Nexus, {
   EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-  IRevision, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
+  IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, ipcRenderer } from 'electron';
@@ -137,7 +137,7 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
 export function getCollectionInfo(nexus: Nexus,
                                   collectionSlug: string, revisionNumber: number,
                                   revisionId: number): Promise<IRemoteInfo> {
-  const query = {
+  const query: IRevisionQuery = {
     adultContent: true,
     collection: {
       category: {
@@ -153,6 +153,7 @@ export function getCollectionInfo(nexus: Nexus,
       description: true,
       user: {
         name: true,
+        memberId: true,
       },
       tileImage: {
         url: true,
