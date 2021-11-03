@@ -32,6 +32,7 @@ import TableDateTimeFilter from './table/DateTimeFilter';
 import TableNumericFilter from './table/NumericFilter';
 import OptionsFilter from './table/OptionsFilter';
 import TableTextFilter from './table/TextFilter';
+import Timer from './Timer';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
@@ -47,6 +48,6 @@ export {
   Image, ITableRowAction, makeGetSelection, Modal,
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   RadialProgress, SelectUpDown, Spinner, Steps,
-  Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, TriStateCheckbox,
-  Toggle, ToolbarIcon, tooltip, Usage, Webview, ZoomableImage
+  Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, Timer, TriStateCheckbox,
+  Toggle, ToolbarIcon, tooltip, Usage, Webview, ZoomableImage,
 };
