@@ -12,6 +12,9 @@ const revisionInfo: IRevisionQuery = {
     average: true,
     total: true,
   },
+  metadata: {
+    ratingValue: true,
+  },
   status: true,
   modFiles: {
     file: {
@@ -45,7 +48,7 @@ const revisionInfo: IRevisionQuery = {
       },
     },
   },
-};
+} as any;
 
 export const FULL_COLLECTION_INFO: ICollectionQuery = {
   id: true,

@@ -407,9 +407,8 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
 
 export function onRateRevision(api: IExtensionApi, nexus: Nexus)
     : (revisionId: number, rating: number) => Promise<boolean> {
-  return (revisionId: number, rating: number): Promise<boolean> => {
+  return (revisionId: number, rating: any): Promise<boolean> => {
     return Promise.resolve(nexus.rateRevision(revisionId, rating))
-      .then(() => true)
       .catch(err => {
         api.showErrorNotification('Failed to rate collection', err);
         return Promise.resolve(false);
