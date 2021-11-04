@@ -750,7 +750,7 @@ class DownloadManager {
       baseUrl = urls[0].split('<')[0];
       nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
     } catch (err) {
-      return Promise.reject(new DataInvalid(`failed to parse url "${baseUrl}"`));
+      return Promise.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
     }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;

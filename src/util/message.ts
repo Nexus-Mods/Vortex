@@ -514,12 +514,22 @@ export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPr
   };
 }
 
+const HIDE_ATTRIBUTES = new Set(
+  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport',
+   'extensionName', 'name']);
+
 interface ICustomErrorType {
   message?: string;
   text?: string;
   parameters?: any;
   allowReport?: boolean;
   wrap: boolean;
+}
+
+function isPrivateField(key: string): boolean {
+  // our own private fields all start with a lower case m followed by UpperCamelCase, like
+  // mExtraInfo
+  return key[0] === 'm' && key[1].toUpperCase() === key[1];
 }
 
 function renderCustomError(err: any) {
@@ -544,7 +554,8 @@ function renderCustomError(err: any) {
       .filter(key => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
     attributes = Object.keys(err || {})
-      .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
+      .filter(key => !isPrivateField(key)
+                  && !HIDE_ATTRIBUTES.has(key));
   }
   if (attributes.length > 0) {
     const old = res.message;
@@ -595,10 +606,6 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
   return func();
 }
 
-const HIDE_ATTRIBUTES = new Set(
-  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport',
-   'extensionName']);
-
 interface IErrorRendered {
   message?: string;
   text?: string;
@@ -638,7 +645,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
         .filter(key => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
       attributes = Object.keys(flatErr || {})
-        .filter(key => !HIDE_ATTRIBUTES.has(key));
+        .filter(key => !isPrivateField(key) && !HIDE_ATTRIBUTES.has(key));
     }
     if (attributes.length > 0) {
       const old = errMessage.message;

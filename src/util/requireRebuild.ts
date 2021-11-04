@@ -138,8 +138,8 @@ function makeRebuildFunc(orig) {
     }
 
     const proc = spawnSync(nodeGyp, gypArgs, spawnOptions);
-    log('info', 'stdout', proc.stdout);
-    log('error', 'stderr', proc.stderr);
+    log('info', 'stdout', proc.stdout.toString());
+    log('error', 'stderr', proc.stderr.toString());
 
     if (proc.error) {
       throw proc.error;
