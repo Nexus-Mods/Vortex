@@ -34,6 +34,7 @@ import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
+import makeRemoteCall from './electronRemote';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate, withContext as withErrorContext } from './errorHandling';
 import extractExeIcon from './exeIcon';
@@ -120,6 +121,7 @@ export {
   makeNormalizingDict,
   makeQueue,
   makeReactive,
+  makeRemoteCall,
   makeUnique,
   makeUniqueByKey,
   MissingInterpreter,
