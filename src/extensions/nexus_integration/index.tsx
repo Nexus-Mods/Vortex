@@ -440,8 +440,10 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
           ?? input.meta?.details?.modId,
       fileId: input.download?.modInfo?.nexus?.ids?.fileId
           ?? input.meta?.details?.fileId,
-      collectionId: input.download?.modInfo?.nexus?.ids?.collectionId,
-      revisionId: input.download?.modInfo?.nexus?.ids?.revisionId,
+      collectionId: input.download?.modInfo?.nexus?.ids?.collectionId
+                 ?? nexusCollectionInfo?.collection?.id,
+      revisionId: input.download?.modInfo?.nexus?.ids?.revisionId
+               ?? nexusCollectionInfo?.id,
       collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection['slug'],
       revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revision,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,

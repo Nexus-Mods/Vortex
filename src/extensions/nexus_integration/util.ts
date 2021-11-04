@@ -139,6 +139,7 @@ export function getCollectionInfo(nexus: Nexus,
                                   revisionId: number): Promise<IRemoteInfo> {
   const query: IRevisionQuery = {
     adultContent: true,
+    id: true,
     collection: {
       category: {
         id: true,
