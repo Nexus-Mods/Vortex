@@ -106,7 +106,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     if ((state === 'update') || (state === 'bug-update')) {
       if (mod.attributes?.collectionId !== undefined) {
         this.context.api.events.emit('collection-update',
-          downloadGame, mod.attributes?.collectionId, newestFileId, mod.attributes?.source);
+          downloadGame, mod.attributes?.collectionSlug, newestFileId, mod.attributes?.source);
       } else {
         this.context.api.events.emit('mod-update',
           downloadGame, mod.attributes?.modId, newestFileId, mod.attributes?.source);
