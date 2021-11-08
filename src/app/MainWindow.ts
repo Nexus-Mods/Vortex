@@ -101,7 +101,8 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (this.mInspector) {
+    if (this.mInspector || process.env.START_DEVTOOLS) {
+      // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }
     this.mWindow.webContents.on('console-message',

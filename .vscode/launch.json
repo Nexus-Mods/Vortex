@@ -24,6 +24,7 @@
         "BLUEBIRD_DEBUG": "0",
         "FORCE_ALLOW_ELEVATED_SYMLINKING": "yes"
       },
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": []
