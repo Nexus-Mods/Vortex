@@ -338,7 +338,8 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     message: haveMessage ? options.message : title,
     allowSuppress: options.allowSuppress,
     replace: options.replace,
-    actions: details !== undefined ? [{
+    actions: details !== undefined ? [
+      ...(options.actions ?? []), {
       title: 'More',
       action: (dismiss: () => void) => {
         dispatch(showDialog('error', 'Error', content, actions));
@@ -606,7 +607,7 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
   return func();
 }
 
-interface IErrorRendered {
+export interface IErrorRendered {
   message?: string;
   text?: string;
   parameters?: any;
@@ -633,7 +634,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
       wrap: false,
       allowReport: false,
     };
-  } else if (err instanceof HTTPError) {
+  } else if (err.name === 'HTTPError') {
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err, options);

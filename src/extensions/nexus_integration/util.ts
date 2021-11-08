@@ -15,7 +15,7 @@ import { DataInvalid, HTTPError, ProcessCanceled, TemporaryError, UserCanceled }
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
-import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
+import { calcDuration, showError } from '../../util/message';
 import { jsonRequest } from '../../util/network';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -886,19 +886,15 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     })
     .catch(err => {
       const t = api.translate;
-      const pretty = prettifyNodeErrorMessage(err);
-      // if there is an "errno", this is more of a technical problem, like
-      // network is offline or server not reachable
-      api.sendNotification({
-        type: 'error',
-        title: err.code === 'ESOCKETTIMEDOUT' ? undefined : 'Failed to log in',
-        message: err.code ===  'ESOCKETTIMEDOUT'
-          ? t('Connection to nexusmods.com timed out, please check your internet connection')
-          : t(pretty.message, { replace: pretty.replace }),
-        actions: [
-          { title: 'Retry', action: dismiss => { updateKey(api, nexus, key); dismiss(); } },
-        ],
-      });
+      api.showErrorNotification(err.code === 'ESOCKETTIMEDOUT'
+        ? 'Connection to nexusmods.com timed out, please check your internet connection'
+        : 'Failed to log in',
+        err, {
+          actions: [{
+            title: 'Retry',
+            action: dismiss => { updateKey(api, nexus, key); dismiss(); },
+          }],
+        });
       api.store.dispatch(setUserInfo(undefined));
     });
 }
