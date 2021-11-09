@@ -12,6 +12,7 @@ coverage
 app/bundledPlugins
 attachments
 sourcemaps
+.env
 
 # User-specific files
 *.suo
