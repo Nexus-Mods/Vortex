@@ -57,7 +57,7 @@ export {
   watch,
   writeFileSync,
   writeSync,
-} from 'fs';
+} from 'original-fs';
 
 export interface ILinkFileOptions {
   // Used to dictate whether error dialogs should
