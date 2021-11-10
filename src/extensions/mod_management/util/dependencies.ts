@@ -415,7 +415,7 @@ function gatherDependencies(
           // wrong type
           return false;
         }
-        const mod = findModByRef(rule.reference, state.persistent.mods[gameMode], source);
+        const mod = findModByRef(rule.reference, state.persistent.mods[gameMode] ?? {}, source);
         if (mod === undefined) {
           // mod not installed, it's required
           return true;

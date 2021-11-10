@@ -4,6 +4,7 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
+import { ArchiveBrokenError } from '../extensions/mod_management/InstallManager';
 import { NoDeployment } from '../extensions/mod_management/util/exceptions';
 import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
@@ -364,7 +365,8 @@ export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPr
     };
   }
 
-  if (err instanceof ThirdPartyError) {
+  if ((err instanceof ThirdPartyError)
+      || (err instanceof ArchiveBrokenError)) {
     return {
       message: err.message,
       allowReport: false,
