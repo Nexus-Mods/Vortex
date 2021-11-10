@@ -82,5 +82,10 @@
   "severity": "information",
   "gamemode": "*",
   "version": "<=1.4.16"
+  }, {
+  "date": "2021-11-10T17:15:00",
+  "description": "Skyrim Special Edition will be updated on 11 November 2021. This update will cause Skyrim Script Extender and any mods that depend on it to temporarily stop working. You can read more about this change in the site news.",
+  "severity": "information",
+  "gamemode": "skyrimse"
   }
 ]
