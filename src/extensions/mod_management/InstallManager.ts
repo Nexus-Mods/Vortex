@@ -2323,7 +2323,7 @@ class InstallManager {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
       if (download === undefined) {
-        return reject(new Error(`Invalid download id (${downloadId})`));
+        return reject(new NotFound(renderModReference(requirement)));
       }
       const downloadGame: string[] = getDownloadGames(download);
       const fullPath: string =
