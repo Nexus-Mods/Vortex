@@ -268,7 +268,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private copyUrlToClipboard = () => {
-    clipboard.writeText(this.props.url);
+    clipboard.writeText(this.props.url ?? '');
   }
 
   private renderConfirm() {
