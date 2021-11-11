@@ -30,7 +30,6 @@ import { finishDownload, setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 import getDownloadGames from '../util/getDownloadGames';
 
-import createColumns from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
@@ -48,6 +47,7 @@ import { ThunkDispatch } from 'redux-thunk';
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
   secondary: boolean;
+  columns: (props: () => IDownloadViewProps) => Array<ITableAttribute<IDownload>>;
 }
 
 interface IConnectedProps {
@@ -198,7 +198,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     const { viewAll } = this.state;
 
     if (this.mColumns === undefined) {
-      this.mColumns = createColumns(this.context.api, () => this.props);
+      this.mColumns = this.props.columns(() => this.props);
     }
 
     let content = null;

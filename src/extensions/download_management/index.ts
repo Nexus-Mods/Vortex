@@ -10,7 +10,7 @@ import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { sum, truthy } from '../../util/util';
+import { sum, toPromise, truthy } from '../../util/util';
 
 import {
   addLocalDownload,
@@ -33,11 +33,12 @@ import { IProtocolHandlers, IResolvedURL } from './types/ProtocolHandlers';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import { finalizeDownload } from './util/postprocessDownload';
-import DownloadView from './views/DownloadView';
+import DownloadView, { IDownloadViewProps } from './views/DownloadView';
 import Settings from './views/Settings';
 import ShutdownButton from './views/ShutdownButton';
 import SpeedOMeter from './views/SpeedOMeter';
 
+import downloadAttributes from './downloadAttributes';
 import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
@@ -51,6 +52,7 @@ import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import winapi from 'winapi-bindings';
 import lazyRequire from '../../util/lazyRequire';
+import setDownloadGames from './util/setDownloadGames';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -67,6 +69,14 @@ const archiveExtLookup = new Set<string>([
 ]);
 
 const addLocalInProgress = new Set<string>();
+
+function withAddInProgress(fileName: string, cb: () => PromiseLike<void>): PromiseLike<void> {
+  addLocalInProgress.add(fileName);
+  return Promise.resolve(cb())
+    .finally(() => {
+      addLocalInProgress.delete(fileName);
+    });
+}
 
 function knownArchiveExt(filePath: string): boolean {
   if (!truthy(filePath)) {
@@ -401,8 +411,9 @@ function postImport(api: IExtensionApi, destination: string,
   return fs.statAsync(destination)
     .then(stats => {
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
-      api.events.emit('did-import-downloads', [dlId]);
-
+      return toPromise(cb => api.events.emit('did-import-downloads', [dlId], cb));
+    })
+    .then(() => {
       if (!silent) {
         api.sendNotification({
           id: `ready-to-install-${dlId}`,
@@ -748,10 +759,14 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerMainPage('download', 'Downloads', DownloadView, {
-                             hotkey: 'D',
-                             group: 'global',
-                             badge: downloadCount,
-                           });
+    hotkey: 'D',
+    group: 'global',
+    badge: downloadCount,
+    props: () => ({
+      columns: (props: () => IDownloadViewProps) =>
+        downloadAttributes(context.api, props, withAddInProgress),
+    }),
+  });
 
   context.registerSettings('Download', Settings, undefined, undefined, 75);
 
@@ -911,6 +926,9 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
+
+    context.api.onAsync('set-download-games', (dlId: string, gameIds: string[]) =>
+      setDownloadGames(context.api, dlId, gameIds, withAddInProgress));
 
     // This debouncer is only needed to avoid a race condition caused primarily by the
     //  testDownloadPath functionality, where the update downloads function gets called twice

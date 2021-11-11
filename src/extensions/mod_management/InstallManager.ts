@@ -43,6 +43,7 @@ import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
+import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
 import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
@@ -63,7 +64,6 @@ import * as url from 'url';
 import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
-import { selectors } from 'vortex-api';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -308,8 +308,9 @@ class InstallManager {
       })
       .then((modInfo: ILookupResult[]) => {
         log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
-        if (modInfo.length > 0) {
-          fullInfo.meta = modInfo[0].value;
+        const match = metaLookupMatch(modInfo, path.basename(archivePath), installGameId);
+        if (match !== undefined) {
+          fullInfo.meta = match.value;
         }
 
         modId = this.deriveInstallName(baseName, fullInfo);
@@ -1796,7 +1797,7 @@ class InstallManager {
       if (dep.download === undefined) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
-          const downloadPath = selectors.downloadPathForGame(state, profile.gameId);
+          const downloadPath = downloadPathForGame(state, profile.gameId);
           const fileName = path.basename(dep.extra.localPath);
           let targetPath = path.join(downloadPath, fileName);
           // backwards compatibility: during alpha testing the bundles were 7zipped inside

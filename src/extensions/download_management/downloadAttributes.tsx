@@ -18,11 +18,13 @@ import { gameName } from '../gamemode_management/selectors';
 
 import { IDownload } from './types/IDownload';
 import getDownloadGames from './util/getDownloadGames';
+import setDownloadGames from './util/setDownloadGames';
 import DownloadGameList from './views/DownloadGameList';
 import DownloadProgressFilter from './views/DownloadProgressFilter';
 import { IDownloadViewProps } from './views/DownloadView';
 import FileTime from './views/FileTime';
 
+import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -112,7 +114,10 @@ function nameFromUrl(input: string) {
   }
 }
 
-function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
+function createColumns(
+  api: IExtensionApi,
+  props: () => IDownloadViewProps,
+  withAddInProgress: (fileName: string, cb: () => PromiseLike<void>) => PromiseLike<void>)
     : Array<ITableAttribute<IDownload>> {
 
   let lang: string;
@@ -124,6 +129,10 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       collator = new Intl.Collator(locale, { sensitivity: 'base' });
     }
     return collator;
+  };
+
+  const onSetDownloadGames = (dlId: string, games: string[]) => {
+    return Promise.resolve(setDownloadGames(api, dlId, games, withAddInProgress));
   };
 
   return [
@@ -177,7 +186,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
               id={id}
               currentGames={getDownloadGames(download)}
               games={knownGames}
-              fileName={download.localPath}
+              onSetDownloadGames={onSetDownloadGames}
             />
           );
         } else {

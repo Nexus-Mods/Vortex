@@ -28,6 +28,7 @@ const revisionInfo: IRevisionQuery = {
         },
         name: true,
         pictureUrl: true,
+        status: true,
         summary: true,
         version: true,
       },

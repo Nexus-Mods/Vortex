@@ -22,6 +22,7 @@ import { ICategoryDictionary } from '../category_management/types/ICategoryDicti
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IMod, IModRepoId } from '../mod_management/types/IMod';
+import metaLookupMatch from '../mod_management/util/metaLookupMatch';
 
 import { DownloadState, IDownload } from '../download_management/types/IDownload';
 import { IResolvedURL } from '../download_management/types/ProtocolHandlers';
@@ -1057,7 +1058,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     retrieveCategories(api, isUpdate);
   });
   api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
-  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds, false); });
+  api.events.on('did-import-downloads', (dlIds: string[], cb?: (err?: Error) => void) => {
+    queryInfo(api, dlIds, false, cb); });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
 
@@ -1120,7 +1122,8 @@ function goBuyPremium(evt: React.MouseEvent<any>) {
   opn(nexusModsURL(PREMIUM_PATH, { section: Section.Users, campaign })).catch(err => undefined);
 }
 
-function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boolean) {
+function queryInfo(api: IExtensionApi, instanceIds: string[],
+                   ignoreCache: boolean, cb?: () => void) {
   if (instanceIds === undefined) {
     return;
   }
@@ -1135,6 +1138,7 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
       log('warn', 'download no longer exists', dlId);
       return;
     }
+    const gameMode = activeGameId(state);
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
     if ((downloadPath === undefined) || (dl.localPath === undefined) || (dl.state !== 'finished')) {
@@ -1153,11 +1157,14 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
     }, ignoreCache)
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
-        const info = modInfo[0].value;
+        const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+        const info = match.value;
 
         const setInfo = (key: string, value: any) => {
           if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
         };
+
+        setInfo('meta', info);
 
         try {
           const nxmUrl = new NXMUrl(info.sourceURI);
@@ -1165,6 +1172,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
           setInfo('nexus.ids.gameId', nxmUrl.gameId);
           setInfo('nexus.ids.fileId', nxmUrl.fileId);
           setInfo('nexus.ids.modId', nxmUrl.modId);
+          const metaGameId = convertNXMIdReverse(knownGames(state), info.gameId);
+          return (gameId !== metaGameId)
+            ? api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId])
+            : Promise.resolve();
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
@@ -1173,8 +1184,6 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
             setInfo('source', 'unknown');
           }
         }
-
-        setInfo('meta', info);
       }
     })
     .catch(err => {
@@ -1186,6 +1195,7 @@ function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boole
   })
   .then(() => {
     log('debug', 'done querying info', { archiveIds: instanceIds });
+    cb?.();
   });
 }
 
