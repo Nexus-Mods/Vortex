@@ -1474,8 +1474,10 @@ class InstallManager {
     return call(lookupResult.sourceURI).then(res => resolvedSource = res)
       .then(() => call(lookupResult.referer).then(res => resolvedReferer = res))
       .then(() => new Promise<string>((resolve, reject) => {
-        if (wasCanceled() || !truthy(resolvedSource)) {
+        if (wasCanceled()) {
           return reject(new UserCanceled(false));
+        } else if (!truthy(resolvedSource)) {
+          return reject(new UserCanceled(true));
         }
         const parsedUrl = new URL(resolvedSource);
         if ((campaign !== undefined) && (parsedUrl.protocol === 'nxm:')) {
