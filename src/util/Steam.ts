@@ -46,15 +46,15 @@ class Steam implements IGameStore {
   constructor() {
     this.id = STORE_ID;
     if (process.platform === 'win32') {
-        // windows
-        try {
-          const steamPath =
-            winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
-          this.mBaseFolder = Promise.resolve(steamPath.value as string);
-        } catch (err) {
-          log('info', 'steam not found', { error: err.message });
-          this.mBaseFolder = Promise.resolve(undefined);
-        }
+      // windows
+      try {
+        const steamPath =
+          winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
+        this.mBaseFolder = Promise.resolve(steamPath.value as string);
+      } catch (err) {
+        log('info', 'steam not found', { error: err.message });
+        this.mBaseFolder = Promise.resolve(undefined);
+      }
     } else {
       this.mBaseFolder = Promise.resolve(path.resolve(getVortexPath('home'), '.steam', 'steam'));
     }
@@ -190,120 +190,124 @@ class Steam implements IGameStore {
     return ('appId' in object) && ('parameters' in object);
   }
 
+  private resolveSteamPaths(): Promise<string[]> {
+    log('debug', 'resolving Steam game paths');
+    return this.mBaseFolder.then((basePath: string) => {
+      if (basePath === undefined) {
+        // Steam not found/installed
+        return Promise.resolve([]);
+      }
+
+      const steamPaths: string[] = [basePath];
+      return fs.readFileAsync(path.resolve(basePath, 'config', 'libraryfolders.vdf'))
+        .then((data: Buffer) => {
+          if (data === undefined) {
+            return Promise.resolve(steamPaths);
+          }
+          let parsedObj;
+          try {
+            parsedObj = parse(data.toString());
+          } catch (err) {
+            log('warn', 'unable to parse steamfolders.vdf', err);
+            return Promise.resolve(steamPaths);
+          }
+          const libObj: any = getSafeCI(parsedObj, ['libraryfolders'], {});
+          let counter = libObj.hasOwnProperty('0') ? 0 : 1;
+          while (libObj.hasOwnProperty(`${counter}`)) {
+            const libPath = libObj[`${counter}`]['path'];
+            if (libPath && !steamPaths.includes(libPath)) {
+              steamPaths.push(libObj[`${counter}`]['path']);
+            }
+            ++counter;
+          }
+          log('debug', 'found steam install folders', { steamPaths });
+          return Promise.resolve(steamPaths);
+        })
+        .catch(err => {
+          // A Steam update has changed the way we resolve the steam library paths
+          //  (we used to get these from config.vdf) the libraryfolders.vdf file
+          //  appears to at times hold a reference to _all_ library folders; other times
+          //  it only holds the path to the alternate steam libraries (the ones that aren't
+          //  part of the base Steam installation folder)
+          log('warn', 'failed to read steam library folders file', err);
+          return ['EPERM', 'ENOENT'].includes(err.code)
+            ? Promise.resolve(steamPaths)
+            : Promise.reject(err);
+        });
+    });
+  }
+
   private parseManifests(): Promise<ISteamEntry[]> {
-    log('debug', 'parsing steam manifest');
-    const start = Date.now();
-    const steamPaths: string[] = [];
-    return this.mBaseFolder
-      .then((basePath: string) => {
-        if (basePath === undefined) {
-          return Promise.resolve(undefined);
-        }
-        steamPaths.push(basePath);
-        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'))
+    return this.resolveSteamPaths()
+      .then((steamPaths: string[]) => Promise.mapSeries(steamPaths, steamPath => {
+        log('debug', 'reading steam install folder', { steamPath });
+        const steamAppsPath = path.join(steamPath, 'steamapps');
+        return fs.readdirAsync(steamAppsPath)
+          .then(names => {
+            const filtered = names.filter(name =>
+              name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
+            log('debug', 'got steam manifests', { manifests: filtered });
+            return Promise.map(filtered, (name: string) =>
+              fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
+                manifestData, name,
+              })));
+          })
+          .then(appsData => {
+            return appsData
+              .map(appData => {
+                const { name, manifestData } = appData;
+                try {
+                  return { obj: parse(manifestData.toString()), name };
+                } catch (err) {
+                  log('warn', 'failed to parse steam manifest',
+                    { name, error: err.message });
+                  return undefined;
+                }
+              })
+              .map(res => {
+                if (res === undefined) {
+                  return undefined;
+                }
+                const { obj, name } = res;
+                if ((obj === undefined)
+                  || (obj['AppState'] === undefined)
+                  || (obj['AppState']['installdir'] === undefined)) {
+                  log('debug', 'invalid appmanifest', name);
+                  return undefined;
+                }
+                try {
+                  return {
+                    appid: obj['AppState']['appid'],
+                    gameStoreId: STORE_ID,
+                    name: obj['AppState']['name'],
+                    gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
+                    lastUser: obj['AppState']['LastOwner'],
+                    lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                  };
+                } catch (err) {
+                  log('warn', 'failed to parse steam manifest',
+                    { name, error: err.message });
+                  return undefined;
+                }
+              })
+              .filter(obj => obj !== undefined);
+          })
+          .catch({ code: 'ENOENT' }, (err: any) => {
+            // no biggy, this can happen for example if the steam library is on a removable medium
+            // which is currently removed
+            log('info', 'Steam library not found', { error: err.message });
+            return undefined;
+          })
           .catch(err => {
-            // If we can't read the configuration file, we can't resolve
-            //  the location of the games. This might be a valid case
-            //  if Steam isn't installed but the registry still has
-            //  some entries for it.
-            log('warn', '[steam] failed to read steam config file', err);
-            return ['EPERM', 'ENOENT'].includes(err.code)
-              ? Promise.resolve(undefined)
-              : Promise.reject(err);
+            log('warn', 'Failed to read steam library', err.message);
           });
       })
-      .then((data: Buffer) => {
-        if (data === undefined) {
-          return Promise.resolve([]);
-        }
-
-        let configObj;
-        try {
-          configObj = parse(data.toString());
-        } catch (err) {
-          return Promise.resolve([]);
-        }
-
-        log('debug', 'steam config parsed', { seconds: (Date.now() - start) / 1000 });
-
-        let counter = 1;
-        const steamObj: any =
-          getSafeCI(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
-        while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
-          steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
-          ++counter;
-        }
-        log('debug', 'found steam install folders', { steamPaths });
-
-        return Promise.mapSeries(steamPaths, steamPath => {
-          log('debug', 'reading steam install folder', { steamPath });
-          const steamAppsPath = path.join(steamPath, 'steamapps');
-          return fs.readdirAsync(steamAppsPath)
-            .then(names => {
-              const filtered = names.filter(name =>
-                name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
-              log('debug', 'got steam manifests', { manifests: filtered });
-              return Promise.map(filtered, (name: string) =>
-                fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
-                  manifestData, name,
-                })));
-            })
-            .then(appsData => {
-              return appsData
-                .map(appData => {
-                  const { name, manifestData } = appData;
-                  try {
-                    return { obj: parse(manifestData.toString()), name };
-                  } catch (err) {
-                    log('warn', 'failed to parse steam manifest',
-                        { name, error: err.message });
-                    return undefined;
-                  }
-                })
-                .map(res => {
-                  if (res === undefined) {
-                    return undefined;
-                  }
-                  const { obj, name } = res;
-                  if ((obj === undefined)
-                      || (obj['AppState'] === undefined)
-                      || (obj['AppState']['installdir'] === undefined)) {
-                    log('debug', 'invalid appmanifest', name);
-                    return undefined;
-                  }
-                  try {
-                    return {
-                      appid: obj['AppState']['appid'],
-                      gameStoreId: STORE_ID,
-                      name: obj['AppState']['name'],
-                      gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
-                      lastUser: obj['AppState']['LastOwner'],
-                      lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
-                    };
-                  } catch (err) {
-                    log('warn', 'failed to parse steam manifest',
-                        { name, error: err.message });
-                    return undefined;
-                  }
-                })
-                .filter(obj => obj !== undefined);
-            })
-            .catch({ code: 'ENOENT' }, (err: any) => {
-              // no biggy, this can happen for example if the steam library is on a removable medium
-              // which is currently removed
-              log('info', 'Steam library not found', { error: err.message });
-            })
-            .catch(err => {
-              log('warn', 'Failed to read steam library', err.message);
-            });
-        });
-      })
-      .then((games: ISteamEntry[][]) =>
-        games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-          current !== undefined ? prev.concat(current) : prev, []))
-      .tap(() => {
-        log('info', 'done reading steam libraries');
-      });
+        .then((games: ISteamEntry[][]) =>
+          games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
+            current !== undefined ? prev.concat(current) : prev, []))
+        .tap(() => {
+          log('info', 'done reading steam libraries');
+        }));
   }
 }
 
