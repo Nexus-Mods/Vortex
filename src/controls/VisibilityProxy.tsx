@@ -5,7 +5,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 export interface IProps {
-  container?: HTMLElement;
+  container: HTMLElement;
   placeholder: () => React.ReactNode;
   content: () => React.ReactNode;
   visible: boolean;
@@ -82,7 +82,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
           (visible || (now - this.mVisibleTime) > 1000.0)) {
         this.mLastVisible = visible;
         this.mVisibleTime = now;
-        this.props.setVisible(visible);
+        this.props.setVisible?.(visible);
       }
     });
   }
@@ -93,18 +93,19 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
 
   public render(): JSX.Element {
     const { componentClass: Component } = this.props;
-    return (
-      <Component
-        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible',
-                                'setVisible', 'componentClass'])}
-      >
-      {
-        (this.props.visible)
-          ? this.props.content()
-          : this.props.placeholder()
-      }
-      </Component>
-    );
+    const props = _.omit(this.props, ['container', 'placeholder', 'content', 'visible',
+      'setVisible', 'componentClass']);
+
+    const content: JSX.Element = (this.props.visible)
+      ? this.props.content()
+      : this.props.placeholder();
+
+    if (Component === undefined) {
+      // return <div className='visibility-proxy-wrap' {...props}>{content}</div>;
+      return <>{content}</>;
+    } else {
+      return <Component {...props}>{content}</Component>;
+    }
   }
 }
 
