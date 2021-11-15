@@ -1178,6 +1178,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         const removeArchives = result.input['mods-and-archive'];
         const idsToRemove = Object.keys(result.input)
           .filter(key => key.startsWith('_'))
+          .filter(key => result.input[key] === true)
           .map(key => key.slice(1));
 
         return this.removeSelectedImpl(idsToRemove, true, removeArchives);
