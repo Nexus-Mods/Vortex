@@ -153,13 +153,13 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 export function onOpenCollectionPage(api: IExtensionApi) {
-  return (gameId: string, collectionId: string, source: string) => {
+  return (gameId: string, collectionSlug: string, source: string) => {
     if (source !== 'nexus') {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
     opn([NEXUS_NEXT_URL,
-      nexusGameId(game) || gameId, 'collections', collectionId,
+      nexusGameId(game) || gameId, 'collections', collectionSlug,
     ].join('/')).catch(err => undefined);
   };
 }

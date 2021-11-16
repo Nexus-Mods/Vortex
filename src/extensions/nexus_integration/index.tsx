@@ -1456,7 +1456,7 @@ function init(context: IExtensionContextExt): boolean {
         : gameMode;
       if (mod.type === 'collection') {
         context.api.events.emit('open-collection-page',
-                              gameId, mod.attributes?.collectionId, mod.attributes?.source);
+                              gameId, mod.attributes?.collectionSlug, mod.attributes?.source);
       } else {
         context.api.events.emit('open-mod-page',
                               gameId, mod.attributes?.modId, mod.attributes?.source);
@@ -1682,7 +1682,14 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
   context.registerAPI('ensureLoggedIn', () => ensureLoggedIn(context.api), {});
 
-  context.once(() => once(context.api, [(nex: NexusT) => tracking.once(nex)]));
+  const extIntegrations: Array<(nex: NexusT) => void> = [
+    (nex: NexusT) => tracking.once(nex),
+  ];
+  context['registerNexusIntegration'] = (cb: (nex: NexusT) => void) => {
+    extIntegrations.push(cb);
+  };
+
+  context.once(() => once(context.api, extIntegrations));
   context.onceMain(() => onceMain(context.api));
 
   return true;
