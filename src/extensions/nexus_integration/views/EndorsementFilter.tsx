@@ -37,12 +37,15 @@ class EndorsementFilter implements ITableFilter {
   public raw = false;
 
   public matches(filter: any, value: any): boolean {
+    if (filter === null) {
+      return true;
+    }
     if (value === '') {
-      return (filter === 'Undecided');
+      return (filter.toLowerCase() === 'undecided');
     } else if (value === undefined) {
       return (filter === 'N/A');
     } else {
-      return (filter === value);
+      return (filter.toLowerCase() === value?.toLowerCase?.());
     }
   }
 }

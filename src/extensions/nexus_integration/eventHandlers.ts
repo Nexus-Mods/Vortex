@@ -24,7 +24,7 @@ import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, startDownload, updateKey } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
@@ -571,7 +571,7 @@ export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[])
                                 'You are not logged in to Nexus Mods!',
                                 { allowReport: false });
     } else {
-      endorseModImpl(api, nexus, gameId, modId, endorsedStatus);
+      endorseThing(api, nexus, gameId, modId, endorsedStatus);
     }
   };
 }

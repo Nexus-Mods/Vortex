@@ -5,6 +5,7 @@ import Nexus, {
 import Promise from 'bluebird';
 import { app as appIn, ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
+import * as _ from 'lodash';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
@@ -28,7 +29,7 @@ import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
-import sendEndorseMod from './util/endorseMod';
+import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -444,14 +445,14 @@ function reportEndorseError(api: IExtensionApi, err: Error,
 export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
                                   gameId: string, nexusId: number, version: string,
                                   endorsedStatus: string): Promise<string> {
-  return sendEndorseMod(nexus, gameId, nexusId, version, endorsedStatus)
+  return endorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
       reportEndorseError(api, err, gameId, nexusId, version);
       return endorsedStatus as EndorsedStatus;
     });
 }
 
-export function endorseModImpl(
+export function endorseThing(
   api: IExtensionApi,
   nexus: Nexus,
   gameId: string,
@@ -475,7 +476,47 @@ export function endorseModImpl(
     return;
   }
 
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
+  if (mod.attributes?.modId !== undefined) {
+    endorseModImpl(api, nexus, gameMode, mod, endorsedStatus);
+  } else if (mod.attributes?.collectionId !== undefined) {
+    endorseCollectionImpl(api, nexus, gameMode, mod, endorsedStatus);
+  }
+}
+
+function convertCollectionEndorseStatus(input: string): string {
+  // transform collection endorsed status to match what we store for mods
+
+  return _.capitalize(input);
+}
+
+function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
+                               mod: IMod, endorsedStatus: string) {
+  const { store } = api;
+
+  const gameId = mod.attributes?.downloadGame;
+
+  const nexusCollectionId: number = parseInt(mod.attributes.collectionId, 10);
+
+  store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'pending'));
+  const game = gameById(api.store.getState(), gameId);
+  endorseCollection(nexus, nexusGameId(game), nexusCollectionId, endorsedStatus)
+    .then((result: { success: boolean, endorsement: { status: string } }) => {
+      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed',
+        convertCollectionEndorseStatus(result.endorsement.status)));
+    })
+    .catch((err: Error | NexusError) => {
+      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
+      api.showErrorNotification('Failed to endorse collection', err);
+    });
+}
+
+function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
+                        mod: IMod, endorsedStatus: string) {
+  const { store } = api;
+
+  const gameId = mod.attributes?.downloadGame;
+
+  const nexusModId: number = parseInt(mod.attributes.modId, 10);
   const version: string = getSafe(mod.attributes, ['version'], undefined)
                         || getSafe(mod.attributes, ['modVersion'], undefined);
 
@@ -487,14 +528,14 @@ export function endorseModImpl(
     return;
   }
 
-  store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
+  store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'pending'));
   const game = gameById(api.store.getState(), gameId);
-  sendEndorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
+  endorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
-      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', endorsed));
+      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', endorsed));
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
+      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
       reportEndorseError(api, err, gameId, nexusModId, version);
     });
 }

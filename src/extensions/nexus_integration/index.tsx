@@ -60,7 +60,7 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
+import { endorseThing, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
          processErrorMessage, startDownload, updateKey } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
@@ -1635,10 +1635,10 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
-      endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
+      endorseThing(context.api, nexus, gameId, modId, endorseStatus)));
   const cmAttr = genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
-      endorseModImpl(context.api, nexus, gameId, modId, endorseStatus));
+      endorseThing(context.api, nexus, gameId, modId, endorseStatus));
   cmAttr.isToggleable = false;
   context.registerTableAttribute('collection-mods', cmAttr);
   context.registerTableAttribute('mods', tracking.attribute());

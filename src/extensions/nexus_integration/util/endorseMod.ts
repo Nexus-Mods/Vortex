@@ -14,10 +14,11 @@ import Promise from 'bluebird';
 
 function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
                     version: string, endorseStatus: string): Promise<string> {
-  if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' ||
+  endorseStatus = endorseStatus.toLowerCase();
+  if (endorseStatus === 'undecided' || endorseStatus === 'abstained' ||
       endorseStatus === '') {
     endorseStatus = 'endorse';
-  } else if (endorseStatus === 'Endorsed') {
+  } else if (endorseStatus === 'endorsed') {
     endorseStatus = 'abstain';
   }
 
@@ -25,4 +26,17 @@ function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
       .then(result => result.status);
 }
 
-export default endorseMod;
+function endorseCollection(nexus: NexusT, gameId: string, collectionId: number,
+                           endorseStatus: string) {
+  endorseStatus = endorseStatus.toLowerCase();
+  if ((endorseStatus === 'undecided') || (endorseStatus === 'abstained') ||
+      (endorseStatus === '')) {
+    endorseStatus = 'endorse';
+  } else if (endorseStatus === 'endorsed') {
+    endorseStatus = 'abstain';
+  }
+
+  return Promise.resolve(nexus.endorseCollection(collectionId, endorseStatus as any, gameId));
+}
+
+export { endorseCollection, endorseMod };
