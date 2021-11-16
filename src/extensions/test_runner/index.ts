@@ -123,7 +123,13 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
     });
 }
 
+const suppressedTests: { [testId: string]: number } = {};
+
 function runChecks(api: IExtensionApi, event: string, delay?: number) {
+  if (suppressedTests[event] ?? 0 > 0) {
+    return;
+  }
+
   if (triggerDelays[event] !== undefined) {
     clearTimeout(triggerDelays[event]);
   }
@@ -138,6 +144,20 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
   }, delay || 500);
 }
 
+function withSuppressedTests(tests: string[], cb: () => Promise<void>) {
+  tests.forEach(test => {
+    setdefault(suppressedTests, test, 0);
+    suppressedTests[test] += 1;
+  });
+
+  return cb()
+    .finally(() => {
+      tests.forEach(test => {
+        suppressedTests[test] -= 1;
+      });
+    });
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerTest = (id, eventType, check) => {
     log('debug', 'register test', { id, eventType });
@@ -150,6 +170,8 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.once(() => {
+    context.api.ext['withSuppressedTests'] = withSuppressedTests;
+
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
       runChecks(context.api, eventType, delay);
     });
