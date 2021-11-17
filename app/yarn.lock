@@ -2458,8 +2458,8 @@ mkdirp@^1.0.3, mkdirp@^1.0.4:
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
 "modmeta-db@git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#collections":
-  version "0.8.0-r4"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#fa0d100efd69ae09bfe041840683a3e22ff250d3"
+  version "0.8.0-r5"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#e1d3680dfe57148d204343db539133f47a32f1de"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"
