@@ -839,7 +839,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
 }
 
 function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
-  return (mods: string[], enabled: boolean, gameId: string) => {
+  return (mods: string[], enabled: boolean, gameId: string, silent: boolean) => {
     const { store } = api;
     const state: IState = store.getState();
     const { notifications } = state.session.notifications;
@@ -850,7 +850,7 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
         api.dismissNotification(notiId);
       }
     });
-    if (state.settings.automation.deploy) {
+    if (state.settings.automation.deploy && (silent !== true)) {
       deploymentTimer.schedule(undefined, false);
     } else if (!state.persistent.deployment.needToDeploy[gameId]) {
       store.dispatch(setDeploymentNecessary(gameId, true));
