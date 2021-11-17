@@ -1,4 +1,4 @@
-export type LockedState = 'true' | 'false' | 'always' | 'never';
+export type LockedState = true | false | 'true' | 'false' | 'always' | 'never';
 export type LoadOrder = ILoadOrderEntry[];
 
 export interface IItemRendererProps {
@@ -80,7 +80,7 @@ export interface ILoadOrderGameInfo {
    *  in the load order page alongside the load order panel.
    *  Default instructions will be provided if custom instructions aren't provided.
    */
-  usageInstructions?: string;
+  usageInstructions?: string | React.ComponentType<{}>;
 
   /**
    * By default the FBLO extension will attempt to automatically generate the data

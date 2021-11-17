@@ -1,18 +1,20 @@
-import { ConnectDragSource, ConnectDragPreview,
-         ConnectDropTarget, DragSourceConnector,
-         DragSourceMonitor, DropTarget, DragSource,
-         DropTargetSpec, DropTargetMonitor,
-         DropTargetConnector, DragSourceSpec } from 'react-dnd';
 import * as React from 'react';
+import { ConnectDragPreview, ConnectDragSource,
+         ConnectDropTarget, DragSource, DragSourceConnector,
+         DragSourceMonitor, DragSourceSpec, DropTarget,
+         DropTargetConnector, DropTargetMonitor, DropTargetSpec,
+        } from 'react-dnd';
 import * as ReactDOM from 'react-dom';
 
 export interface IDraggableListItemProps {
   index: number;
   item: any;
+  isLocked: boolean;
   itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
   containerId: string;
   take: (item: any, list: any[]) => any;
-  onChangeIndex: (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => void;
+  onChangeIndex: (oldIndex: number, newIndex: number,
+                  changeContainer: boolean, take: (list: any[]) => any) => void;
   apply: () => void;
 }
 
@@ -84,14 +86,17 @@ const entrySource: DragSourceSpec<IProps, any> = {
   endDrag(props, monitor: DragSourceMonitor) {
     props.apply();
   },
+  canDrag(props, monitor: DragSourceMonitor) {
+    return !props.isLocked;
+  },
 };
 
 const entryTarget: DropTargetSpec<IProps> = {
   hover(props: IProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
     const hoverIndex = props.index;
 
-    if (index === hoverIndex) {
+    if ((index === hoverIndex) || !!isLocked || !!props.isLocked) {
       return;
     }
 

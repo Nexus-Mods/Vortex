@@ -38,6 +38,7 @@ import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 import TriStateCheckbox from './TriStateCheckbox';
 import Usage from './Usage';
+import VisibilityProxy from './VisibilityProxy';
 import Webview from './Webview';
 import ZoomableImage from './ZoomableImage';
 
@@ -49,5 +50,5 @@ export {
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   RadialProgress, SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, Timer, TriStateCheckbox,
-  Toggle, ToolbarIcon, tooltip, Usage, Webview, ZoomableImage,
+  Toggle, ToolbarIcon, tooltip, Usage, VisibilityProxy, Webview, ZoomableImage,
 };

@@ -12,6 +12,7 @@ export interface IDraggableListProps {
   id: string;
   itemTypeId: string;
   items: any[];
+  isLocked?: (item: any) => boolean;
   idFunc?: (item: any) => string;
   itemRenderer: React.ComponentClass<{ item: any }>;
   apply: (ordered: any[]) => void;
@@ -53,7 +54,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, id, itemRenderer, style, className } = this.props;
+    const { connectDropTarget, id, isLocked, itemRenderer, style, className } = this.props;
 
     const { ordered } = this.state;
     return connectDropTarget(
@@ -65,6 +66,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
                 key={this.itemId(item)}
                 item={item}
                 index={idx}
+                isLocked={isLocked?.(item) ?? false}
                 itemRenderer={itemRenderer}
                 take={this.take}
                 onChangeIndex={this.changeIndex}

@@ -148,7 +148,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const infoPanel = () =>
       <InfoPanel
         validationError={validationError}
-        infoText={gameEntry?.usageInstructions}
+        info={gameEntry?.usageInstructions}
       />;
 
     const draggableList = () => (this.nextState.loading)
@@ -161,6 +161,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             itemRenderer={ItemRenderer}
             apply={this.onApply}
             idFunc={this.getItemId}
+            isLocked={this.isLocked}
         />
         : <EmptyPlaceholder
             icon='folder-download'
@@ -184,7 +185,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             <PanelX.Body>
               <DNDContainer style={{ height: '100%' }}>
                 <FlexLayout type='row'>
-                  <FlexLayout.Flex className={'file-based-load-order-list'}>
+                  <FlexLayout.Flex className='file-based-load-order-list'>
                     {draggableList()}
                   </FlexLayout.Flex>
                   <FlexLayout.Flex>
@@ -216,6 +217,10 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
+
+  private isLocked = (item: IItemRendererProps): boolean => {
+    return [true, 'true', 'always'].includes(item.loEntry.locked);
+  }
 
   private onApply = (ordered: IItemRendererProps[]) => {
     const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } = this.props;
@@ -255,8 +260,12 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
+  let loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile?.id], []);
+  if (!Array.isArray(loadOrder)) {
+    loadOrder = [];
+  }
   return {
-    loadOrder: util.getSafe(state, ['persistent', 'loadOrder', profile?.id], []),
+    loadOrder,
     profile,
     needToDeploy: selectors.needToDeploy(state),
   };

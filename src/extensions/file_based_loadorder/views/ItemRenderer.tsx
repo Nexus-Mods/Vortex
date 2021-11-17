@@ -35,9 +35,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   public render() {
     const item = this.props.item.loEntry;
     const displayCheckboxes = this.props.item.displayCheckboxes;
-    return (!this.isLocked(item))
-      ? this.renderDraggable(item, displayCheckboxes)
-      : null;
+    return this.renderDraggable(item, displayCheckboxes);
   }
 
   private renderValidationError(): JSX.Element {
@@ -105,7 +103,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
         <p className='load-order-index'>{position}</p>
         {this.renderValidationError()}
         {this.renderExternalBanner(item)}
-        <p>{key}</p>
+        <p className='load-order-name'>{key}</p>
         {checkBox()}
         {lock()}
       </ListGroupItem>
@@ -113,7 +111,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   }
 
   private isLocked(item: ILoadOrderEntry): boolean {
-    return ['true', 'always'].includes(item.locked);
+    return [true, 'true', 'always'].includes(item.locked);
   }
 
   private isExternal(item: ILoadOrderEntry): boolean {
