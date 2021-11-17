@@ -922,21 +922,6 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
   };
 }
 
-function checkDownloadsWithMissingMeta(api: IExtensionApi) {
-  const state = api.getState();
-  const downloads = state.persistent.downloads.files;
-
-  const missingInfo = Object.keys(downloads)
-    .filter(dlId => downloads[dlId].modInfo?.source === undefined);
-
-  if (missingInfo.length > 0) {
-    log('info', 'downloads missing meta information', { dlIds: missingInfo });
-    queryInfo(api, missingInfo, false);
-  } else {
-    log('debug', 'no missing meta information');
-  }
-}
-
 function checkModsWithMissingMeta(api: IExtensionApi) {
   const state = api.getState();
   const { mods } = state.persistent;
@@ -1058,8 +1043,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     retrieveCategories(api, isUpdate);
   });
   api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
-  api.events.on('did-import-downloads', (dlIds: string[], cb?: (err?: Error) => void) => {
-    queryInfo(api, dlIds, false, cb); });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
 
@@ -1082,7 +1065,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       log('info', 'failed to determine newest Vortex version', { error: err.message });
     });
 
-  checkDownloadsWithMissingMeta(api);
   checkModsWithMissingMeta(api);
 
   callbacks.forEach(cb => cb(nexus));
@@ -1120,83 +1102,6 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 function goBuyPremium(evt: React.MouseEvent<any>) {
   const campaign = evt.currentTarget.getAttribute('data-campaign');
   opn(nexusModsURL(PREMIUM_PATH, { section: Section.Users, campaign })).catch(err => undefined);
-}
-
-function queryInfo(api: IExtensionApi, instanceIds: string[],
-                   ignoreCache: boolean, cb?: () => void) {
-  if (instanceIds === undefined) {
-    return;
-  }
-
-  const state: IState = api.store.getState();
-
-  const actions: Action[] = [];
-
-  Promise.map(instanceIds, dlId => {
-    const dl = state.persistent.downloads.files[dlId];
-    if (dl === undefined) {
-      log('warn', 'download no longer exists', dlId);
-      return;
-    }
-    const gameMode = activeGameId(state);
-    const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
-    const downloadPath = downloadPathForGame(state, gameId);
-    if ((downloadPath === undefined) || (dl.localPath === undefined) || (dl.state !== 'finished')) {
-      // almost certainly dl.localPath is undefined with a bugged download
-      return;
-    }
-    // note: this may happen in addition to and in parallel to a separate mod meta lookup
-    //   triggered by the file being added to application state, but that should be fine because
-    //   the mod meta information is cached locally, as is the md5 hash if it's not available here
-    //   yet, so no work should be done redundantly
-    return api.lookupModMeta({
-      fileMD5: dl.fileMD5,
-      filePath: path.join(downloadPath, dl.localPath),
-      gameId,
-      fileSize: dl.size,
-    }, ignoreCache)
-    .then((modInfo: ILookupResult[]) => {
-      if (modInfo.length > 0) {
-        const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
-        const info = match.value;
-
-        const setInfo = (key: string, value: any) => {
-          if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
-        };
-
-        setInfo('meta', info);
-
-        try {
-          const nxmUrl = new NXMUrl(info.sourceURI);
-          setInfo('source', 'nexus');
-          setInfo('nexus.ids.gameId', nxmUrl.gameId);
-          setInfo('nexus.ids.fileId', nxmUrl.fileId);
-          setInfo('nexus.ids.modId', nxmUrl.modId);
-          const metaGameId = convertNXMIdReverse(knownGames(state), info.gameId);
-          return (gameId !== metaGameId)
-            ? api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId])
-            : Promise.resolve();
-        } catch (err) {
-          // failed to parse the uri as an nxm link - that's not an error in this case, if
-          // the meta server wasn't nexus mods this is to be expected
-          const dlNow = api.getState().persistent.downloads.files[dlId];
-          if (dlNow.modInfo?.source === undefined) {
-            setInfo('source', 'unknown');
-          }
-        }
-      }
-    })
-    .catch(err => {
-      log('warn', 'failed to look up mod meta info', { message: err.message });
-    });
-  })
-  .finally(() => {
-    batchDispatch(api.store, actions);
-  })
-  .then(() => {
-    log('debug', 'done querying info', { archiveIds: instanceIds });
-    cb?.();
-  });
 }
 
 function idValid(thingId: string,
@@ -1502,22 +1407,6 @@ function init(context: IExtensionContextExt): boolean {
     instanceIds => {
       tracking.untrackMods(instanceIds);
     });
-
-  const queryCondition = (instanceIds: string[]) => {
-    const state: IState = context.api.store.getState();
-    const incomplete = instanceIds.find(instanceId =>
-      getSafe<DownloadState>(state.persistent.downloads.files, [instanceId, 'state'], 'init')
-      !== 'finished');
-    return incomplete === undefined
-      ? true
-      : context.api.translate('Can only query finished downloads') as string;
-  };
-
-  // TODO: this shouldn't be here, it uses the meta server not the nexus api
-  context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
-  context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
 
   const resolveFunc = makeNXMProtocol(context.api,
     (gameId: string, modId: number, fileId: number) => new Promise(resolve => {

@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { finalizingDownload, finalizingProgress,
          finishDownload, setDownloadHash } from '../actions/state';
+import queryInfo from './queryDLInfo';
 
 import { util } from 'vortex-api';
 import { fileMD5 } from 'vortexmt';
@@ -21,6 +22,10 @@ export function finalizeDownload(api: IExtensionApi, id: string,
   return util.toPromise(cb => (fileMD5 as any)(filePath, cb, progressHash))
     .then((md5Hash: string) => {
       api.store.dispatch(setDownloadHash(id, md5Hash));
+    })
+    .then(() => {
+      api.store.dispatch(finishDownload(id, 'finished', undefined));
+      return queryInfo(api, [id], false);
     })
     .finally(() => {
       // still storing the download as successful even if we didn't manage to calculate its

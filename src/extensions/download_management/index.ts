@@ -28,11 +28,12 @@ import { setTransferDownloads } from './actions/transactions';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { transactionsReducer } from './reducers/transactions';
-import { IDownload } from './types/IDownload';
+import { DownloadState, IDownload } from './types/IDownload';
 import { IProtocolHandlers, IResolvedURL } from './types/ProtocolHandlers';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import { finalizeDownload } from './util/postprocessDownload';
+import queryInfo from './util/queryDLInfo';
 import DownloadView, { IDownloadViewProps } from './views/DownloadView';
 import Settings from './views/Settings';
 import ShutdownButton from './views/ShutdownButton';
@@ -745,6 +746,21 @@ function processInterruptedDownloads(api: IExtensionApi,
   });
 }
 
+function checkDownloadsWithMissingMeta(api: IExtensionApi) {
+  const state = api.getState();
+  const downloads = state.persistent.downloads.files;
+
+  const missingInfo = Object.keys(downloads)
+    .filter(dlId => downloads[dlId].modInfo?.source === undefined);
+
+  if (missingInfo.length > 0) {
+    log('info', 'downloads missing meta information', { dlIds: missingInfo });
+    queryInfo(api, missingInfo, false);
+  } else {
+    log('debug', 'no missing meta information');
+  }
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -775,6 +791,21 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;
   };
+
+  const queryCondition = (instanceIds: string[]) => {
+    const state: IState = context.api.store.getState();
+    const incomplete = instanceIds.find(instanceId =>
+      getSafe<DownloadState>(state.persistent.downloads.files, [instanceId, 'state'], 'init')
+      !== 'finished');
+    return incomplete === undefined
+      ? true
+      : context.api.translate('Can only query finished downloads') as string;
+  };
+
+  context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
+    (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
+  context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
+    (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
 
   context.registerAttributeExtractor(100, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
@@ -858,6 +889,9 @@ function init(context: IExtensionContextExt): boolean {
       }
     });
 
+    context.api.events.on('did-import-downloads', (dlIds: string[], cb?: (err?: Error) => void) => {
+      queryInfo(context.api, dlIds, false).then(() => cb()).catch(err => cb(err)); });
+
     context.api.onStateChange(['settings', 'downloads', 'path'], (prev, cur) => {
       updateDebouncer.schedule();
     });
@@ -940,6 +974,8 @@ function init(context: IExtensionContextExt): boolean {
     updateDebouncer = new Debouncer(() => {
       return updateDownloadPath(context.api);
     }, 1000);
+
+    checkDownloadsWithMissingMeta(context.api);
 
     {
       let powerTimer: NodeJS.Timeout;
