@@ -52,9 +52,10 @@ import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
 import { STAGING_DIR_TAG } from './stagingDirectory';
 
+import { HTTPError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
-import { IHashResult, ILookupResult, IModInfo, IReference, IRule } from 'modmeta-db';
+import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
@@ -1557,6 +1558,15 @@ class InstallManager {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
                                    referenceTag, wasCanceled, campaign, fileName)
+        .catch(err => {
+          if (err instanceof HTTPError) {
+            // assuming the api failed because the mod had been archive, can still download
+            // the exact file specified by the curator
+            return undefined;
+          } else {
+            return Promise.reject(err);
+          }
+        })
         .then(res => (res === undefined)
           ? this.downloadURL(api, lookupResult, wasCanceled, referenceTag, campaign, fileName)
           : res);
