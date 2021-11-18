@@ -652,9 +652,11 @@ function checkForUnfinalized(api: IExtensionApi,
                              downloads: { [id: string]: IDownload; },
                              gameMode: string) {
   const unfinalized = Object.keys(downloads)
-    .filter(id => (downloads[id].state === 'finalizing')
-               || ((downloads[id].state === 'finished')
-                   && (downloads[id].fileMD5 === undefined)));
+    .filter(id =>
+      ((downloads[id].state === 'finalizing')
+        || ((downloads[id].state === 'finished')
+          && (downloads[id].fileMD5 === undefined)))
+      && (downloads[id].localPath !== undefined));
 
   if (unfinalized.length > 0) {
     api.sendNotification({
