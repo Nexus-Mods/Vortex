@@ -89,7 +89,11 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               .then(() => runCheck(api, check))
               .catch(UserCanceled, () => null)
               .catch(ProcessCanceled, () => null)
-              .catch(err => api.showErrorNotification('Failed to run automatic fix', err)),
+              .catch(err => {
+                err['attachLogOnReport'] = true;
+                err['Fix'] = check.id;
+                api.showErrorNotification('Failed to run automatic fix', err);
+              }),
           });
         } else {
           actions.push({

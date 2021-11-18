@@ -93,6 +93,7 @@ import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 
 import Promise from 'bluebird';
+import * as _ from 'lodash';
 import minimatch from 'minimatch';
 import * as path from 'path';
 import React from 'react';
@@ -764,13 +765,24 @@ function genValidActivatorCheck(api: IExtensionApi) {
       },
       severity: 'error',
       automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        api.store.dispatch(setDeploymentProblem(reasons.map(reason => ({
-          activator: reason.activator,
-          message: reason.description(api.translate),
-          solution: reason.solution !== undefined ? reason.solution(api.translate) : undefined,
-          order: reason.order || 1000,
-          hasAutomaticFix: reason.fixCallback !== undefined,
-        })).sort((lhs, rhs) => lhs.order - rhs.order)));
+        api.store.dispatch(setDeploymentProblem(reasons.map(reason => {
+          let message: string;
+          if (_.isFunction(reason.description)) {
+            message = reason.description(api.translate);
+          } else {
+            log('error', 'deployment unavailable with no description', {
+              gameId, reason: JSON.stringify(reason),
+            });
+            message = '<Missing description, please report this and include a log file>';
+          }
+          return {
+            activator: reason.activator,
+            message,
+            solution: reason.solution !== undefined ? reason.solution(api.translate) : undefined,
+            order: reason.order || 1000,
+            hasAutomaticFix: reason.fixCallback !== undefined,
+          };
+        }).sort((lhs, rhs) => lhs.order - rhs.order)));
       }),
     });
   });
