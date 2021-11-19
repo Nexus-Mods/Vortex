@@ -260,7 +260,9 @@ export interface ISessionGameMode {
 }
 
 export interface IGameInfoEntry {
+  key: string;
   provider: string;
+  priority: number;
   expires: number;
   title: string;
   value: any;
@@ -293,7 +295,7 @@ export interface IOverlay {
 }
 
 export interface IOverlaysState {
-  overlays: { [key: string]:  IOverlay };
+  overlays: { [key: string]: IOverlay };
 }
 
 /**

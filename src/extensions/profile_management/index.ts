@@ -698,7 +698,7 @@ function init(context: IExtensionContext): boolean {
       const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
         ? manageGameDiscovered
         : manageGameUndiscovered;
-      
+
       context.api.events.emit(
         'analytics-track-event', 'Games', 'Start managing', gameId,
       );
@@ -706,7 +706,6 @@ function init(context: IExtensionContext): boolean {
       checkOverridden(context.api, gameId)
         .then(() => {
           manageFunc(context.api, gameId);
-          
         })
         .catch(err => {
           if (!(err instanceof UserCanceled)) {
@@ -747,7 +746,6 @@ function init(context: IExtensionContext): boolean {
     checkOverridden(context.api, gameId)
       .then(() => {
         activateGame(context.api.store, gameId);
-        
       })
       .catch(err => {
         if (!(err instanceof UserCanceled)) {

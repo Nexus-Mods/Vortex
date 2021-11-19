@@ -144,7 +144,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
         }
       });
       if (values.length > 0) {
-        store.dispatch(setGameInfo(gameId, prov.id, expires, values));
+        store.dispatch(setGameInfo(gameId, prov.id, prov.priority, expires, values));
       }
     });
   })
@@ -529,7 +529,7 @@ function init(context: IExtensionContext): boolean {
         path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
       }));
 
-  context.registerGameInfoProvider('main', 0, 86400000,
+  context.registerGameInfoProvider('main', 30, 86400000,
     ['size', 'size_nolinks'], queryGameInfo);
 
   const openGameFolder = (instanceIds: string[]) => {

@@ -69,9 +69,11 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
 
   public render(): JSX.Element {
     const { t } = this.props;
-    const gameInfo = this.props.gameInfo || {};
+    const gameInfo: { [key: string]: IGameInfoEntry } = this.props.gameInfo || {};
 
-    const keysToRender = Object.keys(gameInfo).filter(key => gameInfo[key].value !== null);
+    const keysToRender = Object.keys(gameInfo)
+      .sort((lhs, rhs) => (gameInfo[lhs].priority ?? 100) - (gameInfo[rhs].priority ?? 100))
+      .filter(key => gameInfo[key].value !== null);
 
     if (keysToRender.length === 0) {
       return (
