@@ -51,6 +51,7 @@ export interface IGame extends ITool {
    *  versioning system internally.
    *
    * @param gamePath path where the game is installed
+   * @param exePath relative (to gamePath) path to the discovered exe
    *
    * @returns the game's version - please note that the game extension must
    *          provide a valid semantic version - non-semantic versions will
@@ -59,7 +60,7 @@ export interface IGame extends ITool {
    *
    * @memberof IGame
    */
-  getGameVersion?: (gamePath: string) => Promise<string>;
+  getGameVersion?: (gamePath: string, exePath: string) => Promise<string>;
 
   /**
    * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
