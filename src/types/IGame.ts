@@ -1,5 +1,4 @@
 import { IModType } from '../extensions/gamemode_management/types/IModType';
-import { IStarterInfo } from '../util/StarterInfo';
 
 import { IDiscoveryResult, IMod } from './IState';
 import { ITool } from './ITool';
@@ -53,14 +52,18 @@ export interface IGame extends ITool {
    * @param gamePath path where the game is installed
    * @param exePath relative (to gamePath) path to the discovered exe
    *
-   * @returns the game's version - please note that the game extension must
-   *          provide a valid semantic version - non-semantic versions will
-   *          be ignored and Vortex will use the game executable's version
-   *          attribute instead as fallback.
+   * @returns the game's version
    *
    * @memberof IGame
    */
   getGameVersion?: (gamePath: string, exePath: string) => Promise<string>;
+
+  /**
+   * use this to determine the version of this game installed on the system
+   *
+   * Do not implement this in your game extension, the function is added by vortex itself
+   */
+  getInstalledVersion?: (discovery: IDiscoveryResult) => Promise<string>;
 
   /**
    * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
