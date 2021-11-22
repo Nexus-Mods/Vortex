@@ -244,11 +244,10 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
           this.props.onNewWindow(url, disposition);
         }
       });
-      // TODO as of electron 15.1.1 (since 14.?.?), webview doesn't support transparent
-      //   background, so it won't properly embed in the page. This at least makes the
-      //   pages readable
+      /*
       (this.mNode as any).insertCSS(
         'body.mediawiki, #content, #mw-pages > table { background-color: #4c4c4c !important }');
+      */
       // (this.mNode as any).openDevTools();
     });
     this.mNode.addEventListener('console-message', this.logMessage);
