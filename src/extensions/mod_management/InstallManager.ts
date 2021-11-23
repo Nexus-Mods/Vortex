@@ -1865,12 +1865,12 @@ class InstallManager {
           }
         })
         .then((downloadId: string) => {
-          if (downloadId === undefined) {
+          downloads = api.getState().persistent.downloads.files;
+
+          if ((downloadId === undefined) || (downloads[downloadId] === undefined)) {
             return Promise.reject(
               new NotFound(`download for ${renderModReference(dep.reference)}`));
           }
-          downloads = api.getState().persistent.downloads.files;
-
           if (downloads[downloadId].state !== 'finished') {
             // download not actually finished, may be paused
             return Promise.reject(new UserCanceled(true));
