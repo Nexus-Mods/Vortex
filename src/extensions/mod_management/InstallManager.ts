@@ -1877,8 +1877,8 @@ class InstallManager {
           }
 
           if ((dep.reference.tag !== undefined)
-              && (downloads[downloadId].modInfo.referenceTag !== undefined)
-              && (downloads[downloadId].modInfo.referenceTag !== dep.reference.tag)) {
+              && (downloads[downloadId].modInfo?.referenceTag !== undefined)
+              && (downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag)) {
             // we can't change the tag on the download because that might break
             // dependencies on the other mod
             dep.reference = {
