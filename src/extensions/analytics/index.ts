@@ -101,7 +101,11 @@ function init(context: IExtensionContext): boolean {
 
       Analytics.start(instanceId, updateChannel, {
         vortexVersion: getApplication().version,
-        membership: userInfo().isPremium ? 'Premium' : 'Free',
+        membership: userInfo().isPremium
+          ? 'Premium'
+          : userInfo().isSupporter
+            ? 'Supporter'
+            : 'Member',
         gameId,
         gameVersion,
       });
