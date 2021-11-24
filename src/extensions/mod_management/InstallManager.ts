@@ -392,8 +392,10 @@ class InstallManager {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
                   api.store.dispatch(setModEnabled(currentProfile.id, existingMod.id, false));
-                  api.events.emit('mods-enabled', [existingMod.id], false,
-                                  currentProfile.gameId, silent);
+                  api.events.emit('mods-enabled', [existingMod.id], false, currentProfile.gameId, {
+                    silent,
+                    installed: true,
+                  });
                 }
                 rules = existingMod.rules || [];
                 overrides = existingMod.fileOverrides;
@@ -473,7 +475,10 @@ class InstallManager {
         if (currentProfile !== undefined) {
           if (enable) {
             api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
-            api.events.emit('mods-enabled', [modId], true, currentProfile.gameId, silent);
+            api.events.emit('mods-enabled', [modId], true, currentProfile.gameId, {
+              silent,
+              installed: true,
+            });
           }
           /*
           if (processDependencies) {
