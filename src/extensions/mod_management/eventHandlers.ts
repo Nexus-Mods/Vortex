@@ -314,12 +314,19 @@ export function onGameModeActivated(
               'Deployment method no longer supported',
               {
                 message:
-                  'The deployment method you had configured is no longer applicable.\n' +
+                  'The deployment method you had configured ({{method}}) is no longer ' +
+                  'applicable.\n' +
                   'Please resolve the problem described below or go to "Settings" and ' +
                   'change the deployment method.',
                 reason: reason.errors[0].description(api.translate),
               },
-              { allowReport: false, id: 'deployment-method-unavailable' },
+              {
+                allowReport: false,
+                id: 'deployment-method-unavailable',
+                replace: {
+                  method: oldActivator.name,
+                },
+              },
             );
           }
         }

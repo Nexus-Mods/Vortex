@@ -81,6 +81,7 @@ import {} from 'uuid';
 import WebSocket from 'ws';
 import { IComponentContext } from '../../types/IComponentContext';
 import { MainContext } from '../../views/MainWindow';
+import { getGame } from '../gamemode_management/util/getGame';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -1007,10 +1008,10 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     nexus = new Proxy(
       new Proxy(
-        new Nexus('Vortex', getApplication().version, gameMode, 30000),
+        new Nexus('Vortex', getApplication().version, nexusGameId(getGame(gameMode)), 30000),
         new Disableable(api),
-       ),
-       requestLog);
+      ),
+      requestLog);
 
     nexus.setLogger((level: LogLevel, message: string, meta: any) =>
       log(level, message, meta));
@@ -1042,7 +1043,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
   });
-  api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
+  api.events.on('gamemode-activated', (gameId: string) => {
+    nexus.setGame(nexusGameId(getGame(gameId)));
+  });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
 

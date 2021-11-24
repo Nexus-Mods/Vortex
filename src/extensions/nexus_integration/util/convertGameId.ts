@@ -17,9 +17,7 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
     return game.details.nexusPageId;
   }
 
-  const gameId = (game !== undefined)
-    ? game.id
-    : fallbackGameId;
+  const gameId = game?.id ?? fallbackGameId;
 
   return {
     skyrimse: 'skyrimspecialedition',

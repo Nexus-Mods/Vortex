@@ -59,13 +59,15 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 
 const gameStoreLaunchers: IGameStore[] = [];
-const extensionGames: IGame[] = [];
-const extensionStubs: IGameStub[] = [];
 
 const $ = local<{
   gameModeManager: GameModeManager,
+  extensionGames: IGame[],
+  extensionStubs: IGameStub[],
 }>('gamemode-management', {
   gameModeManager: undefined,
+  extensionGames: [],
+  extensionStubs: [],
 });
 
 interface IProvider {
@@ -502,7 +504,7 @@ function init(context: IExtensionContext): boolean {
         : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, '1.0.0');
       game.version = gameExtInfo.version;
-      extensionGames.push(game);
+      $.extensionGames.push(game);
     } catch (err) {
       context.api.showErrorNotification('Game Extension not loaded', err, {
         allowReport: false,
@@ -512,7 +514,7 @@ function init(context: IExtensionContext): boolean {
   }) as any;
 
   context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
-    extensionStubs.push({ ext, game });
+    $.extensionStubs.push({ ext, game });
   };
 
   context.registerGameInfoProvider =
@@ -660,8 +662,8 @@ function init(context: IExtensionContext): boolean {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 
     $.gameModeManager = new GameModeManagerImpl(
-      extensionGames,
-      extensionStubs,
+      $.extensionGames,
+      $.extensionStubs,
       gameStoreLaunchers,
       (gameMode: string) => {
         log('debug', 'gamemode activated', gameMode);
@@ -669,7 +671,7 @@ function init(context: IExtensionContext): boolean {
       });
     $.gameModeManager.attachToStore(store);
     $.gameModeManager.startQuickDiscovery()
-      .then(() => removeDisappearedGames(context.api, extensionStubs.reduce((prev, stub) => {
+      .then(() => removeDisappearedGames(context.api, $.extensionStubs.reduce((prev, stub) => {
         prev[stub.game.id] = stub.ext;
         return prev;
       }, {})));

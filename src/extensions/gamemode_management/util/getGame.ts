@@ -2,7 +2,7 @@ import { IGame } from '../../../types/IGame';
 import { IGameStore } from '../../../types/IGameStore';
 import local from '../../../util/local';
 import { log } from '../../../util/log';
-import GameModeManager from '../GameModeManager';
+import GameModeManager, { IGameStub } from '../GameModeManager';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import { getModTypeExtensions } from './modTypeExtensions';
@@ -99,8 +99,12 @@ function makeGameProxy(game: IGame): IGame {
 // this isn't nice...
 const $ = local<{
   gameModeManager: GameModeManager,
+  extensionGames: IGame[],
+  extensionStubs: IGameStub[],
 }>('gamemode-management', {
   gameModeManager: undefined,
+  extensionGames: [],
+  extensionStubs: [],
 });
 
 // ...neither is this
@@ -112,12 +116,9 @@ export function getGames(): IGame[] {
 }
 
 export function getGame(gameId: string): IGame {
-  if ($.gameModeManager === undefined) {
-    throw new Error('getGame only available in renderer process');
-  }
-  let game = $.gameModeManager.games.find(iter => iter.id === gameId);
+  let game = $.extensionGames.find(iter => iter.id === gameId);
   if (game === undefined) {
-    const stub = $.gameModeManager.stubs.find(iter => iter.game.id === gameId);
+    const stub = $.extensionStubs.find(iter => iter.game.id === gameId);
     if (stub !== undefined) {
       game = stub.game;
     }

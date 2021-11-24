@@ -349,6 +349,15 @@ interface IRequestError {
   noReport?: boolean;
 }
 
+function expectedErrorMessage(code: string): string {
+  switch (code) {
+    case 'TOO_SOON_AFTER_DOWNLOAD': return 'You have to wait 15 minutes before endorsing a mod.';
+    case 'NOT_DOWNLOADED_MOD': return 'You have not downloaded this mod (with this account).';
+    case 'API_UNREACHABLE': return 'The server API is currently not reachable, please try again later';
+    default: return undefined;
+  }
+}
+
 export function processErrorMessage(err: NexusError): IRequestError {
   const errorMessage = typeof(err) === 'string' ? err : err.message;
   if (err.statusCode === undefined) {
@@ -364,9 +373,11 @@ export function processErrorMessage(err: NexusError): IRequestError {
       return res;
     }
   } else if ((err.statusCode >= 400) && (err.statusCode < 500)) {
+    const expected = expectedErrorMessage(err.code);
     return {
-      message: 'Server couldn\'t process this request.\nMaybe the locally stored '
-      + 'info about the mod is wrong\nor the mod was removed from Nexus.',
+      message: expected
+            ?? 'Server couldn\'t process this request.\nMaybe the locally stored '
+             + 'info about the mod is wrong\nor the mod was removed from Nexus.',
       Servermessage: errorMessage,
       URL: err.request,
       fatal: errorMessage === undefined,
@@ -430,7 +441,7 @@ function reportEndorseError(api: IExtensionApi, err: Error,
     });
   } else {
     const detail = processErrorMessage(err as NexusError);
-    detail.Game = gameId;
+    detail.Game = gameId ?? activeGameId(api.getState());
     detail.Mod = modId;
     detail.Version = version;
     let allowReport = detail.Servermessage === undefined;
