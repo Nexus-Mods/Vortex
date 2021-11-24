@@ -14,7 +14,14 @@ export const tableReducer: IReducerSpec = {
     },
     [actions.setAttributeSort as any]: (state, payload) => {
       const { tableId, attributeId, direction } = payload;
-      return setSafe(state, [tableId, 'attributes', attributeId, 'sortDirection'], direction);
+      // ensure sorting for other columns is reset because we don't support sorting by multiple
+      // attributes atm
+      Object.keys(state[tableId]?.attributes)
+        .forEach(iter => {
+          state = setSafe(state, [tableId, 'attributes', iter, 'sortDirection'],
+            (iter === attributeId) ? direction : 'none');
+        });
+      return state;
     },
     [actions.setAttributeFilter as any]: (state, payload) => {
       const { tableId, attributeId, filter } = payload;
