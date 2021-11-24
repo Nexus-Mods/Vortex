@@ -1,5 +1,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
+import { activeGameId, discoveryByGame, gameName } from '../../util/selectors';
+import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
 import Analytics from './analytics/Analytics';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
@@ -64,6 +66,13 @@ function init(context: IExtensionContext): boolean {
       Analytics.trackClickEvent(category, label, value);
     });
 
+    // Used to ensure a new dimension is set when changing game by restarting the UA tracking
+    context.api.onStateChange(['settings', 'profiles', 'activeProfileId'], () => {
+      if (Analytics.isUserSet()) {
+        initializeAnalytics();
+      }
+    });
+
     // All state listeners
     const stateListners = [
       ...NAVIGATION_STATE_LISTENERS,
@@ -82,8 +91,25 @@ function init(context: IExtensionContext): boolean {
       context.api.events.on(eventListner.event, eventListner.callback);
     }
 
-    function initializeAnalytics() {
-      Analytics.start(instanceId, updateChannel);
+    async function initializeAnalytics() {
+      const gameId = activeGameId(context.api.store.getState());
+      let gameVersion = '';
+      if (gameId) {
+        gameVersion = await getGame(gameId)
+          .getInstalledVersion(discoveryByGame(context.api.store.getState(), gameId));
+      }
+
+      Analytics.start(instanceId, updateChannel, {
+        vortexVersion: getApplication().version,
+        membership: userInfo().isPremium
+          ? 'Premium'
+          : userInfo().isSupporter
+            ? 'Supporter'
+            : 'Member',
+        gameId,
+        gameVersion,
+      });
+
       Analytics.trackEvent('Vortex', 'Version', getApplication().version);
     }
 
