@@ -156,6 +156,7 @@ export function getCollectionInfo(nexus: Nexus,
       user: {
         name: true,
         memberId: true,
+        avatar: true,
       },
       tileImage: {
         url: true,
