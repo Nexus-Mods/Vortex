@@ -30,7 +30,7 @@ import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
 import modName, { renderModReference } from '../mod_management/util/modName';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
-import { setModEnabled } from '../profile_management/actions/profiles';
+import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, removeModRule, setFileOverride, setModAttribute,
         setModType} from './actions/mods';
@@ -391,8 +391,7 @@ class InstallManager {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  api.store.dispatch(setModEnabled(currentProfile.id, existingMod.id, false));
-                  api.events.emit('mods-enabled', [existingMod.id], false, currentProfile.gameId, {
+                  setModsEnabled(api, currentProfile.id, [existingMod.id], false, {
                     silent,
                     installed: true,
                   });
@@ -474,8 +473,7 @@ class InstallManager {
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
         if (currentProfile !== undefined) {
           if (enable) {
-            api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
-            api.events.emit('mods-enabled', [modId], true, currentProfile.gameId, {
+            setModsEnabled(api, currentProfile.id, [modId], true, {
               silent,
               installed: true,
             });

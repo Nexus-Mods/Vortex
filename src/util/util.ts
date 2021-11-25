@@ -720,6 +720,7 @@ export function semverCoerce(input: string): semver.SemVer {
   return res;
 }
 
+// TODO: support thunk actions?
 export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
   const dispatch = store['dispatch'] ?? store;
   if (actions.length > 0) {

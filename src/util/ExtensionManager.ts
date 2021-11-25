@@ -738,6 +738,7 @@ class ExtensionManager {
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
+      withPrePost: this.withPrePost,
       isOutdated: () => isOutdated(),
       onAsync: this.onAsync,
       highlightControl: this.highlightControl,
@@ -1947,6 +1948,15 @@ class ExtensionManager {
         enqueue(effectiveListener(...args));
       }
     });
+  }
+
+  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Promise<T>) => {
+    return (...args: any[]) => {
+      return this.emitAndAwait(`will-${eventName}`, ...args)
+      .then(() => cb(...args))
+      .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args)
+        .then(() => res));
+    };
   }
 
   // tslint:disable-next-line:member-ordering

@@ -39,7 +39,7 @@ import { setAutoDeployment } from '../settings_interface/actions/automation';
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
-import { setModEnabled } from '../profile_management/actions/profiles';
+import { IEnableOptions, setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
@@ -848,11 +848,6 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
       }
     });
   });
-}
-
-interface IEnableOptions {
-  silent: boolean;
-  installed: boolean;
 }
 
 function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {

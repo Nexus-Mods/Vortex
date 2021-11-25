@@ -24,7 +24,7 @@ import { batchDispatch, truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import getDownloadGames from '../../download_management/util/getDownloadGames';
-import { setModEnabled } from '../../profile_management/actions/profiles';
+import { setModEnabled, setModsEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
@@ -120,7 +120,6 @@ interface IConnectedProps extends IModProps {
 
 interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
-  onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
@@ -925,18 +924,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private cycleModState(profileId: string, modId: string, newValue: string) {
-    const { gameMode, onSetModEnabled } = this.props;
-
+  private cycleModState(modId: string) {
     if (this.state.modsWithState[modId].state === 'downloaded') {
       // cycle from "not installed" -> "disabled"
       this.context.api.events.emit('start-install-download', modId);
     } else {
       // enabled and disabled toggle to each other so the toggle
       // will never remove the mod
-      const nextState = this.state.modsWithState[modId].enabled !== true;
-      onSetModEnabled(profileId, modId, nextState);
-      this.context.api.events.emit('mods-enabled', [modId], nextState, gameMode);
+      const newState = this.state.modsWithState[modId].enabled !== true;
+      this.setModsEnabled([modId], newState);
     }
   }
 
@@ -982,16 +978,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           if (err !== null) {
             this.context.api.showErrorNotification('failed to install download', err);
           } else if (value === 'enabled') {
-            onSetModEnabled(id, true);
-            this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
+            this.setModsEnabled([id], true);
           }
           resolve();
         });
       });
     } else {
       // selected "enabled" or "disabled" from the other one
-      onSetModEnabled(modId, value === 'enabled');
-      this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
+      this.setModsEnabled([modId], value === 'enabled');
     }
 
     return Promise.resolve();
@@ -1007,10 +1001,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (value === undefined) {
-      this.cycleModState(profileId, mod.id, value);
+      this.cycleModState(mod.id);
     } else {
       this.setModState(profileId, mod.id, value, (modId: string, enabled: boolean) =>
-        this.props.onSetModEnabled(profileId, modId, enabled));
+        this.setModsEnabled([modId], enabled));
     }
   }
 
@@ -1046,27 +1040,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectVersion = (evtKey) => {
-    const { gameMode, profileId, onSetModEnabled } = this.props;
+    const { gameMode, profileId } = this.props;
     const { modId, altId } = evtKey;
 
     if (modId === altId) {
       return;
     }
 
-    onSetModEnabled(profileId, modId, false);
-    if ((this.state.modsWithState[altId] !== undefined)
-        && (this.state.modsWithState[altId].state === 'downloaded')) {
-      this.context.api.events.emit('start-install-download', altId, true, (err, id) => {
-        if (err === null) {
-          onSetModEnabled(profileId, id, true);
+    this.setModsEnabled([modId], false)
+      .then(() => {
+        if ((this.state.modsWithState[altId] !== undefined)
+          && (this.state.modsWithState[altId].state === 'downloaded')) {
+          this.context.api.events.emit('start-install-download', altId, true, (err, id) => {
+            if (err === null) {
+              this.setModsEnabled([id], true);
+            }
+          });
+        } else {
+          this.setModsEnabled([altId], true);
         }
       });
-    } else {
-      onSetModEnabled(profileId, altId, true);
-    }
-
-    this.context.api.events.emit('mods-enabled', [modId], false, gameMode);
-    this.context.api.events.emit('mods-enabled', [altId], true, gameMode);
   }
 
   private editDescription = (modId: string) => {
@@ -1102,8 +1095,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
+  private setModsEnabled(modIds: string[], enabled: boolean) {
+    const { profileId } = this.props;
+    return setModsEnabled(this.context.api, profileId, modIds, enabled);
+  }
+
   private enableSelected = (modIds: string[]) => {
-    const { gameMode, profileId, mods, modState, onSetModsEnabled } = this.props;
+    const { profileId, mods, modState } = this.props;
 
     const filtered = modIds.filter(modId =>
       (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
@@ -1113,18 +1111,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       (modToEnable: string) => {
         modsToEnable.push(modToEnable);
       })))
-    .then(() => {
-      onSetModsEnabled(profileId, modsToEnable, true);
-      this.context.api.events.emit('mods-enabled', modsToEnable, true, gameMode);
-    });
+    .then(() => this.setModsEnabled(modsToEnable, true));
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { gameMode, profileId, mods, modState, onSetModsEnabled } = this.props;
+    const { mods, modState } = this.props;
     modIds = modIds.filter(modId =>
       (mods[modId] !== undefined) && (modState[modId]?.enabled === true));
-    onSetModsEnabled(profileId, modIds, false);
-    this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
+    this.setModsEnabled(modIds, false);
   }
 
   private removeRelated = (modIds: string[]) => {
@@ -1427,9 +1421,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   return {
     onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(setModAttribute(gameMode, modId, attributeId, value));
-    },
-    onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
-      dispatch(setModEnabled(profileId, modId, enabled));
     },
     onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => {
       batchDispatch(dispatch, modIds.map(modId => setModEnabled(profileId, modId, enabled)));

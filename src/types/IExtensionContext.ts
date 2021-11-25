@@ -665,6 +665,16 @@ export interface IExtensionApi {
   onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
 
   /**
+   * wraps a function such that it will emitAndAwait will-eventName and did-eventName events
+   * before and after invoking the actual callback.
+   * both these events receive the arguments passed to the callback, the did-event also receives
+   * the result of the callback if any (the result is the first argument because the number
+   * of arguments may be variable)
+   */
+  withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise<T>)
+    => ((...args: any[]) => Promise<T>);
+
+  /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
    * to determine if feedback should be sent to Nexus Mods.
    */

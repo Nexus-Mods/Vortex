@@ -1,6 +1,9 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
+import Bluebird from 'bluebird';
 import * as reduxAct from 'redux-act';
+import { IExtensionApi } from '../../../types/IExtensionContext';
+import { batchDispatch } from '../../../util/util';
 
 /**
  * add or edit a profile
@@ -28,3 +31,37 @@ export const setFeature = safeCreateAction(
 
 export const setProfileActivated =
   safeCreateAction('SET_PROFILE_ACTIVATED', (active: string) => active);
+
+export interface IEnableOptions {
+  silent: boolean;
+  installed: boolean;
+}
+
+const setModsEnabled = (() => {
+  let ppFunc: (profileId: string, modIds: string[],
+               enabled: boolean, options: IEnableOptions) => Bluebird<void>;
+
+  return (api: IExtensionApi, profileIdIn: string, modIdsIn: string[],
+          enableIn: boolean, optionsIn?: IEnableOptions) => {
+    if (ppFunc === undefined) {
+      ppFunc = api.withPrePost('enable-mods',
+        (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
+          batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
+          const { profileById } = require('../selectors');
+          const profile = profileById(api.getState(), profileId);
+          api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+
+          return Bluebird.resolve();
+      });
+    }
+
+    return ppFunc(profileIdIn, modIdsIn, enableIn, optionsIn)
+      .catch(err => {
+        api.showErrorNotification('Failed to enable/disable mod', err);
+      });
+  };
+})();
+
+export {
+  setModsEnabled,
+};

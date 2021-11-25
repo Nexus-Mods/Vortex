@@ -11,7 +11,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
-import { setModEnabled } from '../profile_management/actions/profiles';
+import { setModsEnabled } from '../profile_management/actions/profiles';
 
 import {
   addMod,
@@ -97,11 +97,10 @@ class InstallContext implements IInstallContext {
       dispatch(setModInstallationPath(gameMode, id, installPath));
     this.mSetModType = (id, modType) =>
       dispatch(setModType(gameMode, id, modType));
-    this.mEnableMod = (modId) => {
+    this.mEnableMod = (modId: string) => {
       const state: IState = store.getState();
       const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
-      dispatch(setModEnabled(profileId, modId, true));
-      api.events.emit('mods-enabled', [ modId ], true, this.mGameId);
+      return setModsEnabled(api, profileId, [modId], true);
     };
     this.mIsEnabled = (modId) => {
       const state: IState = store.getState();
