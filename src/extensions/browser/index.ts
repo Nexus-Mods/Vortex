@@ -1,7 +1,7 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { UserCanceled } from '../../util/CustomErrors';
 import { getSafe } from '../../util/storeHelper';
-import { setdefault } from '../../util/util';
+import { makeQueue, setdefault } from '../../util/util';
 
 import BrowserView, { SubscriptionResult } from './views/BrowserView';
 
@@ -43,8 +43,46 @@ function triggerEvent(subscriber: string, eventId: string, ...args: any): Subscr
   return res;
 }
 
+let lastURL: string;
+
+function doBrowse(api: IExtensionApi, navUrl: string,
+                  instructions: string, subscriptionId: string) {
+  return new Promise<string>((resolve, reject) => {
+    lastURL = navUrl;
+    subscribe(subscriptionId, 'close', () => {
+      reject(new UserCanceled());
+      return 'continue';
+    });
+    subscribe(subscriptionId, 'navigate', (newUrl: string) => {
+      lastURL = newUrl;
+      return 'continue';
+    });
+    subscribe(subscriptionId, 'download-url', (download: string) => {
+      resolve(download);
+      return 'close';
+    });
+
+    if (instructions === undefined) {
+      instructions = '';
+    }
+
+    if (instructions.length > 0) {
+      instructions += '\n\n';
+    }
+    const t = api.translate;
+    instructions += t('This window will close as soon as you click a valid download link');
+    api.store.dispatch(showURL(navUrl, instructions, subscriptionId));
+  })
+  .catch(UserCanceled, () => null)
+  .catch(err => {
+    api.showErrorNotification('Failed to download via browser', err);
+  })
+  .finally(() => {
+    unsubscribeAll(subscriptionId);
+  });
+}
+
 function init(context: IExtensionContext): boolean {
-  let lastURL: string;
   context.registerReducer(['session', 'browser'], sessionReducer);
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
@@ -53,45 +91,12 @@ function init(context: IExtensionContext): boolean {
   }));
 
   context.once(() => {
+    const enqueue = makeQueue();
     // open a browser to an url, displaying instructions if provided.
     // the browser closes as soon as a downloadable link was clicked and returns that
     // url
     context.api.onAsync('browse-for-download', (navUrl: string, instructions: string) => {
-      const subscriptionId = shortid();
-
-      return new Promise<string>((resolve, reject) => {
-        lastURL = navUrl;
-        subscribe(subscriptionId, 'close', () => {
-          reject(new UserCanceled());
-          return 'continue';
-        });
-        subscribe(subscriptionId, 'navigate', (newUrl: string) => {
-          lastURL = newUrl;
-          return 'continue';
-        });
-        subscribe(subscriptionId, 'download-url', (download: string) => {
-          resolve(download);
-          return 'close';
-        });
-
-        if (instructions === undefined) {
-          instructions = '';
-        }
-
-        if (instructions.length > 0) {
-          instructions += '\n\n';
-        }
-        const t = context.api.translate;
-        instructions += t('This window will close as soon as you click a valid download link');
-        context.api.store.dispatch(showURL(navUrl, instructions, subscriptionId));
-      })
-      .catch(UserCanceled, () => null)
-      .catch(err => {
-        context.api.showErrorNotification('Failed to download via browser', err);
-      })
-      .finally(() => {
-        unsubscribeAll(subscriptionId);
-      });
+      return enqueue(() => doBrowse(context.api, navUrl, instructions, shortid()), false);
     });
 
     ipcRenderer.on('received-url',
