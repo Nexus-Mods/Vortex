@@ -48,6 +48,6 @@ export {
   Revertability,
 } from '../extensions/history_management/types';
 export { IProfile, IProfileMod } from '../extensions/profile_management/types/IProfile';
+export { IEnableOptions } from '../extensions/profile_management/actions/profiles';
 export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';
 export { ILoadOrderDisplayItem, SortType, UpdateType } from '../extensions/mod_load_order/types/types';
-
