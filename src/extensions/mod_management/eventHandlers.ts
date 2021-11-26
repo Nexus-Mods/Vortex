@@ -629,7 +629,7 @@ export function onRemoveMods(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modIds[0]}`));
 
-  api.emitAndAwait('will-remove-mods', gameMode, removeMods)
+  api.emitAndAwait('will-remove-mods', gameMode, removeMods.map(mod => mod.id))
     .then(() => undeployMods(api, activators, gameMode, removeMods))
     .then(() => Promise.mapSeries(removeMods,
         (mod: IMod, idx: number, length: number) => {
