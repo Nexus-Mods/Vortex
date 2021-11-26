@@ -3,7 +3,8 @@ import { IDialogResult } from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IProfile, IState} from '../../types/IState';
 import { getApplication } from '../../util/application';
-import { DataInvalid, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled,
+         TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { setErrorContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -28,7 +29,7 @@ import { getCurrentActivator, getSupportedActivators } from './util/deploymentMe
 import getDownloadGames from '../download_management/util/getDownloadGames';
 import {getGame} from '../gamemode_management/util/getGame';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
-import {setModEnabled} from '../profile_management/actions/profiles';
+import {setModsEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
 import { IInstallOptions } from './types/IInstallOptions';
@@ -611,8 +612,7 @@ export function onRemoveMods(api: IExtensionApi,
 
   // is it even a plausible scenario that there is no profile active?
   if (profileId !== undefined) {
-    batchDispatch(store,
-      modIds.map(modId => setModEnabled(profileId, modId, false)));
+    setModsEnabled(api, profileId, modIds, false);
   }
 
   // undeploy mods, otherwise we'd leave orphaned links in the game directory

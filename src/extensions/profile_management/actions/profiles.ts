@@ -4,6 +4,7 @@ import Bluebird from 'bluebird';
 import * as reduxAct from 'redux-act';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { batchDispatch } from '../../../util/util';
+import { IProfile } from '../types/IProfile';
 
 /**
  * add or edit a profile
@@ -43,22 +44,30 @@ const setModsEnabled = (() => {
 
   return (api: IExtensionApi, profileIdIn: string, modIdsIn: string[],
           enableIn: boolean, optionsIn?: IEnableOptions) => {
+    const { profileById } = require('../selectors');
+
     if (ppFunc === undefined) {
       ppFunc = api.withPrePost('enable-mods',
         (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
-          batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
-          const { profileById } = require('../selectors');
-          const profile = profileById(api.getState(), profileId);
-          api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+          if (modIds.length > 0) {
+            const profile: IProfile = profileById(api.getState(), profileIdIn);
+            batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
+            api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+          }
 
           return Bluebird.resolve();
       });
     }
 
-    return ppFunc(profileIdIn, modIdsIn, enableIn, optionsIn)
-      .catch(err => {
-        api.showErrorNotification('Failed to enable/disable mod', err);
-      });
+    {
+      const profile: IProfile = profileById(api.getState(), profileIdIn);
+      const willChange = modIdsIn.filter(id =>
+        (profile.modState?.[id]?.enabled ?? false) !== enableIn);
+      return ppFunc(profileIdIn, willChange, enableIn, optionsIn)
+        .catch(err => {
+          api.showErrorNotification('Failed to enable/disable mod', err);
+        });
+    }
   };
 })();
 
