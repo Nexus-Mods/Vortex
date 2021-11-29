@@ -1224,7 +1224,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
             api.store.dispatch(setTransferMods(gameMode, undefined));
             fixResolve();
           } else {
-            fixReject();
+            fixReject(err);
           }
         });
     }),

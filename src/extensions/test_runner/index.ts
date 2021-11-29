@@ -90,6 +90,9 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               .catch(UserCanceled, () => null)
               .catch(ProcessCanceled, () => null)
               .catch(err => {
+                if (err === undefined) {
+                  err = new Error('Invalid fix result');
+                }
                 err['attachLogOnReport'] = true;
                 err['Fix'] = check.id;
                 api.showErrorNotification('Failed to run automatic fix', err);

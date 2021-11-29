@@ -593,7 +593,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
             api.store.dispatch(setTransferDownloads(undefined));
             fixResolve();
           } else {
-            fixReject();
+            fixReject(err);
           }
         })
         .finally(() => {
