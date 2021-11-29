@@ -128,7 +128,6 @@ function MenuAction(props: IMenuActionProps) {
             anchor={itemRef.current}
             onHide={setOpenFalse}
             actions={subMenus}
-
           />
           <Icon className='menu-more-icon' name='showhide-right' />
         </>

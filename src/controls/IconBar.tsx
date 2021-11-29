@@ -4,6 +4,7 @@ import { TFunction } from '../util/i18n';
 import { setdefault } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
+import { HOVER_DELAY } from './constants';
 import Icon from './Icon';
 import PortalMenu from './PortalMenu';
 import ToolbarDropdown from './ToolbarDropdown';
@@ -14,7 +15,8 @@ import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ButtonGroup, MenuItem } from 'react-bootstrap';
+import { ButtonGroup, Dropdown, MenuItem } from 'react-bootstrap';
+import ReactDOM from 'react-dom';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
@@ -73,6 +75,100 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
 
     action.action(instanceIds);
   }
+}
+
+interface IIconBarIconProps {
+  t: TFunction;
+  actionId: string;
+  icon: IActionDefinitionEx;
+  instanceIds: string[];
+  buttonType: ButtonType;
+  tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
+}
+
+function nop() {
+  // nop
+}
+
+function IconBarIcon(props: IIconBarIconProps) {
+  const { t, actionId, buttonType, icon, instanceIds, tooltipPlacement } = props;
+
+  // stuff for submenus
+  const [open, setOpenMenu] = React.useState(false);
+  const [subMenus, setSubMenus] = React.useState<IActionDefinitionEx[]>([]);
+
+  const setOpen = React.useCallback((value: React.SetStateAction<boolean>) => {
+    if (Array.isArray(icon.subMenus)) {
+      setSubMenus(icon.subMenus);
+    } else {
+      setSubMenus(icon.subMenus());
+    }
+    setOpenMenu(value);
+  }, [setOpenMenu, icon.subMenus]);
+
+  const itemRef = React.useRef<HTMLElement>();
+
+  const trigger = React.useCallback(() => {
+    icon.action?.(instanceIds, icon.data);
+    if (icon.subMenus !== undefined) {
+      setOpen(old => !old);
+    }
+  }, [instanceIds, icon, setOpen]);
+
+  const setOpenFalse = React.useCallback(() => { setOpen(false); }, [ setOpen ]);
+
+  const hasIcon = (buttonType === undefined)
+    || ['icon', 'both', 'menu'].includes(buttonType);
+  const hasText = (buttonType === undefined)
+    || ['text', 'both', 'menu'].includes(buttonType);
+
+  const tooltip = (typeof(icon.show) === 'string')
+    ? icon.show
+    : t(icon.title, { ns: icon.options?.namespace });
+
+  const setItemRef = (ref) => {
+    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
+  };
+
+  return (
+    <ToolbarIcon
+      key={actionId}
+      ref={setItemRef}
+      className={actionId}
+      instanceId={instanceIds}
+      icon={hasIcon ? icon.icon : undefined}
+      text={hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined}
+      tooltip={tooltip}
+      onClick={trigger}
+      placement={tooltipPlacement}
+      disabled={(icon.show !== true) && (icon.show !== undefined)}
+      stroke={icon.options?.hollowIcon === true}
+      hollow={icon.options?.hollowIcon === true}
+    >
+      <PortalMenu
+        open={open}
+        target={itemRef.current}
+        onClose={setOpenFalse}
+        onClick={nop}
+      >
+        <Dropdown.Menu
+          style={{ display: 'block', position: 'initial' }}
+          open={true}
+          onClose={setOpenFalse}
+          onClick={nop}
+        >
+          {(subMenus ?? []).map(subMenu =>
+            <MenuAction
+              t={t}
+              key={subMenu.title}
+              id={subMenu.title}
+              action={subMenu}
+              instanceId={actionId}
+            />)}
+        </Dropdown.Menu>
+      </PortalMenu>
+    </ToolbarIcon>
+  );
 }
 
 /**
@@ -273,35 +369,14 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     let actionId = (icon.title || index.toString()).toLowerCase().replace(/ /g, '-');
     actionId = `action-${actionId}`;
     if (icon.component === undefined) {
-      // simple case
-
-      if (icon.icon === null) {
-        return <p>{icon.title}</p>;
-      }
-
-      const buttonType = forceButtonType || this.props.buttonType;
-      const hasIcon = (buttonType === undefined)
-        || ['icon', 'both', 'menu'].includes(buttonType);
-      const hasText = (buttonType === undefined)
-        || ['text', 'both', 'menu'].includes(buttonType);
-
-      const tooltip = (typeof(icon.show) === 'string')
-        ? icon.show
-        : t(icon.title, { ns: icon.options?.namespace });
-
       return (
-        <ToolbarIcon
-          key={actionId}
-          className={actionId}
-          instanceId={instanceIds}
-          icon={hasIcon ? icon.icon : undefined}
-          text={hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined}
-          tooltip={tooltip}
-          onClick={icon.action}
-          placement={tooltipPlacement}
-          disabled={(icon.show !== true) && (icon.show !== undefined)}
-          stroke={icon.options?.hollowIcon === true}
-          hollow={icon.options?.hollowIcon === true}
+        <IconBarIcon
+          t={t}
+          actionId={actionId}
+          buttonType={forceButtonType || this.props.buttonType}
+          icon={icon}
+          instanceIds={instanceIds}
+          tooltipPlacement={tooltipPlacement ?? 'top'}
         />
       );
     } else {

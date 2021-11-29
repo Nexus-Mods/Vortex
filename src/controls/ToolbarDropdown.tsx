@@ -15,7 +15,13 @@ function sharedStart(...input: string[]) {
   return inputArrs[0].slice(0, diffIdx).join(' ');
 }
 
-class ToolbarDropdownItem extends React.PureComponent<{ t?: TFunction, icon: IActionDefinition, instanceIds: string[] }, {}> {
+interface IToolbarDropdownItemProps {
+  t?: TFunction;
+  icon: IActionDefinition;
+  instanceIds: string[];
+}
+
+class ToolbarDropdownItem extends React.PureComponent<IToolbarDropdownItemProps, {}> {
   public render() {
     const { t, icon } = this.props;
     return (
@@ -53,6 +59,9 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
 
     const def = icons.find(i => i.default);
 
+    const renderIcon = icon =>
+      <ToolbarDropdownItem t={t} key={icon.title} icon={icon} instanceIds={instanceId} />;
+
     if (def !== undefined) {
       return (
         <Dropdown
@@ -65,7 +74,7 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
 
           <Dropdown.Toggle />
           <Dropdown.Menu>
-            {icons.map(icon => <ToolbarDropdownItem t={t} key={icon.title} icon={icon} instanceIds={instanceId} />)}
+            {icons.map(renderIcon)}
           </Dropdown.Menu>
         </Dropdown>
       );
@@ -76,7 +85,7 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
           className={classes.join(' ')}
           title={this.renderTitle(shared)}
         >
-          {icons.map(icon => <ToolbarDropdownItem t={t} key={icon.title} icon={icon} instanceIds={instanceId} />)}
+          {icons.map(renderIcon)}
         </DropdownButton>
       );
     }

@@ -2,8 +2,8 @@ import Dropdown from './Dropdown';
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Overlay } from 'react-overlays';
 import { SelectCallback } from 'react-bootstrap';
+import { Overlay } from 'react-overlays';
 
 interface IPortalMenuProps {
   open: boolean;
@@ -13,6 +13,7 @@ interface IPortalMenuProps {
   onSelect?: SelectCallback;
   useMousePosition?: boolean | { x: number, y: number };
   bsRole?: string;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 function nop() {
@@ -32,17 +33,17 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
     this.state = {
       x: 0,
       y: 0,
-    }
+    };
   }
 
   public render() {
-    const { onClose, open, target, useMousePosition } = this.props;
+    const { onClose, open, placement, target, useMousePosition } = this.props;
 
     return (
       <Overlay
         show={open}
         container={this.context.menuLayer}
-        placement='bottom'
+        placement={placement ?? 'bottom'}
         onHide={nop}
         target={target}
         flip={true}
