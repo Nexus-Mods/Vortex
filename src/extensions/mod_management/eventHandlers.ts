@@ -612,7 +612,9 @@ export function onRemoveMods(api: IExtensionApi,
 
   // is it even a plausible scenario that there is no profile active?
   if (profileId !== undefined) {
-    setModsEnabled(api, profileId, modIds, false);
+    setModsEnabled(api, profileId, modIds, false, {
+      installed: options.incomplete,
+    });
   }
 
   // undeploy mods, otherwise we'd leave orphaned links in the game directory
