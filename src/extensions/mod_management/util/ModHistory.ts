@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { profileById } from '../../../util/selectors';
+import { midClip } from '../../../util/util';
 import { IHistoryEvent, IHistoryStack, Revertability } from '../../history_management/types';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfile } from '../../profile_management/types/IProfile';
@@ -22,7 +23,17 @@ interface IEventType {
 
 // some attributes we don't want to show because they are used internally as caches or something
 // and shouldn't be controlled by the user
-const HIDDEN_ATTRIBUTES = ['noContent', 'installTime', 'content', 'endorsed'];
+const HIDDEN_ATTRIBUTES = [
+  'noContent', 'installTime', 'content', 'endorsed', 'newestFileId', 'lastUpdateTime',
+];
+
+function shorten(input: any): any {
+  if (typeof(input) === 'string') {
+    return midClip(input, 20);
+  } else {
+    return input;
+  }
+}
 
 class ModHistory implements IHistoryStack {
   private mApi: IExtensionApi;
@@ -108,10 +119,16 @@ class ModHistory implements IHistoryStack {
       'mod-attribute-changed': {
         describe: evt =>
           api.translate('Mod "{{ name }}" attribute "{{ attribute }}" set: {{ to }}', {
-            replace: evt.data,
+            replace: {
+              ...evt.data,
+              to: shorten(evt.data.to),
+            },
           }),
         revert: {
-          describe: evt => api.translate('Revert to {{ from }}', { replace: evt.data }),
+          describe: evt => api.translate('Revert to {{ from }}', { replace: {
+            ...evt.data,
+            from: shorten(evt.data.from),
+           } }),
           possible: evt => {
             const state = api.getState();
             const { attribute, id, to } = evt.data;

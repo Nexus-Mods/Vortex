@@ -60,7 +60,7 @@ function HistoryItem(props: IHistoryItemProps) {
         {relativeTime(new Date(evt.timestamp), t)}
       </td>
       <td className='history-event-game'>
-        {game !== undefined ? game.name : null}
+        {game !== undefined ? (game.shortName ?? game.name) : null}
       </td>
       <td className='history-event-description'>{stack.describe(evt)}</td>
       <td className='history-event-revert'>
