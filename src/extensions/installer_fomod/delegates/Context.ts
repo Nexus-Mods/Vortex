@@ -69,7 +69,11 @@ export class Context extends DelegateBase {
       (extender: string, callback: (err, res: string) => void) => {
         log('debug', 'getExtenderVersion called');
         const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
-        return callback(null, getVersion(sePath));
+        try {
+          return callback(null, getVersion(sePath));
+        } catch (err) {
+          return callback(err, null);
+        }
       }
 
   public isExtenderPresent =
