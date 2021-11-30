@@ -575,8 +575,12 @@ function processInstallError(api: IExtensionApi,
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
   const gameId = nexusGameId(
     gameById(state, getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode));
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
-  return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
+  if (mod.attributes?.collectionSlug !== undefined) {
+    return `https://www.nexusmods.com/${gameId}/mods/${mod.attributes?.collectionSlug}`;
+  } else {
+    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+    return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
+  }
 }
 
 export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
@@ -683,7 +687,8 @@ function filterByUpdateList(store: Redux.Store<any>,
 export function checkForCollectionUpdates(store: Redux.Store<any>,
                                           nexus: Nexus,
                                           gameId: string,
-                                          mods: { [modId: string]: IMod }) {
+                                          mods: { [modId: string]: IMod })
+    : Promise<{ errorMessages: string[], updatedIds: string[] }> {
   const collectionIds = Object.keys(mods)
     .filter(modId => mods[modId].attributes?.collectionId !== undefined);
 
@@ -694,19 +699,178 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         id: true,
       },
     };
-    return ((mods[modId].attributes?.collectionSlug !== undefined)
-      ? nexus.getCollectionGraph(query, mods[modId].attributes?.collectionSlug)
-      : nexus.getCollectionGraphLegacy(query, mods[modId].attributes?.collectionId))
+    const mod = mods[modId];
+    return ((mod.attributes?.collectionSlug !== undefined)
+      ? nexus.getCollectionGraph(query, mod.attributes?.collectionSlug)
+      : nexus.getCollectionGraphLegacy(query, mod.attributes?.collectionId))
       .then(collection => {
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
-        if (collection.currentRevision.id !== mods[modId].attributes?.revisionId) {
+        if (collection.currentRevision.id !== mod.attributes?.revisionId) {
           store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
                                          collection.currentRevision.revision));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
             collection.currentRevision.revision.toString()));
         }
+        return undefined;
+      })
+      .catch(err => {
+        const name = modName(mod, { version: true });
+        const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
+        return `${nameLink}:<br/>${err.message}`;
       });
+  }))
+  .then(messages => ({
+    errorMessages: messages,
+    updatedIds: collectionIds,
   }));
+}
+
+function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
+                            gameId: string, modsList: IMod[],
+                            forceFull: boolean | 'silent', now: number) {
+  return filterByUpdateList(store, nexus, gameId, modsList)
+    .then((filteredMods: IMod[]) => checkForModUpdatesImpl(store, nexus,
+      gameId, modsList, filteredMods,
+      forceFull, now));
+}
+
+function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
+                                gameId: string, modsList: IMod[], filteredMods: IMod[],
+                                forceFull: boolean | 'silent', now: number)
+                                : Promise<{ errorMessages: string[], updatedIds: string[] }> {
+  const filtered = new Set(filteredMods.map(mod => mod.id));
+  const tStore = (store as ThunkStore<any>);
+  let pos = 0;
+  const progress = () => {
+    tStore.dispatch(addNotification({
+      id: 'check-update-progress',
+      type: 'activity',
+      message: 'Checking mods for update',
+      progress: (pos * 100) / filteredMods.length,
+    }));
+    ++pos;
+  };
+  progress();
+  if (forceFull) {
+    log('info', '[update check] forcing full update check (nexus)',
+      { count: modsList.length });
+  } else {
+    log('info', '[update check] optimized update check (nexus)',
+      { count: filteredMods.length, of: modsList.length });
+  }
+
+  const updatedIds: string[] = [];
+  const updatesMissed: IMod[] = [];
+
+  const verP = ['attributes', 'version'];
+  const fileIdP = ['attributes', 'fileId'];
+  const newWerP = ['attributes', 'newestVersion'];
+  const newFileIdP = ['attributes', 'newestFileId'];
+
+  return Promise.map(modsList, (mod: IMod) => {
+    if (!forceFull && !filtered.has(mod.id)) {
+      store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
+      return;
+    }
+
+    return checkModVersion(store, nexus, gameId, mod)
+      .then(() => {
+        const modNew = getSafe(store.getState(),
+          ['persistent', 'mods', gameId, mod.id], undefined);
+
+        const newestVerChanged =
+          getSafe(modNew, newWerP, undefined) !== getSafe(mod, newWerP, undefined);
+        const verChanged =
+          getSafe(modNew, newWerP, undefined) !== getSafe(modNew, verP, undefined);
+        const newestFileIdChanged =
+          getSafe(modNew, newFileIdP, undefined) !== getSafe(mod, newFileIdP, undefined);
+        const fileIdChanged =
+          getSafe(modNew, newFileIdP, undefined) !== getSafe(modNew, fileIdP, undefined);
+
+        const updateFound = (newestVerChanged && verChanged)
+          || (newestFileIdChanged && fileIdChanged);
+
+        if (updateFound) {
+          updatedIds.push(mod.id);
+          if (truthy(forceFull) && !filtered.has(mod.id)) {
+            log('warn', '[update check] Mod update would have been missed with regular check', {
+              modId: mod.id,
+              lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+              'before.newestVersion': getSafe(mod, newWerP, ''),
+              'before.newestFileId': getSafe(mod, newFileIdP, ''),
+              'after.newestVersion': getSafe(modNew, newWerP, ''),
+              'after.newestFileId': getSafe(modNew, newFileIdP, ''),
+            });
+            updatesMissed.push(mod);
+          } else {
+            log('info', '[update check] Mod update detected', {
+              modId: mod.id,
+              lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+              'before.newestVersion': getSafe(mod, newWerP, ''),
+              'before.newestFileId': getSafe(mod, newFileIdP, ''),
+              'after.newestVersion': getSafe(modNew, newWerP, ''),
+              'after.newestFileId': getSafe(modNew, newFileIdP, ''),
+            });
+          }
+
+          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+        }
+      })
+      .catch(TimeoutError, err => {
+        const name = modName(mod, { version: true });
+        return Promise.resolve(`${name}:\nRequest timeout`);
+      })
+      .catch(err => {
+        const detail = processErrorMessage(err);
+        if (detail.fatal) {
+          return Promise.reject(detail);
+        }
+
+        if (detail.message === undefined) {
+          return Promise.resolve(undefined);
+        }
+
+        const name = modName(mod, { version: true });
+        const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
+
+        return (detail.Servermessage !== undefined)
+          ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
+          : `${nameLink}:<br/>${detail.message}`;
+      })
+      .finally(() => {
+        progress();
+      });
+  }, { concurrency: 4 })
+    .finally(() => {
+      log('info', '[update check] done');
+      tStore.dispatch(dismissNotification('check-update-progress'));
+      // if forceFull is 'silent' we show no notifications
+      if (forceFull === true) {
+        if (updatesMissed.length === 0) {
+          tStore.dispatch(addNotification({
+            id: 'check-update-progress',
+            type: 'info',
+            message: 'Full update check found no updates that the regular check didn\'t.',
+          }));
+        } else {
+          tStore.dispatch(addNotification({
+            id: 'check-update-progress',
+            type: 'info',
+            message:
+              'Full update found {{count}} updates that the regular check would have missed. '
+              + 'Please send in a feedback with your log attached to help debug the cause.',
+            replace: {
+              count: updatesMissed.length,
+            },
+          }));
+        }
+      }
+    })
+    .then((messages: string[]) => ({
+      errorMessages: messages,
+      updatedIds,
+    }))
+    ;
 }
 
 export function checkModVersionsImpl(
@@ -730,141 +894,14 @@ export function checkModVersionsImpl(
   const updatedIds: string[] = [];
 
   return refreshEndorsements(store, nexus)
-    .then(() => checkForCollectionUpdates(store, nexus, gameId, mods))
-    .then(() => filterByUpdateList(store, nexus, gameId, modsList))
-    .then((filteredMods: IMod[]) => {
-      const filtered = new Set(filteredMods.map(mod => mod.id));
-      const tStore = (store as ThunkStore<any>);
-      let pos = 0;
-      const progress = () => {
-        tStore.dispatch(addNotification({
-          id: 'check-update-progress',
-          type: 'activity',
-          message: 'Checking mods for update',
-          progress: (pos * 100) / filteredMods.length,
-        }));
-        ++pos;
-      };
-      progress();
-      if (forceFull) {
-        log('info', '[update check] forcing full update check (nexus)',
-          { count: modsList.length });
-      } else {
-        log('info', '[update check] optimized update check (nexus)',
-          { count: filteredMods.length, of: modsList.length });
-      }
-
-      const updatesMissed: IMod[] = [];
-
-      const verP = ['attributes', 'version'];
-      const fileIdP = ['attributes', 'fileId'];
-      const newWerP = ['attributes', 'newestVersion'];
-      const newFileIdP = ['attributes', 'newestFileId'];
-
-      return Promise.map(modsList, (mod: IMod) => {
-        if (!forceFull && !filtered.has(mod.id)) {
-          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
-          return;
-        }
-
-        return checkModVersion(store, nexus, gameId, mod)
-          .then(() => {
-            const modNew = getSafe(store.getState(),
-                                   ['persistent', 'mods', gameId, mod.id], undefined);
-
-            const newestVerChanged =
-              getSafe(modNew, newWerP, undefined) !== getSafe(mod, newWerP, undefined);
-            const verChanged =
-              getSafe(modNew, newWerP, undefined) !== getSafe(modNew, verP, undefined);
-            const newestFileIdChanged =
-              getSafe(modNew, newFileIdP, undefined) !== getSafe(mod, newFileIdP, undefined);
-            const fileIdChanged =
-              getSafe(modNew, newFileIdP, undefined) !== getSafe(modNew, fileIdP, undefined);
-
-            const updateFound = (newestVerChanged && verChanged)
-                             || (newestFileIdChanged && fileIdChanged);
-
-            if (updateFound) {
-              updatedIds.push(mod.id);
-              if (truthy(forceFull) && !filtered.has(mod.id)) {
-                log('warn', '[update check] Mod update would have been missed with regular check', {
-                  modId: mod.id,
-                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, newWerP, ''),
-                  'before.newestFileId': getSafe(mod, newFileIdP, ''),
-                  'after.newestVersion': getSafe(modNew, newWerP, ''),
-                  'after.newestFileId': getSafe(modNew, newFileIdP, ''),
-                });
-                updatesMissed.push(mod);
-              } else {
-                log('info', '[update check] Mod update detected', {
-                  modId: mod.id,
-                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, newWerP, ''),
-                  'before.newestFileId': getSafe(mod, newFileIdP, ''),
-                  'after.newestVersion': getSafe(modNew, newWerP, ''),
-                  'after.newestFileId': getSafe(modNew, newFileIdP, ''),
-                });
-              }
-
-              store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
-            }
-          })
-          .catch(TimeoutError, err => {
-            const name = modName(mod, { version: true });
-            return Promise.resolve(`${name}:\nRequest timeout`);
-          })
-          .catch(err => {
-            const detail = processErrorMessage(err);
-            if (detail.fatal) {
-              return Promise.reject(detail);
-            }
-
-            if (detail.message === undefined) {
-              return Promise.resolve(undefined);
-            }
-
-            const name = modName(mod, { version: true });
-            const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
-
-            return (detail.Servermessage !== undefined)
-              ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
-              : `${nameLink}:<br/>${detail.message}`;
-          })
-          .finally(() => {
-            progress();
-          });
-
-      }, { concurrency: 4 })
-      .finally(() => {
-        log('info', '[update check] done');
-        tStore.dispatch(dismissNotification('check-update-progress'));
-        // if forceFull is 'silent' we show no notifications
-        if (forceFull === true) {
-          if (updatesMissed.length === 0) {
-            tStore.dispatch(addNotification({
-              id: 'check-update-progress',
-              type: 'info',
-              message: 'Full update check found no updates that the regular check didn\'t.',
-            }));
-          } else {
-            tStore.dispatch(addNotification({
-              id: 'check-update-progress',
-              type: 'info',
-              message:
-                'Full update found {{count}} updates that the regular check would have missed. '
-                + 'Please send in a feedback with your log attached to help debug the cause.',
-              replace: {
-                count: updatesMissed.length,
-              },
-            }));
-          }
-        }
-      });
-    })
-    .then((errorMessages: string[]): { errors: string[], modIds: string[] } => ({
-      errors: errorMessages.filter(msg => msg !== undefined),
-      modIds: updatedIds,
+    .then(() => Promise.all([
+      checkForCollectionUpdates(store, nexus, gameId, mods),
+      checkForModUpdates(store, nexus, gameId, modsList, forceFull, now),
+    ]))
+    .then((result: Array<{ errorMessages: string[], updatedIds: string[] }>)
+          : { errors: string[], modIds: string[] } => ({
+      errors: [].concat(...result.map(r => r.errorMessages.filter(msg => msg !== undefined))),
+      modIds: [].concat(...result.map(r => r.updatedIds)),
     }));
 }
 
