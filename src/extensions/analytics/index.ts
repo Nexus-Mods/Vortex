@@ -98,6 +98,7 @@ function init(context: IExtensionContext): boolean {
         gameVersion = await getGame(gameId)
           .getInstalledVersion(discoveryByGame(context.api.store.getState(), gameId));
       }
+      const theme = context.api.store.getState().settings.interface.currentTheme;
 
       Analytics.start(instanceId, updateChannel, {
         vortexVersion: getApplication().version,
@@ -108,6 +109,7 @@ function init(context: IExtensionContext): boolean {
             : 'Member',
         gameId,
         gameVersion,
+        theme,
       });
 
       Analytics.trackEvent('Vortex', 'Version', getApplication().version);
