@@ -19,7 +19,7 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public start(uuidV4: string, updateChannel: string, dimensionsPayload: DimensionsPaylaod) {
+  public start(uuidV4: string, updateChannel: string, dimensionsPayload: IDimensionsPaylaod) {
     this.key = ANALYTICS_KEYS[updateChannel] ?? ANALYTICS_KEYS.stable;
     this.uuidV4 = uuidV4;
     if (this.key && this.uuidV4) {
@@ -28,6 +28,7 @@ class Analytics {
       this.user.set('cd2', dimensionsPayload.gameId);
       this.user.set('cd3', dimensionsPayload.gameVersion);
       this.user.set('cd4', dimensionsPayload.membership);
+      this.user.set('cd5', dimensionsPayload.theme);
     }
   }
 
@@ -80,11 +81,12 @@ class Analytics {
   }
 }
 
-interface DimensionsPaylaod {
+interface IDimensionsPaylaod {
   vortexVersion: string;
   membership: string;
   gameId: string;
   gameVersion: string;
+  theme: string;
 }
 
 const ANALYTICS_KEYS = {
