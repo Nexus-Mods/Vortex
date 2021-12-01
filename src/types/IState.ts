@@ -292,6 +292,7 @@ export interface IModTable {
 export interface IOverlay {
   title: string;
   text: string;
+  position: IPosition;
 }
 
 export interface IOverlaysState {

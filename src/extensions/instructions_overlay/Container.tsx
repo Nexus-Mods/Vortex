@@ -1,16 +1,17 @@
-import React from 'react';
-import Redux from 'redux';
-import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import { IOverlay, IPosition, IState } from '../../types/IState';
-import MainPage from '../../views/MainPage';
-import InstructionsOverlay from './InstructionsOverlay';
+import { IOverlay, IState } from '../../types/IState';
+
 import { dismissOverlay } from './actions';
+import InstructionsOverlay from './InstructionsOverlay';
+
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 
 function Container(props: {  }) {
   const { t } = useTranslation();
 
-  const overlays = useSelector<IState>(state => state.session.overlays.overlays);
+  const overlays =
+    useSelector<IState, { [key: string]: IOverlay }>(state => state.session.overlays.overlays);
   const dispatch = useDispatch();
 
   const closeOverlay = React.useCallback((key: string) => {
@@ -25,7 +26,6 @@ function Container(props: {  }) {
           key={id}
           overlay={overlays[id]}
           overlayId={id}
-          position={overlays[id]?.position}
           onClose={closeOverlay}
         />
       ))}
