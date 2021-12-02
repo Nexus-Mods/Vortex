@@ -3,19 +3,27 @@
   flex-direction: column;
   align-items: center;
   padding: $half-gutter;
-  padding-top: $half-gutter * 0.3;
 
-  width: 31.7em;
+  width: 32em;
 
   position: absolute;
-  z-index: 10;
+  z-index: $zindex-popover;
   background: $brand-bg;
 
-  border: $border-width solid $border-color;
+  border: $border-width solid transparent;
+
+  &:hover {
+    border-color: $border-color;
+  }
+
+  h4 {
+    margin: 0;
+  }
+
   box-sizing: border-box;
 
-  box-shadow: 0px 10px 10px -5px rgba(0, 0, 0, 0.12), 0px 20px 25px -5px rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.33);
+  border-radius: 8px;
 
   .instructions-overlay-header {
     display: flex;

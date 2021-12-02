@@ -1,3 +1,4 @@
+import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
@@ -22,17 +23,23 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function getContainerImpl() {
+  return document.getElementById('overlays');
+}
+
+const getContainer = memoizeOne(() => getContainerImpl());
+
 function InstructionsOverlay(props: IInstructionsOverlayProps) {
   const { t, overlay, overlayId } = props;
   const context = React.useContext(MainContext);
   const [open, setOpen] = React.useState(true);
   const ref = React.useRef<HTMLDivElement>(null);
   const abortDrag = React.useRef<AbortController>(null);
-  const menuLayer: HTMLDivElement = context['menuLayer'];
+  const container: HTMLElement = getContainer();
 
   const [pos, setPosImpl] = React.useState(() => (overlay.position !== undefined)
     ? overlay.position
-    : { x: menuLayer.clientWidth - 100, y: menuLayer.clientHeight - 100 });
+    : { x: container.clientWidth - 100, y: container.clientHeight - 100 });
 
   const dragOffset = React.useRef<IPosition>({ x: 0, y: 0 });
 
@@ -49,8 +56,8 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
 
   const applyPos = React.useCallback((posIn: IPosition) => {
     if (ref.current !== null) {
-      posIn.x = clamp(posIn.x, BORDER, menuLayer.clientWidth - ref.current.clientWidth - BORDER);
-      posIn.y = clamp(posIn.y, BORDER, menuLayer.clientHeight - ref.current.clientHeight - BORDER);
+      posIn.x = clamp(posIn.x, BORDER, container.clientWidth - ref.current.clientWidth - BORDER);
+      posIn.y = clamp(posIn.y, BORDER, container.clientHeight - ref.current.clientHeight - BORDER);
     }
     // react may not update the style if it doesn't know the dom was manipulated directly
     ref.current.style.left = `${posIn.x}px`;
@@ -77,7 +84,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
 
     const { left, top } = ref.current.style;
     applyPos({ x: parsePos(left), y: parsePos(top) });
-    menuLayer.style.pointerEvents = 'none';
+    container.style.pointerEvents = 'none';
   }, [applyPos]);
 
   const startDrag = React.useCallback((evt: React.DragEvent<HTMLDivElement>) => {
@@ -91,17 +98,17 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
         y: evt.pageY - ref.current.offsetTop,
       };
     }
-    menuLayer.style.pointerEvents = 'initial';
+    container.style.pointerEvents = 'initial';
     // the mousemove event is aborted with this controller, mouseup event is canceled
     // automatically when it's triggered.
     // This is necessary because updatePos and endDrag are hook callbacks that may get updated
     // and then removeEventListener wouldn't find the correct function to remove
     abortDrag.current = new AbortController();
-    // capture makes it so that menuLayer receives the event, not the draggable icon
-    menuLayer.addEventListener('mousemove', trackMouse,
+    // capture makes it so that the container receives the event, not the draggable icon
+    container.addEventListener('mousemove', trackMouse,
                                { capture: true, signal: abortDrag.current.signal });
     // only trigger endDrag once, this way we don't have to remove it manually
-    menuLayer.addEventListener('mouseup', endDrag, { once: true });
+    container.addEventListener('mouseup', endDrag, { once: true });
     trackMouse(evt as any);
   }, [trackMouse]);
 
@@ -153,7 +160,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
       </FlexLayout>
     </div>,
     ],
-    context['menuLayer'],
+    container,
   );
 }
 

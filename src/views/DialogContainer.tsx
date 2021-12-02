@@ -26,7 +26,7 @@ class DialogContainer extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { objects } = this.props;
     return (
-      <div>
+      <div id='dialog-container'>
         {objects.map(dialog => this.renderDialog(dialog))}
       </div>
     );

@@ -21,6 +21,21 @@ body {
   background-color: $brand-bg;
 }
 
+#overlays {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  pointer-events: none;
+
+  > * {
+    pointer-events: initial;
+    -webkit-app-region: no-drag;
+  }
+}
+
 .modal-open #main-window-content,
 .modal-open #notifications-popover,
 .modal-open #window-controls {

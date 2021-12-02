@@ -1,3 +1,4 @@
+import memoizeOne from 'memoize-one';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from 'react-bootstrap';
@@ -13,6 +14,8 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
     menuLayer: PropTypes.object,
   };
 
+  private getContainer = memoizeOne(() => this.getContainerImpl());
+
   private mMenuLayer: Element = null;
 
   public getChildContext(): any {
@@ -23,13 +26,17 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
     return (
       <div className='modal-container'>
         <MutexWrapper show={this.props.show}>
-          <Modal {...this.props}>
+          <Modal {...this.props} container={this.getContainer()}>
             <div className='menu-layer' ref={this.setMenuLayer}/>
             {this.mMenuLayer !== null ? this.props.children : null}
           </Modal>
         </MutexWrapper>
       </div>
     );
+  }
+
+  private getContainerImpl() {
+    return document.getElementById('overlays');
   }
 
   private setMenuLayer = (ref: Element) => {

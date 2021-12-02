@@ -48,6 +48,7 @@
 
 // need to disable while modal is open because the modal might have controls inside
 // the area covered by the region
+// not currently used?
 .modal-open #main-toolbar.toolbar-app-region {
   -webkit-app-region: no-drag;
 }
