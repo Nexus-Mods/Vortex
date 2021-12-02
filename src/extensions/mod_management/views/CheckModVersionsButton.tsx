@@ -77,7 +77,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
         this.context.api.sendNotification({
           type: 'success',
-          message: 'Check for mod updates complete ({{count}} updates found)',
+          message: 'Check for mod updates complete ({{count}} update/s found)',
           replace: {
             count: modIds.length,
           },
