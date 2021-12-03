@@ -291,7 +291,7 @@ function gatherDependenciesGraph(
     log('debug', 'no download found', { ref: JSON.stringify(rule.reference) });
   }
 
-  const mod = findModByRef(rule.reference, state.persistent.mods[gameMode]);
+  const mod = findModByRef(rule.reference, state.persistent.mods[gameMode] ?? {});
 
   let lookupResults: ILookupResult[];
 
