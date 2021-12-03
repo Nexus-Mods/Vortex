@@ -1810,7 +1810,7 @@ class InstallManager {
     const doDownload = (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
 
-      if (dep.download === undefined) {
+      if ((dep.download === undefined) || (downloads[dep.download] === undefined)) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
           const downloadPath = downloadPathForGame(state, profile.gameId);
