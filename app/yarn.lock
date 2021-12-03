@@ -69,8 +69,8 @@
   integrity sha512-mlRYq9FSsOd4m+3wZWatemn3hGFZPWNJ4JQOdrir4rrMK2PyIk26idKBoUWrqF3HJJHl+5GpRU+M0wEruJwecg==
 
 "@nexusmods/nexus-api@git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs":
-  version "1.1.3-dev54"
-  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#dfc77157ef2858e5f3b92d6325993f62b08c3654"
+  version "1.1.3-dev55"
+  resolved "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#2a314d6f847ac0b561a7dad67841869635e9c394"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^8.5.1"
@@ -1989,10 +1989,10 @@ json-schema-traverse@^0.4.1:
   resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz#69f6a87d9513ab8bb8fe63bdb0979c448e684660"
   integrity sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==
 
-json-schema@0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.2.3.tgz#b480c892e59a2f05954ce727bd3f2a4e882f9e13"
-  integrity sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM=
+json-schema@0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.4.0.tgz#f7de4cf6efab838ebaeb3236474cbba5a1930ab5"
+  integrity sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==
 
 json-socket@foi/node-json-socket:
   version "0.3.0"
@@ -2043,13 +2043,13 @@ jsonwebtoken@^8.5.1:
     semver "^5.6.0"
 
 jsprim@^1.2.2:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/jsprim/-/jsprim-1.4.1.tgz#313e66bc1e5cc06e438bc1b7499c2e5c56acb6a2"
-  integrity sha1-MT5mvB5cwG5Di8G3SZwuXFastqI=
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/jsprim/-/jsprim-1.4.2.tgz#712c65533a15c878ba59e9ed5f0e26d5b77c5feb"
+  integrity sha512-P2bSOMAc/ciLz6DzgjVlGJP9+BrJWu5UDGK70C2iweC5QBIeFf0ZXRvGjEj2uYgrY2MkAAhsSWHDWlFtEroZWw==
   dependencies:
     assert-plus "1.0.0"
     extsprintf "1.3.0"
-    json-schema "0.2.3"
+    json-schema "0.4.0"
     verror "1.10.0"
 
 jwa@^1.4.1:
