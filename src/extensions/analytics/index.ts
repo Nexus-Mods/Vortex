@@ -92,6 +92,9 @@ function init(context: IExtensionContext): boolean {
     }
 
     async function initializeAnalytics() {
+      if (userInfo() === undefined) {
+        return;
+      }
       const gameId = activeGameId(context.api.store.getState());
       let gameVersion = '';
       if (gameId) {
