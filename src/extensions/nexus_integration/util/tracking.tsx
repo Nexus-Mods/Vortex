@@ -85,9 +85,9 @@ class Tracking {
     const mods = state.persistent.mods[gameMode] ?? {};
     const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
-      if (mods[modId]?.attributes?.modId !== undefined) {
+      if (truthy(mods[modId]?.attributes?.modId)) {
         this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
-      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+      } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
         this.trackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
@@ -99,9 +99,9 @@ class Tracking {
     const mods = state.persistent.mods[gameMode] ?? {};
     const downloads = state.persistent.downloads.files;
     modIds.forEach(modId => {
-      if (mods[modId]?.attributes?.modId !== undefined) {
+      if (truthy(mods[modId]?.attributes?.modId)) {
         this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
-      } else if (downloads[modId]?.modInfo?.nexus?.ids?.modId !== undefined) {
+      } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
         this.untrackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
