@@ -613,7 +613,7 @@ export function onRemoveMods(api: IExtensionApi,
   // is it even a plausible scenario that there is no profile active?
   if (profileId !== undefined) {
     setModsEnabled(api, profileId, modIds, false, {
-      installed: options.incomplete,
+      installed: options?.incomplete,
     });
   }
 
