@@ -326,7 +326,8 @@ function doMergeMods(api: IExtensionApi,
     // update merged mods
     .then(() => Promise.each(mergeModTypes,
       typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
-        sortedModList.filter(mod => (mod.type || '') === typeId),
+        sortedModList.filter(
+          mod => ((mod.type || '') === typeId) && (mod.installationPath !== undefined)),
         lastDeployment[typeId],
         fileMergers.filter(merger => merger.modType === typeId))
         .then(mergeResult => {
