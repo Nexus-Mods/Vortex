@@ -450,6 +450,9 @@ export function onDownloadUpdate(api: IExtensionApi,
           // find the first update entry that has a version matching the pattern
           .find(update => {
             const file = files.files.find(iter => iter.file_id === update.new_file_id);
+            if (file === undefined) {
+              return false;
+            }
             return (versionPattern === '*')
                 || semver.satisfies(semver.coerce(file.version), versionPattern);
           });
