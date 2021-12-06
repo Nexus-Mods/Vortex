@@ -371,6 +371,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     if (icon.component === undefined) {
       return (
         <IconBarIcon
+          key={actionId}
           t={t}
           actionId={actionId}
           buttonType={forceButtonType || this.props.buttonType}

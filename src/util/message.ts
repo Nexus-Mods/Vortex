@@ -216,16 +216,16 @@ export function bundleAttachment(options?: IErrorOptions): Promise<string> {
       return fs.statAsync(iter.data)
         .then(() => serializeAttachments(iter))
         .then((fileName) => {
-          accum.push(fileName)
+          accum.push(fileName);
           return accum;
         })
         .catch(err => accum);
     } else {
       return serializeAttachments(iter)
         .then(fileName => {
-          accum.push(fileName)
+          accum.push(fileName);
           return accum;
-        })
+        });
     }
   }, [])
     .then(fileNames => zipFiles(fileNames));
