@@ -151,21 +151,14 @@ function IconBarIcon(props: IIconBarIconProps) {
         onClose={setOpenFalse}
         onClick={nop}
       >
-        <Dropdown.Menu
-          style={{ display: 'block', position: 'initial' }}
-          open={true}
-          onClose={setOpenFalse}
-          onClick={nop}
-        >
-          {(subMenus ?? []).map(subMenu =>
-            <MenuAction
-              t={t}
-              key={subMenu.title}
-              id={subMenu.title}
-              action={subMenu}
-              instanceId={actionId}
-            />)}
-        </Dropdown.Menu>
+        {(subMenus ?? []).map(subMenu =>
+          <MenuAction
+            t={t}
+            key={subMenu.title}
+            id={subMenu.title}
+            action={subMenu}
+            instanceId={actionId}
+          />)}
       </PortalMenu>
     </ToolbarIcon>
   );
