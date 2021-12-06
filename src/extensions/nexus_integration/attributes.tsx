@@ -3,6 +3,7 @@ import { IExtensionApi, IMod, IState, ITableAttribute } from '../../types/api';
 import { laterT } from '../../util/i18n';
 import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 import { IModWithState } from '../mod_management/types/IModProps';
 import NXMUrl from './NXMUrl';
 import { nexusGames } from './util';
@@ -32,7 +33,10 @@ function NexusId(props: INexusIdProps) {
 
   const fileName: string = mod.attributes?.fileName ?? mod.attributes?.name;
 
-  const gameMode = mod.attributes?.downloadGame ?? useSelector(activeGameId);
+  let gameMode = useSelector(activeGameId);
+  if (truthy(mod.attributes?.downloadGame)) {
+    gameMode = mod.attributes?.downloadGame;
+  }
   const downloadPath = useSelector((state: IState) => downloadPathForGame(state, gameMode));
   const downloads = useSelector((state: IState) => state.persistent.downloads.files);
 
