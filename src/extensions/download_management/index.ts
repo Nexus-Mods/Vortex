@@ -917,7 +917,10 @@ function init(context: IExtensionContextExt): boolean {
           log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
           return Promise.resolve();
         }
-        context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
+        context.api.lookupModMeta({
+          filePath: path.join(downloadPath, cur[dlId].localPath),
+          gameId: cur[dlId].game[0],
+        })
           .then(result => {
             if (result.length > 0) {
               const info = result[0].value;
