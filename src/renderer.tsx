@@ -312,7 +312,7 @@ function errorHandler(evt: any) {
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
           || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
           || ((error.syscall === 'getaddrinfo') && (error.code === 'ENOTFOUND'))
-          || (['ETIMEDOUT', 'ECONNRESET'].includes(error.code))
+          || (['ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(error.code))
          )
       ) {
     log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
