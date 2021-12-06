@@ -9,8 +9,8 @@ import path from 'path';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import * as fs from '../../../util/fs';
-import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
+import { getGame } from '../../gamemode_management/util/getGame';
 import { setCompatibleGames, setDownloadFilePath } from '../actions/state';
 import { downloadPath, downloadPathForGame } from '../selectors';
 
@@ -33,10 +33,14 @@ async function setDownloadGames(
     try {
       return withAddInProgress(download.localPath, async () => {
         const filePath = await moveDownload(state, download.localPath, fromGameId, gameIds[0]);
+        const game = getGame(gameIds[0]);
         api.sendNotification({
           type: 'success',
-          title: 'Download moved',
+          title: 'Download moved to game {{gameName}}',
           message: download.localPath,
+          replace: {
+            gameName: game.name,
+          },
         });
         api.store.dispatch(setCompatibleGames(dlId, gameIds));
         const fileName = path.basename(filePath);
