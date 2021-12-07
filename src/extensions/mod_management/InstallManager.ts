@@ -1982,7 +1982,7 @@ class InstallManager {
                       dependencies: IDependency[], recommended: boolean): Promise<void> {
     dependencies.map(dep => {
       const updatedRef: IModReference = { ...dep.reference };
-      updatedRef.idHint = dep.mod.id;
+      updatedRef.idHint = dep.mod?.id;
 
       const state: IState = api.store.getState();
       const rules: IModRule[] =
