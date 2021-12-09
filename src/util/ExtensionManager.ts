@@ -209,7 +209,7 @@ class ExtEventHandler extends EventEmitter {
   }
 
   public listenerCount(type: string | symbol): number {
-    return this.listenerCount(type);
+    return this.mWrappee.listenerCount(type);
   }
 
   private funcMap(event: string | symbol) {
