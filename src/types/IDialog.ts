@@ -47,7 +47,8 @@ export interface IControlBase {
 }
 
 export interface ICheckbox extends IControlBase {
-  text: string;
+  text?: string;
+  bbcode?: string;
   value: boolean;
   disabled?: boolean;
 }

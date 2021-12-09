@@ -507,15 +507,15 @@ $close-text-shadow:           none;
 
 //== Code highlighting (not used)
 
-$code-color:                  #c7254e;
-$code-bg:                     #f9f2f4;
+$code-color:                  $text-color;
+$code-bg:                     inherit;
 
 $kbd-color:                   $text-color;
 $kbd-bg:                      #333;
 
-$pre-bg:                      $gray-lighter;
-$pre-color:                   $gray-dark;
-$pre-border-color:            #ccc;
+$pre-bg:                      inherit;
+$pre-color:                   $text-color;
+$pre-border-color:            inherit;
 $pre-scrollable-max-height:   340px;
 
 

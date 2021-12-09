@@ -12,6 +12,7 @@ import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { TFunction } from '../util/i18n';
+import lazyRequire from '../util/lazyRequire';
 import { MutexWrapper } from '../util/MutexContext';
 
 import * as RemoteT from '@electron/remote';
@@ -25,7 +26,6 @@ import * as ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import lazyRequire from '../util/lazyRequire';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -282,7 +282,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push((
         <div key='dialog-content-checkboxes' className='dialog-content-choices'>
           <div>
-            {content.checkboxes.map(this.renderCheckbox)}
+            {content.checkboxes.map(checkbox => this.renderCheckbox(checkbox, content))}
           </div>
         </div>
       ));
@@ -412,8 +412,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     triggerDialogLink(this.props.dialogs[0].id, evt.currentTarget.getAttribute('data-linkidx'));
   }
 
-  private renderCheckbox = (checkbox: ICheckbox) => {
+  private renderCheckbox = (checkbox: ICheckbox, content: IDialogContent) => {
     const { t } = this.props;
+    const text = checkbox.bbcode !== undefined
+      ? bbcode(t(checkbox.bbcode, { replace: content.parameters }),
+               content.options?.bbcodeContext)
+      : t(checkbox.text);
     return (
       <Checkbox
         id={checkbox.id}
@@ -422,7 +426,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.toggleCheckbox}
         disabled={checkbox.disabled}
       >
-        {t(checkbox.text)}
+        {text}
       </Checkbox>
     );
   }

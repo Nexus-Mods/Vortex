@@ -355,7 +355,13 @@ function doMergeMods(api: IExtensionApi,
 }
 
 function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMod[]) {
+  const t = api.translate;
   if (overwritten.length > 0) {
+    const profile = profileById(api.getState(), profileId);
+    const renderEntry = (api.events.listenerCount('display-report') > 0)
+      ? (mod: IMod) => renderModName(mod) + ` [url="cb://report/${mod.id}"](${t('Review')})[/url]`
+      : (mod: IMod) => renderModName(mod);
+
     api.sendNotification({
       id: 'redundant-mods',
       type: 'info',
@@ -363,18 +369,28 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
       actions: [
         {
           title: 'Show', action: dismiss => {
-            return api.showDialog('info', 'Redundant mods', {
-              bbcode: 'Some of the enabled mods either contain no files or all files '
+            return api.showDialog('info', t('Redundant mods'), {
+              bbcode: t('Some of the enabled mods either contain no files or all files '
                 + 'they do contain are entirely overwritten by another mod. '
                 + 'These redundant mods don\'t do any harm except slow down '
                 + 'deployment a bit.\n'
                 + 'If you believe this to be a mistake, please check the file '
-                + 'conflicts [svg]conflict[/svg] for the mod in question.',
+                + 'conflicts [svg]conflict[/svg] for the mod in question.'),
               checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
                 id: mod.id,
-                text: renderModName(mod),
+                bbcode: renderEntry(mod),
                 value: true,
               })),
+              options: {
+                translated: true,
+                bbcodeContext: {
+                  callbacks: {
+                    report: (modId: string) => {
+                      api.events.emit('display-report', modId, profile.gameId);
+                    },
+                  },
+                },
+              },
             }, [
                 { label: 'Disable selected' },
                 { label: 'Close', default: true },
