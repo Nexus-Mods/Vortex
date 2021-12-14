@@ -219,6 +219,7 @@
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",
+    "electron-context-menu": "^3.1.1",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",

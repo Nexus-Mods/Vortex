@@ -71,5 +71,9 @@
     letter-spacing: 0.5px;
     min-height: 20em;
     max-height: 36vh;
+
+    p {
+      user-select: text;
+    }
   }
 }

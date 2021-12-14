@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "1.5.0-r44+internal",
+  "version": "1.5.0-r48+internal",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -32,6 +32,7 @@
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",
+    "electron-context-menu": "^3.1.1",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",

@@ -37,6 +37,7 @@ import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
 import crashDumpT from 'crash-dump';
 import {app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell} from 'electron';
+import contextMenu from 'electron-context-menu';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as os from 'os';
@@ -109,6 +110,20 @@ class Application {
 
     setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
     this.setupAppEvents(args);
+  }
+
+  private setupContextMenu() {
+    contextMenu({
+      showCopyImage: false,
+      showLookUpSelection: false,
+      showSaveImageAs: false,
+      showInspectElement: false,
+      showSearchWithGoogle: false,
+      shouldShowMenu: (event: Electron.Event, params: Electron.ContextMenuParams) => {
+        // currently only offer menu on selected text
+        return params.selectionText.length > 0;
+      },
+    });
   }
 
   private startUi(): Promise<void> {
@@ -313,6 +328,10 @@ class Application {
         })
         .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
+        .then(() => {
+          this.setupContextMenu();
+          return Promise.resolve();
+        })
         .then(() => this.startUi())
         .tap(() => log('debug', 'setting up tray icon'))
         .then(() => this.createTray())
