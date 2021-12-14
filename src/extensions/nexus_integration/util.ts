@@ -345,6 +345,7 @@ interface IRequestError {
   stack?: string;
   fatal?: boolean;
   Mod?: number;
+  Revision?: number;
   Version?: string;
   noReport?: boolean;
 }
@@ -399,20 +400,20 @@ export function processErrorMessage(err: NexusError): IRequestError {
   }
 }
 
-function resolveEndorseError(t: TFunction, err: Error): string {
+export function resolveGraphError(t: TFunction, err: Error): string {
   if (err.message === 'You must provide a version') {
     // is this still reported in this way?
     return t('You can\'t endorse a mod that has no version set.');
-  } else if ((err as any).statusCode === 403) {
-    const msg = {
-      NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
-      TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading a '
-                             + 'mod before you can endorse it.',
-      IS_OWN_MOD: 'You can\'t endorse your own mods.',
-    }[err.message];
-    if (msg !== undefined) {
-      return t(msg);
-    }
+  }
+
+  const msg = {
+    NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
+    TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading before you can endorse/rate things.',
+    IS_OWN_MOD: 'You can\'t endorse your own mods.',
+  }[err.message];
+
+  if (msg !== undefined) {
+    return t(msg);
   }
 
   return undefined;
@@ -420,7 +421,7 @@ function resolveEndorseError(t: TFunction, err: Error): string {
 
 function reportEndorseError(api: IExtensionApi, err: Error,
                             gameId: string, modId: number, version: string) {
-  const expectedError = resolveEndorseError(api.translate, err);
+  const expectedError = resolveGraphError(api.translate, err);
   if (expectedError !== undefined) {
     api.sendNotification({
       type: 'info',

@@ -5,7 +5,7 @@ import { ArgumentInvalid, DataInvalid, ProcessCanceled, UserCanceled } from '../
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { showError } from '../../util/message';
+import { calcDuration, showError } from '../../util/message';
 import { upload } from '../../util/network';
 import opn from '../../util/opn';
 import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
@@ -24,7 +24,8 @@ import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseThing, startDownload, updateKey } from './util';
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, processErrorMessage,
+         resolveGraphError, startDownload, updateKey } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
@@ -405,12 +406,45 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
   };
 }
 
+function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
+  const expectedError = resolveGraphError(api.translate, err);
+  if (expectedError !== undefined) {
+    api.sendNotification({
+      type: 'info',
+      message: expectedError,
+    });
+  } else if (err instanceof TimeoutError) {
+    const message = 'A timeout occurred trying to rate a collection, please try again later.';
+    api.sendNotification({
+      type: 'error',
+      title: 'Timeout',
+      message,
+      displayMS: calcDuration(message.length),
+    });
+  } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
+      || (err instanceof ProcessCanceled)) {
+    api.showErrorNotification('Rating collection failed, please try again later', err, {
+      allowReport: false,
+    });
+  } else {
+    const detail = processErrorMessage(err as NexusError);
+    detail.Revision = revisionId;
+    let allowReport = detail.Servermessage === undefined;
+    if (detail.noReport) {
+      allowReport = false;
+      delete detail.noReport;
+    }
+    showError(api.store.dispatch, 'An error occurred rating a collection', detail,
+      { allowReport });
+  }
+}
+
 export function onRateRevision(api: IExtensionApi, nexus: Nexus)
     : (revisionId: number, rating: number) => Promise<boolean> {
   return (revisionId: number, rating: any): Promise<boolean> => {
     return Promise.resolve(nexus.rateRevision(revisionId, rating))
       .catch(err => {
-        api.showErrorNotification('Failed to rate collection', err);
+        reportRateError(api, err, revisionId);
         return Promise.resolve(false);
       });
   };
