@@ -733,6 +733,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private filterSet(filt: any) {
+    return truthy(filt)
+        && (!Array.isArray(filt) || filt.length !== 0);
+  }
+
   private renderHeaderField = (attribute: ITableAttribute, proxy: boolean): JSX.Element => {
     const { t, filter, groupBy } = this.props;
 
@@ -746,7 +751,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const classes = [
         `header-${attribute.id}`,
       ];
-      if (truthy(filt)
+      if (this.filterSet(filt)
           && ((attribute.filter.isEmpty === undefined) || !attribute.filter.isEmpty(filt))) {
         classes.push('table-filter-column');
       }

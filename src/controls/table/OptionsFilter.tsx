@@ -47,6 +47,13 @@ function OptionsFilterComponent(props: IProps & IBoundProps) {
     }
   }, [props.options]);
 
+  React.useEffect(() => {
+    if ((filter !== undefined) && (!Array.isArray(props.options))) {
+      // if a filter is already set we do need to know the options
+      updateOptions();
+    }
+  }, []);
+
   // can't use undefined as a value in Select
   const optionsSane = options.map(
     opt => opt.value === undefined ? { label: opt.label, value: dummy } : opt);
