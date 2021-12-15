@@ -345,6 +345,7 @@ interface IRequestError {
   stack?: string;
   fatal?: boolean;
   Mod?: number;
+  Collection?: number;
   Revision?: number;
   Version?: string;
   noReport?: boolean;
@@ -419,8 +420,8 @@ export function resolveGraphError(t: TFunction, err: Error): string {
   return undefined;
 }
 
-function reportEndorseError(api: IExtensionApi, err: Error,
-                            gameId: string, modId: number, version: string) {
+function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
+                            gameId: string, modId: number, version?: string) {
   const expectedError = resolveGraphError(api.translate, err);
   if (expectedError !== undefined) {
     api.sendNotification({
@@ -428,7 +429,7 @@ function reportEndorseError(api: IExtensionApi, err: Error,
       message: expectedError,
     });
   } else if (err instanceof TimeoutError) {
-    const message = 'A timeout occurred trying to endorse the mod, please try again later.';
+    const message = `A timeout occurred trying to endorse the ${type}, please try again later.`;
     api.sendNotification({
       type: 'error',
       title: 'Timeout',
@@ -437,20 +438,26 @@ function reportEndorseError(api: IExtensionApi, err: Error,
     });
   } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
       || (err instanceof ProcessCanceled)) {
-    api.showErrorNotification('Endorsing mod failed, please try again later', err, {
+    api.showErrorNotification(`Endorsing ${type} failed, please try again later`, err, {
       allowReport: false,
     });
   } else {
     const detail = processErrorMessage(err as NexusError);
     detail.Game = gameId ?? activeGameId(api.getState());
-    detail.Mod = modId;
-    detail.Version = version;
+    if (type === 'mod') {
+      detail.Mod = modId;
+    } else {
+      detail.Collection = modId;
+    }
+    if (version !== undefined) {
+      detail.Version = version;
+    }
     let allowReport = detail.Servermessage === undefined;
     if (detail.noReport) {
       allowReport = false;
       delete detail.noReport;
     }
-    showError(api.store.dispatch, 'An error occurred endorsing a mod', detail,
+    showError(api.store.dispatch, `An error occurred endorsing a ${type}`, detail,
       { allowReport });
   }
 }
@@ -460,7 +467,7 @@ export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
                                   endorsedStatus: string): Promise<string> {
   return endorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
-      reportEndorseError(api, err, gameId, nexusId, version);
+      reportEndorseError(api, err, 'mod', gameId, nexusId, version);
       return endorsedStatus as EndorsedStatus;
     });
 }
@@ -519,7 +526,7 @@ function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: strin
     })
     .catch((err: Error | NexusError) => {
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
-      api.showErrorNotification('Failed to endorse collection', err);
+      reportEndorseError(api, err, 'collection', gameId, nexusCollectionId);
     });
 }
 
@@ -549,7 +556,7 @@ function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
     })
     .catch((err: Error | NexusError) => {
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
-      reportEndorseError(api, err, gameId, nexusModId, version);
+      reportEndorseError(api, err, 'mod', gameId, nexusModId, version);
     });
 }
 
@@ -919,7 +926,12 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     .then(userInfo => {
       if (userInfo !== null) {
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-        retrieveNexusGames(nexus);
+        retrieveNexusGames(nexus)
+          .catch(err => {
+            api.showErrorNotification('Failed to fetch list of games', err, {
+              allowReport: false,
+            });
+          });
       }
       return github.fetchConfig('api')
         .then(configObj => {
