@@ -976,7 +976,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       return new Promise((resolve) => {
         this.context.api.events.emit('start-install-download', modId, false, (err, id) => {
           if (err !== null) {
-            if (!(err instanceof UserCanceled)) {
+            if (!(err instanceof UserCanceled) && !(err instanceof ProcessCanceled)) {
               this.context.api.showErrorNotification('failed to install download', err);
             }
           } else if (value === 'enabled') {
