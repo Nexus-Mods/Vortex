@@ -1243,7 +1243,7 @@ class InstallManager {
       .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
       .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
       ;
-    }
+  }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});

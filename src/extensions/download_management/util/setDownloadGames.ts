@@ -7,6 +7,7 @@
 
 import path from 'path';
 import { IExtensionApi } from '../../../types/IExtensionContext';
+import { IGame } from '../../../types/IGame';
 import { IState } from '../../../types/IState';
 import * as fs from '../../../util/fs';
 import { truthy } from '../../../util/util';
@@ -33,13 +34,15 @@ async function setDownloadGames(
     try {
       return withAddInProgress(download.localPath, async () => {
         const filePath = await moveDownload(state, download.localPath, fromGameId, gameIds[0]);
-        const game = getGame(gameIds[0]);
+        const game: IGame | undefined = getGame(gameIds[0]);
+        // game may be undefined if the download is recognized but it's for a
+        // game Vortex doesn't support
         api.sendNotification({
           type: 'success',
           title: 'Download moved to game {{gameName}}',
           message: download.localPath,
           replace: {
-            gameName: game.name,
+            gameName: game?.name ?? gameIds[0],
           },
         });
         api.store.dispatch(setCompatibleGames(dlId, gameIds));
