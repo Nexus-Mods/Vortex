@@ -69,8 +69,10 @@ class More extends ComponentEx<IProps, IComponentState> {
     const wikiFooter = (wikiId === undefined) || !haveKnowledgeBase(this.context.api)
       ? null
       : (
-        <div className='more-footer'><a href={`#${wikiId}`} onClick={this.openWiki}>
-          <Icon name='open-in-browser'/>{' '}{t('Learn more')}</a>
+        <div className='more-footer'>
+          <a href={`#${wikiId}`} onClick={this.openWiki}>
+            {t('Learn more')}
+          </a>
         </div>
       );
 
