@@ -386,7 +386,10 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
                 bbcodeContext: {
                   callbacks: {
                     report: (modId: string) => {
-                      api.events.emit('display-report', modId, profile.gameId);
+                      api.events.emit('display-report', modId, profile.gameId, {
+                        hashes: false,
+                        loadOrder: false,
+                      });
                     },
                   },
                 },
