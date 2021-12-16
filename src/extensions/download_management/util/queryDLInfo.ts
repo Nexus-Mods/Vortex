@@ -45,6 +45,8 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
         const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
         const info = match.value;
 
+        const dlNow = api.getState().persistent.downloads.files[dlId];
+
         const setInfo = (key: string, value: any) => {
           if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
         };
@@ -53,6 +55,14 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
 
         try {
           const nxmUrl = new NXMUrl(info.sourceURI);
+          // if the download already has a file id (because we downloaded from nexus)
+          // and what we downloaded doesn't match the md5 lookup, the server probably gave us
+          // incorrect data, so ignore all of it
+          if ((dlNow.modInfo?.nexus?.ids?.fileId !== undefined)
+              && (dlNow.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
+            return Promise.resolve();
+          }
+
           setInfo('source', 'nexus');
           setInfo('nexus.ids.gameId', nxmUrl.gameId);
           setInfo('nexus.ids.fileId', nxmUrl.fileId);
@@ -60,7 +70,6 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
-          const dlNow = api.getState().persistent.downloads.files[dlId];
           if (dlNow.modInfo?.source === undefined) {
             setInfo('source', 'unknown');
           }
