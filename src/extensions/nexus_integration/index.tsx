@@ -1323,7 +1323,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     }
 
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
-    if ((url.userId !== undefined) && (url.userId !== userInfo.userId)) {
+    if ((url.userId !== undefined) && (url.userId !== userInfo?.userId)) {
       const userName: string =
         getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
       api.showErrorNotification('Invalid download links',
