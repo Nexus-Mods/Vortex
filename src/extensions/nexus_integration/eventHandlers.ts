@@ -412,6 +412,9 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
     api.sendNotification({
       type: 'info',
       message: expectedError,
+      replace: {
+        waitingTime: api.translate('12 hours'),
+      },
     });
   } else if (err instanceof TimeoutError) {
     const message = 'A timeout occurred trying to rate a collection, please try again later.';

@@ -116,7 +116,11 @@ function startDownloadCollection(api: IExtensionApi,
       if (!handleErrors) {
         return Promise.reject(err);
       }
-      if (!(err instanceof UserCanceled)) {
+      if (err.code === 'NOT_FOUND') {
+        api.showErrorNotification('Failed to download collection',
+          'The collection was not found. This usually happens when you try to download '
+          + 'an unpublished collection.', { allowReport: false });
+      } else if (!(err instanceof UserCanceled)) {
         api.showErrorNotification('Failed to download collection', err);
       }
       return null;
@@ -409,15 +413,11 @@ export function resolveGraphError(t: TFunction, err: Error): string {
 
   const msg = {
     NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
-    TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading before you can endorse/rate things.',
+    TOO_SOON_AFTER_DOWNLOAD: 'You have to wait {{waitingTime}} after downloading before you can endorse/rate things.',
     IS_OWN_MOD: 'You can\'t endorse your own mods.',
-  }[err.message];
+  }[err['code']];
 
-  if (msg !== undefined) {
-    return t(msg);
-  }
-
-  return undefined;
+  return msg;
 }
 
 function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
@@ -427,6 +427,9 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
     api.sendNotification({
       type: 'info',
       message: expectedError,
+      replace: {
+        waitingTime: type === 'mod' ? api.translate('15 minutes') : api.translate('12 hours'),
+      },
     });
   } else if (err instanceof TimeoutError) {
     const message = `A timeout occurred trying to endorse the ${type}, please try again later.`;
