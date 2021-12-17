@@ -998,6 +998,17 @@ function init(context: IExtensionContextExt): boolean {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
         return null;
       }, 10000, false);
+
+      const maxWorkersDebouncer = new Debouncer((newValue: number) => {
+        manager.setMaxConcurrentDownloads(newValue);
+        return null;
+      }, 500, true);
+
+      context.api.onStateChange<number>(['settings', 'downloads', 'maxParallelDownloads'],
+        (old, newValue: number) => {
+          maxWorkersDebouncer.schedule(undefined, newValue);
+        });
+
       manager = new DownloadManagerImpl(
           selectors.downloadPath(store.getState()),
           store.getState().settings.downloads.maxParallelDownloads,
