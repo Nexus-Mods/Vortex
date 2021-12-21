@@ -36,6 +36,7 @@ interface IConnectedProps {
   url: string;
   subscriber: string;
   instructions: string;
+  skippable: boolean;
   notifications: INotification[];
 }
 
@@ -164,7 +165,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, overlay, instructions } = this.props;
+    const { t, overlay, instructions, skippable } = this.props;
     const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
     const referrer = (history.length > 0)
       ? history[historyIdx - 1]
@@ -173,7 +174,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const Webview = overlay ? WebviewOverlay : WebviewEmbed;
 
     return (
-      <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
+      <Modal id='browser-dialog' show={url !== undefined} onHide={nop}>
         <Modal.Header>
           {this.renderNav()}{this.renderUrl(history[historyIdx])}
           {loading ? <Spinner /> : null}
@@ -196,12 +197,18 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
                 onNewWindow={this.newWindow}
                 events={this.mCallbacks}
               />
-            )
-            : this.renderConfirm()}
+            ) : this.renderConfirm()}
           <div className='browser-notifications'>
             {filtered.map(this.renderNotification)}
           </div>
         </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={this.close}>{t('Cancel')}</Button>
+          {skippable ? (
+            <Button onClick={this.skip}>{t('Skip')}</Button>
+          ) : null
+          }
+        </Modal.Footer>
       </Modal>
     );
   }
@@ -462,9 +469,16 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.props.onNavigate(url);
   }
 
+  private skip = () => {
+    const { onClose, onEvent, subscriber } = this.props;
+    if (onEvent(subscriber, 'close', true) !== 'ignore') {
+      onClose();
+    }
+  }
+
   private close = () => {
     const { onClose, onEvent, subscriber } = this.props;
-    if (onEvent(subscriber, 'close', null) !== 'ignore') {
+    if (onEvent(subscriber, 'close', false) !== 'ignore') {
       onClose();
     }
   }
@@ -477,6 +491,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     subscriber: state.session.browser.subscriber || undefined,
     instructions: state.session.browser.instructions || undefined,
     url: state.session.browser.url || undefined,
+    skippable: state.session.browser.skippable || undefined,
     notifications: state.session.notifications.notifications || emptyList,
   };
 }

@@ -46,11 +46,12 @@ function triggerEvent(subscriber: string, eventId: string, ...args: any): Subscr
 let lastURL: string;
 
 function doBrowse(api: IExtensionApi, navUrl: string,
-                  instructions: string, subscriptionId: string) {
+                  instructions: string, subscriptionId: string,
+                  skippable: boolean) {
   return new Promise<string>((resolve, reject) => {
     lastURL = navUrl;
-    subscribe(subscriptionId, 'close', () => {
-      reject(new UserCanceled());
+    subscribe(subscriptionId, 'close', (skip: boolean) => {
+      reject(new UserCanceled(skip));
       return 'continue';
     });
     subscribe(subscriptionId, 'navigate', (newUrl: string) => {
@@ -71,10 +72,16 @@ function doBrowse(api: IExtensionApi, navUrl: string,
     }
     const t = api.translate;
     instructions += t('This window will close as soon as you click a valid download link');
-    api.store.dispatch(showURL(navUrl, instructions, subscriptionId));
+    api.store.dispatch(showURL(navUrl, instructions, subscriptionId, skippable));
   })
-  .catch(UserCanceled, () => null)
   .catch(err => {
+    if (err instanceof UserCanceled) {
+      if (skippable) {
+        return 'err:' + (err.skipped ? 'skip' : 'cancel');
+      } else {
+        return null;
+      }
+    }
     api.showErrorNotification('Failed to download via browser', err);
   })
   .finally(() => {
@@ -95,9 +102,11 @@ function init(context: IExtensionContext): boolean {
     // open a browser to an url, displaying instructions if provided.
     // the browser closes as soon as a downloadable link was clicked and returns that
     // url
-    context.api.onAsync('browse-for-download', (navUrl: string, instructions: string) => {
-      return enqueue(() => doBrowse(context.api, navUrl, instructions, shortid()), false);
-    });
+    context.api.onAsync('browse-for-download',
+      (navUrl: string, instructions: string, skippable?: boolean) => {
+        return enqueue(() =>
+          doBrowse(context.api, navUrl, instructions, shortid(), skippable ?? false), false);
+      });
 
     ipcRenderer.on('received-url',
         (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {

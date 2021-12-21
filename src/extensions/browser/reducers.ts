@@ -9,8 +9,8 @@ import * as actions from './actions';
 export const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.showURL as any]: (state, payload) => {
-      const { url, instructions, subscriber } = payload;
-      return merge(state, [], { url, instructions, subscriber });
+      const { url, instructions, subscriber, skippable } = payload;
+      return merge(state, [], { url, instructions, subscriber, skippable });
     },
     [actions.closeBrowser as any]: (state, payload) =>
       setSafe(state, ['url'], undefined),
@@ -19,5 +19,6 @@ export const sessionReducer: IReducerSpec = {
     url: undefined,
     instructions: undefined,
     subscriber: undefined,
+    skippable: undefined,
   },
 };

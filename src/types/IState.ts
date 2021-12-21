@@ -281,6 +281,7 @@ export interface IBrowserState {
   url: string;
   instructions: string;
   subscriber: string;
+  skippable: boolean;
 }
 
 export interface IModTable {

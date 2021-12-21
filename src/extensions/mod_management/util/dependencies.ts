@@ -73,10 +73,19 @@ function browseForDownload(api: IExtensionApi,
 
     const doLookup = () => {
       if (lookupResult === undefined) {
-        lookupResult = api.emitAndAwait('browse-for-download', url, instruction)
+        lookupResult = api.emitAndAwait('browse-for-download', url, instruction, true)
           .then((resultList: string[]) => {
             if (resultList.length === 0) {
               return undefined;
+            }
+            if (resultList[0].startsWith('err:')) {
+              const msg = resultList[0].slice(4);
+              if (msg === 'skip') {
+                return Promise.reject(new UserCanceled(true));
+              } else if (msg === 'cancel') {
+                return Promise.reject(new UserCanceled(false));
+              }
+              return Promise.reject(new Error(msg));
             }
             const [dlUrl, referer] = resultList[0].split('<');
             return { url: dlUrl, referer };
@@ -113,7 +122,7 @@ function lookupDownloadHint(api: IExtensionApi,
       })
       .catch(err => {
         if (err instanceof UserCanceled) {
-          return Promise.reject(new UserCanceled(true));
+          return Promise.reject(new UserCanceled(err.skipped ?? true));
         } else {
           return Promise.reject(err);
         }

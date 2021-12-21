@@ -1960,7 +1960,7 @@ class InstallManager {
           return prev;
         }
         return this.doInstallDependenciesPhase(api, depList, profile, sourceModId,
-                                                doDownload, abort)
+                                               doDownload, abort)
           .then((updated: IDependency[]) => {
             if (idx === phaseList.length - 1) {
               return Promise.resolve(updated);
