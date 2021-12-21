@@ -51,8 +51,10 @@ const setModsEnabled = (() => {
         (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
           if (modIds.length > 0) {
             const profile: IProfile = profileById(api.getState(), profileIdIn);
-            batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
-            api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+            if (profile !== undefined) {
+              batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
+              api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+            }
           }
 
           return Bluebird.resolve();
