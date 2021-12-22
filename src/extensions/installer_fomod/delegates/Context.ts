@@ -62,7 +62,13 @@ export class Context extends DelegateBase {
         const executable = this.gameDiscovery.executable || this.gameInfo.executable();
         const gameExePath =
             path.join(this.gameDiscovery.path, executable);
-        return callback(null, getVersion(gameExePath));
+        let version = '';
+        try {
+          version = getVersion(gameExePath);
+        } catch (err) {
+          log('warn', 'failed to get exe version', { exe: gameExePath, error: err.message });
+        }
+        return callback(null, version);
       }
 
   public getExtenderVersion =
