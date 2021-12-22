@@ -379,8 +379,10 @@ export interface IPrettifiedError {
   allowReport?: boolean;
 }
 
-export function prettifyNodeErrorMessage(err: any, options?: IErrorOptions): IPrettifiedError {
-  const decoded = decodeSystemError(err, err.path ?? err.filename);
+export function prettifyNodeErrorMessage(err: any,
+                                         options?: IErrorOptions,
+                                         fileName?: string): IPrettifiedError {
+  const decoded = decodeSystemError(err, err.path ?? err.filename ?? fileName);
   if (decoded !== undefined) {
     return {
       message: decoded.message,
@@ -564,7 +566,9 @@ function renderCustomError(err: any) {
   if (err === undefined) {
     res.text = 'Unknown error';
   } else if ((err.error !== undefined) && (err.error instanceof Error)) {
-    const pretty = prettifyNodeErrorMessage(err.error);
+    // there's probably different fields in a custom error that might contain file path
+    const fileName = err.executable;
+    const pretty = prettifyNodeErrorMessage(err.error, undefined, fileName);
     if (err.message !== undefined) {
       res.text = err.message;
       res.message = pretty.message;
