@@ -20,8 +20,10 @@ import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { batchDispatch, truthy } from '../../../util/util';
+import { batchDispatch, bytesToString, truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
+
+import calculateFolderSize from '../../../util/calculateFolderSize';
 
 import getDownloadGames from '../../download_management/util/getDownloadGames';
 import { setModEnabled, setModsEnabled } from '../../profile_management/actions/profiles';
@@ -54,6 +56,7 @@ import InstallArchiveButton from './InstallArchiveButton';
 import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
+import path from 'path';
 import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
@@ -152,6 +155,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modRevisionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
   private modArchiveNameAttribute: ITableAttribute;
+  private modSizeAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
   private mUpdateDebouncer: Debouncer;
@@ -279,6 +283,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modVersionDetailAttribute,
       this.modRevisionDetailAttribute,
       this.modVariantDetailAttribute,
+      this.modSizeAttribute,
       INSTALL_TIME(() => this.context.api.locale()),
       ENABLED_TIME(() => this.context.api.locale()),
     ]
@@ -813,6 +818,34 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isSortable: false,
     };
 
+    this.modSizeAttribute = {
+      id: 'modSize',
+      name: 'Mod Size',
+      description: 'The total size of the mod',
+      icon: 'chart-bars',
+      customRenderer: (mod: IModWithState) => {
+        const value = mod.attributes.modSize !== undefined
+          ? bytesToString(mod.attributes.modSize)
+          : 'Calculate';
+        return (
+          <a
+            className='control-label'
+            onClick={this.setModSize}
+            data-modid={mod.id}
+            title='Click to calculate'
+          >
+            {value}
+          </a>
+        );
+      },
+      calc: (mod: IModWithState) => mod.attributes.modSize,
+      placement: 'table',
+      isDefaultVisible: false,
+      isToggleable: true,
+      edit: {},
+      isSortable: true,
+    };
+
     this.modAuthorAttribute = {
       id: 'author',
       name: 'Author',
@@ -841,6 +874,25 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         lhs.localeCompare(rhs, this.props.language, { caseFirst: 'false' }),
       edit: {},
     };
+  }
+
+  private setModSize = (evt: React.MouseEvent<any>) => {
+    const modId = evt.currentTarget.getAttribute('data-modid');
+    const api = this.context.api;
+    const stagingFolder = this.props.installPath;
+    const mod = this.props.mods[modId];
+    if (mod === undefined) {
+      return Promise.resolve();
+    }
+    const modPath = path.join(stagingFolder, mod.installationPath);
+    return calculateFolderSize(modPath)
+    .then((totalSize) => {
+      api.store.dispatch(setModAttribute(this.props.gameMode, mod.id, 'modSize', totalSize));
+      return Promise.resolve();
+    })
+    .catch(err => {
+      return Promise.resolve();
+    });
   }
 
   private updateModsWithState(newProps: IProps): Promise<void> {

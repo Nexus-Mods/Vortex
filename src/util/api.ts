@@ -28,6 +28,7 @@ import GameStoreHelper from '../util/GameStoreHelper';
 import { getApplication } from './application';
 import { Archive } from './archives';
 import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from './bbcode';
+import calculateFolderSize from './calculateFolderSize';
 import { checksum, fileMD5 } from './checksum';
 import ConcurrencyLimiter from './ConcurrencyLimiter';
 import copyRecursive from './copyRecursive';
@@ -74,6 +75,7 @@ export {
   bbcodeToHTML,
   bbcodeToReact,
   bytesToString,
+  calculateFolderSize,
   Campaign,
   checksum,
   convertGameIdReverse,

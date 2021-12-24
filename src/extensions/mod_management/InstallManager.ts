@@ -21,6 +21,8 @@ import { getSafe, setSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
+import calculateFolderSize from '../../util/calculateFolderSize';
+
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
 import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
@@ -495,6 +497,7 @@ class InstallManager {
           }
           */
         }
+        this.setModSize(api, modId, installGameId);
         callback?.(null, modId);
         api.events.emit('did-install-mod', installGameId, archiveId, modId, modInfo);
         return null;
@@ -702,6 +705,26 @@ class InstallManager {
     return (ref.fileExpression !== undefined)
         || (ref.fileMD5 !== undefined)
         || (ref.logicalFileName !== undefined);
+  }
+
+  private setModSize(api: IExtensionApi, modId: string, gameId: string): Promise<void> {
+    const state = api.getState();
+    const stagingFolder = installPathForGame(state, gameId);
+    const mod = state.persistent.mods[gameId]?.[modId];
+    if (mod === undefined) {
+      log('debug', 'failed to calculate modSize', 'mod is not in state');
+      return Promise.resolve();
+    }
+    const modPath = path.join(stagingFolder, mod.installationPath);
+    return calculateFolderSize(modPath)
+    .then((totalSize) => {
+      api.store.dispatch(setModAttribute(gameId, mod.id, 'modSize', totalSize));
+      return Promise.resolve();
+    })
+    .catch(err => {
+      log('debug', 'failed to calculate modSize', err);
+      return Promise.resolve();
+    });
   }
 
   /**
