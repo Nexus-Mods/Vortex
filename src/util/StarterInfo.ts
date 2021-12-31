@@ -228,7 +228,12 @@ class StarterInfo implements IStarterInfo {
                                     info: IStarterInfo,
                                     api: IExtensionApi,
                                     addInfo: any): Promise<void> {
-    const gameLauncher = GameStoreHelper.getGameStore(launcher);
+    let gameLauncher;
+    try {
+      gameLauncher = GameStoreHelper.getGameStore(launcher);
+    } catch (err) {
+      return Promise.reject(err);
+    }
     const infoObj = (addInfo !== undefined)
       ? addInfo : path.dirname(info.exePath);
     return (gameLauncher !== undefined)
