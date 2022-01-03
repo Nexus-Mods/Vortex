@@ -256,7 +256,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
-      const grouped: { [key: string]: IActionDefinition[] } =
+      const groupedByIcon: { [key: string]: IActionDefinition[] } =
         actions.reduce((prev: { [key: string]: IActionDefinition[] }, action, idx) => {
           if ((action.icon !== undefined) && (groupByIcon !== false)) {
             setdefault(prev, action.icon, []).push(action);
@@ -268,6 +268,22 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
         return lhs[0].position - rhs[0].position;
       };
+
+      const groupByGroup = (prev: { [group: string]: IActionDefinitionEx[][] },
+                            actionList: IActionDefinitionEx[]) => {
+        const group = actionList[0].group ?? '__unset';
+        if (prev[group] === undefined) {
+          prev[group] = [actionList];
+        } else {
+          prev[group].push(actionList);
+        }
+        return prev;
+      };
+
+      const grouped = Object.values(groupedByIcon)
+        .sort(byFirstPrio)
+        .reduce(groupByGroup, {});
+
       return (
         <ButtonGroup
           id={id}
@@ -277,7 +293,11 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {Object.keys(grouped).map(key => grouped[key]).sort(byFirstPrio).map(this.renderIcons)}
+          {Object.keys(grouped).map((groupId, idx) => (
+            <div className='iconbar-actiongroup' key={groupId}>
+              {grouped[groupId].map(this.renderIcons)}
+            </div>
+          ))}
         </ButtonGroup>
       );
     }

@@ -78,3 +78,15 @@
     animation: pulseColor 6s infinite linear;
     border: $border-width solid $brand-warning;
 }
+
+.iconbar-actiongroup {
+  width: 100%;
+
+  &:not(:last-child)::after {
+    content: "";
+    display: block;
+    width: 80%;
+    margin: 0 auto;
+    border-bottom: $border-width solid $border-color;
+  }
+}

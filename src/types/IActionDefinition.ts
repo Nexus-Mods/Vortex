@@ -30,6 +30,11 @@ export interface IActionDefinition {
   // will understand from context why the action is unavailable in this case.
   condition?: (instanceId: string | string[], data?: any) => boolean | string;
   position?: number;
+  // if supported by the control, actions with the same group (including undefined) will be
+  // displayed together, visually sligthly separated
+  // position is then the order within a group but also groups are sorted by the lowest
+  // priority found within that group
+  group?: string;
   options?: IActionOptions;
   // in certain situations where the actions may be grouped together (e.g. in a dropdown button)
   // a default action can be triggered by the button itself.
