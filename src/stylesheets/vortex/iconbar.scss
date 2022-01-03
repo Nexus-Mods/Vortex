@@ -15,7 +15,7 @@
   align-items: center;
 }
 
-.menubar {
+.menubar, .menubar > .iconbar-actiongroup {
   display: flex;
   flex-direction: row;
   height: 48px;

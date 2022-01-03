@@ -293,11 +293,14 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {Object.keys(grouped).map((groupId, idx) => (
-            <div className='iconbar-actiongroup' key={groupId}>
-              {grouped[groupId].map(this.renderIcons)}
-            </div>
-          ))}
+          {(Object.keys(grouped).length !== 1)
+            ? Object.keys(grouped).map((groupId, idx) => (
+              <div className='iconbar-actiongroup' key={groupId}>
+                {grouped[groupId].map(this.renderIcons)}
+              </div>
+            ))
+            : Object.values(grouped)[0].map(this.renderIcons)
+          }
         </ButtonGroup>
       );
     }
