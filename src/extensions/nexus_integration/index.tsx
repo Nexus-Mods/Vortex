@@ -66,10 +66,9 @@ import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
 import * as RemoteT from '@electron/remote';
-import NexusT, { ICollection, ICollectionQuery, IDateTime, IDownloadURL, IFileInfo,
-  IModFile,
-  IModFileQuery,
-  IModInfo, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+import NexusT, { IDateTime, IDownloadURL, IFileInfo, IModFile, IModFileQuery,
+  IModInfo, IRevision, IRevisionQuery, NexusError, RateLimitError, TimeoutError,
+} from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
@@ -1200,16 +1199,13 @@ interface IDLQueueItem {
 
 const freeDLQueue: IDLQueueItem[] = [];
 
-function makeDLQuery(revisionNumber: number): ICollectionQuery {
-  return {
+const DL_QUERY: IRevisionQuery = {
+  id: true,
+  downloadLink: true,
+  collection: {
     id: true,
-    currentRevision: {
-      $filter: { revision: 1 },
-      id: true,
-      downloadLink : true,
-    },
-  };
-}
+  },
+};
 
 function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   // for free users a dialog needs to be displayed sending them to the site for the download.
@@ -1259,7 +1255,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
-    let collectionInfo: Partial<ICollection>;
+    let revisionInfo: Partial<IRevision>;
 
     return Promise.resolve()
       .then(() => (url.type === 'mod')
@@ -1278,10 +1274,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                 },
               } as any,
           }))
-        : (nexus as any).getCollectionGraph(makeDLQuery(url.revisionNumber), url.collectionSlug)
-          .then((collection: Partial<ICollection>) => {
-            collectionInfo = collection;
-            return nexus.getCollectionDownloadLink(collectionInfo.currentRevision.downloadLink);
+        : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, url.revisionNumber)
+          .then((revision: Partial<IRevision>) => {
+            revisionInfo = revision;
+            return nexus.getCollectionDownloadLink(revision.downloadLink);
           })
           .then(downloadUrls => ({
               urls: downloadUrls.map(iter => iter.URI),
@@ -1290,8 +1286,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                 source: 'nexus',
                 nexus: {
                   ids: {
-                    collectionId: collectionInfo.id,
-                    revisionId: collectionInfo.currentRevision.id,
+                    collectionId: revisionInfo.collection.id,
+                    revisionId: revisionInfo.id,
                     collectionSlug: url.collectionSlug,
                     revisionNumber: url.revisionNumber,
                   },

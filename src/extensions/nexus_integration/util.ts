@@ -1,5 +1,5 @@
 import Nexus, {
-  EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
+  EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
@@ -704,23 +704,26 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
     .filter(modId => mods[modId].attributes?.collectionId !== undefined);
 
   return Promise.all(collectionIds.map(modId => {
-    const query = {
-      currentRevision: {
+    const query: Partial<ICollectionQuery> = {
+      revisions: {
         revision: true,
         id: true,
+        revisionStatus: true,
       },
     };
     const mod = mods[modId];
-    return ((mod.attributes?.collectionSlug !== undefined)
-      ? nexus.getCollectionGraph(query, mod.attributes?.collectionSlug)
-      : nexus.getCollectionGraphLegacy(query, mod.attributes?.collectionId))
+    return nexus.getCollectionGraph(query, mod.attributes?.collectionSlug)
       .then(collection => {
+        const currentRevision = collection.revisions
+          .filter(rev => rev.revisionStatus === 'published')
+          .sort((lhs, rhs) => rhs.revision - lhs.revision)
+          [0];
+
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
-        if (collection.currentRevision.id !== mod.attributes?.revisionId) {
-          store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
-                                         collection.currentRevision.revision));
+        if (currentRevision.id !== mod.attributes?.revisionId) {
+          store.dispatch(setModAttribute(gameId, modId, 'newestFileId', currentRevision.revision));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
-            collection.currentRevision.revision.toString()));
+            currentRevision.revision.toString()));
         }
         return undefined;
       })

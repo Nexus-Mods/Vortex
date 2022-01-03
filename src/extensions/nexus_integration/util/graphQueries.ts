@@ -69,7 +69,11 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   tileImage: {
     url: true,
   },
-  currentRevision: revisionInfo,
+  revisions: {
+    id: true,
+    revision: true,
+    revisionStatus: true,
+  },
   description: true,
   summary: true,
 } as any;

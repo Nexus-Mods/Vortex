@@ -34,6 +34,8 @@ export interface IActionDefinition {
   // displayed together, visually sligthly separated
   // position is then the order within a group but also groups are sorted by the lowest
   // priority found within that group
+  // Note: using this for any item in a supported container may affect the styling so please
+  //   verify things look correctly
   group?: string;
   options?: IActionOptions;
   // in certain situations where the actions may be grouped together (e.g. in a dropdown button)
