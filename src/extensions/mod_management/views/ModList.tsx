@@ -824,6 +824,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       description: 'The total size of the mod',
       icon: 'chart-bars',
       customRenderer: (mod: IModWithState) => {
+        if (mod.state !== 'installed') {
+          const download = this.props.downloads?.[mod.archiveId];
+          return (
+            <>
+              {download?.size !== undefined ? bytesToString(download.size) : '???'}
+            </>
+          )
+        }
         const value = mod.attributes.modSize !== undefined
           ? bytesToString(mod.attributes.modSize)
           : 'Calculate';
@@ -838,7 +846,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           </a>
         );
       },
-      calc: (mod: IModWithState) => mod.attributes.modSize,
+      calc: (mod: IModWithState) => {
+        if (mod.state !== 'installed') {
+          const download = this.props.downloads?.[mod.archiveId];
+          return download?.size !== undefined ? bytesToString(download.size) : '???';
+        }
+        return mod.attributes.modSize;
+      },
       placement: 'table',
       isDefaultVisible: false,
       isToggleable: true,
