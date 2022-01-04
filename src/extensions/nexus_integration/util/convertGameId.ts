@@ -1,5 +1,7 @@
+import { inspect } from 'util';
 import { IGame } from '../../../types/IGame';
 import { IGameStored } from '../../../types/IState';
+import { log } from '../../../util/log';
 import { SITE_ID } from '../../gamemode_management/constants';
 
 /**
@@ -19,13 +21,22 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
 
   const gameId = game?.id ?? fallbackGameId;
 
-  return {
-    skyrimse: 'skyrimspecialedition',
-    skyrimvr: 'skyrimspecialedition',
-    falloutnv: 'newvegas',
-    fallout4vr: 'fallout4',
-    teso: 'elderscrollsonline',
-  }[gameId.toLowerCase()] || gameId;
+  try {
+    return {
+      skyrimse: 'skyrimspecialedition',
+      skyrimvr: 'skyrimspecialedition',
+      falloutnv: 'newvegas',
+      fallout4vr: 'fallout4',
+      teso: 'elderscrollsonline',
+    }[gameId.toLowerCase()] || gameId;
+  } catch (err) {
+    log('error', 'failed to convert game id to domain', {
+      message: err.message,
+      game: inspect(game),
+      fallbackGameId,
+    });
+    throw err;
+  }
 }
 
 /**
