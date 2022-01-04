@@ -13,7 +13,6 @@ import {getGame} from '../../gamemode_management/util/getGame';
 import DelegateBase from './DelegateBase';
 
 import Promise from 'bluebird';
-import getVersion from 'exe-version';
 import minimatch from 'minimatch';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -59,27 +58,27 @@ export class Context extends DelegateBase {
   public getCurrentGameVersion =
       (dummy: any, callback: (err, res: string) => void) => {
         log('debug', 'getCurrentGameVersion called');
-        const executable = this.gameDiscovery.executable || this.gameInfo.executable();
-        const gameExePath =
-            path.join(this.gameDiscovery.path, executable);
-        let version = '';
-        try {
-          version = getVersion(gameExePath);
-        } catch (err) {
-          log('warn', 'failed to get exe version', { exe: gameExePath, error: err.message });
-        }
-        return callback(null, version);
+        this.gameInfo.getInstalledVersion(this.gameDiscovery)
+          .then(version => {
+            // the fomod installer does not support release tags
+            callback(null, version.split(/\-+/)[0]);
+          })
+          .catch(err => {
+            callback(err, null);
+          });
       }
 
   public getExtenderVersion =
       (extender: string, callback: (err, res: string) => void) => {
         log('debug', 'getExtenderVersion called');
-        const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
-        try {
-          return callback(null, getVersion(sePath));
-        } catch (err) {
-          return callback(err, null);
-        }
+        this.gameInfo.getInstalledVersion(this.gameDiscovery)
+          .then(version => {
+            // the fomod installer does not support release tags
+            callback(null, version.split(/\-+/)[0]);
+          })
+          .catch(err => {
+            callback(err, null);
+          });
       }
 
   public isExtenderPresent =
