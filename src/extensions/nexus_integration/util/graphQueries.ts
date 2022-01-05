@@ -8,6 +8,10 @@ const revisionInfo: IRevisionQuery = {
   updatedAt: true,
   downloadLink: true,
   fileSize: true,
+  gameVersions: {
+    id: true,
+    reference: true,
+  },
   rating: {
     average: true,
     total: true,
