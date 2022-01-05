@@ -341,7 +341,7 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
         ? (nexus as any).getCollectionGraph(FULL_COLLECTION_INFO, slug)
         : (nexus as any).getCollectionGraphLegacy(FULL_COLLECTION_INFO, collectionId))
       .catch(err => {
-        if (err.code !== 'NOT_FOUND') {
+        if (!['COLLECTION_DISCARDED', 'NOT_FOUND'].includes(err.code)) {
           api.showErrorNotification('Failed to get collection info', err);
         }
         return Promise.resolve(undefined);
