@@ -1524,11 +1524,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
       endorseThing(context.api, nexus, gameId, modId, endorseStatus)));
-  const cmAttr = genEndorsedAttribute(context.api,
-    (gameId: string, modId: string, endorseStatus: string) =>
-      endorseThing(context.api, nexus, gameId, modId, endorseStatus));
-  cmAttr.isToggleable = false;
-  context.registerTableAttribute('collection-mods', cmAttr);
+
   context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api, () => nexus));
