@@ -135,7 +135,7 @@ class DeploymentMethod extends LinkingDeployment {
           + 'Please note that move deployment is slightly slower, uses more disk space and is less '
           + 'robust regarding changes from external applications than "Hardlink Deployment".\n'
           + 'There are no advantages compared to hardlink deployment except that it also works '
-          + 'on FAT32 formatted drives.\n'
+          + 'on exFAT/FAT32 formatted drives.\n'
           + 'So please only use this if hardlink really is no option.',
     }, [
       { label: 'Cancel' },

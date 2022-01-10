@@ -267,6 +267,9 @@ export interface IDeploymentMethod {
    * deactivate all mods at the destination location
    * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game paths where mods are installed to (destination)
+   * @param {string} gameId id for the game to purge
+   * @param {string} onProgress progress callback. Doesn't have to be used, won't always be
+   *                            supplied
    * Vortex itself does not keep track which files were installed by the
    * activator so if the activator can not discover those automatically it
    * it has to do its own bookkeeping.
@@ -274,7 +277,8 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  purge: (installPath: string, dataPath: string, gameId?: string) => Promise<void>;
+  purge: (installPath: string, dataPath: string, gameId?: string,
+          onProgress?: (num: number, total: number) => void) => Promise<void>;
 
   /**
    * called after mods were purged. If multiple mod types wer purged, this is only called

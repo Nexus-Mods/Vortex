@@ -335,7 +335,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public purge(installPath: string, dataPath: string, gameId?: string): Promise<void> {
+  public purge(installPath: string, dataPath: string, gameId?: string,
+               onProgress?: (num: number, total: number) => void): Promise<void> {
     log('debug', 'purging', { installPath, dataPath });
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
@@ -350,7 +351,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     // stat to ensure the target directory exists
     return fs.statAsync(dataPath)
-      .then(() => this.purgeLinks(installPath, dataPath))
+      .then(() => this.purgeLinks(installPath, dataPath, onProgress))
       .then(() => this.postLinkPurge(dataPath, false, true, directoryCleaning))
       .then(() => undefined);
   }
@@ -471,7 +472,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract linkFile(linkPath: string, sourcePath: string,
                               dirTags?: boolean): Promise<void>;
   protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
-  protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
+  protected abstract purgeLinks(installPath: string, dataPath: string,
+                                onProgress?: (num: number, total: number) => void): Promise<void>;
   /**
    * test if a file is a link to another file. The stats parameters may not be available,
    * they are just intended as an optimization by avoiding doing redundant calls

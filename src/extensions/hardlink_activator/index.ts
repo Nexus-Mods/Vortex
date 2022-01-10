@@ -189,7 +189,8 @@ class DeploymentMethod extends LinkingDeployment {
     return Promise.resolve();
   }
 
-  protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installationPath: string, dataPath: string,
+                       onProgress?: (num: number, total: number) => void): Promise<void> {
     let installEntryProm: Promise<Set<number>>;
 
     // find ids of all files in our mods directory
@@ -223,6 +224,9 @@ class DeploymentMethod extends LinkingDeployment {
     // now remove all files in the game directory that have the same id
     // as a file in the mods directory
     return installEntryProm.then(inos => {
+      const total = inos.size;
+      let purged: number = 0;
+
       let queue = Promise.resolve();
       if (inos.size === 0) {
         return Promise.resolve();
@@ -230,11 +234,19 @@ class DeploymentMethod extends LinkingDeployment {
       return turbowalk(dataPath, entries => {
         queue = queue
           .then(() => Promise.map(entries,
-            entry => (entry.linkCount > 1) && inos.has(entry.id)
-              ? fs.unlinkAsync(entry.filePath)
-                .catch(err =>
-                  log('warn', 'failed to remove', entry.filePath))
-              : Promise.resolve())
+            entry => {
+              if ((entry.linkCount > 1) && inos.has(entry.id)) {
+                ++purged;
+                if ((purged % 1000) === 0) {
+                  onProgress?.(purged, total);
+                }
+                return fs.unlinkAsync(entry.filePath)
+                  .catch(err =>
+                    log('warn', 'failed to remove', entry.filePath));
+              } else {
+                return Promise.resolve();
+              }
+            })
             .then(() => undefined));
       }, { details: true, skipHidden: false })
         .then(() => queue);

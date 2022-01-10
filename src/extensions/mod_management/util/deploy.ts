@@ -18,6 +18,7 @@ import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 
 import Promise from 'bluebird';
+import { generate as shortid } from 'shortid';
 
 const MERGE_SUBDIR = 'zzz_merge';
 
@@ -165,13 +166,19 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
     return Promise.resolve();
   }
 
-  const notification: INotification = {
-    type: 'activity',
-    message: t('Waiting for other operations to complete'),
-    title: t('Purging'),
+  const notificationId: string = shortid();
+
+  const onProgress = (progress: number, message: string) => {
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      title: 'Purging',
+      message,
+      progress,
+    });
   };
 
-  notification.id = api.sendNotification(notification);
+  onProgress(0, 'Waiting for other operations to complete');
 
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
@@ -180,8 +187,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
 
   return withActivationLock(() => {
     log('debug', 'purging mods', { activatorId: activator.id, stagingPath });
-    notification.message = t('Purging mods');
-    api.sendNotification(notification);
+    onProgress(0, 'Preparing purge');
 
     let lastDeployment: { [typeId: string]: IDeployedFile[] };
     api.store.dispatch(startActivity('mods', 'purging'));
@@ -194,12 +200,23 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       .then(() => loadAllManifests(api, activator, gameId, modPaths, stagingPath)
         .then(deployments => { lastDeployment = deployments; }))
       .then(() => api.emitAndAwait('will-purge', profile.id, lastDeployment))
+      .tap(() => onProgress(10, 'Removing links'))
       // deal with all external changes
       .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath,
                                           modPaths, lastDeployment))
+      .tap(() => onProgress(25, 'Removing links'))
       // purge all mod types
-      .then(() => Promise.mapSeries(modTypes, typeId =>
-          activator.purge(stagingPath, modPaths[typeId], gameId)))
+      .then(() => Promise.mapSeries(modTypes, (typeId: string, idx: number) => {
+        // calculating progress for the actual file removal is a bit awkward, we get the idx
+        // and total for each mod type separately. The total removal progress should cover 50%
+        // of our progress bar, each mod type is then a fraction of that.
+        const cover = 50 / modTypes.length;
+        const progressType  = (num: number, total: number) => {
+          onProgress(25 + (idx * cover) + Math.floor((num * cover) / total), 'Removing links');
+        };
+        return activator.purge(stagingPath, modPaths[typeId], gameId, progressType);
+      }))
+      .tap(() => onProgress(75, 'Saving updated manifest'))
       // save (empty) activation
       .then(() => Promise.map(modTypes, typeId =>
           saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
@@ -219,12 +236,13 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       })
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
+      .tap(() => onProgress(85, 'Post purge events'))
       .finally(() => activator.postPurge())
       .then(() => api.emitAndAwait('did-purge', profile.id));
   }, true)
     .then(() => null)
     .finally(() => {
-      api.dismissNotification(notification.id);
+      api.dismissNotification(notificationId);
       api.store.dispatch(stopActivity('mods', 'purging'));
     });
 }
@@ -258,18 +276,23 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     return Promise.resolve();
   }
 
-  const notification: INotification = {
-    type: 'activity',
-    message: t('Waiting for other operations to complete'),
-    title: t('Purging'),
+  const notificationId: string = shortid();
+
+  const onProgress = (progress: number, message: string) => {
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      title: 'Purging',
+      message,
+      progress,
+    });
   };
 
-  notification.id = api.sendNotification(notification);
+  onProgress(0, 'Waiting for other operations to complete');
 
   return withActivationLock(() => {
     log('debug', 'purging mods', { activatorId: activator.id, stagingPath });
-    notification.message = t('Purging mods');
-    api.sendNotification(notification);
+    onProgress(0, 'Preparing purge');
 
     if ((gameId !== undefined) && (profile === undefined)) {
       // gameId was set but we have no last active profile for that game.
@@ -283,18 +306,21 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     //   not the current one! This only works because we force a purge when switching
     //   deployment method.
     return activator.prePurge(stagingPath)
+      .tap(() => onProgress(25, 'Removing links'))
       // purge the specified mod type
       .then(() => activator.purge(stagingPath, modPath, gameId))
+      .tap(() => onProgress(50, 'Saving updated manifest'))
       // save (empty) activation
       .then(() => saveActivation(gameId, typeId, state.app.instanceId, modPath, stagingPath,
                          [], activator.id))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge())
+      .tap(() => onProgress(75, 'Post purge events'))
       .then(() => api.emitAndAwait('did-purge', profile.id));
   }, true)
     .then(() => null)
     .finally(() => {
-      api.dismissNotification(notification.id);
+      api.dismissNotification(notificationId);
     });
 }
