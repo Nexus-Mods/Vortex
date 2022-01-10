@@ -203,7 +203,7 @@
   "dependencies": {
     "@electron/remote": "^2.0.1",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "git+ssh://git@gitlab.nexdev.uk:vortex/node-nexus-api.git#mod-packs",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#collections",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
@@ -243,7 +243,7 @@
     "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.4",
-    "modmeta-db": "git+ssh://git@gitlab.nexdev.uk:vortex/modmeta-db.git#collections",
+    "modmeta-db": "Nexus-Mods/modmeta-db#collections",
     "native-errors": "Nexus-Mods/node-native-errors",
     "node-7z": "Nexus-Mods/node-7z",
     "normalize-url": "^6.0.1",
