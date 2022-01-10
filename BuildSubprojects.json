@@ -335,11 +335,11 @@
     },
     {
       "type": "build-copy",
-      "name": "modpack",
-      "path": "extensions/modpack",
+      "name": "collections",
+      "path": "extensions/collections",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/modpack"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/collections"
     },
     {
       "type": "build-copy",
