@@ -29,6 +29,12 @@ class ContextProxyHandler implements ProxyHandler<any> {
       return (dependencyId: string) => {
         this.mDependencies.push(dependencyId);
       };
+    } else if (key === 'optional') {
+      return new Proxy({}, {
+        get() {
+          return () => undefined;
+        },
+      });
     } else if (key === 'api') {
       return {
         translate: (input) => input,
