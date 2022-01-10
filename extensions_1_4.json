@@ -2326,22 +2326,7 @@
     },
     {
       "modId": 139,
-      "fileId": 1285,
-      "author": "Wol0rd",
-      "uploader": "Wol0rd",
-      "description": {
-        "short": "Český překlad pro Vortex.<br /><br />-aktuálně v beta verzi-<br /><br />aktuální stav překladu: 100% - fáze testování",
-        "long": "Instalace: vložte do &#92;AppData&#92;Roaming&#92;Vortex&#92;locales"
-      },
-      "downloads": 4188,
-      "endorsements": 360,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/139/139-1592585829-233660176.png",
-      "name": "Czech translation for Vortex",
-      "timestamp": 1640638481,
-      "tags": [],
-      "version": "0.6",
-      "type": "translation",
-      "language": "cs"
+      "fileId": 1285
     },
     {
       "modId": 145,
