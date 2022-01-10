@@ -925,13 +925,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private singleRowActions(props: IProps) {
-    return props.actions.filter(
-      (action) => (action.singleRowAction === undefined) || action.singleRowAction);
+    return props.actions.filter((action) => action.singleRowAction ?? true);
   }
 
   private multiRowActions(props: IProps) {
-    return props.actions.filter(
-      (action) => (action.multiRowAction === undefined) || action.multiRowAction);
+    return props.actions.filter((action) => action.multiRowAction ?? true);
   }
 
   private selectRelative = (delta: number, groupId: string, shiftHeld: boolean): string => {

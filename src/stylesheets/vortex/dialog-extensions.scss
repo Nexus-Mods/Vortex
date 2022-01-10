@@ -19,7 +19,10 @@
 
   .extension-sort-container {
     align-items: center;
-    padding: 4px;
+    padding-top: 0.5em;
+    > div:first-child {
+      margin-right: 1em;
+    }
   }
 }
 

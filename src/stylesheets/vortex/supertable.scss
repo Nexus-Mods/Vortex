@@ -197,11 +197,6 @@
   &.table-details-hovered {
     padding-left: 50vw;
     margin-left: -50vw;
-    pointer-events: none;
-
-    .table-form-details {
-      pointer-events: all;
-    }
 
     .Select-menu-outer {
       width: auto;
