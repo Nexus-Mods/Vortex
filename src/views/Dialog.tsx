@@ -278,6 +278,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
+    if (content.input !== undefined) {
+      controls.push((
+      <div key='dialog-form-content' className='dialog-content-input'>
+        {content.input.map(this.renderInput)}
+      </div>
+      ));
+    }
+
     if (content.checkboxes !== undefined) {
       controls.push((
         <div key='dialog-content-checkboxes' className='dialog-content-choices'>
@@ -303,14 +311,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <div key='dialog-form-links'>
           {content.links.map(content.options?.linksAsButtons ? this.renderButton : this.renderLink)}
         </div>
-      ));
-    }
-
-    if (content.input !== undefined) {
-      controls.push((
-      <div key='dialog-form-content' className='dialog-content-input'>
-        {content.input.map(this.renderInput)}
-      </div>
       ));
     }
 
