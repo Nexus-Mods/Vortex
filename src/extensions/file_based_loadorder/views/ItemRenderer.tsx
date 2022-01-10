@@ -57,8 +57,8 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     return this.isExternal(item) ? (
       <div className='load-order-unmanaged-banner'>
+        <Icon className='external-caution-logo' name='feedback-warning'/>
         <span>{t('Not managed by Vortex')}</span>
-        <Icon className='external-caution-logo' name='dialog-info'/>
       </div>
     ) : null;
   }
@@ -102,8 +102,10 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       >
         <p className='load-order-index'>{position}</p>
         {this.renderValidationError()}
-        {this.renderExternalBanner(item)}
-        <p className='load-order-name'>{key}</p>
+        <div>
+          <p className='load-order-name'>{key}</p>
+          {this.renderExternalBanner(item)}
+        </div>
         {checkBox()}
         {lock()}
       </ListGroupItem>
