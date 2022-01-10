@@ -38,12 +38,14 @@ sourceMapSupport.install();
 import requireRemap from './util/requireRemap';
 requireRemap();
 
-function setEnv(key: string, value: string) {
-  process.env[key] = value;
+function setEnv(key: string, value: string, force?: boolean) {
+  if ((process.env[key] === undefined) || force) {
+    process.env[key] = value;
+  }
 }
 
 if (process.env.NODE_ENV !== 'development') {
-  setEnv('NODE_ENV', 'production');
+  setEnv('NODE_ENV', 'production', true);
 } else {
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;
@@ -52,7 +54,6 @@ if (process.env.NODE_ENV !== 'development') {
 
 {
   setEnv('NEXUS_NEXT_URL', 'https://next.nexusmods.com');
-  // setEnv('IGNORE_UPDATES', 'yes');
   setEnv('FORCE_UPDATE_CHANNEL', 'next');
 }
 
