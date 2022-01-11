@@ -819,8 +819,8 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerActionCheck('INIT_DOWNLOAD', (state: IState, action: any) => {
-    const { game } = action.payload;
-    if (!truthy(game) || (typeof(game) !== 'string')) {
+    const { games } = action.payload;
+    if (!truthy(games) || !Array.isArray(games) || (games.length === 0)) {
       return 'No game associated with download';
     }
     return undefined;

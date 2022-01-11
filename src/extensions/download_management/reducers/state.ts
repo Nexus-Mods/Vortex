@@ -31,7 +31,7 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(state, [ 'files', payload.id ], {
         state: 'init',
-        game: [ payload.game ],
+        game: payload.games,
         urls: payload.urls,
         modInfo: payload.modInfo,
         chunks: [],

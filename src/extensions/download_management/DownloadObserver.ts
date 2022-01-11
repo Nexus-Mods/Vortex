@@ -35,6 +35,7 @@ import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import { getGames } from '../gamemode_management/util/getGame';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], chunkable: boolean,
@@ -222,12 +223,12 @@ export class DownloadObserver {
     }
 
     const state: IState = this.mApi.store.getState();
-    let gameMode = (modInfo || {}).game || selectors.activeGameId(state);
-    if (Array.isArray(gameMode)) {
-      gameMode = gameMode[0];
+    let gameId: string = (modInfo || {}).game || selectors.activeGameId(state);
+    if (Array.isArray(gameId)) {
+      gameId = gameId[0];
     }
 
-    if (gameMode === undefined) {
+    if (gameId === undefined) {
       if (callback !== undefined) {
         callback(new ProcessCanceled(
             'You need to select a game to manage before downloading this file'));
@@ -235,10 +236,14 @@ export class DownloadObserver {
       return;
     }
 
-    this.mApi.store.dispatch(
-      initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
+    const compatibleGames = getGames().filter(game =>
+      (game.details?.compatibleDownloads ?? []).includes(gameId));
+    const gameIds = [gameId].concat(compatibleGames.map(game => game.id));
 
-    const downloadPath = selectors.downloadPathForGame(state, gameMode);
+    this.mApi.store.dispatch(
+      initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
+
+    const downloadPath = selectors.downloadPathForGame(state, gameId);
 
     const processCB = this.genProgressCB(id);
 

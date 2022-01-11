@@ -11,8 +11,8 @@ export interface IDictionary {
  * initialize a download (it may not be started immediately)
  */
 export const initDownload = safeCreateAction('INIT_DOWNLOAD',
-  (id: string, urls: string[], modInfo: IDictionary, game: string) => ({
-    id, urls, modInfo, game,
+  (id: string, urls: string[], modInfo: IDictionary, games: string[]) => ({
+    id, urls, modInfo, games,
   }));
 
 /**
