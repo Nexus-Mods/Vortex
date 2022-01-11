@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress",
     "bundle7z": "7z a -t7z sample-extension.7z .\\dist\\index.js .\\dist\\info.json",
     "build": "npm run webpack && extractInfo"
   },
@@ -18,20 +18,18 @@
   },
   "devDependencies": {
     "7z-bin": "Nexus-Mods/7z-bin",
-    "@types/i18next": "^13.0.0",
     "@types/node": "^15.12.4",
     "@types/react": "^17.0.11",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
-    "bluebird": "^3.5.5",
-    "electron": "11.3.0",
-    "i18next": "^17.0.4",
+    "bluebird": "^3.7.2",
+    "i18next": "^19.0.1",
     "react": "^17.0.2",
-    "react-bootstrap": "^0.32.4",
-    "ts-loader": "^6.0.4",
+    "react-bootstrap": "^0.33.0",
+    "ts-loader": "^9.2.6",
     "typescript": "^4.4.3",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.40.0",
-    "webpack-cli": "^4.7.2"
+    "webpack": "^5.57.1",
+    "webpack-cli": "^4.8.0"
   }
 }

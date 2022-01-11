@@ -1,11 +1,12 @@
-import { remote } from 'electron';
-import { log, types } from 'vortex-api';
+import { types } from 'vortex-api';
 
 function main(context: types.IExtensionContext) {
   context.registerAction('global-icons', 100, 'menu', {}, 'Sample', () => {
-    remote.dialog.showMessageBox(remote.getCurrentWindow(), {
-      message: 'Hello World',
-    });
+    context.api.showDialog('info', 'Success!', {
+      text: 'Hello World',
+    }, [
+      { label: 'Close' },
+    ]);
   });
   return true;
 }
