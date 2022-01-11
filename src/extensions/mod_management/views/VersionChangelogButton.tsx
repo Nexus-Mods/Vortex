@@ -8,7 +8,27 @@ import { IMod } from '../../mod_management/types/IMod';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
-import * as ReactSafeHtmlT from 'react-safe-html';
+import Interweave, { ElementAttributes, Filter } from 'interweave';
+
+class LinkFilter extends Filter {
+  public attribute<K extends keyof ElementAttributes>(name: K, value: ElementAttributes[K]): ElementAttributes[K] | null | undefined {
+    if (['href', 'src'].includes(name)) {
+      return undefined;
+    }
+
+    return value;
+  }
+
+  public node(name: string, node: HTMLElement): HTMLElement {
+    if (name === 'a') {
+      for (let i = 0; i < node.attributes.length; ++i) {
+        node.removeAttributeNode(node.attributes[i]);
+      }
+    }
+
+    return node;
+  }
+}
 
 export interface IBaseProps {
   t: TFunction;
@@ -76,15 +96,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     }
     if (changelog.format === 'html') {
       try {
-        const ReactSafeHtml: ReactSafeHtmlT = require('react-safe-html');
-        let components: any = {};
-
-        if (ReactSafeHtml.components !== undefined) {
-          components = ReactSafeHtml.components.makeElements({});
-          components.br = ReactSafeHtml.components.createSimpleElement('br', {});
-        }
-
-        return <ReactSafeHtml html={changelog.content} components={components} />;
+        return <Interweave content={changelog.content} filters={[new LinkFilter()]} />;
       } catch (err) {
         // probably caused by an odd, very very rare bug loading included modules
         return <p>{t('Parsing the changelog failed')}</p>;
