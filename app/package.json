@@ -107,5 +107,8 @@
     "ws": "^7.4.6",
     "xml2js": "^0.4.23",
     "xxhash-addon": "^1.3.0"
+  },
+  "resolutions": {
+    "node-gyp": "^8.4.1"
   }
 }
