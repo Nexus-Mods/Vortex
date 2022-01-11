@@ -24,7 +24,7 @@
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
     "bluebird": "^3.5.5",
-    "electron": "11.3.0",
+    "electron": "11.5.0",
     "i18next": "^17.0.4",
     "react": "^17.0.2",
     "react-bootstrap": "^0.32.4",
