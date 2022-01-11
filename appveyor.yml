@@ -12,7 +12,7 @@ install:
 - ps: Install-Product node $env:nodejs_version x64
 - ps: |
     Write-Host "Installing newest Yarn!"
-    (New-Object Net.WebClient).DownloadFile("https://github.com/yarnpkg/yarn/releases/download/v1.22.17/yarn-1.22.17.msi", "$env:temp\yarn.msi")
+    (New-Object Net.WebClient).DownloadFile("https://github.com/yarnpkg/yarn/releases/download/v1.22.15/yarn-1.22.15.msi", "$env:temp\yarn.msi")
 - cmd: |
     msiexec.exe /i %TEMP%\yarn.msi /quiet /qn /norestart
 - cmd: |
