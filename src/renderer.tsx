@@ -97,6 +97,7 @@ import { IState } from './types/IState';
 import { relaunch } from './util/commandLine';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
+import getVortexPath, { setVortexPath } from './util/getVortexPath';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
@@ -166,8 +167,7 @@ function initialState(): any {
   }
 }
 
-const tempPath = path.join(remote.app.getPath('userData'), 'temp');
-remote.app.setPath('temp', tempPath);
+setVortexPath('temp', () => path.join(getVortexPath('userData'), 'temp'));
 
 let deinitCrashDump: () => void;
 

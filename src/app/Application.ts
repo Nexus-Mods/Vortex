@@ -13,7 +13,7 @@ import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setW
 import ExtensionManagerT from '../util/ExtensionManager';
 import { validateFiles } from '../util/fileValidation';
 import * as fs from '../util/fs';
-import getVortexPath from '../util/getVortexPath';
+import getVortexPath, { setVortexPath } from '../util/getVortexPath';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
@@ -82,8 +82,8 @@ class Application {
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
 
-    const tempPath = path.join(app.getPath('userData'), 'temp');
-    app.setPath('temp', tempPath);
+    setVortexPath('temp', () => path.join(getVortexPath('userData'), 'temp'));
+    const tempPath = getVortexPath('temp');
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
     this.mStartupLogPath = path.join(tempPath, 'startup.log');
@@ -671,7 +671,8 @@ class Application {
     }
   }
 
-  private createStore(restoreBackup?: string, mergeBackup?: string, repair?: boolean): Promise<void> {
+  private createStore(restoreBackup?: string, mergeBackup?: string,
+                      repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
@@ -723,7 +724,7 @@ class Application {
         } else if (multiUser) {
           dataPath = this.multiUserPath();
         }
-        app.setPath('userData', dataPath);
+        setVortexPath('userData', dataPath);
         this.mBasePath = dataPath;
         let created = false;
         try {
