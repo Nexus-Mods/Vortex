@@ -1424,14 +1424,15 @@ class ExtensionManager {
   private registerProtocol = (protocol: string, def: boolean,
                               callback: (url: string, install: boolean) => void): boolean => {
     log('info', 'register protocol', { protocol });
+    let execPath = process.execPath;
     // make it work when using the development version
-    const args = process.execPath.endsWith('electron.exe')
-      ? [getVortexPath('package'), '-d']
-      : ['-d'];
+    if (execPath.endsWith('electron.exe')) {
+      execPath = path.join(getVortexPath('package'), 'vortex.bat');
+    }
 
-    const haveToRegister = def && !app.isDefaultProtocolClient(protocol, process.execPath, args);
+    const haveToRegister = def && !app.isDefaultProtocolClient(protocol, execPath, ['-d']);
     if (def) {
-      app.setAsDefaultProtocolClient(protocol, process.execPath, args);
+      app.setAsDefaultProtocolClient(protocol, execPath, ['-d']);
     }
     this.mProtocolHandlers[protocol] = callback;
     return haveToRegister;
