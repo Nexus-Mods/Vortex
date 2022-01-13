@@ -1,5 +1,7 @@
 'use strict';
 
+const os = require('os');
+
 const dialog = {
   showMessageBoxSync: jest.fn(),
   showMessageBox: jest.fn(),
@@ -8,17 +10,14 @@ const dialog = {
 };
 
 const app = {
-  exit: jest.fn()
-};
-
-const remote = {
-  getCurrentWindow: jest.fn(() => null),
+  exit: jest.fn(),
+  getAppPath: jest.fn(() => os.tmpdir()),
+  getPath: jest.fn(() => os.tmpdir()),
 };
 
 module.exports = {
   require: jest.fn(),
   match: jest.fn(),
   app,
-  remote,
   dialog
 };

@@ -371,7 +371,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private updateSize = () => {
     this.updateState({
-      hidpi: { $set: screen.width > 1920 },
+      hidpi: { $set: (global.screen?.width ?? 0) > 1920 },
     });
   }
 

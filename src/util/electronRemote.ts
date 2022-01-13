@@ -80,7 +80,7 @@ export function makeRemoteCallSync<T>(
   } else {
     knownCallsSync[id] = cb;
     return (...args: any[]) => {
-      return cb(electron, electron.webContents.getFocusedWebContents(), ...args);
+      return cb(electron, electron.webContents?.getFocusedWebContents?.(), ...args);
     };
   }
 }

@@ -38,6 +38,7 @@
     "buildext": " node ./tools/buildScripts/buildSingleExtension.js"
   },
   "jest": {
+    "testEnvironment": "jsdom",
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest",
       "^.+\\.(js|jsx)$": "babel-jest"

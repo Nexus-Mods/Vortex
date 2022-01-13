@@ -13,7 +13,6 @@ export function getDownloadPathPattern(pattern: string): string {
 
 function getDownloadPath(pattern: string, gameId?: string): string {
   if (userData === undefined) {
-    // cached to avoid ipcs from renderer -> main process
     userData = getVortexPath('userData');
   }
   const formatKeys = makeCI({

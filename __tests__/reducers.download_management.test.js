@@ -73,15 +73,15 @@ describe('finishDownload', () => {
 describe('initDownload', () => {
   it('initialises a download', () => {
     const input = { files: {} };
-    const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' });
+    const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, games: ['game'] });
     _.unset(result, ['files', 'id', 'fileTime']);
     expect(result).toEqual({ files: { id: {
-      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: ['game'], fileMD5: undefined, localPath: undefined,
+      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: ['game'],
     } } });
   });
   it('terminates if the id exists', () => {
     const input = { files: { id: { state: 'started' } } };
-    const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' });
+    const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, games: ['game'] });
     expect(terminate.mock.calls.length).toEqual(1);
   });
 });

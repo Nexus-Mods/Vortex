@@ -29,10 +29,10 @@ describe('finishDownload', () => {
 
 describe('initDownload', () => {
   it('creates the action', () => {
-    let action = actions.initDownload('id', ['url1', 'url2'], { key: 'value' }, 'game');
+    let action = actions.initDownload('id', ['url1', 'url2'], { key: 'value' }, ['game']);
     expect(action).toEqual(
       { error: false, type: 'INIT_DOWNLOAD', payload:
-        { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' }
+        { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, games: ['game'] }
       }
     );
   });

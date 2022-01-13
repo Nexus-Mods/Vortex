@@ -1,15 +1,16 @@
 import * as electron from 'electron';
+import * as os from 'os';
 import * as path from 'path';
 import { makeRemoteCallSync } from './electronRemote';
 
-const getElectronPath = makeRemoteCallSync('get-electron-path',
+const getElectronPath = (electron !== undefined) ?  makeRemoteCallSync('get-electron-path',
   (electronIn, webContents, id: string) => {
     // bit of a hack to roll getPath and getAppPath into a single call
     if (id === '__app') {
       return electronIn.app.getAppPath();
     }
     return electronIn.app.getPath(id as any);
-});
+}) : (id: string) => os.tmpdir();
 
 const setElectronPath = makeRemoteCallSync('set-electron-path',
   (electronIn, webContents, id: string, value: string) => {

@@ -3,9 +3,9 @@ jest.mock('../src/util/ExtensionProvider');
 import { MainWindow } from '../src/views/MainWindow';
 import React from 'react';
 import { shallow } from 'enzyme';
-import { findAll, findWithType, findWithClass } from 'react-shallow-testutils';
+import { findAll } from 'react-shallow-testutils';
 
-import { Label, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 
 function renderMainWindow() {
   function dummyT(input) {
