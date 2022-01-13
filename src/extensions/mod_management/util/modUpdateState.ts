@@ -53,14 +53,20 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   const newestVersion: string = getSafe(attributes, ['newestVersion'], undefined);
   const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
+  // for mods we point out any change in version number including downgrades because we
+  // can't make assumptions on the versioning scheme and because downgrades may be intended.
+  // For collections that's different, it's always a number and we don't support downgrades
+  const hasNewerVersion = (attributes.revisionId !== undefined)
+    ? parseInt(newestVersion ?? '0', 10) > parseInt(version ?? '0', 10)
+    : (newestVersion !== undefined) && (version !== undefined)
+      && (versionClean(newestVersion) !== versionClean(version));
+
   // installed file is in the OLD_VERSION group or not available at all
   const hasUpdate = (newestFileId === 'unknown')
     // we know the newest file id and the current file id and they are not the same
     || ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId))
     // we know the newest version and the current version and the are not the same
-    || ((newestVersion !== undefined)
-        && (version !== undefined)
-        && (versionClean(newestVersion) !== versionClean(version)));
+    || hasNewerVersion;
 
   if (hasUpdate) {
     // if the newest file id is unknown this means there *is* an update (according to the
