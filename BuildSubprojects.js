@@ -259,6 +259,9 @@ function main(args) {
   // the projects file contains groups of projects
   // each group is processed in parallel
   return Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
+    if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.BUILD_VARIANT !== project.variant)) {
+      return Promise.resolve();
+    }
     let feedback = new ProcessFeedback(project.name);
     return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {

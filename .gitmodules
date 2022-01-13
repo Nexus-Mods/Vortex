@@ -192,3 +192,7 @@
 	path = extensions/modtype-bepinex
 	url = https://github.com/Nexus-Mods/extension-modtype-bepinex.git
 	branch = main
+[submodule "extensions/collections"]
+	path = extensions/collections
+	url = https://github.com/Nexus-Mods/extension-collections.git
+  branch = master
