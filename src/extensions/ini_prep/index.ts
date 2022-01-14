@@ -280,7 +280,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
 
 function main(context: IExtensionContext) {
   context.registerTableAttribute('mods', {
-    id: 'ini-edits',
+    id: 'iniEdits',
     description: 'Optional ini modifications',
     calc: () => 'Dummy',
     customRenderer: (mod: IModWithState) => renderINITweaks(mod),

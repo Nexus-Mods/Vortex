@@ -41,8 +41,8 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
       fileSize: dl.size,
     }, ignoreCache)
     .then((modInfo: ILookupResult[]) => {
-      if (modInfo.length > 0) {
-        const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+      const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+      if (match !== undefined) {
         const info = match.value;
 
         const dlNow = api.getState().persistent.downloads.files[dlId];

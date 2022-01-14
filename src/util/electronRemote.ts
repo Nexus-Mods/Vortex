@@ -50,12 +50,12 @@ ipcRenderer?.on?.(IPC_CHANNEL_REPLY, (event, arg) => {
   delete outstandingCalls[callId];
 });
 
-ipcMain?.on?.(IPC_CHANNEL, (event, arg) => {
+ipcMain?.on?.(IPC_CHANNEL + '_sync', (event, arg) => {
   const { id, callId, args } = JSON.parse(arg);
   try {
     event.returnValue = {
       error: null,
-      result: knownCallsSync[id](electron, event.sender, ...args)
+      result: knownCallsSync[id](electron, event.sender, ...args),
     };
   } catch (error) {
     event.returnValue = { error };
@@ -70,7 +70,7 @@ export function makeRemoteCallSync<T>(
   if (ipcRenderer !== undefined) {
     return (...args: any[]) => {
       const callId = shortid();
-      const res = ipcRenderer.sendSync(IPC_CHANNEL, JSON.stringify({ id, args, callId }));
+      const res = ipcRenderer.sendSync(IPC_CHANNEL + '_sync', JSON.stringify({ id, args, callId }));
       if (res.error !== null) {
         throw res.error;
       } else {
