@@ -26,14 +26,17 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
   });
 }
 
-function install(files: string[], destinationPath: string,
-                 gameId: string, progress: ProgressDelegate,
-                 api: IExtensionApi): Promise<any> {
+function install(api: IExtensionApi,
+                 files: string[], destinationPath: string,
+                 gameId: string, choicesIn: any, unattended: boolean,
+                 progress: ProgressDelegate): Promise<any> {
   return new Promise((resolve, reject) => {
     const fomod = files.find((file) => path.extname(file) === '.fomod');
     const filePath = path.join(destinationPath, fomod);
     log('debug', 'install nested', filePath);
-    resolve({ instructions: [ { type: 'submodule', key: fomod, path: filePath } ] });
+    resolve({ instructions: [
+      { type: 'submodule', key: fomod, path: filePath, choices: choicesIn, unattended },
+    ] });
   });
 }
 
@@ -41,8 +44,8 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller(
       'nested_fomod', 0, testSupported,
       (files: string[], destinationPath: string, gameId: string,
-       progress: ProgressDelegate) =>
-          install(files, destinationPath, gameId, progress, context.api));
+       progress: ProgressDelegate, choicesIn?: any, unattended?: boolean) =>
+          install(context.api, files, destinationPath, gameId, choicesIn, unattended, progress));
 
   return true;
 }

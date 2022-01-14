@@ -454,7 +454,8 @@ class InstallManager {
         }
       })
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
-                                               installGameId, modId, result))
+                                               installGameId, modId, result,
+                                               fullInfo.choices, unattended))
       .finally(() => {
         if (tempPath !== undefined) {
           log('debug', 'removing temporary path', tempPath);
@@ -772,6 +773,7 @@ class InstallManager {
                        unattended?: boolean): Promise<IInstallResult> {
     const fileList: string[] = [];
     let phase = 'Extracting';
+
     const progress = (files: string[], percent: number) => {
       if ((percent !== undefined) && (installContext !== undefined)) {
         installContext.setProgress(phase, percent);
@@ -1090,16 +1092,18 @@ class InstallManager {
 
   private processSubmodule(api: IExtensionApi, submodule: IInstruction[],
                            destinationPath: string,
-                           gameId: string, modId: string): Promise<void> {
+                           gameId: string, modId: string,
+                           choices: any, unattended: boolean): Promise<void> {
     return Promise.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + shortid() + '.installing';
         log('debug', 'install submodule', { modPath: mod.path, tempPath, destinationPath });
         return this.installInner(api, mod.path, tempPath, destinationPath,
-                                 gameId, undefined, undefined)
+                                 gameId, undefined, undefined,
+                                 choices, undefined, unattended)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
-            gameId, mod.key, resultInner))
+            gameId, modId, resultInner, choices, unattended))
           .then(() => {
             if (mod.submoduleType !== undefined) {
               api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
@@ -1184,7 +1188,8 @@ class InstallManager {
   private processInstructions(api: IExtensionApi, archivePath: string,
                               tempPath: string, destinationPath: string,
                               gameId: string, modId: string,
-                              result: { instructions: IInstruction[] }) {
+                              result: { instructions: IInstruction[] },
+                              choices: any, unattended: boolean) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
       // wrong. Not necessarily a "user canceled" but the error handling happened
@@ -1259,7 +1264,8 @@ class InstallManager {
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
-                                        destinationPath, gameId, modId))
+                                        destinationPath, gameId, modId,
+                                        choices, unattended))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
                                                gameId, modId))
