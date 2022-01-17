@@ -83,9 +83,10 @@
   "gamemode": "*",
   "version": "<=1.4.16"
   }, {
-  "date": "2021-11-10T17:15:00",
-  "description": "Skyrim Special Edition will be updated on 11 November 2021. This update will cause Skyrim Script Extender and any mods that depend on it to temporarily stop working. You can read more about this change in the site news.",
-  "severity": "information",
-  "gamemode": "skyrimse"
+  "date": "2022-01-17T08:00:00",
+  "description": "The latest builds of v1.7.0 and v1.7.1 for Bannerlord (all platforms) change how the game saves mod data. This is very likely to cause errors in gameplay and crashes when playing with mods until it is resolved. TaleWorlds are aware of the issue and are working on a solution. The current workaround is to download and install the latest version of ButterLib: https://www.nexusmods.com/mountandblade2bannerlord/mods/2018. Thank you to Aragasas and Artifixer for the tip!",
+  "severity": "warning",
+  "link": "https://www.nexusmods.com/mountandblade2bannerlord/mods/2018",
+  "gamemode": "mountandblade2bannerlord"
   }
 ]
