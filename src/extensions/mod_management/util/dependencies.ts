@@ -109,9 +109,9 @@ function lookupDownloadHint(api: IExtensionApi,
   }
 
   if (input.mode === 'direct') {
-    return Promise.resolve({ url: normalizeUrl(input.url, { defaultProtocol: 'https:' }) });
+    return Promise.resolve({ url: normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' }) });
   } else if (input.mode === 'browse') {
-    const urlNorm = normalizeUrl(input.url, { defaultProtocol: 'https:' });
+    const urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
     return browseForDownload(api, urlNorm, input.instructions)
       .then(result => {
         if (result === undefined) {
