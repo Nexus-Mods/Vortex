@@ -1625,7 +1625,7 @@ class InstallManager {
   }
 
   private applyExtraFromRule(api: IExtensionApi,
-                             profile: IProfile,
+                             gameId: string,
                              modId: string,
                              extra?: { [key: string]: any }) {
     if (extra === undefined) {
@@ -1633,11 +1633,11 @@ class InstallManager {
     }
 
     if (extra.type !== undefined) {
-      api.store.dispatch(setModType(profile.gameId, modId, extra.type));
+      api.store.dispatch(setModType(gameId, modId, extra.type));
     }
 
     if (extra.name !== undefined) {
-      api.store.dispatch(setModAttribute(profile.gameId, modId, 'customFileName', extra.name));
+      api.store.dispatch(setModAttribute(gameId, modId, 'customFileName', extra.name));
     }
   }
 
@@ -1660,8 +1660,16 @@ class InstallManager {
       return downloadAndInstall(dep)
         .then((modId: string) => {
           log('info', 'installed as dependency', { modId });
-          api.store.dispatch(setModEnabled(profile.id, modId, true));
-          this.applyExtraFromRule(api, profile, modId, dep.extra);
+
+          // enable the mod in any profile that has the source mod enabled
+          const profiles = Object.values(api.getState().persistent.profiles)
+            .filter(prof => (prof.gameId === profile.gameId)
+                         && prof.modState?.[sourceModId]?.enabled);
+          profiles.forEach(prof => {
+            api.store.dispatch(setModEnabled(prof.id, modId, true));
+          });
+
+          this.applyExtraFromRule(api, profile.gameId, modId, dep.extra);
 
           const mods = api.store.getState().persistent.mods[profile.gameId];
           return { ...dep, mod: mods[modId] };
