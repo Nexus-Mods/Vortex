@@ -227,8 +227,14 @@ export interface ISettingsNotification {
   suppress: { [notificationId: string]: boolean };
 }
 
+export const UPDATE_CHANNELS = ['stable', 'beta', 'next', 'none'] as const;
+
+type ValuesOf<T extends readonly any[]>= T[number];
+
+export type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
+
 export interface ISettingsUpdate {
-  channel: 'stable' | 'beta' | 'none';
+  channel: UpdateChannel;
 }
 
 export interface ISettingsWorkarounds {

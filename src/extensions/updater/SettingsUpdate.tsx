@@ -1,4 +1,5 @@
 import More from '../../controls/More';
+import { UPDATE_CHANNELS, UpdateChannel } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
@@ -9,12 +10,6 @@ import * as React from 'react';
 import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-
-export const UPDATE_CHANNELS = ['stable', 'beta', 'next', 'none'] as const;
-
-type ValuesOf<T extends readonly any[]>= T[number];
-
-export type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -45,7 +40,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           >
             <option value='stable'>{t('Stable')}</option>
             <option value='beta'>{t('Beta')}</option>
-            <option value='next'>{t('Next (Preview)')}</option>
+            <option value='next'>{t('Next (Feature Preview)')}</option>
             <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
           <ControlLabel>
@@ -69,8 +64,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
 
   private selectChannel = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    if (UPDATE_CHANNELS.includes(target.value as any)) {
-      this.props.onSetUpdateChannel(target.value as any);
+    if (UPDATE_CHANNELS.includes(target.value as UpdateChannel)) {
+      this.props.onSetUpdateChannel(target.value as UpdateChannel);
     } else {
       log('error', 'invalid channel', target.value);
     }

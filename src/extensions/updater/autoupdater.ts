@@ -1,6 +1,6 @@
 import { setUpdateChannel, showDialog } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IState, UpdateChannel } from '../../types/IState';
 import { getVisibleWindow, UserCanceled } from '../../util/api';
 import { log } from '../../util/log';
 import opn from '../../util/opn';
@@ -14,7 +14,6 @@ import * as semver from 'semver';
 import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
-import { UPDATE_CHANNELS, UpdateChannel } from './SettingsUpdate';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -71,10 +70,12 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
   let channelOverride: UpdateChannel;
-  if (process.env['FORCE_UPDATE_CHANNEL'] !== undefined) {
-    log('info', 'update channel enforced', process.env['FORCE_UPDATE_CHANNEL']);
-    api.store.dispatch(setUpdateChannel(process.env['FORCE_UPDATE_CHANNEL']));
-
+  if (process.env['IS_PREVIEW_BUILD'] === 'yes') {
+    log('info', 'forcing update channel for preview builds so that we don\'t automatically '
+        + 'downgrade');
+    api.store.dispatch(setUpdateChannel('next'));
+  } else if (state().settings.update.channel === 'next') {
+    api.store.dispatch(setUpdateChannel('beta'));
   }
 
   const queryUpdate = (version: string): Promise<void> => {
