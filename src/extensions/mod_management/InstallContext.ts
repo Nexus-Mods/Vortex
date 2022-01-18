@@ -55,7 +55,8 @@ class InstallContext implements IInstallContext {
   private mSilent: boolean = false;
   private mDidReportError: boolean = false;
 
-  private mLastProgress: number = 0;
+  private mLastPhase: string;
+  private mLastProgress: number;
 
   constructor(gameMode: string, api: IExtensionApi, silent: boolean) {
     const store = api.store;
@@ -81,6 +82,7 @@ class InstallContext implements IInstallContext {
         },
       ] });
     };
+    this.mLastProgress = 0;
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {
@@ -138,7 +140,7 @@ class InstallContext implements IInstallContext {
     this.mStartActivity(`installing_${id}`);
   }
 
-  public stopIndicator(mod: IMod): void {
+  public stopIndicator(mod?: IMod): void {
     if (this.mIndicatorId === undefined) {
       return;
     }
@@ -161,8 +163,11 @@ class InstallContext implements IInstallContext {
   }
 
   public setProgress(phase: string, percent?: number) {
-    if ((percent === undefined) || ((percent - (this.mLastProgress ?? 0)) >= 2)) {
+    if ((percent === undefined)
+        || (this.mLastPhase !== phase)
+        || (Math.abs(percent - (this.mLastProgress ?? 0)) >= 2)) {
       this.mLastProgress = percent;
+      this.mLastPhase = phase;
       this.mUpdateNotification(
         'install_' + this.mIndicatorId,
         percent,
@@ -193,7 +198,9 @@ class InstallContext implements IInstallContext {
       id: this.mIndicatorId,
       outcome: this.mInstallOutcome,
     });
-    if (outcome === 'success') {
+    if (outcome === 'ignore') {
+      // nop
+    } else if (outcome === 'success') {
       this.mSetModState(this.mAddedId, 'installed');
 
       this.mSetModAttributes(this.mAddedId, {
@@ -282,6 +289,7 @@ class InstallContext implements IInstallContext {
         displayMS: 4000,
         localize: { message: false },
       };
+      case 'ignore': return null;
       default: return {
         type: 'error',
         title: '{{id}} failed to install',

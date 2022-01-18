@@ -50,7 +50,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       filtered: [],
     });
 
-    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 1000);
+    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 200);
   }
 
   public componentDidMount() {
@@ -70,6 +70,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       if (prevProps.notifications.length !== this.props.notifications.length) {
         this.mUpdateDebouncer.runNow(() => null);
       } else {
+        this.quickUpdate();
         this.mUpdateDebouncer.schedule();
       }
     }
@@ -149,6 +150,26 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       info: 5000,
       activity: null,
     }[item.type] || 10000;
+  }
+
+  private quickUpdate() {
+    // updating only progress and message
+    const { notifications } = this.props;
+    const { filtered } = this.state;
+    for (let i = 0; i < filtered.length; ++i) {
+      const ref = notifications.find(n => n.id === filtered[i].id);
+      // there shouldn't be notifications without id here but just to be safe
+      if (filtered[i].id !== undefined) {
+        if ((filtered[i].message !== ref.message)
+            || (filtered[i].progress !== ref.progress)) {
+          this.nextState.filtered[i] = {
+            ...filtered[i],
+            message: ref.message,
+            progress: ref.progress,
+          };
+        }
+      }
+    }
   }
 
   private triggerFilter = () => {
