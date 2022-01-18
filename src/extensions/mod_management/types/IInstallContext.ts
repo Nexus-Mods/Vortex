@@ -1,6 +1,6 @@
 import { IMod } from './IMod';
 
-export type InstallOutcome = 'success' | 'failed' | 'canceled';
+export type InstallOutcome = 'success' | 'failed' | 'canceled' | 'ignore';
 
 export interface IInstallContext {
   startIndicator: (id: string)  => void;

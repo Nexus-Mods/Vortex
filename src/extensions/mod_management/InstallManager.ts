@@ -1098,8 +1098,11 @@ class InstallManager {
       mod => {
         const tempPath = destinationPath + '.' + shortid() + '.installing';
         log('debug', 'install submodule', { modPath: mod.path, tempPath, destinationPath });
+        const subContext = new InstallContext(gameId, api, unattended);
+        subContext.startIndicator(api.translate('nested: {{modName}}',
+          { replace: { modName: path.basename(mod.path) } }));
         return this.installInner(api, mod.path, tempPath, destinationPath,
-                                 gameId, undefined, undefined,
+                                 gameId, subContext, undefined,
                                  choices, undefined, unattended)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
@@ -1110,6 +1113,8 @@ class InstallManager {
             }
           })
           .finally(() => {
+            subContext.finishInstallCB('ignore');
+            subContext.stopIndicator();
             log('debug', 'removing submodule', tempPath);
             fs.removeAsync(tempPath);
           });
