@@ -15,19 +15,18 @@ export function installDevelExtensions(): Promise<void> {
       const installExtension = require('electron-devtools-installer').default;
       const {
         REACT_DEVELOPER_TOOLS,
-        REACT_PERF,
         REDUX_DEVTOOLS } = require('electron-devtools-installer');
 
+      const options = {
+        loadExtensionOptions: { allowFileAccess: true },
+      };
+
       try {
-        installExtension(REACT_DEVELOPER_TOOLS.id, { allowFileAccess: true })
+        installExtension(REACT_DEVELOPER_TOOLS.id, options)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
 
-        installExtension(REACT_PERF.id, { allowFileAccess: true })
-          .then((name) => log('info', 'Added Extension', name))
-          .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
-
-        installExtension(REDUX_DEVTOOLS.id, { allowFileAccess: true })
+        installExtension(REDUX_DEVTOOLS.id, options)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
       } catch (e) {
