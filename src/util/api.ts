@@ -170,12 +170,15 @@ export {
 };
 
 // getText functions are rolled up into one function
-export type TextGroup = 'mod';
+export type TextGroup = 'mod' | 'profile';
 import getTextModManagement from '../extensions/mod_management/texts';
+import getTextProfileManagement from '../extensions/profile_management/texts';
 
 export function getText(group: TextGroup, textId: string, t: TFunction) {
   if (group === 'mod') {
     return getTextModManagement(textId, t);
+  } else if (group === 'profile') {
+    return getTextProfileManagement(textId, t);
   }
   throw new Error('invalid text group: ' + group);
 }
