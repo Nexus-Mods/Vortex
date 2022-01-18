@@ -105,7 +105,7 @@
 }
 
 .has-feedback label ~ .form-control-feedback {
-  top: ($line-height-computed + 0.4) * 1rem;
+  top: ($line-height-computed + 0.4);
 }
 
 .inline-form {
