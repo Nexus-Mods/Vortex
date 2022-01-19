@@ -50,7 +50,7 @@ const setModsEnabled = (() => {
       ppFunc = api.withPrePost('enable-mods',
         (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
           if (modIds.length > 0) {
-            const profile: IProfile = profileById(api.getState(), profileIdIn);
+            const profile: IProfile = profileById(api.getState(), profileId);
             if (profile !== undefined) {
               batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
               api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
