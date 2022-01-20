@@ -5,13 +5,24 @@ import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 
 const KNOWN_RELEASES = [
+  { release: 528449, version: '4.8.0' },
+  { release: 528372, version: '4.8.0' },
+  { release: 528040, version: '4.8.0' },
+  { release: 528049, version: '4.8.0' },
+  { release: 461814, version: '4.7.2' },
   { release: 461808, version: '4.7.2' },
+  { release: 461310, version: '4.7.1' },
   { release: 461308, version: '4.7.1' },
+  { release: 460805, version: '4.7.0' },
   { release: 460798, version: '4.7.0' },
+  { release: 394808, version: '4.6.2' },
   { release: 394802, version: '4.6.2' },
+  { release: 394271, version: '4.6.1' },
   { release: 394254, version: '4.6.1' },
+  { release: 393297, version: '4.6.0' },
   { release: 393295, version: '4.6.0' },
   { release: 379893, version: '4.5.2' },
+  { release: 378758, version: '4.5.1' },
   { release: 378675, version: '4.5.1' },
   { release: 378389, version: '4.5.0' },
 ];
