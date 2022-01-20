@@ -96,7 +96,7 @@ export class APIDisabled extends Error {
 // functions in the nexus api that don't trigger requests but instead are
 // management functions to control the our api connection
 const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits', 'setLogger']);
-const revalidateFuncs = new Set(['getCollectionGraph', 'getRevisionGraph', 'getCollectionDownloadLink', 'getModInfo', 'getFileInfo']);
+const revalidateFuncs = new Set(['getCollectionGraph', 'getCollectionDownloadLink', 'getModInfo', 'getFileInfo']);
 
 class Disableable {
   private mDisabled = false;
@@ -1027,7 +1027,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('get-nexus-collection', eh.onGetNexusCollection(api, nexus));
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
   api.onAsync('resolve-collection-url', eh.onResolveCollectionUrl(api, nexus));
-  api.onAsync('get-nexus-revision', eh.onGetNexusRevision(api, nexus));
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusCollectionRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));

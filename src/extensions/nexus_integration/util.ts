@@ -76,12 +76,9 @@ function startDownloadCollection(api: IExtensionApi,
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
   let revisionInfo: Partial<IRevision>;
 
-  return Promise.resolve(
-    (url.collectionSlug !== undefined)
-      ? nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
-                                         url.collectionSlug,
-                                         url.revisionNumber)
-      : nexus.getRevisionGraph(FULL_REVISION_INFO, url.revisionId))
+  return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
+                                                          url.collectionSlug,
+                                                          url.revisionNumber))
     .then(revision => {
       revisionInfo = revision;
       api.sendNotification({
@@ -175,9 +172,8 @@ export function getCollectionInfo(nexus: Nexus,
       total: true,
     },
   };
-  return Promise.resolve((collectionSlug !== undefined)
-      ? nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber)
-      : nexus.getRevisionGraph(query, revisionId))
+  return Promise.resolve(
+      nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
     .then(revision => ({ revisionInfo: revision }));
 }
 

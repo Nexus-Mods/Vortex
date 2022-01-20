@@ -331,15 +331,13 @@ export function onNexusDownload(api: IExtensionApi,
 }
 
 export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number, slug: string) => Promise<ICollection> {
-  return (collectionId: number, slug: string): Promise<ICollection> => {
-    if ((slug === undefined) && !Number.isFinite(collectionId)) {
+    : (slug: string) => Promise<ICollection> {
+  return (slug: string): Promise<ICollection> => {
+    if (slug === undefined) {
       return Promise.reject(new Error('invalid parameter, collectionId has to be a number'));
     }
 
-    return Promise.resolve((slug !== undefined)
-        ? (nexus as any).getCollectionGraph(FULL_COLLECTION_INFO, slug)
-        : (nexus as any).getCollectionGraphLegacy(FULL_COLLECTION_INFO, collectionId))
+    return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, slug))
       .catch(err => {
         if (!['COLLECTION_DISCARDED', 'NOT_FOUND'].includes(err.code)) {
           api.showErrorNotification('Failed to get collection info', err);
@@ -367,24 +365,6 @@ export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
         api.showErrorNotification('Failed to get list of collections', err);
         return Promise.resolve([]);
       });
-}
-
-export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
-    : (revisionId: number) => Promise<IRevision> {
-  return (revisionId: number): Promise<IRevision> => {
-    if (!Number.isFinite(revisionId)) {
-      return Promise.reject(
-        new Error('invalid parameter, revisionId has to be a number, '
-                  + `got: ${revisionId}`));
-    }
-    return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
-      .catch(err => {
-        if (err.code !== 'NOT_FOUND') {
-          api.showErrorNotification('Failed to get nexus revision info', err);
-        }
-        return Promise.resolve(undefined);
-      });
-  };
 }
 
 export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)

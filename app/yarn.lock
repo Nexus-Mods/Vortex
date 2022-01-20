@@ -60,8 +60,8 @@
   integrity sha512-mlRYq9FSsOd4m+3wZWatemn3hGFZPWNJ4JQOdrir4rrMK2PyIk26idKBoUWrqF3HJJHl+5GpRU+M0wEruJwecg==
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#collections":
-  version "1.1.3-dev62"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/e1bfbd86231723ba3f38944d1d2ee1fb1fe044b8"
+  version "1.1.3-dev63"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/071cdd629bb243d801f7ca87ba15acef1a76bdb4"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^8.5.1"
@@ -2982,9 +2982,9 @@ qs@6.7.0:
   integrity sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==
 
 qs@~6.5.2:
-  version "6.5.2"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
-  integrity sha512-N5ZAX4/LxJmF+7wN74pUD6qAh9/wnvdQcjq9TZjevvXzSUo7bfmw91saqMjzGS2xq91/odN2dW/WOl7qQHNDGA==
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.3.tgz#3aeeffc91967ef6e35c0e488ef46fb296ab76aad"
+  integrity sha512-qxXIEh4pCGfHICj1mAJQ2/2XVZkjCDTcEgfoSQxc/fYivUZxTkk7L3bDBJSoNrEzXI17oUO5Dp07ktqE5KzczA==
 
 raf-schd@^4.0.2:
   version "4.0.3"
@@ -3695,9 +3695,9 @@ sprintf-js@~1.0.2:
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
 
 sshpk@^1.7.0:
-  version "1.16.1"
-  resolved "https://registry.yarnpkg.com/sshpk/-/sshpk-1.16.1.tgz#fb661c0bef29b39db40769ee39fa70093d6f6877"
-  integrity sha512-HXXqVUq7+pcKeLqqZj6mHFUMvXtOJt1uoUx09pFW6011inTMxqI8BA8PM95myrIyyKwdnzjdFjLiE6KBPVtJIg==
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/sshpk/-/sshpk-1.17.0.tgz#578082d92d4fe612b13007496e543fa0fbcbe4c5"
+  integrity sha512-/9HIEs1ZXGhSPE8X6Ccm7Nam1z8KcoCqPdI7ecm1N33EzAetWahvQWVqLZtaZQ+IDKX4IyA2o0gBzqIMkAagHQ==
   dependencies:
     asn1 "~0.2.3"
     assert-plus "^1.0.0"
