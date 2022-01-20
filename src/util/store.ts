@@ -42,6 +42,10 @@ export function querySanitize(errors: string[]): Decision {
   return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
 }
 
+export function finalizeStoreWrite(): Promise<void> {
+  return basePersistor.finalizeWrite();
+}
+
 export function createVortexStore(sanityCallback: (err: StateError) => void): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,

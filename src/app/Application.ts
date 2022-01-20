@@ -22,6 +22,7 @@ import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import startupSettings from '../util/startupSettings';
 import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
+         finalizeStoreWrite,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
@@ -154,16 +155,20 @@ class Application {
 
   private setupAppEvents(args: IParameters) {
     app.on('window-all-closed', () => {
-      log('info', 'clean application end');
-      if (this.mTray !== undefined) {
-        this.mTray.close();
-      }
-      if (this.mDeinitCrashDump !== undefined) {
-        this.mDeinitCrashDump();
-      }
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
+      log('info', 'Vortex closing');
+      finalizeStoreWrite()
+        .then(() => {
+          log('info', 'clean application end');
+          if (this.mTray !== undefined) {
+            this.mTray.close();
+          }
+          if (this.mDeinitCrashDump !== undefined) {
+            this.mDeinitCrashDump();
+          }
+          if (process.platform !== 'darwin') {
+            app.quit();
+          }
+        });
     });
 
     if (!app.requestSingleInstanceLock()) {
@@ -771,8 +776,8 @@ class Application {
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
         if (this.mExtensions.hasOutdatedExtensions) {
-          log('debug', 'relaunching');
-          relaunch();
+          log('debug', 'relaunching to remove outdated extensions');
+          finalizeStoreWrite().then(() => relaunch());
 
           // relaunching the process happens asynchronously but we don't want to any further work
           // before that

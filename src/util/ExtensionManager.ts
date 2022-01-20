@@ -772,10 +772,13 @@ class ExtensionManager {
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
+      log('info', 'extension state', {
+        state: this.mExtensionState,
+      });
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
-          log('debug', 'removing', path.join(extensionsPath, extId));
+          log('info', 'removing', path.join(extensionsPath, extId));
           fs.removeSync(path.join(extensionsPath, extId));
           initStore.dispatch(forgetExtension(extId));
         });
@@ -793,6 +796,7 @@ class ExtensionManager {
     }
     this.mExtensions = this.prepareExtensions();
 
+    log('info', 'outdated extensions', { numOutdated: this.mOutdated.length });
     if (this.mOutdated.length > 0) {
       this.mOutdated.forEach(ext => {
         log('info', 'extension older than bundled version, will be removed',
@@ -2125,7 +2129,7 @@ class ExtensionManager {
       const existing = alreadyLoaded.find(reg => reg.name === name);
 
       if (existing) {
-        if (semver.gt(info.version, existing.info.version)) {
+        if (semver.gte(info.version, existing.info.version)) {
           this.mOutdated.push(path.basename(existing.path));
         }
 

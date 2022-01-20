@@ -84,8 +84,6 @@ interface IComponentState {
 type IProps = IDialogConnectedProps & IDialogActionProps;
 
 class Dialog extends ComponentEx<IProps, IComponentState> {
-  public static contextType = ErrorContext;
-
   constructor(props: IProps) {
     super(props);
 

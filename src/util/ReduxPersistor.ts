@@ -51,6 +51,10 @@ class ReduxPersistor<T> {
     store.subscribe(this.handleChange);
   }
 
+  public finalizeWrite(): Promise<void> {
+    return this.mUpdateQueue;
+  }
+
   public insertPersistor(hive: string, persistor: IPersistor): Promise<void> {
     return this.resetData(hive, persistor)
         .then(() => {
