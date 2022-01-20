@@ -32,7 +32,7 @@ async function setDownloadGames(
 
   if (fromGameId !== gameIds[0]) {
     try {
-      return withAddInProgress(download.localPath, async () => {
+      return await withAddInProgress(download.localPath, async () => {
         const filePath = await moveDownload(state, download.localPath, fromGameId, gameIds[0]);
         const game: IGame | undefined = getGame(gameIds[0]);
         // game may be undefined if the download is recognized but it's for a
