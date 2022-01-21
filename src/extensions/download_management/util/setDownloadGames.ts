@@ -54,8 +54,7 @@ async function setDownloadGames(
         }
       });
     } catch (err) {
-      api.showErrorNotification('Failed to move download', err,
-        { allowReport: false });
+      api.showErrorNotification('Failed to move download', err);
     }
   } else {
     api.store.dispatch(setCompatibleGames(dlId, gameIds));
