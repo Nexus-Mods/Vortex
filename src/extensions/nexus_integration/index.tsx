@@ -1,5 +1,6 @@
 import { setDownloadModInfo, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
+import { setSettingsPage } from '../../actions/session';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { DataInvalid, HTTPError, ProcessCanceled,
@@ -568,6 +569,30 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
       try {
         const nxmUrl = new NXMUrl(url);
+        if (nxmUrl.collectionSlug !== undefined) {
+          api.showDialog('info', 'Collections not supported', {
+            text: 'You are attempting to add a Collection, but this feature is not '
+                + 'supported in this version of Vortex. If you\'d like to help us '
+                + 'test Collections, please go to your settings, select the tab '
+                + 'labelled "Vortex" and enable the "Beta" Update channel by '
+                + 'selecting it from the dropdown. '
+                + 'This will allow you to update to the latest testing build of '
+                + 'Vortex which does include the Collections feature.\n\n'
+                + 'Please be aware that the latest testing build of Vortex may have '
+                + 'bugs and that by using the Collections feature you are helping '
+                + 'us test alpha software.\n\n'
+                + 'You can opt out of the Beta Update channel at any time by '
+                + 'selecting the "Stable" channel instead.'
+          }, [
+            { label: 'Go to Settings', action: () => {
+              api.events.emit('show-main-page', 'application_settings');
+              api.store.dispatch(setSettingsPage('Vortex'));
+              api.highlightControl('#form-vortex-update', 5000);
+            } },
+            { label: 'Close', default: true },
+          ]);
+          return;
+        }
         const isExtAvailable = api.getState().session.extensions.available
           .find(iter => iter.modId === nxmUrl.modId) !== undefined;
         if (nxmUrl.gameId === SITE_ID && isExtAvailable) {

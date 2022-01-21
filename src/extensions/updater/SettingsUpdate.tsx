@@ -24,7 +24,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, updateChannel } = this.props;
     return (
-      <form>
+      <form id='form-vortex-update'>
         <FormGroup controlId='updateChannel'>
           <ControlLabel>
             {t('Update')}

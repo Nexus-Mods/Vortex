@@ -54,6 +54,10 @@ export function startDownload(api: IExtensionApi,
     return Promise.reject(new DownloadIsHTML(nxmurl));
   }
 
+  if (url.collectionSlug !== undefined) {
+    return Promise.reject(new ProcessCanceled('Collections not supported'));
+  }
+
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
