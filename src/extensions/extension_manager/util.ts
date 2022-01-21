@@ -357,7 +357,7 @@ export function downloadFile(url: string, outputPath: string): Promise<void> {
 }
 
 function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
-  const apiUrl = githubApiUrl(repo, 'contents', source);
+  const apiUrl = githubApiUrl(repo, 'contents', source) + '?ref=' + GAMES_BRANCH;
 
   return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
     .then((content: string) => {
