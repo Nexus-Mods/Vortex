@@ -563,9 +563,7 @@ function isPrivateField(key: string): boolean {
 
 function renderCustomError(err: any) {
   const res: ICustomErrorType = { wrap: false };
-  if (err === undefined) {
-    res.text = 'Unknown error';
-  } else if ((err.error !== undefined) && (err.error instanceof Error)) {
+  if ((err.error !== undefined) && (err.error instanceof Error)) {
     // there's probably different fields in a custom error that might contain file path
     const fileName = err.executable;
     const pretty = prettifyNodeErrorMessage(err.error, undefined, fileName);
@@ -653,6 +651,8 @@ export interface IErrorRendered {
 export function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered {
   if (Array.isArray(err)) {
     err = err[0];
+  } else if ((err === undefined) || (err === null)) {
+    err = new Error('Unknown error');
   }
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
@@ -664,7 +664,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
       wrap: false,
       allowReport: false,
     };
-  } else if (err.name === 'HTTPError') {
+  } else if (err?.name === 'HTTPError') {
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err, options);
