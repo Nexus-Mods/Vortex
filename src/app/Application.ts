@@ -741,6 +741,7 @@ class Application {
         if (multiUser && created) {
           allow(dataPath, 'group', 'rwx');
         }
+        fs.ensureDirSync(path.join(dataPath, 'temp'));
 
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser || (this.mArgs.userData !== undefined)) {
