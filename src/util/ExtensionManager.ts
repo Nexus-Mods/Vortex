@@ -772,9 +772,7 @@ class ExtensionManager {
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
-      log('info', 'extension state', {
-        state: this.mExtensionState,
-      });
+
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
