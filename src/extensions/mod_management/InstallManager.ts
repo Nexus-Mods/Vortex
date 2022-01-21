@@ -2220,7 +2220,7 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     api.store.dispatch(startActivity('dependencies', 'gathering'));
-    return gatherDependencies(filteredRules, api, true, undefined, modId)
+    return gatherDependencies(filteredRules, api, true, undefined)
       .then((dependencies: Dependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         if (dependencies.length === 0) {

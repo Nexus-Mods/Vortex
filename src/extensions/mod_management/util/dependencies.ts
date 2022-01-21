@@ -411,29 +411,14 @@ function gatherDependencies(
   api: IExtensionApi,
   recommendations: boolean,
   progressCB?: (percent: number) => void,
-  modId?: string,
 ): Promise<IDependency[]> {
   const state = api.getState();
   const gameMode: string = activeGameId(state);
-  const source = { gameId: gameMode, modId };
   const requirements: IModRule[] =
     rules === undefined
       ? []
-      : rules.filter((rule: IRule) => {
-        if (rule.type !== (recommendations ? 'recommends' : 'requires')) {
-          // wrong type
-          return false;
-        }
-        const mod = findModByRef(rule.reference, state.persistent.mods[gameMode] ?? {}, source);
-        if (mod === undefined) {
-          // mod not installed, it's required
-          return true;
-        }
-
-        const profile = lastActiveProfileForGame(state, gameMode);
-        // mod installed, but is it enabled?
-        return !state.persistent.profiles[profile].modState?.[mod.id]?.enabled;
-      });
+      : rules.filter((rule: IRule) =>
+        rule.type === (recommendations ? 'recommends' : 'requires'));
 
   let numCompleted = 0;
   const onProgress = () => {
