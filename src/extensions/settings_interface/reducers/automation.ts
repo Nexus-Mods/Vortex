@@ -23,8 +23,8 @@ const automationReducer: IReducerSpec<ISettingsAutomation> = {
   },
   defaults: {
     deploy: true,
-    install: false,
-    enable: false,
+    install: true,
+    enable: true,
     start: false,
     minimized: false,
   },
