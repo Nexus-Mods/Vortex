@@ -22,7 +22,7 @@ function getGameVersion(game: IGame, discovery: IDiscoveryResult) {
       const version: string = getVersion(exePath);
       return Promise.resolve(version);
     } catch (err) {
-      return Promise.resolve('Unknown');
+      return Promise.resolve('0.0.0');
     }
   };
 
