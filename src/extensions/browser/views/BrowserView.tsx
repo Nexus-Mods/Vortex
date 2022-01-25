@@ -417,7 +417,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private navCrumb = (evt) => {
-    if (!truthy(this.mWebView)) {
+    if (!truthy(this.mWebView) || !truthy(this.mCurrentUrl)) {
       return;
     }
 
