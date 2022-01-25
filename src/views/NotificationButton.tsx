@@ -157,11 +157,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const { notifications } = this.props;
     const { filtered } = this.state;
     for (let i = 0; i < filtered.length; ++i) {
-      const ref = notifications.find(n => n.id === filtered[i].id);
       // there shouldn't be notifications without id here but just to be safe
       if (filtered[i].id !== undefined) {
-        if ((filtered[i].message !== ref.message)
-            || (filtered[i].progress !== ref.progress)) {
+        const ref = notifications.find(n => n.id === filtered[i].id);
+        // if the notification no longer exists we're not removing it here,
+        // it will be removed in the "big" update (updateFiltered) a bit later
+        if ((ref !== undefined)
+            && ((filtered[i].message !== ref.message)
+                || (filtered[i].progress !== ref.progress))) {
           this.nextState.filtered[i] = {
             ...filtered[i],
             message: ref.message,
