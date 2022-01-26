@@ -62,13 +62,15 @@ ipcMain?.on?.(IPC_CHANNEL + '_sync', (event, arg) => {
   }
 });
 
-export function makeRemoteCallSync<T>(
+type Arr = readonly unknown[];
+
+export function makeRemoteCallSync<T, ArgsT extends Arr>(
   id: string,
-  cb: (mainElectron: typeof electron, window: electron.WebContents, ...args: any[]) => T)
-  : (...args: any[]) => T {
+  cb: (mainElectron: typeof electron, window: electron.WebContents, ...args: ArgsT) => T)
+  : (...args: ArgsT) => T {
 
   if (ipcRenderer !== undefined) {
-    return (...args: any[]) => {
+    return (...args: ArgsT) => {
       const callId = shortid();
       const res = ipcRenderer.sendSync(IPC_CHANNEL + '_sync', JSON.stringify({ id, args, callId }));
       if (res.error !== null) {
@@ -79,19 +81,19 @@ export function makeRemoteCallSync<T>(
     };
   } else {
     knownCallsSync[id] = cb;
-    return (...args: any[]) => {
+    return (...args: ArgsT) => {
       return cb(electron, electron.webContents?.getFocusedWebContents?.(), ...args);
     };
   }
 }
 
-function makeRemoteCall<T>(id: string,
-                           cb: (mainElectron: typeof electron,
-                                window: electron.WebContents,
-                                ...args: any[]) => Promise<T>)
-                           : (...args: any[]) => Promise<T> {
+function makeRemoteCall<T, ArgsT extends Arr>(id: string,
+                                              cb: (mainElectron: typeof electron,
+                                                   window: electron.WebContents,
+                                                   ...args: ArgsT) => Promise<T>)
+                                              : (...args: ArgsT) => Promise<T> {
   if (ipcRenderer !== undefined) {
-    return (...args: any[]) => {
+    return (...args: ArgsT) => {
       const callId = shortid();
       ipcRenderer.send(IPC_CHANNEL, JSON.stringify({ id, args, callId }));
       return new Promise<T>((resolve, reject) => {
@@ -100,7 +102,7 @@ function makeRemoteCall<T>(id: string,
     };
   } else {
     knownCalls[id] = cb;
-    return (...args: any[]) => {
+    return (...args: ArgsT) => {
       return cb(electron, electron.webContents.getFocusedWebContents(), ...args);
     };
   }

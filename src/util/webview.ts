@@ -7,12 +7,12 @@ import { valueReplacer } from './log';
 
 const extraWebViews: { [contentId: number]: { [viewId: string]: BrowserView } } = {};
 
-export const makeBrowserView = makeRemoteCall<string>('make-browser-view',
+export const makeBrowserView = makeRemoteCall('make-browser-view',
    (mainElectron,
     content,
     src: string,
     forwardEvents: string[],
-    options: Electron.BrowserViewConstructorOptions) => {
+    options?: Electron.BrowserViewConstructorOptions) => {
 
   const viewId = shortid();
   const window = BrowserWindow.fromWebContents(content);
