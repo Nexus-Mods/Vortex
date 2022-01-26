@@ -16,8 +16,9 @@ class Plugins extends DelegateBase {
         try {
           const state = this.api.store.getState();
 
-          const plugins = Object.keys(
-            getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
+          const pluginList = state.session.plugins?.pluginList ?? {};
+
+          const plugins = Object.keys(pluginList);
           // the installer may use a different case than we have on disk
           const localName = plugins.find(plugin =>
             plugin.toLowerCase() === pluginName.toLowerCase());
@@ -25,9 +26,8 @@ class Plugins extends DelegateBase {
             // unknown plugin can't be enabled
             return callback(null, false);
           }
-          const nativePlugins = getNativePlugins(this.mGameId);
-          const enabled = nativePlugins.indexOf(pluginName.toLowerCase()) !== -1
-                        || getSafe(state, ['loadOrder', localName, 'enabled'], false);
+          const enabled = pluginList[localName].isNative
+                        || (state.loadOrder?.[localName]?.enabled ?? false);
           return callback(null, enabled);
         } catch (err) {
           return callback(err, false);
