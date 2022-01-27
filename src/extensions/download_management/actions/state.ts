@@ -2,6 +2,7 @@ import safeCreateAction from '../../../actions/safeCreateAction';
 import { IChunk } from '../types/IChunk';
 
 import * as reduxAct from 'redux-act';
+import { log } from '../../../util/log';
 
 export interface IDictionary {
   [key: string]: any;
@@ -99,7 +100,14 @@ export const mergeDownloadModInfo = safeCreateAction('MERGE_DOWNLOAD_MODINFO',
   (id: string, value: any) => ({ id, value }));
 
 export const setDownloadModInfo = safeCreateAction('SET_DOWNLOAD_MODINFO',
-  (id: string, key: string, value: any) => ({ id, key, value }));
+  (id: string, key: string, value: any) => {
+    if ((key === 'game') && Array.isArray(value)) {
+      const err = new Error();
+      log('error', 'setting invalid gameid', { game: value, stack: err.stack });
+      value = value[0];
+    }
+    return { id, key, value };
+  });
 
 export const setDownloadInstalled = safeCreateAction('SET_DOWNLOAD_INSTALLED',
   (id: string, gameId: string, modId: string) => ({ id, gameId, modId }));

@@ -395,7 +395,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
 
   let fetchPromise: Promise<IRemoteInfo> = Promise.resolve(undefined);
 
-  const gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
+  let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
 
   if ((input.download?.modInfo?.nexus?.modInfo === undefined)
       && (input.download?.modInfo?.source === 'nexus')) {
@@ -411,6 +411,10 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
 
     if (!quick) {
       if (truthy(gameId) && truthy(modId) && truthy(fileId)) {
+        // not entirely sure how this is possible
+        if (Array.isArray(gameId)) {
+          gameId = gameId[0];
+        }
         const domain = nexusGameId(gameById(state, gameId), gameId);
         fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
           .catch(err => {
