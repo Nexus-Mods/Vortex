@@ -434,9 +434,12 @@ function loadOrderRulesChanged(before: IModRule[], after: IModRule[]): boolean {
 
   const types: RuleType[] = ['before', 'after'];
 
-  return !_.isEqual(
-    before.filter(rule => types.includes(rule.type)).sort(),
-    after.filter(rule => types.includes(rule.type)).sort());
+  const normalizeRules = (input: IModRule[]) => input
+    .filter(rule => types.includes(rule.type))
+    .map(rule => _.omit(rule, ['idHint', 'md5Hint']))
+    .sort;
+
+  return !_.isEqual(normalizeRules(before), normalizeRules(after));
 }
 
 export function onModsChanged(api: IExtensionApi, previous: IModTable, current: IModTable) {
