@@ -9,7 +9,9 @@ import path from 'path';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { IState } from '../../../types/IState';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { setCompatibleGames, setDownloadFilePath } from '../actions/state';
@@ -54,7 +56,11 @@ async function setDownloadGames(
         }
       });
     } catch (err) {
-      api.showErrorNotification('Failed to move download', err);
+      if (err instanceof ProcessCanceled) {
+        log('warn', 'updating games for download failed', { error: err.message });
+      } else {
+        api.showErrorNotification('Failed to move download', err);
+      }
     }
   } else {
     api.store.dispatch(setCompatibleGames(dlId, gameIds));
@@ -70,6 +76,9 @@ async function moveDownload(state: IState, fileName: string, fromGameId: string,
   const newPath = downloadPathForGame(state, toGameId);
   const source = path.join(oldPath, fileName);
   const dest = path.join(newPath, fileName);
+  if (source === dest) {
+    throw new ProcessCanceled('source same as destination');
+  }
   await fs.ensureDirWritableAsync(newPath);
   return fs.moveRenameAsync(source, dest);
 }
