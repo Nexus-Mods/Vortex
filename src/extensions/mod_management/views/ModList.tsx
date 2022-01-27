@@ -448,7 +448,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         <Button
           id='btn-more-mods'
           onClick={onGetMoreMods}
-          bsStyle='ghost'
         >
           {this.sourceIcon(filtered[0])}
           {t('Get more mods')}
@@ -462,7 +461,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         title={t('Get more mods')}
         container={this.mRef}
         onClick={onGetMoreMods}
-        bsStyle='ghost'
       >
         {filtered.map(this.renderModSource)}
       </DropdownButton>

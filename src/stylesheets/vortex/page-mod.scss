@@ -92,12 +92,15 @@
 }
 
 #more-mods-container {
- display: flex;
- justify-content: center;
+  display: flex;
+  justify-content: center;
+  position: sticky;
+  bottom: 0;
+  background: rgba($gray-lighter, 0.7);
+  padding: 1em 0;
 }
 
 #table-mods #btn-more-mods {
-  margin-top: $half-gutter;
   display: block;
   border-radius: $btn-border-radius-base;
   border: 2px solid $brand-primary;
