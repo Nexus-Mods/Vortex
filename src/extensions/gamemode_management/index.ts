@@ -763,10 +763,62 @@ function init(context: IExtensionContext): boolean {
             showError(store.dispatch, 'Failed to set game mode', err, {
               allowReport: false, message: newGameId, id: 'failed-to-set-gamemode' });
           } else {
-            err['attachLogOnReport'] = true;
-            showError(store.dispatch, 'Failed to set game mode', err, {
-              message: newGameId, id: 'failed-to-set-gamemode',
-            });
+            if (err.code === 'ENOENT') {
+              context.api.sendNotification({
+                message: 'Failed to set game mode',
+                type: 'error',
+                actions: [
+                  {
+                    title: 'Ignore',
+                    action: (dismiss) => { dismiss(); },
+                  },
+                  {
+                    title: 'More',
+                    action: (dismiss) => {
+                      context.api.showDialog('error', 'Failed to set game mode', {
+                        bbcode: context.api.translate('Vortex attempted to manage the game and has '
+                          + 'encountered a missing file path:[br][/br]"{{errPath}}".[br][/br][br][/br]'
+                          + 'Depending on recent changes on your environment and/or the game store through '
+                          + 'which the game has been purchased, this error could be due to several factors:[br][/br][list]'
+                          + '[*]The game might be only partially installed/uninstalled or in a corrupt state'
+                          + '[*]The game store through which you purchased the game might require additional steps '
+                          + 'to enable modding capabilities'
+                          + '[*]You may have to run the game at least once for certain folders to be created/unlocked'
+                          + '[*]You might have installed an unrecognized game variant. Please attempt to set the game directory '
+                          + 'manually, and inform the game extension developer[/list]',
+                            { replace: { errPath: err.path } }),
+                      },
+                      [
+                        {
+                          label: 'Ignore',
+                          action: () => dismiss() },
+                        {
+                          label: 'Retry',
+                          action: () => {
+                            dismiss();
+                            changeGameMode(oldGameId, newGameId, currentProfileId);
+                          },
+                        },
+                        {
+                          label: 'Generate Report',
+                          action: () => {
+                            dismiss();
+                            err['attachLogOnReport'] = true;
+                            showError(store.dispatch, 'Failed to set game mode', err, {
+                              message: newGameId, id: 'failed-to-set-gamemode',
+                            });
+                          },
+                        },
+                      ]);
+                    },
+                  }],
+              });
+            } else {
+              err['attachLogOnReport'] = true;
+              showError(store.dispatch, 'Failed to set game mode', err, {
+                message: newGameId, id: 'failed-to-set-gamemode',
+              });
+            }
           }
           // unset profile
           store.dispatch(setNextProfile(undefined));

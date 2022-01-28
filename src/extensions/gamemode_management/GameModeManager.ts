@@ -27,7 +27,13 @@ import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
-import { discoverRelativeTools, quickDiscovery, quickDiscoveryTools, searchDiscovery } from './util/discovery';
+import {
+  discoverRelativeTools,
+  quickDiscovery,
+  quickDiscoveryTools,
+  searchDiscovery,
+  verifyDiscovery,
+} from './util/discovery';
 import { getGame } from './util/getGame';
 
 import Promise from 'bluebird';
@@ -109,7 +115,7 @@ class GameModeManager {
     } catch (err) {
       return Promise.reject(err);
     }
-    return fs.statAsync(gameDiscovery.path)
+    return verifyDiscovery(game)
       .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
@@ -164,7 +170,8 @@ class GameModeManager {
       return Promise.resolve();
     } else {
       try {
-        return fs.statAsync(gameDiscovery.path)
+        return verifyDiscovery(game)
+          .then(() => fs.statAsync(gameDiscovery.path))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
             ? Promise.reject(new ProcessCanceled(

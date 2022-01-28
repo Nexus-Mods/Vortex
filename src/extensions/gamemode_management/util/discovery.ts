@@ -19,6 +19,8 @@ import Promise from 'bluebird';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { util } from '../../..';
+import { IExtensionApi } from '../../../types/api';
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (gameId: string, result: IDiscoveredTool) => void;
@@ -89,6 +91,22 @@ export function quickDiscoveryTools(gameId: string,
   .then(() => null);
 }
 
+export function verifyDiscovery(game: IGame) {
+  if (game.queryPath === undefined) {
+    return Promise.reject(new Error('Game not discovered'));
+  }
+  try {
+    const gamePath = game.queryPath();
+    const prom = (typeof (gamePath) === 'string')
+      ? Promise.resolve(gamePath)
+      : gamePath;
+    return prom
+      .then(resolvedPath => assertToolDir(game, resolvedPath));
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
 /**
  * run the "quick" discovery using functions provided by the game extension
  *
@@ -117,7 +135,6 @@ export function quickDiscovery(knownGames: IGame[],
             : gamePath;
 
           prom
-            .then(resolvedPath => assertToolDir(game, resolvedPath))
             .then(resolvedPath => {
               if (!truthy(resolvedPath)) {
                 return resolve(undefined);
