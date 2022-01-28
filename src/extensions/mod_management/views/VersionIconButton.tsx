@@ -102,11 +102,12 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     const { gameMode, mod, state } = this.props;
     const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
     const downloadGame = getSafe(mod.attributes, ['downloadGame'], gameMode);
+    const newestVersion = getSafe(mod.attributes, ['newestVersion'], undefined);
 
     if ((state === 'update') || (state === 'bug-update')) {
       if (mod.attributes?.collectionId !== undefined) {
         this.context.api.events.emit('collection-update',
-          downloadGame, mod.attributes?.collectionSlug, newestFileId,
+          downloadGame, mod.attributes?.collectionSlug, newestVersion,
           mod.attributes?.source, mod.id);
       } else {
         this.context.api.events.emit('mod-update',
