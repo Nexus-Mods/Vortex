@@ -799,16 +799,6 @@ function init(context: IExtensionContext): boolean {
                             changeGameMode(oldGameId, newGameId, currentProfileId);
                           },
                         },
-                        {
-                          label: 'Generate Report',
-                          action: () => {
-                            dismiss();
-                            err['attachLogOnReport'] = true;
-                            showError(store.dispatch, 'Failed to set game mode', err, {
-                              message: newGameId, id: 'failed-to-set-gamemode',
-                            });
-                          },
-                        },
                       ]);
                     },
                   }],
