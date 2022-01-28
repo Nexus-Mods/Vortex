@@ -511,6 +511,10 @@ div:hover > .hover-expand {
   text-align: center;
 }
 
+.cell-modType, .header-modType {
+    white-space: nowrap;
+}
+
 .cell-progress .progress {
   height: 16px;
   margin-top: auto;
