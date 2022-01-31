@@ -11,6 +11,7 @@ import MainPage from '../../../views/MainPage';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+import { getGame } from '../../gamemode_management/util/getGame';
 
 import { removeProfile, setFeature, setProfile, willRemoveProfile } from '../actions/profiles';
 import { clearLastActiveProfile, setNextProfile } from '../actions/settings';
@@ -168,7 +169,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = (discovered !== undefined) && (discovered.path !== undefined);
-
+    const gameAvailable = getGame(profiles[profileId].gameId)?.name !== undefined;
     if (profileId === this.state.edit) {
       return null;
     }
@@ -183,7 +184,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         mods={mods[profile.gameId] ?? emptyObject}
         features={features}
         active={currentProfile === profileId}
-        available={available}
+        available={available && gameAvailable}
         onClone={this.onCloneProfile}
         onRemove={this.onRemoveProfile}
         onActivate={onSetNextProfile}
