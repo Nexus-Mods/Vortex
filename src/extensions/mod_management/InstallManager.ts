@@ -712,7 +712,7 @@ class InstallManager {
     const state = api.getState();
     const stagingFolder = installPathForGame(state, gameId);
     const mod = state.persistent.mods[gameId]?.[modId];
-    if (mod === undefined) {
+    if (mod?.installationPath === undefined) {
       log('debug', 'failed to calculate modSize', 'mod is not in state');
       return Promise.resolve();
     }
