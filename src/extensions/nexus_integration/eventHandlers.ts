@@ -29,7 +29,7 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseThing, processErrorMess
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
-                IIssue, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+                IIssue, IRating, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -422,13 +422,18 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
   }
 }
 
+interface IRateRevisionResult {
+  success: boolean;
+  averageRating?: IRating;
+}
+
 export function onRateRevision(api: IExtensionApi, nexus: Nexus)
-    : (revisionId: number, rating: number) => Promise<boolean> {
-  return (revisionId: number, rating: any): Promise<boolean> => {
+    : (revisionId: number, rating: number) => Promise<IRateRevisionResult> {
+  return (revisionId: number, rating: any): Promise<IRateRevisionResult> => {
     return Promise.resolve(nexus.rateRevision(revisionId, rating))
       .catch(err => {
         reportRateError(api, err, revisionId);
-        return Promise.resolve(false);
+        return Promise.resolve({ success: false });
       });
   };
 }
