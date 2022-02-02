@@ -1657,9 +1657,16 @@ class InstallManager {
         downloadRequired: dep.download === undefined,
       });
 
+      const alreadyInstalled = dep.mod !== undefined;
+
       return downloadAndInstall(dep)
         .then((modId: string) => {
           log('info', 'installed as dependency', { modId });
+
+          if (!alreadyInstalled) {
+            api.store.dispatch(
+              setModAttribute(profile.gameId, modId, 'installedAsDependency', true));
+          }
 
           // enable the mod in any profile that has the source mod enabled
           const profiles = Object.values(api.getState().persistent.profiles)
