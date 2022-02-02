@@ -135,9 +135,14 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
  * @param {any} [metadata] Additional information about the error instance
  */
 export function log(level: LogLevel, message: string, metadata?: any) {
-  if (metadata === undefined) {
-    logger.log(level, message);
-  } else {
-    logger.log(level, message, metadata);
+  try {
+    if (metadata === undefined) {
+      logger.log(level, message);
+    } else {
+      logger.log(level, message, metadata);
+    }
+  } catch (err) {
+    // tslint:disable-next-line:no-console
+    console.log('failed to log to file', { level, message, metadata });
   }
 }

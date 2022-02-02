@@ -165,7 +165,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const {t, disabled, group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
-    const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
+    const isSelected = selectedPlugins.includes(plugin.id);
     const id = `${stepId}-${group.id}-${plugin.id}`;
     const readOnly = plugin.type === 'Required';
 

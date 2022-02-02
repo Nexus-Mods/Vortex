@@ -13,7 +13,7 @@ import { makeExeId } from '../reducers/session';
 
 import { getGameStores } from '../extensions/gamemode_management/util/getGame';
 
-import { UserCanceled, ProcessCanceled } from '../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 
 type SearchType = 'name' | 'id';
 
@@ -117,7 +117,7 @@ class GameStoreHelper {
             }
             return Promise.resolve();
         });
-    })
+    });
 
     const isGameStoreRunning = () => (!!gameStore.getGameStorePath)
       ? gameStore.getGameStorePath()
@@ -243,7 +243,8 @@ class GameStoreHelper {
       } catch (err) {
         // It's possible for a game store to be missing
         //  especially if it is added by a 3rd party extension.
-        log('warn', 'Game entry not found in specified store', { pattern: name, storeId, availableStores: stores });
+        log('warn', 'Game entry not found in specified store',
+            { pattern: name, storeId, availableStores: stores });
         return Promise.reject(new GameEntryNotFound(name, stores));
       }
     }

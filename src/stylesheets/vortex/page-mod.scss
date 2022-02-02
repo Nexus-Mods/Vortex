@@ -95,7 +95,8 @@
   display: flex;
   justify-content: center;
   position: sticky;
-  bottom: 0;
+  // should be 0 but there seems to be a subpixel-imprecision
+  bottom: -1px;
   background: rgba($gray-lighter, 0.7);
   padding: 1em 0;
 }
