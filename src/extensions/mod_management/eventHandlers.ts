@@ -434,7 +434,7 @@ function loadOrderRulesChanged(before: IModRule[], after: IModRule[]): boolean {
 
   const types: RuleType[] = ['before', 'after'];
 
-  const normalizeRules = (input: IModRule[]) => input
+  const normalizeRules = (input: IModRule[]) => (input ?? [])
     .filter(rule => types.includes(rule.type))
     .map(rule => _.omit(rule, ['idHint', 'md5Hint']))
     .sort;
