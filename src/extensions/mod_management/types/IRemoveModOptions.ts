@@ -12,6 +12,11 @@ export interface IRemoveModOptions {
   // aren't
   incomplete?: boolean;
 
+  // usually we don't allow a mod to be removed while something is being installed,
+  // this disables that check in case the removal happens as a preparation step of the
+  // installation
+  ignoreInstalling?: boolean;
+
   // Generally this can be resolved from the state itself when listening to
   //  the 'will-remove-mod' and 'remove-mod' events; however, the state will
   //  not contain the removed mod information when listening to

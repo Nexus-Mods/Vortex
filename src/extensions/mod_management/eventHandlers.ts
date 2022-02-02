@@ -604,7 +604,7 @@ export function onRemoveMods(api: IExtensionApi,
     return !['downloaded', 'installed'].includes(modState);
   });
 
-  if (notInstalled !== undefined) {
+  if ((options?.ignoreInstalling !== true) && (notInstalled !== undefined)) {
     if (callback !== undefined) {
       callback(new ProcessCanceled('Can\'t delete mod during download or install'));
     }
