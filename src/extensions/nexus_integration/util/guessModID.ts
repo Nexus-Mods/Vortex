@@ -1,5 +1,5 @@
-import { IExtensionApi, ILookupResult } from '../../../types/IExtensionContext';
-import { batchDispatch } from '../../../util/util';
+import { IExtensionApi, ILookupResult, IModInfo } from '../../../types/IExtensionContext';
+import { batchDispatch, truthy } from '../../../util/util';
 import { setDownloadModInfo } from '../../download_management/actions/state';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { setModAttribute } from '../../mod_management/actions/mods';
@@ -129,7 +129,10 @@ export function fillNexusIdByMD5(api: IExtensionApi,
 
         return idxProm
           .then(idx => {
-            const info = lookupResults[idx].value;
+            const info: IModInfo = lookupResults[idx].value;
+            if (!truthy(info.sourceURI)) {
+              return;
+            }
             const nxmUrl = new NXMUrl(info.sourceURI);
             if (mod.state === 'installed') {
               batchDispatch(api.store, [
