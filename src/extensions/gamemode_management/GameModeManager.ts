@@ -115,7 +115,7 @@ class GameModeManager {
     } catch (err) {
       return Promise.reject(err);
     }
-    return verifyDiscovery(game)
+    return verifyDiscovery(game, gameDiscovery)
       .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
@@ -170,7 +170,7 @@ class GameModeManager {
       return Promise.resolve();
     } else {
       try {
-        return verifyDiscovery(game)
+        return verifyDiscovery(game, gameDiscovery)
           .then(() => fs.statAsync(gameDiscovery.path))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))

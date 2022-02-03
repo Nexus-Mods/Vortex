@@ -91,12 +91,14 @@ export function quickDiscoveryTools(gameId: string,
   .then(() => null);
 }
 
-export function verifyDiscovery(game: IGame) {
-  if (game.queryPath === undefined) {
+export function verifyDiscovery(game: IGame, discovery: IDiscoveryResult) {
+  if (game.queryPath === undefined || discovery === undefined) {
     return Promise.reject(new Error('Game not discovered'));
   }
   try {
-    const gamePath = game.queryPath();
+    const gamePath = discovery.pathSetManually
+      ? discovery.path
+      : game.queryPath();
     const prom = (typeof (gamePath) === 'string')
       ? Promise.resolve(gamePath)
       : gamePath;
