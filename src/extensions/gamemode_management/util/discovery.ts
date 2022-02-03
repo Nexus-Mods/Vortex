@@ -96,7 +96,7 @@ export function verifyDiscovery(game: IGame, discovery: IDiscoveryResult) {
     return Promise.reject(new Error('Game not discovered'));
   }
   try {
-    const gamePath = discovery.pathSetManually
+    const gamePath = !!discovery.path
       ? discovery.path
       : game.queryPath();
     const prom = (typeof (gamePath) === 'string')

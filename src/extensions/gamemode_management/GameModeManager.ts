@@ -2,7 +2,7 @@ import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
-import { IGameStore } from '../../types/IGameStore';
+import { GameEntryNotFound, IGameStore } from '../../types/IGameStore';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
@@ -116,6 +116,9 @@ class GameModeManager {
       return Promise.reject(err);
     }
     return verifyDiscovery(game, gameDiscovery)
+      .catch(GameEntryNotFound, (err) => (!!gameDiscovery.path)
+        ? Promise.resolve(gameDiscovery.path)
+        : Promise.reject(err))
       .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
@@ -171,6 +174,9 @@ class GameModeManager {
     } else {
       try {
         return verifyDiscovery(game, gameDiscovery)
+          .catch(GameEntryNotFound, (err) => (!!gameDiscovery.path)
+            ? Promise.resolve(gameDiscovery.path)
+            : Promise.reject(err))
           .then(() => fs.statAsync(gameDiscovery.path))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
