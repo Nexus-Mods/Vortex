@@ -34,7 +34,7 @@ import modName, { renderModReference } from '../mod_management/util/modName';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
 
-import {addModRule, removeModRule, setFileOverride, setModAttribute,
+import {addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
         setModType} from './actions/mods';
 import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
@@ -1157,7 +1157,10 @@ class InstallManager {
     return Promise.resolve();
   }
 
-  private processIniEdits(iniEdits: IInstruction[], destinationPath: string): Promise<void> {
+  private processIniEdits(api: IExtensionApi,
+                          iniEdits: IInstruction[],
+                          destinationPath: string,
+                          gameId: string, modId: string): Promise<void> {
     if (iniEdits.length === 0) {
       return Promise.resolve();
     }
@@ -1185,7 +1188,13 @@ class InstallManager {
 
       const content = Object.keys(bySection).map(renderSection).join(os.EOL);
 
-      return fs.writeFileAsync(path.join(destinationPath, INI_TWEAKS_PATH, destination), content);
+      const basename = path.basename(destination, path.extname(destination));
+      const tweakId = `From Installer [${basename}].ini`;
+      api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true));
+
+      return fs.writeFileAsync(
+        path.join(destinationPath, INI_TWEAKS_PATH, tweakId),
+        content);
     }))
     .then(() => undefined);
   }
@@ -1267,7 +1276,8 @@ class InstallManager {
                                       instructionGroups.copy, gameId))
       .then(() => this.processGenerateFiles(instructionGroups.generatefile,
                                             destinationPath))
-      .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
+      .then(() => this.processIniEdits(api, instructionGroups.iniedit, destinationPath,
+                                       gameId, modId))
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
                                         destinationPath, gameId, modId,
                                         choices, unattended))
