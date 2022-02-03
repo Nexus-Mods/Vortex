@@ -158,14 +158,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       gameName = gameName.split('\t').map(part => t(part)).join(' ');
     }
 
-    const PanelX: any = Panel;
-
     return (
       // Prevent default submit event for the form as it will
       //  cause Vortex to refresh (same thing as pressing F5).
       <form onSubmit={this.submitEvt}>
         <Panel>
-          <PanelX.Body>
+          <Panel.Body>
             {this.renderPathCtrl(t('Mod Staging Folder ({{name}})',
                                  { replace: { name: gameName } }), supportedActivators)}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
@@ -179,11 +177,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 </Jumbotron>
               </Modal.Body>
             </Modal>
-          </PanelX.Body>
+          </Panel.Body>
         </Panel>
         <hr />
         <Panel>
-          <PanelX.Body>
+          <Panel.Body>
             <ControlLabel>
               {t('Deployment Method')}
               <More id='more-deploy' name={t('Deployment')} >
@@ -191,7 +189,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </More>
             </ControlLabel>
             {this.renderActivators(supportedActivators, currentActivator)}
-          </PanelX.Body>
+          </Panel.Body>
         </Panel>
       </form>
     );

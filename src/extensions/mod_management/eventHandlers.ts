@@ -24,7 +24,7 @@ import { IDeploymentManifest } from './types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod, IModRule} from './types/IMod';
 import {getManifest, loadActivation, purgeDeployedFiles, saveActivation, withActivationLock} from './util/activationStore';
-import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
+import { getCurrentActivator, getSelectedActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import getDownloadGames from '../download_management/util/getDownloadGames';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -188,6 +188,30 @@ function purgeOldMethod(api: IExtensionApi,
     .catch(err => api.showErrorNotification('Purge failed', err, {
       allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
     }));
+}
+
+export async function updateDeploymentMethod(api: IExtensionApi) {
+  const store = api.store;
+  const state: IState = store.getState();
+  const profile: IProfile = activeProfile(state);
+  const gameId = profile.gameId;
+
+  const selected: IDeploymentMethod = getSelectedActivator(state, gameId);
+  if (selected !== undefined) {
+    // do nothing if there already is a selected activator
+    return Promise.resolve();
+  }
+
+  const valid = getCurrentActivator(state, gameId, true);
+  if (valid !== undefined) {
+    store.dispatch(setActivator(gameId, valid.id));
+    api.sendNotification({
+      type: 'info',
+      title: 'Using default deployment method',
+      message: valid.name,
+      displayMS: 5000,
+    });
+  }
 }
 
 export function onGameModeActivated(
@@ -415,7 +439,7 @@ export function onPathsChanged(api: IExtensionApi,
           }
         });
       })
-      .then(() => null)
+      .then(() => updateDeploymentMethod(api))
       .catch((err: Error) => {
         showError(store.dispatch, 'Failed to refresh mods', err, {
           allowReport: !(err instanceof UserCanceled),

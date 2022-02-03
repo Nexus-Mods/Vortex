@@ -79,8 +79,24 @@ export function getCurrentActivator(state: IState,
   if (allowDefault && (activator === undefined)) {
     if ((game !== undefined) && (gameDiscovery?.path !== undefined)) {
       const modTypes = Object.keys(modPaths);
-      activator = activators.find(act =>
-        allTypesSupported(act, state, gameId, modTypes) === undefined);
+
+      const hadWarnings = [];
+
+      activator = activators.find(act => {
+        const problems =  allTypesSupported(act, state, gameId, modTypes);
+        if (problems.errors.length === 0) {
+          if (problems.warnings.length > 0) {
+            hadWarnings.push(act);
+          } else {
+            return true;
+          }
+        }
+        return false;
+      });
+      // prefer an activator without warnings but if there is none, use one with warnings
+      if ((activator === undefined) && (hadWarnings.length > 0)) {
+        activator = hadWarnings[0];
+      }
     }
   }
 

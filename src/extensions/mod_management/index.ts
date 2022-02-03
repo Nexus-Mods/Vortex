@@ -1331,12 +1331,12 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('mod-icons', 105, ActivationButton, {}, () => ({
     key: 'activate-button',
-    activators: getAllActivators(),
+    getActivators: getAllActivators,
   }));
 
   context.registerAction('mod-icons', 110, DeactivationButton, {}, () => ({
     key: 'deactivate-button',
-    activators: getAllActivators(),
+    getActivators: getAllActivators,
   }));
 
   const validActivatorCheck = genValidActivatorCheck(context.api);

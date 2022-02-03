@@ -35,7 +35,7 @@ interface IActionProps {
 
 export interface IBaseProps {
   buttonType: 'text' | 'icon' | 'both';
-  activators: IDeploymentMethod[];
+  getActivators: () => IDeploymentMethod[];
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -132,7 +132,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
-    activator = ownProps.activators.find((act: IDeploymentMethod) => act.id === activatorId);
+    activator = ownProps.getActivators().find((act: IDeploymentMethod) => act.id === activatorId);
   }
   return {
     activator,
