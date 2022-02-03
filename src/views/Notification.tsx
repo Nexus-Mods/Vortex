@@ -2,16 +2,18 @@ import Dropdown from '../controls/Dropdown';
 import Icon from '../controls/Icon';
 import PortalMenu from '../controls/PortalMenu';
 import Spinner from '../controls/Spinner';
-import { INotification, NotificationType } from '../types/INotification';
+import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
 import { TFunction } from '../util/i18n';
 
 import * as React from 'react';
 import { Button, MenuItem } from 'react-bootstrap';
+import { IconButton } from '../controls/TooltipControls';
 
 interface IActionProps {
   t: TFunction;
+  icon: string;
   title: string;
   count: number;
   onTrigger: (actionTitle: string) => void;
@@ -19,8 +21,12 @@ interface IActionProps {
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
-    const { t, count, title } = this.props;
-    return <Button onClick={this.trigger}>{t(title, { count })}</Button>;
+    const { t, count, icon, title } = this.props;
+    if (icon !== undefined) {
+      return <IconButton onClick={this.trigger} icon={icon} tooltip={t(title, { count })}/>;
+    } else {
+      return <Button onClick={this.trigger}>{t(title, { count })}</Button>;
+    }
   }
 
   private trigger = () => {
@@ -79,9 +85,11 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
             ? actions.map(action => this.renderAction(action, collapsed))
             : null}
           {!noDismiss && (onDismiss !== undefined) ? (
-            <Button onClick={this.dismiss}>
-              {(collapsed > 1) ? t('Dismiss All') : t('Dismiss')}
-            </Button>
+            <IconButton
+              icon='close'
+              tooltip={(collapsed > 1) ? t('Dismiss All') : t('Dismiss')}
+              onClick={this.dismiss}
+            />
           ) : null}
           {((collapsed > 1) && (onExpand !== undefined)) ? (
             <Button onClick={this.expand}>
@@ -150,11 +158,12 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
     onSuppress(params.id);
   }
 
-  private renderAction = (action, count) => {
+  private renderAction = (action: INotificationAction, count) => {
     return (
       <Action
         key={action.title}
         t={this.props.t}
+        icon={action.icon}
         title={action.title}
         count={count}
         onTrigger={this.trigger}

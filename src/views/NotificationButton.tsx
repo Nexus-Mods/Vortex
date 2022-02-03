@@ -130,7 +130,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           onExit={this.unExpand}
           show={items.length > 0}
           target={this.mButtonRef.current}
-          shouldUpdatePosition={true}
+          shouldUpdatePosition={false}
         >
           {popover}
         </Overlay>

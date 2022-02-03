@@ -18,10 +18,10 @@
   margin-bottom: 1px;
   padding: 5px;
   min-height: 32px;
-  min-width: 400px;
+  width: 30em;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
 
   .notification-progress {
@@ -41,6 +41,10 @@
     display: flex;
     flex-direction: column;
     z-index: 1;
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
   .notification-title {
@@ -57,6 +61,11 @@
       background-color: $white;
       color: $brand-primary;
       border: $border-width solid $white;
+    }
+
+    .icon-button {
+      margin-left: 0.5em;
+      @extend .btn-embed;
     }
   }
 
@@ -91,6 +100,7 @@
 
   .popover-content {
     max-height: 40vh;
+    padding: calc(#{$half-gutter} * 0.5);
     overflow: auto;
   }
 }
@@ -125,16 +135,20 @@
 }
 
 .notification-buttons .notification-extra-options {
-  margin-left: 1em;
+  // margin-left: 1em;
   margin-right: 0;
   line-height: 0;
+
+  .dropdown-toggle {
+    padding-right: 0;
+  }
 
   .btn {
     @extend .btn-embed;
 
     svg {
-      width: 1em;
-      height: 1em;
+      width: 1.2em;
+      height: 1.2em;
     }
 
     .caret {

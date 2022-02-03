@@ -1,7 +1,8 @@
 export type NotificationDismiss = () => void;
 
 export interface INotificationAction {
-  title: string;
+  icon?: string;
+  title?: string;
   action: (dismiss: NotificationDismiss) => void;
 }
 
