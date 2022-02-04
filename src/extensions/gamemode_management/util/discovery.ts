@@ -91,24 +91,6 @@ export function quickDiscoveryTools(gameId: string,
   .then(() => null);
 }
 
-export function verifyDiscovery(game: IGame, discovery: IDiscoveryResult) {
-  if (game.queryPath === undefined || discovery === undefined) {
-    return Promise.reject(new Error('Game not discovered'));
-  }
-  try {
-    const gamePath = !!discovery.path
-      ? discovery.path
-      : game.queryPath();
-    const prom = (typeof (gamePath) === 'string')
-      ? Promise.resolve(gamePath)
-      : gamePath;
-    return prom
-      .then(resolvedPath => assertToolDir(game, resolvedPath));
-  } catch (err) {
-    return Promise.reject(err);
-  }
-}
-
 /**
  * run the "quick" discovery using functions provided by the game extension
  *
@@ -271,7 +253,8 @@ function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
     .then(() => undefined);
 }
 
-function assertToolDir(tool: ITool, testPath: string): Promise<string> {
+export function assertToolDir(tool: ITool, testPath: string)
+                              : Promise<string> {
   if (!truthy(testPath)) {
     return Promise.resolve(undefined);
   }
@@ -289,7 +272,7 @@ function assertToolDir(tool: ITool, testPath: string): Promise<string> {
         log('error', 'failed to verify game directory',
           { testPath, error: err.message });
       }
-      return Promise.resolve(undefined);
+      return Promise.reject(err);
     });
 }
 

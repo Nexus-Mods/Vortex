@@ -28,11 +28,11 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import {
+  assertToolDir,
   discoverRelativeTools,
   quickDiscovery,
   quickDiscoveryTools,
   searchDiscovery,
-  verifyDiscovery,
 } from './util/discovery';
 import { getGame } from './util/getGame';
 
@@ -96,7 +96,8 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public setGameMode(oldMode: string, newMode: string, profileId): Promise<void> {
+  public setGameMode(oldMode: string, newMode: string,
+                     profileId: string): Promise<void> {
     log('debug', 'set game mode', { oldMode, newMode });
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
@@ -115,10 +116,10 @@ class GameModeManager {
     } catch (err) {
       return Promise.reject(err);
     }
-    return verifyDiscovery(game, gameDiscovery)
-      .catch(GameEntryNotFound, (err) => (!!gameDiscovery.path)
-        ? Promise.resolve(gameDiscovery.path)
-        : Promise.reject(err))
+    // the game is listed and available to be activated if it was found in any store
+    // but in that case we haven't verified yet whether the directory actually contains the game
+    // (with the expected files)
+    return assertToolDir(game, gameDiscovery.path)
       .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
@@ -173,10 +174,7 @@ class GameModeManager {
       return Promise.resolve();
     } else {
       try {
-        return verifyDiscovery(game, gameDiscovery)
-          .catch(GameEntryNotFound, (err) => (!!gameDiscovery.path)
-            ? Promise.resolve(gameDiscovery.path)
-            : Promise.reject(err))
+        return assertToolDir(game, gameDiscovery.path)
           .then(() => fs.statAsync(gameDiscovery.path))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
