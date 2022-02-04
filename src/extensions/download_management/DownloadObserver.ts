@@ -247,14 +247,14 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    const downloadOptions = this.getExtraDlOptions(modInfo, redownload);
+    const downloadOptions = this.getExtraDlOptions(modInfo ?? {}, redownload);
 
     const urlIn = urls[0].split('<')[0];
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
         .then(() => {
-          if (this.wasIntercepted(modInfo.referenceTag)) {
+          if (this.wasIntercepted(modInfo?.referenceTag)) {
             return Promise.reject(new UserCanceled());
           }
 
@@ -269,7 +269,7 @@ export class DownloadObserver {
           if ((dlId !== undefined) && (downloads[dlId].state !== 'failed')) {
             err.downloadId = dlId;
             return Promise.reject(err);
-          } else if (this.wasIntercepted(modInfo.referenceTag)) {
+          } else if (this.wasIntercepted(modInfo?.referenceTag)) {
             return Promise.reject(new UserCanceled());
           } else {
             // there is a file but with no meta data. force the download instead
@@ -422,7 +422,7 @@ export class DownloadObserver {
         // error case, for some reason the manager didn't know about this download, maybe some
         // delay?
         this.mInterceptedDownloads.push(
-          { time: Date.now(), tag: download.modInfo.referenceTag });
+          { time: Date.now(), tag: download.modInfo?.referenceTag });
         onceStopped();
       } else {
         this.queueFinishCB(downloadId, () => onceStopped());
@@ -449,7 +449,7 @@ export class DownloadObserver {
       if (unfinishedChunks === undefined) {
         this.mInterceptedDownloads.push({
           time: Date.now(),
-          tag: download.modInfo.referenceTag,
+          tag: download.modInfo?.referenceTag,
         });
       }
       this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
@@ -483,7 +483,7 @@ export class DownloadObserver {
         const fullPath = path.join(downloadPath, download.localPath);
         this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
 
-        const extraInfo = this.getExtraDlOptions(download.modInfo, 'always');
+        const extraInfo = this.getExtraDlOptions(download.modInfo ?? {}, 'always');
 
         withContext(`Resuming "${download.localPath}"`, download.urls[0], () => {
           if (download.state === 'failed') {
