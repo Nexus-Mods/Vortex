@@ -146,14 +146,38 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         changeZoomFactor(webFrame.getZoomFactor() + 0.1);
       },
     }, {
+      label: 'Zoom In (hidden)',
+      accelerator: 'CmdOrCtrl+Shift+numadd',
+      visible: false,
+      acceleratorWorksWhenHidden: true,
+      click(item, focusedWindow) {
+        changeZoomFactor(webFrame.getZoomFactor() + 0.1);
+      },
+    }, {
       label: 'Zoom Out',
       accelerator: 'CmdOrCtrl+Shift+-',
       click(item, focusedWindow) {
         changeZoomFactor(webFrame.getZoomFactor() - 0.1);
       },
     }, {
+      label: 'Zoom Out (hidden)',
+      accelerator: 'CmdOrCtrl+Shift+numsub',
+      visible: false,
+      acceleratorWorksWhenHidden: true,
+      click(item, focusedWindow) {
+        changeZoomFactor(webFrame.getZoomFactor() - 0.1);
+      },
+    }, {
       label: 'Reset Zoom',
       accelerator: 'CmdOrCtrl+0',
+      click() {
+        changeZoomFactor(1.0);
+      },
+    }, {
+      label: 'Reset Zoom (hidden)',
+      accelerator: 'CmdOrCtrl+num0',
+      visible: false,
+      acceleratorWorksWhenHidden: true,
       click() {
         changeZoomFactor(1.0);
       },
