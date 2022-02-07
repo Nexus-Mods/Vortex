@@ -242,12 +242,17 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if ((typeof(error) === 'string') && (error === 'Script error.')) {
-    // this is bad. It happens within electron/chrome when an exception is thrown in javascript.
-    // unfortunately it's impossible based on this error to figure out what the cause was, though
-    // it's almost certainly some callback invoked from a native library
-    log('error', 'script error');
-    return;
+  if (typeof(error) === 'string') {
+    if (error === 'Script error.') {
+      // this is bad. It happens within electron/chrome when an exception is thrown in javascript.
+      // unfortunately it's impossible based on this error to figure out what the cause was, though
+      // it's almost certainly some callback invoked from a native library
+      log('error', 'script error');
+      return;
+    } else if (error === 'ResizeObserver loop limit exceeded') {
+      // this error was called "benign" by one of the spec authors. I'll take their word for it.
+      return;
+    }
   }
 
   if ((error.name === 'TypeError')
