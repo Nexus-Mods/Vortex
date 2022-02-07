@@ -1102,8 +1102,8 @@ uri-js@^4.2.2:
     punycode "^2.1.0"
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.5.0"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/2e1083057488f2da01650ec29c40e3264cd96f6e"
+  version "1.5.1-r3"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/ebf37c6b9585f377b005c9202df30c2e0fb02d4b"
 
 warning@^3.0.0:
   version "3.0.0"
