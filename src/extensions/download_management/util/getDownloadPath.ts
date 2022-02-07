@@ -20,7 +20,7 @@ function getDownloadPath(pattern: string, gameId?: string): string {
     username: os.userInfo().username,
   });
 
-  let result = gameId !== undefined
+  let result = ((gameId !== undefined) && (gameId !== '__invalid'))
     ? path.join(format(getDownloadPathPattern(pattern), formatKeys), gameId)
     : format(getDownloadPathPattern(pattern), formatKeys);
 

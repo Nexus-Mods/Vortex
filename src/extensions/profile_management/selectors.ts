@@ -29,11 +29,19 @@ export const activeProfile = (state): IProfile => {
   return getSafe(state, ['persistent', 'profiles', profileId], undefined);
 };
 
-export const profileById = createCachedSelector(
+const profileByIdImpl = createCachedSelector(
   profilesBase,
   (state: IState, profileId: string) => profileId,
   (profilesBaseIn: { [profileId: string]: IProfile }, profileId: string) =>
     profilesBaseIn[profileId])((state, profileId) => profileId);
+
+export function profileById(state: IState, profileId: string) {
+  if (profileId === undefined) {
+    return undefined;
+  }
+
+  return profileByIdImpl(state, profileId);
+}
 
 export const lastActiveProfileForGame = createCachedSelector(
   lastActiveProfiles,

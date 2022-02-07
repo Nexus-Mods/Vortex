@@ -74,7 +74,6 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       />
     );
 
-    const PanelX: any = Panel;
     return (
       <Panel className='profile-edit-panel'>
         <Panel.Body>
@@ -115,6 +114,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     } else if (feature.type === 'text') {
       return (
         <FormControl
+          key={feature.id}
           componentClass='textarea'
           value={getSafe(edit, ['features', feature.id], undefined) ?? ''}
           data-id={feature.id}

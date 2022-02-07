@@ -1,5 +1,6 @@
 import { activeGameId } from '../../extensions/profile_management/selectors';
 import { IDownload, IState } from '../../types/IState';
+import { log } from '../../util/log';
 
 import getDownloadPath from './util/getDownloadPath';
 
@@ -15,9 +16,16 @@ export const downloadPath: OutputSelector<any, string, DLPathCB> = createSelecto
     downloadPathPattern, activeGameId, (inPath: string, inGameId: string) =>
       getDownloadPath(inPath, inGameId));
 
-export const downloadPathForGame: OutputParametricSelector<IState, string, string, DLPathCB, any> =
-  createCachedSelector(downloadPathPattern, (state: IState, gameId: string) => gameId,
+const downloadPathForGameImpl: OutputParametricSelector<IState, string, string, DLPathCB, any> =
+  createCachedSelector(
+    downloadPathPattern, (state: IState, gameId: string) => gameId,
     (inPath: string, gameId: string) => getDownloadPath(inPath, gameId))((state, gameId) => gameId);
+
+export function downloadPathForGame(state: IState, gameId?: string) {
+  log('error', 'acquiring downloadPathForGame with no gameId provided',
+      { stack: (new Error()).stack });
+  return downloadPathForGameImpl(state, gameId ?? activeGameId(state) ?? '__invalid');
+}
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
 
