@@ -14,6 +14,8 @@ import { truthy } from '../../util/util';
 import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
 
+import { GetVolumePathName } from 'winapi-bindings';
+
 export const STAGING_DIR_TAG = '__vortex_staging_folder';
 
 function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
@@ -115,7 +117,19 @@ export function ensureStagingDirectory(api: IExtensionApi,
   if (instPath === undefined) {
     instPath = installPathForGame(state, gameId);
   }
-
+  let partitionExists = true;
+  try {
+    GetVolumePathName(instPath);
+  } catch (err) {
+    // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
+    //  the only way for this error to be reported at this point is when
+    //  the destination path is pointing towards a non-existing partition.
+    // If it's a non-existing partition, we want the reinitialization dialog
+    //  to appear so that the user can re-configure his game's staging folder.
+    if (err.systemCode === 2) {
+      partitionExists = false;
+    }
+  }
   let dirExists = false;
   return fs.statAsync(instPath)
     .then(() => {
@@ -125,7 +139,7 @@ export function ensureStagingDirectory(api: IExtensionApi,
     })
     .catch(err => {
       const mods = getSafe(state, ['persistent', 'mods', gameId], undefined);
-      if ((dirExists === false) && (mods === undefined)) {
+      if ((partitionExists === true) && (dirExists === false) && (mods === undefined)) {
         // If the mods state branch for this game is undefined - this must be the
         //  first time we manage this game - just create the staging path.
         //
@@ -150,6 +164,10 @@ export function ensureStagingDirectory(api: IExtensionApi,
             return fallbackPurge(api)
               .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
               .catch(purgeErr => {
+                if (!partitionExists) {
+                  // Can't purge a non-existing partition!
+                  return Promise.reject(new ProcessCanceled('Invalid/Missing partition'));
+                }
                 if (purgeErr instanceof ProcessCanceled) {
                   log('warn', 'Mods not purged', purgeErr.message);
                 } else {
@@ -162,7 +180,7 @@ export function ensureStagingDirectory(api: IExtensionApi,
                     { label: 'Close' },
                   ]);
                 }
-                return Promise.reject(new ProcessCanceled('not purged'));
+                return Promise.reject(new ProcessCanceled('Not purged'));
               })
               .finally(() => {
                 api.dismissNotification(id);
