@@ -22,8 +22,6 @@ const downloadPathForGameImpl: OutputParametricSelector<IState, string, string, 
     (inPath: string, gameId: string) => getDownloadPath(inPath, gameId))((state, gameId) => gameId);
 
 export function downloadPathForGame(state: IState, gameId?: string) {
-  log('error', 'acquiring downloadPathForGame with no gameId provided',
-      { stack: (new Error()).stack });
   return downloadPathForGameImpl(state, gameId ?? activeGameId(state) ?? '__invalid');
 }
 

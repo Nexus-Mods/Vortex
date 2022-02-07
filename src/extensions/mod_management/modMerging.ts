@@ -159,7 +159,7 @@ function mergeMods(api: IExtensionApi,
 
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
-  return Promise.mapSeries(mods, mod => {
+  return Promise.mapSeries(mods.filter(mod => mod.installationPath !== undefined), mod => {
     const modPath = path.join(modBasePath, mod.installationPath);
     return getFileList(modPath)
       .filter((entry: IFileEntry) => entry.stats.isFile())
