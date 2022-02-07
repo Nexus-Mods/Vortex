@@ -2166,12 +2166,12 @@ class InstallManager {
                            && !rule.ignored);
 
     if (filteredRules.length === 0) {
-      api.events.emit('did-install-dependencies', profile.id, modId, false);
+      api.events.emit('did-install-dependencies', profile.gameId, modId, false);
       return Promise.resolve();
     }
 
     const notificationId = `${installPath}_activity`;
-    api.events.emit('will-install-dependencies', profile.id, modId, false);
+    api.events.emit('will-install-dependencies', profile.gameId, modId, false);
 
     let lastProgress = -1;
 
@@ -2207,7 +2207,7 @@ class InstallManager {
       })
       .finally(() => {
         log('debug', 'done installing dependencies', { profile: profile.id, modId });
-        api.events.emit('did-install-dependencies', profile.id, modId, false);
+        api.events.emit('did-install-dependencies', profile.gameId, modId, false);
       });
   }
 
@@ -2357,7 +2357,7 @@ class InstallManager {
       })
       .finally(() => {
         api.dismissNotification(notificationId);
-        api.events.emit('did-install-dependencies', profile.id, modId, true);
+        api.events.emit('did-install-dependencies', profile.gameId, modId, true);
       });
   }
 
