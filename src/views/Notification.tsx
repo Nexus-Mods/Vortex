@@ -73,7 +73,9 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
         {progress !== undefined
           ? <span className='notification-progress' style={{ left: `${progress}%` }} />
           : null}
-        {this.typeToIcon(type)}{' '}
+        <div className='btn btn-default btn-embed'>
+          {this.typeToIcon(type)}{' '}
+        </div>
         <div className='notification-textbox'>
           {title !== undefined ? <div className='notification-title'>{title}</div> : null}
           <div className='notification-message hover-expand'>
