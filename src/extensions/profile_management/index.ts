@@ -22,7 +22,7 @@ import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session
 import { IAttachment, IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -624,19 +624,22 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
         .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
         .then(() => Promise.resolve())
         .catch(UserCanceled, () => Promise.resolve())
-        .catch(NoDeployment, () => {
-          api.showDialog('error', 'Failed to purge', {
-            text: 'Failed to purge mods deployed for this game. To ensure there are no '
-                + 'leftovers before Vortex stops managing the game, please solve any '
-                + 'setup problems for the game first.',
-          }, [
-            { label: 'Close' },
-          ]);
-        })
         .catch(err => {
-          api.showErrorNotification('Failed to stop managing game', err, {
-            allowReport: !(err instanceof ProcessCanceled),
-          });
+          const isSetupError = (err instanceof NoDeployment) || (err instanceof TemporaryError);
+          if (isSetupError) {
+            api.showDialog('error', 'Failed to purge', {
+              text: 'Failed to purge mods deployed for this game. To ensure there are no '
+                  + 'leftovers before Vortex stops managing the game, please solve any '
+                  + 'setup problems for the game first.',
+            }, [
+              { label: 'Close' },
+            ]);
+            return;
+          } else {
+            api.showErrorNotification('Failed to stop managing game', err, {
+              allowReport: !(err instanceof ProcessCanceled),
+            });
+          }
         });
     } else {
       return Promise.resolve();
