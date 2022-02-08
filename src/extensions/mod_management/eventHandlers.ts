@@ -639,8 +639,12 @@ export function onRemoveMods(api: IExtensionApi,
 
   // is it even a plausible scenario that there is no profile active?
   if (profileId !== undefined) {
+    // Disable automatic deployment if it's active, a deployment
+    //  event will occur once the mods have been successfully removed
+    //  anyway.
     setModsEnabled(api, profileId, modIds, false, {
       installed: options?.incomplete,
+      disableAutoDeploy: true,
     });
   }
 

@@ -36,6 +36,7 @@ export const setProfileActivated =
 export interface IEnableOptions {
   silent?: boolean;
   installed?: boolean;
+  disableAutoDeploy?: boolean;
 }
 
 const setModsEnabled = (() => {

@@ -883,6 +883,9 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
       }
     });
     if (state.settings.automation.deploy && (options?.silent !== true)) {
+      if (options?.disableAutoDeploy === true) {
+        return;
+      }
       deploymentTimer.schedule(undefined, false);
     } else if (!state.persistent.deployment.needToDeploy[gameId]) {
       store.dispatch(setDeploymentNecessary(gameId, true));
