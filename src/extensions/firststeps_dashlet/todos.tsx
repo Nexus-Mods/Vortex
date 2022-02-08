@@ -84,7 +84,14 @@ function todos(api: IExtensionApi): IToDo[] {
       priority: 30,
       props: state => ({ dlPath: selectors.downloadPath(state) }),
       text: 'Downloads are on drive',
-      value: (t: TFunction, props: any) => winapi.GetVolumePathName(props.dlPath),
+      value: (t: TFunction, props: any) => {
+        try {
+          return winapi.GetVolumePathName(props.dlPath);
+        } catch (err) {
+          err.dlPath = props.dlPath;
+          throw err;
+        }
+      },
       action: () => {
         openSettingsPage('Download');
         api.events.emit('analytics-track-click-event', 'Dashboard', 'Download drive');
