@@ -241,7 +241,7 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
       ipcRenderer.send('webview-dom-ready', id);
       ipcRenderer.on('webview-open-url', (_, idInner, url, disposition) => {
         if (id === idInner) {
-          this.props.onNewWindow(url, disposition);
+          this.props.onNewWindow?.(url, disposition);
         }
       });
       /*
