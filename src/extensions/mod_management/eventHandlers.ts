@@ -644,7 +644,7 @@ export function onRemoveMods(api: IExtensionApi,
     //  anyway.
     setModsEnabled(api, profileId, modIds, false, {
       installed: options?.incomplete,
-      disableAutoDeploy: true,
+      allowAutoDeploy: false,
     });
   }
 

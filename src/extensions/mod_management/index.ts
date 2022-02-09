@@ -882,10 +882,7 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
         api.dismissNotification(notiId);
       }
     });
-    if (state.settings.automation.deploy && (options?.silent !== true)) {
-      if (options?.disableAutoDeploy === true) {
-        return;
-      }
+    if (state.settings.automation.deploy && (options?.allowAutoDeploy !== false)) {
       deploymentTimer.schedule(undefined, false);
     } else if (!state.persistent.deployment.needToDeploy[gameId]) {
       store.dispatch(setDeploymentNecessary(gameId, true));

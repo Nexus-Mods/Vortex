@@ -34,9 +34,8 @@ export const setProfileActivated =
   safeCreateAction('SET_PROFILE_ACTIVATED', (active: string) => active);
 
 export interface IEnableOptions {
-  silent?: boolean;
   installed?: boolean;
-  disableAutoDeploy?: boolean;
+  allowAutoDeploy?: boolean;
 }
 
 const setModsEnabled = (() => {

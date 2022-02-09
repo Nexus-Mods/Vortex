@@ -235,7 +235,7 @@ class InstallManager {
     fileList?: IFileListItem[],
     unattended?: boolean,
     forceInstaller?: string,
-    silent?: boolean): void {
+    allowAutoDeploy?: boolean): void {
 
     if (this.mTask === undefined) {
       this.mTask = new Zip();
@@ -296,7 +296,7 @@ class InstallManager {
           return api.emitAndAwait('install-extension-from-download', archiveId)
             .then(() => Promise.reject(new UserCanceled()));
         }
-        installContext = new InstallContext(gameId, api, silent);
+        installContext = new InstallContext(gameId, api, allowAutoDeploy);
         installContext.startIndicator(baseName);
         let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
         if (Array.isArray(dlGame)) {
@@ -394,7 +394,7 @@ class InstallManager {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
                   setModsEnabled(api, currentProfile.id, [existingMod.id], false, {
-                    silent,
+                    allowAutoDeploy,
                     installed: true,
                   });
                 }
@@ -477,7 +477,7 @@ class InstallManager {
         if (currentProfile !== undefined) {
           if (enable) {
             setModsEnabled(api, currentProfile.id, [modId], true, {
-              silent,
+              allowAutoDeploy,
               installed: true,
             });
           }
@@ -657,7 +657,7 @@ class InstallManager {
   }
 
   public installDependencies(api: IExtensionApi, profile: IProfile, modId: string,
-                             silent: boolean): Promise<void> {
+                             allowAutoDeploy: boolean): Promise<void> {
     const state: IState = api.store.getState();
     const mod: IMod = state.persistent.mods[profile.gameId]?.[modId];
 
@@ -671,7 +671,7 @@ class InstallManager {
     log('info', 'start installing dependencies');
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules,
-                                        installPath, silent)
+                                        installPath, allowAutoDeploy)
       .finally(() => {
         log('info', 'done installing dependencies');
         api.store.dispatch(stopActivity('installing_dependencies', mod.id));
