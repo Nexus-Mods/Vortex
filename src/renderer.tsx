@@ -352,8 +352,7 @@ let enhancer = null;
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
-  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
-    && (window as any).__REDUX_DEVTOOLS_EXTENSION__({
+  const devtool = window['__REDUX_DEVTOOLS_EXTENSION__']?.({
       shouldRecordChanges: false,
       autoPause: true,
       shouldHotReload: false,
