@@ -287,3 +287,76 @@
     margin: 5px;
   }
 }
+
+.dashlet-onboarding {
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-subtitle {
+  margin: 0px;
+  margin-bottom: 4px;
+}
+
+.onboarding-card-list {
+  display: flex;
+  gap: 14px;
+}
+
+.onboarding-card {
+  display: flex;
+  flex-direction: column;
+  background: $brand-bg;
+  padding: 16px;
+  width: 250px;
+  max-width: 250px;
+}
+
+.onboarding-card-image {
+  display: block;
+  width: 218px;
+  height: 121px;
+  border: 1px solid #6E6E6E;
+}
+
+.onboarding-card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-card-title-wrapper {
+  display: flex;
+  margin-top: 16px;
+}
+
+.onboarding-card-counter {
+  border: 2px solid $brand-primary;
+  border-radius: 50%;
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  font-size: 1em;
+}
+
+.onboarding-card-title-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-card-title {
+  text-transform: uppercase;
+  font-size: 1em;
+  font-weight: bold;
+}
+
+.onboarding-card-lenght {
+  font-size: 0.8em;
+}
+
+.onboarding-card-desc {
+  margin-top: 16px;
+  font-size: 1em;
+}
