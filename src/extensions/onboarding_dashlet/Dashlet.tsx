@@ -11,7 +11,7 @@ function OnBoardingCard(props: {
 }) {
   return (
     <div className='onboarding-card'>
-      <img className='onboarding-card-image' src="https://placekitten.com/218/121" alt="" />
+      <img className='onboarding-card-image' src={props.img} alt="" />
       <div className='onboarding-card-body'>
         <div className='onboarding-card-title-wrapper'>
           <span className='onboarding-card-counter'>{props.count}</span>
@@ -37,35 +37,35 @@ function OnBoardingDashlet() {
           title='add your game'
           desc='Learn how to add games for Vortex to manage.'
           lenght='1:10'
-          img='nil'
+          img="https://placekitten.com/218/121"
           video='nil'
           count={1} />
         <OnBoardingCard
           title='Install Tools'
           desc='Install any required tools that will allow you to mod your game. '
           lenght='1:20'
-          img='nil'
+          img="https://placekitten.com/218/121"
           video='nil'
           count={2} />
         <OnBoardingCard
           title='Download Mods'
           desc='Install any required tools that will allow you to mod your game. '
           lenght='2:20'
-          img='nil'
+          img="https://placekitten.com/218/121"
           video='nil'
           count={3} />
         <OnBoardingCard
           title='Deploy Mods'
           desc='Search, download and install mods. '
           lenght='3:20'
-          img='nil'
+          img="https://placekitten.com/218/121"
           video='nil'
           count={4} />
         <OnBoardingCard
           title='Play'
           desc='Play your game with the new mods you installed. '
           lenght='4:50'
-          img='nil'
+          img="https://placekitten.com/218/121"
           video='nil'
           count={5} />
       </div>
