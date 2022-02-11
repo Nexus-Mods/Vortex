@@ -17,10 +17,11 @@ export interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string;
+  onTrigger?: () => void;
 }
 
 function MenuAction(props: IMenuActionProps) {
-  const { t, action, id, instanceId } = props;
+  const { t, action, id, instanceId, onTrigger } = props;
 
   const renderCustom = React.useCallback(() => {
     const knownProps = ['condition', 'className', 'group', 't', 'i18nLoadedAt',
@@ -77,6 +78,8 @@ function MenuAction(props: IMenuActionProps) {
     action.action?.(instanceIds, action.data);
     if (action.subMenus !== undefined) {
       setOpen(old => !old);
+    } else {
+      onTrigger?.();
     }
   }, [instanceId, action, setOpen]);
 
@@ -128,6 +131,7 @@ function MenuAction(props: IMenuActionProps) {
             anchor={itemRef.current}
             onHide={setOpenFalse}
             actions={subMenus}
+            onTrigger={onTrigger}
           />
           <Icon className='menu-more-icon' name='showhide-right' />
         </>
@@ -172,6 +176,7 @@ export interface IContextMenuProps {
   instanceId: string;
   actions?: IActionDefinitionEx[];
   className?: string;
+  onTrigger?: () => void;
 }
 
 type IProps = IContextMenuProps;
@@ -266,7 +271,21 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    return <MenuAction t={tf} key={id} id={id} action={action} instanceId={instanceId} />;
+    return (
+      <MenuAction
+        t={tf}
+        key={id}
+        id={id}
+        onTrigger={this.trigger}
+        action={action}
+        instanceId={instanceId}
+      />);
+  }
+
+  private trigger = () => {
+    const { onHide, onTrigger } = this.props;
+    onTrigger?.();
+    onHide();
   }
 
   private setMenuRef = (ref: HTMLDivElement) => {
