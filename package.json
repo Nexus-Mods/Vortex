@@ -25,7 +25,6 @@
     "package": "electron-builder --config electron-builder-oneclick.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
-    "dist_collections": "cross-env VORTEX_VARIANT=collections yarn run dist",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "testbuild": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-test.json --publish never",
