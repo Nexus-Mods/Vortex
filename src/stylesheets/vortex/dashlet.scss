@@ -301,6 +301,7 @@
 .onboarding-card-list {
   display: flex;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .onboarding-card {
@@ -310,6 +311,7 @@
   padding: 16px;
   width: 250px;
   max-width: 250px;
+  box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.25);
 }
 
 .onboarding-card-image {
@@ -338,7 +340,8 @@
   align-items: center;
   justify-content: center;
   margin-right: 8px;
-  font-size: 1em;
+  font-size: 1.2em;
+  line-height: 1.2em;
 }
 
 .onboarding-card-title-container {

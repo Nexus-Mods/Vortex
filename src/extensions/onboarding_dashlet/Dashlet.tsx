@@ -37,37 +37,30 @@ function OnBoardingDashlet() {
           title='add your game'
           desc='Learn how to add games for Vortex to manage.'
           lenght='1:10'
-          img="https://placekitten.com/218/121"
+          img="assets/images/dashlets/add-game.png"
           video='nil'
           count={1} />
         <OnBoardingCard
           title='Install Tools'
           desc='Install any required tools that will allow you to mod your game. '
           lenght='1:20'
-          img="https://placekitten.com/218/121"
+          img="assets/images/dashlets/add-mods.png"
           video='nil'
           count={2} />
         <OnBoardingCard
           title='Download Mods'
           desc='Install any required tools that will allow you to mod your game. '
           lenght='2:20'
-          img="https://placekitten.com/218/121"
+          img="assets/images/dashlets/install-tools.png"
           video='nil'
           count={3} />
         <OnBoardingCard
           title='Deploy Mods'
           desc='Search, download and install mods. '
           lenght='3:20'
-          img="https://placekitten.com/218/121"
+          img="assets/images/dashlets/login-link.png"
           video='nil'
           count={4} />
-        <OnBoardingCard
-          title='Play'
-          desc='Play your game with the new mods you installed. '
-          lenght='4:50'
-          img="https://placekitten.com/218/121"
-          video='nil'
-          count={5} />
       </div>
     </Dashlet>
   );
