@@ -40,13 +40,15 @@ function init(context: IExtensionContext): boolean {
 
     // Check for user login
     context.api.onStateChange(['persistent', 'nexus', 'userInfo'], (previous, current) => {
-      if (enabled() === undefined && !!current) {
+      if (enabled() && current) {
+        // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
+        initializeAnalytics()
+      } else if (enabled() === undefined && !!current) {
         // If I was not logged it, and the tracking is undefined ask me for the tracking
         showConsentDialog();
       } else if (!current) {
         // If I'm logging out disable tracking
         Analytics.stop();
-        context.api.store.dispatch(setAnalytics(undefined));
       }
     });
 
