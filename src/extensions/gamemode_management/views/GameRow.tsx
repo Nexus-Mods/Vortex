@@ -96,12 +96,17 @@ class GameRow extends ComponentEx<IProps, {}> {
       </Popover>
     );
 
+    const protocol = new URL(logoPath).protocol;
+    const imgurl = ((protocol !== null) && (protocol.startsWith('http')))
+      ? logoPath
+      : pathToFileURL(logoPath).href;
+
     return (
       <ListGroupItem className={classes.join(' ')}>
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>
-              <img className='game-thumbnail-img-list' src={pathToFileURL(logoPath).href} />
+              <img className='game-thumbnail-img-list' src={imgurl} />
             </div>
           </Media.Left>
           <Media.Body>
