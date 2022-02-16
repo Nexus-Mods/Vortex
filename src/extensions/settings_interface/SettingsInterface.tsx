@@ -9,6 +9,7 @@ import { IState } from '../../types/IState';
 import { IParameters, relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import getVortexPath from '../../util/getVortexPath';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 
@@ -26,14 +27,13 @@ import getText from './texts';
 import * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
 import { app } from 'electron';
-import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import lazyRequire from '../../util/lazyRequire';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
@@ -41,7 +41,7 @@ interface ILanguage {
   key: string;
   language: string;
   country?: string;
-  ext: IExtensionDownloadInfo[];
+  ext: Array<Partial<IExtensionDownloadInfo>>;
 }
 
 interface IBaseProps {
@@ -50,7 +50,6 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
-  currentLanguage: string;
   profilesVisible: boolean;
   autoDeployment: boolean;
   autoInstall: boolean;
@@ -63,7 +62,6 @@ interface IConnectedProps {
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
-  extensions: IAvailableExtension[];
   suppressedNotifications: { [id: string]: boolean };
   foregroundDL: boolean;
 }
@@ -87,48 +85,33 @@ interface IActionProps {
   onSetForegroundDL: (enabled: boolean) => void;
 }
 
-interface IComponentState {
+type IProps = IBaseProps & IActionProps & IConnectedProps & {
+  currentLanguage: string;
+  extensions: IAvailableExtension[];
   languages: ILanguage[];
-}
+  onReloadLanguages: () => void;
+};
 
-type IProps = IBaseProps & IActionProps & IConnectedProps;
-
-class SettingsInterface extends ComponentEx<IProps, IComponentState> {
+class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   private mInitialTitlebar: boolean;
 
   constructor(props: IProps) {
     super(props);
 
-    this.state = {
-      languages: [],
-    };
     this.mInitialTitlebar = props.customTitlebar;
   }
 
   public componentDidMount() {
     (this.props.startup as any).attach(this);
-    this.readLocales(this.props);
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (this.state.languages.find(lang => lang.key === newProps.currentLanguage) === undefined) {
-      this.setState(update(this.state, {
-        languages: { $push: [{
-          key: newProps.currentLanguage,
-          language: nativeLanguageName(newProps.currentLanguage),
-          ext: [],
-        }] },
-      }));
-    }
-
-    if (this.props.extensions !== newProps.extensions) {
-      this.readLocales(newProps);
-    }
+  public componentWillUnmount() {
+    (this.props.startup as any).detach(this);
   }
 
   public render(): JSX.Element {
     const { t, autoDeployment, autoEnable, autoInstall, autoStart, currentLanguage,
-            customTitlebar, desktopNotifications, foregroundDL, profilesVisible,
+            customTitlebar, desktopNotifications, foregroundDL, languages, profilesVisible,
             hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
             suppressedNotifications } = this.props;
 
@@ -163,7 +146,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            {this.state.languages.reduce((prev, language) => {
+            {languages.reduce((prev, language) => {
               if (language.ext.length < 2) {
                 prev.push(this.renderLanguage(language));
               } else {
@@ -316,19 +299,6 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private isValidLanguageCode(langId: string) {
-    if (!truthy(langId)) {
-      return false;
-    }
-    try {
-      new Date().toLocaleString(langId);
-      return true;
-    } catch (err) {
-      log('warn', 'Not a valid language code', langId);
-      return false;
-    }
-  }
-
   private toggleAcceleration = () => {
     this.props.changeStartup('disableGPU', this.props.startup.disableGPU !== true);
   }
@@ -349,7 +319,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
       ? this.context.api.emitAndAwait('install-extension', ext)
-        .tap(success => success ? this.readLocales(this.props) : Promise.resolve())
+        .tap(success => success ? this.props.onReloadLanguages() : Promise.resolve())
       : Promise.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
@@ -364,7 +334,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       : `${language.language} (${language.country})`;
   }
 
-  private renderLanguage(language: ILanguage, ext?: IExtensionDownloadInfo): JSX.Element {
+  private renderLanguage(language: ILanguage, ext?: Partial<IExtensionDownloadInfo>): JSX.Element {
     const { t } = this.props;
     if (ext === undefined) {
       ext = language.ext.length > 0 ? language.ext[0] : { name: undefined };
@@ -472,50 +442,6 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetAdvancedMode(!advanced);
   }
 
-  private readLocales(props: IProps) {
-    const { extensions } = props;
-    const bundledLanguages = getVortexPath('locales');
-    const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
-
-    const translationExts = extensions.filter(ext => ext.type === 'translation');
-
-    let local: string[] = [];
-
-    return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
-                          .map((file: string) => path.basename(file))
-                          .tap(files => local = files),
-                        translationExts.map(ext => ext.language))
-      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
-      .filter((langId: string) => this.isValidLanguageCode(langId))
-      .then(files => {
-        // files contains just the unique languages being supported, but there
-        // may be multiple extensions providing the same language
-        const loc = new Set(local);
-        const locales = files.map((key: string) => {
-          let language;
-          let country;
-
-          const [languageKey, countryKey] = key.split('-');
-          language = nativeLanguageName(languageKey);
-          if (countryKey !== undefined) {
-            country = nativeCountryName(countryKey);
-          }
-
-          const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
-            ? []
-            : translationExts.filter(iter => iter.language === key);
-          return { key, language, country, ext };
-        });
-
-        this.setState(update(this.state, {
-          languages: { $set: locales as any },
-        }));
-      })
-    .catch(err => {
-      log('warn', 'failed to read locales', err);
-    });
-  }
-
   private restart = () => {
     relaunch();
   }
@@ -523,7 +449,6 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    currentLanguage: state.settings.interface.language,
     profilesVisible: state.settings.interface.profilesVisible,
     hideTopLevelCategory: state.settings.interface.hideTopLevelCategory,
     advanced: state.settings.interface.advanced,
@@ -535,7 +460,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     startMinimized: state.settings.automation.minimized,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
-    extensions: state.session.extensions.available,
     relativeTimes: state.settings.interface.relativeTimes,
     suppressedNotifications: state.settings.notifications.suppress,
     foregroundDL: state.settings.interface.foregroundDL,
@@ -588,7 +512,101 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default
-  translate(['common'])(
+const SettingsInterfaceMapped = translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
-      SettingsInterface)) as React.ComponentClass<{}>;
+      SettingsInterfaceImpl));
+
+function isValidLanguageCode(langId: string) {
+  if (!truthy(langId)) {
+    return false;
+  }
+  try {
+    new Date().toLocaleString(langId);
+    return true;
+  } catch (err) {
+    log('warn', 'Not a valid language code', langId);
+    return false;
+  }
+}
+
+function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
+  const bundledLanguages = getVortexPath('locales');
+  const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
+
+  const translationExts = extensions.filter(ext => ext.type === 'translation');
+
+  let local: string[] = [];
+
+  return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
+    .map((file: string) => path.basename(file))
+    .tap(files => local = files),
+    translationExts.map(ext => ext.language))
+    .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+    .filter((langId: string) => isValidLanguageCode(langId))
+    .then(files => {
+      // files contains just the unique languages being supported, but there
+      // may be multiple extensions providing the same language
+      const loc = new Set(local);
+      const locales = files.map((key: string) => {
+        let language;
+        let country;
+
+        const [languageKey, countryKey] = key.split('-');
+        language = nativeLanguageName(languageKey);
+        if (countryKey !== undefined) {
+          country = nativeCountryName(countryKey);
+        }
+
+        const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
+          ? []
+          : translationExts.filter(iter => iter.language === key);
+        return { key, language, country, ext };
+      });
+
+      return locales;
+    })
+    .catch(err => {
+      log('warn', 'failed to read locales', err);
+      return [];
+    });
+}
+
+function SettingsInterface(props: IBaseProps) {
+  const [languages, setLanguages] = React.useState<ILanguage[]>([]);
+  const [iteration, setIteration] = React.useState<number>(0);
+
+  const { lang, exts } = useSelector<IState, { lang: string, exts: IAvailableExtension[] }>(
+    state => ({
+      lang: state.settings.interface.language,
+      exts: state.session.extensions.available,
+    }));
+
+  const forceReload = React.useCallback(() => setIteration(i => i + 1), []);
+
+  React.useEffect(() => {
+    (async () => {
+      const langs = await readLocales(exts);
+      // ensure the selected language is always an option
+      if (langs.length === 0) {
+        langs.push({
+          key: lang,
+          language: nativeLanguageName(lang),
+          ext: [],
+        });
+      }
+      setLanguages(langs);
+    })();
+  }, [lang, exts, iteration]);
+
+  return (
+    <SettingsInterfaceMapped
+      {...props}
+      languages={languages}
+      currentLanguage={lang}
+      extensions={exts}
+      onReloadLanguages={forceReload}
+    />
+  );
+}
+
+export default SettingsInterface;
