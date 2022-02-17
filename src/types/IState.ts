@@ -298,8 +298,16 @@ export interface IModTable {
 
 export interface IOverlay {
   title: string;
-  text: string;
+  content: string | React.ComponentType<any>;
   position: IPosition;
+  options?: IOverlayOptions
+}
+
+export interface IOverlayOptions {
+  containerTitle?: string;
+  showIcon?: boolean;
+  className?: string
+  props: any
 }
 
 export interface IOverlaysState {

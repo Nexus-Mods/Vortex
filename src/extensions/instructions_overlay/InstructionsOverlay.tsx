@@ -106,7 +106,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     abortDrag.current = new AbortController();
     // capture makes it so that the container receives the event, not the draggable icon
     container.addEventListener('mousemove', trackMouse,
-                               { capture: true, signal: abortDrag.current.signal });
+      { capture: true, signal: abortDrag.current.signal });
     // only trigger endDrag once, this way we don't have to remove it manually
     container.addEventListener('mouseup', endDrag, { once: true });
     trackMouse(evt as any);
@@ -116,11 +116,13 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     props.onClose(overlayId);
   }, [props.onClose, overlayId]);
 
+  const className = `instructions-overlay ${overlay?.options?.className ?? ''}`
+
   return ReactDOM.createPortal([
     <div
       key={overlay.title}
       ref={ref}
-      className='instructions-overlay'
+      className={className}
       style={{ left: pos.x, top: pos.y }}
     >
       <FlexLayout type='column'>
@@ -130,8 +132,8 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
               <Icon name='drag-handle' />
             </FlexLayout.Fixed>
             <FlexLayout.Flex className='instructions-overlay-title' onClick={toggle}>
-              <Icon name='dialog-info' />
-              <h4>{t('Instructions')}</h4>
+              {overlay?.options?.showIcon === false ? null : <Icon name='dialog-info' />} 
+              <h4>{t( overlay?.options?.containerTitle ?? 'Instructions')}</h4>
             </FlexLayout.Flex>
             <FlexLayout.Fixed className='instructions-overlay-close'>
               <tooltip.IconButton
@@ -148,18 +150,20 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
         </FlexLayout.Fixed>
         <FlexLayout.Fixed style={{ overflowY: 'auto' }}>
           {open
-            ? (
-              <ReactMarkdown
-                className='instructions-overlay-content'
-              >
-                {overlay.text}
-              </ReactMarkdown>
-            )
+            ? typeof(overlay.content) === 'string' ? 
+                (
+                  <ReactMarkdown
+                    className='instructions-overlay-content'
+                  >
+                    {overlay.content}
+                  </ReactMarkdown>
+                )
+              : <overlay.content {...(overlay?.options?.props ?? {})}></overlay.content>
             : null}
         </FlexLayout.Fixed>
       </FlexLayout>
     </div>,
-    ],
+  ],
     container,
   );
 }
