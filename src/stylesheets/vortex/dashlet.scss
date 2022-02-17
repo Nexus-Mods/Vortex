@@ -337,6 +337,8 @@
   border-radius: 50%;
   width: 31px;
   height: 31px;
+  min-width: 31px;
+  min-height: 31px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -363,4 +365,9 @@
 .onboarding-card-desc {
   margin-top: 16px;
   font-size: 1em;
+}
+
+.instructions-overlay.overlay-onboarding {
+  height: 466px;
+  width: 600px;
 }

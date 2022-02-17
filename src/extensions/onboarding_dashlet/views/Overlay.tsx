@@ -5,7 +5,7 @@ export function Overlay(props: {url: string}) {
     <div className="onboarding-overlay-content">
       <iframe 
         width="100%" 
-        height="280" 
+        height="335" 
         src={props.url}
         title="YouTube video player" 
         frameBorder={0}

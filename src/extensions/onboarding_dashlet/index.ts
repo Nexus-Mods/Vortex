@@ -17,6 +17,7 @@ function init(context: IExtensionContext): boolean {
         containerTitle: title,
         showIcon: false,
         className: 'overlay-onboarding',
+        disableCollapse: true,
         props: {
           url: video,
         }

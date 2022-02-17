@@ -28,7 +28,7 @@ function OnBoardingCard(props: {
       title,
       video,
       desc,
-      pos: { x: window.innerWidth - 16, y: window.innerHeight }
+      pos: { x: window.innerWidth, y: window.innerHeight }
     })}>
       <img className='onboarding-card-image' src={img} alt="" />
       <div className='onboarding-card-body'>

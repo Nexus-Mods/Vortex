@@ -306,8 +306,9 @@ export interface IOverlay {
 export interface IOverlayOptions {
   containerTitle?: string;
   showIcon?: boolean;
-  className?: string
-  props: any
+  className?: string;
+  disableCollapse?: boolean
+  props?: any
 }
 
 export interface IOverlaysState {

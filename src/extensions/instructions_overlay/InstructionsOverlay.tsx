@@ -51,7 +51,9 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   }, [overlay, ref.current]);
 
   const toggle = React.useCallback(() => {
-    setOpen(old => !old);
+    if (!overlay?.options?.disableCollapse) {
+      setOpen(old => !old);
+    }
   }, [setOpen]);
 
   const applyPos = React.useCallback((posIn: IPosition) => {
