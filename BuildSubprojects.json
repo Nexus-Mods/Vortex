@@ -387,8 +387,7 @@
       "path": "extensions/collections",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/collections",
-      "variant": "collections"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/collections"
     }
   ]
 ]

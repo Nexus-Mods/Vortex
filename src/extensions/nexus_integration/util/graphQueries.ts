@@ -4,6 +4,11 @@ const revisionInfo: IRevisionQuery = {
   id: true,
   revision: true,
   adultContent: true,
+  collectionChangelog: {
+    createdAt: true,
+    description: true,
+    id: true,
+  },
   createdAt: true,
   updatedAt: true,
   downloadLink: true,

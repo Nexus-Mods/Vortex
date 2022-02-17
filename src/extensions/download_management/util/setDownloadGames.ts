@@ -9,7 +9,7 @@ import path from 'path';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { IState } from '../../../types/IState';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
@@ -56,7 +56,8 @@ async function setDownloadGames(
         }
       });
     } catch (err) {
-      if (err instanceof ProcessCanceled) {
+      if ((err instanceof ProcessCanceled)
+          || (err instanceof UserCanceled)) {
         log('warn', 'updating games for download failed', { error: err.message });
       } else {
         api.showErrorNotification('Failed to move download', err);

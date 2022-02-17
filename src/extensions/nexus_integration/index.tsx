@@ -372,16 +372,11 @@ function remapCategory(state: IState, category: number, fromGame: string, toGame
   return sorted[0];
 }
 
-function toTimestamp(time?: IDateTime | string): number {
+function toTimestamp(time?: string): number {
   if (time === undefined) {
     return 0;
   }
-  if (typeof(time) === 'string') {
-    return (new Date(time)).getTime();
-  } else {
-    return (new Date(time.year, time.month, time.day, time.hour, time.minute, time.second))
-      .getTime();
-  }
+  return (new Date(time)).getTime();
 }
 
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {

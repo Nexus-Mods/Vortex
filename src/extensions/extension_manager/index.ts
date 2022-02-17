@@ -287,9 +287,11 @@ function init(context: IExtensionContext) {
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
       return didFetchAvailableExtensions
         .then(() => downloadAndInstallExtension(context.api, ext))
-        .tap(success => {
+        .then(success => {
           if (success) {
-            updateExtensions(false);
+            return updateExtensions(false);
+          } else {
+            return Promise.resolve();
           }
         });
       });

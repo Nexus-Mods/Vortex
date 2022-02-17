@@ -63,6 +63,9 @@ const setModsEnabled = (() => {
 
     {
       const profile: IProfile = profileById(api.getState(), profileIdIn);
+      if (profile === undefined) {
+        return Bluebird.resolve();
+      }
       const willChange = modIdsIn.filter(id =>
         (profile.modState?.[id]?.enabled ?? false) !== enableIn);
       return ppFunc(profileIdIn, willChange, enableIn, optionsIn)
