@@ -309,37 +309,41 @@ export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = 
 export function getManifest(api: IExtensionApi,
                             modType?: string,
                             gameId?: string)
-                            : Promise<IDeploymentManifest> {
+    : Promise<IDeploymentManifest> {
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
 
-  if (gameId === undefined) {
-    gameId = activeGameId(state);
+  try {
+    if (gameId === undefined) {
+      gameId = activeGameId(state);
+    }
+
+    if (modType === undefined) {
+      modType = '';
+    }
+
+    const game = getGame(gameId);
+    const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
+    if ((discovery?.path === undefined) || (game === undefined)) {
+      return Promise.resolve(emptyManifest(instanceId));
+    }
+
+    const stagingPath: string = installPathForGame(state, gameId);
+    const deployPath: string = game.getModPaths(discovery.path)[modType];
+    if ((stagingPath === undefined) || (deployPath === undefined)) {
+      return Promise.resolve(emptyManifest(instanceId));
+    }
+
+    const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
+    const tagFileName = `vortex.deployment.${typeTag}json`;
+    const tagFilePath = path.join(deployPath, tagFileName);
+    const tagBackupPath = path.join(stagingPath, tagFileName);
+    const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
+
+    return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
+  } catch (err) {
+    return Promise.reject(err);
   }
-
-  if (modType === undefined) {
-    modType = '';
-  }
-
-  const game = getGame(gameId);
-  const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  if ((discovery?.path === undefined) || (game === undefined)) {
-    return Promise.resolve(emptyManifest(instanceId));
-  }
-
-  const stagingPath: string = installPathForGame(state, gameId);
-  const deployPath: string = game.getModPaths(discovery.path)[modType];
-  if ((stagingPath === undefined) || (deployPath === undefined)) {
-    return Promise.resolve(emptyManifest(instanceId));
-  }
-
-  const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
-  const tagFileName = `vortex.deployment.${typeTag}json`;
-  const tagFilePath = path.join(deployPath, tagFileName);
-  const tagBackupPath = path.join(stagingPath, tagFileName);
-  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
-
-  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
 }
 
 export function loadActivation(api: IExtensionApi, gameId: string, modType: string,
