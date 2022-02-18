@@ -483,6 +483,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return box.id === evt.currentTarget.id;
     });
 
+    if (idx === -1) {
+      return;
+    }
+
     const newCheckboxes = JSON.parse(JSON.stringify(dialogState.checkboxes.slice(0)));
     newCheckboxes[idx].value = !newCheckboxes[idx].value;
 
