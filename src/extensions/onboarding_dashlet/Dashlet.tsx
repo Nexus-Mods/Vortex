@@ -1,5 +1,6 @@
 import Dashlet from '../../controls/Dashlet';
 import React from 'react';
+import Icon from '../../controls/Icon';
 
 export type onCardClick = (payload: onCardClickPayload) => void
 
@@ -30,7 +31,13 @@ function OnBoardingCard(props: {
       desc,
       pos: { x: window.innerWidth, y: window.innerHeight }
     })}>
-      <img className='onboarding-card-image' src={img} alt="" />
+      <div className='onboarding-card-image-container'>
+        <img className='onboarding-card-image' src={img} alt="" />
+        <Icon
+          className='onboarding-card-image-play'
+          name='launch-simple'
+        />
+      </div>
       <div className='onboarding-card-body'>
         <div className='onboarding-card-title-wrapper'>
           <span className='onboarding-card-counter'>{count}</span>
@@ -48,7 +55,7 @@ function OnBoardingCard(props: {
 }
 
 function OnBoardingDashlet(props: {
-  onCardClick: onCardClick
+  onCardClick: onCardClick,
 }) {
   const { onCardClick } = props;
 

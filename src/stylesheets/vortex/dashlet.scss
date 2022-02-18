@@ -314,12 +314,23 @@
   box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.25);
 }
 
+.onboarding-card-image-container {
+  position: relative;
+}
+
+.onboarding-card-image-play.icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 45px;
+  pointer-events: none;
+}
 .onboarding-card-image {
   display: block;
   width: 218px;
   height: 121px;
   border: 1px solid #6E6E6E;
-  cursor: pointer;
 }
 
 .onboarding-card-body {
@@ -370,4 +381,17 @@
 .instructions-overlay.overlay-onboarding {
   height: 466px;
   width: 600px;
+}
+
+.onboarding-overlay-button-container {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.onboarding-overlay-button {
+  text-transform: uppercase;
+}
+
+.onboarding-overlay-button-icon {
+  margin-right: 8px;  
 }
