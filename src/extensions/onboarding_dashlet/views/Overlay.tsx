@@ -26,7 +26,7 @@ export function Overlay(props: { url: string, id: string }) {
         <Button className='onboarding-overlay-button' onClick={onCompleteStep}>
           <Icon
             className='onboarding-overlay-button-icon'
-            name='checkbox-checked'
+            name='completed'
           />
           Mark as complete
         </Button>

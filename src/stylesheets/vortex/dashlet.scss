@@ -302,6 +302,7 @@
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
+  overflow: auto;
 }
 
 .onboarding-card {
@@ -356,6 +357,12 @@
   margin-right: 8px;
   font-size: 1.2em;
   line-height: 1.2em;
+
+  &--checked {
+    background-color: $brand-success;
+    border-color: $brand-success;
+    color: black;
+  }
 }
 
 .onboarding-card-title-container {
@@ -394,4 +401,50 @@
 
 .onboarding-overlay-button-icon {
   margin-right: 8px;  
+}
+
+.onboarding-completed-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  h2, h4 {
+    margin: 8px 0px;
+  }
+}
+
+.dashlet.dashlet-onboarding-completed {
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-completed-body {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: row;
+  justify-content: center;
+  gap: 42px;
+}
+
+.onboarding-completed-card-header {
+  font-size: 1.5em;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.onboarding-completed-card-desc {
+  margin-bottom: auto;
+  font-size: 1.1em;
+}
+
+.onboarding-completed-card-header-icon {
+  margin-right: 8px;
+}
+
+.onboarding-completed-card-button {
+  text-transform: uppercase;
+  font-size: 1.1em;
 }
