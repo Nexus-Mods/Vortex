@@ -49,6 +49,19 @@ export function resolveCategoryPath(category: string, state: IState) {
 
 }
 
+export function resolveCategoryId(name: string, state: IState): number {
+  const gameId: string = activeGameId(state);
+
+  const categories = state.persistent.categories[gameId];
+  const key = Object.keys(categories ?? {})
+    .find(iter => categories[iter].name === name);
+  if (key !== undefined) {
+    return parseInt(key, 10);
+  } else {
+    return undefined;
+  }
+}
+
 /**
  * retrieve the Category from the Store
  *

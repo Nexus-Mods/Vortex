@@ -23,6 +23,7 @@ import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
 
+import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
 import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
@@ -35,6 +36,7 @@ import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
+        setModAttributes,
         setModType} from './actions/mods';
 import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
@@ -1646,9 +1648,33 @@ class InstallManager {
       api.store.dispatch(setModType(gameId, modId, extra.type));
     }
 
+    const attributes = {};
+
     if (extra.name !== undefined) {
-      api.store.dispatch(setModAttribute(gameId, modId, 'customFileName', extra.name));
+      attributes['customFileName'] = extra.name;
     }
+
+    if (extra.url !== undefined) {
+      attributes['source'] = 'website';
+      attributes['url'] = extra.url;
+    }
+
+    if (extra.category !== undefined) {
+      const categoryId = resolveCategoryId(extra.category, api.getState());
+      if (categoryId !== undefined) {
+        attributes['category'] = categoryId;
+      }
+    }
+
+    if (extra.author !== undefined) {
+      attributes['author'] = extra.author;
+    }
+
+    if (extra.version !== undefined) {
+      attributes['version'] = extra.version;
+    }
+
+    api.store.dispatch(setModAttributes(gameId, modId, attributes));
   }
 
   private doInstallDependenciesPhase(api: IExtensionApi,
