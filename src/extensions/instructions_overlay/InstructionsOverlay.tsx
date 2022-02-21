@@ -160,7 +160,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
                     {overlay.content}
                   </ReactMarkdown>
                 )
-              : <overlay.content {...(overlay?.options?.props ?? {})}></overlay.content>
+              : <overlay.content {...(overlay?.options?.props?.() ?? {})}></overlay.content>
             : null}
         </FlexLayout.Fixed>
       </FlexLayout>

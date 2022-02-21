@@ -1,6 +1,9 @@
 import Dashlet from '../../controls/Dashlet';
 import React from 'react';
 import Icon from '../../controls/Icon';
+import { IStep } from './steps';
+import { useSelector } from 'react-redux';
+import { IState } from '../../types/api';
 
 export type onCardClick = (payload: onCardClickPayload) => void
 
@@ -9,6 +12,7 @@ export type onCardClickPayload = {
   video: string,
   count: number,
   desc: string,
+  id: string,
   pos: { x: number, y: number }
 }
 
@@ -19,9 +23,10 @@ function OnBoardingCard(props: {
   desc: string,
   img: string,
   count: number,
+  id: string,
   onClick: onCardClick
 }) {
-  const { count, desc, img, lenght, onClick, title, video } = props
+  const { count, desc, img, lenght, onClick, title, video, id } = props
 
   return (
     <div className='onboarding-card' onClick={() => onClick({
@@ -29,6 +34,7 @@ function OnBoardingCard(props: {
       title,
       video,
       desc,
+      id,
       pos: { x: window.innerWidth, y: window.innerHeight }
     })}>
       <div className='onboarding-card-image-container'>
@@ -56,45 +62,32 @@ function OnBoardingCard(props: {
 
 function OnBoardingDashlet(props: {
   onCardClick: onCardClick,
+  steps: IStep[]
 }) {
-  const { onCardClick } = props;
+  const { onCardClick, steps } = props;
+
+  const completedSteps =  useSelector<IState, { [key: string]: boolean }>(state => (state.settings as any).onboardingsteps.steps);
+
+  console.log(completedSteps)
 
   return (
     <Dashlet title='Get Started' className='dashlet-onboarding'>
       <p className='onboarding-subtitle'> Watch these 5 videos to guide you on how to start modding you favourite games. </p>
       <div className='onboarding-card-list'>
-        <OnBoardingCard
-          title='add your game'
-          desc='Learn how to add games for Vortex to manage.'
-          lenght='1:10'
-          img="assets/images/dashlets/add-game.png"
-          video="https://www.youtube-nocookie.com/embed/qdn4yguKHaY"
-          count={1}
-          onClick={onCardClick} />
-        <OnBoardingCard
-          title='Install Tools'
-          desc='Install any required tools that will allow you to mod your game. '
-          lenght='1:20'
-          img="assets/images/dashlets/add-mods.png"
-          video="https://www.youtube-nocookie.com/embed/gz99xZGA0LA"
-          count={2}
-          onClick={onCardClick} />
-        <OnBoardingCard
-          title='Download Mods'
-          desc='Install any required tools that will allow you to mod your game. '
-          lenght='2:20'
-          img="assets/images/dashlets/install-tools.png"
-          video="https://www.youtube-nocookie.com/embed/UvYiO3__U5Y"
-          count={3}
-          onClick={onCardClick} />
-        <OnBoardingCard
-          title='Logging in and linking your Account in Vortex'
-          desc='Search, download and install mods. '
-          lenght='3:20'
-          img="assets/images/dashlets/login-link.png"
-          video="https://www.youtube-nocookie.com/embed/Coui1FvFK70"
-          count={4}
-          onClick={onCardClick} />
+        {
+          steps.map(
+            (step, i) =>
+              <OnBoardingCard
+                id={step.id}
+                title={step.title}
+                desc={step.desc}
+                lenght={step.lenght}
+                img={step.img}
+                video={step.video}
+                count={i + 1}
+                onClick={onCardClick} />
+          )
+        }
       </div>
     </Dashlet>
   );
