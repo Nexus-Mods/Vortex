@@ -371,9 +371,10 @@
 }
 
 .onboarding-card-title {
+  font-family: 'Montserrat';
   text-transform: uppercase;
   font-size: 1em;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .onboarding-card-lenght {
@@ -433,11 +434,16 @@
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+  min-height: 55px;
 }
 
 .onboarding-completed-card-desc {
   margin-bottom: auto;
   font-size: 1.1em;
+}
+
+.onboarding-completed-card-header-text {
+  font-family: 'Montserrat';
 }
 
 .onboarding-completed-card-header-icon {
