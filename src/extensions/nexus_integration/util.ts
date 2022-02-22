@@ -110,6 +110,8 @@ function startDownloadCollection(api: IExtensionApi,
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId))
     .catch(err => {
+      err['collectionSlug'] = url.collectionSlug;
+      err['revisionNumber'] = url.revisionNumber;
       if (!handleErrors) {
         return Promise.reject(err);
       }
@@ -174,7 +176,13 @@ export function getCollectionInfo(nexus: Nexus,
   };
   return Promise.resolve(
       nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
-    .then(revision => ({ revisionInfo: revision }));
+    .then(revision => ({ revisionInfo: revision }))
+    .catch(err => {
+      err['collectionSlug'] = collectionSlug;
+      err['revisionNumber'] = revisionNumber;
+      err['revisionId'] = revisionId;
+      return Promise.reject(err);
+    });
 }
 
 function startDownloadMod(api: IExtensionApi,

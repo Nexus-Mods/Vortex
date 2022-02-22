@@ -1273,6 +1273,11 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
               } as any,
           }))
         : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, url.revisionNumber)
+          .catch(err => {
+            err['collectionSlug'] = url.collectionSlug;
+            err['revisionNumber'] = url.revisionNumber;
+            return Promise.reject(err);
+          })
           .then((revision: Partial<IRevision>) => {
             revisionInfo = revision;
             return nexus.getCollectionDownloadLink(revision.downloadLink);
