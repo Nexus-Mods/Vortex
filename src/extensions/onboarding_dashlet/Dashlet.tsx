@@ -1,20 +1,19 @@
-import Dashlet from '../../controls/Dashlet';
 import React from 'react';
-import Icon from '../../controls/Icon';
-import { IStep } from './steps';
-import { useSelector } from 'react-redux';
-import { IState } from '../../types/api';
 import { Button } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
+import Dashlet from '../../controls/Dashlet';
+import Icon from '../../controls/Icon';
+import { IState } from '../../types/api';
+import { IStep } from './steps';
 
-export type onCardClick = (payload: onCardClickPayload) => void
+export type onCardClick = (payload: onCardClickPayload) => void;
 
-export type onCardClickPayload = {
-  title: string,
-  video: string,
-  count: number,
-  desc: string,
-  id: string,
-  pos: { x: number, y: number }
+export interface onCardClickPayload {
+  title: string;
+  video: string;
+  desc: string;
+  id: string;
+  pos: { x: number, y: number };
 }
 
 function OnBoardingCard(props: {
@@ -26,21 +25,24 @@ function OnBoardingCard(props: {
   count: number,
   id: string,
   isCompleted: boolean,
-  onClick: onCardClick
+  onClick: onCardClick,
 }) {
-  const { count, desc, img, lenght, onClick, title, video, id, isCompleted } = props
+  const { count, desc, img, lenght, onClick, title, video, id, isCompleted } = props;
 
-  return (
-    <div className='onboarding-card' onClick={() => onClick({
-      count,
+  const openModal = () => {
+    onClick({
       title,
       video,
       desc,
       id,
-      pos: { x: window.innerWidth, y: window.innerHeight }
-    })}>
+      pos: { x: window.innerWidth, y: window.innerHeight },
+    });
+  };
+
+  return (
+    <div className='onboarding-card' onClick={openModal}>
       <div className='onboarding-card-image-container'>
-        <img className='onboarding-card-image' src={img} alt="" />
+        <img className='onboarding-card-image' src={img} alt='' />
       </div>
       <div className='onboarding-card-body'>
         <div className='onboarding-card-title-wrapper'>
@@ -55,34 +57,42 @@ function OnBoardingCard(props: {
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 function CounterWithCheckbox(props: { isChecked: boolean, count: number }) {
   const { count, isChecked } = props;
-  const className = `onboarding-card-counter ${isChecked ? 'onboarding-card-counter--checked' : ''}`
+  const className = `onboarding-card-counter ${
+      isChecked
+      ? 'onboarding-card-counter--checked'
+      : ''}`;
+
   return (
     <span className={className}>
       {isChecked
         ? <Icon
           className='onboarding-card-counter-checked-icon'
-          name='completed' />
+          name='completed'
+        />
         : count}
     </span>
-  )
+  );
 }
 
 function OnBoardingDashletWrapper(props: {
   onCardClick: onCardClick,
-  steps: IStep[]
+  steps: IStep[],
 }) {
   const { onCardClick, steps } = props;
 
-  const completedSteps = useSelector<IState, { [key: string]: boolean }>(state => (state.settings as any).onboardingsteps.steps);
+  const completedSteps = useSelector<IState, { [key: string]: boolean }>
+    (state => (state.settings as any).onboardingsteps.steps);
 
-  const completedStepsValues = Object.values(completedSteps)
+  const completedStepsValues = Object.values(completedSteps);
 
-  const isFullyCompleted = steps.length == completedStepsValues.length && completedStepsValues.every((x) => x === true)
+  const isFullyCompleted =
+    steps.length === completedStepsValues.length
+    && completedStepsValues.every((x) => x === true);
 
   return (
     <>
@@ -90,12 +100,15 @@ function OnBoardingDashletWrapper(props: {
         isFullyCompleted
           ? <CompletedOnBoardingDashlet />
           : <Dashlet title='Get Started' className='dashlet-onboarding'>
-            <p className='onboarding-subtitle'> Watch these 5 videos to guide you on how to start modding you favourite games. </p>
+            <p className='onboarding-subtitle'>
+              Watch these 5 videos to guide you on how to start modding you favourite games.
+            </p>
             <div className='onboarding-card-list'>
               {
                 steps.map(
                   (step, i) =>
                     <OnBoardingCard
+                      key={i}
                       id={step.id}
                       title={step.title}
                       desc={step.desc}
@@ -104,7 +117,7 @@ function OnBoardingDashletWrapper(props: {
                       video={step.video}
                       count={i + 1}
                       onClick={onCardClick}
-                      isCompleted={completedSteps[step.id]} />
+                      isCompleted={completedSteps[step.id]} />,
                 )
               }
             </div>
@@ -120,7 +133,8 @@ function OnboardingCompletedCard(props: { title, desc, icon, button }) {
       <div className='onboarding-completed-card-header'>
         <Icon
           className='onboarding-completed-card-header-icon'
-          name={props.icon} />
+          name={props.icon}
+        />
         <span className='onboarding-completed-card-header-text'>
           {props.title}
         </span>
@@ -132,7 +146,7 @@ function OnboardingCompletedCard(props: { title, desc, icon, button }) {
         {props.button}
       </Button>
     </div>
-  )
+  );
 }
 
 function CompletedOnBoardingDashlet() {
@@ -151,7 +165,7 @@ function CompletedOnBoardingDashlet() {
         <OnboardingCompletedCard title={'Check out collections'} icon='collection' button={'View Collections'} desc='Collections allow you to download large combinations of mods that work together'/>
       </div>
     </Dashlet>
-  )
+  );
 }
 
-export default OnBoardingDashletWrapper
+export default OnBoardingDashletWrapper;
