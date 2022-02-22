@@ -1566,7 +1566,9 @@ class ExtensionManager {
         name: detail.fileName,
         trace: (new Error()).stack,
       });
-      return Promise.reject(new ProcessCanceled('trying to calculate hash for an empty file'));
+      const err = new ProcessCanceled('trying to calculate hash for an empty file');
+      err['fileName'] = detail.fileName;
+      return Promise.reject(err);
     }
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
       return Promise.resolve([]);
