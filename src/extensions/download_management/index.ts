@@ -892,7 +892,9 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('did-import-downloads', (dlIds: string[], cb?: (err?: Error) => void) => {
-      queryInfo(context.api, dlIds, false).then(() => cb?.()).catch(err => cb?.(err)); });
+      queryInfo(context.api, dlIds, false).then(() => cb?.()).catch(err => cb?.(err));
+      updateDebouncer.schedule();
+    });
 
     context.api.onStateChange(['settings', 'downloads', 'path'], (prev, cur) => {
       updateDebouncer.schedule();
