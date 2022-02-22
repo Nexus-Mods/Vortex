@@ -52,7 +52,9 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
 
   private invokeAction = (evt: React.MouseEvent<Button>) => {
     const { instanceId, onClick } = this.props;
-    if (onClick !== undefined) {
+    if ((onClick !== undefined)
+        && (instanceId !== undefined)
+        && (instanceId.length > 0)) {
       evt.preventDefault();
       onClick(instanceId);
     }
