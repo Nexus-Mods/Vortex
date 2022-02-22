@@ -625,7 +625,8 @@ export function onRemoveMods(api: IExtensionApi,
   // reject trying to remove mods that are actively being installed/downloaded
   const notInstalled = modIds.find(modId => {
     const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
-    return !['downloaded', 'installed'].includes(modState);
+    return (modState !== undefined)
+        && !['downloaded', 'installed'].includes(modState);
   });
 
   if ((options?.ignoreInstalling !== true) && (notInstalled !== undefined)) {
