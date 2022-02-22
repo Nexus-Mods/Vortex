@@ -1969,10 +1969,13 @@ class InstallManager {
               && (downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag)) {
             // we can't change the tag on the download because that might break
             // dependencies on the other mod
-            dep.reference = {
+            // instead we update the rule in the collection. This has to happen immediately,
+            // otherwise the installation might have weird issues around the mod
+            // being installed having a different tag than the rule
+            dep.reference = this.updateModRule(api, profile, sourceModId, dep, {
               ...dep.reference,
               tag: downloads[downloadId].modInfo.referenceTag,
-            };
+            }, recommended).reference;
 
             // now at this point there may in fact already be a mod for the updated reference tag
             if (dep.mod === undefined) {
@@ -2063,22 +2066,31 @@ class InstallManager {
     return res;
   }
 
+  private updateModRule(api: IExtensionApi, profile: IProfile, sourceModId: string,
+                        dep: IDependency, reference: IModReference, recommended: boolean) {
+    const state: IState = api.store.getState();
+    const rules: IModRule[] =
+      getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
+    const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
+
+    const updatedRule: IRule = {
+      ...(oldRule || {}),
+      type: recommended ? 'recommends' : 'requires',
+      reference,
+    };
+
+    api.store.dispatch(removeModRule(profile.gameId, sourceModId, oldRule));
+    api.store.dispatch(addModRule(profile.gameId, sourceModId, updatedRule));
+    return updatedRule;
+  }
+
   private updateRules(api: IExtensionApi, profile: IProfile, sourceModId: string,
                       dependencies: IDependency[], recommended: boolean): Promise<void> {
-    dependencies.map(dep => {
+    dependencies.forEach(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
 
-      const state: IState = api.store.getState();
-      const rules: IModRule[] =
-        getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
-      const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
-      api.store.dispatch(removeModRule(profile.gameId, sourceModId, oldRule));
-      api.store.dispatch(addModRule(profile.gameId, sourceModId, {
-        ...(oldRule || {}),
-        type: recommended ? 'recommends' : 'requires',
-        reference: updatedRef,
-      }));
+      this.updateModRule(api, profile, sourceModId, dep, updatedRef, recommended);
     });
     return Promise.resolve();
   }
