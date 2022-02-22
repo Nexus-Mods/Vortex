@@ -2,7 +2,16 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { batchDispatch } from '../../../util/util'
+import { log } from '../../../util/log';
+import * as fs from '../../../util/fs';
+import { fileMD5 } from '../../../util/checksum';
 import { activeGameId } from '../../../util/selectors';
+
+import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
+import { setModAttribute } from '../../mod_management/actions/mods';
+
+import NXMUrl from '../../nexus_integration/NXMUrl';
 
 import * as React from 'react';
 
@@ -47,7 +56,45 @@ class InstallButton extends ComponentEx<IProps, {}> {
             });
           });
         } else {
-          api.events.emit('start-install', result);
+          api.events.emit('start-install', result, (error, id: string) => {
+            if (error) {
+              return;
+            }
+            const state = api.getState();
+            const gameId = activeGameId(state);
+            return Promise.all([fileMD5(result), fs.statAsync(result)])
+              .then(res => api.lookupModMeta({
+                fileMD5: res[0],
+                filePath: result,
+                gameId,
+                fileSize: res[1].size,
+              }, false))
+            .then((modInfo) => {
+              const match = metaLookupMatch(modInfo, result, gameId);
+              if (match !== undefined) {
+                let actions = [];
+                const info = match.value;
+                const setInfo = (key: string, value: any) => {
+                  if (value !== undefined) { actions.push(setModAttribute(gameId, id, key, value)); }
+                };
+                try {
+                  const nxmUrl = new NXMUrl(info.sourceURI);
+                  setInfo('source', 'nexus');
+                  setInfo('description', info.details.description);
+                  setInfo('category', info.details.category);
+                  setInfo('downloadGame', nxmUrl.gameId);
+                  setInfo('fileId', nxmUrl.fileId);
+                  setInfo('modId', nxmUrl.modId);
+                  batchDispatch(api.store, actions);
+                } catch (err) {
+                  setInfo('source', 'unknown');
+                }
+              }
+            })
+            .catch(err => {
+              log('warn', 'failed to look up mod meta info', { message: err.message });
+            });
+          });
         }
       }
     });
