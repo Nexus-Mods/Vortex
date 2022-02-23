@@ -72,10 +72,12 @@ class InstallButton extends ComponentEx<IProps, {}> {
             .then((modInfo) => {
               const match = metaLookupMatch(modInfo, result, gameId);
               if (match !== undefined) {
-                let actions = [];
+                const actions = [];
                 const info = match.value;
                 const setInfo = (key: string, value: any) => {
-                  if (value !== undefined) { actions.push(setModAttribute(gameId, id, key, value)); }
+                  if (value !== undefined) {
+                    actions.push(setModAttribute(gameId, id, key, value));
+                  }
                 };
                 try {
                   const nxmUrl = new NXMUrl(info.sourceURI);
