@@ -1,15 +1,16 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { batchDispatch } from '../../../util/util'
-import { log } from '../../../util/log';
-import * as fs from '../../../util/fs';
 import { fileMD5 } from '../../../util/checksum';
-import { activeGameId } from '../../../util/selectors';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 
-import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
+import { activeGameId } from '../../../util/selectors';
+import { batchDispatch } from '../../../util/util';
+
 import { setModAttribute } from '../../mod_management/actions/mods';
+import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
 
 import NXMUrl from '../../nexus_integration/NXMUrl';
 
