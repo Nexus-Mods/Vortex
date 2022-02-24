@@ -124,7 +124,8 @@ const handleError = (error: any) => {
        'net::ERR_CONTENT_LENGTH_MISMATCH',
        'net::ERR_SSL_PROTOCOL_ERROR',
        'net::ERR_HTTP2_PROTOCOL_ERROR',
-       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)) {
+       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)
+      || ['ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(error.code)) {
     return;
   }
 
