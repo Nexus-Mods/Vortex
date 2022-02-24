@@ -378,10 +378,11 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
     return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
                                                             collectionSlug, revisionNumber))
       .catch(err => {
+        const allowReport = (!err.message.includes('network disconnected'));
         err['collectionSlug'] = collectionSlug;
         err['revisionNumber'] = revisionNumber;
         if (err.code !== 'NOT_FOUND') {
-          api.showErrorNotification('Failed to get nexus revision info', err);
+          api.showErrorNotification('Failed to get nexus revision info', err, { allowReport });
         }
         return Promise.resolve(undefined);
       });
