@@ -332,6 +332,10 @@
   width: 218px;
   height: 121px;
   border: 1px solid #6E6E6E;
+
+  &:hover {
+    border-color: $brand-primary;
+  }
 }
 
 .onboarding-card-body {

@@ -11,9 +11,9 @@ import { setDashletEnabled } from '../dashboard/actions';
 import { resetSteps } from './actions';
 import { IStep } from './steps';
 
-export type onCardClick = (payload: onCardClickPayload) => void;
+export type onCardClick = (payload: IonCardClickPayload) => void;
 
-export interface onCardClickPayload {
+export interface IonCardClickPayload {
   title: string;
   video: string;
   desc: string;
@@ -97,13 +97,6 @@ function OnBoardingDashletWrapper(props: {
   const isFullyCompleted =
     steps.length === completedStepsValues.length
     && completedStepsValues.every((x) => x === true);
-
-  const resetState = () => {
-    steps.map((x) => x.id).forEach((x) => {
-
-    });
-  }
-
   return (
     <>
       {
@@ -127,7 +120,8 @@ function OnBoardingDashletWrapper(props: {
                       video={step.video}
                       count={i + 1}
                       onClick={onCardClick}
-                      isCompleted={completedSteps[step.id]} />,
+                      isCompleted={completedSteps[step.id]}
+                    />,
                 )
               }
             </div>
@@ -181,5 +175,5 @@ function CompletedOnBoardingDashlet() {
     </Dashlet>
   );
 }
-7
+
 export default OnBoardingDashletWrapper;

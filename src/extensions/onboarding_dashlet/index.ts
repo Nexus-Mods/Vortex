@@ -1,6 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { dismissOverlay } from '../instructions_overlay/actions';
-import Dashlet, { onCardClickPayload } from './Dashlet';
+import Dashlet, { IonCardClickPayload } from './Dashlet';
 import settingsReducer from './reducers';
 import { STEPS } from './steps';
 import { Overlay } from './views/Overlay';
@@ -14,7 +14,7 @@ function init(context: IExtensionContext): boolean {
     return true;
   },
     () => ({
-      onCardClick: (payload: onCardClickPayload) => {
+      onCardClick: (payload: IonCardClickPayload) => {
         const { title, video, desc, pos, id } = payload;
 
         allStepIds.filter((x) => x !== id).forEach((x) => {
