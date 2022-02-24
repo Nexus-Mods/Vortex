@@ -151,10 +151,10 @@ function CompletedOnBoardingDashlet() {
     <Dashlet title='' className='dashlet-onboarding-completed'>
       <div className='onboarding-completed-header'>
         <h1>
-          🎉 Congratulation! You've made it!
+          Congratulations, you've made it!
         </h1>
         <h4>
-          Now you are all setup to enjoy Vortex and start modding!
+          Now you are all set up to enjoy Vortex and start modding!
         </h4>
       </div>
       <div className='onboarding-completed-body'>
