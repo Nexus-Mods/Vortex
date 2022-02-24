@@ -87,7 +87,7 @@ function hasIdentifyingMarker(mod: IModLookupInfo,
                               allowTag: boolean): boolean {
   return ((ref.id !== undefined) && (modId !== undefined))
       || (!fuzzyVersion && (mod.fileMD5 !== undefined))
-      || ((ref.fileExpression !== undefined) && (mod.fileName !== undefined))
+      || ((ref.fileExpression !== undefined) && ((mod.fileName ?? mod.name) !== undefined))
       || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
       || ((ref.repo !== undefined) && (mod.source !== undefined))
       || (allowTag && (ref.tag !== undefined) && (mod.referenceTag !== undefined));
