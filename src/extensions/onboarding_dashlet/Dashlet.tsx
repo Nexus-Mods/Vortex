@@ -1,9 +1,14 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { setOpenMainPage } from '../../actions';
 import Dashlet from '../../controls/Dashlet';
 import Icon from '../../controls/Icon';
 import { IState } from '../../types/api';
+import { setDashletEnabled } from '../dashboard/actions';
+import { resetSteps } from './actions';
 import { IStep } from './steps';
 
 export type onCardClick = (payload: onCardClickPayload) => void;
@@ -62,10 +67,9 @@ function OnBoardingCard(props: {
 
 function CounterWithCheckbox(props: { isChecked: boolean, count: number }) {
   const { count, isChecked } = props;
-  const className = `onboarding-card-counter ${
-      isChecked
-      ? 'onboarding-card-counter--checked'
-      : ''}`;
+  const className = `onboarding-card-counter ${isChecked
+    ? 'onboarding-card-counter--checked'
+    : ''}`;
 
   return (
     <span className={className}>
@@ -93,6 +97,12 @@ function OnBoardingDashletWrapper(props: {
   const isFullyCompleted =
     steps.length === completedStepsValues.length
     && completedStepsValues.every((x) => x === true);
+
+  const resetState = () => {
+    steps.map((x) => x.id).forEach((x) => {
+
+    });
+  }
 
   return (
     <>
@@ -127,45 +137,49 @@ function OnBoardingDashletWrapper(props: {
   );
 }
 
-function OnboardingCompletedCard(props: { title, desc, icon, button }) {
-  return (
-    <div className='onboarding-card onboarding-card--completed'>
-      <div className='onboarding-completed-card-header'>
-        <Icon
-          className='onboarding-completed-card-header-icon'
-          name={props.icon}
-        />
-        <span className='onboarding-completed-card-header-text'>
-          {props.title}
-        </span>
-      </div>
-      <span className='onboarding-completed-card-desc'>
-        {props.desc}
-      </span>
-      <Button className='onboarding-completed-card-button'>
-        {props.button}
-      </Button>
-    </div>
-  );
-}
-
 function CompletedOnBoardingDashlet() {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+
+  const openMods = () => {
+    dispatch(setOpenMainPage('Mods', undefined));
+  };
+
+  const closeDashlet = () => {
+    dispatch(setDashletEnabled('On Boarding', false));
+  };
+
+  const resetAllSteps = () => {
+    dispatch(resetSteps());
+  };
+
   return (
     <Dashlet title='' className='dashlet-onboarding-completed'>
       <div className='onboarding-completed-header'>
-        <h2>
+        <h1>
           🎉 Congratulation! You've made it!
-        </h2>
+        </h1>
         <h4>
           Now you are all setup to enjoy Vortex and start modding!
         </h4>
       </div>
       <div className='onboarding-completed-body'>
-        <OnboardingCompletedCard title={'Say thank you'} icon='endorse-yes' button={'Endorse'} desc='Show your appreciation to the authors by endorsing their mods.'/>
-        <OnboardingCompletedCard title={'Check out collections'} icon='collection' button={'View Collections'} desc='Collections allow you to download large combinations of mods that work together'/>
+        <div className='onboarding-completed-body-button'>
+          <Button
+            id='btn-more-mods'
+            onClick={openMods}
+          >
+            <Icon name={'nexus'} />
+            {t('Get more mods')}
+          </Button>
+        </div>
+        <div className='onboarding-completed-body-links'>
+          <a onClick={resetAllSteps}>Watch again</a>
+          <a onClick={closeDashlet}>Hide</a>
+        </div>
       </div>
     </Dashlet>
   );
 }
-
+7
 export default OnBoardingDashletWrapper;

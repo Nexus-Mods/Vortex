@@ -1,15 +1,9 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-
-import Dashlet, { onCardClickPayload } from './Dashlet';
-
-import { Overlay } from './views/Overlay';
-
-import { TFunction } from 'i18next';
-
-import settingsReducer from './reducers';
-
-import { STEPS } from './steps';
 import { dismissOverlay } from '../instructions_overlay/actions';
+import Dashlet, { onCardClickPayload } from './Dashlet';
+import settingsReducer from './reducers';
+import { STEPS } from './steps';
+import { Overlay } from './views/Overlay';
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'onboardingsteps'], settingsReducer);

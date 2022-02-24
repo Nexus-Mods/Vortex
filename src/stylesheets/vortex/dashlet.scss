@@ -409,7 +409,7 @@
   flex-direction: column;
   align-items: center;
 
-  h2, h4 {
+  h1, h4 {
     margin: 8px 0px;
   }
 }
@@ -417,14 +417,17 @@
 .dashlet.dashlet-onboarding-completed {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .onboarding-completed-body {
   display: flex;
-  flex: 1 1 100%;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
-  gap: 42px;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .onboarding-completed-card-header {
@@ -453,4 +456,14 @@
 .onboarding-completed-card-button {
   text-transform: uppercase;
   font-size: 1.1em;
+}
+
+.onboarding-completed-body-links a:first-child {
+  margin-right: 8px;
+  border-right: 1px solid #b3b3b3;
+  padding-right: 8px;
+}
+
+.onboarding-completed-body-links {
+    margin-right: 12px;
 }
