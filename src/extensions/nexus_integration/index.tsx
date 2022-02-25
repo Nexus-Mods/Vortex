@@ -736,19 +736,21 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         }
 
         // downloading via a nxm link so definitively a nexus source
-        setDownloadModInfo(dlId, 'source', 'nexus');
+        const actions: Action[] = [];
+        actions.push(setDownloadModInfo(dlId, 'source', 'nexus'));
         if (nxmUrl.collectionId !== undefined) {
-          setDownloadModInfo(dlId, 'collectionId', nxmUrl.collectionId);
+          actions.push(setDownloadModInfo(dlId, 'collectionId', nxmUrl.collectionId));
         }
         if (nxmUrl.revisionId !== undefined) {
-          setDownloadModInfo(dlId, 'revisionId', nxmUrl.revisionId);
+          actions.push(setDownloadModInfo(dlId, 'revisionId', nxmUrl.revisionId));
         }
         if (nxmUrl.collectionSlug !== undefined) {
-          setDownloadModInfo(dlId, 'collectionSlug', nxmUrl.collectionSlug);
+          actions.push(setDownloadModInfo(dlId, 'collectionSlug', nxmUrl.collectionSlug));
         }
         if (nxmUrl.revisionNumber !== undefined) {
-          setDownloadModInfo(dlId, 'revisionNumber', nxmUrl.revisionNumber);
+          actions.push(setDownloadModInfo(dlId, 'revisionNumber', nxmUrl.revisionNumber));
         }
+        batchDispatch(api.store, actions);
 
         return new Promise((resolve, reject) => {
           const state: IState = api.store.getState();
