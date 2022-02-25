@@ -58,8 +58,8 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
           // if the download already has a file id (because we downloaded from nexus)
           // and what we downloaded doesn't match the md5 lookup, the server probably gave us
           // incorrect data, so ignore all of it
-          if ((dlNow.modInfo?.nexus?.ids?.fileId !== undefined)
-              && (dlNow.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
+          if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
+              && (dlNow?.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
             return Promise.resolve();
           }
 
@@ -70,7 +70,7 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
-          if (dlNow.modInfo?.source === undefined) {
+          if (dlNow?.modInfo?.source === undefined) {
             setInfo('source', 'unknown');
           }
         }
