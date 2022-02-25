@@ -45,7 +45,6 @@ function Input(props: IInputProps) {
 
 export interface IProps {
   activeGameId: string;
-  fileGameId: string;
   modId: string;
   readOnly?: boolean;
   isDownload: boolean;
@@ -63,7 +62,8 @@ export interface IProps {
 }
 
 function saveModId(dispatch: Redux.Dispatch<any>, isDownload: boolean,
-                   gameId: string, archiveId: string, modId: string, newNexusModId: string) {
+                   gameId: string, archiveId: string,
+                   modId: string, newNexusModId: string) {
   const numId = !newNexusModId ? undefined : parseInt(newNexusModId, 10);
   if (archiveId !== undefined) {
     dispatch(setDownloadModInfo(archiveId, 'nexus.ids.modId', numId));

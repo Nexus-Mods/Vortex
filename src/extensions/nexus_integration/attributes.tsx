@@ -33,14 +33,12 @@ function NexusId(props: INexusIdProps) {
 
   const fileName: string = mod.attributes?.fileName ?? mod.attributes?.name;
 
-  let gameMode = useSelector(activeGameId);
-  if (truthy(mod.attributes?.downloadGame)) {
-    gameMode = mod.attributes?.downloadGame;
-  }
-  const downloadPath = useSelector((state: IState) => downloadPathForGame(state, gameMode));
-  const downloads = useSelector((state: IState) => state.persistent.downloads.files);
+  const gameMode = useSelector(activeGameId);
 
   const fileGameId = mod.attributes?.downloadGame || gameMode;
+
+  const downloadPath = useSelector((state: IState) => downloadPathForGame(state, fileGameId));
+  const downloads = useSelector((state: IState) => state.persistent.downloads.files);
 
   const hasArchive = (mod.archiveId !== undefined)
                   && (downloads[mod.archiveId] !== undefined);
@@ -65,7 +63,7 @@ function NexusId(props: INexusIdProps) {
           api.showErrorNotification('Query failed', err, { allowReport: false });
         }
       });
-  }, [gameMode, mod]);
+  }, [fileGameId, mod]);
 
   return (
     <NexusModIdDetail
@@ -76,7 +74,6 @@ function NexusId(props: INexusIdProps) {
       fileHash={mod.attributes?.fileMD5}
       archiveId={hasArchive ? mod.archiveId : undefined}
       activeGameId={gameMode}
-      fileGameId={fileGameId}
       fileName={fileName}
       isDownload={mod.state === 'downloaded'}
       store={api.store}
