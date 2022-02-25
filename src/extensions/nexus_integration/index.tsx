@@ -939,7 +939,7 @@ function checkModsWithMissingMeta(api: IExtensionApi) {
 
         const before = actions.length;
 
-        const { attributes } = mod ?? {};
+        const attributes = mod?.attributes ?? {};
         const download = downloads[mod.archiveId];
         let source = attributes.source;
         if ((source === undefined) && (download.modInfo?.source === 'nexus')) {
@@ -1363,7 +1363,9 @@ function init(context: IExtensionContextExt): boolean {
         : gameMode;
       if (mod.type === 'collection') {
         context.api.events.emit('open-collection-page',
-                              gameId, mod.attributes?.collectionSlug, mod.attributes?.source);
+          gameId,
+          mod.attributes?.collectionSlug, mod.attributes?.revisionNumber,
+          mod.attributes?.source);
       } else {
         context.api.events.emit('open-mod-page',
                               gameId, mod.attributes?.modId, mod.attributes?.source);
