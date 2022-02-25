@@ -1373,8 +1373,15 @@ function init(context: IExtensionContextExt): boolean {
                           ['files', instanceIds[0], 'modInfo', 'nexus', 'ids'],
                           undefined);
       if (ids !== undefined) {
-        context.api.events.emit('open-mod-page',
-                                ids.gameId || gameMode, ids.modId, 'nexus');
+        if (ids.collectionSlug !== undefined) {
+          context.api.events.emit('open-collection-page',
+            ids.gameId || gameMode,
+            ids.collectionSlug, ids.revisionNumber,
+            'nexus');
+        } else {
+          context.api.events.emit('open-mod-page',
+                                  ids.gameId || gameMode, ids.modId, 'nexus');
+        }
       }
     }
   }, instanceIds => {

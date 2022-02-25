@@ -116,7 +116,9 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       if (mod.attributes?.collectionId !== undefined) {
         this.context.api.events.emit('open-collection-page',
-          downloadGame, mod.attributes?.collectionSlug, mod.attributes?.source);
+          downloadGame,
+          mod.attributes?.collectionSlug, mod.attributes?.revisionNumber,
+          mod.attributes?.source);
       } else {
         this.context.api.events.emit('open-mod-page',
           downloadGame, mod.attributes?.modId, mod.attributes?.source);

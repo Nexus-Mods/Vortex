@@ -154,14 +154,19 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 export function onOpenCollectionPage(api: IExtensionApi) {
-  return (gameId: string, collectionSlug: string, source: string) => {
+  return (gameId: string, collectionSlug: string, revisionNumber: number, source: string) => {
     if (source !== 'nexus') {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn([NEXUS_NEXT_URL,
-      nexusGameId(game) || gameId, 'collections', collectionSlug,
-    ].join('/')).catch(err => undefined);
+    const segments = [NEXUS_NEXT_URL,
+      nexusGameId(game) || gameId,
+      'collections', collectionSlug,
+    ];
+    if (revisionNumber !== undefined) {
+      segments.push('revisions', revisionNumber.toString());
+    }
+    opn(segments.join('/')).catch(() => undefined);
   };
 }
 
