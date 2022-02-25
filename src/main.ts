@@ -110,28 +110,7 @@ process.env.Path = process.env.Path + path.delimiter + __dirname;
 let application: Application;
 
 const handleError = (error: any) => {
-  if (error instanceof UserCanceled) {
-    return;
-  }
-
-  if (!truthy(error)) {
-    return;
-  }
-
-  if (['net::ERR_CONNECTION_RESET',
-       'net::ERR_CONNECTION_ABORTED',
-       'net::ERR_ABORTED',
-       'net::ERR_CONTENT_LENGTH_MISMATCH',
-       'net::ERR_SSL_PROTOCOL_ERROR',
-       'net::ERR_HTTP2_PROTOCOL_ERROR',
-       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)
-      || ['ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(error.code)) {
-    return;
-  }
-
-  // this error message appears to happen as the result of some other problem crashing the
-  // renderer process, so all this may do is obfuscate what's actually going on.
-  if (error.message.includes('Error processing argument at index 0, conversion failure from')) {
+  if (Application.shouldIgnoreError(error)) {
     return;
   }
 

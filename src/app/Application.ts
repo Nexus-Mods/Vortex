@@ -61,6 +61,46 @@ function last(array: any[]): any {
 }
 
 class Application {
+  public static shouldIgnoreError(error: any, promise?: any): boolean {
+    if (error instanceof UserCanceled) {
+      return true;
+    }
+
+    if (!truthy(error)) {
+      log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
+      return true;
+    }
+
+    // this error message appears to happen as the result of some other problem crashing the
+    // renderer process, so all this may do is obfuscate what's actually going on.
+    if (error.message.includes('Error processing argument at index 0, conversion failure from')) {
+      return true;
+    }
+
+    if (['net::ERR_CONNECTION_RESET',
+         'net::ERR_CONNECTION_ABORTED',
+         'net::ERR_ABORTED',
+         'net::ERR_CONTENT_LENGTH_MISMATCH',
+         'net::ERR_SSL_PROTOCOL_ERROR',
+         'net::ERR_HTTP2_PROTOCOL_ERROR',
+         'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)
+        || ['ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(error.code)) {
+      log('warn', 'network error unhandled', error.stack);
+      return true;
+    }
+
+    if (['EACCES', 'EPERM'].includes(error.errno)
+      && (error.path !== undefined)
+      && (error.path.indexOf('vortex-setup') !== -1)) {
+      // It's wonderous how electron-builder finds new ways to be more shit without even being
+      // updated. Probably caused by node update
+      log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
+      return true;
+    }
+
+    return false;
+  }
+
   private mBasePath: string;
   private mStore: ThunkStore<IState>;
   private mLevelPersistors: LevelPersist[] = [];
@@ -242,30 +282,7 @@ class Application {
 
   private genHandleError() {
     return (error: any, promise?: any) => {
-      if (error instanceof UserCanceled) {
-        return;
-      }
-
-      if (!truthy(error)) {
-        log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
-        return;
-      }
-
-      if (['net::ERR_CONNECTION_RESET',
-           'net::ERR_CONNECTION_ABORTED',
-           'net::ERR_ABORTED',
-           'net::ERR_CONTENT_LENGTH_MISMATCH',
-           'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
-        log('warn', 'network error unhandled', error.stack);
-        return;
-      }
-
-      if (['EACCES', 'EPERM'].includes(error.errno)
-          && (error.path !== undefined)
-          && (error.path.indexOf('vortex-setup') !== -1)) {
-        // It's wonderous how electron-builder finds new ways to be more shit without even being
-        // updated. Probably caused by node update
-        log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
+      if (Application.shouldIgnoreError(error, promise)) {
         return;
       }
 
