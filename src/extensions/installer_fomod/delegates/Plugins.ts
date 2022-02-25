@@ -19,16 +19,7 @@ class Plugins extends DelegateBase {
           const pluginList = state.session.plugins?.pluginList ?? {};
 
           const plugins = Object.keys(pluginList);
-          // the installer may use a different case than we have on disk
-          const localName = plugins.find(plugin =>
-            plugin.toLowerCase() === pluginName.toLowerCase());
-          if (localName === undefined) {
-            // unknown plugin can't be enabled
-            return callback(null, false);
-          }
-          const enabled = pluginList[localName].isNative
-                        || (state.loadOrder?.[localName]?.enabled ?? false);
-          return callback(null, enabled);
+          return callback(null, this.isEnabled(state, pluginList, plugins, pluginName));
         } catch (err) {
           return callback(err, false);
         }
@@ -53,18 +44,28 @@ class Plugins extends DelegateBase {
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
     try {
       const state = this.api.store.getState();
-      let plugins = Object.keys(
-        getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
+
+      const pluginList = state.session.plugins?.pluginList ?? {};
+      let plugins = Object.keys(pluginList);
 
       if (isActiveOnly === true) {
-        plugins =
-            plugins.filter((plugin) => getSafe(
-                               state, ['loadOrder', plugin, 'enabled'], false));
+        plugins = plugins.filter(name => this.isEnabled(state, pluginList, plugins, name));
       }
       return callback(null, plugins);
     } catch (err) {
       return callback(err, null);
     }
+  }
+
+  private isEnabled(state: any, pluginList: any, plugins: string[], pluginName: string) {
+    const localName = plugins.find(plugin =>
+      plugin.toLowerCase() === pluginName.toLowerCase());
+    if (localName === undefined) {
+      // unknown plugin can't be enabled
+      return false;
+    }
+    return pluginList[localName].isNative
+      || (state.loadOrder?.[localName]?.enabled ?? false);
   }
 }
 
