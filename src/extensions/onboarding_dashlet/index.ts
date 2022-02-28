@@ -1,5 +1,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { currentGame, nexusGameId, opn } from '../../util/api';
 import { dismissOverlay } from '../instructions_overlay/actions';
+import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 import Dashlet, { IonCardClickPayload } from './Dashlet';
 import settingsReducer from './reducers';
 import { STEPS } from './steps';
@@ -31,6 +33,12 @@ function init(context: IExtensionContext): boolean {
             url: video,
             id,
           }),
+        });
+      },
+      getMoreMods: () => {
+        currentGame(context.api.store)
+        .then(game => {
+          opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch(err => undefined);
         });
       },
       steps: STEPS,

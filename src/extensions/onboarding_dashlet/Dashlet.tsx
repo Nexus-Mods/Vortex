@@ -86,8 +86,9 @@ function CounterWithCheckbox(props: { isChecked: boolean, count: number }) {
 function OnBoardingDashletWrapper(props: {
   onCardClick: onCardClick,
   steps: IStep[],
+  getMoreMods: () => {},
 }) {
-  const { onCardClick, steps } = props;
+  const { onCardClick, steps, getMoreMods } = props;
 
   const completedSteps = useSelector<IState, { [key: string]: boolean }>
     (state => (state.settings as any).onboardingsteps.steps);
@@ -101,7 +102,7 @@ function OnBoardingDashletWrapper(props: {
     <>
       {
         isFullyCompleted
-          ? <CompletedOnBoardingDashlet />
+          ? <CompletedOnBoardingDashlet getMoreMods={getMoreMods} />
           : <Dashlet title='Get Started' className='dashlet-onboarding'>
             <p className='onboarding-subtitle'>
               Watch these 5 videos to guide you on how to start modding you favourite games.
@@ -131,13 +132,9 @@ function OnBoardingDashletWrapper(props: {
   );
 }
 
-function CompletedOnBoardingDashlet() {
+function CompletedOnBoardingDashlet(props: {getMoreMods: () => {}}) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-
-  const openMods = () => {
-    dispatch(setOpenMainPage('Mods', undefined));
-  };
 
   const closeDashlet = () => {
     dispatch(setDashletEnabled('On Boarding', false));
@@ -161,7 +158,7 @@ function CompletedOnBoardingDashlet() {
         <div className='onboarding-completed-body-button'>
           <Button
             id='btn-more-mods'
-            onClick={openMods}
+            onClick={props.getMoreMods}
           >
             <Icon name={'nexus'} />
             {t('Get more mods')}
