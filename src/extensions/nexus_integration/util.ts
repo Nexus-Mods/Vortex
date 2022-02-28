@@ -120,7 +120,9 @@ function startDownloadCollection(api: IExtensionApi,
           'The collection was not found. This usually happens when you try to download '
           + 'an unpublished collection.', { allowReport: false });
       } else if (!(err instanceof UserCanceled)) {
-        api.showErrorNotification('Failed to download collection', err);
+        api.showErrorNotification('Failed to download collection', err, {
+        allowReport: !(err instanceof ProcessCanceled),
+      });
       }
       return null;
     });
