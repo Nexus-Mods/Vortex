@@ -512,6 +512,13 @@ export function prettifyNodeErrorMessage(err: any,
              + 'Proxies, ...)',
       allowReport: false,
     };
+  } else if (err.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+    return {
+      message: 'Encountered a self-signed certificate. If this happens on a network connection '
+              + 'to a server that has a proper certificate (like the Nexus Mods API) it indicates '
+              + 'a significant security issue in your system.',
+      allowReport: false,
+    };
   } else if (err.code === 'UNKNOWN') {
     if (truthy(err['nativeCode'])) {
       // the if block is the original code from when native error codes were introduced
