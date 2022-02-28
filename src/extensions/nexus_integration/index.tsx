@@ -926,7 +926,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
 function checkModsWithMissingMeta(api: IExtensionApi) {
   const state = api.getState();
   const { mods } = state.persistent;
-  const downloads = state.persistent.downloads.files;
+  const downloads = state.persistent.downloads.files ?? {};
 
   const actions: Action[] = [];
 
