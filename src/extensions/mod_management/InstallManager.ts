@@ -1766,8 +1766,11 @@ class InstallManager {
             });
             return Promise.resolve();
           }
-          api.showErrorNotification('Failed to install dependency', err, {
+          const pretty = prettifyNodeErrorMessage(err);
+          api.showErrorNotification('Failed to install dependency', pretty.message, {
             message: renderModReference(dep.reference, undefined),
+            allowReport: pretty.allowReport,
+            replace: pretty.replace,
           });
           return Promise.resolve(undefined);
         })

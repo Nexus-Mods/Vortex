@@ -505,6 +505,13 @@ export function prettifyNodeErrorMessage(err: any,
              + 'disk being almost full.',
       allowReport: false,
     };
+  } else if (['ERR_SSL_WRONG_VERSION_NUMBER', 'ERR_SSL_BAD_DECRYPT'].includes(err.code)) {
+    return {
+      message: 'A network SSL error occurred. If this problem persists, please update and review '
+             + 'any network-related security software in your system (Anti Virus, Firewall, '
+             + 'Proxies, ...)',
+      allowReport: false,
+    };
   } else if (err.code === 'UNKNOWN') {
     if (truthy(err['nativeCode'])) {
       // the if block is the original code from when native error codes were introduced
