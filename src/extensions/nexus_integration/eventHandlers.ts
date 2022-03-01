@@ -463,7 +463,9 @@ export function onDownloadUpdate(api: IExtensionApi,
       return Promise.resolve(undefined);
     }
 
-    const game = gameById(api.store.getState(), gameId);
+    const game = (gameId === SITE_ID)
+      ? null
+      : gameById(api.store.getState(), gameId);
 
     if (game === undefined) {
       return Promise.reject(new ArgumentInvalid(gameId));
@@ -471,7 +473,8 @@ export function onDownloadUpdate(api: IExtensionApi,
 
     const fileIdNum = parseInt(fileId, 10);
 
-    return Promise.resolve(nexus.getModFiles(parseInt(modId, 10), nexusGameId(game) || gameId))
+    return Promise.resolve(nexus.getModFiles(parseInt(modId, 10),
+                           nexusGameId(game, gameId) || gameId))
       .then(files => {
         let updateFileId: number;
 
