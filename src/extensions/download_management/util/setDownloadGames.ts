@@ -11,6 +11,7 @@ import { IGame } from '../../../types/IGame';
 import { IState } from '../../../types/IState';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc from '../../../util/getNormalizeFunc';
 import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -58,9 +59,14 @@ async function setDownloadGames(
         }
       });
     } catch (err) {
-      if ((err instanceof ProcessCanceled)
-          || (err instanceof UserCanceled)) {
-        log('warn', 'updating games for download failed', { error: err.message });
+      if (err instanceof UserCanceled) {
+        log('warn', 'updating games for download canceled');
+      } else if (err instanceof ProcessCanceled) {
+        log('warn', 'updating games for download failed', {
+          error: err.message,
+          from: err['oldPath'],
+          to: err['newPath'],
+        });
       } else {
         api.showErrorNotification('Failed to move download', err);
       }
@@ -80,12 +86,29 @@ async function moveDownload(state: IState, fileName: string, fromGameId: string,
   if (newPath === undefined) {
     return Promise.reject(new ProcessCanceled(`No download path for game ${toGameId}`));
   }
-  const source = path.join(oldPath, fileName);
-  const dest = path.join(newPath, fileName);
+
+  const normalize = await getNormalizeFunc(oldPath);
+  const source = normalize(path.join(oldPath, fileName));
+  const dest = normalize(path.join(newPath, fileName));
   if (source === dest) {
-    throw new ProcessCanceled('source same as destination');
+    const err = new ProcessCanceled('source same as destination');
+    err['oldPath'] = oldPath;
+    err['newPath'] = newPath;
+    throw err;
   }
   await fs.ensureDirWritableAsync(newPath);
+  try {
+    const oStat = await fs.statAsync(oldPath);
+    const nStat = await fs.statAsync(newPath);
+    if (oStat?.ino === nStat?.ino) {
+      const err = new ProcessCanceled('source same as destination');
+      err['oldPath'] = oldPath;
+      err['newPath'] = newPath;
+      throw err;
+    }
+  } catch (err) {
+    log('error', 'failed to stat source or dest on move', err);
+  }
   return fs.moveRenameAsync(source, dest);
 }
 

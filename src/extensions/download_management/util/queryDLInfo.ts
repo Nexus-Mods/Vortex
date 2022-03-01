@@ -5,8 +5,10 @@ import { IExtensionApi, ILookupResult } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
 import { batchDispatch } from '../../../util/util';
+import * as selectors from '../../gamemode_management/selectors';
 import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
 import NXMUrl from '../../nexus_integration/NXMUrl';
+import { convertNXMIdReverse } from '../../nexus_integration/util/convertGameId';
 import { activeGameId } from '../../profile_management/selectors';
 import { setDownloadModInfo } from '../actions/state';
 import { downloadPathForGame } from '../selectors';
@@ -16,6 +18,8 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
+
+  const knownGames = selectors.knownGames(state);
 
   return Promise.map(dlIds ?? [], dlId => {
     const dl = state.persistent.downloads.files[dlId];
@@ -45,6 +49,11 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
       if (match !== undefined) {
         const info = match.value;
 
+        let metaGameId = info.gameId;
+        if (info.domainName !== undefined) {
+          metaGameId = convertNXMIdReverse(knownGames, info.domainName);
+        }
+
         const dlNow = api.getState().persistent.downloads.files[dlId];
 
         const setInfo = (key: string, value: any) => {
@@ -67,6 +76,7 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
           setInfo('nexus.ids.gameId', nxmUrl.gameId);
           setInfo('nexus.ids.fileId', nxmUrl.fileId);
           setInfo('nexus.ids.modId', nxmUrl.modId);
+          metaGameId = convertNXMIdReverse(knownGames, nxmUrl.gameId);
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
@@ -74,7 +84,6 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
             setInfo('source', 'unknown');
           }
         }
-        const metaGameId = info.gameId;
         return (gameId !== metaGameId)
           ? api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId])
           : Promise.resolve();
