@@ -26,7 +26,9 @@ async function setDownloadGames(
   const state = api.getState();
   const download = state.persistent.downloads.files[dlId];
 
-  if (download === undefined) {
+  if ((download === undefined)
+      || (gameIds.length === 0)
+      || (gameIds[0] === undefined)) {
     return Promise.resolve();
   }
 
@@ -75,6 +77,9 @@ async function moveDownload(state: IState, fileName: string, fromGameId: string,
     ? downloadPathForGame(state, fromGameId)
     : downloadPath(state);
   const newPath = downloadPathForGame(state, toGameId);
+  if (newPath === undefined) {
+    return Promise.reject(new ProcessCanceled(`No download path for game ${toGameId}`));
+  }
   const source = path.join(oldPath, fileName);
   const dest = path.join(newPath, fileName);
   if (source === dest) {
