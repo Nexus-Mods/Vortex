@@ -567,9 +567,7 @@ class InstallManager {
                   ],
                 });
               }
-              if (callback !== undefined) {
-                callback(err, null);
-              }
+              callback?.(err, null);
             });
         } else if (err instanceof SetupError) {
           return prom
@@ -583,9 +581,7 @@ class InstallManager {
                     message: err.message,
                   });
               }
-              if (callback !== undefined) {
-                callback(err, null);
-              }
+              callback?.(err, null);
             });
         } else if (err instanceof DataInvalid) {
           return prom
@@ -600,9 +596,7 @@ class InstallManager {
                     message: err.message,
                   });
               }
-              if (callback !== undefined) {
-                callback(err, null);
-              }
+              callback?.(err, null);
             });
         } else if (err['code'] === 'MODULE_NOT_FOUND') {
           const location = err['requireStack'] !== undefined
@@ -618,9 +612,7 @@ class InstallManager {
               location,
               message: err.message.split('\n')[0],
             });
-          if (callback !== undefined) {
-            callback(err, null);
-          }
+          callback?.(err, null);
         } else {
           return prom
             .then(() => genHash(archivePath).catch(() => ({})))
