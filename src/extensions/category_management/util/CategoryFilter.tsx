@@ -214,7 +214,7 @@ class CategoryFilter implements ITableFilter {
     }
 
     const filtList = new Set<string>(filter.filter(f => !f.startsWith('*')));
-    const allCategories = (value !== undefined)
+    const allCategories = truthy(value)
       ? this.categoryChain(value.toString(), state)
       : [UNASSIGNED_ID];
 
