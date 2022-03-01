@@ -512,9 +512,9 @@ export function prettifyNodeErrorMessage(err: any,
              + 'Proxies, ...)',
       allowReport: false,
     };
-  } else if (err.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+  } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'SELF_SIGNED_CERT_IN_CHAIN'].includes(err.code)) {
     return {
-      message: 'Encountered a self-signed certificate. If this happens on a network connection '
+      message: 'Encountered an invalid SSL certificate. If this happens on a network connection '
               + 'to a server that has a proper certificate (like the Nexus Mods API) it indicates '
               + 'a significant security issue in your system.',
       allowReport: false,
