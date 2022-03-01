@@ -181,6 +181,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             treeData={expandedTreeData}
             onChange={nop}
             onVisibilityToggle={this.toggleVisibility}
+            canDrop={this.canDrop}
             onMoveNode={this.moveNode}
             style={{ height: '95%' }}
             searchMethod={this.searchMethod}
@@ -466,13 +467,13 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           + 'Which may in turn, also contain their own sub-categories. Are you sure you wish to proceed ?',
       }, [
         { label: 'Cancel', default: true },
-        { label: 'Remove Category' }
+        { label: 'Remove Category' },
       ]).then((res) => {
         if (res.action !== 'Cancel') {
           userConfirmed = true;
           removeCat();
         }
-      })
+      });
     } else {
       onRemoveCategory(gameMode, id);
     }
@@ -525,6 +526,15 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
 
     this.updateExpandedTreeData(this.props.categories);
+  }
+
+  private canDrop = (args: { node: SortableTreeT.TreeItem,
+                             nextParent: SortableTreeT.TreeItem,
+                             prevParent: SortableTreeT.TreeItem,
+                             nextPath: Array<number | string>,
+                             prevPath: Array<number | string>,
+                             treeIndex: number }) => {
+    return !(args.nextPath ?? []).slice(0, -1).includes(args.node.categoryId);
   }
 
   private moveNode =

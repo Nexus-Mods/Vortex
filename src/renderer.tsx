@@ -295,6 +295,17 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error.stack.includes('react-sortable-tree')) {
+    // bug in external library. I know where the bug is but fixing that causes a new problem and
+    // i just don't want to pull that thread.
+    // To elaborate: there is no logic in react-sortable-tree to stop users
+    //   from moving a node into one of its own decendents and completely destroying its data
+    //   structure but there is an unhandled exception happening _before_ the data gets corrupted
+    //   so if we _did_ handle it, things get worse.
+    //   Solid...
+    return;
+  }
+
   if (error.message === 'Cannot read property \'parentNode\' of undefined') {
     // thrown by packery - seemingly at random
     return;
