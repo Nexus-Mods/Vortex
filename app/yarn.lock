@@ -4131,7 +4131,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/de7875be747428b5d140824238c28217d9ee3f11"
   dependencies:
     bluebird "^3.5.0"
-    lodash "^4.17.4"
+    lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:../src/util/vortex-run":

@@ -16,7 +16,6 @@ export function removeMod(api: IExtensionApi, gameId: string, modId: string): Pr
 }
 
 export function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise<void> {
-  const mods = api.getState().persistent.mods[gameId];
   if (modIds.length === 0) {
     return Promise.resolve();
   }

@@ -5182,9 +5182,9 @@ electron-updater@^4.2.0:
     semver "^7.3.5"
 
 electron@^16.0.0:
-  version "16.0.9"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-16.0.9.tgz#051bdc318549ecb88e11be6e36834e5b2ff9b855"
-  integrity sha512-Kh2fc2g5Me0g8B1X2LMEDDtSNWsGGAmngh7adZpuJ8uI5TlR5GHDTcz37zwJid53S0BQ5d+Nz/NQ8s1DlKAAMA==
+  version "16.0.10"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-16.0.10.tgz#300fe18c0f8096d337e241a2503522011429326b"
+  integrity sha512-QSxkVpvSpLzhSVlPRVOoJc/O/ZsbZm64qvSJeXsYfaH4rQjqBJwAFPuHhbhxzrBDWjH6FrBiNNzWZufSoTz1QQ==
   dependencies:
     "@electron/get" "^1.13.0"
     "@types/node" "^14.6.2"
