@@ -10,7 +10,7 @@ import { upload } from '../../util/network';
 import opn from '../../util/opn';
 import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { toPromise } from '../../util/util';
+import { toPromise, truthy } from '../../util/util';
 
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
@@ -281,7 +281,9 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
         return dlId;
       })
       .then(downloadId => {
-        api.events.emit('start-install-download', downloadId);
+        if (truthy(downloadId)) {
+          api.events.emit('start-install-download', downloadId);
+        }
       })
       .catch(DownloadIsHTML, err => undefined)
       .catch(DataInvalid, () => {
