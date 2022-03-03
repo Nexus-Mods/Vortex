@@ -391,6 +391,8 @@ export function toError(input: any, title?: string,
     ten = fallbackTFunc;
   }
 
+  const subtitle = (options || {}).message;
+
   /* i18next-extract-disable-next-line */
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
@@ -404,7 +406,7 @@ export function toError(input: any, title?: string,
       /* i18next-extract-disable-next-line */
       message: t(input.message),
       title,
-      subtitle: (options || {}).message,
+      subtitle,
       stack,
       allowReport: input['allowReport'],
       details: Object.keys(flatErr)
@@ -465,14 +467,14 @@ export function toError(input: any, title?: string,
           .map(key => key + ':\t' + input[key])
           .join('\n');
 
-      return {message, title, subtitle: (options || {}).message, stack, details};
+      return {message, title, subtitle, stack, details};
     }
     case 'string': {
       /* i18next-extract-disable-next-line */
-      return { message: 'String exception: ' + t(input), title };
+      return { message: 'String exception: ' + t(input), title, subtitle };
     }
     default: {
-      return { message: 'Unknown exception: ' + inspect(input), title };
+      return { message: 'Unknown exception: ' + inspect(input), title, subtitle };
     }
   }
 }

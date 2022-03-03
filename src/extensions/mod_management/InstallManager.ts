@@ -1753,7 +1753,7 @@ class InstallManager {
               abort.abort();
               return Promise.reject(err);
             }
-          } else if ([403, 404].includes(err['statusCode'])) {
+          } else if ([403, 404, 410].includes(err['statusCode'])) {
             api.showErrorNotification(
               'Failed to install dependency',
               'The mod seems to have been deleted and can no longer be downloaded.', {
@@ -1761,9 +1761,21 @@ class InstallManager {
               allowReport: false,
             });
             return Promise.resolve();
+          } else if (err['statusCode'] >= 500) {
+            api.showErrorNotification(
+              'Failed to install dependency',
+              'Server reported an internal error. This is likely a temporary issue, please '
+              + 'try again later.', {
+              message: renderModReference(dep.reference, undefined),
+              allowReport: false,
+            });
+            return Promise.resolve();
           }
+
           const pretty = prettifyNodeErrorMessage(err);
-          api.showErrorNotification('Failed to install dependency', pretty.message, {
+          const newErr = new Error(pretty.message);
+          newErr.stack = err.stack;
+          api.showErrorNotification('Failed to install dependency', newErr, {
             message: renderModReference(dep.reference, undefined),
             allowReport: pretty.allowReport,
             replace: pretty.replace,
