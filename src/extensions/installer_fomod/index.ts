@@ -674,13 +674,14 @@ async function install(files: string[],
                        pluginPath: string,
                        scriptPath: string,
                        fomodChoices: any,
+                       validate: boolean,
                        progressDelegate: ProgressDelegate,
                        coreDelegates: Core): Promise<IInstallResult> {
   const connection = await ensureConnected();
 
   return connection.sendMessage('Install',
-                                { files, stopPatterns, pluginPath, scriptPath, fomodChoices },
-                                coreDelegates);
+    { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
+    coreDelegates);
 }
 
 function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
@@ -697,13 +698,14 @@ function init(context: IExtensionContext): boolean {
     // await currentInstallPromise;
 
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
-    try {
-      const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
-        ? (choicesIn.options ?? {})
-        : undefined;
 
+    const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
+      ? (choicesIn.options ?? {})
+      : undefined;
+
+    const invokeInstall = async (validate: boolean) => {
       const result = await install(files, stopPatterns, pluginPath,
-        scriptPath, fomodChoices, progressDelegate, coreDelegates);
+        scriptPath, fomodChoices, validate, progressDelegate, coreDelegates);
 
       const state = context.api.store.getState();
       const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
@@ -732,8 +734,33 @@ function init(context: IExtensionContext): boolean {
         },
       });
       return result;
+    };
+
+    try {
+      return await invokeInstall(true);
     } catch (err) {
       context.api.store.dispatch(endDialog());
+      if (err.name === 'System.Xml.XmlException') {
+        const res = await context.api.showDialog('error', 'Invalid fomod', {
+          text: 'This fomod failed validation. Vortex tends to be stricter validating installers '
+              + 'than other tools to ensure mods actually work as expected.\n'
+              + 'You can try installing it anyway but we strongly suggest you test if it '
+              + 'actually works correctly afterwards - and you should still inform the mod author '
+              + 'about this issue.',
+          message: err.message,
+        }, [
+          { label: 'Cancel' },
+          { label: 'Ignore' },
+        ]);
+        if (res.action === 'Ignore') {
+          try {
+            return await invokeInstall(false);
+          } catch (innerErr) {
+            return Promise.reject(transformError(innerErr));
+          }
+        }
+      }
+
       return Promise.reject(transformError(err));
     } finally {
       context.api.store.dispatch(clearDialog());
