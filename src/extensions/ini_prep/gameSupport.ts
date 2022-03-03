@@ -10,6 +10,7 @@ const gameSupportGamePass = {
     iniFiles: [
       path.join('{mygames}', 'Skyrim Special Edition MS', 'Skyrim.ini'),
       path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimPrefs.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimCustom.ini'),
     ],
     iniFormat: 'winapi',
   },
@@ -42,6 +43,7 @@ const gameSupport = {
     iniFiles: [
       path.join('{mygames}', 'Skyrim Special Edition', 'Skyrim.ini'),
       path.join('{mygames}', 'Skyrim Special Edition', 'SkyrimPrefs.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition', 'SkyrimCustom.ini'),
     ],
     iniFormat: 'winapi',
   },
@@ -64,6 +66,7 @@ const gameSupport = {
     iniFiles: [
       path.join('{mygames}', 'Fallout3', 'Fallout.ini'),
       path.join('{mygames}', 'Fallout3', 'FalloutPrefs.ini'),
+      path.join('{mygames}', 'Fallout3', 'FalloutCustom.ini'),
     ],
     iniFormat: 'winapi',
   },
