@@ -753,6 +753,9 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
     try {
       return Bluebird.resolve(cb(...args))
         .catch?.(err => {
+          if (typeof(err) === 'string') {
+            err = new Error(err);
+          }
           if ((extInfo !== undefined) && !extInfo.official) {
             err.allowReport = false;
             err.extensionName = extInfo.name;
