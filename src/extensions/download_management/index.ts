@@ -750,7 +750,7 @@ function processInterruptedDownloads(api: IExtensionApi,
 
 function checkDownloadsWithMissingMeta(api: IExtensionApi) {
   const state = api.getState();
-  const downloads = state.persistent.downloads.files;
+  const downloads = state.persistent.downloads.files ?? {};
 
   const missingInfo = Object.keys(downloads)
     .filter(dlId => downloads[dlId].modInfo?.source === undefined);
