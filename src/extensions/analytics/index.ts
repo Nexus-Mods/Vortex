@@ -94,7 +94,8 @@ function init(context: IExtensionContext): boolean {
     }
 
     async function initializeAnalytics() {
-      if (userInfo() === undefined) {
+      const info = userInfo();
+      if (info === undefined) {
         return;
       }
       const gameId = activeGameId(context.api.store.getState());
@@ -107,9 +108,9 @@ function init(context: IExtensionContext): boolean {
 
       Analytics.start(instanceId, updateChannel, {
         vortexVersion: getApplication().version,
-        membership: userInfo().isPremium
+        membership: info.isPremium
           ? 'Premium'
-          : userInfo().isSupporter
+          : info.isSupporter
             ? 'Supporter'
             : 'Member',
         gameId,
