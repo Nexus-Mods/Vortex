@@ -12,7 +12,7 @@ import { IAttachment } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -358,6 +358,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof UserCanceled) {
       // nop
+    } else if (err instanceof DataInvalid) {
+       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof DownloadIsHTML) {
       if (resume) {
         this.props.onShowError(title,
