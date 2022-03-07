@@ -1086,37 +1086,38 @@ function once(api: IExtensionApi) {
   api.events.on('gamemode-activated',
       (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
 
-  api.events.on('install-dependencies', (profileId: string, modIds: string[], silent?: boolean) => {
-    try {
-      const state: IState = api.store.getState();
-      const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-      if (profile === undefined) {
-        api.showErrorNotification('Failed to install dependencies', 'Invalid profile');
+  api.events.on('install-dependencies',
+    (profileId: string, gameId: string, modIds: string[], silent?: boolean) => {
+      try {
+        const state: IState = api.store.getState();
+        const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+
+        Promise.map(modIds, modId =>
+          installManager.installDependencies(api, profile, gameId, modId, silent === true)
+            .catch(ProcessCanceled, () => null))
+          .catch(err => api.showErrorNotification('Failed to install dependencies', err));
+      } catch (err) {
+        api.showErrorNotification('Failed to install dependencies', err);
       }
+    });
 
-      Promise.map(modIds, modId =>
-        installManager.installDependencies(api, profile, modId, silent === true)
-          .catch(ProcessCanceled, () => null))
-        .catch(err => api.showErrorNotification('Failed to install dependencies', err));
-    } catch (err) {
-      api.showErrorNotification('Failed to install dependencies', err);
-    }
-  });
-
-  api.events.on('install-recommendations', (profileId: string, modIds: string[]) => {
-    const state: IState = api.store.getState();
-    const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-    if (profile === undefined) {
-      api.showErrorNotification('Failed to install recommendations', 'Invalid profile');
-    }
-
-    Promise.map(modIds, modId => installManager.installRecommendations(api, profile, modId))
-      .catch(err => {
-        if (!(err instanceof ProcessCanceled) && !(err instanceof UserCanceled)) {
-          api.showErrorNotification('Failed to install recommendations', err);
+  api.events.on('install-recommendations',
+    (profileId: string, gameId: string, modIds: string[]) => {
+      try {
+        const state: IState = api.store.getState();
+        const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+        if (profile === undefined) {
+          api.showErrorNotification('Failed to install recommendations', 'Invalid profile');
         }
-      });
-  });
+
+        Promise.map(modIds, modId =>
+          installManager.installRecommendations(api, profile, gameId, modId)
+            .catch(ProcessCanceled, () => null))
+          .catch(err => api.showErrorNotification('Failed to install recommendations', err));
+      } catch (err) {
+        api.showErrorNotification('Failed to install recommendations', err);
+      }
+    });
 
   api.events.on('mod-enabled', (profileId: string, modId: string) => {
     const state: IState = api.store.getState();
@@ -1127,8 +1128,8 @@ function once(api: IExtensionApi) {
       return;
     }
 
-    installManager.installDependencies(api, profile, modId, false)
-      .then(() => installManager.installRecommendations(api, profile, modId))
+    installManager.installDependencies(api, profile, profile.gameId, modId, false)
+      .then(() => installManager.installRecommendations(api, profile, profile.gameId, modId))
       .catch(err => api.showErrorNotification('Failed to install dependencies', err));
   });
 

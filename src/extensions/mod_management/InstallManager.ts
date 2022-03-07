@@ -150,6 +150,9 @@ class InstallManager {
     api.onAsync('install-from-dependencies',
         (dependentId: string, rules: IModRule[], recommended: boolean) => {
       const profile = activeProfile(api.getState());
+      if (profile === undefined) {
+        return Promise.reject(new ProcessCanceled('No game active'));
+      }
       const { mods } = api.getState().persistent;
       const collection = mods[profile.gameId]?.[dependentId];
 
@@ -163,10 +166,10 @@ class InstallManager {
         collection.rules.find(rule => _.isEqual(iter, rule)) !== undefined);
 
       if (recommended) {
-        return this.installRecommendationsImpl(api, profile, dependentId,
+        return this.installRecommendationsImpl(api, profile, profile.gameId, dependentId,
           modName(collection), filtered, instPath, true);
       } else {
-        return this.installDependenciesImpl(api, profile, dependentId,
+        return this.installDependenciesImpl(api, profile, profile.gameId, dependentId,
           modName(collection), filtered, instPath, true);
       }
 
@@ -654,21 +657,21 @@ class InstallManager {
       })));
   }
 
-  public installDependencies(api: IExtensionApi, profile: IProfile, modId: string,
+  public installDependencies(api: IExtensionApi, profile: IProfile, gameId: string, modId: string,
                              allowAutoDeploy: boolean): Promise<void> {
     const state: IState = api.store.getState();
-    const mod: IMod = state.persistent.mods[profile.gameId]?.[modId];
+    const mod: IMod = state.persistent.mods[gameId]?.[modId];
 
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
-    this.repairRules(api, mod, profile.gameId);
+    this.repairRules(api, mod, gameId);
 
-    const installPath = this.mGetInstallPath(profile.gameId);
+    const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing dependencies');
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
-    return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules,
+    return this.installDependenciesImpl(api, profile, gameId, mod.id, modName(mod), mod.rules,
                                         installPath, allowAutoDeploy)
       .finally(() => {
         log('info', 'done installing dependencies');
@@ -678,21 +681,22 @@ class InstallManager {
 
   public installRecommendations(api: IExtensionApi,
                                 profile: IProfile,
+                                gameId: string,
                                 modId: string)
                                 : Promise<void> {
     const state: IState = api.store.getState();
-    const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
+    const mod: IMod = getSafe(state, ['persistent', 'mods', gameId, modId], undefined);
 
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
-    this.repairRules(api, mod, profile.gameId);
+    this.repairRules(api, mod, gameId);
 
-    const installPath = this.mGetInstallPath(profile.gameId);
+    const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing recommendations');
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
-    return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
+    return this.installRecommendationsImpl(api, profile, gameId, mod.id, modName(mod),
                                            mod.rules, installPath, false)
       .finally(() => {
         log('info', 'done installing recommendations');
@@ -1820,6 +1824,7 @@ class InstallManager {
 
   private doInstallDependencies(api: IExtensionApi,
                                 profile: IProfile,
+                                gameId: string,
                                 sourceModId: string,
                                 dependencies: IDependency[],
                                 recommended: boolean,
@@ -1827,8 +1832,8 @@ class InstallManager {
     const state: IState = api.getState();
     let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
-    const sourceMod = state.persistent.mods[profile.gameId][sourceModId];
-    const stagingPath = installPathForGame(state, profile.gameId);
+    const sourceMod = state.persistent.mods[gameId][sourceModId];
+    const stagingPath = installPathForGame(state, gameId);
 
     let queuedDownloads: IModReference[] = [];
 
@@ -1893,7 +1898,7 @@ class InstallManager {
                               dep.extra?.['instructions'], () =>
           this.installModAsync(dep.reference, api, downloadId,
             { choices: dep.installerChoices }, dep.fileList,
-            profile.gameId, silent))
+            gameId, silent))
           .catch(err => {
             if (err instanceof UserCanceled) {
               err.skipped = true;
@@ -1909,7 +1914,7 @@ class InstallManager {
       if ((dep.download === undefined) || (downloads[dep.download] === undefined)) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
-          const downloadPath = downloadPathForGame(state, profile.gameId);
+          const downloadPath = downloadPathForGame(state, gameId);
           const fileName = path.basename(dep.extra.localPath);
           let targetPath = path.join(downloadPath, fileName);
           // backwards compatibility: during alpha testing the bundles were 7zipped inside
@@ -1983,7 +1988,7 @@ class InstallManager {
             // instead we update the rule in the collection. This has to happen immediately,
             // otherwise the installation might have weird issues around the mod
             // being installed having a different tag than the rule
-            dep.reference = this.updateModRule(api, profile, sourceModId, dep, {
+            dep.reference = this.updateModRule(api, gameId, sourceModId, dep, {
               ...dep.reference,
               tag: downloads[downloadId].modInfo.referenceTag,
             }, recommended).reference;
@@ -1991,7 +1996,7 @@ class InstallManager {
             // now at this point there may in fact already be a mod for the updated reference tag
             if (dep.mod === undefined) {
               dep.mod = findModByRef(
-                dep.reference, api.getState().persistent.mods[profile.gameId]);
+                dep.reference, api.getState().persistent.mods[gameId]);
               log('info', 'updated mod', JSON.stringify(dep.mod));
             }
           } else {
@@ -2077,11 +2082,11 @@ class InstallManager {
     return res;
   }
 
-  private updateModRule(api: IExtensionApi, profile: IProfile, sourceModId: string,
+  private updateModRule(api: IExtensionApi, gameId: string, sourceModId: string,
                         dep: IDependency, reference: IModReference, recommended: boolean) {
     const state: IState = api.store.getState();
     const rules: IModRule[] =
-      getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
+      getSafe(state.persistent.mods, [gameId, sourceModId, 'rules'], []);
     const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
 
     const updatedRule: IRule = {
@@ -2090,24 +2095,25 @@ class InstallManager {
       reference,
     };
 
-    api.store.dispatch(removeModRule(profile.gameId, sourceModId, oldRule));
-    api.store.dispatch(addModRule(profile.gameId, sourceModId, updatedRule));
+    api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
+    api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));
     return updatedRule;
   }
 
-  private updateRules(api: IExtensionApi, profile: IProfile, sourceModId: string,
+  private updateRules(api: IExtensionApi, gameId: string, sourceModId: string,
                       dependencies: IDependency[], recommended: boolean): Promise<void> {
     dependencies.forEach(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
 
-      this.updateModRule(api, profile, sourceModId, dep, updatedRef, recommended);
+      this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Promise.resolve();
   }
 
   private doInstallDependencyList(api: IExtensionApi,
                                   profile: IProfile,
+                                  gameId: string,
                                   modId: string,
                                   name: string,
                                   dependencies: IDependency[],
@@ -2127,7 +2133,7 @@ class InstallManager {
           prev.error.push(dep as IDependencyError);
         } else {
           const { mod } = dep as IDependency;
-          if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
+          if ((mod === undefined) || (!getSafe(profile?.modState, [mod.id, 'enabled'], false))) {
             prev.success.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
@@ -2140,9 +2146,8 @@ class InstallManager {
       { count: success.length, errors: error.length });
 
     if (silent && (error.length === 0)) {
-      return this.doInstallDependencies(api, profile, modId, success, false, silent)
-        .then(updated => this.updateRules(api, profile, modId,
-          [].concat(existing, updated), false));
+      return this.doInstallDependencies(api, profile, gameId, modId, success, false, silent)
+        .then(updated => this.updateRules(api, gameId, modId, [].concat(existing, updated), false));
     }
 
     const state: IState = api.store.getState();
@@ -2192,8 +2197,8 @@ class InstallManager {
         },
       }, actions)).then(result => {
         if (result.action === 'Install') {
-          return this.doInstallDependencies(api, profile, modId, success, false, silent)
-            .then(updated => this.updateRules(api, profile, modId,
+          return this.doInstallDependencies(api, profile, gameId, modId, success, false, silent)
+            .then(updated => this.updateRules(api, gameId, modId,
               [].concat(existing, updated), false));
         } else {
           return Promise.resolve();
@@ -2204,6 +2209,7 @@ class InstallManager {
 
   private installDependenciesImpl(api: IExtensionApi,
                                   profile: IProfile,
+                                  gameId: string,
                                   modId: string,
                                   name: string,
                                   rules: IModRule[],
@@ -2215,12 +2221,12 @@ class InstallManager {
                            && !rule.ignored);
 
     if (filteredRules.length === 0) {
-      api.events.emit('did-install-dependencies', profile.gameId, modId, false);
+      api.events.emit('did-install-dependencies', gameId, modId, false);
       return Promise.resolve();
     }
 
     const notificationId = `${installPath}_activity`;
-    api.events.emit('will-install-dependencies', profile.gameId, modId, false);
+    api.events.emit('will-install-dependencies', gameId, modId, false);
 
     let lastProgress = -1;
 
@@ -2247,7 +2253,8 @@ class InstallManager {
       .then((dependencies: IDependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.dismissNotification(notificationId);
-        return this.doInstallDependencyList(api, profile, modId, name, dependencies, silent);
+        return this.doInstallDependencyList(
+          api, profile, gameId, modId, name, dependencies, silent);
       })
       .catch((err) => {
         api.dismissNotification(notificationId);
@@ -2255,13 +2262,14 @@ class InstallManager {
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
-        log('debug', 'done installing dependencies', { profile: profile.id, modId });
-        api.events.emit('did-install-dependencies', profile.gameId, modId, false);
+        log('debug', 'done installing dependencies', { gameId, modId });
+        api.events.emit('did-install-dependencies', gameId, modId, false);
       });
   }
 
   private installRecommendationsImpl(api: IExtensionApi,
                                      profile: IProfile,
+                                     gameId: string,
                                      modId: string,
                                      name: string,
                                      rules: IRule[],
@@ -2278,7 +2286,7 @@ class InstallManager {
     }
 
     const notificationId = `${installPath}_activity`;
-    api.events.emit('will-install-dependencies', profile.id, modId, true);
+    api.events.emit('will-install-dependencies', profile?.id, modId, true);
 
     api.sendNotification({
       id: notificationId,
@@ -2304,7 +2312,8 @@ class InstallManager {
               prev.error.push(dep as IDependencyError);
             } else {
               const { mod } = dep as IDependency;
-              if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
+              if ((mod === undefined)
+                  || !getSafe(profile?.modState, [mod.id, 'enabled'], false)) {
                 prev.success.push(dep as IDependency);
               } else {
                 prev.existing.push(dep as IDependency);
@@ -2388,12 +2397,13 @@ class InstallManager {
               return this.doInstallDependencies(
                 api,
                 profile,
+                gameId,
                 modId,
                 (result !== null)
                   ? success.filter((dep, idx) => selected.has(idx.toString()))
                   : success,
                 true, silent)
-                .then(updated => this.updateRules(api, profile, modId,
+                .then(updated => this.updateRules(api, gameId, modId,
                   [].concat(existing, updated), true));
             } else {
               return Promise.resolve();
@@ -2406,7 +2416,7 @@ class InstallManager {
       })
       .finally(() => {
         api.dismissNotification(notificationId);
-        api.events.emit('did-install-dependencies', profile.gameId, modId, true);
+        api.events.emit('did-install-dependencies', gameId, modId, true);
       });
   }
 
