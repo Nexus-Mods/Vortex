@@ -109,6 +109,10 @@ function transformError(err: any): Error {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.AggregateException') && (err.InnerException !== undefined)) {
     return transformError(err.InnerException);
+  } else if (err.name === 'System.Runtime.Remoting.RemotingException') {
+    result = new SetupError('Communication with fomod installer failed. '
+                            + 'If you have any details on why or when this happens, '
+                            + 'please let us know.');
   } else if (err.Message === 'task timeout') {
     result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
                           + 'very generously so it\'s more likely that this is either caused '
