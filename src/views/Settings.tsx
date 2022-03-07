@@ -124,17 +124,16 @@ class Settings extends ComponentEx<IProps, {}> {
 
   private renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
     const props = page.props !== undefined ? page.props() : {};
-    const PanelX: any = Panel;
     return (
       <Panel key={idx}>
-        <PanelX.Body>
+        <Panel.Body>
         {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
         <page.component
           {...props}
           startup={this.mStartupSettings}
           changeStartup={this.changeStartup}
         />
-        </PanelX.Body>
+        </Panel.Body>
       </Panel>
     );
   }

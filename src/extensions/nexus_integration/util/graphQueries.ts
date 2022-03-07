@@ -85,6 +85,10 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   },
   description: true,
   summary: true,
+  forumTopic: {
+    postsCount: true,
+  },
+  commentLink: true,
 } as any;
 
 export const FULL_REVISION_INFO: IRevisionQuery = {
