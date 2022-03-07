@@ -11,11 +11,13 @@ export interface IBar {
 export interface IBaseProps {
   data: IBar[];
   className?: string;
+  innerGap?: number;
   gap?: number;
   totalRadius: number;
   offset?: number;
   maxWidth?: number;
   style?: React.CSSProperties;
+  restOverlap?: boolean;
 }
 
 type IProps = IBaseProps;
@@ -74,24 +76,39 @@ class RadialProgress extends React.Component<IProps, {}> {
       this.mWidthPerArc = Math.min(this.mWidthPerArc, maxWidth);
     }
 
-    const offset = this.props.offset || 0;
-    const gap = this.props.gap || 1;
+    const offset = this.props.offset ?? 0;
+    const gap = this.props.gap ?? 1;
+    const innerGap = this.props.innerGap ?? 0;
+    const restOverlap = this.props.restOverlap ?? true;
+
+    const inner = (isRest: boolean, idx: number) => {
+      let res = offset + innerGap + this.mWidthPerArc * (idx + 1);
+      if (isRest && restOverlap) {
+        res += (this.mWidthPerArc - gap) / 4;
+      }
+      return res;
+    };
+
+    const outer = (isRest: boolean, idx: number) => {
+      let res = offset + this.mWidthPerArc * (idx + 2);
+      if (isRest && restOverlap) {
+        res -= gap - (this.mWidthPerArc - gap) / 4;
+      }
+      return res;
+    };
 
     this.mArcGen = d3.arc<any, IBar>()
       .startAngle(0)
       .endAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
-      .innerRadius((item: IBar, idx: number, count: number) =>
-        offset + this.mWidthPerArc * (idx + 1))
-      .outerRadius((item: IBar, idx: number, count: number) =>
-        offset + this.mWidthPerArc * (idx + 2) - (gap || 1));
+      .cornerRadius(4)
+      .innerRadius((item: IBar, idx: number, count: number) => inner(false, idx))
+      .outerRadius((item: IBar, idx: number, count: number) => outer(false, idx));
 
     this.mRestArcGen = d3.arc<any, IBar>()
       .startAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .endAngle(2 * Math.PI)
-      .innerRadius((item: IBar, idx: number, count: number) =>
-        offset + this.mWidthPerArc * (idx + 1) + (this.mWidthPerArc - gap) / 4)
-      .outerRadius((item: IBar, idx: number, count: number) =>
-        offset + this.mWidthPerArc * (idx + 2) - gap - (this.mWidthPerArc - gap) / 4);
+      .innerRadius((item: IBar, idx: number, count: number) => inner(true, idx))
+      .outerRadius((item: IBar, idx: number, count: number) => outer(true, idx));
    }
 }
 
