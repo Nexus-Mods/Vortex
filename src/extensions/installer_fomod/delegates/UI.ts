@@ -89,7 +89,7 @@ class UI extends DelegateBase {
       if (truthy(parameters.details)) {
         msg += '\n' + parameters.details;
       }
-      this.api.showErrorNotification(parameters.title, parameters.details,
+      this.api.showErrorNotification(parameters.title, parameters.details ?? undefined,
         { isHTML: true, allowReport: false, message: parameters.message });
       callback(null);
     } catch (err) {

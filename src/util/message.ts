@@ -324,9 +324,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const actions: IDialogAction[] = [];
 
-  const context = (details !== undefined) && (details.context !== undefined)
-    ? details.context
-    : getErrorContext();
+  const context = details?.context ?? getErrorContext();
 
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
