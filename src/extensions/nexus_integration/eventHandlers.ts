@@ -347,7 +347,9 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
     return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, slug))
       .catch(err => {
         if (!['COLLECTION_DISCARDED', 'NOT_FOUND'].includes(err.code)) {
-          api.showErrorNotification('Failed to get collection info', err);
+          api.showErrorNotification('Failed to get collection info', err, {
+            allowReport: !(err instanceof ProcessCanceled),
+          });
         }
         return Promise.resolve(undefined);
       });
