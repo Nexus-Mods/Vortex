@@ -190,11 +190,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    let filtered = notifications.slice();
+    let filtered = notifications.slice().filter(item => item.type !== 'silent');
     let nextTimeout = null;
     const now = Date.now();
     if (!open) {
-      filtered = notifications.filter(item => {
+      filtered = filtered.filter(item => {
         const displayTime = this.displayTime(item);
         if (displayTime === null) {
           return true;

@@ -126,15 +126,19 @@ class InstallContext implements IInstallContext {
   public startIndicator(id: string): void {
     log('info', 'start mod install', { id });
     this.mLastProgress = 0;
-    if (!this.mSilent) {
-      this.mAddNotification({
-        id: 'install_' + id,
-        title: 'Installing {{ id }}',
-        message: 'Preparing',
-        replace: { id },
-        type: 'activity',
-      });
-    }
+    // TODO: we're adding even when silent but those "silent"
+    // notifications aren't displayed.
+    // This is hacky but notifications get used to track progress on some ops
+    // to display in other locations
+    // if (!this.mSilent) {
+    this.mAddNotification({
+      id: 'install_' + id,
+      title: 'Installing {{ id }}',
+      message: 'Preparing',
+      replace: { id },
+      type: this.mSilent ? 'silent' : 'activity',
+    });
+    // }
     this.mIndicatorId = id;
     this.mInstallOutcome = undefined;
     this.mStartActivity(`installing_${id}`);
