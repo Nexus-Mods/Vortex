@@ -5,7 +5,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
-import { activeGameId, lastActiveProfileForGame } from '../../../util/selectors';
+import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
@@ -13,10 +13,11 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { getGame } from '../../gamemode_management/util/getGame';
 
-import { removeProfile, setFeature, setProfile, willRemoveProfile } from '../actions/profiles';
-import { clearLastActiveProfile, setNextProfile } from '../actions/settings';
+import { setFeature, setProfile } from '../actions/profiles';
+import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
+import { profilePath, removeProfile } from '../util/manage';
 
 import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
@@ -46,9 +47,6 @@ interface IConnectedProps {
 
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
-  onRemoveProfile: (profileId: string) => void;
-  onClearLastActiveProfile: (gameId: string) => void;
-  onWillRemoveProfile: (profileId: string) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
@@ -330,9 +328,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { activity, currentProfile, onClearLastActiveProfile,
-            onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
-            onShowDialog, profiles } = this.props;
+    const { currentProfile, onShowDialog, profiles } = this.props;
 
     const gameMode = profiles[profileId].gameId;
     const totalProfilesForGame = (gameMode)
@@ -356,34 +352,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
           label: 'Remove', action:
             () => {
               log('info', 'user removing profile', { id: profileId });
-              if (activity.includes('deployment')) {
-                log('info', 'refusing to remove profile during deployment');
-                return;
-              }
-
-              onWillRemoveProfile(profileId);
-              if (profileId === currentProfile) {
-                onSetNextProfile(undefined);
-              }
-              const doRemoveProfile = () => {
-                onRemoveProfile(profileId);
-                if (gameMode !== undefined) {
-                  // It's possible that this is the last active profile
-                  //  for this game - we need to remove the last active
-                  //  game entry.
-                  const state = this.context.api.getState();
-                  const lastActiveProfileId = lastActiveProfileForGame(state, gameMode);
-                  if (profileId === lastActiveProfileId) {
-                    onClearLastActiveProfile(gameMode);
-                  }
-                }
-              };
-              return fs.removeAsync(profilePath(profiles[profileId]))
-                .then(() => doRemoveProfile())
-                .catch(err => (err.code === 'ENOENT')
-                  ? doRemoveProfile() // Profile path is already missing, that's fine.
-                  : this.context.api.showErrorNotification('Failed to remove profile',
-                      err, { allowReport: err.code !== 'EPERM' }));
+              removeProfile(this.context.api, profileId);
             },
         },
     ]);
@@ -394,10 +363,6 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       edit: { $set: profileId },
     }));
   }
-}
-
-function profilePath(profile: IProfile): string {
-  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 const emptyArray = [];
@@ -420,9 +385,6 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onRemoveProfile: (profileId: string) => dispatch(removeProfile(profileId)),
-    onClearLastActiveProfile: (gameId: string) => dispatch(clearLastActiveProfile(gameId)),
-    onWillRemoveProfile: (profileId: string) => dispatch(willRemoveProfile(profileId)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),
