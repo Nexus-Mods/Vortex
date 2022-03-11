@@ -32,6 +32,11 @@
     margin-top: auto;
     margin-bottom: auto;
     margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  .dyndiv {
+    overflow-x: auto;
   }
 
   &.toolbar-app-region .main-toolbar-right {
