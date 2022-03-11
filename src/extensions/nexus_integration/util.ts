@@ -447,7 +447,9 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
       message,
       displayMS: calcDuration(message.length),
     });
-  } else if (IGNORE_ERRORS.includes(err['code']) || (err instanceof ProcessCanceled)) {
+  } else if (IGNORE_ERRORS.includes(err['code'])
+             || (err instanceof ProcessCanceled)
+             || (err?.message ?? '').includes('getaddrinfo')) {
     api.showErrorNotification(`Endorsing ${type} failed, please try again later`, err, {
       allowReport: false,
     });
