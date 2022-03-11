@@ -9,6 +9,7 @@ import RadialProgress, { IBar } from '../controls/RadialProgress';
 import Debouncer from '../util/Debouncer';
 import Notification from './Notification';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 import { Badge, Button, Overlay, Popover } from 'react-bootstrap';
 
@@ -32,6 +33,7 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 interface IComponentState {
   expand: string;
   open: boolean;
+  resizing: boolean;
   filtered: INotification[];
 }
 
@@ -41,12 +43,21 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mUpdateDebouncer: Debouncer;
   private mMounted: boolean = false;
 
+  private resizeUpdate = _.debounce(() => {
+    this.forceUpdate();
+  }, 300, { maxWait: 1000, trailing: true });
+
+  private resizeUpdating = _.debounce(() => {
+    this.nextState.resizing = false;
+  }, 1000, { leading: false, trailing: true });
+
   constructor(props: IProps) {
     super(props);
 
     this.initState({
       expand: undefined,
       open: false,
+      resizing: false,
       filtered: [],
     });
 
@@ -56,9 +67,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.updateFiltered();
     this.mMounted = true;
+    window.addEventListener('resize', this.onResize);
   }
 
   public componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
     this.mMounted = false;
     if (this.mUpdateTimer !== undefined) {
       clearTimeout(this.mUpdateTimer);
@@ -78,7 +91,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, hide, notifications } = this.props;
-    const { filtered } = this.state;
+    const { filtered, resizing } = this.state;
 
     const collapsed: { [groupId: string]: number } = {};
 
@@ -130,7 +143,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           onExit={this.unExpand}
           show={items.length > 0}
           target={this.mButtonRef.current}
-          shouldUpdatePosition={false}
+          shouldUpdatePosition={resizing}
         >
           {popover}
         </Overlay>
@@ -173,6 +186,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         }
       }
     }
+  }
+
+  private onResize = () => {
+    if (!this.state.resizing) {
+      this.nextState.resizing = true;
+    }
+    this.resizeUpdate();
+    this.resizeUpdating();
   }
 
   private triggerFilter = () => {
