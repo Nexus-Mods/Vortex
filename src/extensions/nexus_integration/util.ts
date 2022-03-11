@@ -426,6 +426,8 @@ export function resolveGraphError(t: TFunction, err: Error): string {
   return msg;
 }
 
+const IGNORE_ERRORS = ['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'];
+
 function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
                             gameId: string, modId: number, version?: string) {
   const expectedError = resolveGraphError(api.translate, err);
@@ -445,8 +447,7 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
       message,
       displayMS: calcDuration(message.length),
     });
-  } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
-      || (err instanceof ProcessCanceled)) {
+  } else if (IGNORE_ERRORS.includes(err['code']) || (err instanceof ProcessCanceled)) {
     api.showErrorNotification(`Endorsing ${type} failed, please try again later`, err, {
       allowReport: false,
     });
