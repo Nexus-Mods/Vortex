@@ -21,6 +21,7 @@ import {
   Button, Checkbox, ControlLabel, Form, FormGroup, Pager,
   ProgressBar, Radio,
 } from 'react-bootstrap';
+import { pathToFileURL } from 'url';
 
 interface IGroupProps {
   t: TFunction;
@@ -471,7 +472,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
     return (
       <ZoomableImage
-        url={path.join(dataPath, image)}
+        url={pathToFileURL(path.join(dataPath, image)).href}
         className='installer-image'
         overlayClass='installer-zoom'
         container={null}
