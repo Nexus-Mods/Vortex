@@ -849,7 +849,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           const download = this.props.downloads?.[mod.archiveId];
           return download?.size !== undefined ? bytesToString(download.size) : '???';
         }
-        return mod.attributes.modSize;
+        return mod.attributes?.modSize ?? '???';
       },
       placement: 'table',
       isDefaultVisible: false,
