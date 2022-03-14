@@ -398,7 +398,7 @@ class InstallManager {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  setModsEnabled(api, currentProfile.id, [existingMod.id], false, {
+                  setModsEnabled(api, installGameId, [existingMod.id], false, {
                     allowAutoDeploy,
                     installed: true,
                   });
@@ -415,7 +415,7 @@ class InstallManager {
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
                 return new Promise<void>((resolve, reject) => {
-                  api.events.emit('remove-mod', currentProfile.gameId, existingMod.id,
+                  api.events.emit('remove-mod', installGameId, existingMod.id,
                                   (error: Error) => {
                     if (error !== null) {
                       reject(error);
