@@ -306,7 +306,8 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error.message === 'Cannot read property \'parentNode\' of undefined') {
+  if (error.message === 'Cannot read property \'parentNode\' of undefined'
+  || (error.message === 'Cannot read properties of undefined (reading \'parentNode\')')) {
     // thrown by packery - seemingly at random
     return;
   }
