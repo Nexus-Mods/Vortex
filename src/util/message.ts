@@ -307,6 +307,16 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     ]);
   }
 
+  if (details?.['attachFilesOnReport'] !== undefined) {
+    options.attachments = setdefault(options, 'attachments', []).concat(
+      details['attachFilesOnReport'].map((filePath: string, idx: number) => ({
+        id: `file${idx}`,
+        type: 'file',
+        data: filePath,
+        description: path.basename(filePath),
+      })));
+  }
+
   if ((options.attachments !== undefined)
       && (options.attachments.length > 0)
       && allowReport) {

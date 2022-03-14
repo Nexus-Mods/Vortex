@@ -5,6 +5,7 @@ import {IState} from '../../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
+import getVortexPath from '../../../util/getVortexPath';
 import { TFunction } from '../../../util/i18n';
 import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
@@ -300,7 +301,7 @@ export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = 
  * the same should be true for any extension using this function: Work on the assumption
  * that the manifest may be missing or outdated.
  * @remarks
- * This call is expensive as it attempts to read the manifest every time. Store the 
+ * This call is expensive as it attempts to read the manifest every time. Store the
  * result or call infrequently to minimise allocations and/or lag.
  * @param api api
  * @param modType the mod type for which to retrieve the manifest, default mod type if undefined
@@ -399,8 +400,11 @@ export function saveActivation(gameId: string, modType: string, instance: string
   try {
     JSON.parse(dataJSON);
   } catch (err) {
-    return Promise.reject(
-      new Error(`failed to serialize deployment information: "${err.message}"`));
+    const failedPath = path.join(getVortexPath('temp'), 'failed_manifest.json');
+    fs.writeFileSync(failedPath, dataJSON, { encoding: 'utf8' });
+    const repErr = new Error(`failed to serialize deployment information: "${err.message}"`);
+    repErr['attachFilesOnReport'] = [failedPath];
+    return Promise.reject(repErr);
   }
   const tagFileName = `vortex.deployment.${typeTag}json`;
   const tagFilePath = path.join(gamePath, tagFileName);
