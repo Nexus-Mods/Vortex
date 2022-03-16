@@ -289,7 +289,8 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error.message === 'Cannot read property \'focus\' of null') {
+  if ((error.message === 'Cannot read property \'focus\' of null')
+      || (error.message === 'Cannot read properties of null (reading \'focus\')')) {
     // Caused by the react-overlays Modal.restoreLastFocus function but it's unclear how this can
     // happen because the function contains a check specifically to prevent this error.
     return;
