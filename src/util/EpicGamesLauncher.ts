@@ -2,13 +2,16 @@ import { log } from './log';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import * as winapi from 'winapi-bindings';
+import * as winapiT from 'winapi-bindings';
 import * as fs from './fs';
 import { getSafe } from './storeHelper';
 
 import opn from './opn';
 
 import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
+import lazyRequire from './lazyRequire';
+
+const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';

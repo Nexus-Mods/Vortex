@@ -16,6 +16,7 @@
 import { ProcessCanceled, UserCanceled } from './CustomErrors';
 import { createErrorReport, getVisibleWindow } from './errorHandling';
 import { TFunction } from './i18n';
+import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { decodeSystemError } from './nativeErrors';
 import { truthy } from './util';
@@ -27,12 +28,16 @@ import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import * as net from 'net';
 import * as path from 'path';
-import { allow as allowT, getUserId } from 'permissions';
+import * as permissionT from 'permissions';
 import rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import * as tmp from 'tmp';
-import { runElevated } from 'vortex-run';
-import wholocks from 'wholocks';
+import * as vortexRunT from 'vortex-run';
+import * as whoLocksT from 'wholocks';
+
+const permission: typeof permissionT = lazyRequire(() => require('permissions'));
+const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
+const wholocks: typeof whoLocksT = lazyRequire(() => require('wholocks'));
 
 const dialog = (process.type === 'renderer')
   // tslint:disable-next-line:no-var-requires
@@ -148,7 +153,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 
   let processes = [];
   try {
-    processes = wholocks(filePath);
+    processes = wholocks.default(filePath);
   } catch (err) {
     log('warn', 'failed to determine list of processes locking file',
         { filePath, error: err.message });
@@ -271,7 +276,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 
   let processes = [];
   try {
-    processes = wholocks(filePath);
+    processes = wholocks.default(filePath);
   } catch (err) {
     log('warn', 'failed to determine list of processes locking file',
         { filePath, error: err.message });
@@ -335,10 +340,9 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
       .then(() => unlockConfirm(unlockPath))
       .then(doUnlock => {
         if (doUnlock) {
-          const userId = getUserId();
+          const userId = permission.getUserId();
           return elevated((ipcPath, req: NodeRequire) => {
-            const { allow }: { allow: typeof allowT } = req('permissions');
-            return allow(unlockPath, userId as any, 'rwx');
+            return permission.allow(unlockPath, userId as any, 'rwx');
           }, { unlockPath, userId })
             .then(() => true)
             .catch(elevatedErr => {
@@ -812,7 +816,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
         });
     })
     .listen(path.join('\\\\?\\pipe', ipcPath));
-    runElevated(ipcPath, func, parameters)
+    vortexRun.runElevated(ipcPath, func, parameters)
       .catch(err => {
         if ((err.code === 5)
             || ((process.platform === 'win32') && (err.systemCode === 1223))) {
@@ -854,7 +858,7 @@ export function ensureDirWritableAsync(dirPath: string,
       if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST'].indexOf(err.code) !== -1) {
         return PromiseBB.resolve(confirm())
           .then(() => {
-            const userId = getUserId();
+            const userId = permission.getUserId();
             return elevated((ipcPath, req: NodeRequire) => {
               // tslint:disable-next-line:no-shadowed-variable
               const fs = req('fs-extra');
@@ -994,7 +998,7 @@ function raiseUACDialog<T>(t: TFunction,
   if (choice === 1) { // Retry
     return forcePerm(t, op, filePath);
   } else if (choice === 2) { // Give Permission
-    const userId = getUserId();
+    const userId = permission.getUserId();
     return PromiseBB.resolve(fs.stat(fileToAccess))
       .catch((statErr) => {
         if (statErr.code === 'ENOENT') {

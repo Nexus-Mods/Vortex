@@ -2,7 +2,7 @@ import { get as getHTTP, IncomingMessage, request as requestHTTP, ClientRequest 
 import { get as getHTTPS, request as requestHTTPS } from 'https';
 import { Readable } from 'stream';
 import * as url from 'url';
-import { DataInvalid } from './api';
+import { DataInvalid } from './CustomErrors';
 import { log } from './log';
 
 export interface IRequestOptions {

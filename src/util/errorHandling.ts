@@ -269,6 +269,71 @@ export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
     : null;
 }
 
+function showTerminateError(error: IError, state: any, source: string,
+                            allowReport: boolean, withDetails: boolean)
+                            : boolean {
+  const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
+  const buttons = ['Ignore', 'Quit'];
+  if (!withDetails) {
+    buttons.unshift('Show Details');
+  }
+  if ((allowReport !== false) && !outdated && !errorIgnored) {
+    buttons.push('Report and Quit');
+  }
+
+  const contextNow = { ...globalContext };
+
+  let detail: string = error.details;
+  if (withDetails) {
+    detail = (error.stack || '');
+    if (error.path) {
+      detail = 'File: ' + error.path + '\n' + detail;
+    }
+    if (error.code) {
+      detail = error.code + '\n' + detail;
+    }
+    if (error.details) {
+      detail = error.details + '\n' + detail;
+    }
+  }
+
+  let action = dialog.showMessageBoxSync(getVisibleWindow(), {
+    type: 'error',
+    buttons,
+    defaultId: buttons.length - 1,
+    title: 'An unrecoverable error occurred',
+    message: error.message,
+    detail,
+    noLink: true,
+  });
+
+  if (buttons[action] === 'Report and Quit') {
+    // Report
+    createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
+  } else if (buttons[action] === 'Ignore') {
+    // Ignore
+    action = dialog.showMessageBoxSync(getVisibleWindow(), {
+      type: 'error',
+      buttons: ['Quit', 'I won\'t whine'],
+      title: 'Are you sure?',
+      message: 'This error was unhandled and so there is ' +
+        'no way to know what subsequent errors this ' +
+        'may cause. You may lose data!\n' +
+        'We ask that you refrain from reporting issues ' +
+        'that happen from here on out in this session.',
+      noLink: true,
+    });
+    if (action === 1) {
+      log('info', 'user ignored error, disabling reporting');
+      errorIgnored = true;
+      return true;
+    }
+  } else if (buttons[action] === 'Show Details') {
+    showTerminateError(error, state, source, allowReport, true);
+  }
+  return false;
+}
+
 /**
  * display an error message and quit the application
  * on confirmation.
@@ -293,56 +358,16 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     allowReport = error.extension === COMPANY_ID;
   }
 
-  const contextNow = { ...globalContext };
-
   log('error', 'unrecoverable error', { error, process: process.type });
 
   try {
-    let detail = (error.stack || '');
-    if (error.path) {
-      detail = 'File: ' + error.path + '\n' + detail;
+    if (showTerminateError(error, state, source, allowReport, false)) {
+      // ignored
+      return;
     }
-    if (error.details) {
-      detail = error.details + '\n' + detail;
-    }
-    const buttons = ['Ignore', 'Quit'];
-    if ((allowReport !== false) && !outdated && !errorIgnored) {
-      buttons.push('Report and Quit');
-    }
-    let action = dialog.showMessageBoxSync(getVisibleWindow(), {
-      type: 'error',
-      buttons,
-      defaultId: buttons.length - 1,
-      title: 'An unrecoverable error occurred',
-      message: error.message,
-      detail,
-      noLink: true,
-    });
 
-    if (action === 2) {
-      // Report
-      createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
-    } else if (action === 0) {
-      // Ignore
-      action = dialog.showMessageBoxSync(getVisibleWindow(), {
-        type: 'error',
-        buttons: ['Quit', 'I won\'t whine'],
-        title: 'Are you sure?',
-        message: 'This error was unhandled and so there is ' +
-                 'no way to know what subsequent errors this ' +
-                 'may cause. You may lose data!\n' +
-                 'We ask that you refrain from reporting issues ' +
-                 'that happen from here on out in this session.',
-        noLink: true,
-      });
-      if (action === 1) {
-        log('info', 'user ignored error, disabling reporting');
-        errorIgnored = true;
-        return;
-      }
-    }
     if (error.extension !== undefined) {
-      action = dialog.showMessageBoxSync(getVisibleWindow(), {
+      const action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',

@@ -8,6 +8,16 @@ import getVortexPath from './util/getVortexPath';
 import { app, dialog } from 'electron';
 import * as path from 'path';
 
+const earlyErrHandler = (error) => {
+  dialog.showErrorBox('Unhandled error',
+    'Vortex failed to start up. This is usually caused by foreign software (e.g. Anti Virus) '
+    + 'interfering.\n\n' + error.stack);
+  app.exit(1);
+};
+
+process.on('uncaughtException', earlyErrHandler);
+process.on('unhandledRejection', earlyErrHandler);
+
 // ensure the cwd is always set to the path containing the exe, otherwise dynamically loaded
 // dlls will not be able to load vc-runtime files shipped with Vortex.
 process.chdir(getVortexPath('application'));
@@ -84,9 +94,14 @@ if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) 
 
 // Produce english error messages (windows only atm), otherwise they don't get
 // grouped correctly when reported through our feedback system
-import { SetProcessPreferredUILanguages } from 'winapi-bindings';
-if (SetProcessPreferredUILanguages !== undefined) {
-  SetProcessPreferredUILanguages(['en-US']);
+import * as winapiT from 'winapi-bindings';
+
+try {
+  // tslint:disable-next-line:no-var-requires
+  const winapi: typeof winapiT = require('winapi-bindings');
+  winapi?.SetProcessPreferredUILanguages?.(['en-US']);
+} catch (err) {
+  // nop
 }
 
 import {} from './util/requireRebuild';
@@ -94,12 +109,10 @@ import {} from './util/requireRebuild';
 import Application from './app/Application';
 
 import commandLine from './util/commandLine';
-import { UserCanceled } from './util/CustomErrors';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 import './util/monkeyPatching';
-import { truthy } from './util/util';
 // required for the side-effect!
 import './util/webview';
 

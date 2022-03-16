@@ -79,6 +79,10 @@ if ((process as any).type === 'renderer') {
         }
       });
   } // otherwise we're not in electron
+  // TODO: very weird issue, getting an EPIPE error if log is called before setupLogging
+  //   unless we do a console.log first.
+  // tslint:disable-next-line:no-console
+  console.log('logging started');
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

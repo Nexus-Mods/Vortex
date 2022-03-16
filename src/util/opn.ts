@@ -2,9 +2,17 @@ import { MissingInterpreter } from './CustomErrors';
 import { log } from './log';
 
 import Promise from 'bluebird';
-import * as winapi from 'winapi-bindings';
+import * as winapiT from 'winapi-bindings';
 
 import {ipcMain, ipcRenderer, shell} from 'electron';
+
+let winapi: typeof winapiT;
+try {
+  // tslint:disable-next-line:no-var-requires
+  winapi = require('winapi-bindings');
+} catch (err) {
+  // nop
+}
 
 // apparently the browser process is treated as the foreground process and only it
 // can bring a window to the foreground

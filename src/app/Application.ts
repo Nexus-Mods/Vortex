@@ -43,13 +43,15 @@ import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as os from 'os';
 import * as path from 'path';
-import { allow } from 'permissions';
+import * as permissionsT from 'permissions';
 import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
-import { RegGetValue } from 'winapi-bindings';
+import * as winapiT from 'winapi-bindings';
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
+const permissions = lazyRequire<typeof permissionsT>(() => require('permissions'));
+const winapi = lazyRequire<typeof winapiT>(() => require('winapi-bindings'));
 
 const STATE_CHUNK_SIZE = 128 * 1024;
 
@@ -412,6 +414,7 @@ class Application {
               terminate({
                 message: 'Startup failed',
                 details,
+                code: pretty.code,
                 stack: err.stack,
               }, this.mStore !== undefined ? this.mStore.getState() : {},
                 pretty.allowReport);
@@ -436,7 +439,7 @@ class Application {
 
     const getSystemPolicyValue = (key: string) => {
       try {
-        const res = RegGetValue('HKEY_LOCAL_MACHINE',
+        const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
           key);
         return Promise.resolve({ key, type: res.type, value: res.value});
@@ -756,7 +759,7 @@ class Application {
           created = true;
         }
         if (multiUser && created) {
-          allow(dataPath, 'group', 'rwx');
+          permissions.allow(dataPath, 'group', 'rwx');
         }
         fs.ensureDirSync(path.join(dataPath, 'temp'));
 

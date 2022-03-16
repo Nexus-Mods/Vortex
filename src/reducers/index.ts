@@ -8,7 +8,7 @@
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec, IStateVerifier,
          VerifierDrop, VerifierDropParent } from '../types/IExtensionContext';
-import { UserCanceled } from '../util/api';
+import { UserCanceled } from '../util/CustomErrors';
 import deepMerge from '../util/deepMerge';
 import * as fs from '../util/fs';
 import { log } from '../util/log';

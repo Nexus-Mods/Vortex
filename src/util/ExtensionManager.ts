@@ -62,9 +62,11 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import stringFormat from 'string-template';
-import { dynreq, runElevated } from 'vortex-run';
+import * as winapiT from 'vortex-run';
 import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
+
+const winapi = lazyRequire<typeof winapiT>(() => require('vortex-run'));
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
@@ -1909,7 +1911,7 @@ class ExtensionManager {
       });
 
       log('debug', 'running elevated', { executable, cwd, args });
-      runElevated(ipcPath, runElevatedCustomTool, {
+      winapi.runElevated(ipcPath, runElevatedCustomTool, {
         toolPath: executable,
         toolCWD: cwd,
         parameters: args,
@@ -2163,7 +2165,7 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () => dynreq(indexPath).default,
+        initFunc: () => winapi.dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
         info: {

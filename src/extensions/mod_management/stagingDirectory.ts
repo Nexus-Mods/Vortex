@@ -7,6 +7,7 @@ import { IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId, installPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -14,7 +15,9 @@ import { truthy } from '../../util/util';
 import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
 
-import { GetVolumePathName } from 'winapi-bindings';
+import * as winapiT from 'winapi-bindings';
+
+const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
 
 export const STAGING_DIR_TAG = '__vortex_staging_folder';
 
@@ -119,7 +122,7 @@ export function ensureStagingDirectory(api: IExtensionApi,
   }
   let partitionExists = true;
   try {
-    GetVolumePathName(instPath);
+    winapi.GetVolumePathName(instPath);
   } catch (err) {
     // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
     //  the only way for this error to be reported at this point is when

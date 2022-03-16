@@ -20,6 +20,7 @@ import { flatten, setdefault, truthy } from './util';
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import ZipT = require('node-7z');
+import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -383,6 +384,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
 export interface IPrettifiedError {
   message: string;
+  code?: string;
   replace?: any;
   allowReport?: boolean;
 }
@@ -527,6 +529,23 @@ export function prettifyNodeErrorMessage(err: any,
               + 'a significant security issue in your system.',
       allowReport: false,
     };
+  } else if (['ERR_DLOPEN_FAILED'].includes(err.code)) {
+    const lines: string[] = err.message.split(os.EOL);
+    if (lines.length === 2) {
+      const filePath: string = lines[1];
+      return {
+        message: 'The DLL "{{fileName}}" failed to load. This usually happens because an '
+          + 'Antivirus tool has incorrectly quarantined or locked it.',
+        replace: {
+          fileName: path.basename(filePath),
+        },
+      };
+    } else {
+      return {
+        message: 'A DLL failed to load. This usually happens because an '
+          + 'Antivirus tool has incorrectly quarantined or locked it.',
+      };
+    }
   } else if (err.code === 'UNKNOWN') {
     if (truthy(err['nativeCode'])) {
       // the if block is the original code from when native error codes were introduced
@@ -561,6 +580,7 @@ export function prettifyNodeErrorMessage(err: any,
 
   return {
     message: err.message,
+    code: err.code,
     allowReport: err['allowReport'],
   };
 }

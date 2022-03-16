@@ -7,8 +7,11 @@ import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import { getModTypeExtensions } from './modTypeExtensions';
 
-import getVersion from 'exe-version';
+import * as exeVersionT from 'exe-version';
 import * as path from 'path';
+import lazyRequire from '../../../util/lazyRequire';
+
+const exeVersion: typeof exeVersionT = lazyRequire(() => require('exe-version'));
 
 function getGameVersion(game: IGame, discovery: IDiscoveryResult) {
   // allow games to have specific functions to get at the version
@@ -19,7 +22,7 @@ function getGameVersion(game: IGame, discovery: IDiscoveryResult) {
   const getExecGameVersion = () => {
     const exePath = path.join(discovery.path, discovery.executable || game.executable());
     try {
-      const version: string = getVersion(exePath);
+      const version: string = exeVersion.default(exePath);
       return Promise.resolve(version);
     } catch (err) {
       return Promise.resolve('0.0.0');
