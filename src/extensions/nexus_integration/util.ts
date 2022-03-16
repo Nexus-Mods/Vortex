@@ -993,6 +993,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         actions: [
           { title: 'Try again', action: dismiss => {
             updateKey(api, nexus, key);
+            dismiss();
           } },
         ],
       });
@@ -1000,6 +1001,18 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     })
     .catch(ProcessCanceled, err => {
       log('debug', 'login canceled', err.message);
+      api.sendNotification({
+        id: 'nexus-login-failed',
+        type: 'error',
+        title: 'Failed to log in',
+        message: err.message,
+        actions: [
+          { title: 'Try again', action: dismiss => {
+            updateKey(api, nexus, key);
+            dismiss();
+          } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(err => {
@@ -1010,7 +1023,10 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         err, {
           actions: [{
             title: 'Retry',
-            action: dismiss => { updateKey(api, nexus, key); dismiss(); },
+            action: dismiss => {
+              updateKey(api, nexus, key);
+              dismiss();
+            },
           }],
         });
       api.store.dispatch(setUserInfo(undefined));

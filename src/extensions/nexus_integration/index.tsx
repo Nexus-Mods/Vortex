@@ -98,6 +98,20 @@ export class APIDisabled extends Error {
 const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits', 'setLogger']);
 const revalidateFuncs = new Set(['getCollectionGraph', 'getCollectionDownloadLink', 'getModInfo', 'getFileInfo']);
 
+const requestFuncs = new Set([
+  'revalidate', 'setKey', 'validateKey',
+  'getTrackedMods', 'trackMod', 'untrackMod',
+  'getGames', 'getLatestAdded', 'getLatestUpdated', 'getTrending',
+  'getEndorsements', 'getColourschemes', 'getColorschemes', 'getGameInfo', 'getRecentlyUpdatedMods',
+  'endorseMod', 'getModInfo', 'getChangelogs', 'getModFiles', 'getFileInfo', 'getDownloadURLs',
+  'getFileByMD5', 'modsByUid', 'modFilesByUid', 'fileHashes', 'getCollectionDownloadLink',
+  'createCollection', 'updateCollection', 'createOrUpdateRevision', 'editCollection',
+  'publishRevision', 'attachCollectionsToCategory', 'getCollectionGraph',
+  'getCollectionListGraph', 'getCollectionRevisionGraph', 'getRevisionUploadUrl',
+  'endorseCollection', 'rateRevision', 'getCollectionVideo', 'getOwnIssues',
+  'sendFeedback',
+]);
+
 class Disableable {
   private mDisabled = false;
   private mLastValidation: number = Date.now();
@@ -112,10 +126,15 @@ class Disableable {
     const { networkConnected } = state.session.base;
     if (prop === 'disable') {
       return () => this.mDisabled = true;
-    } else if (mgmtFuncs.has(prop) || (typeof obj[prop] !== 'function')) {
+    } else if (!requestFuncs.has(prop)) {
       return obj[prop];
     } else if (!networkConnected) {
-      return () => Promise.reject(new ProcessCanceled('network disconnected'));
+      const cErr = new Error();
+      return () => {
+        const e = new ProcessCanceled(`network disconnected: ${prop}`);
+        e.stack = cErr.stack;
+        return Promise.reject(e);
+      };
     } else if (this.mDisabled) {
       return () => Promise.reject(new APIDisabled(prop));
     } else if (prop === 'getFileByMD5') {
@@ -219,6 +238,9 @@ const requestLog = {
             return Promise.resolve(res);
           })
           .catch(err => {
+            if (typeof(err) === 'string') {
+              err = new Error(err);
+            }
             if (prop === 'setKey') {
               // don't log sensitive data
               this.logErr(prop, [], caller, err);
