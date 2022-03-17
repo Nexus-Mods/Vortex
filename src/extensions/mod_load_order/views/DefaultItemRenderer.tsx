@@ -97,7 +97,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
         {this.renderModImg()}
         <div>
           <p>{item.name}</p>
-          {(!!item?.external) && this.renderExternalBanner()}
+          {(item.external === true) && this.renderExternalBanner()}
         </div>
         <Icon className='locked-entry-logo' name='locked'/>
       </ListGroupItem>
