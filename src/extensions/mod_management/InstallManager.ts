@@ -13,6 +13,7 @@ import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
@@ -201,6 +202,82 @@ class InstallManager {
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
     });
+  }
+
+  public simulate(api: IExtensionApi, gameId: string,
+                  archiveId: string, archivePath: string,
+                  extractList?: IFileListItem[], unattended?: boolean,
+                  installChoices?: any,
+                  progress?: (entries: string[], percent: number) => void) {
+    if (this.mTask === undefined) {
+      this.mTask = new Zip();
+    }
+
+    const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
+    let extractProm: Promise<any>;
+    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
+      extractProm = Promise.reject(new ArchiveBrokenError('file type on avoidlist'));
+    } else {
+      extractProm = this.mTask.extractFull(archivePath, tempPath, {ssc: false},
+                                    progress,
+                                    () => this.queryPassword(api.store) as any)
+          .catch((err: Error) => this.isCritical(err.message)
+            ? Promise.reject(new ArchiveBrokenError(err.message))
+            : Promise.reject(err));
+    }
+
+    const fileList: string[] = [];
+
+    return extractProm
+        .then(({ code, errors }: {code: number, errors: string[] }) => {
+          log('debug', 'extraction completed');
+          if (code !== 0) {
+            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
+            const critical = errors.find(this.isCritical);
+            if (critical !== undefined) {
+              return Promise.reject(new ArchiveBrokenError(critical));
+            }
+            return this.queryContinue(api, errors, archivePath);
+          } else {
+            return Promise.resolve();
+          }
+        })
+        .then(() => walk(tempPath,
+                         (iterPath, stats) => {
+                           if (stats.isFile()) {
+                             fileList.push(path.relative(tempPath, iterPath));
+                           } else {
+                             // unfortunately we also have to pass directories because
+                             // some mods contain empty directories to control stop-folder
+                             // management...
+                             fileList.push(path.relative(tempPath, iterPath) + path.sep);
+                           }
+                           return Promise.resolve();
+                         }))
+        .then(() => {
+          if (truthy(extractList) && extractList.length > 0) {
+            return makeListInstaller(extractList, tempPath);
+          } else {
+            return this.getInstaller(fileList, gameId);
+          }
+        })
+        .then(supportedInstaller => {
+          if (supportedInstaller === undefined) {
+            throw new Error('no installer supporting this file');
+          }
+
+          const {installer, requiredFiles} = supportedInstaller;
+
+          return installer.install(
+              fileList, tempPath, gameId,
+              (perc: number) => {
+                log('info', 'progress', perc);
+                progress([], perc);
+              },
+              installChoices,
+              unattended);
+        });
+
   }
 
   /**

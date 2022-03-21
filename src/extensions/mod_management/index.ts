@@ -27,6 +27,7 @@ import {
   activeGameId,
   activeProfile,
   currentGameDiscovery,
+  downloadPathForGame,
   installPath,
   installPathForGame,
   modPathsForGame,
@@ -1196,6 +1197,18 @@ function once(api: IExtensionApi) {
     // the game changes the cycle dialog can't even be opened or it would trigger an error
     api.dismissNotification('mod-cycle-warning');
   });
+
+  api.onAsync('simulate-installer',
+    (gameId: string, archiveId: string, options: IInstallOptions) => {
+      const state = api.getState();
+      const download = state.persistent.downloads.files[archiveId];
+      const downloadPath: string = downloadPathForGame(state, download.game[0]);
+      const archivePath: string = path.join(downloadPath, download.localPath);
+      return installManager.simulate(api, gameId, archiveId, archivePath,
+                                     options.fileList, true, options.choices, () => {
+                                       // nop
+                                     });
+    });
 
   cleanupIncompleteInstalls(api);
 
