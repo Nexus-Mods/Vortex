@@ -329,7 +329,7 @@ function showTerminateError(error: IError, state: any, source: string,
       return true;
     }
   } else if (buttons[action] === 'Show Details') {
-    showTerminateError(error, state, source, allowReport, true);
+    return showTerminateError(error, state, source, allowReport, true);
   }
   return false;
 }
