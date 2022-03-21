@@ -3,7 +3,7 @@ import { setSettingsPage, startActivity, stopActivity } from '../../actions/sess
 import {
   IExtensionApi,
   IExtensionContext,
-  IModSourceOptions,
+  IInstallResult,
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
@@ -1198,16 +1198,20 @@ function once(api: IExtensionApi) {
     api.dismissNotification('mod-cycle-warning');
   });
 
-  api.onAsync('simulate-installer',
-    (gameId: string, archiveId: string, options: IInstallOptions) => {
+  api.events.on('simulate-installer',
+    (gameId: string, archiveId: string, options: IInstallOptions,
+     cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
       const downloadPath: string = downloadPathForGame(state, download.game[0]);
       const archivePath: string = path.join(downloadPath, download.localPath);
-      return installManager.simulate(api, gameId, archiveId, archivePath,
+      const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
+      return installManager.simulate(api, gameId, archivePath, tempPath,
                                      options.fileList, true, options.choices, () => {
                                        // nop
-                                     });
+                                     })
+        .then(instructions => cb(instructions, tempPath))
+        .then(() => fs.removeAsync(tempPath));
     });
 
   cleanupIncompleteInstalls(api);

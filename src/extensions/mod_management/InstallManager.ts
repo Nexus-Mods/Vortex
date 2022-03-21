@@ -205,15 +205,15 @@ class InstallManager {
   }
 
   public simulate(api: IExtensionApi, gameId: string,
-                  archiveId: string, archivePath: string,
+                  archivePath: string, tempPath: string,
                   extractList?: IFileListItem[], unattended?: boolean,
                   installChoices?: any,
-                  progress?: (entries: string[], percent: number) => void) {
+                  progress?: (entries: string[], percent: number) => void)
+                  : Promise<IInstallResult> {
     if (this.mTask === undefined) {
       this.mTask = new Zip();
     }
 
-    const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
     let extractProm: Promise<any>;
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Promise.reject(new ArchiveBrokenError('file type on avoidlist'));
