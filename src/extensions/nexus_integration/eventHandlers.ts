@@ -380,7 +380,9 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
     : (collectionSlug: string, revisionNumber: number) => Promise<IRevision> {
   return (collectionSlug: string, revisionNumber: number): Promise<IRevision> => {
     if (collectionSlug === undefined) {
-      return Promise.reject(new Error('invalid parameter, collectionSlug undefined'));
+      const err = new Error('invalid parameter, collectionSlug undefined');
+      err['attachLogOnReport'] = true;
+      return Promise.reject(err);
     } else if (!Number.isFinite(revisionNumber)) {
       return Promise.reject(
         new Error('invalid parameter, revisionNumber has to be a number, '
