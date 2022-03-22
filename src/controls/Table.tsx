@@ -914,11 +914,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private getAttributeStates(props: IProps): { [id: string]: IAttributeState } {
-    return (truthy(props.attributeState) || (this.mVisibleAttributes === undefined))
+    return ((Object.keys(props.attributeState ?? {}).length > 0)
+            || (this.mVisibleAttributes === undefined))
       ? props.attributeState
       : this.mVisibleAttributes.reduce((prev, attribute) => {
         if (attribute.isDefaultSort === true) {
           prev[attribute.id] = { sortDirection: 'asc' };
+        } else if (attribute.isDefaultSort === 'desc') {
+          prev[attribute.id] = { sortDirection: 'desc' };
         }
         return prev;
       }, {});

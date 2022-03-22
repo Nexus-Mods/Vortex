@@ -260,6 +260,7 @@ function createColumns(
       isToggleable: true,
       edit: {},
       isSortable: true,
+      isDefaultSort: 'desc',
       filter: new DateTimeFilter(),
     }, {
       id: 'filesize',
