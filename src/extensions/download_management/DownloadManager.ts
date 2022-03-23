@@ -364,7 +364,9 @@ class DownloadWorker {
     if (this.mRequest !== undefined) {
       if (this.mStallResets <= 0) {
         log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
-        return this.handleError(new StalledError());
+        const err = new StalledError();
+        err['allowReport'] = false;
+        return this.handleError(err);
       }
 
       log('info', 'download stalled, resetting connection',
