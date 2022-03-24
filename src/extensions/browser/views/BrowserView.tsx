@@ -213,16 +213,28 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderNotification = (noti: INotification, idx: number): JSX.Element => {
+  private renderNotification = (notification: INotification, idx: number): JSX.Element => {
     const { t } = this.props;
+
+    const translated: INotification = { ...notification };
+    translated.title = ((translated.title !== undefined)
+      && ((notification.localize === undefined) || (notification.localize.title !== false)))
+      ? t(translated.title, { replace: translated.replace })
+      : translated.title;
+
+    translated.message =
+      ((notification.localize === undefined) || (notification.localize.message !== false))
+        ? t(translated.message, { replace: translated.replace })
+        : translated.message;
+
     return (
       <Notification
         key={idx}
         t={t}
         collapsed={1}
-        params={noti}
+        params={translated}
       />
-);
+    );
   }
 
   private renderLoadingOverlay(): JSX.Element {
@@ -323,7 +335,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const now = Date.now();
 
     const filtered = notifications.filter(item => {
-      if ((item.type === 'activity') || (item.createdTime < opened)) {
+      if (['activity', 'silent'].includes(item.type) || (item.createdTime < opened)) {
         return false;
       }
       const displayTime = this.displayTime(item);

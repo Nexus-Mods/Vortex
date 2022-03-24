@@ -364,7 +364,9 @@ class DownloadWorker {
     if (this.mRequest !== undefined) {
       if (this.mStallResets <= 0) {
         log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
-        return this.handleError(new StalledError());
+        const err = new StalledError();
+        err['allowReport'] = false;
+        return this.handleError(err);
       }
 
       log('info', 'download stalled, resetting connection',
@@ -475,7 +477,7 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302, 307, 308].includes(response.statusCode))
+      if (([301, 302, 303, 307, 308].includes(response.statusCode))
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });

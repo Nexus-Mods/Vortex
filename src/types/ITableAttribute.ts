@@ -150,7 +150,7 @@ export interface ITableAttribute<T = any> {
    * if this is true and if the user hasn't changed column sorting yet, this column will be used
    * for sorting (ascending) as long as it's visible and no previous column had this flag set.
    */
-  isDefaultSort?: boolean;
+  isDefaultSort?: boolean | 'desc';
   /**
    * TODO: Obsolete
    * if true, the calc-function for this attribute is called whenever table data is refreshed,
