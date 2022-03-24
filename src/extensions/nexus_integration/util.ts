@@ -200,7 +200,7 @@ function startDownloadMod(api: IExtensionApi,
                           allowInstall?: boolean,
                           handleErrors: boolean = true): Promise<string> {
   log('info', 'start download mod', { urlStr, allowInstall });
-  const state = api.store.getState();
+  let state = api.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
@@ -241,7 +241,10 @@ function startDownloadMod(api: IExtensionApi,
       if (gameId === SITE_ID) {
         return downloadId;
       }
-      if (!state.settings.automation?.install) {
+      state = api.getState();
+      const download = state.persistent.downloads.files[downloadId];
+      // might be paused at this point
+      if (!state.settings.automation?.install && (download.state === 'finished')) {
         api.sendNotification({
           id: `ready-to-install-${downloadId}`,
           type: 'success',
