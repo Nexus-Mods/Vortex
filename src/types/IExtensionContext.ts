@@ -300,6 +300,8 @@ export interface IErrorOptions {
   isBBCode?: boolean;
   isHTML?: boolean;
   allowReport?: boolean;
+  // show as warning instead of error, also disables reporting
+  warning?: boolean;
   allowSuppress?: boolean;
   hideDetails?: boolean;
   replace?: { [key: string]: string };

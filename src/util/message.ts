@@ -145,15 +145,10 @@ function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string 
 const noReportErrors = ['ETIMEDOUT', 'ECONNREFUSED', 'ECONNABORTED', 'ENETUNREACH'];
 
 function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): boolean {
-  if ((options !== undefined) && (options.allowReport !== undefined)) {
-    return options.allowReport;
-  }
-  if (err instanceof ThirdPartyError) {
+  if ((options?.allowReport === false)
+      || (options?.warning === true)
+      || (err instanceof ThirdPartyError)) {
     return false;
-  }
-
-  if ((err === undefined) || (err.code === undefined)) {
-    return true;
   }
 
   return noReportErrors.indexOf(err.code) === -1;
@@ -173,7 +168,12 @@ function dataToFile(id, input: any) {
         .then(() => fs.closeAsync(fd))
         .then(() => {
           resolve(tmpPath);
-        });
+        })
+        .catch(innerErr => {
+          log('error', 'failed to write attachment data to file', { error: innerErr.message });
+          return reject(innerErr);
+        })
+        ;
     });
   });
 }
@@ -367,7 +367,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   dispatch(addNotification({
     id: options.id,
-    type: 'error',
+    type: options?.warning ? 'warning' : 'error',
     title: haveMessage ? title : undefined,
     message: haveMessage ? options.message : title,
     allowSuppress: options.allowSuppress,
