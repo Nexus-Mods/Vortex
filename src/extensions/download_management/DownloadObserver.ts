@@ -155,8 +155,14 @@ export class DownloadObserver {
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
       const prom: Promise<void> = (filePath !== undefined)
         ? fs.removeAsync(path.join(downloadPath, filePath))
-          // this is a cleanup step. If the file doesn' exist that's fine with me
-          .catch({ code: 'ENOENT' }, () => Promise.resolve())
+          .catch(cleanupErr => {
+            // this is a cleanup step. If the file doesn' exist that's fine with me
+            if ((cleanupErr instanceof UserCanceled) || (cleanupErr['code'] === 'ENOENT')) {
+              return Promise.resolve();
+            } else {
+              return Promise.reject(cleanupErr);
+            }
+          })
         : Promise.resolve();
 
       return prom

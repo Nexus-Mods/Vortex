@@ -1058,15 +1058,17 @@ class DownloadManager {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
         --unstartedChunks;
-        this.startWorker(this.mQueue[idx])
+        const queueItem = this.mQueue[idx];
+        this.startWorker(queueItem)
           .then(() => {
             --freeSpots;
           })
           .catch(err => {
-            if (this.mQueue[idx] !== undefined) {
-              this.mQueue[idx].failedCB(err);
+            const nowIdx = this.mQueue.indexOf(queueItem);
+            if (nowIdx !== -1) {
+              this.mQueue[nowIdx].failedCB(err);
             }
-            this.mQueue.splice(idx, 1);
+            this.mQueue.splice(nowIdx, 1);
 
           });
         --freeSpots;
@@ -1141,7 +1143,14 @@ class DownloadManager {
         this.mUserAgent,
         this.mThrottle);
     })
-    .catch({ code: 'EBUSY' }, () => Promise.reject(new ProcessCanceled('output file is locked')));
+    .catch((err) => {
+      delete this.mBusyWorkers[job.workerId];
+      if (err.code === 'EBUSY') {
+        return Promise.reject(new ProcessCanceled('output file is locked'));
+      } else {
+        return Promise.reject(err);
+      }
+    });
   }
 
   private makeDataCB(download: IRunningDownload) {
