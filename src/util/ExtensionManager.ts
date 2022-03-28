@@ -126,7 +126,7 @@ const showErrorBox = makeRemoteCall('show-error-box',
 
 const showMessageBox = makeRemoteCall('show-message-box',
   (electron, contents, options: Electron.MessageBoxOptions) => {
-    const window = electron.BrowserWindow.fromWebContents(contents);
+    const window = electron.BrowserWindow?.fromWebContents?.(contents);
     return electron.dialog.showMessageBox(window, options);
   });
 

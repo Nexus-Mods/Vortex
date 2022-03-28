@@ -342,7 +342,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
         if (doUnlock) {
           const userId = permission.getUserId();
           return elevated((ipcPath, req: NodeRequire) => {
-            return permission.allow(unlockPath, userId as any, 'rwx');
+            return req('permissions').allow(unlockPath, userId as any, 'rwx');
           }, { unlockPath, userId })
             .then(() => true)
             .catch(elevatedErr => {
