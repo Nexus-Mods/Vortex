@@ -507,7 +507,9 @@ class DownloadWorker {
           this.assignJob(this.mJob, newUrl);
         }, 100);
       } else {
-        this.handleError(new HTTPError(response.statusCode, response.statusMessage, jobUrl));
+        const err = new HTTPError(response.statusCode, response.statusMessage, jobUrl);
+        err['attachLogOnReport'] = true;
+        this.handleError(err);
       }
       return;
     }
