@@ -23,7 +23,7 @@ import {
   setPhaseCount,
 } from './actions/discovery';
 import {clearGameDisabled, setGameDisabled, setKnownGames} from './actions/session';
-import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
+import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
@@ -392,7 +392,11 @@ class GameModeManager {
   }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
-    this.mStore.dispatch(addDiscoveredGame(gameId, result));
+    if (result === undefined) {
+      this.mStore.dispatch(clearDiscoveredGame(gameId));
+    } else {
+      this.mStore.dispatch(addDiscoveredGame(gameId, result));
+    }
   }
 
   private onError = (title: string, message: string) => {

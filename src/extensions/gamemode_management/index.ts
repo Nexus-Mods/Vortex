@@ -29,7 +29,7 @@ import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
-import { addDiscoveredGame, setGamePath, setGameSearchPaths } from './actions/settings';
+import { addDiscoveredGame, clearDiscoveredGame, setGamePath, setGameSearchPaths } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -263,10 +263,10 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
-function installGameExtenstion(api: IExtensionApi,
-                               gameId: string,
-                               dlInfo: IExtensionDownloadInfo)
-                               : Promise<void> {
+function installGameExtension(api: IExtensionApi,
+                              gameId: string,
+                              dlInfo: IExtensionDownloadInfo)
+                              : Promise<void> {
   if (dlInfo !== undefined) {
     log('info', 'installing missing game extension', { gameId });
     const name = dlInfo.name.replace(/^Game: /, '');
@@ -320,35 +320,74 @@ function awaitProfileSwitch(api: IExtensionApi): Promise<string> {
 }
 
 function removeDisappearedGames(api: IExtensionApi,
+                                discoveredGames: Set<string>,
                                 gameStubs?: { [gameId: string]: IExtensionDownloadInfo })
                                 : Promise<void> {
-  log('info', 'remove disappeared games');
   let state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
   let gameMode = activeGameId(state);
   const managedGames = new Set(Object.values(state.persistent.profiles).map(prof => prof.gameId));
 
+  log('info', 'remove disappeared games');
+
+  const assertRequiredFiles = (requiredFiles: string[], gameId: string): Promise<void> => {
+    if (requiredFiles === undefined) {
+      return Promise.resolve();
+    }
+    return Promise.map(requiredFiles,
+          file => fsExtra.stat(path.join(discovered[gameId].path, file)))
+          .then(() => undefined)
+          .catch(err => {
+            if (err.code === 'ENOENT') {
+              return Promise.reject(err);
+            } else {
+              return Promise.resolve();
+            }
+          });
+  };
+
   return Promise.map(
     Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
     gameId => {
       const stored = known.find(iter => iter.id === gameId);
-      return stored === undefined
-        ? Promise.resolve()
-        : Promise.map(stored.requiredFiles,
-          file => fsExtra.stat(path.join(discovered[gameId].path, file)))
-          .then(() => undefined)
-          .catch(err => {
-            if (err.code === 'EPERM') {
-              // ignore permission errors because this is "normal" for games installed
-              // through the microsoft store.
-              return;
+      return fsExtra.stat(discovered[gameId].path)
+        .then(() => assertRequiredFiles(stored?.requiredFiles, gameId))
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            return Promise.reject(err);
+          }
+          // if we can't stat the game directory for any other reason than it being missing
+          // (almost certainly permission error) we just assume the game is installed and
+          // can be launched through the store because that's how it works with the xbox store
+          // and we have to support that.
+          return Promise.resolve();
+        })
+        .catch(err => {
+          const gameName = stored?.name ?? discovered[gameId].name;
+          if (discoveredGames.has(gameId)) {
+            log('info', 'game no longer found',
+              { gameName: gameName ?? 'Unknown', reason: err.message });
+            if (gameName !== undefined) {
+              api.sendNotification({
+                type: 'info',
+                message: api.translate('{{gameName}} no longer found',
+                  { replace: { gameName } }),
+              });
             }
+          } else {
+            log('debug', 'game discovery found invalid game path', {
+              gameName,
+              path: discovered[gameId].path,
+            });
+          }
 
-            if (gameId === gameMode) {
-              api.store.dispatch(setNextProfile(undefined));
-            }
-          });
+          if (gameId === gameMode) {
+            api.store.dispatch(setNextProfile(undefined));
+          }
+
+          api.store.dispatch(clearDiscoveredGame(gameId));
+        });
     })
     .then(() => awaitProfileSwitch(api))
     .then(() => {
@@ -365,7 +404,7 @@ function removeDisappearedGames(api: IExtensionApi,
           if (knownGameIds.has(gameId)) {
             return Promise.resolve();
           }
-          return installGameExtenstion(api, gameId, gameStubs[gameId]);
+          return installGameExtension(api, gameId, gameStubs[gameId]);
         }))
           .then(() => Promise.resolve());
       } else {
@@ -558,16 +597,24 @@ function init(context: IExtensionContext): boolean {
     if ($.gameModeManager !== undefined) {
       // we need the state from before the discovery so can determine which games were discovered
       const oldState: IState = context.api.getState();
+      const preDiscovered = oldState.settings.gameMode.discovered;
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
-          const discoveredGames = oldState.settings.gameMode.discovered;
-          const knownGames = oldState.session.gameMode.known;
-          const newGames = gameIds.filter(id =>
-            (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
-
+          const preDiscoveredIds = new Set(
+            Object.keys(preDiscovered).filter(gameId => preDiscovered[gameId].path !== undefined));
+          return removeDisappearedGames(context.api, preDiscoveredIds).then(() => gameIds);
+        })
+        .then((gameIds: string[]) => {
           const newState = context.api.getState();
+          const postDiscovered = newState.settings.gameMode.discovered;
+          const knownGames = newState.session.gameMode.known;
+
+          const newGames = gameIds.filter(id =>
+            (preDiscovered[id]?.path === undefined)
+            && (postDiscovered[id]?.path !== undefined));
+
           const numDiscovered =
-            Object.values(newState.settings.gameMode.discovered)
+            Object.values(postDiscovered)
               .filter(iter => iter.path !== undefined).length;
 
           let message =
@@ -584,8 +631,8 @@ function init(context: IExtensionContext): boolean {
               .join('\n');
           }
 
-          removeDisappearedGames(context.api);
           context.api.sendNotification({
+            id: 'discovery-completed',
             type: 'success',
             title: 'Discovery completed',
             message,
@@ -662,24 +709,40 @@ function init(context: IExtensionContext): boolean {
         events.emit('gamemode-activated', gameMode);
       });
     $.gameModeManager.attachToStore(store);
-    $.gameModeManager.startQuickDiscovery()
-      .then(() => removeDisappearedGames(context.api, $.extensionStubs.reduce((prev, stub) => {
-        prev[stub.game.id] = stub.ext;
-        return prev;
-      }, {})));
+    {
+      const { discovered } = store.getState().settings.gameMode;
+      const discoveredGames = new Set(
+        Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
+      $.gameModeManager.startQuickDiscovery()
+        .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
+          .reduce((prev, stub) => {
+            prev[stub.game.id] = stub.ext;
+            return prev;
+          }, {})));
+    }
 
     // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
     //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
-    events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
+    events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) => {
+      const { discovered } = store.getState().settings.gameMode;
+      const discoveredGames = new Set(
+        Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
+
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api)
+          return removeDisappearedGames(context.api, discoveredGames)
             .then(() => {
               if (cb !== undefined) {
                 cb(gameIds);
               }
             });
-        }));
+        })
+        .catch(err => {
+          err['attachLogOnReport'] = true;
+          context.api.showErrorNotification('Discovery failed', err);
+          cb?.(Array.from(discoveredGames));
+        });
+    });
     context.api.onAsync('discover-tools', (gameId: string) =>
       $.gameModeManager.startToolDiscovery(gameId));
     events.on('start-discovery', () => {

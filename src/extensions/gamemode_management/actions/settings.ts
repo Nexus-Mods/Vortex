@@ -14,6 +14,9 @@ export const addDiscoveredGame =
   safeCreateAction('ADD_DISCOVERED_GAME',
   (id: string, result: IDiscoveryResult) => ({ id, result }));
 
+// undiscover game that's no longer found
+export const clearDiscoveredGame = safeCreateAction('UNDISCOVER_GAME', (id: string) => ({ id }));
+
 /**
  * override the path of a game that's already been discovered
  */
