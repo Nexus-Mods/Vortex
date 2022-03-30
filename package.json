@@ -165,7 +165,7 @@
     "jest-cli": "^27.4.7",
     "json-loader": "^0.5.7",
     "license-checker": "^25.0.1",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.6",
     "prettier": "^2.0.5",
     "react-docgen-typescript-loader": "^3.6.0",
     "react-shallow-testutils": "^3.0.1",
