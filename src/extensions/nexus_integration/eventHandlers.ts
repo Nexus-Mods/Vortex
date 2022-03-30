@@ -12,10 +12,12 @@ import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
 
+import { resolveCategoryName } from '../category_management';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
+import { IModListItem } from '../news_dashlet/types';
 
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
@@ -29,7 +31,8 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseThing, processErrorMess
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
-                IIssue, IRating, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+                IIssue, IModInfo, IRating, IRevision, NexusError,
+                RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -627,6 +630,46 @@ export function onEndorseDirect(api: IExtensionApi, nexus: Nexus) {
           endorsedStatus: EndorsedStatus): Promise<EndorsedStatus> => {
     return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus)
       .then(res => res as EndorsedStatus);
+  };
+}
+
+function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): IModListItem {
+  return {
+    name: input.name,
+    author: input.uploaded_by,
+    category: resolveCategoryName(input.category_id.toString(), state),
+    summary: input.summary,
+    imageUrl: input.picture_url,
+    link: `${NEXUS_BASE_URL}/${input.domain_name}/mods/${input.mod_id}`,
+    extra: [
+      { id: 'endorsements', value: input.endorsement_count },
+    ],
+  };
+}
+
+export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string): Promise<{ id: string, encoding: string, mods: IModListItem[] }> => {
+    return Promise.resolve(nexus.getLatestAdded(gameId))
+      .then(mods => ({
+        id: 'nexus',
+        encoding: 'bbcode',
+        mods: mods
+          .filter(mod => !mod.contains_adult_content && mod.available)
+          .map(mod => extractLatestModInfo(api.getState(), gameId, mod)),
+      }));
+  };
+}
+
+export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string): Promise<{ id: string, encoding: string, mods: IModListItem[] }> => {
+    return Promise.resolve(nexus.getTrending(gameId))
+      .then(mods => ({
+        id: 'nexus',
+        encoding: 'bbcode',
+        mods: mods
+          .filter(mod => !mod.contains_adult_content && mod.available)
+          .map(mod => extractLatestModInfo(api.getState(), gameId, mod)),
+      }));
   };
 }
 

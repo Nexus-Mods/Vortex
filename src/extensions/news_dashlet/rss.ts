@@ -14,6 +14,7 @@ export interface IFeedMessage {
   title: string;
   summary: string;
   description: string;
+  categories?: string[];
   link: string;
   titleRendered?: React.ReactChild[];
   descriptionShortened?: React.ReactChild;

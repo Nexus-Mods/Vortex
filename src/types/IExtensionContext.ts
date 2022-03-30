@@ -655,7 +655,7 @@ export interface IExtensionApi {
    * after all these Promises are resolved.
    * If the event handlers return a value, this returns an array of results
    */
-  emitAndAwait: (eventName: string, ...args: any[]) => Promise<any>;
+  emitAndAwait: <T = any>(eventName: string, ...args: any[]) => Promise<T>;
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter

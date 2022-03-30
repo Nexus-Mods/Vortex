@@ -20,5 +20,7 @@
   "Install All_plural": "Install All",
   "{{ count }} notification is being suppressed_plural": "{{ count }} notifications are being suppressed",
   "{{ count }} extensions will be updated": "An extension will be updated",
-  "{{ count }} extensions will be updated_plural": "{{ count }} extensions will be updated"
+  "{{ count }} extensions will be updated_plural": "{{ count }} extensions will be updated",
+  "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?": "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?",
+  "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?_plural": "The mods you {{enabled}} depend on other mods, do you want to {{enable}} those as well?"
 }
