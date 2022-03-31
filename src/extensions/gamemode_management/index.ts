@@ -241,6 +241,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
                 hidden: false,
                 environment: game.environment,
                 executable: (exe !== game.executable()) ? exe : undefined,
+                pathSetManually: true,
               }));
               resolve();
             })
