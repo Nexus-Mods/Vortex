@@ -166,7 +166,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         >
           <Modal.Header>
             <Modal.Title>{this.iconForType(dialog.type)}{' '}{
-              t(dialog.title, { replace: dialog.content.parameters })
+              t(dialog.title,
+                { replace: dialog.content.parameters, count: dialog.content.parameters?.count })
             }</Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -192,7 +193,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       .split('\n')
       .map((line: string) => line
         .split('\t')
-        .map((block: string) => t(block, { replace: parameters }))
+        .map((block: string) => t(block, { replace: parameters, count: parameters?.count }))
         .join(' '))
       .join('\n');
   }
@@ -210,7 +211,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.text) {
       controls.push((
         <div key='dialog-content-text' className='dialog-content-text'>
-          {t(content.text, { replace: content.parameters })}
+          {t(content.text,
+             { replace: content.parameters, count: content.parameters?.count })}
         </div>
       ));
     }
@@ -218,7 +220,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.bbcode !== undefined) {
       controls.push((
         <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
-          {bbcode(t(content.bbcode, { replace: content.parameters }),
+          {bbcode(t(content.bbcode,
+                    { replace: content.parameters, count: content.parameters?.count }),
             content.options?.bbcodeContext)}
         </div>
       ));
@@ -227,7 +230,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.md !== undefined) {
       controls.push((
         <div key='dialog-content-markdown' className='dialog-content-markdown'>
-          <ReactMarkdown>{t(content.md, { replace: content.parameters })}</ReactMarkdown>
+          <ReactMarkdown>
+            {t(content.md,
+              { replace: content.parameters, count: content.parameters?.count })}
+          </ReactMarkdown>
         </div>
       ));
     }
@@ -413,9 +419,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private renderCheckbox = (checkbox: ICheckbox, content: IDialogContent) => {
     const { t } = this.props;
     const text = checkbox.bbcode !== undefined
-      ? bbcode(t(checkbox.bbcode, { replace: content.parameters }),
+      ? bbcode(t(checkbox.bbcode,
+                 { replace: content.parameters, count: content.parameters?.count }),
                content.options?.bbcodeContext)
-      : t(checkbox.text);
+      : t(checkbox.text, { replace: content.parameters, count: content.parameters?.count });
     return (
       <Checkbox
         id={checkbox.id}

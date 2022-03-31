@@ -284,9 +284,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const { discoveredGames, discoveredTools, gameMode, knownGames } = props;
 
     const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
-    const discoveredGame = discoveredGames[gameMode];
+    const discoveredGame: IDiscoveryResult = discoveredGames[gameMode];
 
-    if (game === undefined || discoveredGame === undefined) {
+    if (game === undefined || discoveredGame?.path === undefined) {
       return [];
     }
 

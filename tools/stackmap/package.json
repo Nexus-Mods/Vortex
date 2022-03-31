@@ -70,12 +70,13 @@
 		"test": "yarn run compile && node ./node_modules/vscode/bin/test"
 	},
 	"resolutions": {
-		"**/vscode/mocha/mkdirp/minimist": "1.2.5"
+		"**/vscode/mocha/mkdirp/minimist": "1.2.6"
 	},
 	"dependencies": {
 		"copy-paste": "notatestuser/node-copy-paste",
 		"copy-paste-win32fix": "^1.4.0",
 		"fs-extra": "^8.0.1",
+		"minimist": "^1.2.6",
 		"semver": "^6.1.0",
 		"source-map": "^0.7.3",
 		"stack-trace": "^0.0.10"

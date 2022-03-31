@@ -119,6 +119,18 @@ export function quickDiscovery(knownGames: IGame[],
             : gamePath;
 
           prom
+            .then(resolvedPath => resolvedPath === undefined
+              ? Promise.resolve(undefined)
+              : fs.statAsync(resolvedPath)
+                .then(() => resolvedPath)
+                .catch(err => {
+                  if (err.code === 'ENOENT') {
+                    log('info', 'rejecting game discovery, directory doesn\'t exist',
+                        resolvedPath);
+                    return Promise.resolve(undefined);
+                  }
+                  return Promise.reject(err);
+                }))
             .then(resolvedPath => {
               if (!truthy(resolvedPath)) {
                 return resolve(undefined);
@@ -137,6 +149,7 @@ export function quickDiscovery(knownGames: IGame[],
                 .then(() => resolve(game.id));
             })
             .catch((err) => {
+              onDiscoveredGame(game.id, undefined);
               if (err.message !== undefined) {
                 log('debug', 'game not found',
                   { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });

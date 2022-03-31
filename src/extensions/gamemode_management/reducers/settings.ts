@@ -29,6 +29,12 @@ export const settingsReducer: IReducerSpec = {
         return res;
       }
     },
+    [actions.clearDiscoveredGame as any]: (state, payload) => {
+      const { id } = payload;
+      // if the path was set manually, reset that as well
+      state = deleteOrNop(state, ['discovered', id, 'pathSetManually']);
+      return deleteOrNop(state, ['discovered', id, 'path']);
+    },
     [actions.setGamePath as any]: (state, payload) =>
       setOrNop(
         setOrNop(state, ['discovered', payload.gameId, 'path'], payload.gamePath),

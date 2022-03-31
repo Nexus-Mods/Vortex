@@ -20,7 +20,7 @@ import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { batchDispatch, bytesToString, truthy } from '../../../util/util';
+import { batchDispatch, bytesToString, toPromise, truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import calculateFolderSize from '../../../util/calculateFolderSize';
@@ -1162,18 +1162,25 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return setModsEnabled(this.context.api, profileId, modIds, enabled);
   }
 
+  private installIfNecessary(modId: string) {
+    const { modsWithState } = this.state;
+
+    if (modsWithState[modId].state === 'downloaded') {
+      return toPromise(cb =>
+        this.context.api.events.emit('start-install-download', modId, false, cb));
+    } else {
+      return Promise.resolve();
+    }
+  }
+
   private enableSelected = (modIds: string[]) => {
-    const { profileId, mods, modState } = this.props;
+    const { mods, modState } = this.props;
 
     const filtered = modIds.filter(modId =>
       (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
 
-    const modsToEnable: string[] = [];
-    Promise.all(filtered.map(modId => this.setModState(profileId, modId, 'enabled',
-      (modToEnable: string) => {
-        modsToEnable.push(modToEnable);
-      })))
-    .then(() => this.setModsEnabled(modsToEnable, true));
+    Promise.all(filtered.map(modId => this.installIfNecessary(modId)))
+    .then(() => this.setModsEnabled(filtered, true));
   }
 
   private disableSelected = (modIds: string[]) => {
