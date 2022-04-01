@@ -31,6 +31,10 @@ function nextDirection(direction: SortDirection): SortDirection {
   }
 }
 
+function nop() {
+  // nop
+}
+
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   private mMinWidth: number = -1;
   private mRef: HTMLDivElement = null;
@@ -64,7 +68,11 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
             style={{ display: 'flex', flexDirection: 'row' }}
             onClick={this.cycleDirection}
           >
-            <p style={{ margin: 0 }}>{preT(t, attribute.name)}</p>
+            {(attribute.help !== undefined)
+              ? (<a className='fake-link' onClick={nop} title={preT(t, attribute.help)}>
+                {preT(t, attribute.name)}
+              </a>
+              ) : <p style={{ margin: 0 }}>{preT(t, attribute.name)}</p>}
             <div className='cell-controls'>
               {attribute.isSortable ? this.renderSortIndicator() : <div/>}
               {attribute.isGroupable ? this.renderGroupIndicator() : null}
