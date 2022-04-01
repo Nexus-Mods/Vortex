@@ -11,7 +11,7 @@ import { setDashletEnabled } from '../dashboard/actions';
 import { resetSteps } from './actions';
 import { IStep } from './steps';
 
-export type onCardClick = (payload: IonCardClickPayload) => void;
+export type OnCardClick = (payload: IonCardClickPayload) => void;
 
 export interface IonCardClickPayload {
   title: string;
@@ -30,8 +30,10 @@ function OnBoardingCard(props: {
   count: number,
   id: string,
   isCompleted: boolean,
-  onClick: onCardClick,
+  onClick: OnCardClick,
 }) {
+  const { t } = useTranslation();
+
   const { count, desc, img, lenght, onClick, title, video, id, isCompleted } = props;
 
   const openModal = () => {
@@ -53,12 +55,12 @@ function OnBoardingCard(props: {
         <div className='onboarding-card-title-wrapper'>
           <CounterWithCheckbox count={count} isChecked={isCompleted} />
           <div className='onboarding-card-title-container'>
-            <span className='onboarding-card-title'>{title}</span>
+            <span className='onboarding-card-title'>{t(title)}</span>
             <span className='onboarding-card-lenght'>{lenght}</span>
           </div>
         </div>
         <span className='onboarding-card-desc'>
-          {desc}
+          {t(desc)}
         </span>
       </div>
     </div>
@@ -84,7 +86,7 @@ function CounterWithCheckbox(props: { isChecked: boolean, count: number }) {
 }
 
 function OnBoardingDashletWrapper(props: {
-  onCardClick: onCardClick,
+  onCardClick: OnCardClick,
   steps: IStep[],
   getMoreMods: () => {},
 }) {
@@ -148,10 +150,10 @@ function CompletedOnBoardingDashlet(props: {getMoreMods: () => {}}) {
     <Dashlet title='' className='dashlet-onboarding-completed'>
       <div className='onboarding-completed-header'>
         <h1>
-          🎉 Congratulations, you've made it!
+          &#127881; {t(`Congratulations, you've made it!`)}
         </h1>
         <h4>
-          Now you are all set up to enjoy Vortex and start modding!
+          {t(`Now you are all set up to enjoy Vortex and start modding!`)}
         </h4>
       </div>
       <div className='onboarding-completed-body'>
