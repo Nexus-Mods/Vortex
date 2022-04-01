@@ -1,6 +1,7 @@
 const program = require('commander');
-const fs = require('fs-extra');
+const fs = require('fs');
 const _ = require('lodash');
+const mdi = require('@mdi/js')
 const path = require('path');
 const format = require('string-template');
 const xml2js = require('xml2js');
@@ -65,18 +66,34 @@ function sanitize(svg, iconCfg) {
   return svg;
 }
 
-function extractIcon(iconPath, iconCfg) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(iconPath, (err, data) => {
-      xml2js.parseString(data.toString(), (err, result) => {
-        if (err !== null) {
-          return reject(err);
-        }
+async function extractIcon(iconPath, iconCfg) {
+  const dat = await fs.promises.readFile(iconPath, { encoding: 'utf8' });
+  const result = await xml2js.parseStringPromise(dat.toString());
+  return sanitize(result.svg, iconCfg);
+}
 
-        resolve(sanitize(result.svg, iconCfg));
-      });
-    });
+function extractMDI(iconId, mdiId) {
+  return Promise.resolve({
+    $: {
+      id: `icon-${iconId}`,
+      viewBox: '0 0 24 24',
+    },
+    path: {
+      $: {
+        d: mdi[mdiId],
+      },
+    },
   });
+}
+
+async function extractLegacy(iconId, fullPath, iconcfg) {
+  try {
+    const icon = await extractIcon(fullPath, iconcfg)
+    icon.$.id = 'icon-' + iconId;
+    return icon;
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 function processConfig(basePath, config) {
@@ -86,12 +103,20 @@ function processConfig(basePath, config) {
     const iconCfg = typeof config.icons[iconId] === 'string'
       ? { path: config.icons[iconId] }
       : config.icons[iconId];
-    return extractIcon(path.join(basePath, format(iconCfg.path, config.variables) + '.svg'), iconCfg)
-      .then(icon => {
-        icon.$.id = 'icon-' + iconId;
-        symbol.push(icon);
-      });
-    }))
+    const iconDat = (iconCfg.source === 'mdi')
+      ? extractMDI(iconId, iconCfg.value)
+      : extractLegacy(iconId, path.join(basePath, format(iconCfg.path, config.variables) + '.svg'), iconCfg)
+    return iconDat
+    .then(icon => {
+      symbol.push(icon);
+      return Promise.resolve();
+    })
+    .catch(err => {
+      console.error('failed to extract icon', iconId, err.message);
+      return Promise.resolve();
+    })
+  }))
+
     .then(() => {
       const builder = new xml2js.Builder();
       const outputPath = path.resolve('..', 'assets', 'fonts', 'icons.svg');
@@ -112,21 +137,32 @@ function processConfig(basePath, config) {
     });
 }
 
-function main() {
-  const params = commandLine();
-  return new Promise((resolve, reject) => {
-    fs.readFile(params.config || 'iconconfig.json', (err, data) => {
-      if (err !== null) {
-        console.error('failed', require('util').inspect(err));
-        resolve(1);
-      } else {
-        processConfig(params.base || '../icons', JSON.parse(data.toString()))
-          .then(() => {
-            resolve(0);
-          });
-      }
-    });
-  });
+function mergeIcons(legacy,  material) {
+  return {
+    variables: legacy.variables,
+    icons: {
+      ...legacy.icons,
+      ...material,
+    },
+  };
 }
 
-main().then(exitCode => process.exit(exitCode));
+async function main() {
+  const params = commandLine();
+
+  try {
+    const legacyIcons =
+      await fs.promises.readFile(params.config || 'iconconfig.json', { encoding: 'utf8' });
+    const materialIcons =
+      await fs.promises.readFile(params.mdiconfig || 'mdiconfig.json', { encoding: 'utf8' });
+
+    const data = mergeIcons(JSON.parse(legacyIcons), JSON.parse(materialIcons));
+    processConfig(params.base || '../icons', data);
+
+  } catch (err) {
+    console.error('failed', require('util').inspect(err));
+    process.exit(1);
+  }
+}
+
+main();

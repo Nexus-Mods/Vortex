@@ -1,0 +1,9 @@
+{
+  "uic-sample": {
+    "source": "mdi",
+    "value": "mdiAnchor",
+    "metadata": {
+      "mdiVersion": "1.0.0"
+    }
+  }
+}

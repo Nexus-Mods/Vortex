@@ -1500,6 +1500,11 @@
     semver "^7.3.2"
     tar "^6.0.5"
 
+"@mdi/js@6.6.96":
+  version "6.6.96"
+  resolved "https://registry.yarnpkg.com/@mdi/js/-/js-6.6.96.tgz#119f79fa9327359421167a7d4b8bde26e84702ce"
+  integrity sha512-ke9PN5DjPCOlMfhioxeZYADz8Yiz6v47W0IYRza01SSJD7y1EwESVpwFnnFUso+eCoWtE1CO9cTIvQF6sEreuA==
+
 "@msgpack/msgpack@^2.7.0":
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.7.0.tgz#3a0fbe4e0406f6576895f990857e19da97376f18"
