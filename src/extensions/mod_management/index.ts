@@ -276,13 +276,15 @@ function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
     .filter(modId => profile.modState[modId].enabled);
 
   const enabledMods = enabledModIds.reduce((prev: { [modId: string]: IMod }, modId: string) => {
-    prev[modId] = mods[modId];
+    if (mods[modId] !== undefined) {
+      prev[modId] = mods[modId];
+    }
     return prev;
   }, {});
 
   const incompatibilities = enabledModIds.reduce((prev, modId) => {
     const conflictRules =
-      (enabledMods[modId].rules ?? []).filter(rule => rule.type === 'conflicts');
+      (enabledMods[modId]?.rules ?? []).filter(rule => rule.type === 'conflicts');
 
     return [].concat(prev, conflictRules
       .map(rule => findModByRef(rule.reference, enabledMods))
