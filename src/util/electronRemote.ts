@@ -95,9 +95,9 @@ function makeRemoteCall<T, ArgsT extends Arr>(id: string,
   if (ipcRenderer !== undefined) {
     return (...args: ArgsT) => {
       const callId = shortid();
-      ipcRenderer.send(IPC_CHANNEL, JSON.stringify({ id, args, callId }));
       return new Promise<T>((resolve, reject) => {
         outstandingCalls[callId] = { resolve, reject };
+        ipcRenderer.send(IPC_CHANNEL, JSON.stringify({ id, args, callId }));
       });
     };
   } else {
