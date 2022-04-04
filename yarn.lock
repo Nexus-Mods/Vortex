@@ -5188,10 +5188,10 @@ electron-updater@^4.2.0:
     lodash.isequal "^4.5.0"
     semver "^7.3.5"
 
-electron@^16.0.0:
-  version "16.2.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-16.2.0.tgz#89f1c29c7581046c61e3d488d1fa05afa12c17b2"
-  integrity sha512-AJOvd0725vYTynviokL97XQ9SEIqoSLWBaJYFnMuoXbg89g0kLkCnMPp5Nx038Xh4emHuHmIAMwU+iR/OQ2QCQ==
+electron@^16.2.1:
+  version "16.2.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-16.2.1.tgz#3cb87df7354fc02d075f05342d70f3eb8be37a8b"
+  integrity sha512-hkVZuV+Dei67eSl/xxCykZXNcHJS5OGVZI0QdSgEoSsUxLWBohD2E85XFrkNQ0A2W2HcYNausrog+It7U8Af7w==
   dependencies:
     "@electron/get" "^1.13.0"
     "@types/node" "^14.6.2"
