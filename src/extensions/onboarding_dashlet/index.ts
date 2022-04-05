@@ -32,6 +32,7 @@ function init(context: IExtensionContext): boolean {
           props: () => ({
             url: video,
             id,
+            isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id]
           }),
         });
       },

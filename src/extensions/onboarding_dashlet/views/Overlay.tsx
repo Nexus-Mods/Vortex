@@ -5,7 +5,7 @@ import Icon from '../../../controls/Icon';
 import Webview from '../../../controls/Webview';
 import opn from '../../../util/opn';
 import { completeStep } from '../actions';
-
+import { useTranslation } from 'react-i18next';
 const onNewWindow = (ytUrl: string) => {
   // Small hack to avoid blank page when clicking the subscibe button
   // the blank page is: `https://www.youtube.com/post_login`
@@ -15,9 +15,14 @@ const onNewWindow = (ytUrl: string) => {
   opn(ytUrl).catch(() => null);
 };
 
-export function Overlay(props: { url: string, id: string, closeOverlay: () => void }) {
-  const { url, id, closeOverlay } = props;
-
+export function Overlay(props: {
+  url: string,
+  id: string,
+  isCompleted: boolean,
+  closeOverlay: () => void
+}) {
+  const { url, id, closeOverlay, isCompleted } = props;
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const onCompleteStep = () => {
@@ -28,7 +33,7 @@ export function Overlay(props: { url: string, id: string, closeOverlay: () => vo
   return (
     <div className='onboarding-overlay-content'>
       <Webview
-        style={{width: '100%', height: 335}}
+        style={{ width: '100%', height: 335 }}
         src={url}
         onNewWindow={onNewWindow}
         title='YouTube video player'
@@ -40,7 +45,7 @@ export function Overlay(props: { url: string, id: string, closeOverlay: () => vo
             className='onboarding-overlay-button-icon'
             name='completed'
           />
-          Mark as complete
+          {isCompleted ? t('Marked as complete') : t('Mark as complete')}
         </Button>
       </div>
     </div>
