@@ -16,7 +16,7 @@ import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy } from '../../util/util';
+import { batchDispatch, decodeHTML, nexusModsURL, Section, toPromise, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -665,6 +665,7 @@ function doDownload(api: IExtensionApi, url: string): Promise<string> {
 
 function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   if (sel.apiKey(api.store.getState()) === undefined) {
+    log('info', 'user not logged in, triggering log in dialog');
     return api.showDialog('info', 'Not logged in', {
         text: 'Nexus Mods requires Vortex to be logged in for downloading',
       }, [
@@ -673,15 +674,7 @@ function ensureLoggedIn(api: IExtensionApi): Promise<void> {
       ])
       .then(result => {
         if (result.action === 'Log in') {
-          return new Promise((resolve, reject) => {
-              requestLogin(api, (err) => {
-                if (err !== null) {
-                  return reject(err);
-                } else {
-                  return resolve();
-                }
-              });
-            });
+          return toPromise(cb => requestLogin(api, cb));
         } else {
           return Promise.reject(new UserCanceled());
         }
