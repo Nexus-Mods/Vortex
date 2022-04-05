@@ -1165,7 +1165,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private installIfNecessary(modId: string) {
     const { modsWithState } = this.state;
 
-    if (modsWithState[modId].state === 'downloaded') {
+    if (modsWithState[modId]?.state === 'downloaded') {
       return toPromise(cb =>
         this.context.api.events.emit('start-install-download', modId, false, cb));
     } else {
