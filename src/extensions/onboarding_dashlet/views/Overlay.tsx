@@ -18,10 +18,11 @@ const onNewWindow = (ytUrl: string) => {
 export function Overlay(props: {
   url: string,
   id: string,
+  desc: string,
   isCompleted: boolean,
   closeOverlay: () => void
 }) {
-  const { url, id, closeOverlay, isCompleted } = props;
+  const { url, id, closeOverlay, desc, isCompleted } = props;
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -32,9 +33,12 @@ export function Overlay(props: {
 
   return (
     <div className='onboarding-overlay-content'>
+      <p>
+        {desc}
+      </p>
       <Webview
         style={{ width: '100%', height: 335 }}
-        src={url}
+        src={`${url}?autoplay=1`}
         onNewWindow={onNewWindow}
         title='YouTube video player'
         allowFullScreen
@@ -45,7 +49,7 @@ export function Overlay(props: {
             className='onboarding-overlay-button-icon'
             name='completed'
           />
-          {isCompleted ? t('Marked as complete') : t('Mark as complete')}
+          {isCompleted ? t('Completed') : t('Mark as complete')}
         </Button>
       </div>
     </div>

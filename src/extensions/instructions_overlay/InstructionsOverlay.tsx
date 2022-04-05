@@ -153,7 +153,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
           </FlexLayout>
         </FlexLayout.Fixed>
         <FlexLayout.Fixed className='instructions-overlay-mod-name'>
-          <h3>{overlay.title}</h3>
+          {overlay.title ? <h3>{overlay.title}</h3> : null}
         </FlexLayout.Fixed>
         <FlexLayout.Fixed style={{ overflowY: 'auto' }}>
           {open

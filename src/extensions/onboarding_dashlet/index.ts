@@ -24,12 +24,13 @@ function init(context: IExtensionContext): boolean {
           context.api.store.dispatch(dismissOverlay(x));
         });
 
-        context.api.ext.showOverlay(id, desc, Overlay, pos, {
+        context.api.ext.showOverlay(id, undefined, Overlay, pos, {
           containerTitle: title,
           showIcon: false,
           className: 'overlay-onboarding',
           disableCollapse: true,
           props: () => ({
+            desc,
             url: video,
             id,
             isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id]
