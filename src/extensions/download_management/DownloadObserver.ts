@@ -301,7 +301,7 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult,
                                  allowInstall: boolean) {
-    const download = this.mApi.store.getState().persistent.downloads.files?.[id];
+    const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
       // The only way for the download entry to be missing at this point
       //  is if the user had canceled the download which would mean it was
@@ -344,7 +344,8 @@ export class DownloadObserver {
               this.mApi.store.dispatch(setDownloadModInfo(id, key, flattened[key])));
 
           const state = this.mApi.getState();
-          if (state.settings.automation?.install && allowInstall) {
+          if ((state.settings.automation?.install && allowInstall)
+              || (download.modInfo['startedAsUpdate'] === true)) {
             this.mApi.events.emit('start-install-download', id);
           }
 
