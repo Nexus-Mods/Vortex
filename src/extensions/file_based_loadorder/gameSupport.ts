@@ -25,8 +25,13 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
   //  game extension but an unofficial load order registration so checking if
   //  game.contributed === undefined is not sufficient - we need to read the
   //  info.json file of the extension that registers the LO page.
-  const gameExtInfo = JSON.parse(
-    fs.readFileSync(path.join(extPath, 'info.json'), { encoding: 'utf8' }));
+  let gameExtInfo;
+  try {
+    gameExtInfo = JSON.parse(fs.readFileSync(path.join(extPath, 'info.json'), { encoding: 'utf8' }));
+  } catch (err) {
+    log('error', 'Failed to parse extension information', err);
+    return;
+  }
 
   gameSupport.push({ ...gameEntry, isContributed: gameExtInfo.author !== COMPANY_ID });
 }
