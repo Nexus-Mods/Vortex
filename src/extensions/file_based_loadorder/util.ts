@@ -54,7 +54,9 @@ export async function errorHandler(api: types.IExtensionApi,
                                    gameId: string,
                                    err: Error) {
   const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
-  const allowReport = !gameEntry.isContributed;
+  const allowReport = !gameEntry.isContributed
+    && !(err instanceof util.ProcessCanceled)
+    && !(err instanceof util.DataInvalid);
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const errorMessage = 'Load order failed validation';
