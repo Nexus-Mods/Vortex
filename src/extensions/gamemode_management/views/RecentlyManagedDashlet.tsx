@@ -58,14 +58,17 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
       content = (
         <div className='list-recently-managed' >
           {games.map(game => (
-            <GameThumbnail
-              t={t}
-              key={game.id}
-              game={game}
-              type='managed'
-              active={false}
-              onRefreshGameInfo={this.refreshGameInfo}
-            />))}
+            <div className='recently-managed-analytics-click' onClick={this.analyticsTrack}>
+              <GameThumbnail
+                t={t}
+                key={game.id}
+                game={game}
+                type='managed'
+                active={false}
+                onRefreshGameInfo={this.refreshGameInfo}
+              />
+            </div>
+          ))}
         </div>
       );
     }
@@ -75,6 +78,10 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
         {content}
       </Dashlet>
     );
+  }
+
+  private analyticsTrack = () => {
+    this.context.api.events.emit('analytics-track-click-event', 'Dashboard', 'Recent game');
   }
 
   private refreshGameInfo = gameId => {
