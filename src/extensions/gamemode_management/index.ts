@@ -23,6 +23,8 @@ import ReduxProp from '../../util/ReduxProp';
 import { activeGameId, activeProfile, downloadPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
+import { batchDispatch } from '../../util/util';
+
 import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
@@ -383,11 +385,13 @@ function removeDisappearedGames(api: IExtensionApi,
             });
           }
 
+          const batchedActions = [];
           if (gameId === gameMode) {
-            api.store.dispatch(setNextProfile(undefined));
+            batchedActions.push(setNextProfile(undefined));
           }
 
-          api.store.dispatch(clearDiscoveredGame(gameId));
+          batchedActions.push(clearDiscoveredGame(gameId));
+          batchDispatch(api.store, batchedActions);
         });
     })
     .then(() => awaitProfileSwitch(api))

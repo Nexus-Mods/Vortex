@@ -12,7 +12,7 @@ import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
 import { activeProfile, discoveryByGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { batchDispatch, truthy } from '../../util/util';
 
 import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setPrimaryTool } from '../starter_dashlet/actions';
@@ -40,6 +40,7 @@ import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
+import { setNextProfile } from '../../actions';
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
@@ -393,7 +394,11 @@ class GameModeManager {
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
-      this.mStore.dispatch(clearDiscoveredGame(gameId));
+      const currentProfile = activeProfile(this.mStore.getState());
+      const batchedActions = (currentProfile?.gameId === gameId)
+        ? [setNextProfile(undefined), clearDiscoveredGame(gameId)]
+        : [clearDiscoveredGame(gameId)];
+      batchDispatch(this.mStore, batchedActions);
     } else {
       this.mStore.dispatch(addDiscoveredGame(gameId, result));
     }

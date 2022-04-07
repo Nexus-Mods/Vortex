@@ -8,7 +8,6 @@ import { getSafe } from '../../../util/storeHelper';
 import { toPromise } from '../../../util/util';
 import { onAddMod } from '../eventHandlers';
 import { installPathForGame } from '../selectors';
-import { IMod } from '../types/IMod';
 import allTypesSupported from './allTypesSupported';
 import { getAllActivators } from './deploymentMethods';
 import modName from './modName';

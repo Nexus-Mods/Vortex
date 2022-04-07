@@ -92,6 +92,7 @@ import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
 import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
+import { findModByRef } from './util/dependencies';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -268,6 +269,51 @@ function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
     .then(result => (result.action === 'Cancel')
       ? Promise.reject(new UserCanceled())
       : Promise.resolve());
+}
+
+function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
+                                mods: { [modId: string]: IMod }) {
+  const enabledModIds = Object.keys(profile.modState ?? {})
+    .filter(modId => profile.modState[modId].enabled);
+
+  const enabledMods = enabledModIds.reduce((prev: { [modId: string]: IMod }, modId: string) => {
+    if (mods[modId] !== undefined) {
+      prev[modId] = mods[modId];
+    }
+    return prev;
+  }, {});
+
+  const incompatibilities = enabledModIds.reduce((prev, modId) => {
+    const conflictRules =
+      (enabledMods[modId]?.rules ?? []).filter(rule => rule.type === 'conflicts');
+
+    return [].concat(prev, conflictRules
+      .map(rule => findModByRef(rule.reference, enabledMods))
+      .filter(mod => mod !== undefined)
+      .map(mod => ({ left: mods[modId], right: mods[mod.id] })));
+  }, []);
+
+  if (incompatibilities.length > 0) {
+    const t = api.translate;
+    api.sendNotification({
+      type: 'warning',
+      message: 'Incompatible mods enabled',
+      actions: [
+        { title: 'Show', action: () => {
+          api.showDialog('info', 'Incompatible mods', {
+            md: 'You have mods enabled that are marked as being incompatible with each other:\n'
+              + incompatibilities.map(inc =>
+                  `* "${renderModName(inc.left)}" _${t('incompatible with')}_ "${renderModName(inc.right)}"`).join('\n'),
+          }, [
+            { label: 'Close' },
+          ]);
+        } },
+      ],
+    });
+    return Promise.reject(new ProcessCanceled('Incompatible mods'));
+  } else {
+    return Promise.resolve();
+  }
 }
 
 function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: string]: IMod }) {
@@ -564,6 +610,8 @@ function genUpdateModDeployment() {
           .tap(() => progress(t('Checking for external changes'), 5))
           .then(() => dealWithExternalChanges(api, activator, profileId, stagingPath, modPaths,
             lastDeployment))
+          .tap(() => progress(t('Checking for mod incompatibilities'), 25))
+          .then(() => checkIncompatibilities(api, profile, mods))
           .tap(() => progress(t('Sorting mods'), 30))
           .then(() => doSortMods(api, profile, mods)
             .then((sortedModListIn: IMod[]) => {

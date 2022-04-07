@@ -393,17 +393,12 @@ function genOnProfileChange(api: IExtensionApi,
           { allowReport: false });
       })
       .catch(CorruptActiveProfile, (err) => {
-        err['attachLogOnReport'] = true;
-        const persistentData = api.getState().persistent;
-        const attachment: IAttachment = {
-          id: 'persistentData',
-          type: 'data',
-          data: {
-            persistentData,
-          },
-          description: 'Application State',
-        };
-        showError(store.dispatch, 'Failed to set profile', err, { attachments: [ attachment ] });
+        // AFAICT the only way for this error to pop up is when upgrading from
+        //  an ancient version of Vortex which probably had a bug in it which we
+        //  fixed a long time ago. Corrupt profiles are automatically removed by
+        //  our verifiers and the user will just have to create a new profile for
+        //  their game - not much we can do to help him with that.
+        showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
       })
       .catch(UserCanceled, () => null)
       .catch(err => {
@@ -919,7 +914,8 @@ function init(context: IExtensionContext): boolean {
           })
           .catch((err: Error) => {
             if (!(err instanceof UserCanceled)) {
-              showError(store.dispatch, 'Failed to set profile', err);
+              const allowReport = !(err instanceof CorruptActiveProfile);
+              showError(store.dispatch, 'Failed to set profile', err, { allowReport });
             }
             store.dispatch(setCurrentProfile(undefined, undefined));
             store.dispatch(setNextProfile(undefined));

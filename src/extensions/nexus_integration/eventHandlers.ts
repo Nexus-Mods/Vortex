@@ -284,7 +284,14 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
         return dlId;
       })
       .then(downloadId => {
-        if (truthy(downloadId)) {
+        const state = api.getState();
+        const downloads = state.persistent.downloads.files;
+
+        if (!truthy(downloadId)) {
+          // nop
+        } else if (downloads[downloadId]?.state !== 'finished') {
+          api.store.dispatch(setDownloadModInfo(downloadId, 'startedAsUpdate', true));
+        } else {
           api.events.emit('start-install-download', downloadId);
         }
       })
