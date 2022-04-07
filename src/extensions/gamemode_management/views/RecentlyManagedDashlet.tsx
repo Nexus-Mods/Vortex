@@ -55,14 +55,10 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
         />
       );
     } else {
-      const analyticsTrack = () => {
-        this.context.api.events.emit('analytics-track-click-event', 'Dashboard', 'Recent game');
-      }
-
       content = (
         <div className='list-recently-managed' >
           {games.map(game => (
-            <div className='recently-managed-analytics-click' onClick={analyticsTrack}>
+            <div className='recently-managed-analytics-click' onClick={this.analyticsTrack}>
               <GameThumbnail
                 t={t}
                 key={game.id}
@@ -82,6 +78,10 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
         {content}
       </Dashlet>
     );
+  }
+
+  private analyticsTrack = () => {
+    this.context.api.events.emit('analytics-track-click-event', 'Dashboard', 'Recent game');
   }
 
   private refreshGameInfo = gameId => {
