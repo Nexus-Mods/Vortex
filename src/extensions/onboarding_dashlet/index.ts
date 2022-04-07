@@ -40,7 +40,8 @@ function init(context: IExtensionContext): boolean {
       getMoreMods: () => {
         currentGame(context.api.store)
         .then(game => {
-          opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch(err => undefined);
+          const nxsGameId = nexusGameId(game) 
+          opn(`${NEXUS_BASE_URL}/${nxsGameId !== '__placeholder' ? nxsGameId : 'mods'}`).catch(err => undefined);
         });
       },
       steps: STEPS,
