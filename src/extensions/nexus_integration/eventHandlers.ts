@@ -649,26 +649,30 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
 
 export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string): Promise<{ id: string, encoding: string, mods: IModListItem[] }> => {
-    return Promise.resolve(nexus.getLatestAdded(gameId))
+    const state = api.getState();
+    const gameDomain = nexusGameId(gameById(state, gameId), gameId);
+    return Promise.resolve(nexus.getLatestAdded(gameDomain))
       .then(mods => ({
         id: 'nexus',
         encoding: 'bbcode',
         mods: mods
           .filter(mod => !mod.contains_adult_content && mod.available)
-          .map(mod => extractLatestModInfo(api.getState(), gameId, mod)),
+          .map(mod => extractLatestModInfo(state, gameId, mod)),
       }));
   };
 }
 
 export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string): Promise<{ id: string, encoding: string, mods: IModListItem[] }> => {
-    return Promise.resolve(nexus.getTrending(gameId))
+    const state = api.getState();
+    const gameDomain = nexusGameId(gameById(state, gameId), gameId);
+    return Promise.resolve(nexus.getTrending(gameDomain))
       .then(mods => ({
         id: 'nexus',
         encoding: 'bbcode',
         mods: mods
           .filter(mod => !mod.contains_adult_content && mod.available)
-          .map(mod => extractLatestModInfo(api.getState(), gameId, mod)),
+          .map(mod => extractLatestModInfo(state, gameId, mod)),
       }));
   };
 }
