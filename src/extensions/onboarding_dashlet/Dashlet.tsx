@@ -91,7 +91,7 @@ function OnBoardingDashletWrapper(props: {
   getMoreMods: () => {},
 }) {
   const { onCardClick, steps, getMoreMods } = props;
-
+  const { t } = useTranslation();
   const completedSteps = useSelector<IState, { [key: string]: boolean }>
     (state => (state.settings as any).onboardingsteps.steps);
 
@@ -105,9 +105,9 @@ function OnBoardingDashletWrapper(props: {
       {
         isFullyCompleted
           ? <CompletedOnBoardingDashlet getMoreMods={getMoreMods} />
-          : <Dashlet title='Get Started' className='dashlet-onboarding'>
+          : <Dashlet title={t('Get Started')} className='dashlet-onboarding'>
             <p className='onboarding-subtitle'>
-              Watch these 5 videos to guide you on how to start modding you favourite games.
+              {t('Watch these 4 videos to guide you on how to start modding you favourite games.')}
             </p>
             <div className='onboarding-card-list'>
               {
