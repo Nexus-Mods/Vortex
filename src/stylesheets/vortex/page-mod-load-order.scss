@@ -68,9 +68,16 @@
         background: white;
         color: black;
         border-radius: 16px;
+        position: absolute;
+        margin-right: 5px;
       }
 
       .external-caution-logo {
+        margin-right: 5px;
+        margin-left: 5px;
+      }
+
+      .external-text-area {
         margin-right: 5px;
       }
     }
