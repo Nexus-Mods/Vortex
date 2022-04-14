@@ -58,10 +58,13 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
       content = (
         <div className='list-recently-managed' >
           {games.map(game => (
-            <div className='recently-managed-analytics-click' onClick={this.analyticsTrack}>
+            <div
+              key={game.id}
+              className='recently-managed-analytics-click'
+              onClick={this.analyticsTrack}
+            >
               <GameThumbnail
                 t={t}
-                key={game.id}
                 game={game}
                 type='managed'
                 active={false}
