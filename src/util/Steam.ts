@@ -17,7 +17,9 @@ import getVortexPath from './getVortexPath';
 const STORE_ID = 'steam';
 const STEAM_EXEC = 'Steam.exe';
 
-export interface ISteamEntry extends IGameStoreEntry {}
+export interface ISteamEntry extends IGameStoreEntry {
+  manifestData?: any;
+}
 
 export class GameNotFound extends Error {
   private mSearch;
@@ -283,6 +285,7 @@ class Steam implements IGameStore {
                     gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
                     lastUser: obj['AppState']['LastOwner'],
                     lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                    manifestData: obj,
                   };
                 } catch (err) {
                   log('warn', 'failed to parse steam manifest',
