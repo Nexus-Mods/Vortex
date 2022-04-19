@@ -345,7 +345,7 @@ export class DownloadObserver {
 
           const state = this.mApi.getState();
           if ((state.settings.automation?.install && allowInstall)
-              || (download.modInfo['startedAsUpdate'] === true)) {
+              || (download.modInfo?.['startedAsUpdate'] === true)) {
             this.mApi.events.emit('start-install-download', id);
           }
 
