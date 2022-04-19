@@ -158,7 +158,7 @@ class Disableable {
           that.mLastValidation = now;
           return obj.revalidate()
             .then((userInfo) => {
-              if (userInfo !== null) {
+              if (truthy(userInfo)) {
                 that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
               }
               return obj[prop](...args);
