@@ -54,13 +54,15 @@
 // need to disable while modal is open because the modal might have controls inside
 // the area covered by the region
 // not currently used?
-.modal-open #main-toolbar.toolbar-app-region {
+.modal-open #main-toolbar.toolbar-app-region,
+.modal-open#overlays {
   -webkit-app-region: no-drag;
 }
 
 // disable drag while any menu is open. They should close anyway if you click outside the menu
 // and if you click inside you don't want to move the window
-.menu-open #main-toolbar.toolbar-app-region {
+.menu-open #main-toolbar.toolbar-app-region,
+.menu-open#overlays {
   -webkit-app-region: no-drag;
 }
 
