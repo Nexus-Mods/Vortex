@@ -139,7 +139,7 @@ function CompletedOnBoardingDashlet(props: {getMoreMods: () => {}}) {
   const dispatch = useDispatch();
 
   const closeDashlet = () => {
-    dispatch(setDashletEnabled('On Boarding', false));
+    dispatch(setDashletEnabled('Onboarding', false));
   };
 
   const resetAllSteps = () => {

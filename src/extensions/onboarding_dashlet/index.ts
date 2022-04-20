@@ -12,7 +12,7 @@ function init(context: IExtensionContext): boolean {
 
   const allStepIds = STEPS.map((x) => x.id);
 
-  context.registerDashlet('On Boarding', 2, 3, 0, Dashlet, state => {
+  context.registerDashlet('Onboarding', 2, 3, 0, Dashlet, state => {
     return true;
   },
     () => ({
