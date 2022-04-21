@@ -673,7 +673,7 @@ function init(context: IExtensionContext): boolean {
     context.api.onAsync('discover-game', (gameId: string) => {
       const game = getGame(gameId);
       if (game !== undefined) {
-        return $.gameModeManager.startQuickDiscovery([game], false);
+        return $.gameModeManager.startQuickDiscovery([game]);
       } else {
         return Promise.resolve();
       }
