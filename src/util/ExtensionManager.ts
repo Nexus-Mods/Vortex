@@ -2293,6 +2293,7 @@ class ExtensionManager {
       'tool_variables_base',
       'history_management',
       'analytics',
+      'onboarding_dashlet'
     ];
 
     require('./extensionRequire').default(() => this.extensions);

@@ -3,7 +3,7 @@ import { dismissOverlay, showOverlay } from './actions';
 import Container from './Container';
 import Reducer from './reducer';
 
-import { IPosition } from '../../types/IState';
+import { IOverlayOptions, IPosition } from '../../types/IState';
 
 function init(context: IExtensionContext): boolean {
   // bit of a hack, we're not actually rendering a dialog, the overlays are added via portal, we
@@ -13,8 +13,8 @@ function init(context: IExtensionContext): boolean {
 
   // not yet ready to make these official parts of the api
   context.registerAPI('showOverlay',
-    (id: string, title: string, text: string, pos: IPosition = undefined) =>
-      context.api.store.dispatch(showOverlay(id, title, text, pos)), { minArguments: 3 });
+    (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) =>
+      context.api.store.dispatch(showOverlay(id, title, content, pos, options)), { minArguments: 3 });
 
   context.registerAPI('dismissOverlay', (id: string) =>
     context.api.store.dispatch(dismissOverlay(id)), { minArguments: 1 });
