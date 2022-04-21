@@ -61,7 +61,7 @@ import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseThing, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
-         processErrorMessage, startDownload, updateKey } from './util';
+         processErrorMessage, retrieveNexusGames, startDownload, updateKey } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -467,7 +467,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId
                ?? nexusCollectionInfo?.id,
       collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection['slug'],
-      revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revision,
+      revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revisionNumber,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
       uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
       uploaderUrl: nexusModInfo?.uploaded_users_profile_url,
@@ -486,8 +486,8 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       uploadedTimestamp: nexusFileInfo?.uploaded_timestamp
                       ?? toTimestamp(nexusCollectionInfo?.createdAt),
       updatedTimestamp: toTimestamp(nexusCollectionInfo?.updatedAt),
-      version: nexusFileInfo?.version ?? (nexusCollectionInfo?.revision?.toString?.()),
-      modVersion: nexusModInfo?.version ?? (nexusCollectionInfo?.revision?.toString?.()),
+      version: nexusFileInfo?.version ?? (nexusCollectionInfo?.revisionNumber?.toString?.()),
+      modVersion: nexusModInfo?.version ?? (nexusCollectionInfo?.revisionNumber?.toString?.()),
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
       rating: nexusCollectionInfo?.rating,

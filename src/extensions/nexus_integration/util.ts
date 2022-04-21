@@ -174,7 +174,7 @@ export function getCollectionInfo(nexus: Nexus,
     createdAt: true,
     updatedAt: true,
     installationInfo: true,
-    revision: true,
+    revisionNumber: true,
     rating: {
       average: true,
       total: true,
@@ -428,6 +428,7 @@ export function resolveGraphError(t: TFunction, err: Error): string {
     NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
     TOO_SOON_AFTER_DOWNLOAD: 'You have to wait {{waitingTime}} after downloading before you can endorse/rate things.',
     IS_OWN_MOD: 'You can\'t endorse your own mods.',
+    UNAUTHORIZED: 'You have to be logged in to vote.',
   }[err['code']];
 
   return msg;
@@ -722,7 +723,7 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
   return Promise.all(collectionIds.map(modId => {
     const query: Partial<ICollectionQuery> = {
       revisions: {
-        revision: true,
+        revisionNumber: true,
         id: true,
         revisionStatus: true,
       },
@@ -732,14 +733,15 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
       .then(collection => {
         const currentRevision = collection.revisions
           .filter(rev => rev.revisionStatus === 'published')
-          .sort((lhs, rhs) => rhs.revision - lhs.revision)
+          .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber)
           [0];
 
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
         if (currentRevision?.id !== mod.attributes?.revisionId) {
-          store.dispatch(setModAttribute(gameId, modId, 'newestFileId', currentRevision.revision));
+          store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
+            currentRevision.revisionNumber));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
-            currentRevision.revision.toString()));
+            currentRevision.revisionNumber.toString()));
         }
         return undefined;
       })
@@ -942,7 +944,7 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
+export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key))
     .then(userInfo => {
@@ -971,10 +973,11 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         })
         .catch(err => {
           log('warn', 'Failed to fetch api config', { message: err.message });
-        });
+        })
+        .then(() => true);
     })
     // don't stop the login just because the github rate limit is exceeded
-    .catch(RateLimitExceeded, () => Promise.resolve())
+    .catch(RateLimitExceeded, () => Promise.resolve(true))
     .catch(TimeoutError, () => {
       api.sendNotification({
         type: 'error',
@@ -984,6 +987,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      return false;
     })
     .catch(NexusError, err => {
       api.sendNotification({
@@ -999,6 +1003,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      return false;
     })
     .catch(ProcessCanceled, err => {
       log('debug', 'login canceled', err.message);
@@ -1015,6 +1020,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      return false;
     })
     .catch(err => {
       const t = api.translate;
@@ -1031,6 +1037,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
           }],
         });
       api.store.dispatch(setUserInfo(undefined));
+      return false;
     });
 }
 
