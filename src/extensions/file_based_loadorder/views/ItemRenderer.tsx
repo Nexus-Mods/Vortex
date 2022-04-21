@@ -58,7 +58,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     return this.isExternal(item) ? (
       <div className='load-order-unmanaged-banner'>
         <Icon className='external-caution-logo' name='feedback-warning'/>
-        <span>{t('Not managed by Vortex')}</span>
+        <span className='external-text-area'>{t('Not managed by Vortex')}</span>
       </div>
     ) : null;
   }
@@ -126,7 +126,6 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       ...item.loEntry,
       enabled: evt.target.checked,
     };
-
     onSetLoadOrderEntry(profile.id, entry);
   }
 }

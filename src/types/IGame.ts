@@ -56,7 +56,7 @@ export interface IGame extends ITool {
    *
    * @memberof IGame
    */
-  getGameVersion?: (gamePath: string, exePath: string) => Promise<string>;
+  getGameVersion?: (gamePath: string, exePath: string) => PromiseLike<string>;
 
   /**
    * use this to determine the version of this game installed on the system

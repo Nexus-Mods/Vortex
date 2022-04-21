@@ -77,10 +77,15 @@ export const settingsReducer: IReducerSpec = {
       setSafe(state, ['searchPaths'], payload),
     [actions.setPickerLayout as any]: (state, payload) =>
       setSafe(state, ['pickerLayout'], payload.layout),
+    [actions.setSortManaged as any]: (state, payload) => setSafe(state, ['sortManaged'], payload),
+    [actions.setSortUnmanaged as any]: (state, payload) =>
+      setSafe(state, ['sortUnmanaged'], payload),
   },
   defaults: {
     discovered: {},
     searchPaths: [],
     pickerLayout: 'small',
+    sortManaged: 'alphabetical',
+    sortUnmanaged: 'alphabetical',
   },
 };

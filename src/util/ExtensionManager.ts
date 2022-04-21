@@ -114,7 +114,13 @@ const removeSelfAsProtocolClient = makeRemoteCallSync('remove-as-default-protoco
 
 const showOpenDialog = makeRemoteCall('show-open-dialog',
   (electron, contents, options: Electron.OpenDialogOptions) => {
-    const window = electron.BrowserWindow.fromWebContents(contents);
+    let window: Electron.BrowserWindow = null;
+    try {
+      window = electron.BrowserWindow?.fromWebContents?.(contents);
+    } catch (err) {
+      // nop
+    }
+
     return electron.dialog.showOpenDialog(window, options);
   });
 
@@ -126,7 +132,12 @@ const showErrorBox = makeRemoteCall('show-error-box',
 
 const showMessageBox = makeRemoteCall('show-message-box',
   (electron, contents, options: Electron.MessageBoxOptions) => {
-    const window = electron.BrowserWindow?.fromWebContents?.(contents);
+    let window: Electron.BrowserWindow = null;
+    try {
+      window = electron.BrowserWindow?.fromWebContents?.(contents);
+    } catch (err) {
+      // nop
+    }
     return electron.dialog.showMessageBox(window, options);
   });
 

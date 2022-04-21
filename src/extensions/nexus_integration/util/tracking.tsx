@@ -155,8 +155,10 @@ class Tracking {
       this.mOnChanged?.();
     })
     .catch(err => {
+      if (err instanceof ProcessCanceled) {
+        return;
+      }
       const allowReport = !(err instanceof RateLimitError)
-                        && !(err instanceof ProcessCanceled)
                         && !(err instanceof TimeoutError)
                         && !(err instanceof ProtocolError)
                         && !(err instanceof NexusError);

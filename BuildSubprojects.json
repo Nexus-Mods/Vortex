@@ -28,14 +28,6 @@
     },
     {
       "type": "build-copy",
-      "name": "morrowind-plugin-management",
-      "path": "extensions/morrowind-plugin-management",
-      "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/morrowind-plugin-management"
-    },
-    {
-      "type": "build-copy",
       "name": "gamebryo-test-settings",
       "path": "extensions/gamebryo-test-settings",
       "removeModules": ["vortex-api", "nexus-api"],

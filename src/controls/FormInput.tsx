@@ -84,7 +84,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
           min={min}
           max={max}
         />
-        {clearable ? this.renderClear() : null}
+        {cachedValue ? (clearable ? this.renderClear() : null) : this.renderSearch()}
       </div>
     );
 
@@ -115,6 +115,16 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       validateRes = (validate as any)(value);
     }
     return validateRes as ValidationState;
+  }
+
+  private renderSearch() {
+    return (
+      <IconButton
+        className='form-input-clear btn-embed'
+        icon='search'
+        tooltip={undefined}
+      />
+    );
   }
 
   private renderClear() {

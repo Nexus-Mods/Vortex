@@ -195,6 +195,8 @@ export interface ISettingsGameMode {
   discovered: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
   pickerLayout: 'list' | 'small' | 'large';
+  sortManaged: string;
+  sortUnmanaged: string;
 }
 
 export interface ISettingsDownloads {

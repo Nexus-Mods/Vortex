@@ -39,10 +39,6 @@ $thumbnail-width: 256px;
     @extend .panel-default;
     border-color: transparent;
   }
-
-  &.game-thumbnail-undiscovered img {
-    filter: grayscale(100%) contrast(50%) brightness(50%);
-  }
 }
 
 .game-thumbnail-body {
@@ -150,7 +146,7 @@ $thumbnail-width: 256px;
   border: 1px solid rgba($white, 0.3);
   svg {
     stroke: $text-color;
-    stroke-width: 2px;
+    stroke-width: 4px;
   }
 }
 
@@ -175,10 +171,6 @@ $thumbnail-width: 256px;
 
   .list-group-item:hover {
     background-color: $gray-lighter;
-  }
-
-  &.game-list-undiscovered img {
-    filter: grayscale(100%) contrast(50%) brightness(50%);
   }
 }
 
