@@ -206,9 +206,9 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startQuickDiscovery() {
+  public startQuickDiscovery(games?: IGame[]) {
     return this.reloadStoreGames()
-      .then(() => quickDiscovery(this.mKnownGames,
+      .then(() => quickDiscovery(games ?? this.mKnownGames,
         this.mStore.getState().settings.gameMode.discovered,
         this.onDiscoveredGame, this.onDiscoveredTool))
       .tap(() => this.postDiscovery())

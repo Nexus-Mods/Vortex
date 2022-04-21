@@ -600,64 +600,6 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  context.registerAction('game-icons', 100, 'refresh', {}, 'Scan: Quick', () => {
-    if ($.gameModeManager !== undefined) {
-      // we need the state from before the discovery so can determine which games were discovered
-      const oldState: IState = context.api.getState();
-      const preDiscovered = oldState.settings.gameMode.discovered;
-      $.gameModeManager.startQuickDiscovery()
-        .then((gameIds: string[]) => {
-          const preDiscoveredIds = new Set(
-            Object.keys(preDiscovered).filter(gameId => preDiscovered[gameId].path !== undefined));
-          return removeDisappearedGames(context.api, preDiscoveredIds).then(() => gameIds);
-        })
-        .then((gameIds: string[]) => {
-          const newState = context.api.getState();
-          const postDiscovered = newState.settings.gameMode.discovered;
-          const knownGames = newState.session.gameMode.known;
-
-          const newGames = gameIds.filter(id =>
-            (preDiscovered[id]?.path === undefined)
-            && (postDiscovered[id]?.path !== undefined));
-
-          const numDiscovered =
-            Object.values(postDiscovered)
-              .filter(iter => iter.path !== undefined).length;
-
-          let message =
-            context.api.translate('{{numTotal}} games discovered ({{numNew}} new)', {
-            replace: {
-              numNew: newGames.length,
-              numTotal: numDiscovered,
-            },
-          });
-
-          if (newGames.length > 0) {
-            message += '\n' + newGames
-              .map(id => '- ' + knownGames.find(iter => iter.id === id).name)
-              .join('\n');
-          }
-
-          context.api.sendNotification({
-            id: 'discovery-completed',
-            type: 'success',
-            title: 'Discovery completed',
-            message,
-          });
-        });
-    }
-  });
-
-  context.registerAction('game-icons', 110, 'refresh', {}, 'Scan: Full', () => {
-    if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
-      try {
-        context.api.events.emit('start-discovery');
-      } catch (err) {
-        context.api.showErrorNotification('Failed to search for games', err);
-      }
-    }
-  });
-
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
@@ -727,6 +669,15 @@ function init(context: IExtensionContext): boolean {
             return prev;
           }, {})));
     }
+
+    context.api.onAsync('discover-game', (gameId: string) => {
+      const game = getGame(gameId);
+      if (game !== undefined) {
+        return $.gameModeManager.startQuickDiscovery([game], false);
+      } else {
+        return Promise.resolve();
+      }
+    });
 
     // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
     //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6

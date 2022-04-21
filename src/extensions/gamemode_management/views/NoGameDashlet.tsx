@@ -63,7 +63,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
                   t={t}
                   key={game.id}
                   game={game}
-                  type='discovered'
+                  type='unmanaged'
                   active={false}
                   onRefreshGameInfo={this.refreshGameInfo}
                 />))

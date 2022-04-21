@@ -687,25 +687,24 @@ function init(context: IExtensionContext): boolean {
     props: () => ({ features: profileFeatures }),
   });
 
-  context.registerAction('game-discovered-buttons', 50, 'activate', {
+  context.registerAction('game-unmanaged-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
       const gameId = instanceIds[0];
-      const state = context.api.getState();
-
-      // double check, calling manageGameDiscovered for a game that isn't
-      // actually discovered would be invalid
-      const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
-        ? manageGameDiscovered
-        : manageGameUndiscovered;
 
       context.api.events.emit(
         'analytics-track-event', 'Games', 'Start managing', gameId,
       );
 
-      checkOverridden(context.api, gameId)
+      context.api.emitAndAwait('discover-game', gameId)
+        .then(() => checkOverridden(context.api, gameId))
         .then(() => {
+          const state = context.api.getState();
+          const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
+            ? manageGameDiscovered
+            : manageGameUndiscovered;
+
           manageFunc(context.api, gameId);
         })
         .catch(err => {
@@ -713,26 +712,6 @@ function init(context: IExtensionContext): boolean {
             context.api.showErrorNotification('Failed to manage game', err);
           }
         });
-  });
-
-  context.registerAction('game-undiscovered-buttons', 50, 'activate', {
-    noCollapse: true,
-  }, 'Manage', (instanceIds: string[]) => {
-    const gameId = instanceIds[0];
-
-    context.api.events.emit(
-      'analytics-track-event', 'Games', 'Start managing' , gameId,
-    );
-
-    checkOverridden(context.api, gameId)
-      .then(() => {
-        manageGameUndiscovered(context.api, gameId);
-      })
-      .catch(err => {
-        if (!(err instanceof UserCanceled)) {
-          context.api.showErrorNotification('Failed to manage game', err);
-        }
-      });
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
