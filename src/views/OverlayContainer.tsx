@@ -47,7 +47,7 @@ class OverlayContainer extends React.Component<IProps, {}> {
 }
 
 function registerOverlay(instanceGroup: undefined, id: string, component: React.ComponentClass<any>,
-                        props?: PropsCallback): IExtOverlay {
+                         props?: PropsCallback): IExtOverlay {
   return { id, component, props };
 }
 
