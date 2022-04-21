@@ -458,8 +458,10 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
 
           api.ext.ensureLoggedIn()
           .then(() => api.emitAndAwait('install-extension', extension))
-            .then(() => {
-              relaunch(['--game', gameId]);
+            .then((results: boolean[]) => {
+              if (results.includes(true)) {
+                relaunch(['--game', gameId]);
+              }
             })
             .finally(() => {
               api.store.dispatch(clearUIBlocker('installing-game'));

@@ -2,7 +2,7 @@ import { ICollectionQuery, IRevisionQuery } from '@nexusmods/nexus-api';
 
 const revisionInfo: IRevisionQuery = {
   id: true,
-  revision: true,
+  revisionNumber: true,
   adultContent: true,
   collectionChangelog: {
     createdAt: true,
@@ -39,6 +39,11 @@ const revisionInfo: IRevisionQuery = {
         pictureUrl: true,
         status: true,
         summary: true,
+        uploader: {
+          name: true,
+          avatar: true,
+          memberId: true,
+        },
         version: true,
       },
       modId: true,
@@ -58,7 +63,7 @@ const revisionInfo: IRevisionQuery = {
       },
     },
   },
-} as any;
+};
 
 export const FULL_COLLECTION_INFO: ICollectionQuery = {
   id: true,
@@ -80,7 +85,7 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   },
   revisions: {
     id: true,
-    revision: true,
+    revisionNumber: true,
     revisionStatus: true,
   },
   description: true,
@@ -89,7 +94,7 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
     postsCount: true,
   },
   commentLink: true,
-} as any;
+};
 
 export const FULL_REVISION_INFO: IRevisionQuery = {
   ...revisionInfo,

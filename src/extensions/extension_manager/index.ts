@@ -289,9 +289,11 @@ function init(context: IExtensionContext) {
         .then(() => downloadAndInstallExtension(context.api, ext))
         .then(success => {
           if (success) {
-            return updateExtensions(false);
+            return updateExtensions(false)
+              .then(() => success);
           } else {
-            return Promise.resolve();
+            return Promise.resolve()
+              .then(() => success);
           }
         });
       });
