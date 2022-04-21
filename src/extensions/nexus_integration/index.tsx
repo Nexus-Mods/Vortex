@@ -1018,7 +1018,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     const state = api.store.getState();
 
     const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
-    const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
+    const apiKey = sel.apiKey(state);
+    log('info', 'init api key', { isUndefined: apiKey !== undefined });
     const gameMode = activeGameId(state);
 
     nexus = new Proxy(
@@ -1036,6 +1037,13 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
 
     api.registerRepositoryLookup('nexus', true, makeRepositoryLookup(api, nexus));
+
+    retrieveNexusGames(nexus)
+      .catch(err => {
+        api.showErrorNotification('Failed to fetch list of games', err, {
+          allowReport: false,
+        });
+      });
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));

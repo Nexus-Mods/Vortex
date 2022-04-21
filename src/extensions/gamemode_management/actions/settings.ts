@@ -55,3 +55,6 @@ export const setGameSearchPaths = safeCreateAction('SET_GAME_SEARCH_PATHS',
 
 export const setPickerLayout = safeCreateAction('SET_GAMEPICKER_LAYOUT',
   (layout: 'list' | 'small' | 'large') => ({ layout }));
+
+export const setSortManaged = safeCreateAction('SET_SORT_MANAGED', (order: string) => order);
+export const setSortUnmanaged = safeCreateAction('SET_SORT_UNMANAGED', (order: string) => order);

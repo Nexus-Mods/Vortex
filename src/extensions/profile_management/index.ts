@@ -441,7 +441,8 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
   const gameStored = knownGames.find(game => game.id === gameId);
 
   if (gameStored === undefined) {
-    const extension = state.session.extensions.available.find(ext => ext.name === gameId);
+    const extension = state.session.extensions.available.find(ext =>
+      (ext?.gameId === gameId) || (ext.name === gameId));
     if (extension === undefined) {
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);
     }

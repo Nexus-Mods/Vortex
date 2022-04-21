@@ -948,12 +948,6 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     .then(userInfo => {
       if (userInfo !== null) {
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-        retrieveNexusGames(nexus)
-          .catch(err => {
-            api.showErrorNotification('Failed to fetch list of games', err, {
-              allowReport: false,
-            });
-          });
       }
       return github.fetchConfig('api')
         .then(configObj => {

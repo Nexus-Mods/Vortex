@@ -486,8 +486,9 @@
       "rmFill": true
     },
     "game-menu": {
-      "path": "{nucleo}/user interface/{nucleo_simple}_small-add",
-      "rmFill": true
+      "path": "Nucleo_Outline/interactive icons/32px_dots-to-close-2",
+      "rmFill": true,
+      "rmStroke": true
     },
     "groups": {
       "path": "{nucleo}/design-development/{nucleo_simple}_layers",

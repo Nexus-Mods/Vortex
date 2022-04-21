@@ -28,6 +28,7 @@ import { batchDispatch } from '../../util/util';
 import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
+import { nexusGames } from '../nexus_integration/util';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
@@ -498,6 +499,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       onRefreshGameInfo,
       onBrowseGameLocation,
+      nexusGames: nexusGames(),
     }),
     activity,
   });

@@ -17,9 +17,10 @@ import MainPage from '../../../views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
 import { NEXUS_DOMAIN } from '../../nexus_integration/constants';
+import { nexusGameId } from '../../nexus_integration/util/convertGameId';
 import { IProfile } from '../../profile_management/types/IProfile';
 
-import { setPickerLayout } from '../actions/settings';
+import { setPickerLayout, setSortManaged, setSortUnmanaged } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
@@ -27,11 +28,15 @@ import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
+import { IGameListEntry } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
+import { ratio } from 'fuzzball';
 import update from 'immutability-helper';
+import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import { FormControl, InputGroup, ListGroup,
          Panel, PanelGroup, ProgressBar } from 'react-bootstrap';
+import Select from 'react-select';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -46,6 +51,10 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
   };
 }
 
+function captureClick(evt: React.MouseEvent) {
+  evt.preventDefault();
+}
+
 function byGameName(lhs: IGameStored, rhs: IGameStored): number {
   return lhs.name.localeCompare(rhs.name);
 }
@@ -53,6 +62,7 @@ function byGameName(lhs: IGameStored, rhs: IGameStored): number {
 interface IBaseProps {
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   onBrowseGameLocation: (gameId: string) => Promise<void>;
+  nexusGames: IGameListEntry[];
 }
 
 interface IConnectedProps {
@@ -64,10 +74,14 @@ interface IConnectedProps {
   pickerLayout: 'list' | 'small' | 'large';
   extensions: IAvailableExtension[];
   extensionsInstalled: { [extId: string]: IExtension };
+  sortManaged: string;
+  sortUnmanaged: string;
 }
 
 interface IActionProps {
   onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
+  onSetSortManaged: (sorting: string) => void;
+  onSetSortUnmanaged: (sorting: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -89,11 +103,24 @@ function nop() {
  * @class GamePicker
  */
 class GamePicker extends ComponentEx<IProps, IComponentState> {
+  // "PAYDAY 2" vs "Payday 2" or "Resident Evil: Village" vs "Resident Evil Village" are 100 similar
+  // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
+  public static SIMILARITY_RATIO: number = 90;
   public declare context: IComponentContext;
 
   private buttons: IActionDefinition[];
   private mRef: HTMLElement;
   private mScrollRef: HTMLElement;
+
+  private nexusGameById = memoizeOne((gameList: IGameListEntry[]) =>
+    gameList.reduce<{ [id: string]: IGameListEntry }>((prev, entry) => {
+      prev[entry.domain_name] = entry; return prev; }, {}));
+
+  private nexusGameByName = memoizeOne((gameList: IGameListEntry[]) =>
+    gameList.reduce<{ [name: string]: IGameListEntry }>((prev, entry) => {
+      prev[entry.name] = entry; return prev; }, {}));
+
+  private mNameLookup: { [name: string]: string } = {};
 
   constructor(props: IProps) {
     super(props);
@@ -116,7 +143,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discoveredGames, discovery, extensions, extensionsInstalled, knownGames,
-            pickerLayout, profiles } = this.props;
+            pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
     const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
@@ -164,7 +191,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     });
 
     supportedGameList.push(...extensionsUninstalled.map(ext => ({
-      id: ext.name,
+      id: ext.gameId || ext.name,
       name: ext.gameName || ext.name,
       extensionPath: undefined,
       imageURL: ext.image,
@@ -190,10 +217,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
 
     const filteredManaged =
-      managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+      managedGameList.filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortManaged));
     const filteredUnmanaged =
         unmanagedGameList
-        .filter(game => this.applyGameFilter(game)).sort(byGameName);
+        .filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortUnmanaged));
 
     const titleManaged = t('Managed ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
@@ -262,6 +289,22 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                     <Panel.Heading onClick={this.toggleManaged}>
                       <Icon name={expandManaged ? 'showhide-down' : 'showhide-right'} />
                       <Panel.Title>{titleManaged}</Panel.Title>
+                      <div className='flex-fill' />
+                      {expandManaged ? (
+                        <div onClick={captureClick} >
+                          <Select
+                            className='select-compact'
+                            options={[
+                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'recentlyused', label: t('Recently used') },
+                            ]}
+                            value={sortManaged}
+                            onChange={this.setSortManaged}
+                            clearable={false}
+                            autosize={false}
+                          />
+                        </div>
+                      ) : null}
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredManaged, 'managed')}
@@ -275,6 +318,23 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                     <Panel.Heading onClick={this.toggleUnmanaged}>
                       <Icon name={expandUnmanaged ? 'showhide-down' : 'showhide-right'} />
                       <Panel.Title>{titleUnmanaged}</Panel.Title>
+                      <div className='flex-fill' />
+                      {expandUnmanaged ? (
+                        <div onClick={captureClick} >
+                          <Select
+                            className='select-compact'
+                            options={[
+                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'recent', label: t('Most Recent') },
+                              { value: 'popular', label: t('Most Popular') },
+                            ]}
+                            value={sortUnmanaged}
+                            onChange={this.setSortUnmanaged}
+                            clearable={false}
+                            autosize={false}
+                          />
+                        </div>
+                      ) : null}
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredUnmanaged, 'unmanaged')}
@@ -324,12 +384,24 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       .catch(() => null);
   }
 
-  private toggleManaged = () => {
-    this.nextState.expandManaged = !this.state.expandManaged;
+  private setSortManaged = (value: { value: string, label: string }) => {
+    this.props.onSetSortManaged(value.value);
   }
 
-  private toggleUnmanaged = () => {
-    this.nextState.expandUnmanaged = !this.state.expandUnmanaged;
+  private setSortUnmanaged = (value: { value: string, label: string }) => {
+    this.props.onSetSortUnmanaged(value.value);
+  }
+
+  private toggleManaged = (evt: React.MouseEvent<any>) => {
+    if (!evt.isDefaultPrevented()) {
+      this.nextState.expandManaged = !this.state.expandManaged;
+    }
+  }
+
+  private toggleUnmanaged = (evt: React.MouseEvent<any>) => {
+    if (!evt.isDefaultPrevented()) {
+      this.nextState.expandUnmanaged = !this.state.expandUnmanaged;
+    }
   }
 
   private onFilterInputChange = (input) => {
@@ -396,6 +468,71 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private stopDiscovery = () => {
     this.context.api.events.emit('cancel-discovery');
+  }
+
+  private lastUsed(game: IGameStored): number {
+    const { profiles } = this.props;
+    return Math.max(...Object.values(profiles)
+      .filter(prof => prof.gameId === game.id)
+      .map(prof => prof.lastActivated));
+  }
+
+  private byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number => {
+    return this.lastUsed(rhs) - this.lastUsed(lhs);
+  }
+
+  private lookupName(input: string) {
+    const { nexusGames } = this.props;
+    if (this.mNameLookup[input] === undefined) {
+      const exactMatch = nexusGames.find(i => i.name === input);
+      if (exactMatch !== undefined) {
+        this.mNameLookup[input] = input;
+      } else {
+        const sorted = nexusGames
+          .map(item => ({ item, ratio: ratio(item.name, input) }))
+          .filter(iter => iter.ratio > GamePicker.SIMILARITY_RATIO)
+          .sort((lhs, rhs) => rhs.ratio - lhs.ratio);
+
+        this.mNameLookup[input] = (sorted.length > 0)
+           ? sorted[0].item.name
+           : input;
+      }
+    }
+
+    return this.mNameLookup[input];
+  }
+
+  private identifyGame(game: IGameStored): IGameListEntry {
+    const { nexusGames } = this.props;
+    return this.nexusGameById(nexusGames)[nexusGameId(game)]
+        ?? this.nexusGameByName(nexusGames)[this.lookupName(game.name)];
+
+  }
+
+  private approvedTime(game: IGameStored): number {
+    const nexusGame = this.identifyGame(game);
+    return nexusGame?.approved_date ?? 0;
+  }
+
+  private byRecent = (lhs: IGameStored, rhs: IGameStored): number => {
+    return this.approvedTime(rhs) - this.approvedTime(lhs);
+  }
+
+  private gameFileCount(game: IGameStored): number {
+    const nexusGame = this.identifyGame(game);
+    return nexusGame?.downloads ?? 0;
+  }
+
+  private byPopular = (lhs: IGameStored, rhs: IGameStored): number => {
+    return this.gameFileCount(rhs) - this.gameFileCount(lhs);
+  }
+
+  private sortBy = (sortMode: string) => {
+    return {
+      recentlyused: this.byRecentlyUsed,
+      recent: this.byRecent,
+      popular: this.byPopular,
+    }[sortMode] ?? byGameName;
   }
 
   private renderGames = (games: IGameStored[], type: string): JSX.Element => {
@@ -486,6 +623,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     discovery: state.session.discovery,
     extensions: state.session.extensions.available,
     extensionsInstalled: state.session.extensions.installed,
+    sortManaged: state.settings.gameMode.sortManaged ?? 'alphabetical',
+    sortUnmanaged: state.settings.gameMode.sortUnmanaged ?? 'alphabetical',
   };
 }
 
@@ -493,6 +632,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetPickerLayout: (layout) =>
       dispatch(setPickerLayout(layout)),
+    onSetSortManaged: (sorting: string) => dispatch(setSortManaged(sorting)),
+    onSetSortUnmanaged: (sorting: string) => dispatch(setSortUnmanaged(sorting)),
   };
 }
 
