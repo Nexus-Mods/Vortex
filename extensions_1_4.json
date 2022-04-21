@@ -2883,7 +2883,8 @@
       "tags": [],
       "version": "1.1.0",
       "type": "game",
-      "gameName": "Dark Souls III"
+      "gameName": "Dark Souls III",
+      "gameId": "darksouls3"
     },
     {
       "modId": 195,
@@ -4232,7 +4233,8 @@
       "tags": [],
       "version": "0.1.0",
       "type": "game",
-      "gameName": "Dragon Quest XI S: Echoes of an Elusive Age - Definitive Edition"
+      "gameName": "Dragon Quest XI S: Echoes of an Elusive Age - Definitive Edition",
+      "gameId": "dragonquestxisdefinitiveedition"
     },
     {
       "modId": 344,
