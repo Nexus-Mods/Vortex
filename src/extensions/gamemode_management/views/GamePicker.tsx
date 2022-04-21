@@ -271,16 +271,20 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Fixed>
-              <InputGroup>
-                <FormInput
-                  className='game-filter-input'
-                  value={currentFilterValue}
-                  placeholder={t('Search for a game...')}
-                  onChange={this.onFilterInputChange}
-                  debounceTimer={100}
-                  clearable
-                />
-              </InputGroup>
+              <Panel className='game-filter-container'>
+                <Panel.Body>
+                  <InputGroup>
+                    <FormInput
+                      className='game-filter-input'
+                      value={currentFilterValue}
+                      placeholder={t('Search for a game...')}
+                      onChange={this.onFilterInputChange}
+                      debounceTimer={100}
+                      clearable
+                    />
+                  </InputGroup>
+                </Panel.Body>
+              </Panel>
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>

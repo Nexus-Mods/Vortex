@@ -2,9 +2,12 @@
   padding-right: $half-gutter;
 }
 
+.game-filter-container {
+  padding: 0 10px 5px;
+  border: 0;
+}
+
 .game-filter-input {
-  padding: 10px 0;
-  margin-bottom: 5px !important;
   position: relative;
   border-color: $border-color;
   width: 20em;
