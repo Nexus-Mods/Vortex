@@ -3,13 +3,13 @@
 #
 
 # check compatibility with node-gyp
-$python_ver = "3.8.5"
+$python_ver = "3.10.4"
 # current lts
-$node_ver = "12.18.4"
+$node_ver = "16.14.2"
 # newest version available
-$git_ver = "2.28.0"
-# currently 2019 doesn't work
-$msvs_ver = "2017"
+$git_ver = "2.36.0"
+# need at least the 2019 version
+$msvs_ver = "2022"
 
 trap [Exception] {
   write-host "We have an error!"
@@ -58,7 +58,7 @@ $git_exe = "Git-$git_ver-64-bit.exe"
 
 # the 2019 version does *NOT* work atm because the script to detect msbuild fails because MS puts it into a different, randomly selected, place on disk every release
 # $build_tools_url = "https://download.visualstudio.microsoft.com/download/pr/6c56603d-6cb9-4f23-8d58-dcc8eb8b3563/34c42804299595c6bfef03ee68deff566d820d1c1fdf9aaeec40d2e3be9199df/vs_BuildTools.exe"
-$build_tools_url = "https://download.visualstudio.microsoft.com/download/pr/5f6dfbf7-a8f7-4f36-9b9e-928867c28c08/27a614a8f510d3f79fceef544b1a54ad0becabab50ddee596e6faab014dbef1b/vs_BuildTools.exe"
+$build_tools_url = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
 
 if(![System.IO.File]::Exists($path + "/downloads/visualcppbuildtools_full.exe")) {
   Write-Output "Downloading c++ build tools"
