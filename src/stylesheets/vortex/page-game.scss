@@ -3,20 +3,34 @@
 }
 
 .game-filter-container {
-  padding: 0 10px 5px;
+  padding: 0 0 5px 10px;
   border: 0;
+
+  .input-group {
+    width: 100%;
+  }
 }
 
 .game-filter-input {
   position: relative;
   border-color: $border-color;
-  width: 20em;
   // prevent this from overlaying popovers from the iconbar above
   z-index: 0;
   .form-control {
     position: initial;
     float: unset;
     z-index: unset;
+  }
+}
+
+.game-sort-container {
+  width: 15em;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+
+  > .Select {
+    flex: 1 1 0;
   }
 }
 

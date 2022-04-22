@@ -298,17 +298,19 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       <Panel.Title>{titleManaged}</Panel.Title>
                       <div className='flex-fill' />
                       {expandManaged ? (
-                        <div onClick={captureClick} >
+                        <div className='game-sort-container' onClick={captureClick} >
+                          {t('Sort by:')}
                           <Select
                             className='select-compact'
                             options={[
-                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'alphabetical', label: t('Name A-Z') },
                               { value: 'recentlyused', label: t('Recently used') },
                             ]}
                             value={sortManaged}
                             onChange={this.setSortManaged}
                             clearable={false}
                             autosize={false}
+                            searchable={false}
                           />
                         </div>
                       ) : null}
@@ -327,11 +329,12 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       <Panel.Title>{titleUnmanaged}</Panel.Title>
                       <div className='flex-fill' />
                       {expandUnmanaged ? (
-                        <div onClick={captureClick} >
+                        <div className='game-sort-container' onClick={captureClick} >
+                          {t('Sort by:')}
                           <Select
                             className='select-compact'
                             options={[
-                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'alphabetical', label: t('Name A-Z') },
                               { value: 'recent', label: t('Most Recent') },
                               { value: 'popular', label: t('Most Popular') },
                             ]}
@@ -339,6 +342,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                             onChange={this.setSortUnmanaged}
                             clearable={false}
                             autosize={false}
+                            searchable={false}
                           />
                         </div>
                       ) : null}
