@@ -38,7 +38,7 @@ function NexusId(props: INexusIdProps) {
   const fileGameId = mod.attributes?.downloadGame || gameMode;
 
   const downloadPath = useSelector((state: IState) => downloadPathForGame(state, fileGameId));
-  const downloads = useSelector((state: IState) => state.persistent.downloads.files);
+  const downloads = useSelector((state: IState) => state.persistent.downloads.files ?? {});
 
   const hasArchive = (mod.archiveId !== undefined)
                   && (downloads[mod.archiveId] !== undefined);

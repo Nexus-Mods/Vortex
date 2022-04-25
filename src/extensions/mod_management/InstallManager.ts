@@ -1756,7 +1756,7 @@ class InstallManager {
 
   private doInstallDependenciesPhase(api: IExtensionApi,
                                      dependencies: IDependency[],
-                                     profile: IProfile,
+                                     gameId: string,
                                      sourceModId: string,
                                      downloadAndInstall: (dep: IDependency) => Promise<string>,
                                      abort: AbortController)
@@ -1778,20 +1778,20 @@ class InstallManager {
 
           if (!alreadyInstalled) {
             api.store.dispatch(
-              setModAttribute(profile.gameId, modId, 'installedAsDependency', true));
+              setModAttribute(gameId, modId, 'installedAsDependency', true));
           }
 
           // enable the mod in any profile that has the source mod enabled
           const profiles = Object.values(api.getState().persistent.profiles)
-            .filter(prof => (prof.gameId === profile.gameId)
+            .filter(prof => (prof.gameId === gameId)
                          && prof.modState?.[sourceModId]?.enabled);
           profiles.forEach(prof => {
             api.store.dispatch(setModEnabled(prof.id, modId, true));
           });
 
-          this.applyExtraFromRule(api, profile.gameId, modId, dep.extra);
+          this.applyExtraFromRule(api, gameId, modId, dep.extra);
 
-          const mods = api.store.getState().persistent.mods[profile.gameId];
+          const mods = api.store.getState().persistent.mods[gameId];
           return { ...dep, mod: mods[modId] };
         })
         // don't cancel the whole process if one dependency fails to install
@@ -1900,7 +1900,6 @@ class InstallManager {
   }
 
   private doInstallDependencies(api: IExtensionApi,
-                                profile: IProfile,
                                 gameId: string,
                                 sourceModId: string,
                                 dependencies: IDependency[],
@@ -2140,7 +2139,7 @@ class InstallManager {
         if (depList.length === 0) {
           return prev;
         }
-        return this.doInstallDependenciesPhase(api, depList, profile, sourceModId,
+        return this.doInstallDependenciesPhase(api, depList, gameId, sourceModId,
                                                doDownload, abort)
           .then((updated: IDependency[]) => {
             if (idx === phaseList.length - 1) {
@@ -2223,7 +2222,7 @@ class InstallManager {
       { count: success.length, errors: error.length });
 
     if (silent && (error.length === 0)) {
-      return this.doInstallDependencies(api, profile, gameId, modId, success, false, silent)
+      return this.doInstallDependencies(api, gameId, modId, success, false, silent)
         .then(updated => this.updateRules(api, gameId, modId, [].concat(existing, updated), false));
     }
 
@@ -2274,7 +2273,7 @@ class InstallManager {
         },
       }, actions)).then(result => {
         if (result.action === 'Install') {
-          return this.doInstallDependencies(api, profile, gameId, modId, success, false, silent)
+          return this.doInstallDependencies(api, gameId, modId, success, false, silent)
             .then(updated => this.updateRules(api, gameId, modId,
               [].concat(existing, updated), false));
         } else {
@@ -2473,7 +2472,6 @@ class InstallManager {
 
               return this.doInstallDependencies(
                 api,
-                profile,
                 gameId,
                 modId,
                 (result !== null)
