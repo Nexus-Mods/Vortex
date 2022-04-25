@@ -760,7 +760,9 @@ function init(context: IExtensionContext): boolean {
           try {
             return await invokeInstall(false);
           } catch (innerErr) {
-            return Promise.reject(transformError(innerErr));
+            const err2 = transformError(innerErr);
+            err2['allowReport'] = false;
+            return Promise.reject(err2);
           }
         }
       }
