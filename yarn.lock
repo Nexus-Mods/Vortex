@@ -3067,7 +3067,7 @@ async-exit-hook@^2.0.1:
   resolved "https://registry.yarnpkg.com/async-exit-hook/-/async-exit-hook-2.0.1.tgz#8bd8b024b0ec9b1c01cccb9af9db29bd717dfaf3"
   integrity sha512-NW2cX8m1Q7KPA7a5M2ULQeZ2wR5qI5PAbw5L0UOMxdioVk9PMZ0h1TmyZEkPYrCvYjDlFICusOu1dlEKAAeXBw==
 
-async@*:
+async@*, async@^3.2.2:
   version "3.2.3"
   resolved "https://registry.yarnpkg.com/async/-/async-3.2.3.tgz#ac53dafd3f4720ee9e8a160628f18ea91df196c9"
   integrity sha512-spZRyzKL5l5BZQrr/6m/SqFdBN0q3OCI0f9rjfBzCMBIP4p75P620rR3gTmaksNOhmzgdxcaxdNfMy6anrbM0g==
@@ -5834,10 +5834,10 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.5.23"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3c6ab0083444cb93e063a05b4a6107129661c030"
+  version "0.5.24"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/2a3c4acc1ae141f75a53075ad17a4f59fe6fdcca"
   dependencies:
-    async "^2.6.2"
+    async "^3.2.2"
     copyfiles "*"
     msbuild "1.1.2"
 
