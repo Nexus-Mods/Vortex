@@ -1314,6 +1314,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .map(modId => {
         let name = modName(this.state.modsWithState[modId], {
           version: true,
+          variant: true,
         });
         if (this.state.modsWithState[modId].state === 'downloaded') {
           name += ' ' + t('(Archive only)');
@@ -1386,7 +1387,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       const validIds = modIds.filter(modId => mods[modId] !== undefined);
-      withBatchContext<void>('install-mod', validIds, () => {
+      withBatchContext<void>('install-mod', validIds.map(modId => mods[modId].archiveId), () => {
         return Promise.all(
           validIds.map(modId => {
             const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);

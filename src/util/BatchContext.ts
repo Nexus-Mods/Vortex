@@ -136,7 +136,6 @@ export async function withBatchContext<T>(operation: string,
       // idx should *always* be 0 at this point, the block above ensures we only run a batch
       // when it's at idx 0 for all keys
       contexts[key].splice(idx, idx + 1);
-      delete context[key];
     });
   }
   return res;

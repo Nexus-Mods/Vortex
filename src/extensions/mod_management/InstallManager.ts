@@ -1,7 +1,7 @@
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadModInfo,
          startActivity, stopActivity } from '../../actions';
-import { showDialog } from '../../actions/notifications';
+import { IConditionResult, IDialogContent, showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
@@ -14,6 +14,7 @@ import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { TFunction } from '../../util/i18n';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
@@ -52,6 +53,7 @@ import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
 import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
+import { MAX_VARIANT_NAME, MIN_VARIANT_NAME } from './constants';
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
@@ -126,6 +128,23 @@ const FILETYPES_AVOID = ['.dll'];
 
 function nop() {
   // nop
+}
+
+function validateVariantName(t: TFunction, content: IDialogContent): IConditionResult[] {
+  const variantName = content.input.find(inp => inp.id === 'variant')?.value ?? '';
+
+  if ((variantName.length < MIN_VARIANT_NAME) || (variantName.length > MAX_VARIANT_NAME)) {
+    return [{
+      id: 'variant',
+      actions: ['Continue'],
+      errorText: t('Name must be between {{min}}-{{max}} characters long', {
+        min: MIN_VARIANT_NAME,
+        max: MAX_VARIANT_NAME,
+      }),
+    }];
+  } else {
+    return [];
+  }
 }
 
 /**
@@ -1486,11 +1505,7 @@ class InstallManager {
         });
       }
 
-      const context = getBatchContext('install-mod', modId);
-
-      if (context.get('canceled', false)) {
-        return reject(new UserCanceled());
-      }
+      const context = getBatchContext('install-mod', mod.archiveId);
 
       const queryVariantNameDialog: () => Promise<string> = () =>
         api.showDialog('question', 'Install options - Name mod variant', {
@@ -1501,8 +1516,14 @@ class InstallManager {
             label: 'Variant',
           }],
           checkboxes: checkVariantRemember,
+          md: '**Remember:** You can switch between variants by clicking in the version '
+            + 'column in your mod list and selecting from the dropdown.',
           parameters: {
             modName: modName(mod, { version: false }),
+          },
+          condition: (content: IDialogContent) => validateVariantName(api.translate, content),
+          options: {
+            order: ['text', 'input', 'md', 'checkboxes'],
           },
         }, [
           { label: 'Cancel' },
@@ -1578,6 +1599,10 @@ class InstallManager {
       const checkVariantRemember: ICheckbox[] = [];
       const checkRoVRemember: ICheckbox[] = [];
       if (context !== undefined) {
+        if (context.get('canceled', false)) {
+          return reject(new UserCanceled());
+        }
+
         const action = context.get('replace-or-variant');
         const itemsCompleted = context.get('items-completed', 0);
         const itemsLeft = context.itemCount - itemsCompleted;
