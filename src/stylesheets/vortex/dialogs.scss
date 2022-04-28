@@ -117,8 +117,17 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+
     > div {
       overflow: auto;
+    }
+
+    .choice-maintext {
+      font-weight: bold;
+    }
+
+    .choice-subtext {
+      margin-bottom: 1em;
     }
   }
 }
