@@ -2,7 +2,7 @@ import { IGame } from '../../../types/IGame';
 import { statAsync } from '../../../util/fs';
 import lazyRequire from '../../../util/lazyRequire';
 import { log } from '../../../util/log';
-import { IDiscoveryResult } from '../types/IDiscoveryResult';
+import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 
 import * as exeVersionT from 'exe-version';
 import path from 'path';

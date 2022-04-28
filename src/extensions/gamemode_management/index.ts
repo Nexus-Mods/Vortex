@@ -39,7 +39,6 @@ import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
-import { GameVersionProviderFunc, GameVersionProviderTest, IGameVersionProvider } from './types/IGameVersionProvider';
 import { IModType } from './types/IModType';
 import getDriveList from './util/getDriveList';
 import { getGame } from './util/getGame';
@@ -53,10 +52,7 @@ import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 
 import GameModeManager, { IGameStub } from './GameModeManager';
-import GameVersionManager from './GameVersionManager';
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
-
-import { getExecGameVersion, getExtGameVersion, testExecProvider, testExtProvider } from './util/getGameVersion';
 
 import Promise from 'bluebird';
 import * as fsExtra from 'fs-extra';
@@ -68,12 +64,10 @@ const gameStoreLaunchers: IGameStore[] = [];
 
 const $ = local<{
   gameModeManager: GameModeManager,
-  gameVersionManager: GameVersionManager,
   extensionGames: IGame[],
   extensionStubs: IGameStub[],
 }>('gamemode-management', {
   gameModeManager: undefined,
-  gameVersionManager: undefined,
   extensionGames: [],
   extensionStubs: [],
 });
@@ -87,7 +81,6 @@ interface IProvider {
 }
 
 const gameInfoProviders: IProvider[] = [];
-const gameVersionProviders: IGameVersionProvider[] = [];
 
 function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<void> {
   interface IKeyProvider {
@@ -567,27 +560,6 @@ function init(context: IExtensionContext): boolean {
       gameInfoProviders.push({ id, priority, expireMS, keys, query });
   };
 
-  context.registerGameVersionProvider =
-    ((id: string, priority: number, supported: GameVersionProviderTest,
-      getGameVersion: GameVersionProviderFunc, options?: any, extPath?: any) => {
-        // TODO: replace this with a proper validator.
-        const provider: IGameVersionProvider = { id, priority, supported, getGameVersion };
-        if (!provider) {
-          context.api.showErrorNotification('Invalid game version provider', undefined, {
-            message: 'A game version provider has failed to initialize',
-          });
-          return;
-        }
-        gameVersionProviders.push({
-          id,
-          priority,
-          supported: wrapExtCBAsync(supported, extPath),
-          getGameVersion: wrapExtCBAsync(getGameVersion, extPath),
-          options,
-        });
-        gameVersionProviders.sort((lhs, rhs) => lhs.priority - rhs.priority);
-  }) as any;
-
   context.registerModType = registerModType;
 
   context.registerGameInfoProvider('game-path', 0, 1000,
@@ -729,18 +701,9 @@ function init(context: IExtensionContext): boolean {
     },
   }));
 
-  context.registerGameVersionProvider('ext-version-check',
-    20, testExtProvider, getExtGameVersion);
-  context.registerGameVersionProvider('exec-version-check',
-    100, testExecProvider, getExecGameVersion);
-  context.registerGameVersionProvider('fallback',
-    1000, () => Promise.resolve(true), () => Promise.resolve('0.0.0'));
-
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
-
-    $.gameVersionManager = new GameVersionManager(context.api, gameVersionProviders);
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 

@@ -2,10 +2,8 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { ProcessCanceled } from '../../util/CustomErrors';
 import { truthy } from '../../util/util';
-import { discoveryByGame } from './selectors';
-import { IDiscoveryResult } from './types/IDiscoveryResult';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameVersionProvider } from './types/IGameVersionProvider';
-import { getGame } from './util/getGame';
 
 import { log } from '../../util/log';
 
@@ -19,21 +17,8 @@ export default class GameVersionManager {
     this.mProviders = providers;
   }
 
-  public async getSupportedProvider<T>(gameInstance: T,
-                                       discovery?: IDiscoveryResult)
-                                        : Promise<IGameVersionProvider> {
-    let game;
-    if (typeof gameInstance === 'string') {
-      const state = this.mApi.getState();
-      discovery = discoveryByGame(state, gameInstance);
-      game = getGame(gameInstance);
-      if (!this.isGameValid(game, discovery)) {
-        return Promise.reject(new ProcessCanceled('Game is not discovered'));
-      }
-    } else {
-      game = gameInstance;
-    }
-
+  public async getSupportedProvider(game: IGame,
+                                    discovery?: IDiscoveryResult): Promise<IGameVersionProvider> {
     for (const provider of this.mProviders) {
       const isSupported = await provider.supported(game, discovery);
       if (isSupported) {

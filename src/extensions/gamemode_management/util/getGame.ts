@@ -1,9 +1,8 @@
 import { IGame } from '../../../types/IGame';
 import { IGameStore } from '../../../types/IGameStore';
 import local from '../../../util/local';
-import { log } from '../../../util/log';
+import GameVersionManager from '../../gameversion_management/GameVersionManager';
 import GameModeManager, { IGameStub } from '../GameModeManager';
-import GameVersionManager from '../GameVersionManager';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import { getModTypeExtensions } from './modTypeExtensions';
@@ -40,7 +39,7 @@ const gameExHandler = {
       return getModTypeExtensions().filter(ex => ex.isSupported(target.id));
     } else if (key === 'getInstalledVersion') {
       return (discovery: IDiscoveryResult) =>
-        $.gameVersionManager.getGameVersion(target, discovery);
+      gvm.gameVersionManager.getGameVersion(target, discovery);
     } else {
       return target[key];
     }
@@ -57,17 +56,22 @@ function makeGameProxy(game: IGame): IGame {
 // this isn't nice...
 const $ = local<{
   gameModeManager: GameModeManager,
-  gameVersionManager: GameVersionManager,
   extensionGames: IGame[],
   extensionStubs: IGameStub[],
 }>('gamemode-management', {
   gameModeManager: undefined,
-  gameVersionManager: undefined,
   extensionGames: [],
   extensionStubs: [],
 });
 
 // ...neither is this
+const gvm = local<{
+  gameVersionManager: GameVersionManager,
+}>('gameversion-manager', {
+  gameVersionManager: undefined,
+});
+
+// ...or this
 export function getGames(): IGame[] {
   if ($.gameModeManager === undefined) {
     throw new Error('getGames only available in renderer process');

@@ -1,8 +1,10 @@
 import { IExtension, IExtensionDownloadInfo } from '../extensions/extension_manager/types';
 import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
+import {
+  GameVersionProviderFunc, GameVersionProviderTest, IGameVersionProviderOptions,
+} from '../extensions/gameversion_management/types/IGameVersionProvider';
 import { IHistoryStack } from '../extensions/history_management/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
-import { GameVersionProviderFunc, GameVersionProviderTest } from '../extensions/gamemode_management/types/IGameVersionProvider';
 
 import {
   IDeployedFile,
@@ -1262,7 +1264,7 @@ export interface IExtensionContext {
                                  priority: number,
                                  supported: GameVersionProviderTest,
                                  getVersion: GameVersionProviderFunc,
-                                 options?: any) => void;
+                                 options?: IGameVersionProviderOptions) => void;
 
   /**
    * register a handler that can be used to preview or diff files.
