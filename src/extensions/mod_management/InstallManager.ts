@@ -5,6 +5,7 @@ import { showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
+import { getBatchContext } from '../../util/BatchContext';
 import { fileMD5 } from '../../util/checksum';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
@@ -13,12 +14,11 @@ import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
-import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
-import { getSafe, setSafe } from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
@@ -403,8 +403,10 @@ class InstallManager {
         // if the name is already taken, consult the user,
         // repeat until user canceled, decided to replace the existing
         // mod or provided a new, unused name
+
+        let variantCounter: number = 0;
         const checkNameLoop = () => this.checkModExists(testModId, api, installGameId)
-          ? this.queryUserReplace(modId, installGameId, api)
+          ? this.queryUserReplace(api, modId, installGameId, ++variantCounter)
             .then((choice: IReplaceChoice) => {
               testModId = choice.id;
               if (choice.enable) {
@@ -1462,7 +1464,7 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
+  private queryUserReplace(api: IExtensionApi, modId: string, gameId: string, counter: number) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mod: IMod = state.persistent.mods[gameId][modId];
@@ -1483,32 +1485,149 @@ class InstallManager {
           rules: [],
         });
       }
-      api.store
-        .dispatch(showDialog(
-          'question', modName(mod, { version: false }),
-          {
-            text:
-              'This mod seems to be installed already. '
-              + 'You can replace the existing one - which will update all profiles - '
-              + 'or install the new one under a different name. '
-              + 'If you do the latter, the new installation will appear as a variant '
-              + 'of the other mod that can be toggled through the version dropdown. '
-              + 'Use the input below to make the variant distinguishable.',
-            input: [{
-              id: 'variant',
-              value: '2',
-              label: 'Variant',
-            }],
-            options: {
-              wrap: true,
-            },
+
+      const context = getBatchContext('install-mod', modId);
+
+      if (context.get('canceled', false)) {
+        return reject(new UserCanceled());
+      }
+
+      const queryVariantNameDialog: () => Promise<string> = () =>
+        api.showDialog('question', 'Install options - Name mod variant', {
+          text: 'Enter a variant name for "{{modName}}" to differentiate it from the original',
+          input: [{
+            id: 'variant',
+            value: '2',
+            label: 'Variant',
+          }],
+          checkboxes: checkVariantRemember,
+          parameters: {
+            modName: modName(mod, { version: false }),
           },
-          [
-            { label: 'Cancel' },
-            { label: VARIANT_ACTION },
-            { label: REPLACE_ACTION },
-          ]))
-        .then((result: IDialogResult) => {
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => {
+          if (result.action === 'Cancel') {
+            context?.set?.('canceled', true);
+            return Promise.reject(new UserCanceled());
+          } else {
+            if (result.input.remember) {
+              context.set('variant-name', result.input.variant);
+            }
+            return Promise.resolve(result.input.variant);
+          }
+        });
+
+      const queryDialog = () => api.showDialog('question', 'Install options',
+        {
+          text: '"{{modName}}" has already been installed. Would you like to:',
+          choices: [
+            {
+              id: 'replace',
+              value: true,
+              text: 'Replace the existing mod',
+              subText: 'This will replace your existing mod with this '
+                     + 'new version on all your profiles',
+            },
+            {
+              id: 'variant',
+              value: false,
+              text: 'Install as variant of the existing mod',
+              subText: 'This will allow you to install variants of the same mod and easily '
+                     + 'switch between them from the version drop-down in the mods table. '
+                     + 'This can be useful if you want to install the same mod but with '
+                     + 'different options in different profiles.',
+            },
+          ],
+          checkboxes: checkRoVRemember,
+          options: {
+            wrap: true,
+            order: ['choices', 'checkboxes'],
+          },
+          parameters: {
+            modName: modName(mod, { version: false }),
+          },
+        },
+        [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => {
+          if (result.action === 'Cancel') {
+            context?.set?.('canceled', true);
+            return Promise.reject(new UserCanceled());
+          } else if (result.input.variant) {
+            return queryVariantNameDialog()
+              .then(variant => ({
+                action: 'variant',
+                variant,
+                remember: result.input.remember,
+              }));
+          } else if (result.input.replace) {
+            return {
+              action: 'replace',
+              remember: result.input.remember,
+            };
+          }
+        });
+
+      let choices: Promise<{ action: string, variant?: string, remember: boolean }>;
+
+      const checkVariantRemember: ICheckbox[] = [];
+      const checkRoVRemember: ICheckbox[] = [];
+      if (context !== undefined) {
+        const action = context.get('replace-or-variant');
+        const itemsCompleted = context.get('items-completed', 0);
+        const itemsLeft = context.itemCount - itemsCompleted;
+        if (itemsLeft > 1) {
+          if (action === undefined) {
+            checkRoVRemember.push({
+              id: 'remember',
+              value: false,
+              text: api.translate('Do this for all remaining reinstalls ({{count}} more)', {
+                count: itemsLeft - 1,
+              }),
+            });
+          }
+          checkVariantRemember.push({
+            id: 'remember',
+            value: false,
+            text: api.translate('Use this name for all remaining variants ({{count}} more)', {
+              count: itemsLeft - 1,
+            }),
+          });
+        }
+
+        if (action !== undefined) {
+          let variant: string = context.get('variant-name');
+          if (variant === undefined) {
+            choices = queryVariantNameDialog()
+              .then(variantName => ({
+                action,
+                variant: variantName,
+                remember: true,
+              }));
+          } else {
+            if (counter > 1) {
+              variant += `.${counter}`;
+            }
+            choices = Promise.resolve({
+              action,
+              variant,
+              remember: true,
+            });
+          }
+        }
+      }
+
+      if (choices === undefined) {
+        choices = queryDialog();
+      }
+
+      choices
+        .then((result: { action: string, variant: string, remember: boolean }) => {
           const currentProfile = activeProfile(api.store.getState());
           const wasEnabled = () => {
             return (currentProfile?.gameId === gameId)
@@ -1516,20 +1635,24 @@ class InstallManager {
               : false;
           };
 
-          if (result.action === 'Cancel') {
-            reject(new UserCanceled());
-          } else if (result.action === VARIANT_ACTION) {
+          if (result.action === 'variant') {
+            if (result.remember === true) {
+              context.set('replace-or-variant', 'variant');
+            }
             if (currentProfile !== undefined) {
               api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
             }
             resolve({
-              id: modId + '+' + result.input.variant,
-              variant: result.input.variant,
+              id: modId + '+' + result.variant,
+              variant: result.variant,
               enable: wasEnabled(),
               attributes: {},
               rules: [],
             });
-          } else if (result.action === REPLACE_ACTION) {
+          } else if (result.action === 'replace') {
+            if (result.remember === true) {
+              context.set('replace-or-variant', 'replace');
+            }
             api.events.emit('remove-mod', gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);
@@ -1543,8 +1666,23 @@ class InstallManager {
                 });
               }
             }, { willBeReplaced: true });
+          } else {
+            if (result.action === 'Cancel') {
+              log('error', 'invalid action in "queryUserReplace"', { action: result.action });
+            }
+            context?.set?.('canceled', true);
+            reject(new UserCanceled());
           }
-        });
+        })
+        .tap(() => {
+          if (context !== undefined) {
+            context.set('items-completed', context.get('items-completed', 0) + 1);
+          }
+        })
+        .catch(err => {
+          return reject(err);
+        })
+        ;
     });
   }
 
