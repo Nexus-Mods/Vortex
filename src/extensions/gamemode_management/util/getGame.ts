@@ -3,58 +3,12 @@ import { IGameStore } from '../../../types/IGameStore';
 import local from '../../../util/local';
 import { log } from '../../../util/log';
 import GameModeManager, { IGameStub } from '../GameModeManager';
+import GameVersionManager from '../GameVersionManager';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import { getModTypeExtensions } from './modTypeExtensions';
 
-import * as exeVersionT from 'exe-version';
 import * as path from 'path';
-import lazyRequire from '../../../util/lazyRequire';
-
-const exeVersion: typeof exeVersionT = lazyRequire(() => require('exe-version'));
-
-function getGameVersion(game: IGame, discovery: IDiscoveryResult) {
-  // allow games to have specific functions to get at the version
-  // otherwise take the version stored in the executable
-  if (discovery?.path === undefined) {
-    return Promise.resolve(undefined);
-  }
-  const getExecGameVersion = () => {
-    const exePath = path.join(discovery.path, discovery.executable || game.executable());
-    try {
-      const version: string = exeVersion.default(exePath);
-      return Promise.resolve(version);
-    } catch (err) {
-      return Promise.resolve('0.0.0');
-    }
-  };
-
-  const getExtGameVersion = async () => {
-    try {
-      const version: string =
-        await game.getGameVersion(discovery.path, discovery.executable || game.executable());
-      if (typeof version !== 'string') {
-        return Promise.reject(new Error('getGameVersion functor returned an invalid type'));
-      }
-
-      return version;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  };
-
-  return (game?.getGameVersion === undefined)
-    ? getExecGameVersion()
-    : getExtGameVersion()
-      .catch(err => {
-        log('warn', 'getGameVersion call failed', {
-          message: err.message,
-          gameMode: game.id,
-        });
-        return getExecGameVersion();
-      });
-
-}
 
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
@@ -85,7 +39,8 @@ const gameExHandler = {
     } else if (key === 'modTypes') {
       return getModTypeExtensions().filter(ex => ex.isSupported(target.id));
     } else if (key === 'getInstalledVersion') {
-      return (discovery: IDiscoveryResult) => getGameVersion(target, discovery);
+      return (discovery: IDiscoveryResult) =>
+        $.gameVersionManager.getGameVersion(target, discovery);
     } else {
       return target[key];
     }
@@ -102,10 +57,12 @@ function makeGameProxy(game: IGame): IGame {
 // this isn't nice...
 const $ = local<{
   gameModeManager: GameModeManager,
+  gameVersionManager: GameVersionManager,
   extensionGames: IGame[],
   extensionStubs: IGameStub[],
 }>('gamemode-management', {
   gameModeManager: undefined,
+  gameVersionManager: undefined,
   extensionGames: [],
   extensionStubs: [],
 });
