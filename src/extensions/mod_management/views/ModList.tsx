@@ -1387,6 +1387,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       const validIds = modIds.filter(modId => mods[modId] !== undefined);
+      const installTimes = validIds.reduce((prev, modId) => {
+        prev[modId] = mods[modId].attributes?.installTime;
+        return prev;
+      }, {});
       withBatchContext<void>('install-mod', validIds.map(modId => mods[modId].archiveId), () => {
         return Promise.all(
           validIds.map(modId => {
@@ -1404,7 +1408,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               });
           }))
           .then(() => {
-            const enabled = validIds.filter(id => getSafe(modState, [id, 'enabled'], false));
+            const newMods = this.props.mods;
+            const enabled = validIds
+              .filter(id => getSafe(modState, [id, 'enabled'], false))
+              .filter(id => installTimes?.[id] !== newMods[id]?.attributes?.installTime);
             if (enabled.length > 0) {
               this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
             }
