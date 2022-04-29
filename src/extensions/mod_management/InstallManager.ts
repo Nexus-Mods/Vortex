@@ -1507,8 +1507,23 @@ class InstallManager {
 
       const context = getBatchContext('install-mod', mod.archiveId);
 
-      const queryVariantNameDialog: () => Promise<string> = () =>
-        api.showDialog('question', 'Install options - Name mod variant', {
+      const queryVariantNameDialog = (remember: boolean) => {
+        const checkVariantRemember: ICheckbox[] = [];
+        if (context  !== null) {
+          const itemsCompleted = context.get('items-completed', 0);
+          const itemsLeft = context.itemCount - itemsCompleted;
+          if ((itemsLeft > 1) && remember) {
+            checkVariantRemember.push({
+              id: 'remember',
+              value: false,
+              text: api.translate('Use this name for all remaining variants ({{count}} more)', {
+                count: itemsLeft - 1,
+              }),
+            });
+          }
+        }
+
+        return api.showDialog('question', 'Install options - Name mod variant', {
           text: 'Enter a variant name for "{{modName}}" to differentiate it from the original',
           input: [{
             id: 'variant',
@@ -1540,6 +1555,7 @@ class InstallManager {
             return Promise.resolve(result.input.variant);
           }
         });
+      };
 
       const queryDialog = () => api.showDialog('question', 'Install options',
         {
@@ -1549,8 +1565,7 @@ class InstallManager {
               id: 'replace',
               value: true,
               text: 'Replace the existing mod',
-              subText: 'This will replace your existing mod with this '
-                     + 'new version on all your profiles',
+              subText: 'This will replace the existing mod on all your profiles.',
             },
             {
               id: 'variant',
@@ -1580,7 +1595,7 @@ class InstallManager {
             context?.set?.('canceled', true);
             return Promise.reject(new UserCanceled());
           } else if (result.input.variant) {
-            return queryVariantNameDialog()
+            return queryVariantNameDialog(result.input.remember)
               .then(variant => ({
                 action: 'variant',
                 variant,
@@ -1596,7 +1611,6 @@ class InstallManager {
 
       let choices: Promise<{ action: string, variant?: string, remember: boolean }>;
 
-      const checkVariantRemember: ICheckbox[] = [];
       const checkRoVRemember: ICheckbox[] = [];
       if (context !== undefined) {
         if (context.get('canceled', false)) {
@@ -1616,19 +1630,12 @@ class InstallManager {
               }),
             });
           }
-          checkVariantRemember.push({
-            id: 'remember',
-            value: false,
-            text: api.translate('Use this name for all remaining variants ({{count}} more)', {
-              count: itemsLeft - 1,
-            }),
-          });
         }
 
         if (action !== undefined) {
           let variant: string = context.get('variant-name');
           if (variant === undefined) {
-            choices = queryVariantNameDialog()
+            choices = queryVariantNameDialog(context.get('replace-or-variant') !== undefined)
               .then(variantName => ({
                 action,
                 variant: variantName,
