@@ -150,7 +150,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const { loadOrder } = this.state;
     const idx: number = loadOrder.indexOf(loEntry);
     const key = loEntry.id + JSON.stringify(loEntry);
-    const name = util.renderModName(this.props.mods[loEntry.id]);
+    const name = loEntry.name || (loEntry.modId !== undefined)
+      ? util.renderModName(this.props.mods[loEntry.modId])
+      : loEntry.id;
     const classes = ['load-order-entry', 'collection-tab'];
     return (
       <ListGroupItem
