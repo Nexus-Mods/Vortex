@@ -11,6 +11,7 @@ import {
   getExecGameVersion, getExtGameVersion,
   testExecProvider, testExtProvider,
 } from './util/getGameVersion';
+import isVersionProvider from './util/validation';
 
 // oh boy
 const $ = local<{
@@ -26,10 +27,9 @@ function init(context: IExtensionContext): boolean {
     ((id: string, priority: number, supported: GameVersionProviderTest,
       getGameVersion: GameVersionProviderFunc, options?: IGameVersionProviderOptions,
       extPath?: any) => {
-        // TODO: replace this with a proper validator.
-        const provider: IGameVersionProvider = { id, priority, supported, getGameVersion };
-        if (!provider) {
-          context.api.showErrorNotification('Invalid game version provider', undefined, {
+        const errors = isVersionProvider({ id, priority, supported, getGameVersion });
+        if (errors !== null) {
+          context.api.showErrorNotification('Invalid game version provider', errors, {
             message: 'A game version provider has failed to initialize',
           });
           return;
