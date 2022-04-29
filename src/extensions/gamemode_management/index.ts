@@ -23,7 +23,7 @@ import ReduxProp from '../../util/ReduxProp';
 import { activeGameId, activeProfile, downloadPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
-import { batchDispatch } from '../../util/util';
+import { batchDispatch, wrapExtCBAsync } from '../../util/util';
 
 import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setModType } from '../mod_management/actions/mods';

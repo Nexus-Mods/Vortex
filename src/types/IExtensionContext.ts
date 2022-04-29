@@ -1,5 +1,8 @@
 import { IExtension, IExtensionDownloadInfo } from '../extensions/extension_manager/types';
 import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
+import {
+  GameVersionProviderFunc, GameVersionProviderTest, IGameVersionProviderOptions,
+} from '../extensions/gameversion_management/types/IGameVersionProvider';
 import { IHistoryStack } from '../extensions/history_management/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
 
@@ -1253,6 +1256,15 @@ export interface IExtensionContext {
    */
   registerProfileFeature?: (featureId: string, type: string, icon: string, label: string,
                             description: string, supported: () => boolean) => void;
+
+  /**
+   * register a game version resolution provider.
+   */
+  registerGameVersionProvider?: (id: string,
+                                 priority: number,
+                                 supported: GameVersionProviderTest,
+                                 getVersion: GameVersionProviderFunc,
+                                 options?: IGameVersionProviderOptions) => void;
 
   /**
    * register a handler that can be used to preview or diff files.
