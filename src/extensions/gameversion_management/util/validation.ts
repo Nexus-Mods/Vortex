@@ -2,15 +2,6 @@
 'use strict';
 
 export default function isVersionProvider(data): any[] {
-    const { supported, getGameVersion } = data;
-    // ts-v-gen can't handle types very well - this is a temporary, extremely ugly
-    //  hack to at least try to ensure that the test and func logic has the expected
-    //  function signature while I figure out how to handle functors in ts-v-gen.
-    // const rgx = new RegExp('(function.*\(.*,.*\).*{$)|(.*resolve\(|.*reject)', 'gm');
-    // const what = supported.supported.toString();
-    // if (supported.supported.toString()) {
-    //     return ['Incorrect return type signature for provider test'];
-    // }
     const res = validate10(data);
     return (res === false) ? validate10.prototype.constructor.errors : null;
 }
