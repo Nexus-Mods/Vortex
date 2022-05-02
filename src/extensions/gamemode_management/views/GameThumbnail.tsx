@@ -156,7 +156,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private renderMenu(): JSX.Element[] {
     const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
+      <Popover id={`popover-info-${game.id}`} className='popover-game-info'>
         <Provider store={this.context.api.store}>
           <IconBar
             id={`game-thumbnail-${game.id}`}
@@ -241,12 +241,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
   private redraw = () => {
     if (this.mRef !== null) {
-      this.mRef.hide();
-      setTimeout(() => {
-        if (this.mRef !== null) {
-          this.mRef.show();
-        }
-      }, 100);
+      this.mRef.forceUpdate();
     }
   }
 }
