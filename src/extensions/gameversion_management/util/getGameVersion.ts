@@ -35,7 +35,10 @@ export async function testExecProvider(game: IGame, discovery: IDiscoveryResult)
   const exePath = path.join(discovery.path, discovery.executable || game.executable());
   try {
     await statAsync(exePath);
-    return Promise.resolve(true);
+    const version: string = exeVersion.default(exePath);
+    return version === '0.0.0'
+      ? Promise.resolve(false)
+      : Promise.resolve(true);
   } catch (err) {
     log('error', 'unable to test executable version fields', err);
     return Promise.resolve(false);
