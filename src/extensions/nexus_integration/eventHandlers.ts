@@ -402,8 +402,9 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
     return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
                                                             collectionSlug, revisionNumber))
       .catch(err => {
-        const allowReport = (!err.message.includes('network disconnected'))
-          && !(err.message.includes('Cannot return null for non-nullable field CollectionRevision.collection'));
+        const allowReport = !err.message.includes('network disconnected')
+          && !err.message.includes('Cannot return null for non-nullable field CollectionRevision.collection')
+          && !(err.code === 'COLLECTION_UNDER_MODERATION');
         err['collectionSlug'] = collectionSlug;
         err['revisionNumber'] = revisionNumber;
         if (err.code !== 'NOT_FOUND') {
