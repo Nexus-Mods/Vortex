@@ -1634,7 +1634,7 @@ class InstallManager {
 
         if (action !== undefined) {
           let variant: string = context.get('variant-name');
-          if (variant === undefined) {
+          if ((action === 'variant') && (variant === undefined)) {
             choices = queryVariantNameDialog(context.get('replace-or-variant') !== undefined)
               .then(variantName => ({
                 action,
@@ -1642,7 +1642,7 @@ class InstallManager {
                 remember: true,
               }));
           } else {
-            if (counter > 1) {
+            if ((variant !== undefined) && (counter > 1)) {
               variant += `.${counter}`;
             }
             choices = Promise.resolve({
