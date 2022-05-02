@@ -25,6 +25,7 @@ export interface IProps {
   validate?: ValidationState | ((value: any) => ValidationState);
   debounceTimer?: number;
   clearable?: boolean;
+  emptyIcon?: string;
 }
 
 interface IComponentState {
@@ -65,11 +66,30 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { className, clearable, groupClass, id, label, min, max,
+    const { className, clearable, emptyIcon, groupClass, id, label, min, max,
             placeholder, readOnly, style, type, validate } = this.props;
     const { cachedValue } = this.state;
+    const classes = ['form-input-container'];
+    if (className !== undefined) {
+      classes.push(className);
+    }
+
+    let icon: JSX.Element = null;
+
+    if (cachedValue) {
+      if (clearable) {
+        this.renderClear();
+      }
+    } else if (emptyIcon !== undefined) {
+      icon = this.renderIcon(emptyIcon);
+    }
+
+    if (icon !== null) {
+      classes.push('form-input-hasicon');
+    }
+
     const content = (
-      <div className={className} style={style}>
+      <div className={classes.join(' ')} style={style}>
         <input
           className={'form-control'}
           type={type ?? 'text'}
@@ -84,7 +104,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
           min={min}
           max={max}
         />
-        {cachedValue ? (clearable ? this.renderClear() : null) : this.renderSearch()}
+        {icon}
       </div>
     );
 
@@ -117,11 +137,11 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     return validateRes as ValidationState;
   }
 
-  private renderSearch() {
+  private renderIcon(iconName: string) {
     return (
       <IconButton
         className='form-input-clear btn-embed'
-        icon='search'
+        icon={iconName}
         tooltip={undefined}
       />
     );

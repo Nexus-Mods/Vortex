@@ -283,6 +283,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       placeholder={t('Search for a game...')}
                       onChange={this.onFilterInputChange}
                       debounceTimer={100}
+                      emptyIcon='search'
                       clearable
                     />
                   </InputGroup>
