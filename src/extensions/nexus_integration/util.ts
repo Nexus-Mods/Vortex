@@ -244,7 +244,7 @@ function startDownloadMod(api: IExtensionApi,
       state = api.getState();
       const download = state.persistent.downloads.files[downloadId];
       // might be paused at this point
-      if (!state.settings.automation?.install && (download.state === 'finished')) {
+      if (!state.settings.automation?.install && (download?.state === 'finished')) {
         api.sendNotification({
           id: `ready-to-install-${downloadId}`,
           type: 'success',
