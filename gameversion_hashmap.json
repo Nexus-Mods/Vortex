@@ -1,0 +1,18 @@
+{
+  "valheim": {
+    "53c5eaf569854c0823c41a529ad61551": {
+      "files": ["valheim.exe"],
+      "hashValue": "53c5eaf569854c0823c41a529ad61551",
+      "userFacingVersion": "0.208.1",
+      "variant": "steam"
+    }
+  },
+  "skyrimse": {
+    "2e4e5c4a27ceb761526eb36e3d7f524f": {
+      "files": ["appxmanifest.xml", "Data/Skyrim.esm", "Data/Update.esm"],
+      "hashValue": "2e4e5c4a27ceb761526eb36e3d7f524f",
+      "userFacingVersion": "1.6.353",
+      "variant": "xbox"
+    }
+  }
+}
