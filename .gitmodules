@@ -196,3 +196,7 @@
 	path = extensions/collections
 	url = https://github.com/Nexus-Mods/extension-collections.git
   branch = master
+[submodule "extensions/gameversion-hash"]
+	path = extensions/gameversion-hash
+	url = https://github.com/nexus-mods/extension-gameversion-hash.git
+	branch = main

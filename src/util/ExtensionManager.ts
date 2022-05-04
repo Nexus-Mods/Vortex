@@ -2280,6 +2280,7 @@ class ExtensionManager {
       'profile_management',
       'nexus_integration',
       'download_management',
+      'gameversion_management',
       'gamemode_management',
       'announcement_dashlet',
       'symlink_activator',
