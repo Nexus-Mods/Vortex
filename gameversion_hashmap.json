@@ -174,5 +174,17 @@
       "userFacingVersion": "1.21.0.1",
       "variant": "steam"
     }
+  },
+  "teso": {
+    "183ede2539c3b82f3f9598a85d9ee47a": {
+      "files": [
+        "..\\The Elder Scrolls Online\\game\\game_player.version",
+        "..\\The Elder Scrolls Online\\depot\\depot.version",
+        "Bethesda.net_Launcher.version"
+      ],
+      "hashValue": "183ede2539c3b82f3f9598a85d9ee47a",
+      "userFacingVersion": "7.3.8",
+      "variant": "bethesda"
+    }
   }
 }
