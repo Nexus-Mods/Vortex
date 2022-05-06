@@ -21,5 +21,16 @@
       "userFacingVersion": "1.34",
       "variant": "xbox"
     }
+  },
+  "falloutnv": {
+    "38a0935f8c9906670ffdc2753ab192ff": {
+      "files": [
+        "Data\\Update.bsa",
+        "Data\\FalloutNV.esm"
+      ],
+      "hashValue": "38a0935f8c9906670ffdc2753ab192ff",
+      "userFacingVersion": "1.4.0.525",
+      "variant": "xbox(english)"
+    }
   }
 }
