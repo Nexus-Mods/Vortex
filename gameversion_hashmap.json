@@ -163,5 +163,16 @@
       "userFacingVersion": "1.13",
       "variant": "steam"
     }
+  },
+  "bloodstainedritualofthenight": {
+    "d88590c9337be2079df7bc04c28bd4b3": {
+      "files": [
+        "BloodstainedRotN.exe",
+        "BloodstainedROTN\\Binaries\\Win64\\BloodstainedRotN-Win64-Shipping.exe"
+      ],
+      "hashValue": "d88590c9337be2079df7bc04c28bd4b3",
+      "userFacingVersion": "1.21.0.1",
+      "variant": "steam"
+    }
   }
 }
