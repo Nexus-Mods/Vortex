@@ -131,5 +131,17 @@
       "userFacingVersion": "1.12.3",
       "variant": "steam"
     }
+  },
+  "survivingmars": {
+    "af127454926a8da2618cf5950f9d1b35": {
+      "files": [
+        "MarsSteam.exe",
+        "pops_api.dll",
+        "steam_api64.dll"
+      ],
+      "hashValue": "af127454926a8da2618cf5950f9d1b35",
+      "userFacingVersion": "1010838",
+      "variant": "steam"
+    }
   }
 }
