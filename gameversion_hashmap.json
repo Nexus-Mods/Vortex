@@ -90,5 +90,25 @@
       "userFacingVersion": "Alpha 20.4 B42",
       "variant": "steam"
     }
+  },
+  "darkestdungeon": {
+    "8a1800dfb17e90febad6c0e038fb5328": {
+      "files": [
+        "_windowsnosteam\\Darkest.exe"
+      ],
+      "hashValue": "8a1800dfb17e90febad6c0e038fb5328",
+      "userFacingVersion": "24839",
+      "variant": "steam"
+    }
+  },
+  "residentevil22019": {
+    "bf7b878882d93bd78f0c9ca8ea7291cf": {
+      "files": [
+        "re2.exe"
+      ],
+      "hashValue": "bf7b878882d93bd78f0c9ca8ea7291cf",
+      "userFacingVersion": "1.07",
+      "variant": "steam"
+    }
   }
 }
