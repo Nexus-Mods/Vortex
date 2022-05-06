@@ -10,5 +10,16 @@
       "userFacingVersion": "1.6.353",
       "variant": "xbox"
     }
+  },
+  "fallout4": {
+    "7d50e9724d712e657dc3467f42ce9359": {
+      "files": [
+        "appxmanifest.xml",
+        "Data\\Fallout4.esm"
+      ],
+      "hashValue": "7d50e9724d712e657dc3467f42ce9359",
+      "userFacingVersion": "1.34",
+      "variant": "xbox"
+    }
   }
 }
