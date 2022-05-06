@@ -110,5 +110,26 @@
       "userFacingVersion": "1.07",
       "variant": "steam"
     }
+  },
+  "grimdawn": {
+    "dfc8e6a9772239e8d1e53a92c181784a": {
+      "files": [
+        "Grim Dawn.exe",
+        "Game.dll"
+      ],
+      "hashValue": "dfc8e6a9772239e8d1e53a92c181784a",
+      "userFacingVersion": "1.1.9.2",
+      "variant": "steam"
+    }
+  },
+  "kerbalspaceprogram": {
+    "77b2b337cac5cd0f9636abcaf3d376eb": {
+      "files": [
+        "KSP_x64_Data\\Managed\\Assembly-CSharp.dll"
+      ],
+      "hashValue": "77b2b337cac5cd0f9636abcaf3d376eb",
+      "userFacingVersion": "1.12.3",
+      "variant": "steam"
+    }
   }
 }
