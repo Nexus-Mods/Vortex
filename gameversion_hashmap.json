@@ -32,5 +32,15 @@
       "userFacingVersion": "1.4.0.525",
       "variant": "xbox(english)"
     }
+  },
+  "fallout3": {
+    "e112f056ef9f381fe9e0a3319aa0695c": {
+      "files": [
+        "Data\\Fallout3.esm"
+      ],
+      "hashValue": "e112f056ef9f381fe9e0a3319aa0695c",
+      "userFacingVersion": "1.7.0.4",
+      "variant": "xbox(english)"
+    }
   }
 }
