@@ -62,5 +62,23 @@
       "userFacingVersion": "1.2.0416",
       "variant": "xbox(english)"
     }
+  },
+  "witcher3": {
+    "2de6b186a6899433ffae64bad5f4c99a": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "2de6b186a6899433ffae64bad5f4c99a",
+      "userFacingVersion": "1.32",
+      "variant": "gog(unpatched)"
+    },
+    "5a695851376f24b32355c9dc3a7d78a6": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "5a695851376f24b32355c9dc3a7d78a6",
+      "userFacingVersion": "1.32",
+      "variant": "gog(patched)"
+    }
   }
 }
