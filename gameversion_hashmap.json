@@ -42,5 +42,15 @@
       "userFacingVersion": "1.7.0.4",
       "variant": "xbox(english)"
     }
+  },
+  "dawnofman": {
+    "b8ae744cc567951ffb96e8232103cd16": {
+      "files": [
+        "DawnOfMan_Data\\Managed\\Assembly-CSharp.dll"
+      ],
+      "hashValue": "b8ae744cc567951ffb96e8232103cd16",
+      "userFacingVersion": "1.7.2",
+      "variant": "steam"
+    }
   }
 }
