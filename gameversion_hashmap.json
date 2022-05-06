@@ -143,5 +143,25 @@
       "userFacingVersion": "1010838",
       "variant": "steam"
     }
+  },
+  "residentevil32020": {
+    "3aa78b7664d9cac669fa0765dd5f6789": {
+      "files": [
+        "re3.exe"
+      ],
+      "hashValue": "3aa78b7664d9cac669fa0765dd5f6789",
+      "userFacingVersion": "1.07",
+      "variant": "steam"
+    }
+  },
+  "devilmaycry5": {
+    "79bb4c76e0fee7f70c511c394f504e0d": {
+      "files": [
+        "DevilMayCry5.exe"
+      ],
+      "hashValue": "79bb4c76e0fee7f70c511c394f504e0d",
+      "userFacingVersion": "1.13",
+      "variant": "steam"
+    }
   }
 }
