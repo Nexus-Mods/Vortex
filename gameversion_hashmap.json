@@ -52,5 +52,15 @@
       "userFacingVersion": "1.7.2",
       "variant": "steam"
     }
+  },
+  "oblivion": {
+    "c3fef8cd8c0028a04c885cf476f8646b": {
+      "files": [
+        "Data\\Oblivion.esm"
+      ],
+      "hashValue": "c3fef8cd8c0028a04c885cf476f8646b",
+      "userFacingVersion": "1.2.0416",
+      "variant": "xbox(english)"
+    }
   }
 }
