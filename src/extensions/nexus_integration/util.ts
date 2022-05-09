@@ -737,7 +737,8 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
           [0];
 
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
-        if (currentRevision?.id !== mod.attributes?.revisionId) {
+        if ((currentRevision?.id !== mod.attributes?.revisionId)
+            && (currentRevision?.revisionNumber !== undefined)) {
           store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
             currentRevision.revisionNumber));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
