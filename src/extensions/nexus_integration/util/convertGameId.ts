@@ -69,6 +69,11 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
     return undefined;
   }
 
+  const clearGameMatch = knownGames.find(iter => iter.id === input.toLowerCase());
+  if (clearGameMatch) {
+    return clearGameMatch.id;
+  }
+
   const game = knownGames.find(iter =>
     (iter.details !== undefined) &&
     ((iter.details.nxmLinkId === input) || (iter.details.nexusPageId === input)));

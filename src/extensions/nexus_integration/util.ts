@@ -244,7 +244,7 @@ function startDownloadMod(api: IExtensionApi,
       state = api.getState();
       const download = state.persistent.downloads.files[downloadId];
       // might be paused at this point
-      if (!state.settings.automation?.install && (download.state === 'finished')) {
+      if (!state.settings.automation?.install && (download?.state === 'finished')) {
         api.sendNotification({
           id: `ready-to-install-${downloadId}`,
           type: 'success',
@@ -737,7 +737,8 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
           [0];
 
         store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
-        if (currentRevision?.id !== mod.attributes?.revisionId) {
+        if ((currentRevision?.id !== mod.attributes?.revisionId)
+            && (currentRevision?.revisionNumber !== undefined)) {
           store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
             currentRevision.revisionNumber));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
