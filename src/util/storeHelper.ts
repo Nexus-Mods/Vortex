@@ -322,12 +322,12 @@ export function rehydrate<T extends object>(
   inbound: any,
   path: string[],
   replace: boolean,
+  defaults: any,
   ): T {
   const inState = getSafe(inbound, path, undefined);
-  return replace
-    ? (inState ?? state)
-    : (inState !== undefined)
-    ? merge(state, [], inState)
+
+  return (inState !== undefined)
+    ? merge(replace ? defaults : state, [], inState)
     : state;
 }
 
