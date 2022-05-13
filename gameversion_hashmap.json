@@ -186,5 +186,37 @@
       "userFacingVersion": "7.3.8",
       "variant": "bethesda"
     }
+  },
+  "conanexiles": {
+    "b9ecc9d083af59a8b7cc2d10330f464f": {
+      "files": [
+        "ConanSandbox.exe",
+        "Manifest_UFSFiles_Win64.txt",
+        "ConanSandbox\\AssetRegistry.bin"
+      ],
+      "hashValue": "b9ecc9d083af59a8b7cc2d10330f464f",
+      "userFacingVersion": "2.8.1"
+    }
+  },
+  "dragonsdogma": {
+    "c8a2d31c9e861e365ba521fb3d34bec8": {
+      "files": [
+        "DDDA.exe"
+      ],
+      "hashValue": "c8a2d31c9e861e365ba521fb3d34bec8",
+      "userFacingVersion": "1.0.0.18"
+    }
+  },
+  "shadowrunreturns": {
+    "1b0a61e33f4d70e23b9a54008fd9cf7f": {
+      "files": [
+        "Shadowrun_Data\\Managed\\Assembly-UnityScript.dll",
+        "Shadowrun_Data\\Managed\\Assembly-CSharp.dll",
+        "Shadowrun_Data\\Managed\\Assembly-CSharp-firstpass.dll",
+        "ShadowrunEditor.exe"
+      ],
+      "hashValue": "1b0a61e33f4d70e23b9a54008fd9cf7f",
+      "userFacingVersion": "1.2.7"
+    }
   }
 }
