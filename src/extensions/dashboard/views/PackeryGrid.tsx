@@ -1,6 +1,11 @@
+import lazyRequire from '../../../util/lazyRequire';
+
 import * as _ from 'lodash';
-import { PackeryOptions } from 'packery';
+import * as PackeryT from 'packery';
 import * as React from 'react';
+import { generate as shortid } from 'shortid';
+
+const PackeryLib = lazyRequire<typeof PackeryT>(() => ({ Packery: require('packery') }));
 
 const LAYOUT_SETTLE_MS = 5000;
 
@@ -24,6 +29,11 @@ function setEqual(lhs: Set<any>, rhs: Set<any>) {
     .find(lKey => !rhs.has(lKey)) === undefined);
 }
 
+interface IPosition {
+  x: number;
+  y: number;
+}
+
 /**
  * wrapper for packery
  *
@@ -31,7 +41,7 @@ function setEqual(lhs: Set<any>, rhs: Set<any>) {
  * @extends {React.Component<IProps, {}>}
  */
 class Packery extends React.Component<IProps, {}> {
-  private mPackery: any;
+  private mPackery: PackeryT.Packery;
   private mLayoutTimer: NodeJS.Timer;
   private mRefreshTimer: NodeJS.Timer;
   private mChildren: Set<string>;
@@ -81,12 +91,14 @@ class Packery extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const {children, totalWidth} = this.props;
+    const id = shortid();
     return (
-      <div ref={this.refContainer}>
+      <div id={id} ref={this.refContainer}>
         {React.Children.map(children,
           (child: React.ReactElement<any>) => React.cloneElement(child, {
             totalWidth,
             packery: this.mPackery,
+            onUpdateLayout: this.onUpdateLayout,
           }))}
       </div>
     );
@@ -95,20 +107,21 @@ class Packery extends React.Component<IProps, {}> {
   private refContainer = (ref: Element) => {
     // gutter is manually implemented in css as a padding, that way it
     // can access variables
-    const options: PackeryOptions = {
+    const options: PackeryT.PackeryOptions = {
       itemSelector: '.packery-item',
       gutter: 0,
       percentPosition: false,
       stamp: '.stamp',
+      // isHorizontal: true,
     };
 
     if (ref !== null) {
       // there are no typings for current packery version
-      const PackeryLib = require('packery');
-      this.mPackery = new PackeryLib(ref, options);
+      this.mPackery = new PackeryLib.Packery(ref, options);
       this.mPackery.on('layoutComplete', this.saveLayout);
       this.mPackery.on('dragItemPositioned', (draggedItem) => {
-        this.scheduleLayout();
+        this.onUpdateLayout();
+        // this.scheduleLayout();
       });
       this.scheduleRefresh();
     } else {
@@ -116,9 +129,34 @@ class Packery extends React.Component<IProps, {}> {
     }
   }
 
+  private byPosition = (lhs: IPosition, rhs: IPosition): number => {
+    return (lhs.y !== rhs.y)
+      ? lhs.y - rhs.y
+      : lhs.x - rhs.x;
+  }
+
+  private fixedOrder() {
+    return this.mPackery.getItemElements()
+      .map(ch => this.mPackery.getItem(ch))
+      .sort((lhs, rhs) => this.byPosition(lhs.position, rhs.position));
+  }
+
+  private onUpdateLayout = () => {
+    if (this.mPackery === undefined) {
+      return;
+    }
+
+    (this.mPackery as any)._resetLayout();
+    (this.mPackery.layoutItems as any)(this.fixedOrder(), true);
+  }
+
   private saveLayout = (items) => {
+    if (items.length === 0) {
+      return;
+    }
+    const ordered = this.fixedOrder().map(item => item.element.id);
     // TODO: this gets called a lot, is that a bug?
-    this.props.onChangeLayout(items.map(item => item.element.id));
+    this.props.onChangeLayout(ordered);
   }
 
   private scheduleLayout() {
@@ -142,6 +180,10 @@ class Packery extends React.Component<IProps, {}> {
       if (this.mPackery !== undefined) {
         this.mPackery.reloadItems();
         this.forceUpdate();
+        if (this.props.items.length !== (this.mPackery.getItemElements().length)) {
+          // almost certainly a bug, refresh again
+          this.scheduleRefresh();
+        }
       } else {
         this.scheduleRefresh();
       }

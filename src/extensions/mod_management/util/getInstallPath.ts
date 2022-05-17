@@ -1,10 +1,9 @@
+import getVortexPath from '../../../util/getVortexPath';
 import makeCI from '../../../util/makeCaseInsensitive';
 
-import { app as appIn } from 'electron';
 import * as os from 'os';
 import * as path from 'path';
 import format from 'string-template';
-import getVortexPath from '../../../util/getVortexPath';
 
 export function getInstallPathPattern(pattern: string): string {
   return pattern || path.join('{USERDATA}', '{GAME}', 'mods');

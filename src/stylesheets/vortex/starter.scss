@@ -32,8 +32,8 @@
     .refresh-button {
       @extend .btn-embed;
       position: absolute;
-      top: 40px;
-      right: 12px;
+      top: $half-gutter;
+      right: $half-gutter;
     }
   }
 }

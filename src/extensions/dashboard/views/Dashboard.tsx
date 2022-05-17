@@ -1,21 +1,26 @@
+import DropdownButton from '../../../controls/DropdownButton';
+import FlexLayout from '../../../controls/FlexLayout';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import lazyRequire from '../../../util/lazyRequire';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
 import { setDashletEnabled, setDashletHeight, setDashletWidth, setLayout } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';
 
+import FixedItem from './FixedItem';
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
 
 import * as remoteT from '@electron/remote';
 import * as _ from 'lodash';
 import * as React from 'react';
+import { Button, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import lazyRequire from '../../../util/lazyRequire';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
@@ -42,6 +47,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   counter: number;
+  editMode: boolean;
 }
 
 /**
@@ -57,6 +63,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       counter: 0,
+      editMode: false,
     });
 
     this.mLayoutDebouncer = new Debouncer((layout: string[]) => {
@@ -100,7 +107,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { dashletSettings, layout, dashlets } = this.props;
+    const { t, dashletSettings, layout, dashlets } = this.props;
+    const { editMode } = this.state;
 
     const state = this.context.api.store.getState();
 
@@ -123,11 +131,19 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       return prev;
     }, { fixed: [], dynamic: [] });
 
+    const classes = [
+      'page-dashboard',
+      editMode ? 'dashboard-edit' : 'dashboard-view',
+    ];
+
     return (
-      <MainPage id='page-dashboard' className='page-dashboard'>
+      <MainPage id='page-dashboard' className={classes.join(' ')}>
         <MainPage.Body
           style={{ display: 'flex', flexDirection: 'column' }}
         >
+          <div className='dashboard-editbar'>
+            {this.renderEditBar()}
+          </div>
           <div className='fixed-dashlets'>
             {fixed.map(this.renderFixedItem)}
           </div>
@@ -138,12 +154,62 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
               settings={dashletSettings}
               items={dynamic.map(iter => iter.title).sort()}
             >
+              {editMode
+                ? <div key='foobar' className='dashboard-background-grid' />
+                : <div key='foobar' />}
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
           </div>
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private renderEditBar() {
+    const { t, dashlets, dashletSettings } = this.props;
+    const { editMode } = this.state;
+
+    return editMode ? (
+      <FlexLayout type='row'>
+        <FlexLayout.Fixed>
+          {t('Drag dashlets to rearrange or drag the borders to resize them.')}
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex/>
+        <FlexLayout.Fixed>
+          <DropdownButton id='add-widget-button' title={t('Add Dashlet')}>
+            {
+              dashlets
+                .filter(dash => dash.closable && (dashletSettings[dash.title]?.enabled === false))
+                .map(dash => (
+                  <MenuItem
+                    onClick={this.enableMenuItem}
+                    data-id={dash.title}
+                    key={dash.title}
+                  >
+                    {dash.title}
+                  </MenuItem>
+                ))
+            }
+          </DropdownButton>
+          <Button onClick={this.toggleEdit}>{t('Done')}</Button>
+        </FlexLayout.Fixed>
+      </FlexLayout>
+    ) : (
+      <div className='dashlet-customize-btn'>
+        <IconButton icon='edit' tooltip={t('Customize your dashboard')} onClick={this.toggleEdit}>
+          {t('Customize your dashboard')}
+        </IconButton>
+      </div>
+    );
+  }
+
+  private enableMenuItem = (evt: React.MouseEvent<any>) => {
+    const dashId = evt.currentTarget.getAttribute('data-id');
+    this.props.onSetDashletEnabled(dashId, true);
+  }
+
+  private toggleEdit = () => {
+    this.nextState.editMode = !this.nextState.editMode;
   }
 
   private onChangeLayout = (layout: string[]) => {
@@ -169,27 +235,38 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderFixedItem = (dash: IDashletProps) => {
-    const { counter } = this.state;
+    const { t } = this.props;
+    const { counter, editMode } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
 
     return (
-      <div className={`fixed-width-${dash.width} packery-height-${dash.height}`} key={dash.title}>
+      <FixedItem
+        t={t}
+        id={dash.title}
+        key={dash.title}
+        width={dash.width}
+        height={dash.height}
+        editable={editMode}
+        onDismiss={dash.closable ? this.dismissDashlet : undefined}
+      >
         <dash.component t={this.props.t} {...componentProps} counter={counter} />
-      </div>
+      </FixedItem>
     );
   }
 
-  private renderItem = (dash: IDashletProps) => {
+  private renderItem = (dash: IDashletProps, idx: number) => {
     const { t, dashletSettings } = this.props;
-    const { counter } = this.state;
+    const { counter, editMode } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
       <PackeryItem
         t={t}
         id={dash.title}
         key={dash.title}
-        width={getSafe(dashletSettings, [dash.title, 'width'], dash.width)}
-        height={getSafe(dashletSettings, [dash.title, 'height'], dash.height)}
+        editable={editMode}
+        position={idx + 1}
+        width={dashletSettings?.[dash.title]?.width ?? dash.width}
+        height={dashletSettings?.[dash.title]?.height ?? dash.height}
         onSetWidth={this.setWidth}
         onSetHeight={this.setHeight}
         onDismiss={dash.closable ? this.dismissDashlet : undefined}

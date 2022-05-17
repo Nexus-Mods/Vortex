@@ -78,7 +78,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
       : fallback;
 
     return (
-      <div className='dashlet-nexus-account'>
+      <div className='dashlet dashlet-nexus-account'>
         <Image
           srcs={[profileIcon || fallback, fallback]}
           circle

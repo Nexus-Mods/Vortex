@@ -1,3 +1,5 @@
+$grid-opacity: 0.12;
+
 #page-dashboard {
   top: 0px;
   bottom: 0px;
@@ -11,6 +13,7 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 .fixed-width-1 {
@@ -23,4 +26,26 @@
 
 .fixed-width-3 {
   width: 100%;
+}
+
+.dashboard-background-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  // margin: $half-gutter;
+  pointer-events: none;
+  /*
+  left: 33.3%;
+  right: 33.3%;
+  height: 100%;
+  border-left: 6px dashed white;
+  border-right: 6px dashed white;
+  */
+
+  background-image: repeating-linear-gradient(rgba(255, 255, 255, $grid-opacity) 0 3px, transparent 3px $dashlet-height),
+                    repeating-linear-gradient(90deg, rgba(255, 255, 255, $grid-opacity) 0 3px, transparent 1px 33.3%);
+
+  border-bottom: 3px solid rgba(255, 255, 255, $grid-opacity);
 }

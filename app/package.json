@@ -65,6 +65,7 @@
     "permissions": "Nexus-Mods/node-permissions",
     "prop-types": "^15.7.2",
     "re-reselect": "^3.4.0",
+    "re-resizable": "^6.9.9",
     "react": "^16.12.0",
     "react-bootstrap": "^0.33.0",
     "react-datepicker": "^3.3.0",

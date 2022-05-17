@@ -1,5 +1,5 @@
 .dashlet {
-  border: $border-width solid $border-color;
+  border: $border-width solid rgba($border-color, 0.5);
   background-color: $brand-menu;
   padding: $half-gutter;
   height: 100%;
@@ -185,7 +185,37 @@
   font-weight: 300;
 }
 
-.packery-item {
+.dashboard-editbar {
+  padding: 0.5em 1em;
+  .layout-container {
+    align-items: center;
+  }
+
+  .btn {
+    margin-left: 1em;
+  }
+
+  .dashlet-customize-btn {
+    display: flex;
+    justify-content: flex-end;
+
+    .btn {
+      color: currentColor;
+      background-color: transparent;
+      border-color: transparent;
+
+      &:hover {
+        color: $link-hover-color;
+      }
+    }
+  }
+}
+
+.fixed-item {
+  position: relative;
+}
+
+.packery-item, .stamp, .fixed-item {
   padding: floor(($half-gutter / 2));
   // overflow: hidden;
 
@@ -200,8 +230,52 @@
       margin-left: 4px;
     }
   }
-  .drag-handle:hover {
-    color: $brand-clickable;
+
+  .drag-handle {
+    background-color: rgba($brand-clickable, 0.12);
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    cursor: move;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.packery-item.packery-viewmode {
+  .drag-handle {
+    visibility: hidden;
+  }
+}
+
+.stamp.packery-editmode {
+  padding: $half-gutter;
+}
+
+.fixed-item.packery-editmode {
+  .dashlet {
+    > *:not(.dashlet-title) {
+      pointer-events: none;
+      filter: blur(1px);
+    }
+  }
+}
+
+.packery-item.packery-editmode {
+  padding: $half-gutter;
+
+  .dashlet {
+    border: 2px solid $brand-primary;
+    > *:not(.dashlet-title) {
+      pointer-events: none;
+      filter: blur(1px);
+    }
+  }
+  .drag-handle {
+    pointer-events: all;
   }
 }
 
