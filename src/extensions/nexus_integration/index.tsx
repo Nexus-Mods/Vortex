@@ -1569,11 +1569,13 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genModIdAttribute(context.api, () => nexus));
   context.registerTableAttribute('mods', genCollectionIdAttribute(context.api, () => nexus));
 
+  /* tentatively removed, deemed unnecessary
   context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner,
                           undefined, undefined, {
     fixed: true,
     closable: true,
   });
+  */
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
     (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)

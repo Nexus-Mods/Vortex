@@ -172,7 +172,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     return editMode ? (
       <FlexLayout type='row'>
         <FlexLayout.Fixed>
-          {t('Drag dashlets to rearrange or drag the borders to resize them.')}
+          {t('Drag dashlets to rearrange and drag the borders to resize')}
         </FlexLayout.Fixed>
         <FlexLayout.Flex/>
         <FlexLayout.Fixed>

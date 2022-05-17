@@ -125,15 +125,15 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
             onResize={this.resizeCallback}
             enable={editable ? undefined : {}}
         >
-          <div key='drag-handle' className='drag-handle'/>
           {this.props.children}
+          <div key='drag-handle' className='drag-handle'/>
           <div className='packery-buttons'>
           {editable ? (
             <Button
-              className='btn-embed'
+              className='dashlet-close-button'
               onClick={this.dismissWidget}
             >
-              <Icon name='close-slim' />
+              <Icon name='close' />
             </Button>
           ) : null}
         </div>

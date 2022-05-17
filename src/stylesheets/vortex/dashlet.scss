@@ -245,6 +245,10 @@
   }
 }
 
+.dashlet-close-button {
+  @extend .btn-embed;
+}
+
 .packery-item.packery-viewmode {
   .drag-handle {
     visibility: hidden;
@@ -308,6 +312,8 @@
   font-weight: 500;
   // text-transform: uppercase;
   font-family: $font-family-headings;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .dashlet-game-title {
