@@ -2283,10 +2283,17 @@ class InstallManager {
                   if (dep['reresolveDownloadHint'] === undefined) {
                     return Promise.reject(err);
                   }
-                  const download = downloads[downloadId];
-                  const fullPath: string =
-                    path.join(downloadPathForGame(state, download.game[0]), download.localPath);
-                  return fs.removeAsync(fullPath)
+                  const newState = api.getState();
+                  const download = newState.persistent.downloads.files[downloadId];
+
+                  let removeProm = Promise.resolve();
+                  if (download !== undefined) {
+                    const fullPath: string =
+                    path.join(downloadPathForGame(newState, download.game[0]), download.localPath);
+                    removeProm = fs.removeAsync(fullPath);
+                  }
+
+                  return removeProm
                     .then(() => dep['reresolveDownloadHint']())
                     .then(() => doDownload(dep));
                 })

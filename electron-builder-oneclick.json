@@ -28,14 +28,7 @@
     "forceCodeSigning": true,
     "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
     "timeStampServer": "http://timestamp.comodoca.com",
-    "publisherName": "Black Tree Gaming Limited",
-    "extraFiles": [
-      {
-        "from": "assets/vcruntime",
-        "to": ".",
-        "filter": "*.dll"
-      }
-    ]
+    "publisherName": "Black Tree Gaming Limited"
   },
   "nsis": {
     "perMachine": true,

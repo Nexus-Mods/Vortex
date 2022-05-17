@@ -196,7 +196,7 @@ function hydrateRed(
       } // in case of ignore we just continue with the original payload
     }
   }
-  return rehydrate(state, payload, pathArray, replace);
+  return rehydrate(state, payload, pathArray, replace, ele.defaults);
 }
 
 function deriveReducer(statePath: string,

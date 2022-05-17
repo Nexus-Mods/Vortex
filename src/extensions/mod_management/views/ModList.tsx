@@ -1163,14 +1163,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return setModsEnabled(this.context.api, profileId, modIds, enabled);
   }
 
-  private installIfNecessary(modId: string) {
+  private installIfNecessary(modId: string): Promise<string> {
     const { modsWithState } = this.state;
 
     if (modsWithState[modId]?.state === 'downloaded') {
       return toPromise(cb =>
         this.context.api.events.emit('start-install-download', modId, false, cb));
     } else {
-      return Promise.resolve();
+      return Promise.resolve(modId);
     }
   }
 
@@ -1181,7 +1181,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
 
     Promise.all(filtered.map(modId => this.installIfNecessary(modId)))
-    .then(() => this.setModsEnabled(filtered, true));
+    .then((updatedModIds: string[]) => this.setModsEnabled(updatedModIds, true));
   }
 
   private disableSelected = (modIds: string[]) => {
