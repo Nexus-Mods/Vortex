@@ -7,8 +7,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import getInstallPath from './util/getInstallPath';
 
 import createCachedSelector from 're-reselect';
-import { ICacheObject, OutputParametricSelector, ParametricSelector } from 're-reselect';
-import { createSelector, OutputSelector } from 'reselect';
+import { createSelector } from 'reselect';
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>

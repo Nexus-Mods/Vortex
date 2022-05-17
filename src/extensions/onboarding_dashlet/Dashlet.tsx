@@ -11,9 +11,9 @@ import { setDashletEnabled } from '../dashboard/actions';
 import { resetSteps } from './actions';
 import { IStep } from './steps';
 
-export type OnCardClick = (payload: IonCardClickPayload) => void;
+export type OnCardClick = (payload: IOnCardClickPayload) => void;
 
-export interface IonCardClickPayload {
+export interface IOnCardClickPayload {
   title: string;
   video: string;
   desc: string;
@@ -150,10 +150,10 @@ function CompletedOnBoardingDashlet(props: {getMoreMods: () => {}}) {
     <Dashlet title='' className='dashlet-onboarding-completed'>
       <div className='onboarding-completed-header'>
         <h1>
-          &#127881; {t(`Congratulations, you've made it!`)}
+          &#127881; {t('Congratulations, you\'ve made it!')}
         </h1>
         <h4>
-          {t(`Now you are all set up to enjoy Vortex and start modding!`)}
+          {t('Now you are all set up to enjoy Vortex and start modding!')}
         </h4>
       </div>
       <div className='onboarding-completed-body'>
@@ -167,8 +167,8 @@ function CompletedOnBoardingDashlet(props: {getMoreMods: () => {}}) {
           </Button>
         </div>
         <div className='onboarding-completed-body-links'>
-          <a onClick={resetAllSteps}>Watch again</a>
-          <a onClick={closeDashlet}>Hide</a>
+          <a onClick={resetAllSteps}>{t('Watch again')}</a>
+          <a onClick={closeDashlet}>{t('Hide')}</a>
         </div>
       </div>
     </Dashlet>

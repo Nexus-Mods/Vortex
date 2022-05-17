@@ -1,8 +1,10 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { currentGame, nexusGameId, opn } from '../../util/api';
+import opn from '../../util/opn';
+import { currentGame } from '../../util/storeHelper';
 import { dismissOverlay } from '../instructions_overlay/actions';
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
-import Dashlet, { IonCardClickPayload } from './Dashlet';
+import { nexusGameId } from '../nexus_integration/util/convertGameId';
+import Dashlet, { IOnCardClickPayload } from './Dashlet';
 import settingsReducer from './reducers';
 import { STEPS } from './steps';
 import { Overlay } from './views/Overlay';
@@ -16,7 +18,7 @@ function init(context: IExtensionContext): boolean {
     return true;
   },
     () => ({
-      onCardClick: (payload: IonCardClickPayload) => {
+      onCardClick: (payload: IOnCardClickPayload) => {
         const { title, video, desc, pos, id } = payload;
 
         allStepIds.filter((x) => x !== id).forEach((x) => {
@@ -33,15 +35,16 @@ function init(context: IExtensionContext): boolean {
             desc,
             url: video,
             id,
-            isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id]
+            isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id],
           }),
         });
       },
       getMoreMods: () => {
         currentGame(context.api.store)
         .then(game => {
-          const nxsGameId = nexusGameId(game) 
-          opn(`${NEXUS_BASE_URL}/${nxsGameId !== '__placeholder' ? nxsGameId : 'mods'}`).catch(err => undefined);
+          const nxsGameId = nexusGameId(game);
+          opn(`${NEXUS_BASE_URL}/${nxsGameId !== '__placeholder' ? nxsGameId : 'mods'}`)
+            .catch(err => undefined);
         });
       },
       steps: STEPS,

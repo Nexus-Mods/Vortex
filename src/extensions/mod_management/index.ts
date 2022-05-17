@@ -1259,7 +1259,10 @@ function once(api: IExtensionApi) {
                                        // nop
                                      })
         .then(instructions => cb(instructions, tempPath))
-        .then(() => fs.removeAsync(tempPath));
+        .then(() => fs.removeAsync(tempPath))
+        .catch(err => {
+          api.showErrorNotification('Failed to simulate installer', err);
+        });
     });
 
   cleanupIncompleteInstalls(api);
