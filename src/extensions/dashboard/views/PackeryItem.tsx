@@ -45,6 +45,14 @@ function clamp(input: number, min: number, max: number): number {
   return Math.min(Math.max(input, min), max);
 }
 
+function ResizeHandle(props: { corner: string }) {
+  return (
+    <div className={`resize-handle-${props.corner}`}>
+      <Icon name='corner-handle' />
+    </div>
+  );
+}
+
 class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
   private mRef: HTMLElement = null;
   private mResizeRef: Resizable = null;
@@ -124,6 +132,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
             onResizeStop={this.resizeEnd}
             onResize={this.resizeCallback}
             enable={editable ? undefined : {}}
+            handleComponent={{ bottomRight: <ResizeHandle corner='br'/> }}
         >
           {this.props.children}
           <div key='drag-handle' className='drag-handle'/>

@@ -257,6 +257,9 @@
 
 .stamp.packery-editmode {
   padding: $half-gutter;
+  .dashlet {
+    border: 2px solid $brand-primary;
+  }
 }
 
 .fixed-item.packery-editmode {
@@ -337,6 +340,14 @@
 .dashlet-announcement {
   .placeholder {
     flex: 1 1 0;
+  }
+}
+
+.resize-handle-br {
+  margin: -7px -6px;
+  color: $brand-primary;
+  .icon-corner-handle {
+    clip-path: polygon(100% -2px, 100% 100%, -2px 100%);
   }
 }
 

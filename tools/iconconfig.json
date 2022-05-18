@@ -629,6 +629,10 @@
     "turn-s": {
       "path": "{nucleo}/arrows/{nucleo_simple}_turn-s",
       "rmFill": true
+    },
+    "corner-handle": {
+      "path": "{nucleo}/design-development/48px_texture",
+      "rmFill": true
     }
   }
 }
