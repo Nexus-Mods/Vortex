@@ -6518,14 +6518,6 @@ i18next@^19.0.0, i18next@^19.0.1:
   dependencies:
     "@babel/runtime" "^7.12.0"
 
-icon-extract@Nexus-Mods/node-icon-extract:
-  version "1.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-icon-extract/tar.gz/53e7a724a4387c70b4ae01dde3bd1041274f07c9"
-  dependencies:
-    autogypi "^0.2.2"
-    node-addon-api "*"
-    node-gyp "^6.0.0"
-
 iconv-corefoundation@^1.1.7:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/iconv-corefoundation/-/iconv-corefoundation-1.1.7.tgz#31065e6ab2c9272154c8b0821151e2c88f1b002a"
@@ -8623,11 +8615,6 @@ node-abi@^3.3.0:
   dependencies:
     semver "^7.3.5"
 
-node-addon-api@*:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.1.0.tgz#98b21931557466c6729e51cb77cd39c965f42239"
-  integrity sha512-flmrDNB06LIl5lywUz7YlNGZH/5p0M7W28k8hzd9Lshtdh1wshD2Y+U4h9LD6KObOy1f+fEVdgprPrEymjM5uw==
-
 node-addon-api@^1.6.3:
   version "1.7.2"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-1.7.2.tgz#3df30b95720b53c24e59948b49532b662444f54d"
@@ -8653,7 +8640,7 @@ node-gyp-build@~4.1.0:
   resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.1.1.tgz#d7270b5d86717068d114cc57fff352f96d745feb"
   integrity sha512-dSq1xmcPDKPZ2EED2S6zw/b9NKsqzXRE6dVr8TVQnI3FJOTteUMuqF3Qqs6LZg+mLGYJWqQzMbIjMtJqTv87nQ==
 
-node-gyp@^6.0.0, node-gyp@^6.0.1, node-gyp@^6.1.0, node-gyp@^7.1.2, node-gyp@^8.4.1, node-gyp@^9.0.0:
+node-gyp@^6.0.1, node-gyp@^6.1.0, node-gyp@^7.1.2, node-gyp@^8.4.1, node-gyp@^9.0.0:
   version "8.4.1"
   resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-8.4.1.tgz#3d49308fc31f768180957d6b5746845fbd429937"
   integrity sha512-olTJRgUtAb/hOXG0E93wZDs5YiJlgbXxTwQAFHyNlRsXQnYzUaF2aGgujZbw+hR8aF4ZG/rST57bWMWD16jr9w==
