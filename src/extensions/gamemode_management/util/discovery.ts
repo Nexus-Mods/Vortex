@@ -3,6 +3,7 @@ import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
 import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 import { log } from '../../../util/log';
 import StarterInfo from '../../../util/StarterInfo';
 import { getSafe } from '../../../util/storeHelper';
@@ -11,16 +12,12 @@ import { truthy } from '../../../util/util';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import {IToolStored} from '../types/IToolStored';
 
-import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
-
 import Progress from './Progress';
 
 import Promise from 'bluebird';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import { util } from '../../..';
-import { IExtensionApi } from '../../../types/api';
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (gameId: string, result: IDiscoveredTool) => void;
