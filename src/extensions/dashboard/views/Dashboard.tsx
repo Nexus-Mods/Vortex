@@ -1,5 +1,6 @@
 import DropdownButton from '../../../controls/DropdownButton';
 import FlexLayout from '../../../controls/FlexLayout';
+import Icon from '../../../controls/Icon';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -155,8 +156,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
               items={dynamic.map(iter => iter.title).sort()}
             >
               {editMode
-                ? <div key='foobar' className='dashboard-background-grid' />
-                : <div key='foobar' />}
+                ? <div key='background-grid' className='dashboard-background-grid' />
+                : <div key='background-grid' />}
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
           </div>
@@ -169,6 +170,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const { t, dashlets, dashletSettings } = this.props;
     const { editMode } = this.state;
 
+    const state = this.context.api.store.getState();
+
     return editMode ? (
       <FlexLayout type='row'>
         <FlexLayout.Fixed>
@@ -176,16 +179,25 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         </FlexLayout.Fixed>
         <FlexLayout.Flex/>
         <FlexLayout.Fixed>
-          <DropdownButton id='add-widget-button' title={t('Add Dashlet')}>
+          <DropdownButton
+            id='add-widget-button'
+            title={t('Add Dashlet')}
+          >
             {
               dashlets
-                .filter(dash => dash.closable && (dashletSettings[dash.title]?.enabled === false))
+                .filter(dash => dash.closable && (dash.isVisible?.(state) !== false))
                 .map(dash => (
                   <MenuItem
-                    onClick={this.enableMenuItem}
+                    onClick={this.toggleMenuItem}
                     data-id={dash.title}
                     key={dash.title}
                   >
+                    <Icon
+                      name={(dashletSettings[dash.title]?.enabled === false)
+                        ? 'checkbox-unchecked'
+                        : 'checkbox-checked'}
+                    />
+                    {' '}
                     {dash.title}
                   </MenuItem>
                 ))
@@ -203,9 +215,12 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private enableMenuItem = (evt: React.MouseEvent<any>) => {
+  private toggleMenuItem = (evt: React.MouseEvent<any>) => {
+    evt.stopPropagation();
+    const { dashletSettings } = this.props;
     const dashId = evt.currentTarget.getAttribute('data-id');
-    this.props.onSetDashletEnabled(dashId, true);
+    const old = (dashletSettings[dashId]?.enabled !== false);
+    this.props.onSetDashletEnabled(dashId, !old);
   }
 
   private toggleEdit = () => {
