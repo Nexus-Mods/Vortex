@@ -22,6 +22,7 @@ export interface IProps {
   packery?: PackeryT.Packery;
   fixed: boolean;
   editable: boolean;
+  closable: boolean;
   position: number;
   onDismiss?: (id: string) => void;
   onSetWidth?: (id: string, width: number) => void;
@@ -85,7 +86,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
   }
 
   public render(): JSX.Element {
-    const { editable, height, id, position, totalWidth, width } = this.props;
+    const { closable, editable, height, id, totalWidth, width } = this.props;
     const { resizing } = this.state;
 
     if (this.props.packery === undefined) {
@@ -137,7 +138,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
           {this.props.children}
           <div key='drag-handle' className='drag-handle'/>
           <div className='packery-buttons'>
-          {editable ? (
+          {(editable && closable) ? (
             <Button
               className='dashlet-close-button'
               onClick={this.dismissWidget}

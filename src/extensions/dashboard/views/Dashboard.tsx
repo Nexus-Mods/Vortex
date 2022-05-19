@@ -278,6 +278,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         t={t}
         id={dash.title}
         key={dash.title}
+        closable={dash.closable}
         editable={editMode}
         position={idx + 1}
         width={dashletSettings?.[dash.title]?.width ?? dash.width}
