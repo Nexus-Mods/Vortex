@@ -23,6 +23,13 @@ function augmentExtra(input: IExtra): IExtra {
         text: '{{ value }}',
       };
     }
+    case 'downloads': {
+      return {
+        ...input,
+        icon: 'download',
+        text: '{{ value }}',
+      };
+    }
     default: return undefined;
   }
 }

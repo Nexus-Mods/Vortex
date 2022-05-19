@@ -651,6 +651,7 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
     link: `${NEXUS_BASE_URL}/${input.domain_name}/mods/${input.mod_id}`,
     extra: [
       { id: 'endorsements', value: input.endorsement_count },
+      { id: 'downloads', value: input.mod_downloads },
     ],
   };
 }
