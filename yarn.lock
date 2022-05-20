@@ -2871,7 +2871,7 @@ ansi-escapes@^4.2.1:
 ansi-regex@^2.0.0, ansi-regex@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-2.1.1.tgz#c3b33ab5ee360d86e0e628f0468ae7ef27d654df"
-  integrity sha1-w7M6te42DYbg5ijwRorn7yfWVN8=
+  integrity sha512-TIGnTpdo+E3+pCyAluZvtED5p5wCqLdezCyhPZzKPcxvFplEt4i+W7OONCKgeZFT3+y5NZZfOOS/Bdcanm1MYA==
 
 ansi-regex@^3.0.0:
   version "3.0.1"
@@ -3136,7 +3136,7 @@ atob@^2.1.2:
 autogypi@^0.2.2:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/autogypi/-/autogypi-0.2.2.tgz#258bab5f7857755b09beac6a641fea130ff4622d"
-  integrity sha1-JYurX3hXdVsJvqxqZB/qEw/0Yi0=
+  integrity sha512-NkDsjbybxo98NEUpvDULvV6w4OxhnX8owBptd8/GlQLhi81TZrh7siRYX9zVEoAYpYaX5QrRuIZAtgYD9PGDXg==
   dependencies:
     bluebird "^3.4.0"
     commander "~2.9.0"
@@ -3464,9 +3464,9 @@ bindings@^1.3.0, bindings@~1.5.0:
     file-uri-to-path "1.0.0"
 
 bl@^4.0.3:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/bl/-/bl-4.0.3.tgz#12d6287adc29080e22a705e5764b2a9522cdc489"
-  integrity sha512-fs4G6/Hu4/EE+F75J8DuN/0IpQqNjAdC7aEQv7Qt8MHGUH7Ckv2MwTEEeN9QehD0pfIDkMI1bkHYkKy7xHyKIg==
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/bl/-/bl-4.1.0.tgz#451535264182bec2fbbc83a62ab98cf11d9f7b3a"
+  integrity sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==
   dependencies:
     buffer "^5.5.0"
     inherits "^2.0.4"
@@ -4309,13 +4309,14 @@ core-util-is@~1.0.0:
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "2.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/9e887da1e44eebaa378c859833cfb05b1109e828"
+  version "2.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/4dff0654f86ef8237cc43a05dd0e290ff0a6c2e2"
   dependencies:
     autogypi "^0.2.2"
-    minimist "^1.2.3"
+    minimist "^1.2.6"
     node-addon-api "^4.0.0"
-    node-gyp "^6.0.1"
+    node-gyp "^9.0.0"
+    prebuild-install "7.1.0"
 
 crc@^3.8.0:
   version "3.8.0"
@@ -5590,7 +5591,7 @@ events@*, events@^3.2.0:
 
 exe-version@Nexus-Mods/node-exe-version:
   version "2.2.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/57b04b6867077b5afd59ea02d0ec6b755b861e5c"
+  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/bd5ef39efe9a14f652ba4af1bcfa7b64d99aaca9"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -6170,7 +6171,7 @@ glob@^7.0.0, glob@^7.1.1, glob@^7.1.2:
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@^7.0.5, glob@^7.1.3, glob@^7.1.4, glob@^7.1.6:
+glob@^7.0.5, glob@^7.1.6:
   version "7.2.0"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.0.tgz#d15535af7732e02e948f4c41628bd910293f6023"
   integrity sha512-lmLf6gtyrPq8tTjSmrO94wBeQbFR3HbLHbuyD69wuyQkImp2hWqMGB47OX65FBkPffO641IP9jWa1z4ivqG26Q==
@@ -6179,6 +6180,18 @@ glob@^7.0.5, glob@^7.1.3, glob@^7.1.4, glob@^7.1.6:
     inflight "^1.0.4"
     inherits "2"
     minimatch "^3.0.4"
+    once "^1.3.0"
+    path-is-absolute "^1.0.0"
+
+glob@^7.1.3, glob@^7.1.4:
+  version "7.2.3"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.3.tgz#b8df0fb802bbfa8e89bd1d938b4e16578ed44f2b"
+  integrity sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==
+  dependencies:
+    fs.realpath "^1.0.0"
+    inflight "^1.0.4"
+    inherits "2"
+    minimatch "^3.1.1"
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
@@ -6655,9 +6668,9 @@ invariant@^2.2.2, invariant@^2.2.4:
     loose-envify "^1.0.0"
 
 ip@^1.1.5:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.5.tgz#bdded70114290828c0a039e72ef25f5aaec4354a"
-  integrity sha1-vd7XARQpCCjAoDnnLvJfWq7ENUo=
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.8.tgz#ae05948f6b075435ed3307acce04629da8cdbf48"
+  integrity sha512-PuExPYUiu6qMBQb4l06ecm6T6ujzhmh+MeJcW9wa89PoAz5pvd4zPgN5WJV104mb6S2T1AwNIAaB70JNrLQWhg==
 
 is-accessor-descriptor@^0.1.6:
   version "0.1.6"
@@ -8346,7 +8359,7 @@ minimatch@3.0.4:
   dependencies:
     brace-expansion "^1.1.7"
 
-minimatch@^3.0.3, minimatch@^3.0.4:
+minimatch@^3.0.3, minimatch@^3.0.4, minimatch@^3.1.1:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.1.2.tgz#19cd194bfd3e428f049a70817c038d89ab4be35b"
   integrity sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==
@@ -8631,9 +8644,9 @@ node-addon-api@^3.1.0:
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
 
 node-addon-api@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-4.0.0.tgz#ac128f43eff7fac4b5f5ef2f39d6d7c2709efead"
-  integrity sha512-ALmRVBFzfwldBfk3SbKfl6+PVMXiCPKZBEfsJqB/EjXAMAI+MfFrEHR+GMRBuI162DihZ1QjEZ8ieYKuRCJ8Hg==
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-4.3.0.tgz#52a1a0b475193e0928e98e0426a0d1254782b77f"
+  integrity sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==
 
 node-gyp-build@~4.1.0:
   version "4.1.1"
@@ -9125,7 +9138,7 @@ performance-now@^2.1.0:
 
 permissions@Nexus-Mods/node-permissions:
   version "2.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/045fcfde72c3878765139b37fee68adbf326bf78"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/e756ff6b01cfe9bd6ddb129940d738a2dcd22a2a"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -11876,10 +11889,10 @@ vortex-api@Nexus-Mods/vortex-api:
   resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/ebf37c6b9585f377b005c9202df30c2e0fb02d4b"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.2.6"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/de7875be747428b5d140824238c28217d9ee3f11"
+  version "0.2.9"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/f35df33959f5e8465f0106ae6e92968a1226e7bc"
   dependencies:
-    bluebird "^3.5.0"
+    bluebird "^3.7.2"
     lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -12088,7 +12101,7 @@ which@^2.0.1, which@^2.0.2:
 
 wholocks@Nexus-Mods/node-wholocks:
   version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/82288b5035905b2e0b7866d7dbeaf76e5ec1c0a4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/f1803ddbb058a08c27d0e7327325edf18a2fbcb9"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -12112,8 +12125,8 @@ wildcard@^2.0.0:
   integrity sha512-JcKqAHLPxcdb9KM49dufGXn2x3ssnfjbcaQdLlfZsL9rH9wgDQjUtDxbo8NE0F6SFvydeu1VhZe7hZuHsB2/pw==
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.4.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/09bb068a86e20500246d706f67d76fd0594b74eb"
+  version "2.4.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/052f22958cca700f9bc1cfa9e6f21c05f89c4227"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^3.1.0"
