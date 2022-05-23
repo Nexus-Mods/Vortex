@@ -46,8 +46,8 @@ function reportError(api: types.IExtensionApi,
                      errorMessage: string,
                      errDetails: any,
                      allowReport: boolean = true) {
-const errorId = errorMessage + 'notifId';
-api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
+  const errorId = errorMessage + 'notifId';
+  api.showErrorNotification(errorMessage, errDetails, { allowReport, id: errorId });
 }
 
 export async function errorHandler(api: types.IExtensionApi,
@@ -56,7 +56,8 @@ export async function errorHandler(api: types.IExtensionApi,
   const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
   const allowReport = !gameEntry.isContributed
     && !(err instanceof util.ProcessCanceled)
-    && !(err instanceof util.DataInvalid);
+    && !(err instanceof util.DataInvalid)
+    && !(err instanceof util.UserCanceled);
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const errorMessage = 'Load order failed validation';
