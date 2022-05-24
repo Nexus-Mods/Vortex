@@ -346,7 +346,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                                              context, ['error'], '', process.type, undefined,
                                              attachmentBundle))
         .then(response => {
-          if (response !== undefined) {
+          if (response?.github_issue !== undefined) {
             const { issue_number } = response.github_issue;
             const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${issue_number}`;
             jsonRequest<any>(githubURL)
