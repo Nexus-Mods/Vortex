@@ -728,7 +728,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           ]).then(res => (res.action === 'Restore Vortex Backup')
             ? fs.removeAsync(targetPath)
                 .then(() => this.restoreBackup(backupPath))
-            : null);
+            : fs.removeAsync(backupPath));
       })
       .catch(UserCanceled, cancelErr => {
         // TODO:
