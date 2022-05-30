@@ -11,6 +11,7 @@ import SortIndicator from './SortIndicator';
 
 import * as _ from 'lodash';
 import * as React from 'react';
+import More from '../More';
 
 export interface IHeaderProps {
   className: string;
@@ -68,11 +69,15 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
             style={{ display: 'flex', flexDirection: 'row' }}
             onClick={this.cycleDirection}
           >
-            {(attribute.help !== undefined)
-              ? (<a className='fake-link' onClick={nop} title={preT(t, attribute.help)}>
-                {preT(t, attribute.name)}
-              </a>
-              ) : <p style={{ margin: 0 }}>{preT(t, attribute.name)}</p>}
+            <p style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+              {preT(t, attribute.name)}
+              {(attribute.help !== undefined)
+                ? (
+                  <More id={`more-${attribute.name}`} name={preT(t, attribute.name)}>
+                    {preT(t, attribute.help)}
+                  </More>
+                ) : null}
+            </p>
             <div className='cell-controls'>
               {attribute.isSortable ? this.renderSortIndicator() : <div/>}
               {attribute.isGroupable ? this.renderGroupIndicator() : null}
