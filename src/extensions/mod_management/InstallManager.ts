@@ -398,7 +398,7 @@ class InstallManager {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  setModsEnabled(api, installGameId, [existingMod.id], false, {
+                  setModsEnabled(api, currentProfile.id, [existingMod.id], false, {
                     allowAutoDeploy,
                     installed: true,
                   });
