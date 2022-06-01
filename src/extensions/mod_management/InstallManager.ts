@@ -1834,6 +1834,10 @@ class InstallManager {
     const sourceMod = state.persistent.mods[gameId][sourceModId];
     const stagingPath = installPathForGame(state, gameId);
 
+    if (sourceMod?.installationPath === undefined) {
+      return Promise.resolve([]);
+    }
+
     let queuedDownloads: IModReference[] = [];
 
     const clearQueued = () => {

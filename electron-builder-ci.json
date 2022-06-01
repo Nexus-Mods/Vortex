@@ -33,7 +33,8 @@
     "perMachine": true,
     "runAfterFinish": true,
     "menuCategory": true,
-    "uninstallDisplayName": "${productName}"
+    "uninstallDisplayName": "${productName}",
+    "include": "build/installer_ci.nsh"
   },
   "linux": {
     "target": "tar.bz2",

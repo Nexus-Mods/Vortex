@@ -267,7 +267,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       return null;
     }
     const parsed = nodeUrl.parse(input);
-    const segments = parsed.pathname.split('/').filter(seg => seg.length > 0);
+    const segments = (parsed.pathname ?? '').split('/').filter(seg => seg.length > 0);
     const Item: any = Breadcrumb.Item;
     return (
       <Breadcrumb>
