@@ -1834,7 +1834,7 @@ class InstallManager {
     const sourceMod = state.persistent.mods[gameId][sourceModId];
     const stagingPath = installPathForGame(state, gameId);
 
-    if (sourceMod === undefined) {
+    if (sourceMod?.installationPath === undefined) {
       return Promise.resolve([]);
     }
 
