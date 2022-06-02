@@ -33,20 +33,24 @@ export function findModByRef(reference: IModReference, mods: { [modId: string]: 
     return mods[reference['idHint']];
   }
 
+  if ((reference.versionMatch !== undefined)
+      && isFuzzyVersion(reference.versionMatch)
+      && (reference.fileMD5 !== undefined)
+      && ((reference.logicalFileName !== undefined)
+          || (reference.fileExpression !== undefined))) {
+    reference = {
+      md5Hint: reference.fileMD5,
+      ...reference,
+    };
+    delete reference.fileMD5;
+  }
+
   if (reference['md5Hint'] !== undefined) {
     const result = Object.keys(mods)
       .find(dlId => mods[dlId].attributes?.fileMD5 === reference['md5Hint']);
     if (result !== undefined) {
       return mods[result];
     }
-  }
-
-  if ((reference.versionMatch !== undefined)
-      && isFuzzyVersion(reference.versionMatch)
-      && (reference.fileMD5 !== undefined)
-      && ((reference.logicalFileName !== undefined)
-          || (reference.fileExpression !== undefined))) {
-    reference = _.omit(reference, ['fileMD5']);
   }
 
   return Object.values(mods).find((mod: IMod): boolean =>
