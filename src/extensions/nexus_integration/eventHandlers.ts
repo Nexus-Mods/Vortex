@@ -358,6 +358,7 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
       .catch(err => {
         if (!['COLLECTION_DISCARDED', 'NOT_FOUND'].includes(err.code)) {
           api.showErrorNotification('Failed to get collection info', err, {
+            id: 'failed-get-collection-info',
             allowReport: !(err instanceof ProcessCanceled),
           });
         }
@@ -408,7 +409,10 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
         err['collectionSlug'] = collectionSlug;
         err['revisionNumber'] = revisionNumber;
         if (err.code !== 'NOT_FOUND') {
-          api.showErrorNotification('Failed to get nexus revision info', err, { allowReport });
+          api.showErrorNotification('Failed to get nexus revision info', err, {
+            id: 'failed-get-revision-info',
+            allowReport,
+          });
         }
         return Promise.resolve(undefined);
       });

@@ -709,6 +709,27 @@ abstract class LinkingActivator implements IDeploymentMethod {
       // where has it gone? Oh well, doesn't matter. We wouldn't even be trying to restore
       // it if it had been removed a bit earlier
       .catch({ code: 'ENOENT' }, () => null)
+      // targetPath exists - user is potentially using another mod manager
+      // or has manipulated the files manually - let him decide what to do.
+      .catch({ code: 'EEXIST' }, () => {
+        return this.mApi.showDialog('question', 'Confirm', {
+          text: 'Vortex is attempting to restore the below game file using '
+            + 'a backup it generated during a deployment event, but the game '
+            + 'file appears to already exist - this usually happens when Vortex '
+            + 'is used alongside other mod managers or when the user manipulates '
+            + 'the game files manually.\n\n'
+            + 'If you choose to restore the Vortex backup, Vortex will erase '
+            + 'the existing file and restore the backup; alternatively you can '
+            + 'choose to keep the existing file.',
+          message: targetPath,
+        }, [
+            { label: 'Keep Existing File' },
+            { label: 'Restore Vortex Backup' },
+          ]).then(res => (res.action === 'Restore Vortex Backup')
+            ? fs.removeAsync(targetPath)
+                .then(() => this.restoreBackup(backupPath))
+            : fs.removeAsync(backupPath));
+      })
       .catch(UserCanceled, cancelErr => {
         // TODO:
         // this dialog may show up multiple times for the same file because

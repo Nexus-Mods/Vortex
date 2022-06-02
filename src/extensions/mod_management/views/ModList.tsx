@@ -848,9 +848,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       calc: (mod: IModWithState) => {
         if (mod.state !== 'installed') {
           const download = this.props.downloads?.[mod.archiveId];
-          return download?.size !== undefined ? bytesToString(download.size) : '???';
+          return download?.size ?? -1;
         }
-        return mod.attributes?.modSize ?? '???';
+        return mod.attributes?.modSize ?? -1;
       },
       placement: 'table',
       isDefaultVisible: false,

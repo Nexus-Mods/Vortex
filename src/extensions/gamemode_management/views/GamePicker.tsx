@@ -372,7 +372,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private openGameExtWiki = () => {
-    opn(`https://wiki.${NEXUS_DOMAIN}/index.php/Creating_a_game_extension_for_Vortex`)
+    opn('https://nexus-mods.github.io/vortex-api/2022/04/03/Creating-a-game-extension.html')
       .catch(() => null);
   }
 
