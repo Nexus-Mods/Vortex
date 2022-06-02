@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 import { activeGameId } from '../profile_management/selectors';
 
 import APIDashlet from './APIDashlet';
@@ -20,6 +21,22 @@ function init(context: IExtensionContext): boolean {
   }), undefined);
 
   context.registerDashlet(
+    'Latest Mods', 1, 3, 300, RSSDashlet,
+    state => activeGameId(state) !== undefined, () => {
+      return {
+        title: t('New Files'),
+        emptyText: t('No New Files'),
+        url: `${NEXUS_BASE_URL}/${GAMEID_PLACEHOLDER}/rss/newtoday/`,
+        maxLength: 400,
+        extras: [
+          { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },
+          { attribute: 'nexusmods:downloads', icon: 'download', text: '{{ value }}' },
+        ],
+      };
+    }, undefined);
+
+  /*
+  context.registerDashlet(
     'Latest Mods', 1, 3, 300, APIDashlet,
     state => activeGameId(state) !== undefined, () => ({
       title: t('New Files'),
@@ -34,6 +51,7 @@ function init(context: IExtensionContext): boolean {
       emptyText: t('No Trending Files'),
       eventName: 'get-trending-mods',
     }), undefined);
+  */
 
   return true;
 }
