@@ -1741,6 +1741,7 @@ class InstallManager {
               allowReport: false,
               message: renderModReference(dep.reference, undefined),
             });
+          return Promise.resolve(undefined);
         })
         .catch(NotFound, err => {
           api.showErrorNotification('Failed to install dependency', err, {
@@ -1765,25 +1766,20 @@ class InstallManager {
               allowReport: false,
             });
             return Promise.resolve();
-          } else if (err['statusCode'] >= 500) {
-            api.showErrorNotification(
-              'Failed to install dependency',
-              'Server reported an internal error. This is likely a temporary issue, please '
-              + 'try again later.', {
-              message: renderModReference(dep.reference, undefined),
-              allowReport: false,
-            });
-            return Promise.resolve();
           }
 
-          const pretty = prettifyNodeErrorMessage(err);
-          const newErr = new Error(pretty.message);
-          newErr.stack = err.stack;
-          api.showErrorNotification('Failed to install dependency', newErr, {
-            message: renderModReference(dep.reference, undefined),
-            allowReport: pretty.allowReport,
-            replace: pretty.replace,
-          });
+          if (err.name === 'HTTPError') {
+            api.showErrorNotification('Failed to install dependency', err);
+          } else {
+            const pretty = prettifyNodeErrorMessage(err);
+            const newErr = new Error(pretty.message);
+            newErr.stack = err.stack;
+            api.showErrorNotification('Failed to install dependency', newErr, {
+              message: renderModReference(dep.reference, undefined),
+              allowReport: pretty.allowReport,
+              replace: pretty.replace,
+            });
+          }
           return Promise.resolve(undefined);
         })
         .then((updatedDependency: IDependency) => {
