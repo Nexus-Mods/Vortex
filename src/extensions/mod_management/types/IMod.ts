@@ -33,6 +33,14 @@ export interface IMod {
   fileOverrides?: string[];
 }
 
+// well-known standard mod attributes
+export interface IModAttributes {
+  [id: string]: any;
+
+  // the `downloadGame` attribute is sometimes an array
+  downloadGame?: string | string[];
+}
+
 // identifies a mod in an online repository (like nexusmods.com)
 // we're assuming there will be at least an id for the file.
 // if the fileid is not unique across all mods we require an id to identify the mod.

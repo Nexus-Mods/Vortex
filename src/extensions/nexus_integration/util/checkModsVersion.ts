@@ -2,6 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 import { batchDispatch, truthy } from '../../../util/util';
+import { getGameId } from '../util';
 import { nexusGameId } from './convertGameId';
 
 import { gameById } from '../../gamemode_management/selectors';
@@ -309,7 +310,7 @@ export function retrieveModInfo(
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {
     return Promise.resolve();
   }
-  const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
+  const gameId = getGameId(mod, gameMode);
   const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
   return Promise.resolve(nexus.getModInfo(nexusIdNum,

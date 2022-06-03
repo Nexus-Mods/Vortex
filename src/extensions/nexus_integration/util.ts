@@ -10,7 +10,7 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
-import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
+import { IExtensionApi, IMod, IModAttributes, IState, ThunkStore } from '../../types/api';
 import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
@@ -36,6 +36,14 @@ import transformUserInfo from './util/transformUserInfo';
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const GAMES_JSON_URL = 'https://data.nexusmods.com/file/nexus-data/games.json';
+
+export function getGameId(mod: IMod, fallBackGameId?: string) {
+  let gameId = (mod.attributes as IModAttributes)?.downloadGame;
+  if (Array.isArray(gameId)) {
+    gameId = gameId[0];
+  }
+  return gameId ?? fallBackGameId;
+}
 
 export function startDownload(api: IExtensionApi,
                               nexus: Nexus,
@@ -569,7 +577,7 @@ function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
   }
 
   store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'pending'));
-  const game = gameById(api.store.getState(), gameId);
+  const game = gameById(api.store.getState(), Array.isArray(gameId) ? gameId[0] : gameId);
   endorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', endorsed));
@@ -602,7 +610,7 @@ function processInstallError(api: IExtensionApi,
 
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
   const gameId = nexusGameId(
-    gameById(state, getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode));
+    gameById(state, getGameId(mod, gameMode)));
   if (mod.attributes?.collectionSlug !== undefined) {
     return `https://www.nexusmods.com/${gameId}/mods/${mod.attributes?.collectionSlug}`;
   } else {
@@ -654,17 +662,16 @@ function filterByUpdateList(store: Redux.Store<any>,
                             nexus: Nexus,
                             gameId: string,
                             input: IMod[]): Promise<IMod[]> {
-  const getGameId = (mod: IMod) => getSafe(mod.attributes, ['downloadGame'], undefined) || gameId;
 
   // all game ids for which we have mods installed
-  const gameIds = Array.from(new Set(input.map(getGameId)));
+  const gameIds = Array.from(new Set(input.map(mod => getGameId(mod, gameId))));
 
   interface IMinAgeMap { [gameId: string]: number; }
   interface IUpdateMap { [gameId: string]: IUpdateEntry[]; }
 
   // for each game, stores the update time of the least recently updated mod
   const minAge: IMinAgeMap = input.reduce((prev: IMinAgeMap, mod: IMod) => {
-    const modGameId = getGameId(mod);
+    const modGameId = getGameId(mod, gameId);
     const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], undefined);
     if ((lastUpdate !== undefined)
         && ((prev[modGameId] === undefined) || (prev[modGameId] > lastUpdate))) {
@@ -697,7 +704,7 @@ function filterByUpdateList(store: Redux.Store<any>,
         const now = Date.now();
 
         return input.filter(mod => {
-          const modGameId = getGameId(mod);
+          const modGameId = getGameId(mod, gameId);
           if (updateMap[modGameId] === undefined) {
             // the game hasn't been checked for updates for so long we can't fetch an update range
             // long enough
