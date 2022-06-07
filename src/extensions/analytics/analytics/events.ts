@@ -20,7 +20,7 @@ export const EVENTS_STATE_LISTENERS: StateListeners = [
   {
     path: ['settings', 'interface', 'profilesVisible'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Dashboard', `Profile management ${current ? 'ON' : 'OFF'}`);
+      Analytics.trackClickEvent('Settings', `Profile management ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
