@@ -196,6 +196,11 @@ export const modsReducer: IReducerSpec = {
                   description: () => 'Corrupted mod version will be reset',
                   deleteBroken: true,
                 },
+                downloadGame: {
+                  type: 'string',
+                  description: () => 'Invalid download game id will be fixed',
+                  repair: (input) => Array.isArray(input) ? input[0] : undefined,
+                },
               },
             },
           },
