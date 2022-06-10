@@ -87,5 +87,6 @@
       "xstddef": "cpp",
       "xtr1common": "cpp",
       "regex": "cpp"
-    }
+    },
+    "typescript.preferences.quoteStyle": "single"
   }

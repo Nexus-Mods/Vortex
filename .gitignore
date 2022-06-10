@@ -48,3 +48,4 @@ icons/nucleo-standard-license.txt
 BuildState*.json
 tools/stackmap/*.vsix
 changelog_*.txt
+eslint.log
