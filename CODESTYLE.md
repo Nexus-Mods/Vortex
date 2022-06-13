@@ -122,6 +122,16 @@ const text = something ? 'give you up' : 'let you down'
 
 const song = t(`Never gonna {{ text }}`,{ replace: { text } })
 ```
+
+### **Error Logging**
+The way our error feedback works is that error reports from users are grouped based on the error message and stack so that we don't get too many duplicates.
+
+If you have a dynamic part in the error message that depends on the users system (or is random or a url or something) it has to be in quotes so that it gets ignored for the purpose of grouping the error reports otherwise every single occurrence of this error (if message is set) will produce a new report.
+
+```
+throw new CustomError(`CustomName "${Dynamic information goes here in quotes}"`)
+
+```
 ### **File naming and folder structure**
 *Proposal:
 If a file contains primarily a class, interface or react component, the file name matches that class, including case (that is: UpperCamelCase).
