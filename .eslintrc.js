@@ -34,25 +34,37 @@ module.exports = {
       "no-useless-escape": "warn",
       "no-empty": "warn",
       "no-empty-pattern": "warn",
-  
+      "no-prototype-builtins": "warn",
+      "no-mixed-spaces-and-tabs": "warn",
+
+      // We can turn this off since we do it only once
+      "no-global-assign": "warn",
+      
+      // I'd like this one as an error again once solved
+      "prefer-rest-params": "warn",
+      // I'd like this one as an error again once solved
+      "no-ex-assign": "warn",
       // I'd like this one as an error again once solved
       "no-irregular-whitespace": "warn",
       // I'd like this one as an error again once solved
       "no-constant-condition": "warn",
-
+      
       // I'm not sure about this one, maybe we should just disable this rule entirelly
       "prefer-spread": "warn", 
-
+      
       "@typescript-eslint/prefer-as-const": "warn",
       "@typescript-eslint/no-extra-semi": "warn",
       "@typescript-eslint/no-inferrable-types": "warn",
       "@typescript-eslint/no-var-requires": "warn",
+      "@typescript-eslint/no-this-alias": "warn",
+      "@typescript-eslint/no-empty-function": "warn",
 
       // I'd like this one as an error again once solved
       "@typescript-eslint/ban-ts-comment": "warn",
       "react/prop-types": "warn",
       "react/display-name": "warn",
       "react/jsx-no-comment-textnodes": "warn",
+      "react/no-direct-mutation-state": "warn",
 
       // One of the few rules I'm quite happy to just disable entirelly -> https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-unescaped-entities.md
       "react/no-unescaped-entities": "warn",
