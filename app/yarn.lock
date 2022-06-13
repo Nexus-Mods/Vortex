@@ -1483,8 +1483,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.17.15"
 
 fomod-installer@Nexus-Mods/fomod-installer#net6:
-  version "0.7.0"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/09a6fdcde61c9f47472e52d9e03a1a2100600bd7"
+  version "0.7.1"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/7fca5fae7e6dfed41310cb8f1c96760020dcf8eb"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -2976,24 +2976,6 @@ prebuild-install@^5.2.4:
     tar-fs "^2.0.0"
     tunnel-agent "^0.6.0"
     which-pm-runs "^1.0.0"
-
-prebuild-install@^7.1.0:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.1.tgz#de97d5b34a70a0c81334fd24641f2a1702352e45"
-  integrity sha512-jAXscXWMcCK8GgCoHOfIr0ODh5ai8mj63L2nWrjuAgXE6tDyYGnx4/8o/rCgU+B4JSyZBKbeZqzhtwtC3ovxjw==
-  dependencies:
-    detect-libc "^2.0.0"
-    expand-template "^2.0.3"
-    github-from-package "0.0.0"
-    minimist "^1.2.3"
-    mkdirp-classic "^0.5.3"
-    napi-build-utils "^1.0.1"
-    node-abi "^3.3.0"
-    pump "^3.0.0"
-    rc "^1.2.7"
-    simple-get "^4.0.0"
-    tar-fs "^2.0.0"
-    tunnel-agent "^0.6.0"
 
 process-nextick-args@~2.0.0:
   version "2.0.1"

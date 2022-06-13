@@ -29,6 +29,8 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
+import { CONTAINER_NAME } from './constants';
+
 import Bluebird from 'bluebird';
 import { createIPC } from 'fomod-installer';
 import * as net from 'net';
@@ -260,8 +262,7 @@ function createSocket(options: ICreateSocketOptions)
         log('info', 'listen', { pipePath });
         server.listen(pipePath, () => {
           try {
-            winapi.GrantAppContainer(
-              'fomod_installer', pipePath, 'named_pipe', ['all_access']);
+            winapi?.GrantAppContainer?.(CONTAINER_NAME, pipePath, 'named_pipe', ['all_access']);
           } catch (err) {
             log('error', 'Failed to allow access to pipe', { pipePath, message: err.message });
           }
@@ -443,7 +444,7 @@ class ConnectionIPC {
           });
         };
 
-        pid = await (createIPC as any)(pipe, ipcId, onExit, onStdout);
+        pid = await createIPC(pipe, ipcId, onExit, onStdout, CONTAINER_NAME);
       } catch (err) {
         setConnectOutcome(err);
       }
@@ -743,8 +744,8 @@ function init(context: IExtensionContext): boolean {
     const pluginPath = getPluginPath(gameId);
     // await currentInstallPromise;
 
-    winapi.GrantAppContainer(
-      'fomod_installer', scriptPath, 'file_object', ['generic_read', 'list_directory']);
+    winapi?.GrantAppContainer?.(
+      CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
