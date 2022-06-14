@@ -119,6 +119,12 @@
     width: 100% !important;
     height: 100% !important;
   }
+  .notifications-spin {
+    animation-name: notifications-spin;
+    animation-duration: 1.5s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear
+  }
   .badge {
     padding: 1px 3px;
     font-size: $font-size-small;
@@ -132,6 +138,15 @@
       color: $brand-primary;
       background-color: $text-color;
     }
+  }
+}
+
+@keyframes notifications-spin {
+  from {
+      transform:rotate(0deg);
+  }
+  to {
+      transform:rotate(360deg);
   }
 }
 

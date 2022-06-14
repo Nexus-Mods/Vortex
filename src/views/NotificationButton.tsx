@@ -124,12 +124,28 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       });
     }
 
+    const isRunningBgProcess = 
+      notifications
+      .filter((x) => x.type === 'activity' && x.progress === undefined)
+      .length >= 1 && combinedProgress.length == 0;
+    
+    if (isRunningBgProcess) {
+      combinedProgress.push({
+        class: 'running',
+        min: 0,
+        max: 100,
+        value: 25,
+      });
+    }
+
     return (
       <div style={{ display: 'inline-block' }}>
         <Button id='notifications-button' onClick={this.toggle} ref={this.mButtonRef}>
           <Icon name='notifications' />
           <RadialProgress
-            className='notifications-progress'
+            className={
+              `${isRunningBgProcess ? 'notifications-spin ' : ''}notifications-progress`
+            }
             data={combinedProgress}
             offset={8}
             totalRadius={8}
