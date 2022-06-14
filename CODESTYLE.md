@@ -47,6 +47,11 @@ Use PascalCase for type names.
 ```
 type NotificationFunc = (dismiss: NotificationDismiss) => void;
 ```
+
+#### **Type `Any`**
+We have the ESLint rule `no-explicit-any` disabled, but this does not mean you can use `Any` freely.
+
+Use `Any` only when stricly necessary
 #### **Interfaces**
 We use I as a prefix for our interfaces. This is because most of the team has a C# background.
 ```

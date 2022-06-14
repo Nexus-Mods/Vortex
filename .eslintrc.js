@@ -52,8 +52,7 @@ module.exports = {
     "prefer-spread": "warn",
 
     "@typescript-eslint/prefer-as-const": "warn",
-    "@typescript-eslint/no-extra-semi": "warn",
-    "@typescript-eslint/no-inferrable-types": "warn",
+    "@typescript-eslint/no-extra-semi": "warn",    
     "@typescript-eslint/no-var-requires": "warn",
     "@typescript-eslint/no-this-alias": "warn",
     "@typescript-eslint/no-empty-function": "warn",
@@ -84,6 +83,10 @@ module.exports = {
     "@typescript-eslint/no-empty-interface": "warn",
 
     // !!! Vortex specific rules mentioned in the Vortex code standards and style guides !!!
+    
+    // Massimo and Sebastian agreed on turning this off
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
 
     "@typescript-eslint/naming-convention": [
       "warn",
@@ -128,6 +131,7 @@ module.exports = {
       {
         "FunctionDeclaration": { "parameters": "first" },
         "FunctionExpression": { "parameters": "first" },
+        "CallExpression": { "arguments": "first" },
         "ImportDeclaration": "first",
         "flatTernaryExpressions": true,
         "offsetTernaryExpressions": false,
