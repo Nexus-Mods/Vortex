@@ -88,9 +88,9 @@ async function moveDownload(state: IState, fileName: string, fromGameId: string,
   }
 
   const normalize = await getNormalizeFunc(oldPath);
-  const source = normalize(path.join(oldPath, fileName));
-  const dest = normalize(path.join(newPath, fileName));
-  if (source === dest) {
+  const source = path.join(oldPath, fileName);
+  const dest = path.join(newPath, fileName);
+  if (normalize(source) === normalize(dest)) {
     const err = new ProcessCanceled('source same as destination');
     err['oldPath'] = oldPath;
     err['newPath'] = newPath;
