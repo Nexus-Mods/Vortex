@@ -1,6 +1,13 @@
 import * as d3 from 'd3';
 import * as React from 'react';
 
+const spinData = {
+  class: 'running',
+  min: 0,
+  max: 100,
+  value: 25,
+};
+
 export interface IBar {
   value: number;
   min: number;
@@ -18,6 +25,7 @@ export interface IBaseProps {
   maxWidth?: number;
   style?: React.CSSProperties;
   restOverlap?: boolean;
+  spin?: boolean;
 }
 
 type IProps = IBaseProps;
@@ -38,11 +46,22 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { className, data, offset, style, totalRadius } = this.props;
+    const { className, data, offset, style, totalRadius, spin } = this.props;
     const sideLength = (totalRadius + (offset || 0)) * 2;
+
+    const classNames = ['radial', className];
+
+    let progressData = [...data]
+    
+    if (spin && progressData.length == 0) {
+      // The normal progress has higher priority than the spin
+      classNames.push('radial--spin');
+      progressData.push(spinData);
+    }
+
     return (
-      <svg className={className} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
-        {data.map(this.renderArc)}
+      <svg className={classNames.join(' ')} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
+        {progressData.map(this.renderArc)}
       </svg>
     );
   }
@@ -71,7 +90,8 @@ class RadialProgress extends React.Component<IProps, {}> {
 
   private updateArcGen(props: IProps) {
     const { data, maxWidth, totalRadius } = props;
-    this.mWidthPerArc = totalRadius / (data.length + 1);
+    const length = Math.max(data.length + 1, 2);
+    this.mWidthPerArc = totalRadius / length;
     if (maxWidth !== undefined) {
       this.mWidthPerArc = Math.min(this.mWidthPerArc, maxWidth);
     }

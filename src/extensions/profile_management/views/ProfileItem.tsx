@@ -241,15 +241,14 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         return;
       }
       const img = nativeImage.createFromPath(file);
-      try {
-        // TODO: could resize here to save some disc space
-        return fs.writeFileAsync(this.imagePath, img.toPNG())
-          .then(() => {
-            this.setHasProfileImage(true);
-          });
-      } catch (err) {
-        log('warn', 'failed to get path for profile image', { profile: this.props.profile });
-      }
+      // TODO: could resize here to save some disc space
+      fs.writeFileAsync(this.imagePath, img.toPNG())
+        .then(() => {
+          this.setHasProfileImage(true);
+        })
+        .catch(err => {
+          log('warn', 'failed to get path for profile image', { profile: this.props.profile });
+        });
     });
   }
 

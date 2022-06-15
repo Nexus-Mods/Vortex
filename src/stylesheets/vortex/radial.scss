@@ -9,3 +9,20 @@
 .radial-rest {
   fill: $gray-light;
 }
+
+.radial--spin {
+  animation-name: radial--spin;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear
+}
+
+@keyframes radial--spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

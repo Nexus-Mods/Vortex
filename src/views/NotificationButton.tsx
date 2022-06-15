@@ -136,6 +136,10 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       });
     }
 
+    const pendingActivities = notifications.filter(
+      (iter) => iter.type === 'activity' && iter.progress === undefined
+    );
+
     return (
       <div style={{ display: 'inline-block' }}>
         <Button id='notifications-button' onClick={this.toggle} ref={this.mButtonRef}>
@@ -143,6 +147,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           <RadialProgress
             className='notifications-progress'
             data={combinedProgress}
+            spin={pendingActivities.length >= 1}
             offset={8}
             totalRadius={8}
           />

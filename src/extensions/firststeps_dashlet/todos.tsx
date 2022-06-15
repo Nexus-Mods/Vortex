@@ -75,7 +75,10 @@ function todos(api: IExtensionApi): IToDo[] {
       props: state => ({ profilesVisible: state.settings.interface.profilesVisible }),
       text: 'Profile Management',
       value: (t: TFunction, props: any) => props.profilesVisible ? t('Yes') : t('No'),
-      action: (props: any) => api.store.dispatch(setProfilesVisible(!props.profilesVisible)),
+      action: (props: any) => {
+        api.store.dispatch(setProfilesVisible(!props.profilesVisible));
+        api.events.emit('analytics-track-click-event', 'Dashboard', `Profile management ${!props.profilesVisible ? 'ON' : 'OFF'}`);
+      },
     },
     {
       id: 'download-location',
@@ -137,7 +140,7 @@ function todos(api: IExtensionApi): IToDo[] {
       }),
       condition: props => props.searchPaths !== undefined,
       text: (t: TFunction, props: any): JSX.Element =>
-          props.discoveryRunning
+        props.discoveryRunning
           ? t('Discovery running')
           : t('Scan for missing games'),
       action: startManualSearch,
