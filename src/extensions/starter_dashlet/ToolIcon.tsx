@@ -3,34 +3,53 @@ import Icon from '../../controls/Icon';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { pathToFileURL } from 'url';
+import { IconButton } from '../../controls/TooltipControls';
+import { TFunction } from '../../util/i18n';
 
 export interface IToolIconProps {
+  t?: TFunction;
   valid: boolean;
+  isPrimary?: boolean;
   imageUrl: string;
   imageId?: number;
+  onRun?: () => void;
 }
 
 const ToolIcon = (props: IToolIconProps) => {
   const validClass = props.valid ? 'valid' : 'invalid';
+  let iconImage;
   if (props.imageUrl !== undefined) {
     let src = pathToFileURL(props.imageUrl).href;
     if (props.imageId !== undefined) {
       src += '?' + props.imageId;
     }
-    return (
+    iconImage = (
       <Image
         src={src}
         className={'tool-icon ' + validClass}
       />
     );
   } else {
-    return (
+    iconImage = (
       <Icon
         name='executable'
         className={'tool-icon ' + validClass}
       />
     );
   }
+
+  const containerClasses = props.isPrimary
+    ? ['starter-tool-icon-container', 'primary']
+    : ['starter-tool-icon-container'];
+  return (
+    <div className={containerClasses.join(' ')}>
+      {iconImage}
+      {props.isPrimary ? <div className='primary-star'>★</div> : null}
+      {props.valid && props.t
+        ? <IconButton icon='launch-simple' tooltip={props.t('Run')} onClick={props.onRun} className='run-tool'/>
+        : null}
+    </div>
+  );
 };
 
 export default ToolIcon;

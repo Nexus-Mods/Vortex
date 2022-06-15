@@ -19,10 +19,29 @@
     padding: 0;
   }
 
+  .buttons {
+    background-color: $brand-bg;
+    min-width: 2em;
+    height: auto;
+    display: flex;
+    border-left: 1px solid $brand-menu;
+    align-items: center;
+    justify-content: center;
+    svg {
+      height: 2em;
+      width: 2em;
+    }
+  }
+
   .media-body {
     vertical-align: middle;
     flex-direction: row;
     position: relative;
+    .starter-dashlet-tools-header {
+      justify-content: space-between;
+      align-items: baseline;
+      height: auto;
+    }
   }
   
   .media-right {
@@ -34,6 +53,30 @@
       position: absolute;
       top: $half-gutter;
       right: $half-gutter;
+    }
+  }
+
+  .starter-drag-handle-container {
+    display: flex;
+    flex-direction: row;
+    margin-right: .5rem;
+    background-color: transparent;
+    width: 20rem;
+    .starter-drag-handle {
+      background-color: $brand-bg;
+      min-width: 20px;
+      height: auto;
+      display: flex;
+      cursor: move;
+      border-right: 1px solid $brand-menu;
+      .starter-drag-handle-icon {
+        padding: 3px;
+        color: $brand-menu;
+        width: 2em;
+        height: 2em;
+        margin: auto;
+        cursor: move;
+      }
     }
   }
 }
@@ -62,10 +105,7 @@ svg.tool-icon {
   flex-direction: row;
   padding: 8px;
   min-width: 128px;
-
-  &:hover {
-    background-color: $brand-primary;
-  }
+  width: 100%;
 
   button {
     @extend .btn-embed;
@@ -74,52 +114,83 @@ svg.tool-icon {
     flex: 1 1 0;
     margin: auto 0.5em;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    overflow-wrap: break-word;
     overflow-x: hidden;
   }
   .btn-group {
     display: inline-flex;
     margin: auto 0;
   }
+}
 
-  &.tool-button-primary {
-    background-color: $brand-secondary;
+.starter-tool-icon-container:hover {
+  .primary-star {
+    visibility: hidden;
+  }
+  .run-tool {
+    visibility: visible;
   }
 }
 
-.tool-bookmark {
-  // balance the padding of the tool button
-  margin-top: -9px;
+.starter-tool-icon-container {
+  border: $border-width solid $border-color;
+  border-radius: 5px;
+  position: relative;
+  padding: 2px;
+  &.primary {
+    border: $border-width solid;
+  }
+  .run-tool {
+    position: absolute;
+    left: 25%;
+    top: 25%;
+    visibility: hidden;
+  }
+  .primary-star {
+    font-size: 200%;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 15%;
+    top: 1%;
+    visibility: visible;
+  }
+  img {
+    display: block
+  }
 }
 
 #add-tool-button {
   // top padding needs to be large enough to fit the icon
   // and then some padding around it
-  padding: 5em $half-gutter $half-gutter;
-  height: 100%;
+  // padding: 2em $half-gutter $half-gutter;
+  // height: 100%;
 
-  display: flex !important;
-  background-color: $brand-bg;
-
-  &:hover {
-    background-color: $brand-clickable;
-  }
+  display: flex;
+  background-color: transparent;
+  border: $border-width solid;
+  width: 100%;
 
   span {
     margin-top: auto;
     margin-bottom: auto;
   }
+
   .btn-add-tool-text {
-    flex: 1 1 0;
+    @extend .tool-icon-text;
+    align-items: flex-start;
+    justify-content: end;
+    margin-left: 1em;
   }
-  svg {
-    width: 2.5em;
-    height: 2.5em;
-    position: absolute;
-    top: 1em;
-    left: 50%;
-    margin-left: -1.25em;
-    }
+
+  .btn-add-tool-dropdown-toggle {
+    @extend .tool-icon-container;
+  }
+  .btn-add-tool-icon {
+    @extend .tool-icon;
+    height: 46px;
+    position: inherit;
+  }
 }
 
 .tool-icon-box {
@@ -132,13 +203,9 @@ svg.tool-icon {
   width: 100%;
   > * {
     flex: 0 1 30%;
-    min-width: 150px;
+    min-width: 30em;
     margin: 2px;
   }
-}
-
-.btn-add-tool {
-  margin: $half-gutter 0;
 }
 
 .env-kvpair {
