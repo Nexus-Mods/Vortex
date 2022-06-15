@@ -1,12 +1,13 @@
 import * as d3 from 'd3';
 import * as React from 'react';
 
-const spinData = [{
+const spinData = {
   class: 'running',
   min: 0,
   max: 100,
   value: 25,
-}];
+};
+
 export interface IBar {
   value: number;
   min: number;
@@ -48,17 +49,19 @@ class RadialProgress extends React.Component<IProps, {}> {
     const { className, data, offset, style, totalRadius, spin } = this.props;
     const sideLength = (totalRadius + (offset || 0)) * 2;
 
-    if (spin) {
-      return (
-        <svg className={`notifications-spin ${className}`} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
-          {spinData.map(this.renderArc)}
-        </svg>
-      );  
+    const classNames = ['radial', className];
+
+    let progressData = [...data]
+    
+    if (spin && progressData.length == 0) {
+      // The normal progress has higher priority than the spin
+      classNames.push('radial--spin');
+      progressData.push(spinData);
     }
 
     return (
-      <svg className={className} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
-        {data.map(this.renderArc)}
+      <svg className={classNames.join(' ')} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
+        {progressData.map(this.renderArc)}
       </svg>
     );
   }
