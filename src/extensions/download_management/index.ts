@@ -318,6 +318,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
       api.events.emit('downloads-refreshed');
     })
+    .then(() => checkDownloadsWithMissingMeta(api))
     .catch(err => {
       api.showErrorNotification('Failed to read downloads directory',
           err, { allowReport: err.code !== 'ENOENT' });
@@ -979,8 +980,6 @@ function init(context: IExtensionContextExt): boolean {
     updateDebouncer = new Debouncer(() => {
       return updateDownloadPath(context.api);
     }, 1000);
-
-    checkDownloadsWithMissingMeta(context.api);
 
     {
       let powerTimer: NodeJS.Timeout;
