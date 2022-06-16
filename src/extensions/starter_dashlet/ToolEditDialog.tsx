@@ -16,7 +16,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
 
-import ToolIcon from './ToolIcon';
+import ToolIcon from '../../controls/ToolIcon';
 
 import Promise from 'bluebird';
 import { nativeImage } from 'electron';

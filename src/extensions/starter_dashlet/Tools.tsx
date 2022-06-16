@@ -31,8 +31,6 @@ import {
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
-// TODO: this import is not ok because it breaks the encapsulation of the module
-import GameThumbnail from '../gamemode_management/views/GameThumbnail';
 
 import { setAddToTitleBar, setPrimaryTool, setToolOrder } from './actions';
 

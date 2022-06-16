@@ -1,10 +1,9 @@
-import Icon from '../../controls/Icon';
 import IconBar from '../../controls/IconBar';
 import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
-import ToolIcon from './ToolIcon';
+import ToolIcon from '../../controls/ToolIcon';
 
 import React, { CSSProperties } from 'react';
 import { useDrop } from 'react-dnd';

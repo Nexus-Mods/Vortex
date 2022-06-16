@@ -1,13 +1,14 @@
-import Icon from '../../controls/Icon';
+import Icon from './Icon';
 
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { pathToFileURL } from 'url';
-import { IconButton } from '../../controls/TooltipControls';
-import { TFunction } from '../../util/i18n';
+import { IconButton } from './TooltipControls';
+import { TFunction } from '../util/i18n';
 
 export interface IToolIconProps {
   t?: TFunction;
+  classes?: string[];
   valid: boolean;
   isPrimary?: boolean;
   imageUrl: string;
@@ -38,9 +39,10 @@ const ToolIcon = (props: IToolIconProps) => {
     );
   }
 
+  const classes = props.classes ?? [];
   const containerClasses = props.isPrimary
-    ? ['starter-tool-icon-container', 'primary']
-    : ['starter-tool-icon-container'];
+    ? ['starter-tool-icon-container', 'primary', ...classes]
+    : ['starter-tool-icon-container', ...classes];
   return (
     <div className={containerClasses.join(' ')}>
       {iconImage}

@@ -30,6 +30,8 @@
     svg {
       height: 2em;
       width: 2em;
+      max-width: 2em;
+      max-height: 2em;
     }
   }
 
@@ -61,7 +63,6 @@
     flex-direction: row;
     margin-right: .5rem;
     background-color: transparent;
-    width: 20rem;
     .starter-drag-handle {
       background-color: $brand-bg;
       min-width: 20px;
@@ -169,7 +170,7 @@ svg.tool-icon {
   display: flex;
   background-color: transparent;
   border: $border-width solid;
-  width: 100%;
+  width: 98%;
 
   span {
     margin-top: auto;
@@ -194,18 +195,15 @@ svg.tool-icon {
 }
 
 .tool-icon-box {
-  display: flex;
-  flex-flow: row wrap;
-  overflow-y: auto;
-  justify-content: flex-start;
-  align-items: center;
-  margin: 0;
-  width: 100%;
-  > * {
-    flex: 0 1 30%;
-    min-width: 40em;
-    margin: 2px;
-  }
+   --grid-layout-gap: 1em;
+   --grid-column-count: 3;
+   --grid-item--min-width: 30em;
+   --gap-count: calc(var(--grid-column-count) - 1);
+   --total-gap-width: calc(var(--gap-count) * var(--grid-layout-gap));
+   --grid-item--max-width: calc((100% - var(--total-gap-width)) / var(--grid-column-count));
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(max(var(--grid-item--min-width), var(--grid-item--max-width)), 1fr));
+   grid-gap: var(--grid-layout-gap);
 }
 
 .env-kvpair {
