@@ -15,8 +15,10 @@ export const useConnectedProps = (): IConnectedProps => {
   const [t] = useTranslation();
   return {
     t,
-    addToTitleBar: false,
-    toolsOrder: [],
+    addToTitleBar: getSafe(state,
+      ['settings', 'interface', 'tools', 'addToolsToTitleBar', gameMode], false),
+    toolsOrder: getSafe(state,
+      ['settings', 'interface', 'tools', 'order', gameMode], []),
     gameMode,
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,

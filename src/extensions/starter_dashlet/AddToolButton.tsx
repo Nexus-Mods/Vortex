@@ -14,19 +14,37 @@ import { setToolVisible } from '../gamemode_management/actions/settings';
 interface IBaseProps {
   onAddNewTool: () => void;
   tools: StarterInfo[];
+  onSetToolOrder: (order: string[]) => void;
 }
 
 export default function AddToolButton(props: IBaseProps) {
-  const { t, gameMode, discoveredTools } = useConnectedProps();
-  const { tools, onAddNewTool } = props;
+  const { t, gameMode, discoveredTools, toolsOrder } = useConnectedProps();
+  const { tools, onAddNewTool, onSetToolOrder } = props;
   const store = useStore();
   const hidden = tools.filter(starter =>
     (discoveredTools[starter.id] !== undefined)
     && (discoveredTools[starter.id].hidden === true));
 
+  const setToolOrder = React.useCallback((newOrder: string[]) => {
+    onSetToolOrder(newOrder);
+  }, [onSetToolOrder])
   const addNewTool = React.useCallback((e) => {
     onAddNewTool();
   }, [onAddNewTool]);
+
+
+  React.useEffect(() => {
+    const hiddenIds = Object.values(hidden).map(tool => tool.id);
+    const newOrder = toolsOrder.reduce((prev, iter) => {
+      if (!hiddenIds.includes(iter)) {
+        prev.push(iter);
+      }
+      return prev;
+    }, []);
+    if (hidden.length !== newOrder.length) {
+      setToolOrder(newOrder);
+    }
+  }, [discoveredTools]);
 
   const unhide = React.useCallback((key) => {
     store.dispatch(setToolVisible(gameMode, key, true));
@@ -36,7 +54,6 @@ export default function AddToolButton(props: IBaseProps) {
     <Dropdown
       id='add-tool-button'
       className='btn-add-tool dropup'
-      dropup={true}
     >
       <Dropdown.Toggle noCaret className='btn-add-tool-dropdown-toggle'>
         <Icon name='add' className='btn-add-tool-icon'/>

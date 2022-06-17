@@ -8,6 +8,7 @@ import { TFunction } from '../util/i18n';
 
 export interface IToolIconProps {
   t?: TFunction;
+  children?: any;
   classes?: string[];
   valid: boolean;
   isPrimary?: boolean;
@@ -50,6 +51,7 @@ const ToolIcon = (props: IToolIconProps) => {
       {props.valid && props.t
         ? <IconButton icon='launch-simple' tooltip={props.t('Run')} onClick={props.onRun} className='run-tool'/>
         : null}
+      {props.children}
     </div>
   );
 };

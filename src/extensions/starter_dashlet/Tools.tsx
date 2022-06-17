@@ -1,15 +1,9 @@
 import { showDialog } from '../../actions/notifications';
 import Dashlet from '../../controls/Dashlet';
-import Dropdown from '../../controls/Dropdown';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
-import Icon from '../../controls/Icon';
-import Spinner from '../../controls/Spinner';
-import DraggableListWrapper from '../../controls/DraggableList';
-import { IconButton } from '../../controls/TooltipControls';
 import { makeExeId } from '../../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IRunningTool } from '../../types/IState';
 import { ComponentEx, connect } from '../../util/ComponentEx';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
@@ -47,7 +41,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import { IConnectedProps, IDraggableListItemProps } from './types';
+import { IConnectedProps } from './types';
 
 import FlexLayout from '../../controls/FlexLayout';
 import Toggle from '../../controls/Toggle';
@@ -148,7 +142,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
                   checked={addToTitleBar}
                   onToggle={this.onToggle}
                 >
-                  {t('Add to Titlebar')}
+                  {t('Enable toolbar')}
                 </Toggle>
               </FlexLayout>
               {this.renderEditToolDialog()}
@@ -186,8 +180,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       <div className='tool-icon-box'>
         {visible.map(this.renderTool)}
         <AddToolButton
+          onSetToolOrder={this.applyOrder}
           onAddNewTool={this.addNewTool}
-          tools={visible}
+          tools={tools}
         />
       </div>
     );
@@ -296,7 +291,10 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         }
       });
 
-    const findIdx = (starter: StarterInfo) => toolsOrder.findIndex(toolId => toolId === starter.id);
+    const findIdx = (starter: StarterInfo) => {
+      const idx = toolsOrder.findIndex(toolId => toolId === starter.id);
+      return idx !== -1 ? idx : starters.length;
+    }
     starters.sort((lhs, rhs) => findIdx(lhs) - findIdx(rhs));
     return starters;
   }
@@ -324,18 +322,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     remote.app.setUserTasks(userTasks);
   }
 
-  private startGame = () => {
-    const { primaryTool } = this.props;
-    const { tools, gameStarter } = this.state;
-
-    if (!truthy(primaryTool)) {
-      this.startTool(gameStarter);
-    } else {
-      const info = tools.find(iter => iter.id === primaryTool);
-      this.startTool(info || gameStarter);
-    }
-  }
-
   private startTool = (info: StarterInfo) => {
     const { onShowError } = this.props;
     if (info?.exePath === undefined) {
@@ -344,23 +330,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return;
     }
     StarterInfo.run(info, this.context.api, onShowError);
-  }
-
-  private unhide = (toolId: any) => {
-    const { gameMode, onSetToolVisible } = this.props;
-    onSetToolVisible(gameMode, toolId, true);
-  }
-
-  private onRefreshGameInfo = (gameId: string) => {
-    return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('refresh-game-info', gameId, (err: Error) => {
-        if (err !== null) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
   }
 
   private renderEditToolDialog() {
