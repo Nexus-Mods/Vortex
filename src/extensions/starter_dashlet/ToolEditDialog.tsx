@@ -315,6 +315,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     onClick={this.handleChangeIcon}
                   >
                     <ToolIcon
+                      item={tool}
                       imageUrl={tool.iconPath}
                       imageId={imageId}
                       valid={true}

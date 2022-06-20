@@ -6,12 +6,17 @@ import { pathToFileURL } from 'url';
 import { IconButton } from './TooltipControls';
 import { TFunction } from '../util/i18n';
 
+export interface IItemProps {
+  name: string;
+}
+
 export interface IToolIconProps {
   t?: TFunction;
   children?: any;
   classes?: string[];
   valid: boolean;
   isPrimary?: boolean;
+  item: IItemProps;
   imageUrl: string;
   imageId?: number;
   onRun?: () => void;
@@ -49,7 +54,12 @@ const ToolIcon = (props: IToolIconProps) => {
       {iconImage}
       {props.isPrimary ? <div className='primary-star'>★</div> : null}
       {props.valid && props.t
-        ? <IconButton icon='launch-simple' tooltip={props.t('Run')} onClick={props.onRun} className='run-tool'/>
+        ? <IconButton
+            icon='launch-simple'
+            tooltip={props.item.name}
+            onClick={props.onRun}
+            className='run-tool'
+          />
         : null}
       {props.children}
     </div>

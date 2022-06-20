@@ -98,6 +98,7 @@ function ToolButton(props: IToolButtonProps) {
         <div className='tool-icon-container'>
           <ToolIcon
             t={t}
+            item={props.item}
             imageUrl={imageSrc}
             imageId={counter}
             isPrimary={primary}
