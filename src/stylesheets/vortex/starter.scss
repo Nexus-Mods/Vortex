@@ -36,6 +36,8 @@
   }
 
   .media-body {
+    overflow-y: visible;
+    overflow-x: hidden;
     vertical-align: middle;
     flex-direction: row;
     position: relative;
@@ -83,7 +85,7 @@
 }
 
 .tool-icon {
-  width: auto;
+  width: 30px;
   height: 30px;
 
   &.invalid {
@@ -209,8 +211,6 @@ svg.tool-icon {
 }
 
 .tool-icon-box {
-  overflow-y: auto;
-  overflow-x: hidden;
   --grid-layout-gap: 1em;
   --grid-column-count: 3;
   --grid-item--min-width: 30em;

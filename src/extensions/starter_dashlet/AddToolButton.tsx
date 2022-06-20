@@ -27,11 +27,10 @@ export default function AddToolButton(props: IBaseProps) {
 
   const setToolOrder = React.useCallback((newOrder: string[]) => {
     onSetToolOrder(newOrder);
-  }, [onSetToolOrder])
+  }, [onSetToolOrder]);
   const addNewTool = React.useCallback((e) => {
     onAddNewTool();
   }, [onAddNewTool]);
-
 
   React.useEffect(() => {
     const hiddenIds = Object.values(hidden).map(tool => tool.id);
@@ -50,10 +49,14 @@ export default function AddToolButton(props: IBaseProps) {
     store.dispatch(setToolVisible(gameMode, key, true));
   }, [store]);
 
+  const classes = ['btn-add-tool'];
+  if (tools.length - hidden.length > 3) {
+    classes.push('dropup');
+  }
   return (
     <Dropdown
       id='add-tool-button'
-      className='btn-add-tool dropup'
+      className={classes.join(' ')}
     >
       <Dropdown.Toggle noCaret className='btn-add-tool-dropdown-toggle'>
         <Icon name='add' className='btn-add-tool-icon'/>
