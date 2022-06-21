@@ -22,9 +22,9 @@ export const BoxWithHandle: FC<IProps> = memo((props: IProps) => {
   const children = Array.isArray(props.children)
     ? props.children : [props.children];
   return (
-    <div className='starter-drag-handle-container' ref={dragPreview} style={{ opacity }}>
-      <div className='starter-drag-handle' ref={drag as any} >
-        <Icon className='starter-drag-handle-icon' name='drag-handle' />
+    <div className='box-drag-handle-container' ref={dragPreview} style={{ opacity }}>
+      <div className='box-drag-handle' ref={drag as any} >
+        <Icon className='box-drag-handle-icon' name='drag-handle' />
       </div>
       {...children}
     </div>

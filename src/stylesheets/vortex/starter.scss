@@ -24,7 +24,7 @@
     min-width: 2em;
     height: auto;
     display: flex;
-    border-left: 1px solid $brand-menu;
+    border-left: $border-width solid $brand-menu;
     align-items: center;
     justify-content: center;
     svg {
@@ -60,20 +60,20 @@
     }
   }
 
-  .starter-drag-handle-container {
+  .box-drag-handle-container {
     display: flex;
     flex-direction: row;
     margin-right: .5rem;
     background-color: transparent;
-    .starter-drag-handle {
+    .box-drag-handle {
       background-color: $brand-bg;
-      min-width: 20px;
+      min-width: 1.66em;
       height: auto;
       display: flex;
       cursor: move;
-      border-right: 1px solid $brand-menu;
-      .starter-drag-handle-icon {
-        padding: 3px;
+      border-right: $border-width solid $brand-menu;
+      .box-drag-handle-icon {
+        padding: 0.25em;
         color: $brand-menu;
         width: 2em;
         height: 2em;
@@ -85,8 +85,8 @@
 }
 
 .tool-icon {
-  width: 30px;
-  height: 30px;
+  width: 2.5em;
+  height: 2.5em;
 
   &.invalid {
     filter: grayscale(100%);
@@ -99,15 +99,15 @@
 }
 
 svg.tool-icon {
-  width: 30px;
+  width: 2.5em;
 }
 
 .tool-button {
   background-color: $brand-bg;
   display: flex;
   flex-direction: row;
-  padding: 8px;
-  min-width: 128px;
+  padding: 0.66em;
+  min-width: 10.66em;
   width: 100%;
 
   button {
@@ -140,7 +140,7 @@ svg.tool-icon {
 
 .starter-tool-icon-container {
   border: $border-width solid $border-color;
-  border-radius: 5px;
+  border-radius: 0.41em;
   position: relative;
   min-height: 3em;
   max-height: 3em;
@@ -148,7 +148,7 @@ svg.tool-icon {
   min-width: 3em;
   max-width: 3em;
   width: 3em;
-  padding: 2px;
+  padding: 0.16em;
   &.primary {
     border: $border-width solid;
   }
@@ -205,7 +205,7 @@ svg.tool-icon {
   }
   .btn-add-tool-icon {
     @extend .tool-icon;
-    height: 46px;
+    height: 3.83em;
     position: inherit;
   }
 }

@@ -4,6 +4,7 @@ import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import { makeExeId } from '../../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+import { IRunningTool } from '../../types/IState';
 import { ComponentEx, connect } from '../../util/ComponentEx';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
@@ -26,7 +27,7 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
 
-import { setAddToTitleBar, setPrimaryTool, setToolOrder } from './actions';
+import { setPrimaryTool, setToolOrder } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
@@ -35,18 +36,27 @@ let ToolEditDialog: typeof ToolEditDialogT;
 import * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as React from 'react';
-import { ListGroupItem, Media, MenuItem } from 'react-bootstrap';
+import { Media } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import { IConnectedProps } from './types';
-
+import DynDiv from '../../controls/DynDiv';
 import FlexLayout from '../../controls/FlexLayout';
-import Toggle from '../../controls/Toggle';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
+
+interface IConnectedProps {
+  addToTitleBar: boolean;
+  toolsOrder: string[];
+  gameMode: string;
+  knownGames: IGameStored[];
+  discoveredGames: { [id: string]: IDiscoveryResult };
+  discoveredTools: { [id: string]: IDiscoveredTool };
+  primaryTool: string;
+  toolsRunning: { [exePath: string]: IRunningTool };
+}
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
@@ -62,8 +72,7 @@ interface IActionProps {
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onMakePrimary: (gameId: string, toolId: string) => void;
-  onAddToTitleBar: (gameId: string, addToTitleBar: boolean) => void;
+  onSetPrimary: (gameId: string, toolId: string) => void;
   onSetToolOrder: (gameId: string, tools: string[]) => void;
 }
 
@@ -117,7 +126,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    const { addToTitleBar, t, discoveredGames, gameMode, knownGames, onAddToTitleBar } = this.props;
+    const { t, discoveredGames, gameMode, knownGames } = this.props;
 
     let content: JSX.Element;
 
@@ -138,12 +147,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
             <FlexLayout type='column'>
               <FlexLayout type='row' className='starter-dashlet-tools-header'>
                 <h1>{t('Tools')}</h1>
-                <Toggle
-                  checked={addToTitleBar}
-                  onToggle={this.onToggle}
-                >
-                  {t('Enable toolbar')}
-                </Toggle>
+                <DynDiv group='starter-dashlet-tools-controls' />
               </FlexLayout>
               {this.renderEditToolDialog()}
               {this.renderToolIcons(game, discoveredGame)}
@@ -158,10 +162,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         {content}
       </Dashlet>
     );
-  }
-
-  private onToggle = (value: boolean) => {
-    this.props.onAddToTitleBar(this.props.gameMode, value);
   }
 
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
@@ -209,7 +209,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           onEdit={this.editTool}
           onMoveItem={this.moveItem}
           onRemove={this.removeTool}
-          onMakePrimary={this.makePrimary}
+          onMakePrimary={this.setPrimary}
         />
       </BoxWithHandle>);
   }
@@ -294,7 +294,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const findIdx = (starter: StarterInfo) => {
       const idx = toolsOrder.findIndex(toolId => toolId === starter.id);
       return idx !== -1 ? idx : starters.length;
-    }
+    };
     starters.sort((lhs, rhs) => findIdx(lhs) - findIdx(rhs));
     return starters;
   }
@@ -382,11 +382,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.props.onSetToolVisible(starter.gameId, starter.id, false);
   }
 
-  private makePrimary = (starter: StarterInfo) => {
+  private setPrimary = (starter: StarterInfo) => {
     if (starter.id === this.props.primaryTool) {
-      this.props.onMakePrimary(starter.gameId, null);
+      this.props.onSetPrimary(starter.gameId, null);
     } else {
-      this.props.onMakePrimary(starter.gameId, starter.isGame ? null : starter.id);
+      this.props.onSetPrimary(starter.gameId, starter.isGame ? null : starter.id);
     }
   }
 }
@@ -422,9 +422,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
-    onAddToTitleBar: (gameId: string, addToTitleBar: boolean) =>
-      dispatch(setAddToTitleBar(gameId, addToTitleBar)),
+    onSetPrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
     onSetToolOrder: (gameId: string, order: string[]) => dispatch(setToolOrder(gameId, order)),
   };
 }
