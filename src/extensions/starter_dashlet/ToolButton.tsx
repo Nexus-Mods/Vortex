@@ -3,12 +3,25 @@ import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+
 import ToolIcon from '../../controls/ToolIcon';
 
-import React, { CSSProperties } from 'react';
+import * as selectors from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
+
+import { IState } from '../../types/IState';
+import { useSelector } from 'react-redux';
+import React, {  useState } from 'react';
 import { useDrop } from 'react-dnd';
+import { fs } from '../..';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
+
+interface IConnectedProps {
+  toolsOrder: string[];
+  discoveredTools: { [id: string]: IDiscoveredTool };
+}
 
 export interface IToolButtonProps {
   t: TFunction;
@@ -27,6 +40,7 @@ function ToolButton(props: IToolButtonProps) {
   const { t, counter, item, primary, running, onRun,
           onMakePrimary, onRemove, onEdit } = props;
 
+  const { discoveredTools, toolsOrder } = useSelector(mapStateToProps);
   let imageSrc;
   const starter = item as StarterInfo;
   if (!starter) {
@@ -79,7 +93,23 @@ function ToolButton(props: IToolButtonProps) {
       condition: () => !starter.isGame,
     },
   ];
-  const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
+
+  const [valid, setValid] = useState(false);
+  React.useEffect(() => {
+    const isStarterValid = async () => {
+      if (!starter.exePath) {
+        setValid(false);
+      } else {
+        try {
+          await fs.statAsync(starter.exePath);
+          setValid(true);
+        } catch (err) {
+          setValid(false);
+        }
+      }
+    }
+    isStarterValid();
+  }, [toolsOrder, discoveredTools])
 
   const classes = ['tool-button'];
   if (primary) {
@@ -122,6 +152,17 @@ function ToolButton(props: IToolButtonProps) {
       />
     </>
   );
+}
+
+const emptyObj = {};
+function mapStateToProps(state: IState): IConnectedProps {
+  const game: { id } = selectors.currentGame(state);
+  return {
+    toolsOrder: getSafe(state,
+      ['settings', 'interface', 'tools', 'order', game?.id], []),
+    discoveredTools: getSafe(state, ['settings', 'gameMode',
+      'discovered', game?.id, 'tools'], emptyObj),
+  };
 }
 
 export default ToolButton;
