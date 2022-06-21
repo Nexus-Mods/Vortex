@@ -109,7 +109,7 @@ function ToolButton(props: IToolButtonProps) {
       }
     }
     isStarterValid();
-  }, [toolsOrder, discoveredTools])
+  }, [toolsOrder, discoveredTools]);
 
   const classes = ['tool-button'];
   if (primary) {

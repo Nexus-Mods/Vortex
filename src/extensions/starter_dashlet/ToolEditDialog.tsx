@@ -16,6 +16,8 @@ import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
 
+import * as selectors from '../../util/selectors';
+
 import ToolIcon from '../../controls/ToolIcon';
 
 import Promise from 'bluebird';
@@ -28,6 +30,8 @@ import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal, ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
+import { IToolStored } from '../gamemode_management/types/IToolStored';
 
 interface IEnvButtonProps {
   t: TFunction;
@@ -159,6 +163,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   displayGroups: { [id: string]: string };
+  game: IGameStored;
 }
 
 interface IActionProps {
@@ -211,13 +216,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   public render(): JSX.Element {
-    const { t, onClose } = this.props;
+    const { t, onClose, game } = this.props;
     const { imageId, tool } = this.state;
     let realName: string = tool.name;
     if ((realName === undefined) && (this.props.tool !== undefined)) {
       realName = this.props.tool.name;
     }
 
+    let exePathPlaceholder = t('Target');
+    const predefinedToolPath = ((game?.supportedTools ?? []).find(st => st.id === tool.id) as IToolStored)?.executable;
+    if (predefinedToolPath !== undefined) {
+      exePathPlaceholder = `../${predefinedToolPath}`;
+    }
     const haveEnvironment: boolean = Object.keys(tool.environment).length > 0;
 
     return (
@@ -245,7 +255,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 t={t}
                 controlId='target'
                 label={t('Target')}
-                placeholder={t('Target')}
+                placeholder={exePathPlaceholder}
                 stateKey='target'
                 value={tool.exePath}
                 readOnly={tool.isGame}
@@ -255,7 +265,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                   t={t}
                   controlId='target'
                   label={t('Target')}
-                  placeholder={t('Target')}
+                  placeholder={exePathPlaceholder}
                   stateKey='exePath'
                   value={tool.exePath}
                   onChangeValue={this.handleChangePath}
@@ -638,9 +648,11 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 }
 
+const emptyObj = {};
 function mapStateToProps(state: any): IConnectedProps {
   return {
     displayGroups: state.session.base.displayGroups,
+    game: selectors.currentGame(state),
   };
 }
 
