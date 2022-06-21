@@ -1,10 +1,6 @@
 import { showDialog } from '../../actions/notifications';
 import Dashlet from '../../controls/Dashlet';
-import Dropdown from '../../controls/Dropdown';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
-import Icon from '../../controls/Icon';
-import Spinner from '../../controls/Spinner';
-import { IconButton } from '../../controls/TooltipControls';
 import { makeExeId } from '../../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
@@ -18,6 +14,10 @@ import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { BoxWithHandle } from './BoxWithHandle';
+
+import AddToolButton from './AddToolButton';
+
 import {
   addDiscoveredTool,
   setToolVisible,
@@ -26,10 +26,8 @@ import {
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
-// TODO: this import is not ok because it breaks the encapsulation of the module
-import GameThumbnail from '../gamemode_management/views/GameThumbnail';
 
-import { setPrimaryTool } from './actions';
+import { setPrimaryTool, setToolOrder } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
@@ -38,17 +36,32 @@ let ToolEditDialog: typeof ToolEditDialogT;
 import * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as React from 'react';
-import { Media, MenuItem } from 'react-bootstrap';
+import { Media } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
+import DynDiv from '../../controls/DynDiv';
+import FlexLayout from '../../controls/FlexLayout';
+
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
+
+interface IConnectedProps {
+  addToTitleBar: boolean;
+  toolsOrder: string[];
+  gameMode: string;
+  knownGames: IGameStored[];
+  discoveredGames: { [id: string]: IDiscoveryResult };
+  discoveredTools: { [id: string]: IDiscoveredTool };
+  primaryTool: string;
+  toolsRunning: { [exePath: string]: IRunningTool };
+}
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
   counter: number;
+  gameStarter: StarterInfo;
   tools: StarterInfo[];
   discovering: boolean;
 }
@@ -59,16 +72,8 @@ interface IActionProps {
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onMakePrimary: (gameId: string, toolId: string) => void;
-}
-
-interface IConnectedProps {
-  gameMode: string;
-  knownGames: IGameStored[];
-  discoveredGames: { [id: string]: IDiscoveryResult };
-  discoveredTools: { [id: string]: IDiscoveredTool };
-  primaryTool: string;
-  toolsRunning: { [exePath: string]: IRunningTool };
+  onSetPrimary: (gameId: string, toolId: string) => void;
+  onSetToolOrder: (gameId: string, tools: string[]) => void;
 }
 
 type IStarterProps = IConnectedProps & IActionProps;
@@ -82,10 +87,14 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.initState({
       editTool: undefined,
       counter: 1,
+      gameStarter: this.generateGameStarter(props),
       tools: this.generateToolStarters(props),
       discovering: false,
     });
-    this.updateJumpList(this.state.tools);
+    const tools = truthy(this.state.gameStarter)
+      ? [this.state.gameStarter].concat(this.state.tools)
+      : this.state.tools;
+    this.updateJumpList(tools);
   }
 
   public componentDidMount() {
@@ -105,10 +114,14 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     if ((nextProps.discoveredGames !== this.props.discoveredGames)
        || (nextProps.discoveredTools !== this.props.discoveredTools)
        || (nextProps.gameMode !== this.props.gameMode)
-       || (nextProps.knownGames !== this.props.knownGames)) {
+       || (nextProps.knownGames !== this.props.knownGames)
+       || (nextProps.toolsOrder !== this.props.toolsOrder)) {
+      this.nextState.gameStarter = this.generateGameStarter(nextProps);
       this.nextState.tools = this.generateToolStarters(nextProps);
-
-      this.updateJumpList(this.nextState.tools);
+      const tools = truthy(this.nextState.gameStarter)
+        ? [this.nextState.gameStarter].concat(this.nextState.tools)
+        : this.nextState.tools;
+      this.updateJumpList(tools);
    }
   }
 
@@ -130,17 +143,16 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       const discoveredGame = discoveredGames[gameMode];
       content = (
         <Media id='starter-dashlet'>
-          <Media.Left>
-            {this.renderGameIcon(game, discoveredGame)}
-            {this.renderEditToolDialog()}
-          </Media.Left>
           <Media.Body>
-            {this.renderToolIcons(game, discoveredGame)}
+            <FlexLayout type='column'>
+              <FlexLayout type='row' className='starter-dashlet-tools-header'>
+                <h1>{t('Tools')}</h1>
+                <DynDiv group='starter-dashlet-tools-controls' />
+              </FlexLayout>
+              {this.renderEditToolDialog()}
+              {this.renderToolIcons(game, discoveredGame)}
+            </FlexLayout>
           </Media.Body>
-          <Media.Right>
-            {this.renderAddButton()}
-            {this.renderRefresh()}
-          </Media.Right>
         </Media>
       );
     }
@@ -149,19 +161,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       <Dashlet title='' className='dashlet-starter'>
         {content}
       </Dashlet>
-    );
-  }
-
-  private renderRefresh() {
-    const { t } = this.props;
-    const { discovering } = this.state;
-    return (
-      <IconButton
-        icon={discovering ? 'spinner' : 'refresh'}
-        tooltip={t('Quickscan')}
-        onClick={this.quickDiscovery}
-        className='refresh-button'
-      />
     );
   }
 
@@ -177,111 +176,81 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       starter.isGame
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
-
     return (
       <div className='tool-icon-box'>
-        {visible.map((vis, idx) => <div key={idx}>{this.renderTool(vis)}</div>)}
+        {visible.map(this.renderTool)}
+        <AddToolButton
+          onSetToolOrder={this.applyOrder}
+          onAddNewTool={this.addNewTool}
+          tools={tools}
+        />
       </div>
     );
   }
 
-  private renderAddButton() {
-    const { t, discoveredTools } = this.props;
-    const { tools } = this.state;
-
-    const hidden = tools.filter(starter =>
-      (discoveredTools[starter.id] !== undefined)
-      && (discoveredTools[starter.id].hidden === true));
-
-    return (
-      <Dropdown
-        id='add-tool-button'
-        className='btn-add-tool'
-        // container={this.mRef}
-      >
-        <Dropdown.Toggle>
-          <Icon name='add' />
-          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {hidden.map(starter => (
-            <MenuItem
-              key={starter.id}
-              eventKey={starter.id}
-              onSelect={this.unhide}
-            >{starter.name}
-            </MenuItem>
-          ))}
-          <MenuItem
-            key='__add'
-            onSelect={this.addNewTool}
-          >
-            {t('New...')}
-          </MenuItem>
-        </Dropdown.Menu>
-      </Dropdown>
-    );
-  }
-
-  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
-    if ((game === undefined) && (discoveredGame === undefined)) {
-      // assumption is that this can only happen during startup
-      return <Spinner />;
-    } else {
-      const { t } = this.props;
-      return (
-        <GameThumbnail
-          t={t}
-          game={game}
-          active={true}
-          type='launcher'
-          onRefreshGameInfo={this.onRefreshGameInfo}
-          onLaunch={this.startGame}
-        />
-      );
-    }
-  }
-
   private renderTool = (starter: StarterInfo) => {
-    const { t, primaryTool, toolsRunning } = this.props;
-    const { counter } = this.state;
-    if (starter === undefined) {
-      return null;
-    }
-
+    const { t, toolsRunning, primaryTool } = this.props;
+    const { counter, tools } = this.state;
     const running = (starter.exePath !== undefined)
                  && (toolsRunning[makeExeId(starter.exePath)] !== undefined);
-
     return (
-      <ToolButton
-        t={t}
+      <BoxWithHandle
         key={starter.id}
-        primary={starter.id === primaryTool}
-        counter={counter}
-        starter={starter}
-        running={running}
-        onRun={this.startTool}
-        onEdit={this.editTool}
-        onRemove={this.removeTool}
-        onMakePrimary={this.makePrimary}
-      />
-    );
+        item={starter}
+        {...this.props}
+      >
+        <ToolButton
+          t={t}
+          primary={starter.id === primaryTool}
+          counter={counter}
+          item={starter}
+          running={running}
+          onRun={this.startTool}
+          onEdit={this.editTool}
+          onMoveItem={this.moveItem}
+          onRemove={this.removeTool}
+          onMakePrimary={this.setPrimary}
+        />
+      </BoxWithHandle>);
   }
 
-  private quickDiscovery = () => {
-    const { gameMode } = this.props;
-    this.nextState.discovering = true;
-    const start = Date.now();
-    this.context.api.emitAndAwait('discover-tools', gameMode)
-      .then(() => {
-        setTimeout(() => {
-          this.nextState.discovering = false;
-        }, 1000 - (Date.now() - start));
-      });
+  private moveItem = (srcId: string, destId: string) => {
+    const { tools } = this.state;
+    const sourceIndex = tools.findIndex(item => item.id === srcId);
+    const destinationIndex = tools.findIndex(item => item.id === destId);
+    if (sourceIndex === -1 || destinationIndex === -1) {
+      return;
+    }
+
+    const offset = destinationIndex - sourceIndex;
+    const newOrder = moveElement(tools, sourceIndex, offset);
+    this.applyOrder(newOrder.map(starter => starter.id));
+  }
+
+  private applyOrder = (ordered: string[]) => {
+    this.props.onSetToolOrder(this.props.gameMode, ordered);
+  }
+
+  private generateGameStarter(props: IStarterProps): StarterInfo {
+    const { discoveredGames, gameMode, knownGames } = props;
+
+    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+    const discoveredGame: IDiscoveryResult = discoveredGames[gameMode];
+
+    if (game === undefined || discoveredGame?.path === undefined) {
+      return null;
+    }
+    try {
+      const starter = new StarterInfo(game, discoveredGame);
+      return starter;
+    } catch (err) {
+      log('error', 'invalid game', { err });
+    }
+    return null;
   }
 
   private generateToolStarters(props: IStarterProps): StarterInfo[] {
-    const { discoveredGames, discoveredTools, gameMode, knownGames } = props;
+    const { discoveredGames, discoveredTools, gameMode, knownGames, toolsOrder } = props;
 
     const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
     const discoveredGame: IDiscoveryResult = discoveredGames[gameMode];
@@ -294,15 +263,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const gameId = discoveredGame.id || game.id;
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
-    // add the main game executable
     const starters: StarterInfo[] = [
     ];
-
-    try {
-      starters.push(new StarterInfo(game, discoveredGame));
-    } catch (err) {
-      log('error', 'invalid game', { err });
-    }
 
     // add the tools provided by the game extension (whether they are found or not)
     knownTools.forEach((tool: IToolStored) => {
@@ -329,6 +291,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         }
       });
 
+    const findIdx = (starter: StarterInfo) => {
+      const idx = toolsOrder.findIndex(toolId => toolId === starter.id);
+      return idx !== -1 ? idx : starters.length;
+    };
+    starters.sort((lhs, rhs) => findIdx(lhs) - findIdx(rhs));
     return starters;
   }
 
@@ -355,18 +322,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     remote.app.setUserTasks(userTasks);
   }
 
-  private startGame = () => {
-    const { primaryTool } = this.props;
-    const { tools } = this.state;
-
-    if (!truthy(primaryTool)) {
-      this.startTool(tools[0]);
-    } else {
-      const info = tools.find(iter => iter.id === primaryTool);
-      this.startTool(info || tools[0]);
-    }
-  }
-
   private startTool = (info: StarterInfo) => {
     const { onShowError } = this.props;
     if (info?.exePath === undefined) {
@@ -375,23 +330,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return;
     }
     StarterInfo.run(info, this.context.api, onShowError);
-  }
-
-  private unhide = (toolId: any) => {
-    const { gameMode, onSetToolVisible } = this.props;
-    onSetToolVisible(gameMode, toolId, true);
-  }
-
-  private onRefreshGameInfo = (gameId: string) => {
-    return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('refresh-game-info', gameId, (err: Error) => {
-        if (err !== null) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
   }
 
   private renderEditToolDialog() {
@@ -444,18 +382,25 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.props.onSetToolVisible(starter.gameId, starter.id, false);
   }
 
-  private makePrimary = (starter: StarterInfo) => {
-    this.props.onMakePrimary(starter.gameId, starter.isGame ? null : starter.id);
+  private setPrimary = (starter: StarterInfo) => {
+    if (starter.id === this.props.primaryTool) {
+      this.props.onSetPrimary(starter.gameId, null);
+    } else {
+      this.props.onSetPrimary(starter.gameId, starter.isGame ? null : starter.id);
+    }
   }
 }
 
 const emptyObj = {};
-
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode: string = activeGameId(state);
 
   return {
     gameMode,
+    addToTitleBar: getSafe(state,
+      ['settings', 'interface', 'tools', 'addToolsToTitleBar', gameMode], false),
+    toolsOrder: getSafe(state,
+      ['settings', 'interface', 'tools', 'order', gameMode], []),
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, ['settings', 'gameMode',
@@ -477,8 +422,23 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
+    onSetPrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
+    onSetToolOrder: (gameId: string, order: string[]) => dispatch(setToolOrder(gameId, order)),
   };
+}
+
+function move(array, oldIndex, newIndex) {
+  if (newIndex >= array.length) {
+    newIndex = array.length - 1;
+  }
+  const newArray = [...array];
+  newArray.splice(newIndex, 0, newArray.splice(oldIndex, 1)[0]);
+  return newArray;
+}
+
+function moveElement(array, index, offset) {
+  const newIndex = index + offset;
+  return move(array, index, newIndex);
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(Starter);

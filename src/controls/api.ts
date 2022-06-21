@@ -35,6 +35,7 @@ import TableTextFilter from './table/TextFilter';
 import Timer from './Timer';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
+import ToolIcon from './ToolIcon';
 import * as tooltip from './TooltipControls';
 import TriStateCheckbox from './TriStateCheckbox';
 import Usage from './Usage';
@@ -50,5 +51,5 @@ export {
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   RadialProgress, SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, Timer, TriStateCheckbox,
-  Toggle, ToolbarIcon, tooltip, Usage, VisibilityProxy, Webview, ZoomableImage,
+  Toggle, ToolbarIcon, ToolIcon, tooltip, Usage, VisibilityProxy, Webview, ZoomableImage,
 };

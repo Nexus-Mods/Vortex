@@ -9,7 +9,7 @@ import { truthy } from '../../util/util';
 
 import { setPrimaryTool } from './actions';
 import settingsReducer from './reducers';
-import Starter from './Starter';
+import Tools from './Tools';
 
 function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
@@ -67,14 +67,13 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
-  context.registerDashlet('Starter', 2, 2, 100, Starter,
+  context.registerDashlet('Tools', 2, 2, 100, Tools,
                           undefined, undefined, {
                             closable: false,
                           });
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));
-
   return true;
 }
 

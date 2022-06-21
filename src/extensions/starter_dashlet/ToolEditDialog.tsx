@@ -16,7 +16,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
 
-import ToolIcon from './ToolIcon';
+import ToolIcon from '../../controls/ToolIcon';
 
 import Promise from 'bluebird';
 import { nativeImage } from 'electron';
@@ -315,6 +315,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     onClick={this.handleChangeIcon}
                   >
                     <ToolIcon
+                      item={tool}
                       imageUrl={tool.iconPath}
                       imageId={imageId}
                       valid={true}
