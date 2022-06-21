@@ -1,4 +1,4 @@
-import React, { CSSProperties, FC, memo } from 'react';
+import React, { FC } from 'react';
 import { useDrag } from 'react-dnd';
 import Icon from '../../controls/Icon';
 import { StarterInfo } from '../../util/api';
@@ -9,7 +9,7 @@ interface IProps {
   item: StarterInfo;
 }
 
-export const BoxWithHandle: FC<IProps> = memo((props: IProps) => {
+export const BoxWithHandle: FC<IProps> = (props: IProps) => {
   const [{ opacity, isDragging }, drag, dragPreview] = useDrag({
     item: { id: props.item.id, type: 'TOOL' },
     collect: (monitor) => {
@@ -29,4 +29,4 @@ export const BoxWithHandle: FC<IProps> = memo((props: IProps) => {
       {...children}
     </div>
   );
-});
+};
