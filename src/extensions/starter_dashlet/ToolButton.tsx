@@ -75,7 +75,7 @@ function ToolButton(props: IToolButtonProps) {
       condition: () => truthy(starter.exePath),
     },
     {
-      title: primary ? 'Remove primary' : 'Make primary',
+      title: primary ? 'Unset as primary' : 'Set as primary',
       icon: 'bookmark',
       action: setPrimaryTool,
       condition: () => truthy(starter.exePath)
