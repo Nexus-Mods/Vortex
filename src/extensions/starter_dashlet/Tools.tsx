@@ -228,6 +228,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private applyOrder = (ordered: string[]) => {
+    this.context.api.events.emit('analytics-track-event', 'Tools', 'Rearranged tools', ordered.join());
     this.props.onSetToolOrder(this.props.gameMode, ordered);
   }
 
@@ -329,6 +330,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
+    this.context.api.events.emit('analytics-track-click-event', 'Tools', 'Manually ran tool');
     StarterInfo.run(info, this.context.api, onShowError);
   }
 
@@ -371,7 +373,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     });
     this.nextState.editTool = empty;
 
-    this.context.api.events.emit('analytics-track-click-event', 'Dashboard', 'Add tool');
+    this.context.api.events.emit('analytics-track-click-event', 'Tools', 'Add tool');
   }
 
   private editTool = (starter: StarterInfo) => {
@@ -379,6 +381,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private removeTool = (starter: StarterInfo) => {
+    this.context.api.events.emit('analytics-track-click-event', 'Tools', 'Removed tool');
     this.props.onSetToolVisible(starter.gameId, starter.id, false);
   }
 
@@ -386,6 +389,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     if (starter.id === this.props.primaryTool) {
       this.props.onSetPrimary(starter.gameId, null);
     } else {
+      this.context.api.events.emit('analytics-track-click-event', 'Tools', 'Selected new primary tool');
       this.props.onSetPrimary(starter.gameId, starter.isGame ? null : starter.id);
     }
   }

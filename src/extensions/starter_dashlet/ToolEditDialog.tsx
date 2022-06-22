@@ -645,6 +645,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       onAddTool(tool.gameId, tool.id, this.toToolDiscovery(tool));
     }
     onClose();
+    this.context.api.events.emit('analytics-track-click-event', 'Tools', 'Edited tool');
   }
 }
 
