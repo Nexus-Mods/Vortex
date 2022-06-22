@@ -164,7 +164,7 @@ class MainWindow {
     };
 
     this.mWindow.webContents.session.webRequest.onBeforeSendHeaders(REQUEST_HEADER_FILTER, (details, callback) => {
-      details.requestHeaders['User-Agent'] = 'Chrome';
+      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36';
       callback({ requestHeaders: details.requestHeaders });
     });
 
