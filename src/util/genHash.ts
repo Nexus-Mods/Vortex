@@ -23,7 +23,7 @@ function sanitizeKnownMessages(input: string): string {
     .replace(/.*(contains invalid WIN32 path characters.)/, '... $1')
     .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, '$1')
     .replace(/.*(Cipher functions:OPENSSL_internal).*/, '$1')
-    .replace(/\\\\?\\.*(\\Vortex\\resources)/, '$1')
+    .replace(/\\\\?\\.*(\\Vortex\\resources)/i, '$1')
     ;
 }
 
