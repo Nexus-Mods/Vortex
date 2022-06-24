@@ -2,6 +2,8 @@
   margin: 0;
   height: 100%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 
   .media-left {
     margin-top: auto;
@@ -35,17 +37,18 @@
     }
   }
 
+  .starter-dashlet-tools-header {
+    justify-content: space-between;
+    align-items: baseline;
+    height: auto;
+  }
+
   .media-body {
     overflow-y: visible;
     overflow-x: hidden;
     vertical-align: middle;
     flex-direction: row;
     position: relative;
-    .starter-dashlet-tools-header {
-      justify-content: space-between;
-      align-items: baseline;
-      height: auto;
-    }
   }
   
   .media-right {

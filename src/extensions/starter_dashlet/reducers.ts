@@ -11,11 +11,7 @@ const reducer: IReducerSpec = {
       return setSafe(state, ['tools', 'order', gameId], tools);
     },
   },
-  defaults: {
-    tools: {
-      order: [],
-    },
-  },
+  defaults: {},
 };
 
 export default reducer;

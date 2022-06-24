@@ -121,6 +121,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       const tools = truthy(this.nextState.gameStarter)
         ? [this.nextState.gameStarter].concat(this.nextState.tools)
         : this.nextState.tools;
+      if (nextProps.toolsOrder.length === 0 && this.nextState.tools.length > 0) {
+        this.applyOrder(this.nextState.tools.map(tool => tool.id));
+      }
       this.updateJumpList(tools);
    }
   }
@@ -143,12 +146,12 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       const discoveredGame = discoveredGames[gameMode];
       content = (
         <Media id='starter-dashlet'>
+          <FlexLayout type='row' className='starter-dashlet-tools-header'>
+            <div className='dashlet-title'>{t('Tools')}</div>
+            <DynDiv group='starter-dashlet-tools-controls' />
+          </FlexLayout>
           <Media.Body>
             <FlexLayout type='column'>
-              <FlexLayout type='row' className='starter-dashlet-tools-header'>
-                <h1>{t('Tools')}</h1>
-                <DynDiv group='starter-dashlet-tools-controls' />
-              </FlexLayout>
               {this.renderEditToolDialog()}
               {this.renderToolIcons(game, discoveredGame)}
             </FlexLayout>
@@ -402,7 +405,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode,
     addToTitleBar: getSafe(state,
-      ['settings', 'interface', 'tools', 'addToolsToTitleBar', gameMode], false),
+      ['settings', 'interface', 'tools', 'addToolsToTitleBar'], false),
     toolsOrder: getSafe(state,
       ['settings', 'interface', 'tools', 'order', gameMode], []),
     knownGames: state.session.gameMode.known,
