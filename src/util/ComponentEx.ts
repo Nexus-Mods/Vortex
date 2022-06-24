@@ -7,6 +7,7 @@ import { deleteOrNop, setSafe } from './storeHelper';
 import * as PropTypes from 'prop-types';
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { clearImmediate, setImmediate } from 'timers';
+import { truthy } from './util';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
 
@@ -93,7 +94,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   }
 
   private derive(obj: T, key: PropertyKey) {
-    if ((typeof(obj[key]) !== 'object') || (typeof key !== 'string')) {
+    if ((typeof(obj[key]) !== 'object') || (typeof key !== 'string') || !truthy(obj[key])) {
       return obj[key];
     }
 
