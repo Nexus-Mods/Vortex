@@ -29,7 +29,7 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
-import { CONTAINER_NAME } from './constants';
+import { CONTAINER_NAME, NET_CORE_DOWNLOAD } from './constants';
 
 import Bluebird from 'bluebird';
 import { createIPC } from 'fomod-installer';
@@ -39,6 +39,10 @@ import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
 import * as winapi from 'winapi-bindings';
+import { ChildProcess, execFile, spawn } from 'child_process';
+import opn from '../../util/opn';
+import { SITE_ID } from '../gamemode_management/constants';
+import { downloadPathForGame } from '../download_management/selectors';
 
 function transformError(err: any): Error {
   let result: Error;
@@ -149,58 +153,75 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
     return Bluebird.resolve({});
   }
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
-      .then((data: Buffer) => {
-        let offset = 0;
-        let encoding: BufferEncoding = 'utf8';
-        if (data.readUInt16LE(0) === 0xFEFF) {
-          encoding = 'utf16le';
-          offset = 2;
-        } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
-          offset = 3;
-        }
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
-        const name: Element = xmlDoc.querySelector('fomod Name');
-        return truthy(name)
-          ? {
-            customFileName: name.childNodes[0].nodeValue,
-          } : {};
-      })
-      .catch(err => ({}));
+    .then((data: Buffer) => {
+      let offset = 0;
+      let encoding: BufferEncoding = 'utf8';
+      if (data.readUInt16LE(0) === 0xFEFF) {
+        encoding = 'utf16le';
+        offset = 2;
+      } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
+        offset = 3;
+      }
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
+      const name: Element = xmlDoc.querySelector('fomod Name');
+      return truthy(name)
+        ? {
+          customFileName: name.childNodes[0].nodeValue,
+        } : {};
+    })
+    .catch(() => ({}));
 }
 
-function checkNetInstall() {
-  const netVersion = getNetVersion();
-  if ((netVersion === undefined) || semver.lt(netVersion, '4.6.0')) {
-    const res: ITestResult = {
+async function installDotNet(api: IExtensionApi): Promise<void> {
+  const dlId: string = await toPromise(cb =>
+    api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
+
+  const state = api.getState();
+  const download = state.persistent.downloads.files[dlId];
+  const downloadsPath = downloadPathForGame(state, SITE_ID);
+  const fullPath = path.join(downloadsPath, download.localPath);
+
+  api.showDialog('info', '.Net is being installed', {
+    text: 'Please follow the instructions in the .Net installer. If you can see the window, please check if it\'s hidden '
+        + 'behind another window.',
+  }, [
+    { label: 'Ok' },
+  ]);
+
+  return new Promise((resolve) => {
+    spawn(fullPath)
+      .on('close', () => resolve());
+  });
+}
+
+async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
+  if (process.platform !== 'win32') {
+    // currently only supported/tested on windows
+    return Promise.resolve(undefined);
+  }
+
+  const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+  let stderr: string = '';
+  const exitCode = await new Promise((resolve) => {
+    const proc = execFile(probeExe).on('close', code => resolve(code));
+    proc.stderr.on('data', dat => stderr += dat.toString());
+  });
+
+  return (exitCode !== 0)
+    ? Promise.resolve({
       description: {
         short: '.Net installation incompatible',
-        long: 'It appears that your installation of the .Net framework is outdated or missing.'
-            + '[br][/br]You will probably not be able to install mods.'
-            + '[br][/br]Please install a current version of .Net (at least version 4.6).',
+        long: 'It appears that your installation of ".Net" is outdated or missing.'
+            + '[br][/br]You will probably not be able to install mods until you install ".Net 6".'
+            + '[br][/br]Full error message:'
+            + '[br][/br][spoiler]{{stderr}}[/spoiler][/quote]',
+        replace: { stderr: stderr.replace('\n', '[br][/br]') },
       },
+      automaticFix: () => installDotNet(api),
       severity: 'error',
-    };
-    return Bluebird.resolve(res);
-  } else {
-    return checkAssemblies()
-      .then(valid => {
-        if (valid) {
-          return Bluebird.resolve(undefined);
-        } else {
-          const res: ITestResult = {
-            description: {
-              short: '.Net installation broken',
-              long: 'It appears that your installation of the .Net framework is broken.[br][/br]'
-                + 'You will probably not be able to install mods.[br][/br]'
-                + 'Please (re-)install .Net (at least version 4.6).',
-            },
-            severity: 'error',
-          };
-          return Bluebird.resolve(res);
-        }
-      });
-  }
+    })
+    : Promise.resolve(undefined);
 }
 
 interface IAwaitingPromise {
@@ -825,7 +846,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
   if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', checkNetInstall);
+    context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
   }
   context.registerDialog('fomod-installer', InstallerDialog);
 

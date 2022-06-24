@@ -14,6 +14,7 @@
     "node_modules/fomod-installer/dist",
     "node_modules/opn/xdg-open",
     "node_modules/json-socket",
+    "assets/*.exe",
     "assets/css/**",
     "**/*.node"
   ],
