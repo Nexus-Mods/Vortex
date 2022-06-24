@@ -101,7 +101,7 @@
     "vortex-run": "file:../src/util/vortex-run",
     "vortexmt": "Nexus-Mods/node-vortexmt",
     "wholocks": "Nexus-Mods/node-wholocks",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings#appcontainer",
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
     "ws": "^7.4.6",
