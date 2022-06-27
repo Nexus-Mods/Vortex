@@ -509,6 +509,9 @@ class DownloadWorker {
       } else {
         const err = new HTTPError(response.statusCode, response.statusMessage, jobUrl);
         err['attachLogOnReport'] = true;
+        if (response.statusCode === 429) {
+          err['allowReport'] = false;
+        }
         this.handleError(err);
       }
       return;
