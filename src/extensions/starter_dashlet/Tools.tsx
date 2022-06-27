@@ -235,7 +235,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       const tool = this.state.tools.find(tool => tool.id === id);
       return tool?.name;
     }).filter(name => !!name);
-    this.context.api.events.emit('analytics-track-event', 'Tools', 'Rearranged tools', 'Drag above/below', names.join());
+    this.context.api.events.emit('analytics-track-event', 'Tools', 'Drag above/below', 'Rearranged tools', names.join());
     this.props.onSetToolOrder(this.props.gameMode, ordered);
   }
 
