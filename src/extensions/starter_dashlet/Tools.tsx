@@ -231,7 +231,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private applyOrder = (ordered: string[]) => {
-    this.context.api.events.emit('analytics-track-event', 'Tools', 'Rearranged tools', ordered.join());
+    const names = ordered.map(id => {
+      const tool = this.state.tools.find(tool => tool.id === id);
+      return tool?.name;
+    }).filter(name => !!name);
+    this.context.api.events.emit('analytics-track-event', 'Tools', 'Rearranged tools', 'Drag above/below', names.join());
     this.props.onSetToolOrder(this.props.gameMode, ordered);
   }
 
