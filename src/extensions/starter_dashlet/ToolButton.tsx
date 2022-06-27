@@ -76,7 +76,7 @@ function ToolButton(props: IToolButtonProps) {
     },
     {
       title: primary ? 'Unset as primary' : 'Set as primary',
-      icon: 'bookmark',
+      icon: 'plugin-master',
       action: setPrimaryTool,
       condition: () => truthy(starter.exePath)
         ? true : t('Not configured') as string,

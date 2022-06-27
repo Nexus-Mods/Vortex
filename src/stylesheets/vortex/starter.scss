@@ -1,3 +1,5 @@
+$tools-border-width: 2px;
+
 #starter-dashlet {
   margin: 0;
   height: 100%;
@@ -26,7 +28,7 @@
     min-width: 2em;
     height: auto;
     display: flex;
-    border-left: $border-width solid $brand-menu;
+    border-left: $tools-border-width solid $brand-menu;
     align-items: center;
     justify-content: center;
     svg {
@@ -74,7 +76,7 @@
       height: auto;
       display: flex;
       cursor: move;
-      border-right: $border-width solid $brand-menu;
+      border-right: $tools-border-width solid $brand-menu;
       .box-drag-handle-icon {
         padding: 0.25em;
         color: $brand-menu;
@@ -88,8 +90,9 @@
 }
 
 .tool-icon {
-  width: 2.5em;
-  height: 2.5em;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.1em;
 
   &.invalid {
     filter: grayscale(100%);
@@ -138,22 +141,20 @@ svg.tool-icon {
     visibility: visible !important;
   }
 
-  border: $border-width solid $brand-clickable !important;
+  border: $tools-border-width solid $brand-clickable !important;
 }
 
 .starter-tool-icon-container {
-  border: $border-width solid $border-color;
+  border: $tools-border-width solid $border-color;
   border-radius: 0.41em;
   position: relative;
   min-height: 3em;
-  max-height: 3em;
   height: 3em;
   min-width: 3em;
-  max-width: 3em;
+  max-width: 3.36em;
   width: 3em;
-  padding: 0.16em;
   &.primary {
-    border: $border-width solid;
+    border: $tools-border-width solid #ffffff;
   }
   .run-tool {
     background-color: transparent;
@@ -166,13 +167,15 @@ svg.tool-icon {
     visibility: hidden;
   }
   .primary-star {
-    font-size: 200%;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-size: 185%;
     position: absolute;
     width: 100%;
     height: 100%;
-    left: 20%;
+    text-align: center;
     top: 0;
     visibility: visible;
+    color: #ffffff;
   }
   img {
     display: block
@@ -187,7 +190,7 @@ svg.tool-icon {
 
   display: flex;
   background-color: transparent;
-  border: $border-width solid;
+  border: $tools-border-width solid;
   width: 98.5%;
 
   span {
