@@ -10,6 +10,10 @@ const reducer: IReducerSpec = {
       const { gameId, tools } = payload;
       return setSafe(state, ['tools', 'order', gameId], tools);
     },
+    [actions.setToolValid as any]: (state, payload) => {
+      const { gameId, toolId, valid } = payload;
+      return setSafe(state, ['tools', 'valid', gameId, toolId], valid);
+    },
   },
   defaults: {},
 };

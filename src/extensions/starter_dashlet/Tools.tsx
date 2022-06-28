@@ -4,7 +4,7 @@ import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import { makeExeId } from '../../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IRunningTool } from '../../types/IState';
+import { IMod, IRunningTool } from '../../types/IState';
 import { ComponentEx, connect } from '../../util/ComponentEx';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
@@ -47,6 +47,10 @@ import FlexLayout from '../../controls/FlexLayout';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
+interface IBaseProps {
+  onGetValidTools: (starters: IStarterInfo[], gameMode: string) => Promise<string[]>;
+}
+
 interface IConnectedProps {
   addToTitleBar: boolean;
   toolsOrder: string[];
@@ -56,6 +60,7 @@ interface IConnectedProps {
   discoveredTools: { [id: string]: IDiscoveredTool };
   primaryTool: string;
   toolsRunning: { [exePath: string]: IRunningTool };
+  mods: { [modId: string]: IMod };
 }
 
 interface IWelcomeScreenState {
@@ -63,6 +68,7 @@ interface IWelcomeScreenState {
   counter: number;
   gameStarter: StarterInfo;
   tools: StarterInfo[];
+  validToolIds: string[];
   discovering: boolean;
 }
 
@@ -76,7 +82,7 @@ interface IActionProps {
   onSetToolOrder: (gameId: string, tools: string[]) => void;
 }
 
-type IStarterProps = IConnectedProps & IActionProps;
+type IStarterProps = IBaseProps & IConnectedProps & IActionProps;
 
 class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   private mIsMounted: boolean = false;
@@ -85,6 +91,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     super(props);
 
     this.initState({
+      validToolIds: [],
       editTool: undefined,
       counter: 1,
       gameStarter: this.generateGameStarter(props),
@@ -102,6 +109,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.mIsMounted = true;
     ToolEditDialog = require('./ToolEditDialog').default;
     if (this.mIsMounted) {
+      this.updateValidTools(this.state.tools);
       this.forceUpdate();
     }
   }
@@ -115,9 +123,13 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
        || (nextProps.discoveredTools !== this.props.discoveredTools)
        || (nextProps.gameMode !== this.props.gameMode)
        || (nextProps.knownGames !== this.props.knownGames)
-       || (nextProps.toolsOrder !== this.props.toolsOrder)) {
+       || (nextProps.toolsOrder !== this.props.toolsOrder)
+       // You'll have to thank whoever thought it's a good idea to install tools
+       //  as mods for the one below!
+       || (nextProps.mods !== this.props.mods)) {
       this.nextState.gameStarter = this.generateGameStarter(nextProps);
       this.nextState.tools = this.generateToolStarters(nextProps);
+      this.updateValidTools(this.nextState.tools);
       const tools = truthy(this.nextState.gameStarter)
         ? [this.nextState.gameStarter].concat(this.nextState.tools)
         : this.nextState.tools;
@@ -191,9 +203,16 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     );
   }
 
+  private updateValidTools = (tools: IStarterInfo[]) => {
+    this.props.onGetValidTools(tools, this.props.gameMode)
+      .then((valid) => {
+        this.nextState.validToolIds = valid
+      });
+  }
+
   private renderTool = (starter: StarterInfo) => {
     const { t, toolsRunning, primaryTool } = this.props;
-    const { counter, tools } = this.state;
+    const { counter, validToolIds } = this.state;
     const running = (starter.exePath !== undefined)
                  && (toolsRunning[makeExeId(starter.exePath)] !== undefined);
     return (
@@ -204,6 +223,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       >
         <ToolButton
           t={t}
+          valid={validToolIds.includes(starter.id)}
           primary={starter.id === primaryTool}
           counter={counter}
           item={starter}
@@ -418,6 +438,7 @@ function mapStateToProps(state: any): IConnectedProps {
       'discovered', gameMode, 'tools'], emptyObj),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
     toolsRunning: state.session.base.toolsRunning,
+    mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObj),
   };
 }
 

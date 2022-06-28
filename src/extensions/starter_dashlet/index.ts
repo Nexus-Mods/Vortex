@@ -2,7 +2,9 @@ import Promise from 'bluebird';
 import path from 'path';
 import { fs } from '../..';
 
-import { IExtensionApi, IExtensionContext, ITestResult } from '../../types/api';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
+import { ITestResult } from '../../types/ITestResult';
+import { IStarterInfo } from '../../util/StarterInfo'
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
@@ -10,6 +12,7 @@ import { truthy } from '../../util/util';
 import { setPrimaryTool } from './actions';
 import settingsReducer from './reducers';
 import Tools from './Tools';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
@@ -67,14 +70,35 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
-  context.registerDashlet('Tools', 2, 2, 100, Tools,
-                          undefined, undefined, {
-                            closable: false,
-                          });
+  context.registerDashlet('Tools', 2, 2, 100, Tools, undefined,
+    () => ({
+      onGetValidTools: (starters: IStarterInfo[], gameMode: string) =>
+        validateTools(context.api, starters, gameMode),
+    }), {
+      closable: false,
+    });
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));
   return true;
+}
+
+function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: string) {
+  const state = api.getState();
+  const discovery: IDiscoveryResult = getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], {});
+  if (discovery?.path === undefined) {
+    return Promise.resolve([]);
+  }
+
+  return Promise.reduce(starters, (accum, iter) => {
+    const exePath = path.isAbsolute(iter.exePath)
+      ? iter.exePath
+      : path.join(discovery.path, iter.exePath);
+    return fs.statAsync(exePath)
+      .then(() => accum.push(iter.id))
+      .catch(() => Promise.resolve())
+      .then(() => Promise.resolve(accum));
+  }, []);
 }
 
 export default init;
