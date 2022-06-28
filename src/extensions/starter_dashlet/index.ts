@@ -91,6 +91,9 @@ function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: s
   }
 
   return Promise.reduce(starters, (accum, iter) => {
+    if (iter?.exePath === undefined) {
+      return Promise.resolve(accum);
+    }
     const exePath = path.isAbsolute(iter.exePath)
       ? iter.exePath
       : path.join(discovery.path, iter.exePath);
