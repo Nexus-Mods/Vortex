@@ -73,7 +73,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
         {progress !== undefined
           ? <span className='notification-progress' style={{ left: `${progress}%` }} />
           : null}
-        <div className='btn btn-default btn-embed'>
+        <div className='btn btn-default btn-embed no-hover'>
           {this.typeToIcon(type)}{' '}
         </div>
         <div className='notification-textbox'>
@@ -200,7 +200,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
       case 'success': return <Icon name='feedback-success' />;
       case 'info': return <Icon name='feedback-info' />;
       case 'warning': return <Icon name='feedback-warning' />;
-      case 'error': return <Icon name='feedback-error' />;
+      case 'error': return <Icon name='feedback-warning' />;
       default: return null;
     }
   }

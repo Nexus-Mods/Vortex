@@ -23,6 +23,9 @@
     background-color: initial !important;
     outline-width: 0;
   }
+  &.no-hover {
+    color: $text-color;
+  }
 }
 
 // button inside a (input- or list-) line  pulled to the right
