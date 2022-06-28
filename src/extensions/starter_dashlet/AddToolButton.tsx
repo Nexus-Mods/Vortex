@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next';
 import Icon from '../../controls/Icon';
 import { getSafe } from '../../util/storeHelper';
 
-import React from 'react';
+import React, { useState } from 'react';
+import * as ReactDOM from 'react-dom';
 import { MenuItem } from 'react-bootstrap';
 import { useSelector, useStore } from 'react-redux';
 
 import Dropdown from '../../controls/Dropdown';
+import PortalMenu from '../../controls/PortalMenu';
 
 import { setToolVisible } from '../gamemode_management/actions/settings';
 
@@ -42,6 +44,8 @@ export default function AddToolButton(props: IBaseProps) {
     (discoveredTools[starter.id] !== undefined)
     && (discoveredTools[starter.id].hidden === true));
 
+  const dropRef = React.useRef();
+  const [open, setOpen] = React.useState(false);
   const setToolOrder = React.useCallback((newOrder: string[]) => {
     onSetToolOrder(newOrder);
   }, [onSetToolOrder]);
@@ -73,22 +77,43 @@ export default function AddToolButton(props: IBaseProps) {
   if (gameMode === undefined) {
     return null;
   }
+
+  const setRef = (ref) => {
+    dropRef.current = ReactDOM.findDOMNode(ref) as any;
+  }
+
+  const onToggleOpen = React.useCallback(() => {
+    setOpen(true);
+  }, [setOpen]);
+
+  const onToggleClose = React.useCallback(() => {
+    setOpen(false);
+  }, [setOpen]);
+
   return (
     <Dropdown
-      id='add-tool-button'
+      id='add-tool-button-menu'
       className={classes.join(' ')}
+      ref={setRef}
     >
-      <Dropdown.Toggle noCaret className='btn-add-tool-dropdown-toggle'>
+      <Dropdown.Toggle noCaret className='btn-add-tool-dropdown-toggle' open={open} onClick={onToggleOpen}>
         <Icon name='add' className='btn-add-tool-icon'/>
         <div className='btn-add-tool-text'>{t('Add Tool')}</div>
       </Dropdown.Toggle>
-      <Dropdown.Menu>
+      <PortalMenu
+        onClick={nop}
+        onClose={onToggleClose}
+        open={open}
+        target={dropRef.current}
+        bsRole='menu'
+      >
         {hidden.map(starter => (
           <MenuItem
             key={starter.id}
             eventKey={starter.id}
             onSelect={unhide}
-          >{starter.name}
+          >
+            {starter.name}
           </MenuItem>
         ))}
         <MenuItem
@@ -97,7 +122,7 @@ export default function AddToolButton(props: IBaseProps) {
         >
           {t('New...')}
         </MenuItem>
-      </Dropdown.Menu>
+      </PortalMenu>
     </Dropdown>
   );
 }
@@ -122,4 +147,8 @@ function mapStateToProps(state: IState): IConnectedProps {
       ['settings', 'gameMode', 'discovered', game.id, 'tools'], emptyObj),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', game.id], undefined),
   };
+}
+
+function nop() {
+  // nop
 }
