@@ -36,17 +36,19 @@ function nop() {
   // nop
 }
 
-class HeaderCell extends React.Component<IHeaderProps, {}> {
+type IProps = React.PropsWithChildren<IHeaderProps>;
+
+class HeaderCell extends React.Component<IProps, {}> {
   private mMinWidth: number = -1;
   private mRef: HTMLDivElement = null;
 
-  public shouldComponentUpdate(newProps: IHeaderProps) {
+  public shouldComponentUpdate(newProps: IProps) {
     // TODO: state is a new object every call, needs to be fixed in Table.tsx
     return (this.props.attribute !== newProps.attribute)
              || !_.isEqual(this.props.state, newProps.state)
              || (this.props.doFilter !== newProps.doFilter)
              || (this.props.doGroup !== newProps.doGroup)
-             || (this.props.children !== (newProps as any).children);
+             || (this.props.children !== newProps.children);
   }
 
   public render(): JSX.Element {
@@ -69,7 +71,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
             style={{ display: 'flex', flexDirection: 'row' }}
             onClick={this.cycleDirection}
           >
-            <p style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+            <div style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
               {preT(t, attribute.name)}
               {(attribute.help !== undefined)
                 ? (
@@ -77,7 +79,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
                     {preT(t, attribute.help)}
                   </More>
                 ) : null}
-            </p>
+            </div>
             <div className='cell-controls'>
               {attribute.isSortable ? this.renderSortIndicator() : <div/>}
               {attribute.isGroupable ? this.renderGroupIndicator() : null}
