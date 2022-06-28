@@ -26,7 +26,6 @@ module.exports = {
     // To put it simple, we used TSLint, and when we moved to ESLint we did not want to to auto fix all the errors
     // so now these are warning and we fix them only when we touch the files with warning
     "no-unexpected-multiline": "warn",
-    "no-extra-boolean-cast": "warn",
     "prefer-const": "warn",
     "no-async-promise-executor": "warn",
     "no-var": "warn",
@@ -35,6 +34,8 @@ module.exports = {
     "no-empty-pattern": "warn",
     "no-prototype-builtins": "warn",
     "no-mixed-spaces-and-tabs": "warn",
+
+    "no-extra-boolean-cast": "off",
 
     // We can turn this off since we do it only once
     "no-global-assign": "warn",

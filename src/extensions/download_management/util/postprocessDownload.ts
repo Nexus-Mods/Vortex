@@ -1,9 +1,9 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
+import { toPromise } from '../../../util/util';
 import { finalizingDownload, finalizingProgress,
          finishDownload, setDownloadHash } from '../actions/state';
 import queryInfo from './queryDLInfo';
 
-import { util } from 'vortex-api';
 import { fileMD5 } from 'vortexmt';
 
 export function finalizeDownload(api: IExtensionApi, id: string,
@@ -19,7 +19,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     }
   };
 
-  return util.toPromise(cb => (fileMD5 as any)(filePath, cb, progressHash))
+  return toPromise(cb => (fileMD5 as any)(filePath, cb, progressHash))
     .then((md5Hash: string) => {
       api.store.dispatch(setDownloadHash(id, md5Hash));
     })
