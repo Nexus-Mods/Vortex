@@ -858,6 +858,8 @@ class InstallManager {
   private isCritical(error: string): boolean {
     return (error.indexOf('Unexpected end of archive') !== -1)
         || (error.indexOf('ERROR: Data Error') !== -1)
+        // used to be "Can not", current 7z prints "Cannot"
+        || (error.indexOf('Cannot open the file as archive') !== -1)
         || (error.indexOf('Can not open the file as archive') !== -1);
   }
 
