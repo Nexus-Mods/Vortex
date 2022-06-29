@@ -13,12 +13,6 @@ import { useDrop } from 'react-dnd';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
-interface IConnectedProps {
-  toolsOrder: string[];
-  discoveredTools: { [id: string]: IDiscoveredTool };
-  discovery: IDiscoveryResult;
-}
-
 export interface IToolButtonProps {
   t: TFunction;
   counter: number;
@@ -68,14 +62,13 @@ function ToolButton(props: IToolButtonProps) {
       title: 'Run',
       icon: 'launch-simple',
       action: () => run,
-      condition: () => truthy(starter.exePath),
+      condition: () => valid ? true : t('Not configured') as string,
     },
     {
       title: primary ? 'Unset as primary' : 'Set as primary',
       icon: 'plugin-master',
       action: setPrimaryTool,
-      condition: () => truthy(starter.exePath)
-        ? true : t('Not configured') as string,
+      condition: () => (primary || valid) ? true : t('Not configured') as string,
     },
     {
       title: 'Edit',
