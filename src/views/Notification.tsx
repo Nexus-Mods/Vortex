@@ -200,7 +200,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
       case 'success': return <Icon name='feedback-success' />;
       case 'info': return <Icon name='feedback-info' />;
       case 'warning': return <Icon name='feedback-warning' />;
-      case 'error': return <Icon name='feedback-warning' />;
+      case 'error': return <Icon name='feedback-error' />;
       default: return null;
     }
   }

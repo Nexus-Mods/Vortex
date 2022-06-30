@@ -89,7 +89,7 @@
       "rmFill": true
     },
     "feedback-error": {
-      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
       "rmFill": true
     },
     "feedback-warning": {
