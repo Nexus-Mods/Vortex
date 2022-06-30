@@ -62,7 +62,7 @@ function transformError(err: any): Error {
       if (err.FileName.indexOf('PublicKeyToken') !== -1) {
         const fileName = err.FileName.split(',')[0];
         result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part `
-                               + 'of the .Net Framework. Please reinstall it.');
+                               + 'of the .NET Framework. Please reinstall it.');
       } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
@@ -123,7 +123,7 @@ function transformError(err: any): Error {
   } else if (err.Message === 'task timeout') {
     result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
                           + 'very generously so it\'s more likely that this is either caused '
-                          + 'by a broken .Net installation or something else on your system '
+                          + 'by a broken .NET installation or something else on your system '
                           + 'interrupted the process (like a debugger).');
   }
 
@@ -182,8 +182,8 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
   const downloadsPath = downloadPathForGame(state, SITE_ID);
   const fullPath = path.join(downloadsPath, download.localPath);
 
-  api.showDialog('info', '.Net is being installed', {
-    text: 'Please follow the instructions in the .Net installer. If you can see the window, please check if it\'s hidden '
+  api.showDialog('info', '.NET is being installed', {
+    text: 'Please follow the instructions in the .NET installer. If you can see the window, please check if it\'s hidden '
         + 'behind another window.',
   }, [
     { label: 'Ok' },
@@ -211,9 +211,9 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
   return (exitCode !== 0)
     ? Promise.resolve({
       description: {
-        short: '.Net installation incompatible',
-        long: 'It appears that your installation of ".Net" is outdated or missing.'
-            + '[br][/br]You will probably not be able to install mods until you install ".Net 6".'
+        short: '.NET installation incompatible',
+        long: 'It appears that your installation of .NET is outdated or missing.'
+            + '[br][/br]You will probably not be able to install mods until you install ".NET 6".'
             + '[br][/br]Full error message:'
             + '[br][/br][spoiler]{{stderr}}[/spoiler][/quote]',
         replace: { stderr: stderr.replace('\n', '[br][/br]') },

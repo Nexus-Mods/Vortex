@@ -735,7 +735,7 @@ class InstallManager {
                   + 'To use Vortex, please uninstall "Browser Assistant".';
                 const errorMessage = (typeof err === 'string') ? err : err.message;
                 let allowReport: boolean;
-                if (err.message.includes('No compatible .Net Framework')) {
+                if (err.message.includes('No compatible .NET installation')) {
                   allowReport = false;
                 }
                 (!this.isBrowserAssistantError(errorMessage))

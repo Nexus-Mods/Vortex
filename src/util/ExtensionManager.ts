@@ -1823,14 +1823,14 @@ class ExtensionManager {
               } else if (code === 0xE0434352) {
                 // A .net error, unfortunately we can't now if/how the actual exception
                 // text has been reported
-                log('warn', '.Net error', { stdOut, errOut });
+                log('warn', '.NET error', { stdOut, errOut });
                 if (game === 'stardewvalley') {
                   // In the case of SDV the interesting information seems to get printed to stdout
                   return reject(new ThirdPartyError(stdOut || errOut));
                 } else if (errOut) {
                   return reject(new ThirdPartyError(errOut));
                 } else {
-                  return reject(new ProcessCanceled('.Net error'));
+                  return reject(new ProcessCanceled('.NET error'));
                 }
               } else if (code === 0xC000026B) {
                 return reject(new ProcessCanceled('Windows shutting down'));
