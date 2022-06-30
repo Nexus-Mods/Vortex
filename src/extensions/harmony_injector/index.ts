@@ -555,7 +555,7 @@ function init(context: IExtensionContext): boolean {
   }, { minArguments: 1 });
 
   if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', checkNetInstall);
+    context.registerTest('net-current-harmony', 'startup', checkNetInstall);
   }
 
   return true;
