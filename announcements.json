@@ -88,5 +88,18 @@
   "severity": "warning",
   "link": "https://www.nexusmods.com/mountandblade2bannerlord/mods/2018",
   "gamemode": "mountandblade2bannerlord"
+  }, {
+  "date": "2022-06-30T00:00:00",
+  "description": "The latest version of QModManager is not currently compatible with the Xbox Game Pass version of Subnautica. You will need to download v4.2.1 from GitHub using the icon below. Simply disable any other version of QMM and install this one with Vortex.",
+  "severity": "information",
+  "link": "https://github.com/SubnauticaModding/QModManager/releases/download/v4.2.1/ManualInstall.QModManager_SN.EXP.zip",
+  "gamemode": "subnautica"
+  }, {
+  "date": "2022-06-30T00:00:00",
+  "description": "The latest version of QModManager is not currently compatible with the Xbox Game Pass version of Subnautica: Below Zero. You will need to download v4.2.1 from GitHub using the icon below. Simply disable any other version of QMM and install this one with Vortex.",
+  "severity": "information",
+  "link": "https://github.com/SubnauticaModding/QModManager/releases/download/v4.2.1/ManualInstall.QModManager_BZ.EXP.zip",
+  "gamemode": "subnauticabelowzero"
   }
 ]
+
