@@ -133,11 +133,20 @@ svg.tool-icon {
 }
 
 .starter-tool-icon-container:hover {
+  background-color: rgba(0,0,0,0.5);
+  svg, img, .tool-icon {
+    filter: opacity(0.5);
+    background-color: rgba(0,0,0,0.5);
+  }
   .primary-star {
     visibility: hidden !important;
   }
+  .icon-launch-simple {
+    color: $text-color;
+    background-color: transparent;
+    filter: opacity(1);
+  }
   .run-tool {
-    color: $brand-clickable !important;
     visibility: visible !important;
   }
 
@@ -146,7 +155,7 @@ svg.tool-icon {
 
 .starter-tool-icon-container {
   border: $tools-border-width solid $border-color;
-  border-radius: 0.41em;
+  border-radius: 0.2em;
   position: relative;
   min-height: 3em;
   height: 3em;
@@ -155,6 +164,9 @@ svg.tool-icon {
   width: 3em;
   &.primary {
     background-color: rgba(255, 255, 255, 0.1);
+    svg, img {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
     border: $tools-border-width solid #ffffff;
   }
   .run-tool {

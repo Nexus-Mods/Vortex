@@ -14,6 +14,8 @@ import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import Debouncer from '../../util/Debouncer';
+
 import { BoxWithHandle } from './BoxWithHandle';
 
 import AddToolButton from './AddToolButton';
@@ -85,6 +87,7 @@ interface IActionProps {
 type IStarterProps = IBaseProps & IConnectedProps & IActionProps;
 
 class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
+  private mMoveDebouncer: Debouncer;
   private mIsMounted: boolean = false;
   private mRef: Element = null;
   constructor(props) {
@@ -102,6 +105,10 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       ? [this.state.gameStarter].concat(this.state.tools)
       : this.state.tools;
     this.updateJumpList(tools);
+    this.mMoveDebouncer = new Debouncer((srcId: string, destId: string) => {
+      this.moveItem(srcId, destId);
+      return null;
+    }, 200, false);
   }
 
   public componentDidMount() {
@@ -210,15 +217,21 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       });
   }
 
-  private renderTool = (starter: StarterInfo) => {
+  private moveItemDebounce = (srcId: string, destId: string) => {
+    this.mMoveDebouncer.schedule(undefined, srcId, destId);
+  }
+
+  private renderTool = (starter: StarterInfo, idx: number) => {
     const { t, toolsRunning, primaryTool } = this.props;
     const { counter, validToolIds } = this.state;
     const running = (starter.exePath !== undefined)
                  && (toolsRunning[makeExeId(starter.exePath)] !== undefined);
     return (
       <BoxWithHandle
+        index={idx}
         key={starter.id}
         item={starter}
+        onMoveItem={this.moveItemDebounce}
         {...this.props}
       >
         <ToolButton
@@ -230,7 +243,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           running={running}
           onRun={this.startTool}
           onEdit={this.editTool}
-          onMoveItem={this.moveItem}
+          onMoveItem={this.moveItemDebounce}
           onRemove={this.removeTool}
           onMakePrimary={this.setPrimary}
         />
@@ -277,7 +290,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     return null;
   }
 
-  private generateToolStarters(props: IStarterProps): StarterInfo[] {
+  private generateToolStarters = (props: IStarterProps): StarterInfo[] => {
     const { discoveredGames, discoveredTools, gameMode, knownGames, toolsOrder } = props;
 
     const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
@@ -305,7 +318,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
     // finally, add those tools that were added manually
     Object.keys(discoveredTools)
-      .filter(toolId => !preConfTools.has(toolId))
+      .filter(toolId => !preConfTools.has(toolId) && (toolId !== this.state?.gameStarter?.id))
       .sort((lhs, rhs) => {
         const tlhs = discoveredTools[lhs]?.timestamp || 0;
         const trhs = discoveredTools[rhs]?.timestamp || 0;
