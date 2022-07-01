@@ -9,6 +9,8 @@ import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import memoize from 'memoize-one';
+
 import { setPrimaryTool } from './actions';
 import settingsReducer from './reducers';
 import Tools from './Tools';
@@ -67,13 +69,14 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   return Promise.resolve(undefined);
 }
 
+const toolsValidation = memoize(validateTools);
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
   context.registerDashlet('Tools', 2, 2, 100, Tools, undefined,
     () => ({
       onGetValidTools: (starters: IStarterInfo[], gameMode: string) =>
-        validateTools(context.api, starters, gameMode),
+        toolsValidation(context.api, starters, gameMode),
     }), {
       closable: false,
     });
@@ -91,7 +94,7 @@ function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: s
   }
 
   return Promise.reduce(starters, (accum, iter) => {
-    if (iter?.exePath === undefined) {
+    if (!iter?.exePath) {
       return Promise.resolve(accum);
     }
     const exePath = path.isAbsolute(iter.exePath)
