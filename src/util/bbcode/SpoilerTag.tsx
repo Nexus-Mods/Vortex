@@ -2,12 +2,12 @@ import { TFunction } from '../i18n';
 
 import { Tag } from 'bbcode-to-react';
 import * as React from 'react';
-import { Button } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 
 interface ISpoilerProps {
   t: TFunction;
   content: any;
+  label?: string;
 }
 
 class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
@@ -21,12 +21,16 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
     const { t } = this.props;
     return (
       <div className='bbcode-spoiler-tag'>
-        <Button onClick={this.toggle}>
-          {t('Spoiler')}
-        </Button>
-        {this.state.display ? this.props.content : null}
+        <a onClick={this.toggle}>
+          {t(this.props.label ?? 'More')}
+        </a>
+        {this.state.display ? (
+          <div className='bbcode-spoiler-content'>
+            {this.props.content}
+          </div>
+        ) : null}
       </div>
-      );
+    );
   }
 
   private toggle = () => {
@@ -42,7 +46,7 @@ class SpoilerTag extends Tag {
   }
 
   public toReact() {
-    return <SpoilerTrans content={this.getComponents()} />;
+    return <SpoilerTrans content={this.getComponents()} label={this.params.label} />;
   }
 }
 

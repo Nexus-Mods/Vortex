@@ -183,7 +183,7 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
   const fullPath = path.join(downloadsPath, download.localPath);
 
   api.showDialog('info', '.NET is being installed', {
-    text: 'Please follow the instructions in the .NET installer. If you can see the window, please check if it\'s hidden '
+    text: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden '
         + 'behind another window.',
   }, [
     { label: 'Ok' },
@@ -211,11 +211,12 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
   return (exitCode !== 0)
     ? Promise.resolve({
       description: {
-        short: '.NET installation incompatible',
-        long: 'It appears that your installation of .NET is outdated or missing.'
-            + '[br][/br]You will probably not be able to install mods until you install ".NET 6".'
-            + '[br][/br]Full error message:'
-            + '[br][/br][spoiler]{{stderr}}[/spoiler][/quote]',
+        short: 'Microsoft .NET installation required',
+        long: 'Vortex requires Microsoft .NET to perform important tasks.'
+            + '[br][/br]Click "Fix" below to install the required version.'
+            + '[br][/br]If you already have Microsoft .NET 6 or later installed, there may be a problem with your installation, '
+            + 'please click below for technical details.'
+            + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
         replace: { stderr: stderr.replace('\n', '[br][/br]') },
       },
       automaticFix: () => installDotNet(api),
