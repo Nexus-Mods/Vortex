@@ -1402,7 +1402,7 @@ class InstallManager {
     //  functionality will generally use the OLD modId when replacing the older mod.
     //  the archiveId should confirm this is the exact same mod.
     const state = api.getState();
-    const mods = Object.values(state.persistent.mods[gameMode] || {});
+    const mods = Object.values(state.persistent.mods[gameMode] || []);
     const existingMod = mods.find(mod => mod.id === installName);
     if (existingMod) {
       return existingMod.id;
