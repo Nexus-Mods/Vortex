@@ -289,7 +289,7 @@ function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
 
     return [].concat(prev, conflictRules
       .map(rule => findModByRef(rule.reference, enabledMods))
-      .filter(mod => mod !== undefined)
+      .filter(mod => (mod !== undefined) && (mod.id !== modId))
       .map(mod => ({ left: mods[modId], right: mods[mod.id] })));
   }, []);
 
