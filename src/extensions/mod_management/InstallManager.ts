@@ -424,13 +424,8 @@ class InstallManager {
         // mod or provided a new, unused name
 
         let variantCounter: number = 0;
-        const checkNameLoop = () => {
-          const existingId = this.checkModExists(testModId, archiveId, api, installGameId);
-          if (existingId === undefined) {
-            return Promise.resolve(testModId);
-          } else {
-            modId = existingId;
-            return this.queryUserReplace(api, modId, installGameId, ++variantCounter)
+        const checkNameLoop = () => this.checkModExists(testModId, api, installGameId)
+          ? this.queryUserReplace(api, modId, installGameId, ++variantCounter)
             .then((choice: IReplaceChoice) => {
               testModId = choice.id;
               if (choice.enable) {
@@ -441,8 +436,7 @@ class InstallManager {
               fullInfo.previous = choice.attributes;
               return checkNameLoop();
             })
-          }
-        };
+          : Promise.resolve(testModId);
         return checkNameLoop();
       })
       // TODO: this is only necessary to get at the fileId and the fileId isn't
@@ -1397,22 +1391,8 @@ class InstallManager {
       ;
   }
 
-  private checkModExists(installName: string, archiveId: string, api: IExtensionApi, gameMode: string): string {
-    // Checking only for the mod name is not sufficient since the "Update for all Profiles/Replace"
-    //  functionality will generally use the OLD modId when replacing the older mod.
-    //  the archiveId should confirm this is the exact same mod.
-    const state = api.getState();
-    const mods = Object.values(state.persistent.mods[gameMode] || []);
-    const existingMod = mods.find(mod => mod.id === installName);
-    if (existingMod) {
-      return existingMod.id;
-    }
-    const modWithMatchingArchive = mods.find(mod => mod.archiveId === archiveId);
-    if (modWithMatchingArchive) {
-      return modWithMatchingArchive.id;
-    }
-
-    return undefined;
+  private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
+    return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
