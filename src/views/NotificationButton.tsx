@@ -136,8 +136,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       });
     }
 
-    const hasErrors = notifications.find(iter => iter.type === 'error') !== undefined;
-
     const pendingActivities = notifications.filter(
       (iter) => iter.type === 'activity' && iter.progress === undefined
     );
@@ -145,7 +143,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'inline-block' }}>
         <Button id='notifications-button' onClick={this.toggle} ref={this.mButtonRef}>
-          <Icon name={hasErrors ? 'feedback-error' : 'notifications'} />
+          <Icon name='notifications' />
           <RadialProgress
             className='notifications-progress'
             data={combinedProgress}
