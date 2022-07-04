@@ -203,7 +203,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
 
   const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
   let stderr: string = '';
-  const exitCode = await new Promise((resolve) => {
+  const exitCode = await new Promise<number>((resolve) => {
     const proc = execFile(probeExe).on('close', code => resolve(code));
     proc.stderr.on('data', dat => stderr += dat.toString());
   });

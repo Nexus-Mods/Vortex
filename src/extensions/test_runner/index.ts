@@ -54,9 +54,10 @@ const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
   return result.automaticFix()
     .then(() => runCheck(api, check))
-    .catch(UserCanceled, () => null)
-    .catch(ProcessCanceled, () => null)
     .catch(err => {
+      if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
+        return null;
+      }
       if (err === undefined) {
         err = new Error('Invalid fix result');
       }
