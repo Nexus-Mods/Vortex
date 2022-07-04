@@ -1,119 +1,129 @@
-import Icon from '../../controls/Icon';
 import IconBar from '../../controls/IconBar';
-import { IActionDefinition } from '../../types/IActionDefinition';
-import { PureComponentEx } from '../../util/ComponentEx';
 import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
-import ToolIcon from './ToolIcon';
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 
-import * as React from 'react';
+import ToolIcon from '../../controls/ToolIcon';
+
+import { IDiscoveryResult } from '../../types/IState';
+import React from 'react';
+import { useDrop } from 'react-dnd';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
-export interface IProps {
+export interface IToolButtonProps {
   t: TFunction;
   counter: number;
-  starter: StarterInfo;
+  item: StarterInfo;
+  valid: boolean;
   primary: boolean;
   running: boolean;
+  onMoveItem: (hoverId: string, id: string) => any;
   onRun: (starter: StarterInfo) => void;
   onMakePrimary: (starter: StarterInfo) => void;
   onRemove: (starter: StarterInfo) => void;
   onEdit: (starter: StarterInfo) => void;
 }
 
-class ToolButton extends PureComponentEx<IProps, {}> {
-  private mStaticElements: IActionDefinition[];
+function ToolButton(props: IToolButtonProps) {
+  const { t, counter, item, primary, running, onRun,
+          onMakePrimary, onRemove, onEdit, valid } = props;
 
-  constructor(props: IProps) {
-    super(props);
-
-    this.mStaticElements = [
-      {
-        title: 'Run',
-        icon: 'launch-simple',
-        action: () => this.props.onRun(this.props.starter),
-        condition: () => truthy(this.props.starter.exePath),
-        options: {
-          noCollapse: true,
-        },
-      },
-      {
-        title: 'Make primary',
-        icon: 'bookmark',
-        action: this.setPrimaryTool,
-        condition: () => truthy(this.props.starter.exePath)
-          ? true : props.t('Not configured') as string,
-      },
-      {
-        title: 'Edit',
-        icon: 'edit',
-        action: this.edit,
-      },
-      {
-        title: 'Remove',
-        icon: 'remove',
-        action: this.remove,
-        condition: () => !this.props.starter.isGame,
-      },
-    ];
+  let imageSrc;
+  const starter = item as StarterInfo;
+  if (!starter) {
+    return null;
   }
+  try {
+    imageSrc = StarterInfo.getIconPath(starter);
+  } catch (err) {
+    return null;
+  }
+  const remove = React.useCallback(() => {
+    onRemove(starter);
+  }, [onRemove, starter]);
 
-  public render() {
-    const { t, counter, running, primary, starter } = this.props;
-    const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
+  const setPrimaryTool = React.useCallback(() => {
+    onMakePrimary(starter);
+  }, [onMakePrimary, starter]);
 
-    const classes = [
-      'tool-button',
-    ];
-    if (primary) {
-      classes.push('tool-button-primary');
-    }
+  const edit = React.useCallback(() => {
+    onEdit(starter);
+  }, [onEdit, starter]);
 
-    return (
-      <div className={classes.join(' ')}>
+  const run = React.useCallback(() => {
+    onRun(starter);
+  }, [onRun, starter]);
+
+  const staticElements = [
+    {
+      title: 'Run',
+      icon: 'launch-simple',
+      action: () => run,
+      condition: () => valid ? true : t('Not configured') as string,
+    },
+    {
+      title: primary ? 'Unset as primary' : 'Set as primary',
+      icon: 'plugin-master',
+      action: setPrimaryTool,
+      condition: () => (primary || valid) ? true : t('Not configured') as string,
+    },
+    {
+      title: 'Edit',
+      icon: 'edit',
+      action: edit,
+    },
+    {
+      title: 'Remove',
+      icon: 'remove',
+      action: remove,
+      condition: () => !starter.isGame,
+    },
+  ];
+
+  const classes = ['tool-button'];
+  if (primary) {
+    classes.push('tool-button-primary');
+  }
+  const [spec, dropRef] = useDrop({
+    accept: 'TOOL',
+    hover: (hoveredOverItem: any) => {
+      if (hoveredOverItem.id !== props.item.id) {
+        props.onMoveItem(hoveredOverItem.id, props.item.id);
+      }
+  }});
+  return (
+    <>
+      <div ref={dropRef} className={classes.join(' ')}>
         <div className='tool-icon-container'>
-          <ToolIcon imageUrl={StarterInfo.getIconPath(starter)} imageId={counter} valid={valid} />
+          <ToolIcon
+            t={t}
+            item={props.item}
+            imageUrl={imageSrc}
+            imageId={counter}
+            isPrimary={primary}
+            valid={valid}
+            onRun={run}
+          />
         </div>
         <div className='tool-icon-text'>
           <div className='tool-icon-name'>{starter.name}</div>
           {running ? <div className='tool-icon-running'>{t('Running...')}</div> : null}
         </div>
-        {primary ? <Icon className='tool-bookmark' name='bookmark'/> : null}
-        <IconBar
-          id={`tool-starter-${starter.id}`}
-          className='buttons'
-          group='tool-starter'
-          instanceId={starter.id}
-          staticElements={this.mStaticElements}
-          collapse={true}
-          t={t}
-        />
       </div>
-    );
-  }
-
-  private remove = () => {
-    const { onRemove, starter } = this.props;
-    onRemove(starter);
-  }
-
-  private setPrimaryTool = () => {
-    const { onMakePrimary, starter } = this.props;
-    onMakePrimary(starter);
-  }
-
-  private edit = () => {
-    const { onEdit, starter }  = this.props;
-    onEdit(starter);
-  }
-
-  private run = () => {
-    const { onRun, starter } = this.props;
-    onRun(starter);
-  }
+      <IconBar
+        id={`tool-starter-${starter.id}`}
+        className='buttons'
+        group='tool-starter'
+        instanceId={starter.id}
+        staticElements={staticElements}
+        collapse={true}
+        t={t}
+      />
+    </>
+  );
 }
 
 export default ToolButton;

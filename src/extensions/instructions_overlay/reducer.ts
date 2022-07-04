@@ -7,7 +7,7 @@ const sessionReducer: IReducerSpec<IOverlaysState> = {
   reducers: {
     ...addReducer(actions.showOverlay, (state, payload) =>
       setSafe(state, ['overlays', payload.id],
-        { title: payload.title, text: payload.instructions, position: payload.pos })),
+        { title: payload.title, content: payload.content, position: payload.pos, options: payload.options })),
     ...addReducer(actions.dismissOverlay, (state, payload) =>
       deleteOrNop(state, ['overlays', payload])),
   },

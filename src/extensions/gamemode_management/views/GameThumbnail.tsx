@@ -154,19 +154,14 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 
   private renderMenu(): JSX.Element[] {
-    const { t, container, discovered, game, getBounds, onRefreshGameInfo, type } = this.props;
-    const groupType = (type !== 'unmanaged')
-      ? type
-      : discovered
-      ? 'discovered'
-      : 'undiscovered';
+    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
+      <Popover id={`popover-info-${game.id}`} className='popover-game-info'>
         <Provider store={this.context.api.store}>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'
-            group={`game-${groupType}-buttons`}
+            group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
             collapse={false}
@@ -190,7 +185,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
-          group={`game-${groupType}-buttons`}
+          group={`game-${type}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
@@ -246,12 +241,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
   private redraw = () => {
     if (this.mRef !== null) {
-      this.mRef.hide();
-      setTimeout(() => {
-        if (this.mRef !== null) {
-          this.mRef.show();
-        }
-      }, 100);
+      this.mRef.forceUpdate();
     }
   }
 }

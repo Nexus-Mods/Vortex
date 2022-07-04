@@ -20,6 +20,9 @@ import { pathToFileURL } from 'url';
 import TrayIcon from './TrayIcon';
 
 const MIN_HEIGHT = 700;
+const REQUEST_HEADER_FILTER = {
+  urls: ['*://enbdev.com/*'],
+};
 
 interface IRect {
   x1: number;
@@ -159,6 +162,11 @@ class MainWindow {
         }
       }
     };
+
+    this.mWindow.webContents.session.webRequest.onBeforeSendHeaders(REQUEST_HEADER_FILTER, (details, callback) => {
+      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36';
+      callback({ requestHeaders: details.requestHeaders });
+    });
 
     this.mWindow.webContents.session.on('will-download', (event, item) => {
       // unfortunately we have to deal with these events in the main process even though

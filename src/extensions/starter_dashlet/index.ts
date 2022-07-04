@@ -2,14 +2,19 @@ import Promise from 'bluebird';
 import path from 'path';
 import { fs } from '../..';
 
-import { IExtensionApi, IExtensionContext, ITestResult } from '../../types/api';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
+import { ITestResult } from '../../types/ITestResult';
+import { IStarterInfo } from '../../util/StarterInfo'
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import memoize from 'memoize-one';
+
 import { setPrimaryTool } from './actions';
 import settingsReducer from './reducers';
-import Starter from './Starter';
+import Tools from './Tools';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
@@ -64,18 +69,42 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   return Promise.resolve(undefined);
 }
 
+const toolsValidation = memoize(validateTools);
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
-  context.registerDashlet('Starter', 2, 2, 100, Starter,
-                          undefined, undefined, {
-                            closable: false,
-                          });
+  context.registerDashlet('Tools', 2, 2, 100, Tools, undefined,
+    () => ({
+      onGetValidTools: (starters: IStarterInfo[], gameMode: string) =>
+        toolsValidation(context.api, starters, gameMode),
+    }), {
+      closable: false,
+    });
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));
-
   return true;
+}
+
+function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: string) {
+  const state = api.getState();
+  const discovery: IDiscoveryResult = getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], {});
+  if (discovery?.path === undefined) {
+    return Promise.resolve([]);
+  }
+
+  return Promise.reduce(starters, (accum, iter) => {
+    if (!iter?.exePath) {
+      return Promise.resolve(accum);
+    }
+    const exePath = path.isAbsolute(iter.exePath)
+      ? iter.exePath
+      : path.join(discovery.path, iter.exePath);
+    return fs.statAsync(exePath)
+      .then(() => accum.push(iter.id))
+      .catch(() => Promise.resolve())
+      .then(() => Promise.resolve(accum));
+  }, []);
 }
 
 export default init;

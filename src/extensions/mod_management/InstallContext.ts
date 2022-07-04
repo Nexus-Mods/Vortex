@@ -288,7 +288,7 @@ class InstallContext implements IInstallContext {
       case 'canceled': return {
         type: 'info',
         title: 'Installation canceled',
-        message: this.mFailReason,
+        message: modName,
         replace: { id },
         displayMS: 4000,
         localize: { message: false },

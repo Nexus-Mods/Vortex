@@ -389,6 +389,14 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/collections"
+    },
+    {
+      "type": "build-copy",
+      "name": "titlebar-launcher",
+      "path": "extensions/titlebar-launcher",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/titlebar-launcher"
     }
   ]
 ]

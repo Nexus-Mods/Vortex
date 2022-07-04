@@ -51,6 +51,7 @@ export interface ICheckbox extends IControlBase {
   bbcode?: string;
   value: boolean;
   disabled?: boolean;
+  subText?: string;
 }
 
 export interface IInput extends IControlBase {
@@ -65,6 +66,9 @@ export interface ILink {
   id?: string;
   action?: (dismiss: () => void, id: string) => void;
 }
+
+export type DialogContentItem = 'htmlFile' | 'htmlText' | 'text' | 'message' | 'bbcode' | 'md'
+                              | 'checkboxes' | 'choices' | 'input' | 'links';
 
 export interface IDialogContent {
   htmlFile?: string;
@@ -105,6 +109,8 @@ export interface IDialogContent {
     // context made available to bbcode tags
     bbcodeContext?: IBBCodeContext;
     linksAsButtons?: boolean;
+    // set the order items should occur in, overriding the default
+    order?: DialogContentItem[];
   };
 
   condition?: Condition;

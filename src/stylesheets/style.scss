@@ -23,6 +23,9 @@
     background-color: initial !important;
     outline-width: 0;
   }
+  &.no-hover {
+    color: $text-color;
+  }
 }
 
 // button inside a (input- or list-) line  pulled to the right
@@ -94,6 +97,10 @@
 
 .form-control-feedback {
   z-index: 4;
+}
+
+.form-input-hasicon {
+  position: relative;
 }
 
 .form-input-clear {

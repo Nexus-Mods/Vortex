@@ -3,7 +3,7 @@ import { setSettingsPage, startActivity, stopActivity } from '../../actions/sess
 import {
   IExtensionApi,
   IExtensionContext,
-  IModSourceOptions,
+  IInstallResult,
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
@@ -27,6 +27,7 @@ import {
   activeGameId,
   activeProfile,
   currentGameDiscovery,
+  downloadPathForGame,
   installPath,
   installPathForGame,
   modPathsForGame,
@@ -288,7 +289,7 @@ function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
 
     return [].concat(prev, conflictRules
       .map(rule => findModByRef(rule.reference, enabledMods))
-      .filter(mod => mod !== undefined)
+      .filter(mod => (mod !== undefined) && (mod.id !== modId))
       .map(mod => ({ left: mods[modId], right: mods[mod.id] })));
   }, []);
 
@@ -1244,6 +1245,25 @@ function once(api: IExtensionApi) {
     // the game changes the cycle dialog can't even be opened or it would trigger an error
     api.dismissNotification('mod-cycle-warning');
   });
+
+  api.events.on('simulate-installer',
+    (gameId: string, archiveId: string, options: IInstallOptions,
+     cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
+      const state = api.getState();
+      const download = state.persistent.downloads.files[archiveId];
+      const downloadPath: string = downloadPathForGame(state, download.game[0]);
+      const archivePath: string = path.join(downloadPath, download.localPath);
+      const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
+      return installManager.simulate(api, gameId, archivePath, tempPath,
+                                     options.fileList, true, options.choices, () => {
+                                       // nop
+                                     })
+        .then(instructions => cb(instructions, tempPath))
+        .then(() => fs.removeAsync(tempPath))
+        .catch(err => {
+          api.showErrorNotification('Failed to simulate installer', err);
+        });
+    });
 
   cleanupIncompleteInstalls(api);
 

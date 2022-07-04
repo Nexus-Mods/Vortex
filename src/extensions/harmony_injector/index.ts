@@ -42,7 +42,7 @@ function transformError(err: any): Error {
       if (err.FileName.indexOf('PublicKeyToken') !== -1) {
         const fileName = err.FileName.split(',')[0];
         result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part `
-                               + 'of the .Net Framework. Please reinstall it.');
+                               + 'of the .NET Framework. Please reinstall it.');
       } else if (err.FileName.indexOf('node_modules\\harmony-patcher') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
@@ -104,10 +104,10 @@ function checkNetInstall() {
   if ((netVersion === undefined) || semver.lt(netVersion, '4.6.0')) {
     const res: ITestResult = {
       description: {
-        short: '.Net installation incompatible',
-        long: 'It appears that your installation of the .Net framework is outdated or missing.'
+        short: '.NET installation incompatible',
+        long: 'It appears that your installation of the .NET framework is outdated or missing.'
             + '[br][/br]You will probably not be able to install mods.'
-            + '[br][/br]Please install a current version of .Net (at least version 4.6).',
+            + '[br][/br]Please install a current version of .NET (at least version 4.6).',
       },
       severity: 'error',
     };
@@ -120,10 +120,10 @@ function checkNetInstall() {
         } else {
           const res: ITestResult = {
             description: {
-              short: '.Net installation broken',
-              long: 'It appears that your installation of the .Net framework is broken.[br][/br]'
+              short: '.NET installation broken',
+              long: 'It appears that your installation of the .NET framework is broken.[br][/br]'
                 + 'You will probably not be able to install mods.[br][/br]'
-                + 'Please (re-)install .Net (at least version 4.6).',
+                + 'Please (re-)install .NET (at least version 4.6).',
             },
             severity: 'error',
           };
@@ -555,7 +555,7 @@ function init(context: IExtensionContext): boolean {
   }, { minArguments: 1 });
 
   if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', checkNetInstall);
+    context.registerTest('net-current-harmony', 'startup', checkNetInstall);
   }
 
   return true;

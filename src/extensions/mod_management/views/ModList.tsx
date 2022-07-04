@@ -15,6 +15,7 @@ import { IActionDefinition } from '../../../types/IActionDefinition';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
+import { withBatchContext } from '../../../util/BatchContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
@@ -1313,6 +1314,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .map(modId => {
         let name = modName(this.state.modsWithState[modId], {
           version: true,
+          variant: true,
         });
         if (this.state.modsWithState[modId].state === 'downloaded') {
           name += ' ' + t('(Archive only)');
@@ -1384,18 +1386,37 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private reinstall = (modIds: string | string[]) => {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
-      modIds.filter(modId => mods[modId] !== undefined).forEach(modId => {
-        const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);
-        this.context.api.events.emit('start-install-download', mods[modId].archiveId,
-                                     { choices, allowAutoEnable: false }, (err) => {
-          if (err === null) {
-            const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
+      const validIds = modIds.filter(modId => mods[modId] !== undefined);
+      const installTimes = validIds.reduce((prev, modId) => {
+        prev[modId] = mods[modId].attributes?.installTime;
+        return prev;
+      }, {});
+      withBatchContext<void>('install-mod', validIds.map(modId => mods[modId].archiveId), () => {
+        return Promise.all(
+          validIds.map(modId => {
+            const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);
+            return toPromise(cb => this.context.api.events.emit('start-install-download',
+                mods[modId].archiveId, { choices, allowAutoEnable: false }, cb))
+              .catch(err => {
+                if (err instanceof UserCanceled) {
+                  return;
+                }
+                this.context.api.showErrorNotification('Failed to reinstall mod', err, {
+                  message: modName(mods[modId]),
+                  allowReport: false,
+                });
+              });
+          }))
+          .then(() => {
+            const newMods = this.props.mods;
+            const enabled = validIds
+              .filter(id => getSafe(modState, [id, 'enabled'], false))
+              .filter(id => installTimes?.[id] !== newMods[id]?.attributes?.installTime);
             if (enabled.length > 0) {
               this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
             }
-          }
+          });
         });
-      });
     } else if (mods[modIds] !== undefined) {
       const choices = getSafe(mods[modIds], ['attributes', 'installerChoices'], undefined);
       this.context.api.events.emit('start-install-download', mods[modIds].archiveId,

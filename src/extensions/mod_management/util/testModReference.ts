@@ -53,6 +53,12 @@ const fuzzyVersionCache: { [input: string]: boolean } = {};
 
 const coerceableRE = /^v?[0-9.]+$/;
 
+function safeCoerce(input: string): string {
+  return coerceableRE.test(input)
+    ? semver.coerce(input)?.raw ?? input
+    : input;
+}
+
 export function isFuzzyVersion(input: string) {
   const cachedRes: boolean = fuzzyVersionCache[input];
   if (cachedRes !== undefined) {
@@ -68,9 +74,7 @@ export function isFuzzyVersion(input: string) {
     // semver.validRange accepts partial versions as ranges, e.g. "1.5" is equivalent
     // to "1.5.x" but we can't accept that because then we can't distinguish them from
     // non-semantic versions where 1.5 should match exactly 1.5
-    const coerced = coerceableRE.test(input)
-      ? semver.coerce(input)?.raw ?? input
-      : input;
+    const coerced = safeCoerce(input);
 
     const valRange = semver.validRange(coerced);
 
@@ -176,15 +180,17 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   if ((ref.versionMatch !== undefined)
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
-    if (semver.valid(semver.coerce(mod.version))) {
-      const versionMatch = ref.versionMatch.split('+')[0];
-      if ((mod.version !== ref.versionMatch)
-        && !semver.satisfies(semver.coerce(mod.version), versionMatch, true)) {
-        return false;
-      }
-    } else {
-      // if the version number can't be interpreted then we can only do an exact match
-      if (mod.version !== ref.versionMatch) {
+    const versionMatch = ref.versionMatch.split('+')[0];
+    let doesMatch = (mod.version === ref.versionMatch)
+                  || (mod.version !== safeCoerce(versionMatch));
+    if (!doesMatch) {
+      const versionCoerced = semver.coerce(mod.version);
+      if (semver.valid(versionCoerced)) {
+        if (!semver.satisfies(versionCoerced, versionMatch, true)) {
+          return false;
+        } // the version is a valid semantic version and does match
+      } else {
+        // if the version number can't be interpreted then we can only use the exact match
         return false;
       }
     }

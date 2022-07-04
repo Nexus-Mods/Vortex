@@ -1,5 +1,5 @@
 import { ILink, triggerDialogLink } from '../actions';
-import { closeDialog } from '../actions/notifications';
+import { closeDialog, DialogContentItem } from '../actions/notifications';
 import Collapse from '../controls/Collapse';
 import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
 import Icon from '../controls/Icon';
@@ -206,36 +206,36 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       t = (input: string, options) => this.props.t(input, { ...options, lngs: [] });
     }
 
-    const controls: JSX.Element[] = [];
+    const controls: Array<{ id: DialogContentItem, control: JSX.Element }> = [];
 
     if (content.text) {
-      controls.push((
+      controls.push({ id: 'text', control: (
         <div key='dialog-content-text' className='dialog-content-text'>
           {t(content.text,
              { replace: content.parameters, count: content.parameters?.count })}
         </div>
-      ));
+      ) });
     }
 
     if (content.bbcode !== undefined) {
-      controls.push((
+      controls.push({ id: 'bbcode', control: (
         <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(t(content.bbcode,
                     { replace: content.parameters, count: content.parameters?.count }),
             content.options?.bbcodeContext)}
         </div>
-      ));
+      ) });
     }
 
     if (content.md !== undefined) {
-      controls.push((
+      controls.push({ id: 'md', control: (
         <div key='dialog-content-markdown' className='dialog-content-markdown'>
           <ReactMarkdown>
             {t(content.md,
               { replace: content.parameters, count: content.parameters?.count })}
           </ReactMarkdown>
         </div>
-      ));
+      ) });
     }
 
     if (content.message !== undefined) {
@@ -250,7 +250,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         />
       );
       if ((content.options !== undefined) && (content.options.hideMessage === true)) {
-        controls.push((
+        controls.push({ id: 'message', control: (
           <Collapse
             key='dialog-content-message-wrapper'
             showText={t('Show Details')}
@@ -258,67 +258,76 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           >
             {ctrl}
           </Collapse>
-          ));
+          ) });
       } else {
-        controls.push(ctrl);
+        controls.push({ id: 'message', control: ctrl });
       }
     }
 
     if (content.htmlFile !== undefined) {
-      controls.push((
+      controls.push({ id: 'htmlFile', control: (
         <div key='dialog-content-html-file'>
           <Webview src={`file://${content.htmlFile}`} />
         </div>
-      ));
+      ) });
     }
 
     if (content.htmlText !== undefined) {
-      controls.push((
+      controls.push({ id: 'htmlText', control: (
         <div
           key='dialog-content-html-text'
           className='dialog-content-html'
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
-      ));
+      ) });
     }
 
     if (content.input !== undefined) {
-      controls.push((
+      controls.push({ id: 'input', control: (
       <div key='dialog-form-content' className='dialog-content-input'>
         {content.input.map(this.renderInput)}
       </div>
-      ));
+      ) });
     }
 
     if (content.checkboxes !== undefined) {
-      controls.push((
+      controls.push({ id: 'checkboxes', control: (
         <div key='dialog-content-checkboxes' className='dialog-content-choices'>
           <div>
             {content.checkboxes.map(checkbox => this.renderCheckbox(checkbox, content))}
           </div>
         </div>
-      ));
+      ) });
     }
 
     if (content.choices !== undefined) {
-      controls.push((
+      controls.push({ id: 'choices', control: (
         <div key='dialog-content-choices' className='dialog-content-choices'>
           <div>
             {content.choices.map(this.renderRadiobutton)}
           </div>
         </div>
-      ));
+      ) });
     }
 
     if (content.links !== undefined) {
-      controls.push((
+      controls.push({ id: 'links', control: (
         <div key='dialog-form-links'>
           {content.links.map(content.options?.linksAsButtons ? this.renderButton : this.renderLink)}
         </div>
-      ));
+      ) });
     }
 
-    return <div className='dialog-container'>{controls}</div>;
+    if (content.options?.order !== undefined) {
+      const { order } = content.options;
+      controls.sort((lhs, rhs) => {
+        const lIdx = order.includes(lhs.id) ? (100 + order.indexOf(lhs.id)) : controls.indexOf(lhs);
+        const rIdx = order.includes(rhs.id) ? (100 + order.indexOf(rhs.id)) : controls.indexOf(rhs);
+        return lIdx - rIdx;
+      });
+    }
+
+    return <div className='dialog-container'>{controls.map(iter => iter.control)}</div>;
   }
 
   private handleKeyPress = (evt: React.KeyboardEvent<Modal>) => {
@@ -438,6 +447,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderRadiobutton = (checkbox: ICheckbox) => {
     const { t } = this.props;
+    const content = (checkbox.subText !== undefined)
+      ? <>
+        <div className='choice-maintext'>{t(checkbox.text)}</div>
+        <div className='choice-subtext'>{t(checkbox.subText)}</div>
+      </>
+      : <>{t(checkbox.text)}</>;
+
     return (
       <Radio
         id={checkbox.id}
@@ -447,7 +463,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.toggleRadio}
         disabled={checkbox.disabled}
       >
-        {t(checkbox.text)}
+        {content}
       </Radio>
     );
   }
@@ -517,8 +533,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return box.id === evt.currentTarget.id;
     });
 
-    const newChoices = dialogState.choices.map((choice: ICheckbox) =>
-      ({ id: choice.id, text: choice.text, value: false }));
+    const newChoices = dialogState.choices.map((choice: ICheckbox) => ({
+      ...choice,
+      value: false,
+     }));
     newChoices[idx].value = true;
 
     let newState = update(this.state, {

@@ -6,7 +6,6 @@ import { TFunction } from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
-  buttonType: ButtonType;
   toggleHidden: () => void;
   showHidden: boolean;
   t: TFunction;
@@ -14,7 +13,7 @@ export interface IBaseProps {
 
 class ShowHiddenButton extends ComponentEx<IBaseProps, {}> {
   public render(): JSX.Element {
-    const { t, buttonType, showHidden, toggleHidden } = this.props;
+    const { t, showHidden, toggleHidden } = this.props;
 
     return (
       <ToolbarIcon

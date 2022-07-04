@@ -1,10 +1,11 @@
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadModInfo,
          startActivity, stopActivity } from '../../actions';
-import { showDialog } from '../../actions/notifications';
+import { IConditionResult, IDialogContent, showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
+import { getBatchContext } from '../../util/BatchContext';
 import { fileMD5 } from '../../util/checksum';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
@@ -13,11 +14,12 @@ import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { TFunction } from '../../util/i18n';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
-import { getSafe, setSafe } from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
@@ -51,6 +53,7 @@ import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
 import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
+import { MAX_VARIANT_NAME, MIN_VARIANT_NAME } from './constants';
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
@@ -127,6 +130,23 @@ function nop() {
   // nop
 }
 
+function validateVariantName(t: TFunction, content: IDialogContent): IConditionResult[] {
+  const variantName = content.input.find(inp => inp.id === 'variant')?.value ?? '';
+
+  if ((variantName.length < MIN_VARIANT_NAME) || (variantName.length > MAX_VARIANT_NAME)) {
+    return [{
+      id: 'variant',
+      actions: ['Continue'],
+      errorText: t('Name must be between {{min}}-{{max}} characters long', {
+        min: MIN_VARIANT_NAME,
+        max: MAX_VARIANT_NAME,
+      }),
+    }];
+  } else {
+    return [];
+  }
+}
+
 /**
  * central class for the installation process
  *
@@ -201,6 +221,82 @@ class InstallManager {
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
     });
+  }
+
+  public simulate(api: IExtensionApi, gameId: string,
+                  archivePath: string, tempPath: string,
+                  extractList?: IFileListItem[], unattended?: boolean,
+                  installChoices?: any,
+                  progress?: (entries: string[], percent: number) => void)
+                  : Promise<IInstallResult> {
+    if (this.mTask === undefined) {
+      this.mTask = new Zip();
+    }
+
+    let extractProm: Promise<any>;
+    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
+      extractProm = Promise.reject(new ArchiveBrokenError('file type on avoidlist'));
+    } else {
+      extractProm = this.mTask.extractFull(archivePath, tempPath, {ssc: false},
+                                    progress,
+                                    () => this.queryPassword(api.store) as any)
+          .catch((err: Error) => this.isCritical(err.message)
+            ? Promise.reject(new ArchiveBrokenError(err.message))
+            : Promise.reject(err));
+    }
+
+    const fileList: string[] = [];
+
+    return extractProm
+        .then(({ code, errors }: {code: number, errors: string[] }) => {
+          log('debug', 'extraction completed');
+          if (code !== 0) {
+            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
+            const critical = errors.find(this.isCritical);
+            if (critical !== undefined) {
+              return Promise.reject(new ArchiveBrokenError(critical));
+            }
+            return this.queryContinue(api, errors, archivePath);
+          } else {
+            return Promise.resolve();
+          }
+        })
+        .then(() => walk(tempPath,
+                         (iterPath, stats) => {
+                           if (stats.isFile()) {
+                             fileList.push(path.relative(tempPath, iterPath));
+                           } else {
+                             // unfortunately we also have to pass directories because
+                             // some mods contain empty directories to control stop-folder
+                             // management...
+                             fileList.push(path.relative(tempPath, iterPath) + path.sep);
+                           }
+                           return Promise.resolve();
+                         }))
+        .then(() => {
+          if (truthy(extractList) && extractList.length > 0) {
+            return makeListInstaller(extractList, tempPath);
+          } else {
+            return this.getInstaller(fileList, gameId);
+          }
+        })
+        .then(supportedInstaller => {
+          if (supportedInstaller === undefined) {
+            throw new Error('no installer supporting this file');
+          }
+
+          const {installer, requiredFiles} = supportedInstaller;
+
+          return installer.install(
+              fileList, tempPath, gameId,
+              (perc: number) => {
+                log('info', 'progress', perc);
+                progress([], perc);
+              },
+              installChoices,
+              unattended);
+        });
+
   }
 
   /**
@@ -326,8 +422,10 @@ class InstallManager {
         // if the name is already taken, consult the user,
         // repeat until user canceled, decided to replace the existing
         // mod or provided a new, unused name
+
+        let variantCounter: number = 0;
         const checkNameLoop = () => this.checkModExists(testModId, api, installGameId)
-          ? this.queryUserReplace(modId, installGameId, api)
+          ? this.queryUserReplace(api, modId, installGameId, ++variantCounter)
             .then((choice: IReplaceChoice) => {
               testModId = choice.id;
               if (choice.enable) {
@@ -637,7 +735,7 @@ class InstallManager {
                   + 'To use Vortex, please uninstall "Browser Assistant".';
                 const errorMessage = (typeof err === 'string') ? err : err.message;
                 let allowReport: boolean;
-                if (err.message.includes('No compatible .Net Framework')) {
+                if (err.message.includes('No compatible .NET installation')) {
                   allowReport = false;
                 }
                 (!this.isBrowserAssistantError(errorMessage))
@@ -760,6 +858,8 @@ class InstallManager {
   private isCritical(error: string): boolean {
     return (error.indexOf('Unexpected end of archive') !== -1)
         || (error.indexOf('ERROR: Data Error') !== -1)
+        // used to be "Can not", current 7z prints "Cannot"
+        || (error.indexOf('Cannot open the file as archive') !== -1)
         || (error.indexOf('Can not open the file as archive') !== -1);
   }
 
@@ -1385,7 +1485,7 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
+  private queryUserReplace(api: IExtensionApi, modId: string, gameId: string, counter: number) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mod: IMod = state.persistent.mods[gameId][modId];
@@ -1406,32 +1506,162 @@ class InstallManager {
           rules: [],
         });
       }
-      api.store
-        .dispatch(showDialog(
-          'question', modName(mod, { version: false }),
-          {
-            text:
-              'This mod seems to be installed already. '
-              + 'You can replace the existing one - which will update all profiles - '
-              + 'or install the new one under a different name. '
-              + 'If you do the latter, the new installation will appear as a variant '
-              + 'of the other mod that can be toggled through the version dropdown. '
-              + 'Use the input below to make the variant distinguishable.',
-            input: [{
-              id: 'variant',
-              value: '2',
-              label: 'Variant',
-            }],
-            options: {
-              wrap: true,
-            },
+
+      const context = getBatchContext('install-mod', mod.archiveId);
+
+      const queryVariantNameDialog = (remember: boolean) => {
+        const checkVariantRemember: ICheckbox[] = [];
+        if (context  !== null) {
+          const itemsCompleted = context.get('items-completed', 0);
+          const itemsLeft = context.itemCount - itemsCompleted;
+          if ((itemsLeft > 1) && remember) {
+            checkVariantRemember.push({
+              id: 'remember',
+              value: false,
+              text: api.translate('Use this name for all remaining variants ({{count}} more)', {
+                count: itemsLeft - 1,
+              }),
+            });
+          }
+        }
+
+        return api.showDialog('question', 'Install options - Name mod variant', {
+          text: 'Enter a variant name for "{{modName}}" to differentiate it from the original',
+          input: [{
+            id: 'variant',
+            value: '2',
+            label: 'Variant',
+          }],
+          checkboxes: checkVariantRemember,
+          md: '**Remember:** You can switch between variants by clicking in the version '
+            + 'column in your mod list and selecting from the dropdown.',
+          parameters: {
+            modName: modName(mod, { version: false }),
           },
-          [
-            { label: 'Cancel' },
-            { label: VARIANT_ACTION },
-            { label: REPLACE_ACTION },
-          ]))
-        .then((result: IDialogResult) => {
+          condition: (content: IDialogContent) => validateVariantName(api.translate, content),
+          options: {
+            order: ['text', 'input', 'md', 'checkboxes'],
+          },
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => {
+          if (result.action === 'Cancel') {
+            context?.set?.('canceled', true);
+            return Promise.reject(new UserCanceled());
+          } else {
+            if (result.input.remember) {
+              context.set('variant-name', result.input.variant);
+            }
+            return Promise.resolve(result.input.variant);
+          }
+        });
+      };
+
+      const queryDialog = () => api.showDialog('question', 'Install options',
+        {
+          text: '"{{modName}}" has already been installed. Would you like to:',
+          choices: [
+            {
+              id: 'replace',
+              value: true,
+              text: 'Replace the existing mod',
+              subText: 'This will replace the existing mod on all your profiles.',
+            },
+            {
+              id: 'variant',
+              value: false,
+              text: 'Install as variant of the existing mod',
+              subText: 'This will allow you to install variants of the same mod and easily '
+                     + 'switch between them from the version drop-down in the mods table. '
+                     + 'This can be useful if you want to install the same mod but with '
+                     + 'different options in different profiles.',
+            },
+          ],
+          checkboxes: checkRoVRemember,
+          options: {
+            wrap: true,
+            order: ['choices', 'checkboxes'],
+          },
+          parameters: {
+            modName: modName(mod, { version: false }),
+          },
+        },
+        [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => {
+          if (result.action === 'Cancel') {
+            context?.set?.('canceled', true);
+            return Promise.reject(new UserCanceled());
+          } else if (result.input.variant) {
+            return queryVariantNameDialog(result.input.remember)
+              .then(variant => ({
+                action: 'variant',
+                variant,
+                remember: result.input.remember,
+              }));
+          } else if (result.input.replace) {
+            return {
+              action: 'replace',
+              remember: result.input.remember,
+            };
+          }
+        });
+
+      let choices: Promise<{ action: string, variant?: string, remember: boolean }>;
+
+      const checkRoVRemember: ICheckbox[] = [];
+      if (context !== undefined) {
+        if (context.get('canceled', false)) {
+          return reject(new UserCanceled());
+        }
+
+        const action = context.get('replace-or-variant');
+        const itemsCompleted = context.get('items-completed', 0);
+        const itemsLeft = context.itemCount - itemsCompleted;
+        if (itemsLeft > 1) {
+          if (action === undefined) {
+            checkRoVRemember.push({
+              id: 'remember',
+              value: false,
+              text: api.translate('Do this for all remaining reinstalls ({{count}} more)', {
+                count: itemsLeft - 1,
+              }),
+            });
+          }
+        }
+
+        if (action !== undefined) {
+          let variant: string = context.get('variant-name');
+          if ((action === 'variant') && (variant === undefined)) {
+            choices = queryVariantNameDialog(context.get('replace-or-variant') !== undefined)
+              .then(variantName => ({
+                action,
+                variant: variantName,
+                remember: true,
+              }));
+          } else {
+            if ((variant !== undefined) && (counter > 1)) {
+              variant += `.${counter}`;
+            }
+            choices = Promise.resolve({
+              action,
+              variant,
+              remember: true,
+            });
+          }
+        }
+      }
+
+      if (choices === undefined) {
+        choices = queryDialog();
+      }
+
+      choices
+        .then((result: { action: string, variant: string, remember: boolean }) => {
           const currentProfile = activeProfile(api.store.getState());
           const wasEnabled = () => {
             return (currentProfile?.gameId === gameId)
@@ -1439,20 +1669,24 @@ class InstallManager {
               : false;
           };
 
-          if (result.action === 'Cancel') {
-            reject(new UserCanceled());
-          } else if (result.action === VARIANT_ACTION) {
+          if (result.action === 'variant') {
+            if (result.remember === true) {
+              context.set('replace-or-variant', 'variant');
+            }
             if (currentProfile !== undefined) {
               api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
             }
             resolve({
-              id: modId + '+' + result.input.variant,
-              variant: result.input.variant,
+              id: modId + '+' + result.variant,
+              variant: result.variant,
               enable: wasEnabled(),
               attributes: {},
               rules: [],
             });
-          } else if (result.action === REPLACE_ACTION) {
+          } else if (result.action === 'replace') {
+            if (result.remember === true) {
+              context.set('replace-or-variant', 'replace');
+            }
             api.events.emit('remove-mod', gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);
@@ -1466,8 +1700,23 @@ class InstallManager {
                 });
               }
             }, { willBeReplaced: true });
+          } else {
+            if (result.action === 'Cancel') {
+              log('error', 'invalid action in "queryUserReplace"', { action: result.action });
+            }
+            context?.set?.('canceled', true);
+            reject(new UserCanceled());
           }
-        });
+        })
+        .tap(() => {
+          if (context !== undefined) {
+            context.set('items-completed', context.get('items-completed', 0) + 1);
+          }
+        })
+        .catch(err => {
+          return reject(err);
+        })
+        ;
     });
   }
 

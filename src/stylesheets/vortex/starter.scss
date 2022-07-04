@@ -1,7 +1,11 @@
+$tools-border-width: 2px;
+
 #starter-dashlet {
   margin: 0;
   height: 100%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 
   .media-left {
     margin-top: auto;
@@ -19,7 +23,31 @@
     padding: 0;
   }
 
+  .buttons {
+    background-color: $brand-bg;
+    min-width: 2em;
+    height: auto;
+    display: flex;
+    border-left: $tools-border-width solid $brand-menu;
+    align-items: center;
+    justify-content: center;
+    svg {
+      height: 2em;
+      width: 2em;
+      max-width: 2em;
+      max-height: 2em;
+    }
+  }
+
+  .starter-dashlet-tools-header {
+    justify-content: space-between;
+    align-items: baseline;
+    height: auto;
+  }
+
   .media-body {
+    overflow-y: visible;
+    overflow-x: hidden;
     vertical-align: middle;
     flex-direction: row;
     position: relative;
@@ -32,15 +60,39 @@
     .refresh-button {
       @extend .btn-embed;
       position: absolute;
-      top: 40px;
-      right: 12px;
+      top: $half-gutter;
+      right: $half-gutter;
+    }
+  }
+
+  .box-drag-handle-container {
+    display: flex;
+    flex-direction: row;
+    margin-right: .5rem;
+    background-color: transparent;
+    .box-drag-handle {
+      background-color: $brand-bg;
+      min-width: 1.66em;
+      height: auto;
+      display: flex;
+      cursor: move;
+      border-right: $tools-border-width solid $brand-menu;
+      .box-drag-handle-icon {
+        padding: 0.25em;
+        color: $brand-menu;
+        width: 2em;
+        height: 2em;
+        margin: auto;
+        cursor: move;
+      }
     }
   }
 }
 
 .tool-icon {
-  width: auto;
-  height: 30px;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.1em;
 
   &.invalid {
     filter: grayscale(100%);
@@ -53,19 +105,16 @@
 }
 
 svg.tool-icon {
-  width: 30px;
+  width: 2.5em;
 }
 
 .tool-button {
   background-color: $brand-bg;
   display: flex;
   flex-direction: row;
-  padding: 8px;
-  min-width: 128px;
-
-  &:hover {
-    background-color: $brand-primary;
-  }
+  padding: 0.66em;
+  min-width: 10.66em;
+  width: 100%;
 
   button {
     @extend .btn-embed;
@@ -74,71 +123,121 @@ svg.tool-icon {
     flex: 1 1 0;
     margin: auto 0.5em;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    overflow-wrap: break-word;
     overflow-x: hidden;
   }
   .btn-group {
     display: inline-flex;
     margin: auto 0;
   }
+}
 
-  &.tool-button-primary {
-    background-color: $brand-secondary;
+.starter-tool-icon-container:hover {
+  background-color: rgba(0,0,0,0.5);
+  svg, img, .tool-icon {
+    filter: opacity(0.5);
+    background-color: rgba(0,0,0,0.5);
+  }
+  .primary-star {
+    visibility: hidden !important;
+  }
+  .icon-launch-simple {
+    color: $text-color;
+    background-color: transparent;
+    filter: opacity(1);
+  }
+  .run-tool {
+    visibility: visible !important;
+  }
+
+  border: $tools-border-width solid $brand-clickable !important;
+}
+
+.starter-tool-icon-container {
+  border: $tools-border-width solid $border-color;
+  border-radius: 0.2em;
+  position: relative;
+  min-height: 3em;
+  height: 3em;
+  min-width: 3em;
+  max-width: 3.36em;
+  width: 3em;
+  &.primary {
+    background-color: rgba(255, 255, 255, 0.1);
+    svg, img {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    border: $tools-border-width solid #ffffff;
+  }
+  .run-tool {
+    background-color: transparent;
+    border: unset;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    bottom: 0px;
+    right: 0px;
+    visibility: hidden;
+  }
+  .primary-star {
+    font-size: 185%;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    top: 0;
+    visibility: visible;
+    color: #ffffff;
+  }
+  img {
+    display: block
   }
 }
 
-.tool-bookmark {
-  // balance the padding of the tool button
-  margin-top: -9px;
-}
-
-#add-tool-button {
+#add-tool-button-menu {
   // top padding needs to be large enough to fit the icon
   // and then some padding around it
-  padding: 5em $half-gutter $half-gutter;
-  height: 100%;
+  // padding: 2em $half-gutter $half-gutter;
+  // height: 100%;
 
-  display: flex !important;
-  background-color: $brand-bg;
-
-  &:hover {
-    background-color: $brand-clickable;
-  }
+  display: flex;
+  background-color: transparent;
+  border: $tools-border-width solid;
+  width: 98.5%;
 
   span {
     margin-top: auto;
     margin-bottom: auto;
   }
+
   .btn-add-tool-text {
-    flex: 1 1 0;
+    @extend .tool-icon-text;
+    align-items: flex-start;
+    justify-content: end;
+    margin-left: 1em;
   }
-  svg {
-    width: 2.5em;
-    height: 2.5em;
-    position: absolute;
-    top: 1em;
-    left: 50%;
-    margin-left: -1.25em;
-    }
+
+  .btn-add-tool-dropdown-toggle {
+    @extend .tool-icon-container;
+    min-height: auto;
+  }
+  .btn-add-tool-icon {
+    @extend .tool-icon;
+    height: 3.83em;
+    position: inherit;
+  }
 }
 
 .tool-icon-box {
-  display: flex;
-  flex-flow: row wrap;
-  overflow-y: auto;
-  justify-content: flex-start;
-  align-items: center;
-  margin: 0;
-  width: 100%;
-  > * {
-    flex: 0 1 30%;
-    min-width: 150px;
-    margin: 2px;
-  }
-}
-
-.btn-add-tool {
-  margin: $half-gutter 0;
+  --grid-layout-gap: 1em;
+  --grid-column-count: 3;
+  --grid-item--min-width: 30em;
+  --gap-count: calc(var(--grid-column-count) - 1);
+  --total-gap-width: calc(var(--gap-count) * var(--grid-layout-gap));
+  --grid-item--max-width: calc((100% - var(--total-gap-width)) / var(--grid-column-count));
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(var(--grid-item--min-width), var(--grid-item--max-width)), 1fr));
+  grid-gap: var(--grid-layout-gap);
 }
 
 .env-kvpair {

@@ -112,8 +112,10 @@ import commandLine from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
-import './util/monkeyPatching';
+
 // required for the side-effect!
+import './util/exeIcon';
+import './util/monkeyPatching';
 import './util/webview';
 
 import * as child_processT from 'child_process';

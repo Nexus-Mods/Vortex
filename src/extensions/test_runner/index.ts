@@ -1,3 +1,6 @@
+// LEGACY FILE
+/* eslint-disable max-lines-per-function, indent */
+
 /**
  * This extension is a host for automated tests against the current
  * setup to find problems with Vortex in general, the setup for the current game,
@@ -26,7 +29,7 @@
  * Further event types can be triggered by extensions
  */
 
-import {showDialog} from '../../actions/notifications';
+import {DialogActions, showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
 import { ITestResult } from '../../types/ITestResult';
@@ -47,6 +50,22 @@ interface ICheckEntry {
 const checks: { [type: string]: ICheckEntry[] } = {};
 
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
+
+function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
+  return result.automaticFix()
+    .then(() => runCheck(api, check))
+    .catch(err => {
+      if ((err instanceof UserCanceled) || (err instanceof ProcessCanceled)) {
+        return null;
+      }
+      if (err === undefined) {
+        err = new Error('Invalid fix result');
+      }
+      err['attachLogOnReport'] = true;
+      err['Fix'] = check.id;
+      api.showErrorNotification('Failed to run automatic fix', err);
+    });
+}
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
   let res: Promise<ITestResult>;
@@ -70,6 +89,12 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
       } else {
         const actions: INotificationAction[] = [];
         if (result.description.long !== undefined) {
+          const dialogActions: DialogActions = [{ label: 'Close' }];
+          if (result.automaticFix !== undefined) {
+            dialogActions.push({
+              label: 'Fix', action: () => applyFix(api, check, result),
+            });
+          }
           actions.push({
             title: 'More',
             action: () => api.store.dispatch(showDialog('info', 'Check failed', {
@@ -79,24 +104,13 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
                 bbcodeContext: result.description.context,
                 translated: result.description.localize === false,
               },
-            }, [{ label: 'Close' }])),
+            }, dialogActions)),
           });
         }
         if (result.automaticFix !== undefined) {
           actions.push({
             title: 'Fix',
-            action: () => result.automaticFix()
-              .then(() => runCheck(api, check))
-              .catch(UserCanceled, () => null)
-              .catch(ProcessCanceled, () => null)
-              .catch(err => {
-                if (err === undefined) {
-                  err = new Error('Invalid fix result');
-                }
-                err['attachLogOnReport'] = true;
-                err['Fix'] = check.id;
-                api.showErrorNotification('Failed to run automatic fix', err);
-              }),
+            action: () => applyFix(api, check, result),
           });
         } else {
           actions.push({

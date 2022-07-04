@@ -3,10 +3,10 @@ import FlexLayout from '../../../controls/FlexLayout';
 import FormInput from '../../../controls/FormInput';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
-import { IconButton, ToggleButton } from '../../../controls/TooltipControls';
+import { ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import opn from '../../../util/opn';
@@ -34,8 +34,7 @@ import { ratio } from 'fuzzball';
 import update from 'immutability-helper';
 import memoizeOne from 'memoize-one';
 import * as React from 'react';
-import { FormControl, InputGroup, ListGroup,
-         Panel, PanelGroup, ProgressBar } from 'react-bootstrap';
+import { InputGroup, ListGroup, Panel, PanelGroup } from 'react-bootstrap';
 import Select from 'react-select';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
@@ -70,7 +69,6 @@ interface IConnectedProps {
   profiles: { [profileId: string]: IProfile };
   knownGames: IGameStored[];
   gameMode: string;
-  discovery: IDiscoveryState;
   pickerLayout: 'list' | 'small' | 'large';
   extensions: IAvailableExtension[];
   extensionsInstalled: { [extId: string]: IExtension };
@@ -142,7 +140,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, discovery, extensions, extensionsInstalled, knownGames,
+    const { t, discoveredGames, extensions, extensionsInstalled, knownGames,
             pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
     const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
@@ -232,7 +230,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         <MainPage.Header>
           <IconBar
             group='game-icons'
-            staticElements={this.buttons}
+            staticElements={[]}
             className='menubar'
             t={t}
           />
@@ -244,6 +242,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             className='menubar'
             t={t}
           >
+            <ShowHiddenButton
+              t={this.props.t}
+              showHidden={this.state.showHidden}
+              toggleHidden={this.toggleHidden}
+            />
             <ToggleButton
               id='gamepicker-layout-list'
               onClick={this.setLayoutList}
@@ -280,6 +283,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       placeholder={t('Search for a game...')}
                       onChange={this.onFilterInputChange}
                       debounceTimer={100}
+                      emptyIcon='search'
                       clearable
                     />
                   </InputGroup>
@@ -295,17 +299,19 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       <Panel.Title>{titleManaged}</Panel.Title>
                       <div className='flex-fill' />
                       {expandManaged ? (
-                        <div onClick={captureClick} >
+                        <div className='game-sort-container' onClick={captureClick} >
+                          {t('Sort by:')}
                           <Select
                             className='select-compact'
                             options={[
-                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'alphabetical', label: t('Name A-Z') },
                               { value: 'recentlyused', label: t('Recently used') },
                             ]}
                             value={sortManaged}
                             onChange={this.setSortManaged}
                             clearable={false}
                             autosize={false}
+                            searchable={false}
                           />
                         </div>
                       ) : null}
@@ -324,11 +330,12 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       <Panel.Title>{titleUnmanaged}</Panel.Title>
                       <div className='flex-fill' />
                       {expandUnmanaged ? (
-                        <div onClick={captureClick} >
+                        <div className='game-sort-container' onClick={captureClick} >
+                          {t('Sort by:')}
                           <Select
                             className='select-compact'
                             options={[
-                              { value: 'alphabetical', label: t('Sort by: Name A-Z') },
+                              { value: 'alphabetical', label: t('Name A-Z') },
                               { value: 'recent', label: t('Most Recent') },
                               { value: 'popular', label: t('Most Popular') },
                             ]}
@@ -336,6 +343,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                             onChange={this.setSortUnmanaged}
                             clearable={false}
                             autosize={false}
+                            searchable={false}
                           />
                         </div>
                       ) : null}
@@ -357,26 +365,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 </PanelGroup>
               </div>
             </FlexLayout.Flex>
-            <FlexLayout.Fixed>
-              <div className='discovery-progress-container'>
-                <FlexLayout.Flex>
-                  <ProgressBar>
-                  {Object.keys(discovery.phases)
-                    .map(idx => discovery.phases[idx]).map(this.renderProgress)}
-                  </ProgressBar>
-                </FlexLayout.Flex>
-                <FlexLayout.Fixed>
-                  <IconButton
-                    id='start-discovery'
-                    icon={discovery.running ? 'stop' : 'search'}
-                    tooltip={discovery.running ? t('Stop Scan') : t('Scan for Games')}
-                    onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
-                  >
-                    {discovery.running ? t('Stop Scan') : t('Scan for Games')}
-                  </IconButton>
-                </FlexLayout.Fixed>
-              </div>
-            </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
       </MainPage>
@@ -423,25 +411,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         || !currentFilterValue;
   }
 
-  private renderProgress = (phase: IDiscoveryPhase, idx: number): JSX.Element => {
-    const { discovery } = this.props;
-    if (phase === undefined) {
-      return <ProgressBar />;
-    }
-    return (
-      <ProgressBar
-        striped={phase.progress < 100}
-        key={idx}
-        className={`discovery-progress-${idx % 4}`}
-        active={phase.progress < 100}
-        min={0}
-        max={100 * Object.keys(discovery.phases).length}
-        now={phase.progress}
-        label={<span>{phase.directory}</span>}
-      />
-    );
-  }
-
   private setRef = ref => {
     this.mRef = ref;
   }
@@ -463,15 +432,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private setLayoutSmall = () => {
     this.props.onSetPickerLayout('small');
-  }
-
-  private startDiscovery = () => {
-    const { api } = this.context;
-    api.events.emit('start-discovery');
-  }
-
-  private stopDiscovery = () => {
-    this.context.api.events.emit('cancel-discovery');
   }
 
   private lastUsed(game: IGameStored): number {
@@ -624,7 +584,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     pickerLayout: state.settings.gameMode.pickerLayout || 'list',
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
-    discovery: state.session.discovery,
     extensions: state.session.extensions.available,
     extensionsInstalled: state.session.extensions.installed,
     sortManaged: state.settings.gameMode.sortManaged ?? 'alphabetical',

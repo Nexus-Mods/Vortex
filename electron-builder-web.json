@@ -14,6 +14,7 @@
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
     "node_modules/json-socket",
+    "assets/*.exe",
     "assets/css/**"
   ],
   "appId": "com.nexusmods.vortex",

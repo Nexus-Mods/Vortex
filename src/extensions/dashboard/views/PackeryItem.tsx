@@ -1,12 +1,17 @@
-import ContextMenu from '../../../controls/ContextMenu';
 import Icon from '../../../controls/Icon';
+import { ComponentEx } from '../../../util/ComponentEx';
 import { TFunction } from '../../../util/i18n';
+import lazyRequire from '../../../util/lazyRequire';
+import { log } from '../../../util/log';
 
-import {} from 'draggabilly';
-import update from 'immutability-helper';
+import * as DraggabillyT from 'draggabilly';
+import * as PackeryT from 'packery';
+import { Resizable, ResizeDirection } from 're-resizable';
 import * as React from 'react';
+import { Button } from 'react-bootstrap';
 
-let Draggabilly: any;
+const Draggabilly =
+  lazyRequire<typeof DraggabillyT>(() => ({ default: require('draggabilly') }));
 
 export interface IProps {
   t: TFunction;
@@ -14,11 +19,15 @@ export interface IProps {
   width: number;
   height: number;
   totalWidth?: number;
-  packery?: any;
+  packery?: PackeryT.Packery;
   fixed: boolean;
+  editable: boolean;
+  closable: boolean;
+  position: number;
   onDismiss?: (id: string) => void;
   onSetWidth?: (id: string, width: number) => void;
   onSetHeight?: (id: string, height: number) => void;
+  onUpdateLayout?: () => void;
 }
 
 interface IPackeryItemState {
@@ -26,39 +35,85 @@ interface IPackeryItemState {
     x: number;
     y: number;
   };
+  size: {
+    width: string;
+    height: string;
+  };
+  resizing: boolean;
 }
 
-class PackeryItem extends React.Component<IProps, IPackeryItemState> {
-  private mRef: Element = null;
+function clamp(input: number, min: number, max: number): number {
+  return Math.min(Math.max(input, min), max);
+}
+
+function ResizeHandle(props: { corner: string }) {
+  return (
+    <div className={`resize-handle-${props.corner}`}>
+      <Icon name='corner-handle' />
+    </div>
+  );
+}
+
+class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
+  private mRef: HTMLElement = null;
+  private mResizeRef: Resizable = null;
+  private mPackeryItem: any;
+  private mCellWidth: number = 10000;
+  private mCellHeight: number = 10000;
+  private mMinWidth: number = 0;
+  private mMinHeight: number = 0;
+  private mDrag: DraggabillyT.default = undefined;
+  private mResizeAnchor: { x: number, y: number, width: number, height: number } =
+    { x: 0, y: 0, width: 0, height: 0 };
+  private mResizeUp: boolean = false;
+  private mResizeLeft: boolean = false;
 
   constructor(props: IProps) {
     super(props);
 
-    this.state = {
+    this.initState({
       context: undefined,
-    };
+      size: { width: '100%', height: '100%' },
+      resizing: false,
+    });
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: React.PropsWithChildren<IProps>) {
     if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
+      this.mPackeryItem = undefined;
       this.makeDraggable(newProps);
     }
   }
 
   public render(): JSX.Element {
-    const { t, onDismiss, fixed, height, id, totalWidth, width } = this.props;
+    const { closable, editable, height, id, totalWidth, width } = this.props;
+    const { resizing } = this.state;
+
+    if (this.props.packery === undefined) {
+      return null;
+    }
+
     // round to 2 positions after decimal point. It's fairly noticable if
     // widgets don't align even by a few pixels
-    const widthPerc = Math.round(((width * 10000) / totalWidth)) / 100;
+    const widthPerc = Math.floor(((width * 10000) / totalWidth)) / 100;
 
     const classes = [
-      'packery-item',
       `packery-height-${height}`,
     ];
 
-    // we need two nested divs. The outer controls the width of
-    // the item and it can't have a margin, otherwise the layout
-    // would break.
+    if (resizing) {
+      classes.push('stamp');
+    } else {
+      classes.push('packery-item');
+    }
+
+    if (editable) {
+      classes.push('packery-editmode');
+
+    } else {
+      classes.push('packery-viewmode');
+    }
+
     return (
       <div
         id={id}
@@ -67,106 +122,109 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
         className={classes.join(' ')}
         onContextMenu={this.onContext}
       >
-        {this.props.children}
-        <div className='packery-buttons'>
-          {!fixed ? this.renderDragHandle() : null}
-          {/*(onDismiss !== undefined) ? (
+        <Resizable
+            ref={x => { this.mResizeRef = x; }}
+            defaultSize={{ width: '100%', height: '100%' }}
+            minWidth={resizing ? this.mMinWidth / 2 : undefined}
+            minHeight={resizing ? this.mMinHeight / 2 : undefined}
+            maxWidth={resizing ? 3 * this.mCellWidth : undefined}
+            maxHeight={resizing ? 6 * this.mCellHeight : undefined}
+            onResizeStart={this.resizeStart}
+            onResizeStop={this.resizeEnd}
+            onResize={this.resizeCallback}
+            enable={editable ? undefined : {}}
+            handleComponent={{ bottomRight: <ResizeHandle corner='br'/> }}
+        >
+          {this.props.children}
+          <div key='drag-handle' className='drag-handle'/>
+          <div className='packery-buttons'>
+          {(editable && closable) ? (
             <Button
-              className='btn-embed'
+              className='dashlet-close-button'
               onClick={this.dismissWidget}
             >
-              <Icon name='close-slim' />
+              <Icon name='close' />
             </Button>
-          ) : null*/}
+          ) : null}
         </div>
-        <ContextMenu
-          key='drag-context'
-          position={this.state.context}
-          visible={this.state.context !== undefined}
-          onHide={this.hideContext}
-          instanceId='42'
-          actions={[
-            { title: t('Width'), icon: null, show: true },
-            { title: '33%', show: width !== 1, action: this.setWidth1 },
-            { title: '66%', show: width !== 2, action: this.setWidth2 },
-            { title: '100%', show: width !== 3, action: this.setWidth3 },
-            { title: t('Height'), icon: null, show: true },
-            { title: '1', show: height !== 2, action: this.setHeight2 },
-            { title: '2', show: height !== 3, action: this.setHeight3 },
-            { title: '3', show: height !== 4, action: this.setHeight4 },
-            { title: '4', show: height !== 5, action: this.setHeight5 },
-            { title: '5', show: height !== 6, action: this.setHeight6 },
-            { title: t('Fit Content'), show: height !== 0, action: this.setHeight0 },
-            { icon: null, show: true },
-            { title: t('Close'),
-              show: onDismiss !== undefined,
-              action: this.dismissWidget,
-            },
-          ]}
-        />
+        </Resizable>
       </div>
     );
   }
 
-  private renderDragHandle() {
-    return (
-      <Icon
-        key='drag-icon'
-        name='drag-handle'
-        className='drag-handle'
-      />
-    );
+  public get packeryItem(): any {
+    if (this.mPackeryItem === undefined) {
+      this.mPackeryItem = this.props.packery.getItem(this.mRef);
+    }
+    return this.mPackeryItem;
   }
 
-  private setWidth1 = () => {
-    this.props.onSetWidth(this.props.id, 1);
+  private resizeStart = (e: React.MouseEvent<HTMLElement>, dir: ResizeDirection) => {
+    try {
+      this.packeryItem.enablePlacing();
+      this.nextState.resizing = true;
+      this.props.packery.stamp(this.mRef);
+      this.mCellWidth = this.mResizeRef.size.width / this.props.width;
+      this.mCellHeight = this.mResizeRef.size.height / this.props.height;
+      this.mMinWidth = this.mCellWidth;
+      this.mMinHeight = this.mCellHeight;
+      this.mResizeAnchor = {
+        x: this.mRef.offsetLeft,
+        y: this.mRef.offsetTop,
+        width: this.mResizeRef.size.width,
+        height: this.mResizeRef.size.height,
+      };
+      this.mResizeUp = ['top', 'topLeft', 'topRight'].includes(dir);
+      this.mResizeLeft = ['left', 'topLeft', 'bottomLeft'].includes(dir);
+    } catch (err) {
+      log('error', 'failed to start resizing', { message: err.message });
+    }
   }
 
-  private setWidth2 = () => {
-    this.props.onSetWidth(this.props.id, 2);
+  private resizeEnd = () => {
+    this.nextState.resizing = false;
+    this.mDrag.enable();
+
+    this.packeryItem.moveTo(this.mRef.offsetLeft, this.mRef.offsetTop);
+
+    this.mResizeRef.updateSize({ width: '100%', height: '100%' });
+
+    this.props.packery.layout();
+    (this.props.packery as any).sortItemsByPosition();
+
+    this.packeryItem.disablePlacing();
+    this.props.packery.unstamp(this.mRef);
+
+    this.props.onUpdateLayout?.();
   }
 
-  private setWidth3 = () => {
-    this.props.onSetWidth(this.props.id, 3);
-  }
+  private resizeCallback = (event: MouseEvent | TouchEvent, direction: any,
+                            refToElement: HTMLDivElement, delta: any) => {
+    const { size } = this.mResizeRef;
 
-  private setHeight0 = () => {
-    this.props.onSetHeight(this.props.id, 0);
-  }
+    if (this.mResizeLeft) {
+      this.mRef.style.left = `${this.mResizeAnchor.x - (size.width - this.mResizeAnchor.width)}px`;
+    }
 
-  private setHeight1 = () => {
-    this.props.onSetHeight(this.props.id, 1);
-  }
+    if (this.mResizeUp) {
+      this.mRef.style.top = `${this.mResizeAnchor.y - (size.height - this.mResizeAnchor.height)}px`;
+    }
 
-  private setHeight2 = () => {
-    this.props.onSetHeight(this.props.id, 2);
-  }
+    const newWidth = clamp(Math.ceil(size.width / this.mCellWidth), 1, 3);
+    const newHeight = clamp(Math.ceil(size.height / this.mCellHeight), 1, 6);
 
-  private setHeight3 = () => {
-    this.props.onSetHeight(this.props.id, 3);
-  }
-
-  private setHeight4 = () => {
-    this.props.onSetHeight(this.props.id, 4);
-  }
-
-  private setHeight5 = () => {
-    this.props.onSetHeight(this.props.id, 5);
-  }
-
-  private setHeight6 = () => {
-    this.props.onSetHeight(this.props.id, 6);
+    if (newWidth !== this.props.width) {
+      this.props.onSetWidth(this.props.id, newWidth);
+    }
+    if (newHeight !== this.props.height) {
+      this.props.onSetHeight(this.props.id, newHeight);
+    }
   }
 
   private onContext = (event: React.MouseEvent<any>) => {
-    this.setState(update(this.state, {
-      context: { $set: {
-        x: event.clientX, y: event.clientY,
-      } } }));
-  }
-
-  private hideContext = () => {
-    this.setState({ context: undefined });
+    this.nextState.context = {
+      x: event.clientX, y: event.clientY,
+    };
   }
 
   private dismissWidget = () => {
@@ -177,6 +235,9 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
 
   private setRef = (ref) => {
     const { fixed } = this.props;
+    if ((ref === null) && (this.mRef !== null)) {
+      this.props.packery.remove(this.mRef);
+    }
     this.mRef = ref;
     if (!fixed) {
       this.makeDraggable(this.props);
@@ -188,12 +249,11 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
       return;
     }
 
-    if (Draggabilly === undefined) {
-      Draggabilly = require('draggabilly');
-    }
-    props.packery.bindDraggabillyEvents(new Draggabilly(this.mRef, {
+    this.mDrag = new Draggabilly.default(this.mRef, {
       handle: '.drag-handle',
-    }));
+    });
+
+    props.packery.bindDraggabillyEvents(this.mDrag);
   }
 }
 

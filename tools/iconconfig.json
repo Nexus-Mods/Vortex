@@ -89,7 +89,7 @@
       "rmFill": true
     },
     "feedback-error": {
-      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
       "rmFill": true
     },
     "feedback-warning": {
@@ -218,7 +218,7 @@
       "rmFill": true
     },
     "drag-handle": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_zoom-100",
+      "path": "{nucleo}/user interface/{nucleo_simple}_gallery-layout",
       "rmFill": true
     },
     "details": {
@@ -628,6 +628,10 @@
     },
     "turn-s": {
       "path": "{nucleo}/arrows/{nucleo_simple}_turn-s",
+      "rmFill": true
+    },
+    "corner-handle": {
+      "path": "{nucleo}/design-development/48px_texture",
       "rmFill": true
     }
   }

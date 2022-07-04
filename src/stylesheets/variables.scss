@@ -36,7 +36,7 @@ $table-header-separator: 1px;
 
 $body-bg:               $brand-menu;
 $text-color:            #eeeeee;
-$text-color-disabled:   darken($text-color, 15%);
+$text-color-disabled:   darken($text-color, 40%);
 
 $link-color:            $brand-clickable;
 $link-hover-color:      darken($link-color, 15%);

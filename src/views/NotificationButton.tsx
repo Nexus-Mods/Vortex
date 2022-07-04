@@ -30,6 +30,18 @@ interface IActionProps {
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
+function sortValue(noti: INotification): number {
+  let value = noti.createdTime;
+  if ((noti.progress !== undefined) || (noti.type === 'activity')) {
+    value /= 10;
+  }
+  return value;
+}
+
+function inverseSort(lhs: INotification, rhs: INotification) {
+  return sortValue(lhs) - sortValue(rhs);
+}
+
 interface IComponentState {
   expand: string;
   open: boolean;
@@ -98,7 +110,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const items = filtered.slice()
       .reduce((prev: INotification[], notification: INotification) =>
             this.groupNotifications(prev, notification, collapsed), [])
-      .sort(this.inverseSort)
+      .sort(inverseSort)
       .map(notification => this.renderNotification(notification, collapsed));
 
     const popover = (
@@ -290,10 +302,6 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   private unExpand = () => {
     this.nextState.expand = undefined;
-  }
-
-  private inverseSort(lhs: INotification, rhs: INotification) {
-    return lhs.createdTime - rhs.createdTime;
   }
 
   private renderNotification = (notification: INotification,

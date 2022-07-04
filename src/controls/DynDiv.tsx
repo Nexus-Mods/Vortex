@@ -48,7 +48,8 @@ class DynDiv extends React.Component<IProps, {}> {
   }
 
   private renderComponent(object: IDynDivDefinition, idx: number) {
-    return <object.component key={idx} />;
+    const props = object.options?.props ?? {};
+    return <object.component key={idx} {...props} />;
   }
 }
 

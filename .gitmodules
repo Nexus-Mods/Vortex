@@ -200,3 +200,7 @@
 	path = extensions/gameversion-hash
 	url = https://github.com/nexus-mods/extension-gameversion-hash.git
 	branch = main
+[submodule "extensions/titlebar-launcher"]
+	path = extensions/titlebar-launcher
+	url = https://github.com/Nexus-Mods/extension-titlebar-launcher.git
+	branch = master

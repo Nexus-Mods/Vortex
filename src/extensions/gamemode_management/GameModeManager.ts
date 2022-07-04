@@ -206,9 +206,9 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startQuickDiscovery() {
+  public startQuickDiscovery(games?: IGame[]) {
     return this.reloadStoreGames()
-      .then(() => quickDiscovery(this.mKnownGames,
+      .then(() => quickDiscovery(games ?? this.mKnownGames,
         this.mStore.getState().settings.gameMode.discovered,
         this.onDiscoveredGame, this.onDiscoveredTool))
       .tap(() => this.postDiscovery())
@@ -218,7 +218,11 @@ class GameModeManager {
   public startToolDiscovery(gameId: string) {
     const game = this.mKnownGames.find(iter => iter.id === gameId);
     if (game !== undefined) {
-      return quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool);
+      const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
+      const discovery = this.mStore.getState().settings.gameMode.discovered[game.id];
+      return quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool)
+        .then(() => getNormalizeFunc(discovery.path))
+        .then(normalize => discoverRelativeTools(game, discovery.path, discoveredGames, this.onDiscoveredTool, normalize));
     } else {
       return Promise.reject(new Error('unknown game id: ' + gameId));
     }

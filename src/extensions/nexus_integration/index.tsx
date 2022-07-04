@@ -1054,6 +1054,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusCollectionRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
+  api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
+  api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -1567,11 +1569,13 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genModIdAttribute(context.api, () => nexus));
   context.registerTableAttribute('mods', genCollectionIdAttribute(context.api, () => nexus));
 
+  /* tentatively removed, deemed unnecessary
   context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner,
                           undefined, undefined, {
     fixed: true,
     closable: true,
   });
+  */
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
     (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)

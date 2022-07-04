@@ -7,11 +7,12 @@ import {
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import {delayed, toPromise, truthy} from '../../util/util';
+import { toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -28,14 +29,20 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
+import { CONTAINER_NAME, NET_CORE_DOWNLOAD } from './constants';
+
 import Bluebird from 'bluebird';
-import { ChildProcess } from 'child_process';
 import { createIPC } from 'fomod-installer';
 import * as net from 'net';
 import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
+import { ChildProcess, execFile, spawn } from 'child_process';
+import opn from '../../util/opn';
+import { SITE_ID } from '../gamemode_management/constants';
+import { downloadPathForGame } from '../download_management/selectors';
 
 function transformError(err: any): Error {
   let result: Error;
@@ -55,7 +62,7 @@ function transformError(err: any): Error {
       if (err.FileName.indexOf('PublicKeyToken') !== -1) {
         const fileName = err.FileName.split(',')[0];
         result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part `
-                               + 'of the .Net Framework. Please reinstall it.');
+                               + 'of the .NET Framework. Please reinstall it.');
       } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
@@ -116,7 +123,7 @@ function transformError(err: any): Error {
   } else if (err.Message === 'task timeout') {
     result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
                           + 'very generously so it\'s more likely that this is either caused '
-                          + 'by a broken .Net installation or something else on your system '
+                          + 'by a broken .NET installation or something else on your system '
                           + 'interrupted the process (like a debugger).');
   }
 
@@ -146,58 +153,76 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
     return Bluebird.resolve({});
   }
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
-      .then((data: Buffer) => {
-        let offset = 0;
-        let encoding: BufferEncoding = 'utf8';
-        if (data.readUInt16LE(0) === 0xFEFF) {
-          encoding = 'utf16le';
-          offset = 2;
-        } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
-          offset = 3;
-        }
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
-        const name: Element = xmlDoc.querySelector('fomod Name');
-        return truthy(name)
-          ? {
-            customFileName: name.childNodes[0].nodeValue,
-          } : {};
-      })
-      .catch(err => ({}));
+    .then((data: Buffer) => {
+      let offset = 0;
+      let encoding: BufferEncoding = 'utf8';
+      if (data.readUInt16LE(0) === 0xFEFF) {
+        encoding = 'utf16le';
+        offset = 2;
+      } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
+        offset = 3;
+      }
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
+      const name: Element = xmlDoc.querySelector('fomod Name');
+      return truthy(name)
+        ? {
+          customFileName: name.childNodes[0].nodeValue,
+        } : {};
+    })
+    .catch(() => ({}));
 }
 
-function checkNetInstall() {
-  const netVersion = getNetVersion();
-  if ((netVersion === undefined) || semver.lt(netVersion, '4.6.0')) {
-    const res: ITestResult = {
-      description: {
-        short: '.Net installation incompatible',
-        long: 'It appears that your installation of the .Net framework is outdated or missing.'
-            + '[br][/br]You will probably not be able to install mods.'
-            + '[br][/br]Please install a current version of .Net (at least version 4.6).',
-      },
-      severity: 'error',
-    };
-    return Bluebird.resolve(res);
-  } else {
-    return checkAssemblies()
-      .then(valid => {
-        if (valid) {
-          return Bluebird.resolve(undefined);
-        } else {
-          const res: ITestResult = {
-            description: {
-              short: '.Net installation broken',
-              long: 'It appears that your installation of the .Net framework is broken.[br][/br]'
-                + 'You will probably not be able to install mods.[br][/br]'
-                + 'Please (re-)install .Net (at least version 4.6).',
-            },
-            severity: 'error',
-          };
-          return Bluebird.resolve(res);
-        }
-      });
+async function installDotNet(api: IExtensionApi): Promise<void> {
+  const dlId: string = await toPromise(cb =>
+    api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
+
+  const state = api.getState();
+  const download = state.persistent.downloads.files[dlId];
+  const downloadsPath = downloadPathForGame(state, SITE_ID);
+  const fullPath = path.join(downloadsPath, download.localPath);
+
+  api.showDialog('info', '.NET is being installed', {
+    text: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden '
+        + 'behind another window.',
+  }, [
+    { label: 'Ok' },
+  ]);
+
+  return new Promise((resolve) => {
+    spawn(fullPath)
+      .on('close', () => resolve());
+  });
+}
+
+async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
+  if (process.platform !== 'win32') {
+    // currently only supported/tested on windows
+    return Promise.resolve(undefined);
   }
+
+  const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+  let stderr: string = '';
+  const exitCode = await new Promise<number>((resolve) => {
+    const proc = execFile(probeExe).on('close', code => resolve(code));
+    proc.stderr.on('data', dat => stderr += dat.toString());
+  });
+
+  return (exitCode !== 0)
+    ? Promise.resolve({
+      description: {
+        short: 'Microsoft .NET installation required',
+        long: 'Vortex requires Microsoft .NET to perform important tasks.'
+            + '[br][/br]Click "Fix" below to install the required version.'
+            + '[br][/br]If you already have Microsoft .NET 6 or later installed, there may be a problem with your installation, '
+            + 'please click below for technical details.'
+            + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
+        replace: { stderr: stderr.replace('\n', '[br][/br]') },
+      },
+      automaticFix: () => installDotNet(api),
+      severity: 'error',
+    })
+    : Promise.resolve(undefined);
 }
 
 interface IAwaitingPromise {
@@ -236,10 +261,9 @@ function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => strin
 }
 
 interface ICreateSocketOptions {
-  // if true, use a pipe. windows only
-  pipe: boolean;
   // if true, use a fixed id/port for the connection
   debug: boolean;
+  pipeId?: string;
 }
 
 /**
@@ -254,11 +278,17 @@ function createSocket(options: ICreateSocketOptions)
       server.on('error', err => {
         reject(err);
       });
-      if (options.pipe && !options.debug) {
+      if ((options.pipeId !== undefined) && !options.debug) {
         // on windows, using a socket is a pita because firewalls and AVs...
-        const ipcId = options.debug ? 'debug' : shortid();
-        server.listen(`\\\\?\\pipe\\${ipcId}`, () => {
-          resolve({ ipcId, server });
+        const pipePath = `\\\\?\\pipe\\${options.pipeId}`;
+        log('info', 'listen', { pipePath });
+        server.listen(pipePath, () => {
+          try {
+            winapi?.GrantAppContainer?.(CONTAINER_NAME, pipePath, 'named_pipe', ['all_access']);
+          } catch (err) {
+            log('error', 'Failed to allow access to pipe', { pipePath, message: err.message });
+          }
+          resolve({ ipcId: options.pipeId, server });
         });
       } else {
         const port = options.debug ? 12345 : 0;
@@ -273,31 +303,8 @@ function createSocket(options: ICreateSocketOptions)
   });
 }
 
-function createConnection(ipcPath: string, tries: number = 5): Promise<net.Socket> {
-  return new Promise((resolve, reject) => {
-    const errCB = err => {
-      if ((err['code'] === 'ENOENT') && (tries > 0)) {
-        delayed(1000)
-          .then(() => createConnection(ipcPath, tries - 1))
-          .then(resolve)
-          .catch(reject);
-      } else {
-        err.message = err.message.replace(ipcPath, '<ipc path>');
-        reject(err);
-      }
-    };
-
-    const sock = net.createConnection(ipcPath, () => {
-      sock.off('error', errCB);
-      resolve(sock);
-    });
-    sock.on('error', errCB);
-  });
-}
-
 class ConnectionIPC {
   public static async bind(retry: boolean = false): Promise<ConnectionIPC> {
-    let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
     const connectedPromise = new Promise<void>((resolve, reject) => {
@@ -312,45 +319,56 @@ class ConnectionIPC {
     const pipe = (process.platform === 'win32') && !retry;
     const debug = false;
 
-    if ((ConnectionIPC.sListen === undefined) || retry) {
+    const pipeId = pipe ? (debug ? 'debug' : shortid()) : undefined;
+
+    if ((ConnectionIPC.sListenOut === undefined) || retry) {
       // only set up the listening server once, otherwise we might end
       // up creating orphaned connections if a connection later dies
-      ConnectionIPC.sListen = await createSocket({
-        pipe,
-        debug,
-      });
+      ConnectionIPC.sListenOut = await createSocket({ debug, pipeId });
     } else {
-      ConnectionIPC.sListen.server.removeAllListeners('connection');
+      ConnectionIPC.sListenOut.server.removeAllListeners('connection');
     }
 
-    const { server, ipcId } = ConnectionIPC.sListen;
+    if (pipe) {
+      if ((ConnectionIPC.sListenIn === undefined) || retry) {
+        ConnectionIPC.sListenIn = await createSocket({ debug, pipeId: pipeId + '_reply' });
+      } else {
+        ConnectionIPC.sListenIn.server.removeAllListeners('connection');
+      }
+      ConnectionIPC.sListenIn.server.on('connection', sockIn => {
+        log('debug', '[installer] peer connected reply');
+        sockIn.setEncoding('utf8');
+        cliSocket = sockIn;
+        // technically we should verify both connections are established but the cli
+        // is supposed to open the reply channel last anyway
+        const onInitMsg = (msg: Buffer) => {
+          log('info', 'client says', { msg: msg.toString() });
+          wasConnected = true;
+          cliSocket.off('data', onInitMsg);
+          setTimeout(() => {
+            onResolve?.();
+          }, 100);
+        };
+        cliSocket.on('data', onInitMsg);
+        // onResolve?.();
+      });
+    }
+
+    const { ipcId } = ConnectionIPC.sListenOut;
 
     log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
 
-    server.on('connection', sock => {
-      log('debug', '[installer] peer connected');
-      sock.setEncoding('utf8');
+    ConnectionIPC.sListenOut.server.on('connection', sockIn => {
+      log('debug', '[installer] peer connected there');
+      sockIn.setEncoding('utf8');
       if (!wasConnected) {
-        wasConnected = true;
-        servSocket = sock;
-        if (pipe && !debug) {
-          log('debug', '[installer] connecting to reply pipe');
-          createConnection(`\\\\?\\pipe\\${ipcId}_reply`)
-          .then(sockIn => {
-            log('debug', '[installer] reply pipe connected');
-            sockIn.setEncoding('utf-8');
-            sockIn.on('error', err => {
-              log('error', '[installer] socket error', err.message);
-            });
-            cliSocket = sockIn;
-            onResolve();
-          })
-          .catch(err => {
-            onReject(err);
-          });
-        } else {
+        servSocket = sockIn;
+        if (!pipe) {
           cliSocket = servSocket;
-          onResolve();
+          log('info', 'bidir channel connected');
+          // onResolve?.();
+        } else {
+          log('info', 'there channel connected');
         }
       }
     });
@@ -382,36 +400,73 @@ class ConnectionIPC {
       }
     };
 
+    let pid: number;
+    let onExitCBs: (code: number) => void;
+
     if (!debug) {
       // for debugging purposes, the user has to run the installer manually
       // invoke the c# installer, passing the id/port
       try {
-        proc = await createIPC(pipe, ipcId, procCB => {
-          procCB.stdout.on('data', (dat: Buffer) => {
-            log('debug', 'from installer:', dat.toString().trim());
-          });
-          procCB.stderr.on('data', async (dat: Buffer) => {
-            const errorMessage = dat.toString().trim();
-            if (!retry && errorMessage.includes('The operation has timed out')) {
-              // if the client failed to connect to our pipe, try a second time connecting
-              // via socket
-              try {
-                res = await ConnectionIPC.bind(true);
-                setConnectOutcome(null);
-              } catch (err) {
-                setConnectOutcome(err);
-              }
-            } else if (errorMessage.length > 0) {
-              log('error', 'from installer:', errorMessage);
-              if (!wasConnected) {
-                const err = new Error(errorMessage);
-                err['attachLogOnReport'] = true;
-                setConnectOutcome(err);
-                wasConnected = true;
-              }
+        const onExit = (code: number) => {
+          onExitCBs?.(code);
+        };
+
+        let msg: string = '';
+        // stdout can be emitted in arbitrary chunks, using a debouncer to ensure
+        // (more or less) we get full messages in a single call
+        const stdoutDebouncer = new Debouncer(() => {
+          const lines = msg.split('\n');
+          msg = '';
+
+          let isErr: number = -1;
+
+          lines.forEach((line: string, idx: number) => {
+            // if the client failed to connect to our pipe, try a second time connecting
+            // via socket
+            if (retry && line.includes('The operation has timed out')) {
+              (async () => {
+                try {
+                  res = await ConnectionIPC.bind(true);
+                  setConnectOutcome(null);
+                } catch (err) {
+                  setConnectOutcome(err);
+                }
+              })();
+            }
+
+            if (line.startsWith('Failed') || line.includes('Exception')) {
+              isErr = idx;
             }
           });
-        });
+
+          if (isErr !== -1) {
+            const errStack = lines.slice(isErr + 1).join('\n');
+            const err = new Error(lines[isErr]);
+            err.stack = errStack;
+            err['attachLogOnReport'] = true;
+            setConnectOutcome(err);
+            wasConnected = true;
+          } else {
+            log('info', 'from installer:', lines.join(';'));
+          }
+          return Promise.resolve();
+        }, 100);
+
+        const onStdout = (dat: string) => {
+          msg += dat;
+          stdoutDebouncer.schedule();
+
+        };
+
+        onExitCBs = (code: number) => {
+          stdoutDebouncer.runNow(() => {
+            const err = new Error('Fomod installer startup failed, please review your log file');
+            err['attachLogOnReport'] = true;
+            setConnectOutcome(err);
+          });
+        };
+
+        pid = await createIPC(pipe, ipcId, onExit, onStdout, CONTAINER_NAME);
       } catch (err) {
         setConnectOutcome(err);
       }
@@ -422,38 +477,28 @@ class ConnectionIPC {
     await awaitConnected();
 
     if (res === undefined) {
-      return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
+      res = new ConnectionIPC({ in: cliSocket, out: servSocket }, pid);
+      onExitCBs = code => res.onExit(code);
     }
     return res;
   }
 
-  private static sListen: { ipcId: string, server: net.Server };
+  private static sListenOut: { ipcId: string, server: net.Server };
+  private static sListenIn: { ipcId: string, server: net.Server };
 
   private mSocket: { in: net.Socket, out: net.Socket };
-  private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
   private mReceivedBuffer: string;
   private mActionLog: string[];
   private mOnDrained: Array<() => void> = [];
+  private mPid: number;
 
-  constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
+  constructor(socket: { in: net.Socket, out: net.Socket }, pid: number) {
     this.mSocket = socket;
-    this.mProcess = proc;
     this.mActionLog = [];
-
-    if (proc !== null) {
-      proc.on('exit', async (code, signal) => {
-        log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
-        try {
-          await toPromise(cb => socket.out.end(cb));
-          this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
-        } catch (err) {
-          log('warn', 'failed to close connection to fomod installer process', err.message);
-        }
-      });
-    }
+    this.mPid = pid;
 
     socket.out.on('drain', (hadError) => {
       this.mOnDrained.forEach(cb => cb());
@@ -466,7 +511,7 @@ class ConnectionIPC {
       try {
         // just making sure, the remote is probably closing anyway
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        this.mProcess?.kill();
+        process.kill(pid);
         this.interrupt(new Error(`Installer process disconnected unexpectedly`));
       } catch (err) {
         // nop
@@ -501,7 +546,17 @@ class ConnectionIPC {
   public isActive(): boolean {
     // kill accepts numeric signal codes and returns a boolean to signal success
     // For some reason the type declaration is incomplete
-    return (this.mProcess === null) ||  (this.mProcess.kill as any)(0);
+
+    // return (this.mProcess === null) ||  (this.mProcess.kill as any)(0);
+    if (this.mPid === undefined) {
+      return true;
+    }
+    try {
+      process.kill(this.mPid, 0);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 
   public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
@@ -511,6 +566,16 @@ class ConnectionIPC {
       this.interruptible(),
       this.sendMessageInner(command, data, delegate),
     ]);
+  }
+
+  public async onExit(code) {
+    log(code === 0 ? 'info' : 'error', 'remote process exited', { code });
+    try {
+      await toPromise(cb => this.mSocket.out.end(cb));
+      this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
+    } catch (err) {
+      log('warn', 'failed to close connection to fomod installer process', err.message);
+    }
   }
 
   private logAction(message: string) {
@@ -701,6 +766,8 @@ function init(context: IExtensionContext): boolean {
     const pluginPath = getPluginPath(gameId);
     // await currentInstallPromise;
 
+    winapi?.GrantAppContainer?.(
+      CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
@@ -780,7 +847,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
   if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', checkNetInstall);
+    context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
   }
   context.registerDialog('fomod-installer', InstallerDialog);
 

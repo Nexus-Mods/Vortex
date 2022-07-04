@@ -20,18 +20,13 @@ Manual:
     * download installer (64-bit) from https://git-scm.com and run
     * default settings are fine
   - python
-    * This has been tested with python 3.8 but any version since 2.7 should work. Newer versions may be supported with a delay,
-      if in doubt, please check the compatibility table of node-gyp
+    * required for one of the build tools (node-gyp). At the time of writing versions 3.7-3.10 are known to work
     * download installer (64-bit) from https://www.python.org/downloads/ and run
     * make sure to have it added to PATH, otherwise defaults are fine. You can disable samples and documentation if you want
-  - c++ build tools 2017
-    * You may have to google around for this as Microsoft tends to change their site and url schemas all the bloody time
-    * They also change the directory layout of their tools all the time, which is why we actually need the 2017 tools here, the
-      2019 ones are not compatible (although it will probably not be a problem if you have them installed as well)
-    * download "Build Tools für Visual Studio 2017" and run
-    * In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers,
-      everything else is optional
-  - Call _"yarn config set msvs_version 2017 --global"_
+  - visual c++ build tools 2022 or visual studio 2022 (community edition)
+    * https://visualstudio.microsoft.com/de/downloads/ (You may have to google around for this as Microsoft tends to change their site layout all the bloody time)
+    * In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers, everything else is optional
+  - Call _"yarn config set msvs_version 2022 --global"_
     * This sets up yarn to use the c++ build tools we just installed, you probably only need to do this
       if you've also installed other versions of Visual Studio. Can't hurt though
 - Check out the repository

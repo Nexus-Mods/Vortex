@@ -1,9 +1,9 @@
+import getVortexPath from '../../../util/getVortexPath';
 import makeCI from '../../../util/makeCaseInsensitive';
 
 import * as os from 'os';
 import * as path from 'path';
 import format from 'string-template';
-import getVortexPath from '../../../util/getVortexPath';
 
 let userData: string;
 

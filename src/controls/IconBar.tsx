@@ -229,7 +229,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             onClick={this.toggleOpen}
             tooltip={''}
             icon={icon || 'menu'}
-            rotateId={`dots-iconbar-${id}`}
             stroke
             ref={this.setPortalTargetRef}
           />
@@ -242,7 +241,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             {this.state.open ? collapsed.map(this.renderMenuItem) : null}
           </PortalMenu>
         </div>
-          );
+      );
 
       return (
         <ButtonGroup

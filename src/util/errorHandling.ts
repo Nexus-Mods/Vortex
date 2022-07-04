@@ -197,18 +197,16 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       reportInfo = JSON.parse(reportData.toString());
-      if (reportInfo.error.attachLog) {
-        return bundleAttachment({
-          attachments: [{
-            id: 'logfile',
-            type: 'file',
-            data: path.join(getVortexPath('userData'), 'vortex.log'),
-            description: 'Vortex Log',
-          }],
-        });
-      } else {
-        return undefined;
-      }
+      // currently attaching a log for any crash-type report
+      // if (reportInfo.error.attachLog) {
+      return bundleAttachment({
+        attachments: [{
+          id: 'logfile',
+          type: 'file',
+          data: path.join(getVortexPath('userData'), 'vortex.log'),
+          description: 'Vortex Log',
+        }],
+      });
     })
     .then(attachment => {
       const { type, error, labels, reporterId, reportProcess, sourceProcess, context } = reportInfo;

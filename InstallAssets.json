@@ -85,6 +85,14 @@
       ]
     },
     {
+      "srcPath": "assets/dotnetprobe.exe",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
       "srcPath": "assets/*.json",
       "outPath": "",
       "target": [
