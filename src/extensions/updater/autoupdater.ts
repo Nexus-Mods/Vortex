@@ -128,7 +128,8 @@ function setupAutoUpdate(api: IExtensionApi) {
         'Failed to verify the signature of the update file, please try again later.',
         { allowReport: false });
     } else if ((err.message === 'net::ERR_CONNECTION_RESET')
-               || (err.message === 'net::ERR_NAME_NOT_RESOLVED')) {
+               || (err.message === 'net::ERR_NAME_NOT_RESOLVED')
+               || (err.message === 'net::ERR_INTERNET_DISCONNECTED')) {
       api.showErrorNotification(
         'Checking for update failed',
         'This was probably a temporary network problem, please try again later.',
