@@ -202,7 +202,7 @@
   "dependencies": {
     "@electron/remote": "^2.0.1",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#collections",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
@@ -242,7 +242,7 @@
     "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.4",
-    "modmeta-db": "Nexus-Mods/modmeta-db#collections",
+    "modmeta-db": "Nexus-Mods/modmeta-db",
     "native-errors": "Nexus-Mods/node-native-errors",
     "node-7z": "Nexus-Mods/node-7z",
     "normalize-url": "^6.0.1",
@@ -296,38 +296,5 @@
   },
   "resolutions": {
     "node-gyp": "^8.4.1"
-  },
-  "config": {
-    "forge": {
-      "packagerConfig": {
-        "asar": true,
-        "ignore": [
-          "api",
-          "app",
-          "build",
-          "assets",
-          "coverage",
-          "extensions",
-          "tools",
-          "samples",
-          "sourcemaps",
-          ".*\\.xjs",
-          ".*\\.ps1",
-          ".*\\.txt",
-          "dist*",
-          "^\\..*",
-          "__.*"
-        ]
-      },
-      "makers": [
-        {
-          "name": "@electron-forge/maker-wix",
-          "config": {
-            "language": 1033,
-            "manufacturer": "Black Tree Gaming Ltd."
-          }
-        }
-      ]
-    }
   }
 }
