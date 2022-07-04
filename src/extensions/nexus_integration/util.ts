@@ -344,6 +344,11 @@ function startDownloadMod(api: IExtensionApi,
           error: err,
           message: 'Certificate validation failed',
         }, { allowReport: false });
+      } else if (IGNORE_ERRORS.includes(err['code'])) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
       } else {
         const allowReport = (err['nativeCode'] === undefined)
                          || ([225].indexOf(err['nativeCode']) === -1);
@@ -434,7 +439,7 @@ export function resolveGraphError(t: TFunction, err: Error): string {
   return msg;
 }
 
-const IGNORE_ERRORS = ['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'];
+const IGNORE_ERRORS = ['ENOENT', 'EPROTO', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'];
 
 function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
                             gameId: string, modId: number, version?: string) {
