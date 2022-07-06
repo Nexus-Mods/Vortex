@@ -3,9 +3,10 @@ import Nexus, {
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
-import { app as appIn, ipcRenderer } from 'electron';
+import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
+import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
@@ -14,6 +15,8 @@ import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
 import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
+import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
 import { calcDuration, showError } from '../../util/message';
@@ -1052,10 +1055,30 @@ let nexusGamesCache: IGameListEntry[] = [];
 let onCacheLoaded: () => void;
 const cachePromise = new Promise(resolve => onCacheLoaded = resolve);
 
+function cachePath() {
+  return path.join(getVortexPath('temp'), 'nexus_gamelist.json');
+}
+
 export function retrieveNexusGames(nexus: Nexus) {
-  return Promise.resolve(jsonRequest<IGameListEntry[]>(GAMES_JSON_URL))
+  return fs.readFileAsync(cachePath(), { encoding: 'utf8' })
+    .then(cacheData => {
+      nexusGamesCache = JSON.parse(cacheData);;
+    })
+    .catch(() => {
+      // ignore missing cache
+    })
+    .then(() => Promise.resolve(jsonRequest<IGameListEntry[]>(GAMES_JSON_URL)))
     .then(gamesList => {
       nexusGamesCache = gamesList.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      return fs.writeFileAsync(cachePath(), JSON.stringify(gamesList));
+    })
+    .catch(err => {
+      // maybe network issues, may not be problematic
+      log('warn', 'failed to fetch list of nexus games', {
+        error: err.message,
+      });
+    })
+    .then(() => {
       onCacheLoaded();
     });
 
