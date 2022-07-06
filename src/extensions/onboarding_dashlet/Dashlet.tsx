@@ -23,7 +23,7 @@ export interface IOnCardClickPayload {
 
 function OnBoardingCard(props: {
   title: string,
-  lenght: string,
+  length: string,
   video: string,
   desc: string,
   img: string,
@@ -34,7 +34,7 @@ function OnBoardingCard(props: {
 }) {
   const { t } = useTranslation();
 
-  const { count, desc, img, lenght, onClick, title, video, id, isCompleted } = props;
+  const { count, desc, img, length, onClick, title, video, id, isCompleted } = props;
 
   const openModal = () => {
     onClick({
@@ -56,7 +56,7 @@ function OnBoardingCard(props: {
           <CounterWithCheckbox count={count} isChecked={isCompleted} />
           <div className='onboarding-card-title-container'>
             <span className='onboarding-card-title'>{t(title)}</span>
-            <span className='onboarding-card-lenght'>{lenght}</span>
+            <span className='onboarding-card-length'>{length}</span>
           </div>
         </div>
         <span className='onboarding-card-desc'>
@@ -118,7 +118,7 @@ function OnBoardingDashletWrapper(props: {
                       id={step.id}
                       title={step.title}
                       desc={step.desc}
-                      lenght={step.lenght}
+                      length={step.length}
                       img={step.img}
                       video={step.video}
                       count={i + 1}
