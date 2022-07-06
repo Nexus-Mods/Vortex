@@ -33,6 +33,7 @@ import {DialogActions, showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
 import { ITestResult } from '../../types/ITestResult';
+import { getApplication } from '../../util/application';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { activeGameId, activeProfile } from '../../util/selectors';
@@ -87,52 +88,61 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
       if (result === undefined) {
         api.dismissNotification(id);
       } else {
-        const actions: INotificationAction[] = [];
-        if (result.description.long !== undefined) {
-          const dialogActions: DialogActions = [{ label: 'Close' }];
-          if (result.automaticFix !== undefined) {
-            dialogActions.push({
-              label: 'Fix', action: () => applyFix(api, check, result),
+        const dialogActions: DialogActions = [];
+        if (result.automaticFix !== undefined) {
+          dialogActions.push({
+            label: 'Fix', action: () => applyFix(api, check, result),
+          });
+        }
+
+        const showMore = () => api.store.dispatch(showDialog('info', 'Check failed', {
+          bbcode: result.description.long,
+          parameters: result.description.replace,
+          options: {
+            bbcodeContext: result.description.context,
+            translated: result.description.localize === false,
+          },
+        }, dialogActions));
+
+        if (result.severity === 'fatal') {
+          dialogActions.unshift({ label: 'Quit Vortex', action: () => getApplication().quit(0) });
+          showMore();
+        } else {
+          dialogActions.unshift({ label: 'Close' });
+          const actions: INotificationAction[] = [];
+          if (result.description.long !== undefined) {
+            actions.push({
+              title: 'More',
+              action: showMore,
             });
           }
-          actions.push({
-            title: 'More',
-            action: () => api.store.dispatch(showDialog('info', 'Check failed', {
-              bbcode: result.description.long,
-              parameters: result.description.replace,
-              options: {
-                bbcodeContext: result.description.context,
-                translated: result.description.localize === false,
+          if (result.automaticFix !== undefined) {
+            actions.push({
+              title: 'Fix',
+              action: () => applyFix(api, check, result),
+            });
+          } else {
+            actions.push({
+              title: 'Check again',
+              action: () => {
+                const preCheck = (result.onRecheck !== undefined)
+                  ? result.onRecheck()
+                  : Promise.resolve();
+                return preCheck.then(() => runCheck(api, check));
               },
-            }, dialogActions)),
+            });
+          }
+          api.sendNotification({
+            id,
+            type: result.severity,
+            message: result.description.short,
+            replace: result.description.replace,
+            actions,
+            noDismiss: true,
+            allowSuppress: result.severity !== 'error',
+            localize: { title: result.description.localize, message: result.description.localize },
           });
         }
-        if (result.automaticFix !== undefined) {
-          actions.push({
-            title: 'Fix',
-            action: () => applyFix(api, check, result),
-          });
-        } else {
-          actions.push({
-            title: 'Check again',
-            action: () => {
-              const preCheck = (result.onRecheck !== undefined)
-              ? result.onRecheck()
-              : Promise.resolve();
-              return preCheck.then(() => runCheck(api, check));
-            },
-          });
-        }
-        api.sendNotification({
-          id,
-          type: result.severity,
-          message: result.description.short,
-          replace: result.description.replace,
-          actions,
-          noDismiss: true,
-          allowSuppress: result.severity !== 'error',
-          localize: { title: result.description.localize, message: result.description.localize },
-        });
       }
     })
     .catch((err) => {

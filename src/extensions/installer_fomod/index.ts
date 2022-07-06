@@ -190,7 +190,7 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
   ]);
 
   return new Promise((resolve) => {
-    spawn(fullPath)
+    spawn(fullPath, ['/passive'])
       .on('close', () => resolve());
   });
 }
@@ -220,7 +220,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
         replace: { stderr: stderr.replace('\n', '[br][/br]') },
       },
       automaticFix: () => installDotNet(api),
-      severity: 'error',
+      severity: 'fatal',
     })
     : Promise.resolve(undefined);
 }
