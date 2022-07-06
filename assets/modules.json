@@ -30,17 +30,15 @@
     "licenses": "MIT",
     "repository": "https://github.com/electron/remote",
     "name": "@electron/remote",
-    "version": "2.0.1",
-    "licenseFile": "node_modules\\@electron\\remote\\README.md"
+    "version": "2.0.1"
   },
-  "@gar/promisify@1.1.2": {
+  "@gar/promisify@1.1.3": {
     "licenses": "MIT",
     "repository": "https://github.com/wraithgar/gar-promisify",
     "publisher": "Gar",
     "email": "gar+npm@danger.computer",
     "name": "@gar/promisify",
-    "version": "1.1.2",
-    "licenseFile": "node_modules\\@gar\\promisify\\README.md"
+    "version": "1.1.3"
   },
   "@hypnosphi/create-react-context@0.3.1": {
     "licenses": "MIT",
@@ -71,29 +69,24 @@
     "licenseFile": "node_modules\\@msgpack\\msgpack\\LICENSE",
     "copyright": "Copyright 2019 The MessagePack Community."
   },
-  "@npmcli/fs@1.1.0": {
+  "@npmcli/fs@1.1.1": {
     "licenses": "ISC",
     "publisher": "GitHub Inc.",
     "name": "@npmcli/fs",
-    "version": "1.1.0",
-    "repository": "",
-    "licenseFile": "node_modules\\@npmcli\\fs\\LICENSE.md",
-    "copyright": "Copyright npm, Inc."
+    "version": "1.1.1",
+    "repository": ""
   },
   "@npmcli/move-file@1.1.2": {
     "licenses": "MIT",
     "repository": "https://github.com/npm/move-file",
     "name": "@npmcli/move-file",
-    "version": "1.1.2",
-    "licenseFile": "node_modules\\@npmcli\\move-file\\LICENSE.md",
-    "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). Copyright (c) npm, Inc."
+    "version": "1.1.2"
   },
   "@react-dnd/asap@4.0.0": {
     "licenses": "MIT",
     "repository": "https://github.com/kriskowal/asap",
     "name": "@react-dnd/asap",
-    "version": "4.0.0",
-    "licenseFile": "node_modules\\@react-dnd\\asap\\LICENSE.md"
+    "version": "4.0.0"
   },
   "@react-dnd/invariant@2.0.0": {
     "licenses": "MIT",
@@ -139,8 +132,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/Level/abstract-leveldown",
     "name": "abstract-leveldown",
-    "version": "6.2.3",
-    "licenseFile": "node_modules\\abstract-leveldown\\LICENSE.md"
+    "version": "6.2.3"
   },
   "addressparser@1.0.1": {
     "licenses": "MIT",
@@ -158,18 +150,16 @@
     "email": "nathan@tootallnate.net",
     "url": "http://n8.io/",
     "name": "agent-base",
-    "version": "6.0.2",
-    "licenseFile": "node_modules\\agent-base\\README.md",
-    "copyright": "Copyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;"
+    "version": "6.0.2"
   },
-  "agentkeepalive@4.2.0": {
+  "agentkeepalive@4.2.1": {
     "licenses": "MIT",
     "repository": "https://github.com/node-modules/agentkeepalive",
     "publisher": "fengmk2",
     "email": "fengmk2@gmail.com",
     "url": "https://fengmk2.com",
     "name": "agentkeepalive",
-    "version": "4.2.0",
+    "version": "4.2.1",
     "licenseFile": "node_modules\\agentkeepalive\\LICENSE",
     "copyright": "Copyright(c) node-modules and other contributors.. Copyright(c) 2012 - 2015 fengmk2 <fengmk2@gmail.com>"
   },
@@ -277,14 +267,12 @@
     "licenseFile": "node_modules\\are-we-there-yet\\LICENSE",
     "copyright": "Copyright (c) 2015, Rebecca Turner"
   },
-  "are-we-there-yet@2.0.0": {
+  "are-we-there-yet@3.0.0": {
     "licenses": "ISC",
     "repository": "https://github.com/npm/are-we-there-yet",
     "publisher": "GitHub Inc.",
     "name": "are-we-there-yet",
-    "version": "2.0.0",
-    "licenseFile": "node_modules\\node-gyp\\node_modules\\are-we-there-yet\\LICENSE.md",
-    "copyright": "Copyright npm, Inc."
+    "version": "3.0.0"
   },
   "argparse@1.0.10": {
     "licenses": "MIT",
@@ -308,15 +296,13 @@
     "publisher": "Dan MacTough",
     "email": "danmactough@gmail.com",
     "name": "array-indexofobject",
-    "version": "0.0.1",
-    "licenseFile": "node_modules\\array-indexofobject\\README.md"
+    "version": "0.0.1"
   },
   "asap@2.0.6": {
     "licenses": "MIT",
     "repository": "https://github.com/kriskowal/asap",
     "name": "asap",
-    "version": "2.0.6",
-    "licenseFile": "node_modules\\asap\\LICENSE.md"
+    "version": "2.0.6"
   },
   "asn1@0.2.6": {
     "licenses": "MIT",
@@ -334,8 +320,7 @@
     "publisher": "Mark Cavage",
     "email": "mcavage@gmail.com",
     "name": "assert-plus",
-    "version": "1.0.0",
-    "licenseFile": "node_modules\\assert-plus\\README.md"
+    "version": "1.0.0"
   },
   "astral-regex@2.0.0": {
     "licenses": "MIT",
@@ -357,22 +342,22 @@
     "licenseFile": "node_modules\\winston\\node_modules\\async\\LICENSE",
     "copyright": "Copyright (c) 2010-2014 Caolan McMahon"
   },
-  "async@2.6.3": {
+  "async@2.6.4": {
     "licenses": "MIT",
     "repository": "https://github.com/caolan/async",
     "publisher": "Caolan McMahon",
     "name": "async",
-    "version": "2.6.3",
-    "licenseFile": "node_modules\\async\\LICENSE",
+    "version": "2.6.4",
+    "licenseFile": "node_modules\\harmony-patcher\\node_modules\\async\\LICENSE",
     "copyright": "Copyright (c) 2010-2018 Caolan McMahon"
   },
-  "async@3.2.2": {
+  "async@3.2.3": {
     "licenses": "MIT",
     "repository": "https://github.com/caolan/async",
     "publisher": "Caolan McMahon",
     "name": "async",
-    "version": "3.2.2",
-    "licenseFile": "node_modules\\msbuild\\node_modules\\async\\LICENSE",
+    "version": "3.2.3",
+    "licenseFile": "node_modules\\async\\LICENSE",
     "copyright": "Copyright (c) 2010-2018 Caolan McMahon"
   },
   "asynckit@0.4.0": {
@@ -442,9 +427,7 @@
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com",
     "name": "balanced-match",
-    "version": "0.4.2",
-    "licenseFile": "node_modules\\reduce-css-calc\\node_modules\\balanced-match\\LICENSE.md",
-    "copyright": "Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;"
+    "version": "0.4.2"
   },
   "balanced-match@1.0.2": {
     "licenses": "MIT",
@@ -453,9 +436,7 @@
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com",
     "name": "balanced-match",
-    "version": "1.0.2",
-    "licenseFile": "node_modules\\balanced-match\\LICENSE.md",
-    "copyright": "Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;"
+    "version": "1.0.2"
   },
   "base64-js@1.5.1": {
     "licenses": "MIT",
@@ -511,17 +492,13 @@
     "email": "nathan@tootallnate.net",
     "url": "http://tootallnate.net",
     "name": "bindings",
-    "version": "1.5.0",
-    "licenseFile": "node_modules\\bindings\\LICENSE.md",
-    "copyright": "Copyright (c) 2012 Nathan Rajlich &lt;nathan@tootallnate.net&gt;"
+    "version": "1.5.0"
   },
   "bl@4.1.0": {
     "licenses": "MIT",
     "repository": "https://github.com/rvagg/bl",
     "name": "bl",
-    "version": "4.1.0",
-    "licenseFile": "node_modules\\bl\\LICENSE.md",
-    "copyright": "Copyright (c) 2013-2019 bl contributors. ----------------------------------"
+    "version": "4.1.0"
   },
   "bluebird@3.7.2": {
     "licenses": "MIT",
@@ -623,9 +600,7 @@
     "licenses": "ISC",
     "repository": "https://github.com/npm/cacache",
     "name": "cacache",
-    "version": "15.3.0",
-    "licenseFile": "node_modules\\cacache\\LICENSE.md",
-    "copyright": "Copyright (c) npm, Inc."
+    "version": "15.3.0"
   },
   "call-bind@1.0.2": {
     "licenses": "MIT",
@@ -836,8 +811,7 @@
     "repository": "https://github.com/Marak/colors.js",
     "publisher": "Marak Squires",
     "name": "colors",
-    "version": "1.0.3",
-    "licenseFile": "node_modules\\colors\\ReadMe.md"
+    "version": "1.0.3"
   },
   "colors@1.4.0": {
     "licenses": "MIT",
@@ -944,15 +918,13 @@
     "licenses": "ISC",
     "repository": "https://github.com/calvinmetcalf/copyfiles",
     "name": "copyfiles",
-    "version": "1.2.0",
-    "licenseFile": "node_modules\\harmony-patcher\\node_modules\\copyfiles\\license.md"
+    "version": "1.2.0"
   },
   "copyfiles@2.4.1": {
     "licenses": "MIT",
     "repository": "https://github.com/calvinmetcalf/copyfiles",
     "name": "copyfiles",
-    "version": "2.4.1",
-    "licenseFile": "node_modules\\copyfiles\\license.md"
+    "version": "2.4.1"
   },
   "core-js@2.6.12": {
     "licenses": "MIT",
@@ -1005,11 +977,10 @@
     "copyright": "Copyright (c) 2017-2018 Fredrik Nicol"
   },
   "cycle@1.0.3": {
-    "licenses": "Custom: https://github.com/douglascrockford/JSON-js",
+    "licenses": "UNKNOWN",
     "repository": "https://github.com/dscape/cycle",
     "name": "cycle",
-    "version": "1.0.3",
-    "licenseFile": "node_modules\\cycle\\README.md"
+    "version": "1.0.3"
   },
   "d3-array@1.2.4": {
     "licenses": "BSD-3-Clause",
@@ -1346,9 +1317,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/date-fns/date-fns",
     "name": "date-fns",
-    "version": "2.22.1",
-    "licenseFile": "node_modules\\date-fns\\LICENSE.md",
-    "copyright": "Copyright (C) 2020 Sasha Koss and Lesha Koss"
+    "version": "2.22.1"
   },
   "debug@2.6.9": {
     "licenses": "MIT",
@@ -1380,13 +1349,13 @@
     "licenseFile": "node_modules\\builder-util-runtime\\node_modules\\debug\\LICENSE",
     "copyright": "Copyright (c) 2014 TJ Holowaychuk <tj@vision-media.ca>"
   },
-  "debug@4.3.3": {
+  "debug@4.3.4": {
     "licenses": "MIT",
     "repository": "https://github.com/debug-js/debug",
     "publisher": "Josh Junon",
     "email": "josh.junon@protonmail.com",
     "name": "debug",
-    "version": "4.3.3",
+    "version": "4.3.4",
     "licenseFile": "node_modules\\debug\\LICENSE",
     "copyright": "Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>. Copyright (c) 2018-2021 Josh Junon"
   },
@@ -1396,9 +1365,7 @@
     "publisher": "Michael Mclaughlin",
     "email": "M8ch88l@gmail.com",
     "name": "decimal.js-light",
-    "version": "2.5.1",
-    "licenseFile": "node_modules\\decimal.js-light\\LICENCE.md",
-    "copyright": "Copyright (c) 2020 Michael Mclaughlin"
+    "version": "2.5.1"
   },
   "decompress-response@4.2.1": {
     "licenses": "MIT",
@@ -1408,8 +1375,19 @@
     "url": "sindresorhus.com",
     "name": "decompress-response",
     "version": "4.2.1",
-    "licenseFile": "node_modules\\decompress-response\\license",
+    "licenseFile": "node_modules\\drivelist\\node_modules\\decompress-response\\license",
     "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+  },
+  "decompress-response@6.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/decompress-response",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "name": "decompress-response",
+    "version": "6.0.0",
+    "licenseFile": "node_modules\\decompress-response\\license",
+    "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)"
   },
   "deep-equal@1.1.1": {
     "licenses": "MIT",
@@ -1436,8 +1414,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/Level/deferred-leveldown",
     "name": "deferred-leveldown",
-    "version": "5.3.0",
-    "licenseFile": "node_modules\\deferred-leveldown\\LICENSE.md"
+    "version": "5.3.0"
   },
   "define-properties@1.1.3": {
     "licenses": "MIT",
@@ -1482,8 +1459,7 @@
     "repository": "https://github.com/desandro/matches-selector",
     "publisher": "David DeSandro",
     "name": "desandro-matches-selector",
-    "version": "2.0.2",
-    "licenseFile": "node_modules\\desandro-matches-selector\\README.md"
+    "version": "2.0.2"
   },
   "detect-libc@1.0.3": {
     "licenses": "Apache-2.0",
@@ -1493,6 +1469,15 @@
     "name": "detect-libc",
     "version": "1.0.3",
     "licenseFile": "node_modules\\detect-libc\\LICENSE"
+  },
+  "detect-libc@2.0.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/lovell/detect-libc",
+    "publisher": "Lovell Fuller",
+    "email": "npm@lovell.info",
+    "name": "detect-libc",
+    "version": "2.0.1",
+    "licenseFile": "node_modules\\prebuild-install\\node_modules\\detect-libc\\LICENSE"
   },
   "diskusage@2.0.0": {
     "licenses": "MIT",
@@ -1544,8 +1529,7 @@
     "repository": "https://github.com/desandro/draggabilly",
     "publisher": "David DeSandro",
     "name": "draggabilly",
-    "version": "2.3.0",
-    "licenseFile": "node_modules\\draggabilly\\README.md"
+    "version": "2.3.0"
   },
   "drivelist@10.0.0": {
     "licenses": "Apache-2.0",
@@ -1627,9 +1611,7 @@
     "email": "burkhard.reffeling@gmail.com",
     "url": "http://burgiblog.com",
     "name": "electron-redux",
-    "version": "1.4.6-sync",
-    "licenseFile": "node_modules\\electron-redux\\LICENSE.md",
-    "copyright": "Copyright (c) 2016 Burkhard Reffeling"
+    "version": "1.4.6-sync"
   },
   "electron-updater@4.3.9": {
     "licenses": "MIT",
@@ -1654,8 +1636,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/Level/encoding-down",
     "name": "encoding-down",
-    "version": "6.3.0",
-    "licenseFile": "node_modules\\encoding-down\\LICENSE.md"
+    "version": "6.3.0"
   },
   "encoding@0.1.13": {
     "licenses": "MIT",
@@ -1694,15 +1675,13 @@
     "email": "hello@indigounited.com",
     "url": "http://indigounited.com",
     "name": "err-code",
-    "version": "2.0.3",
-    "licenseFile": "node_modules\\err-code\\README.md"
+    "version": "2.0.3"
   },
   "errno@0.1.8": {
     "licenses": "MIT",
     "repository": "https://github.com/rvagg/node-errno",
     "name": "errno",
-    "version": "0.1.8",
-    "licenseFile": "node_modules\\errno\\README.md"
+    "version": "0.1.8"
   },
   "es6-promise@4.2.8": {
     "licenses": "MIT",
@@ -1770,8 +1749,7 @@
     "repository": "https://github.com/metafizzy/ev-emitter",
     "publisher": "David DeSandro",
     "name": "ev-emitter",
-    "version": "1.1.1",
-    "licenseFile": "node_modules\\ev-emitter\\README.md"
+    "version": "1.1.1"
   },
   "events@3.3.0": {
     "licenses": "MIT",
@@ -1788,9 +1766,7 @@
     "licenses": "GPL-3.0",
     "name": "exe-version",
     "version": "2.2.0",
-    "repository": "",
-    "licenseFile": "node_modules\\exe-version\\LICENSE.md",
-    "copyright": "Copyright (C) 2007 Free Software Foundation, Inc.. <http://fsf.org/>"
+    "repository": ""
   },
   "execa@1.0.0": {
     "licenses": "MIT",
@@ -1927,8 +1903,7 @@
     "repository": "https://github.com/metafizzy/fizzy-ui-utils",
     "publisher": "David DeSandro",
     "name": "fizzy-ui-utils",
-    "version": "2.0.7",
-    "licenseFile": "node_modules\\fizzy-ui-utils\\README.md"
+    "version": "2.0.7"
   },
   "flux-standard-action@2.1.1": {
     "licenses": "MIT",
@@ -2061,8 +2036,7 @@
     "publisher": "Nolan Kaplan",
     "email": "nolan@nolankaplan.com",
     "name": "fuzzball",
-    "version": "1.4.0",
-    "licenseFile": "node_modules\\fuzzball\\LICENSE.md"
+    "version": "1.4.0"
   },
   "gauge@2.7.4": {
     "licenses": "ISC",
@@ -2074,22 +2048,19 @@
     "licenseFile": "node_modules\\gauge\\LICENSE",
     "copyright": "Copyright (c) 2014, Rebecca Turner <me@re-becca.org>"
   },
-  "gauge@4.0.0": {
+  "gauge@4.0.4": {
     "licenses": "ISC",
     "repository": "https://github.com/npm/gauge",
     "publisher": "GitHub Inc.",
     "name": "gauge",
-    "version": "4.0.0",
-    "licenseFile": "node_modules\\node-gyp\\node_modules\\gauge\\LICENSE.md",
-    "copyright": "Copyright npm, Inc."
+    "version": "4.0.4"
   },
   "get-caller-file@2.0.5": {
     "licenses": "ISC",
     "repository": "https://github.com/stefanpenner/get-caller-file",
     "publisher": "Stefan Penner",
     "name": "get-caller-file",
-    "version": "2.0.5",
-    "licenseFile": "node_modules\\get-caller-file\\LICENSE.md"
+    "version": "2.0.5"
   },
   "get-intrinsic@1.1.1": {
     "licenses": "MIT",
@@ -2106,8 +2077,7 @@
     "repository": "https://github.com/desandro/get-size",
     "publisher": "David DeSandro",
     "name": "get-size",
-    "version": "2.0.3",
-    "licenseFile": "node_modules\\get-size\\README.md"
+    "version": "2.0.3"
   },
   "get-stream@4.1.0": {
     "licenses": "MIT",
@@ -2162,6 +2132,25 @@
     "licenseFile": "node_modules\\glob\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
+  "glob@7.2.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-glob",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "name": "glob",
+    "version": "7.2.3",
+    "licenseFile": "node_modules\\node-gyp\\node_modules\\glob\\LICENSE",
+    "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
+  },
+  "graceful-fs@4.2.10": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-graceful-fs",
+    "name": "graceful-fs",
+    "version": "4.2.10",
+    "licenseFile": "node_modules\\node-gyp\\node_modules\\graceful-fs\\LICENSE",
+    "copyright": "Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors"
+  },
   "graceful-fs@4.2.9": {
     "licenses": "ISC",
     "repository": "https://github.com/isaacs/node-graceful-fs",
@@ -2195,8 +2184,7 @@
     "publisher": "Jamie Kyle",
     "email": "me@thejameskyle.com",
     "name": "gud",
-    "version": "1.0.0",
-    "licenseFile": "node_modules\\gud\\README.md"
+    "version": "1.0.0"
   },
   "har-schema@2.0.0": {
     "licenses": "ISC",
@@ -2268,8 +2256,7 @@
     "publisher": "Xueqiao Xu",
     "email": "xueqiaoxu@gmail.com",
     "name": "heap",
-    "version": "0.2.6",
-    "licenseFile": "node_modules\\heap\\README.md"
+    "version": "0.2.6"
   },
   "hoist-non-react-statics@3.3.2": {
     "licenses": "BSD-3-Clause",
@@ -2277,9 +2264,7 @@
     "publisher": "Michael Ridgway",
     "email": "mcridgway@gmail.com",
     "name": "hoist-non-react-statics",
-    "version": "3.3.2",
-    "licenseFile": "node_modules\\hoist-non-react-statics\\LICENSE.md",
-    "copyright": "Copyright (c) 2015, Yahoo! Inc. All rights reserved.. ----------------------------------------------------"
+    "version": "3.3.2"
   },
   "html-parse-stringify@3.0.1": {
     "licenses": "MIT",
@@ -2287,8 +2272,7 @@
     "publisher": "Henrik Joreteg",
     "email": "henrik@joreteg.com",
     "name": "html-parse-stringify",
-    "version": "3.0.1",
-    "licenseFile": "node_modules\\html-parse-stringify\\README.md"
+    "version": "3.0.1"
   },
   "http-cache-semantics@4.1.0": {
     "licenses": "BSD-2-Clause",
@@ -2319,9 +2303,7 @@
     "email": "nathan@tootallnate.net",
     "url": "http://n8.io/",
     "name": "http-proxy-agent",
-    "version": "4.0.1",
-    "licenseFile": "node_modules\\http-proxy-agent\\README.md",
-    "copyright": "Copyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;"
+    "version": "4.0.1"
   },
   "http-signature@1.2.0": {
     "licenses": "MIT",
@@ -2332,16 +2314,14 @@
     "licenseFile": "node_modules\\http-signature\\LICENSE",
     "copyright": "Copyright Joyent, Inc. All rights reserved.. Permission is hereby granted, free of charge, to any person obtaining a copy. of this software and associated documentation files (the \"Software\"), to. deal in the Software without restriction, including without limitation the. rights to use, copy, modify, merge, publish, distribute, sublicense, and/or. sell copies of the Software, and to permit persons to whom the Software is. furnished to do so, subject to the following conditions:"
   },
-  "https-proxy-agent@5.0.0": {
+  "https-proxy-agent@5.0.1": {
     "licenses": "MIT",
     "repository": "https://github.com/TooTallNate/node-https-proxy-agent",
     "publisher": "Nathan Rajlich",
     "email": "nathan@tootallnate.net",
     "url": "http://n8.io/",
     "name": "https-proxy-agent",
-    "version": "5.0.0",
-    "licenseFile": "node_modules\\https-proxy-agent\\README.md",
-    "copyright": "Copyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;"
+    "version": "5.0.1"
   },
   "humanize-ms@1.2.1": {
     "licenses": "MIT",
@@ -2374,14 +2354,6 @@
     "version": "19.9.2",
     "licenseFile": "node_modules\\i18next\\LICENSE",
     "copyright": "Copyright (c) 2017 i18next"
-  },
-  "icon-extract@1.1.0": {
-    "licenses": "GPL-3.0",
-    "name": "icon-extract",
-    "version": "1.1.0",
-    "repository": "",
-    "licenseFile": "node_modules\\icon-extract\\LICENSE.md",
-    "copyright": "Copyright (C) 2007 Free Software Foundation, Inc.. <http://fsf.org/>"
   },
   "iconv-lite@0.4.24": {
     "licenses": "MIT",
@@ -2459,8 +2431,7 @@
     "email": "jensyt@gmail.com",
     "url": "https://github.com/homebrewing",
     "name": "imurmurhash",
-    "version": "0.1.4",
-    "licenseFile": "node_modules\\imurmurhash\\README.md"
+    "version": "0.1.4"
   },
   "indent-string@4.0.0": {
     "licenses": "MIT",
@@ -2526,8 +2497,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/remarkablemark/inline-style-parser",
     "name": "inline-style-parser",
-    "version": "0.1.1",
-    "licenseFile": "node_modules\\inline-style-parser\\README.md"
+    "version": "0.1.1"
   },
   "interweave@12.9.0": {
     "licenses": "MIT",
@@ -2548,15 +2518,13 @@
     "licenseFile": "node_modules\\invariant\\LICENSE",
     "copyright": "Copyright (c) 2013-present, Facebook, Inc."
   },
-  "ip@1.1.5": {
+  "ip@1.1.8": {
     "licenses": "MIT",
     "repository": "https://github.com/indutny/node-ip",
     "publisher": "Fedor Indutny",
     "email": "fedor@indutny.com",
     "name": "ip",
-    "version": "1.1.5",
-    "licenseFile": "node_modules\\ip\\README.md",
-    "copyright": "Copyright Fedor Indutny, 2012."
+    "version": "1.1.8"
   },
   "is-admin@3.0.0": {
     "licenses": "MIT",
@@ -2778,8 +2746,7 @@
     "email": "hughskennedy@gmail.com",
     "url": "http://hughsk.io/",
     "name": "is-typedarray",
-    "version": "1.0.0",
-    "licenseFile": "node_modules\\is-typedarray\\LICENSE.md"
+    "version": "1.0.0"
   },
   "isarray@0.0.1": {
     "licenses": "MIT",
@@ -2788,9 +2755,7 @@
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com",
     "name": "isarray",
-    "version": "0.0.1",
-    "licenseFile": "node_modules\\noms\\node_modules\\isarray\\README.md",
-    "copyright": "Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;"
+    "version": "0.0.1"
   },
   "isarray@1.0.0": {
     "licenses": "MIT",
@@ -2799,9 +2764,7 @@
     "email": "mail@juliangruber.com",
     "url": "http://juliangruber.com",
     "name": "isarray",
-    "version": "1.0.0",
-    "licenseFile": "node_modules\\isarray\\README.md",
-    "copyright": "Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;"
+    "version": "1.0.0"
   },
   "isexe@2.0.0": {
     "licenses": "ISC",
@@ -2820,9 +2783,7 @@
     "publisher": "Rod Vagg",
     "email": "rod@vagg.org",
     "name": "isstream",
-    "version": "0.1.2",
-    "licenseFile": "node_modules\\isstream\\LICENSE.md",
-    "copyright": "Copyright (c) 2015 Rod Vagg. ---------------------------"
+    "version": "0.1.2"
   },
   "js-tokens@4.0.0": {
     "licenses": "MIT",
@@ -2905,9 +2866,7 @@
     "publisher": "Aseem Kishore",
     "email": "aseem.kishore@gmail.com",
     "name": "json5",
-    "version": "2.0.0",
-    "licenseFile": "node_modules\\json5\\LICENSE.md",
-    "copyright": "Copyright (c) 2012-2018 Aseem Kishore, and [others]."
+    "version": "2.0.0"
   },
   "jsonfile@4.0.0": {
     "licenses": "MIT",
@@ -2979,15 +2938,13 @@
     "repository": "https://github.com/develar/lazy-val",
     "publisher": "Vladimir Krivosheev",
     "name": "lazy-val",
-    "version": "1.0.5",
-    "licenseFile": "node_modules\\lazy-val\\readme.md"
+    "version": "1.0.5"
   },
   "level-codec@9.0.2": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/codec",
     "name": "level-codec",
-    "version": "9.0.2",
-    "licenseFile": "node_modules\\level-codec\\LICENSE.md"
+    "version": "9.0.2"
   },
   "level-concat-iterator@2.0.1": {
     "licenses": "MIT",
@@ -2995,50 +2952,44 @@
     "publisher": "Lars-Magnus Skog",
     "email": "ralphtheninja@riseup.net",
     "name": "level-concat-iterator",
-    "version": "2.0.1",
-    "licenseFile": "node_modules\\level-concat-iterator\\LICENSE.md"
+    "version": "2.0.1"
   },
   "level-errors@2.0.1": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/errors",
     "name": "level-errors",
-    "version": "2.0.1",
-    "licenseFile": "node_modules\\level-errors\\LICENSE.md"
+    "version": "2.0.1"
   },
   "level-iterator-stream@4.0.2": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/iterator-stream",
     "name": "level-iterator-stream",
-    "version": "4.0.2",
-    "licenseFile": "node_modules\\level-iterator-stream\\LICENSE.md"
+    "version": "4.0.2"
   },
   "level-supports@1.0.1": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/supports",
     "name": "level-supports",
-    "version": "1.0.1",
-    "licenseFile": "node_modules\\level-supports\\LICENSE.md"
+    "version": "1.0.1"
   },
   "leveldown@5.6.0": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/leveldown",
     "name": "leveldown",
-    "version": "5.6.0",
-    "licenseFile": "node_modules\\leveldown\\LICENSE.md"
+    "version": "5.6.0"
   },
   "levelup@4.4.0": {
     "licenses": "MIT",
     "repository": "https://github.com/Level/levelup",
     "name": "levelup",
-    "version": "4.4.0",
-    "licenseFile": "node_modules\\levelup\\LICENSE.md"
+    "version": "4.4.0"
   },
-  "libxmljs2@0.26.3": {
+  "libxmljs2@0.27.0": {
     "licenses": "MIT",
     "repository": "https://github.com/marudor/libxmljs2",
     "publisher": "marudor",
     "name": "libxmljs2",
-    "version": "0.26.3",
+    "version": "0.27.0",
     "licenseFile": "node_modules\\libxmljs\\LICENSE",
     "copyright": "Copyright 2009, Squish Tech, LLC. All rights reserved."
   },
@@ -3248,14 +3199,12 @@
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
   "ltcdr@2.2.1": {
-    "licenses": "MIT*",
+    "licenses": "UNKNOWN",
     "repository": "https://github.com/calvinmetcalf/ltcdr",
     "publisher": "TJ Holowaychuk",
     "email": "tj@vision-media.ca",
     "name": "ltcdr",
-    "version": "2.2.1",
-    "licenseFile": "node_modules\\ltcdr\\Readme.md",
-    "copyright": "Copyright (c) 2011 TJ Holowaychuk &lt;tj@vision-media.ca&gt;"
+    "version": "2.2.1"
   },
   "make-fetch-happen@9.1.0": {
     "licenses": "ISC",
@@ -3368,11 +3317,27 @@
     "licenseFile": "node_modules\\mime-db\\LICENSE",
     "copyright": "Copyright (c) 2014 Jonathan Ong me@jongleberry.com"
   },
+  "mime-db@1.52.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/mime-db",
+    "name": "mime-db",
+    "version": "1.52.0",
+    "licenseFile": "node_modules\\mime-types\\node_modules\\mime-db\\LICENSE",
+    "copyright": "Copyright (c) 2014 Jonathan Ong <me@jongleberry.com>. Copyright (c) 2015-2022 Douglas Christopher Wilson <doug@somethingdoug.com>"
+  },
   "mime-types@2.1.34": {
     "licenses": "MIT",
     "repository": "https://github.com/jshttp/mime-types",
     "name": "mime-types",
     "version": "2.1.34",
+    "licenseFile": "node_modules\\type-is\\node_modules\\mime-types\\LICENSE",
+    "copyright": "Copyright (c) 2014 Jonathan Ong <me@jongleberry.com>. Copyright (c) 2015 Douglas Christopher Wilson <doug@somethingdoug.com>"
+  },
+  "mime-types@2.1.35": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/mime-types",
+    "name": "mime-types",
+    "version": "2.1.35",
     "licenseFile": "node_modules\\mime-types\\LICENSE",
     "copyright": "Copyright (c) 2014 Jonathan Ong <me@jongleberry.com>. Copyright (c) 2015 Douglas Christopher Wilson <doug@somethingdoug.com>"
   },
@@ -3384,6 +3349,17 @@
     "url": "https://sindresorhus.com",
     "name": "mimic-response",
     "version": "2.1.0",
+    "licenseFile": "node_modules\\drivelist\\node_modules\\mimic-response\\license",
+    "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)"
+  },
+  "mimic-response@3.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/mimic-response",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "name": "mimic-response",
+    "version": "3.1.0",
     "licenseFile": "node_modules\\mimic-response\\license",
     "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)"
   },
@@ -3398,14 +3374,25 @@
     "licenseFile": "node_modules\\minimatch\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
-  "minimist@1.2.5": {
+  "minimatch@3.1.2": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/minimatch",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me",
+    "name": "minimatch",
+    "version": "3.1.2",
+    "licenseFile": "node_modules\\node-gyp\\node_modules\\minimatch\\LICENSE",
+    "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
+  },
+  "minimist@1.2.6": {
     "licenses": "MIT",
     "repository": "https://github.com/substack/minimist",
     "publisher": "James Halliday",
     "email": "mail@substack.net",
     "url": "http://substack.net",
     "name": "minimist",
-    "version": "1.2.5",
+    "version": "1.2.6",
     "licenseFile": "node_modules\\minimist\\LICENSE"
   },
   "minipass-collect@1.0.2": {
@@ -3460,27 +3447,16 @@
     "licenseFile": "node_modules\\minipass-sized\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
-  "minipass@3.1.3": {
+  "minipass@3.3.4": {
     "licenses": "ISC",
     "repository": "https://github.com/isaacs/minipass",
     "publisher": "Isaac Z. Schlueter",
     "email": "i@izs.me",
     "url": "http://blog.izs.me/",
     "name": "minipass",
-    "version": "3.1.3",
+    "version": "3.3.4",
     "licenseFile": "node_modules\\minipass\\LICENSE",
-    "copyright": "Copyright (c) npm, Inc. and Contributors"
-  },
-  "minipass@3.1.6": {
-    "licenses": "ISC",
-    "repository": "https://github.com/isaacs/minipass",
-    "publisher": "Isaac Z. Schlueter",
-    "email": "i@izs.me",
-    "url": "http://blog.izs.me/",
-    "name": "minipass",
-    "version": "3.1.6",
-    "licenseFile": "node_modules\\cacache\\node_modules\\minipass\\LICENSE",
-    "copyright": "Copyright (c) npm, Inc. and Contributors"
+    "copyright": "Copyright (c) 2017-2022 npm, Inc., Isaac Z. Schlueter, and Contributors"
   },
   "minizlib@2.1.2": {
     "licenses": "MIT",
@@ -3539,33 +3515,25 @@
     "email": "luke.edwards05@gmail.com",
     "url": "https://lukeed.com",
     "name": "mri",
-    "version": "1.1.6",
-    "licenseFile": "node_modules\\mri\\license.md",
-    "copyright": "Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)"
+    "version": "1.1.6"
   },
   "ms@2.0.0": {
     "licenses": "MIT",
     "repository": "https://github.com/zeit/ms",
     "name": "ms",
-    "version": "2.0.0",
-    "licenseFile": "node_modules\\body-parser\\node_modules\\ms\\license.md",
-    "copyright": "Copyright (c) 2016 Zeit, Inc."
+    "version": "2.0.0"
   },
   "ms@2.1.2": {
     "licenses": "MIT",
     "repository": "https://github.com/zeit/ms",
     "name": "ms",
-    "version": "2.1.2",
-    "licenseFile": "node_modules\\debug\\node_modules\\ms\\license.md",
-    "copyright": "Copyright (c) 2016 Zeit, Inc."
+    "version": "2.1.2"
   },
   "ms@2.1.3": {
     "licenses": "MIT",
     "repository": "https://github.com/vercel/ms",
     "name": "ms",
-    "version": "2.1.3",
-    "licenseFile": "node_modules\\ms\\license.md",
-    "copyright": "Copyright (c) 2020 Vercel, Inc."
+    "version": "2.1.3"
   },
   "msbuild@1.1.2": {
     "licenses": "MIT",
@@ -3580,9 +3548,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
-    "version": "2.14.2",
-    "licenseFile": "node_modules\\nan\\LICENSE.md",
-    "copyright": "Copyright (c) 2018 NAN contributors. -----------------------------------"
+    "version": "2.14.2"
   },
   "napi-build-utils@1.0.2": {
     "licenses": "MIT",
@@ -3613,11 +3579,11 @@
     "licenseFile": "node_modules\\needle\\license.txt",
     "copyright": "Copyright (c) Fork, Ltd."
   },
-  "negotiator@0.6.2": {
+  "negotiator@0.6.3": {
     "licenses": "MIT",
     "repository": "https://github.com/jshttp/negotiator",
     "name": "negotiator",
-    "version": "0.6.2",
+    "version": "0.6.3",
     "licenseFile": "node_modules\\negotiator\\LICENSE",
     "copyright": "Copyright (c) 2012-2014 Federico Romero. Copyright (c) 2012-2014 Isaac Z. Schlueter. Copyright (c) 2014-2015 Douglas Christopher Wilson"
   },
@@ -3645,6 +3611,15 @@
     "publisher": "Lukas Geiger",
     "name": "node-abi",
     "version": "2.30.0",
+    "licenseFile": "node_modules\\drivelist\\node_modules\\node-abi\\LICENSE",
+    "copyright": "Copyright (c) 2016 Lukas Geiger"
+  },
+  "node-abi@3.15.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/lgeiger/node-abi",
+    "publisher": "Lukas Geiger",
+    "name": "node-abi",
+    "version": "3.15.0",
     "licenseFile": "node_modules\\node-abi\\LICENSE",
     "copyright": "Copyright (c) 2016 Lukas Geiger"
   },
@@ -3652,25 +3627,19 @@
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/node-addon-api",
     "name": "node-addon-api",
-    "version": "2.0.2",
-    "licenseFile": "node_modules\\diskusage\\node_modules\\node-addon-api\\LICENSE.md",
-    "copyright": "Copyright (c) 2017 Node.js API collaborators. -----------------------------------"
+    "version": "2.0.2"
   },
   "node-addon-api@3.2.1": {
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/node-addon-api",
     "name": "node-addon-api",
-    "version": "3.2.1",
-    "licenseFile": "node_modules\\node-addon-api\\LICENSE.md",
-    "copyright": "Copyright (c) 2017 Node.js API collaborators. -----------------------------------"
+    "version": "3.2.1"
   },
-  "node-addon-api@4.0.0": {
+  "node-addon-api@4.3.0": {
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/node-addon-api",
     "name": "node-addon-api",
-    "version": "4.0.0",
-    "licenseFile": "node_modules\\crash-dump\\node_modules\\node-addon-api\\LICENSE.md",
-    "copyright": "Copyright (c) 2017 Node.js API collaborators. -----------------------------------"
+    "version": "4.3.0"
   },
   "node-gyp-build@4.1.1": {
     "licenses": "MIT",
@@ -3698,15 +3667,13 @@
     "repository": "https://github.com/calvinmetcalf/noms",
     "publisher": "Calvin Metcalf",
     "name": "noms",
-    "version": "0.0.0",
-    "licenseFile": "node_modules\\noms\\readme.md"
+    "version": "0.0.0"
   },
   "noop-logger@0.1.1": {
     "licenses": "MIT",
     "repository": "https://github.com/segmentio/noop-logger",
     "name": "noop-logger",
-    "version": "0.1.1",
-    "licenseFile": "node_modules\\noop-logger\\Readme.md"
+    "version": "0.1.1"
   },
   "nopt@5.0.0": {
     "licenses": "ISC",
@@ -3795,14 +3762,12 @@
     "licenseFile": "node_modules\\npmlog\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
-  "npmlog@6.0.0": {
+  "npmlog@6.0.2": {
     "licenses": "ISC",
     "repository": "https://github.com/npm/npmlog",
     "publisher": "GitHub Inc.",
     "name": "npmlog",
-    "version": "6.0.0",
-    "licenseFile": "node_modules\\node-gyp\\node_modules\\npmlog\\LICENSE.md",
-    "copyright": "Copyright npm, Inc."
+    "version": "6.0.2"
   },
   "number-is-nan@1.0.1": {
     "licenses": "MIT",
@@ -3880,8 +3845,7 @@
     "repository": "https://github.com/metafizzy/outlayer",
     "publisher": "David DeSandro",
     "name": "outlayer",
-    "version": "2.1.1",
-    "licenseFile": "node_modules\\outlayer\\README.md"
+    "version": "2.1.1"
   },
   "p-finally@1.0.0": {
     "licenses": "MIT",
@@ -3910,8 +3874,7 @@
     "repository": "https://github.com/metafizzy/packery",
     "publisher": "Metafizzy",
     "name": "packery",
-    "version": "2.1.2",
-    "licenseFile": "node_modules\\packery\\README.md"
+    "version": "2.1.2"
   },
   "parse-entities@2.0.0": {
     "licenses": "MIT",
@@ -3993,8 +3956,7 @@
     "publisher": "Federico Zivolo",
     "email": "federico.zivolo@gmail.com",
     "name": "popper.js",
-    "version": "1.16.1",
-    "licenseFile": "node_modules\\popper.js\\README.md"
+    "version": "1.16.1"
   },
   "prebuild-install@5.3.6": {
     "licenses": "MIT",
@@ -4003,15 +3965,34 @@
     "url": "@mafintosh",
     "name": "prebuild-install",
     "version": "5.3.6",
+    "licenseFile": "node_modules\\drivelist\\node_modules\\prebuild-install\\LICENSE",
+    "copyright": "Copyright (c) 2015 Mathias Buus"
+  },
+  "prebuild-install@7.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prebuild/prebuild-install",
+    "publisher": "Mathias Buus",
+    "url": "@mafintosh",
+    "name": "prebuild-install",
+    "version": "7.1.0",
     "licenseFile": "node_modules\\prebuild-install\\LICENSE",
+    "copyright": "Copyright (c) 2015 Mathias Buus"
+  },
+  "prebuild-install@7.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prebuild/prebuild-install",
+    "publisher": "Mathias Buus",
+    "url": "@mafintosh",
+    "name": "prebuild-install",
+    "version": "7.1.1",
+    "licenseFile": "node_modules\\native-errors\\node_modules\\prebuild-install\\LICENSE",
     "copyright": "Copyright (c) 2015 Mathias Buus"
   },
   "process-nextick-args@2.0.1": {
     "licenses": "MIT",
     "repository": "https://github.com/calvinmetcalf/process-nextick-args",
     "name": "process-nextick-args",
-    "version": "2.0.1",
-    "licenseFile": "node_modules\\process-nextick-args\\license.md"
+    "version": "2.0.1"
   },
   "promise-inflight@1.0.1": {
     "licenses": "ISC",
@@ -4071,9 +4052,7 @@
     "email": "rod@vagg.org",
     "url": "https://github.com/rvagg",
     "name": "prr",
-    "version": "1.0.1",
-    "licenseFile": "node_modules\\prr\\LICENSE.md",
-    "copyright": "Copyright (c) 2014 Rod Vagg. ---------------------------"
+    "version": "1.0.1"
   },
   "psl@1.8.0": {
     "licenses": "MIT",
@@ -4117,13 +4096,11 @@
     "licenseFile": "node_modules\\pupa\\license",
     "copyright": "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
   },
-  "qs@6.5.2": {
+  "qs@6.5.3": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/ljharb/qs",
     "name": "qs",
-    "version": "6.5.2",
-    "licenseFile": "node_modules\\request\\node_modules\\qs\\LICENSE",
-    "copyright": "Copyright (c) 2014 Nathan LaFreniere and other contributors.. All rights reserved."
+    "version": "6.5.3"
   },
   "qs@6.7.0": {
     "licenses": "BSD-3-Clause",
@@ -4181,9 +4158,7 @@
     "publisher": "Andrea Carraro",
     "email": "me@andreacarraro.it",
     "name": "re-reselect",
-    "version": "3.4.0",
-    "licenseFile": "node_modules\\re-reselect\\LICENSE.md",
-    "copyright": "Copyright (c) Andrea Carraro"
+    "version": "3.4.0"
   },
   "react-bootstrap@0.33.1": {
     "licenses": "MIT",
@@ -4285,9 +4260,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/reactjs/react-lifecycles-compat",
     "name": "react-lifecycles-compat",
-    "version": "3.0.4",
-    "licenseFile": "node_modules\\react-lifecycles-compat\\LICENSE.md",
-    "copyright": "Copyright (c) 2013-present, Facebook, Inc."
+    "version": "3.0.4"
   },
   "react-markdown@6.0.3": {
     "licenses": "MIT",
@@ -4303,8 +4276,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/Pomax/react-onclickoutside",
     "name": "react-onclickoutside",
-    "version": "6.11.2",
-    "licenseFile": "node_modules\\react-onclickoutside\\README.md"
+    "version": "6.11.2"
   },
   "react-overlays@0.9.3": {
     "licenses": "MIT",
@@ -4354,9 +4326,7 @@
     "email": "dan.abramov@me.com",
     "url": "https://github.com/gaearon",
     "name": "react-redux",
-    "version": "7.2.4",
-    "licenseFile": "node_modules\\react-redux\\LICENSE.md",
-    "copyright": "Copyright (c) 2015-present Dan Abramov"
+    "version": "7.2.4"
   },
   "react-resize-detector@2.3.0": {
     "licenses": "MIT",
@@ -4529,25 +4499,19 @@
     "publisher": "Dan Abramov",
     "email": "dan.abramov@me.com",
     "name": "redux-thunk",
-    "version": "2.3.0",
-    "licenseFile": "node_modules\\redux-thunk\\LICENSE.md",
-    "copyright": "Copyright (c) 2015-present Dan Abramov"
+    "version": "2.3.0"
   },
   "redux@3.7.2": {
     "licenses": "MIT",
     "repository": "https://github.com/reactjs/redux",
     "name": "redux",
-    "version": "3.7.2",
-    "licenseFile": "node_modules\\electron-redux\\node_modules\\redux\\LICENSE.md",
-    "copyright": "Copyright (c) 2015-present Dan Abramov"
+    "version": "3.7.2"
   },
   "redux@4.1.0": {
     "licenses": "MIT",
     "repository": "https://github.com/reduxjs/redux",
     "name": "redux",
-    "version": "4.1.0",
-    "licenseFile": "node_modules\\redux\\LICENSE.md",
-    "copyright": "Copyright (c) 2015-present Dan Abramov"
+    "version": "4.1.0"
   },
   "regenerator-runtime@0.13.7": {
     "licenses": "MIT",
@@ -4587,8 +4551,7 @@
     "email": "tituswormer@gmail.com",
     "url": "https://wooorm.com",
     "name": "remark-parse",
-    "version": "9.0.0",
-    "licenseFile": "node_modules\\remark-parse\\readme.md"
+    "version": "9.0.0"
   },
   "remark-rehype@8.1.0": {
     "licenses": "MIT",
@@ -4790,7 +4753,7 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "6.3.0",
-    "licenseFile": "node_modules\\semver\\LICENSE",
+    "licenseFile": "node_modules\\modmeta-db\\node_modules\\semver\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
   "semver@7.3.5": {
@@ -4798,7 +4761,7 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "7.3.5",
-    "licenseFile": "node_modules\\@npmcli\\fs\\node_modules\\semver\\LICENSE",
+    "licenseFile": "node_modules\\semver\\LICENSE",
     "copyright": "Copyright (c) Isaac Z. Schlueter and Contributors"
   },
   "set-blocking@2.0.0": {
@@ -4878,6 +4841,16 @@
     "email": "ben@npmjs.com",
     "name": "signal-exit",
     "version": "3.0.6",
+    "licenseFile": "node_modules\\write-file-atomic\\node_modules\\signal-exit\\LICENSE.txt",
+    "copyright": "Copyright (c) 2015, Contributors"
+  },
+  "signal-exit@3.0.7": {
+    "licenses": "ISC",
+    "repository": "https://github.com/tapjs/signal-exit",
+    "publisher": "Ben Coe",
+    "email": "ben@npmjs.com",
+    "name": "signal-exit",
+    "version": "3.0.7",
     "licenseFile": "node_modules\\signal-exit\\LICENSE.txt",
     "copyright": "Copyright (c) 2015, Contributors"
   },
@@ -4892,14 +4865,25 @@
     "licenseFile": "node_modules\\simple-concat\\LICENSE",
     "copyright": "Copyright (c) Feross Aboukhadijeh"
   },
-  "simple-get@3.1.0": {
+  "simple-get@3.1.1": {
     "licenses": "MIT",
     "repository": "https://github.com/feross/simple-get",
     "publisher": "Feross Aboukhadijeh",
     "email": "feross@feross.org",
     "url": "http://feross.org/",
     "name": "simple-get",
-    "version": "3.1.0",
+    "version": "3.1.1",
+    "licenseFile": "node_modules\\drivelist\\node_modules\\simple-get\\LICENSE",
+    "copyright": "Copyright (c) Feross Aboukhadijeh"
+  },
+  "simple-get@4.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/feross/simple-get",
+    "publisher": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "https://feross.org",
+    "name": "simple-get",
+    "version": "4.0.1",
     "licenseFile": "node_modules\\simple-get\\LICENSE",
     "copyright": "Copyright (c) Feross Aboukhadijeh"
   },
@@ -4909,8 +4893,7 @@
     "publisher": "Rossen Georgiev",
     "email": "hello@rgp.io",
     "name": "simple-vdf",
-    "version": "1.1.3",
-    "licenseFile": "node_modules\\simple-vdf\\README.md"
+    "version": "1.1.3"
   },
   "slice-ansi@3.0.0": {
     "licenses": "MIT",
@@ -4929,23 +4912,21 @@
     "licenseFile": "node_modules\\smart-buffer\\LICENSE",
     "copyright": "Copyright (c) 2013-2017 Josh Glazebrook"
   },
-  "socks-proxy-agent@6.1.1": {
+  "socks-proxy-agent@6.2.1": {
     "licenses": "MIT",
     "repository": "https://github.com/TooTallNate/node-socks-proxy-agent",
     "publisher": "Nathan Rajlich",
     "email": "nathan@tootallnate.net",
     "url": "http://n8.io/",
     "name": "socks-proxy-agent",
-    "version": "6.1.1",
-    "licenseFile": "node_modules\\socks-proxy-agent\\README.md",
-    "copyright": "Copyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;"
+    "version": "6.2.1"
   },
-  "socks@2.6.1": {
+  "socks@2.6.2": {
     "licenses": "MIT",
     "repository": "https://github.com/JoshGlazebrook/socks",
     "publisher": "Josh Glazebrook",
     "name": "socks",
-    "version": "2.6.1",
+    "version": "2.6.2",
     "licenseFile": "node_modules\\socks\\LICENSE",
     "copyright": "Copyright (c) 2013 Josh Glazebrook"
   },
@@ -4956,9 +4937,7 @@
     "email": "kevinmartensson@gmail.com",
     "url": "https://github.com/kevva",
     "name": "sort-keys-length",
-    "version": "1.0.1",
-    "licenseFile": "node_modules\\sort-keys-length\\LICENSE.md",
-    "copyright": "Copyright (c) Kevin Mårtensson"
+    "version": "1.0.1"
   },
   "sort-keys@1.1.2": {
     "licenses": "MIT",
@@ -4975,9 +4954,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/evanw/node-source-map-support",
     "name": "source-map-support",
-    "version": "0.5.19",
-    "licenseFile": "node_modules\\source-map-support\\LICENSE.md",
-    "copyright": "Copyright (c) 2014 Evan Wallace"
+    "version": "0.5.19"
   },
   "source-map@0.6.1": {
     "licenses": "BSD-3-Clause",
@@ -5010,12 +4987,12 @@
     "licenseFile": "node_modules\\sprintf-js\\LICENSE",
     "copyright": "Copyright (c) 2007-2014, Alexandru Marasteanu <hello [at) alexei (dot] ro>. All rights reserved."
   },
-  "sshpk@1.16.1": {
+  "sshpk@1.17.0": {
     "licenses": "MIT",
     "repository": "https://github.com/joyent/node-sshpk",
     "publisher": "Joyent, Inc",
     "name": "sshpk",
-    "version": "1.16.1",
+    "version": "1.17.0",
     "licenseFile": "node_modules\\sshpk\\LICENSE",
     "copyright": "Copyright Joyent, Inc. All rights reserved.. Permission is hereby granted, free of charge, to any person obtaining a copy. of this software and associated documentation files (the \"Software\"), to. deal in the Software without restriction, including without limitation the. rights to use, copy, modify, merge, publish, distribute, sublicense, and/or. sell copies of the Software, and to permit persons to whom the Software is. furnished to do so, subject to the following conditions:"
   },
@@ -5025,9 +5002,7 @@
     "publisher": "Kat Marchán",
     "email": "kzm@sykosomatic.org",
     "name": "ssri",
-    "version": "8.0.1",
-    "licenseFile": "node_modules\\ssri\\LICENSE.md",
-    "copyright": "Copyright (c) npm, Inc."
+    "version": "8.0.1"
   },
   "stack-trace@0.0.10": {
     "licenses": "MIT",
@@ -5234,8 +5209,7 @@
     "email": "r@va.gg",
     "url": "https://github.com/rvagg",
     "name": "through2",
-    "version": "2.0.5",
-    "licenseFile": "node_modules\\through2\\LICENSE.md"
+    "version": "2.0.5"
   },
   "tmp@0.1.0": {
     "licenses": "MIT",
@@ -5371,8 +5345,7 @@
     "repository": "https://github.com/metafizzy/unidragger",
     "publisher": "David DeSandro",
     "name": "unidragger",
-    "version": "2.3.1",
-    "licenseFile": "node_modules\\unidragger\\README.md"
+    "version": "2.3.1"
   },
   "unified@9.2.2": {
     "licenses": "MIT",
@@ -5390,8 +5363,7 @@
     "repository": "https://github.com/metafizzy/unipointer",
     "publisher": "David DeSandro",
     "name": "unipointer",
-    "version": "2.3.0",
-    "licenseFile": "node_modules\\unipointer\\README.md"
+    "version": "2.3.0"
   },
   "unique-filename@1.1.1": {
     "licenses": "ISC",
@@ -5497,9 +5469,7 @@
     "publisher": "Jörg Tillmann",
     "email": "joerg@peaksandpies.com",
     "name": "universal-analytics",
-    "version": "0.4.23",
-    "licenseFile": "node_modules\\universal-analytics\\README.md",
-    "copyright": "Copyright (c) 2017 Peaks & Pies GmbH &lt;hello@peaksandpies.com&gt;"
+    "version": "0.4.23"
   },
   "universalify@0.1.2": {
     "licenses": "MIT",
@@ -5578,9 +5548,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/uuidjs/uuid",
     "name": "uuid",
-    "version": "3.4.0",
-    "licenseFile": "node_modules\\uuid\\LICENSE.md",
-    "copyright": "Copyright (c) 2010-2016 Robert Kieffer and other contributors"
+    "version": "3.4.0"
   },
   "verror@1.10.0": {
     "licenses": "MIT",
@@ -5628,9 +5596,7 @@
     "email": "berkeley@r3dm.com",
     "url": "http://www.freecodecamp.com",
     "name": "warning",
-    "version": "3.0.0",
-    "licenseFile": "node_modules\\react-bootstrap\\node_modules\\warning\\LICENSE.md",
-    "copyright": "Copyright (c) 2013-2015, Facebook, Inc.. All rights reserved."
+    "version": "3.0.0"
   },
   "warning@4.0.3": {
     "licenses": "MIT",
@@ -5639,9 +5605,7 @@
     "email": "berkeley@berkeleytrue.com",
     "url": "http://www.berkeleytrue.com",
     "name": "warning",
-    "version": "4.0.3",
-    "licenseFile": "node_modules\\warning\\LICENSE.md",
-    "copyright": "Copyright (c) 2013-present, Facebook, Inc."
+    "version": "4.0.3"
   },
   "which-pm-runs@1.0.0": {
     "licenses": "MIT",
