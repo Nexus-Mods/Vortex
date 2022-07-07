@@ -12,7 +12,7 @@ import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import { toPromise, truthy} from '../../util/util';
+import { delayed, toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -26,7 +26,6 @@ import {
   getPluginPath,
   getStopPatterns,
 } from './util/gameSupport';
-import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD } from './constants';
@@ -35,12 +34,10 @@ import Bluebird from 'bluebird';
 import { createIPC } from 'fomod-installer';
 import * as net from 'net';
 import * as path from 'path';
-import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
 import * as winapi from 'winapi-bindings';
-import { ChildProcess, execFile, spawn } from 'child_process';
-import opn from '../../util/opn';
+import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 
@@ -173,6 +170,46 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
     .catch(() => ({}));
 }
 
+function spawnAsync(command: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
+      spawn(command, args)
+        .on('close', () => resolve());
+    } catch (err) {
+      reject(err)    ;
+    }
+  });
+}
+
+function spawnRetry(api: IExtensionApi, command: string, args: string[], tries = 3): Promise<void> {
+  return spawnAsync(command, args)
+    .catch(err => {
+      if (err.code === 'EBUSY') {
+        if (tries > 0) {
+          return delayed(100)
+            .then(() => spawnRetry(api, command, args, tries - 1))
+        } else {
+          return api.showDialog('error', 'File locked', {
+            text: 'The file "{{fileName}}" is locked, probably because it\'s being accessed by another process.',
+            parameters: {
+              fileName: command,
+            },
+          }, [
+            { label: 'Cancel' },
+            { label: 'Retry' },
+          ])
+            .then(result => {
+              if (result.action === 'Cancel') {
+                return Promise.reject(new UserCanceled());
+              } else {
+                return spawnRetry(api, command, args);
+              }
+            });
+        }
+      }
+    });
+}
+
 async function installDotNet(api: IExtensionApi): Promise<void> {
   const dlId: string = await toPromise(cb =>
     api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
@@ -189,10 +226,7 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
     { label: 'Ok' },
   ]);
 
-  return new Promise((resolve) => {
-    spawn(fullPath, ['/passive'])
-      .on('close', () => resolve());
-  });
+  return spawnRetry(api, fullPath, ['/passive']);
 }
 
 async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
