@@ -52,7 +52,14 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
+const fixTriggered: { [id: string]: boolean } = {};
+
+
 function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
+  if (fixTriggered[check.id]) {
+    return Promise.resolve();
+  }
+  fixTriggered[check.id] = true;
   return result.automaticFix()
     .then(() => runCheck(api, check))
     .catch(err => {
@@ -65,6 +72,9 @@ function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
       err['attachLogOnReport'] = true;
       err['Fix'] = check.id;
       api.showErrorNotification('Failed to run automatic fix', err);
+    })
+    .finally(() => {
+      fixTriggered[check.id] = false;
     });
 }
 
