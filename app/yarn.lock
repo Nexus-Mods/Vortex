@@ -1483,8 +1483,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.17.15"
 
 fomod-installer@Nexus-Mods/fomod-installer#net6:
-  version "0.7.4"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/7aba1dee46ff1ba6dc9b98fe37f199d22cd97fb9"
+  version "0.7.5"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/147b5eb46ebd71fbf4145549b78d1809f7b65edd"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -2560,9 +2560,9 @@ minipass-sized@^1.0.3:
     minipass "^3.0.0"
 
 minipass@^3.0.0, minipass@^3.1.0, minipass@^3.1.1, minipass@^3.1.3:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/minipass/-/minipass-3.3.3.tgz#fd1f0e6c06449c10dadda72618b59c00f3d6378d"
-  integrity sha512-N0BOsdFAlNRfmwMhjAsLVWOk7Ljmeb39iqFlsV1At+jqRhSUP9yeof8FyJu4imaJiSUp8vQebWD/guZwGQC8iA==
+  version "3.3.4"
+  resolved "https://registry.yarnpkg.com/minipass/-/minipass-3.3.4.tgz#ca99f95dd77c43c7a76bf51e6d200025eee0ffae"
+  integrity sha512-I9WPbWHCGu8W+6k1ZiGpPu0GkoKBeorkfKNuAFBNS1HNFJvke82sxvI5bzcCNpWPorkOO5QQ+zomzzwRxejXiw==
   dependencies:
     yallist "^4.0.0"
 
@@ -4304,8 +4304,8 @@ wide-align@^1.1.0, wide-align@^1.1.5:
     string-width "^1.0.2 || 2 || 3 || 4"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.5.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/5f81686ad2e8771bd613f6e569bc762eb63201e4"
+  version "2.5.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/853e21abeccdf878f3c72d3cab7d188af7ed7bcd"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^3.1.0"
