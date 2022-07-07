@@ -24,7 +24,7 @@ function init(context: IExtensionContext): boolean {
     // check for update when the user changes the update channel
     context.api.onStateChange(['settings', 'update', 'channel'],
       (oldChannel: string, newChannel: string) => {
-        ipcRenderer.send('set-update-channel', newChannel);
+        ipcRenderer.send('set-update-channel', newChannel, true);
         haveSetChannel = true;
     });
     // unless the user changes the update channel before,
@@ -32,7 +32,7 @@ function init(context: IExtensionContext): boolean {
     setTimeout(() => {
       if (!haveSetChannel) {
         const channel = context.api.store.getState().settings.update.channel;
-        ipcRenderer.send('set-update-channel', channel);
+        ipcRenderer.send('set-update-channel', channel, false);
       }
     }, 5000);
   });

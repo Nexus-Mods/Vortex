@@ -298,13 +298,16 @@ function setupAutoUpdate(api: IExtensionApi) {
     checkNow(channel);
   });
 
-  ipcMain.on('set-update-channel', (event, channel) => {
+  ipcMain.on('set-update-channel', (event, channel: any, manual: boolean) => {
     try {
-      log('info', 'set channel', channel);
+      log('info', 'set channel', { channel, manual });
       if ((channel !== 'none')
-          && (channelOverride === undefined)
+          && ((channelOverride === undefined) || manual)
           && (process.env.NODE_ENV !== 'development')
           && (process.env.IGNORE_UPDATES !== 'yes')) {
+        if (manual) {
+          channelOverride = channel;
+        }
         checkNow(channel);
       }
     } catch (err) {
