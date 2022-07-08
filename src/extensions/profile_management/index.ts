@@ -859,30 +859,34 @@ function init(context: IExtensionContext): boolean {
       });
 
     context.api.onStateChange(
-        ['persistent', 'profiles'], (prev: string, current: string) => {
-          Object.keys(current).forEach(profileId => {
-            if (prev[profileId] === current[profileId]) {
-              return;
-            }
+      ['persistent', 'profiles'],
+      (prev: { [profileId: string]: IProfile }, current: { [profileId: string]: IProfile }) => {
+        Object.keys(current).forEach(profileId => {
+          if (prev[profileId] === current[profileId]) {
+            return;
+          }
 
-            const prevState = getSafe(prev, [profileId, 'modState'], {});
-            const currentState = getSafe(current, [profileId, 'modState'], {});
+          const profile = current[profileId];
 
-            if (prevState !== currentState) {
-              Object.keys(currentState)
-                .forEach(modId => {
-                  const isEnabled = getSafe(currentState, [modId, 'enabled'], false);
-                  const wasEnabled = getSafe(prevState, [modId, 'enabled'], false);
+          const prevState = getSafe(prev, [profileId, 'modState'], {});
+          const currentState = getSafe(current, [profileId, 'modState'], {});
 
-                  if (isEnabled !== wasEnabled) {
-                    context.api.events.emit(
-                        isEnabled ? 'mod-enabled' : 'mod-disabled', profileId,
-                        modId);
-                  }
-                });
-            }
-          });
+          if (prevState !== currentState) {
+            const mods = context.api.getState().persistent.mods[profile.gameId];
+            Object.keys(currentState)
+              .forEach(modId => {
+                const isEnabled = getSafe(currentState, [modId, 'enabled'], false);
+                const wasEnabled = getSafe(prevState, [modId, 'enabled'], false);
+
+                if ((isEnabled !== wasEnabled) && (mods[modId] !== undefined)) {
+                  context.api.events.emit(
+                    isEnabled ? 'mod-enabled' : 'mod-disabled', profileId,
+                    modId);
+                }
+              });
+          }
         });
+      });
     {
       const state: IState = store.getState();
 
