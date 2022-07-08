@@ -181,8 +181,8 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split('+')[0];
-    let doesMatch = (mod.version === ref.versionMatch)
-                  || (mod.version !== safeCoerce(versionMatch));
+    const doesMatch = (mod.version === ref.versionMatch)
+                    || (mod.version === safeCoerce(versionMatch));
     if (!doesMatch) {
       const versionCoerced = semver.coerce(mod.version);
       if (semver.valid(versionCoerced)) {
