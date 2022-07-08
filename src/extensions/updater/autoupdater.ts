@@ -144,6 +144,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       log('info', 'installed version seems to be a non-stable release, switching update channel');
       api.store.dispatch(setUpdateChannel(channelOverride));
       api.sendNotification({
+        id: 'switched-to-beta-channel',
         type: 'info',
         message: 'You are running a beta version of Vortex so auto update settings have been '
                + 'changed to keep you up-to-date with current betas.',
