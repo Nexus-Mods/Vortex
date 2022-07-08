@@ -1511,7 +1511,7 @@ class InstallManager {
 
       const queryVariantNameDialog = (remember: boolean) => {
         const checkVariantRemember: ICheckbox[] = [];
-        if (context  !== null) {
+        if (truthy(context)) {
           const itemsCompleted = context.get('items-completed', 0);
           const itemsLeft = context.itemCount - itemsCompleted;
           if ((itemsLeft > 1) && remember) {
