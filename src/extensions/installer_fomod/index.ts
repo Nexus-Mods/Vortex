@@ -214,8 +214,21 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
   const dlId: string = await toPromise(cb =>
     api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
 
+  if (dlId === undefined) {
+    log('warn', 'failed to download .NET');
+    // trigger a new check
+    return Promise.resolve();
+  }
+
   const state = api.getState();
   const download = state.persistent.downloads.files[dlId];
+
+  if (download?.state !== 'finished') {
+    log('warn', '.NET download not finished');
+    // trigger a new check
+    return Promise.resolve();
+  }
+
   const downloadsPath = downloadPathForGame(state, SITE_ID);
   const fullPath = path.join(downloadsPath, download.localPath);
 
