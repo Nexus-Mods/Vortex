@@ -1128,7 +1128,8 @@ const KNOWN_BOMS: Array<{ bom: Buffer, enc: string }> = [
 ];
 
 export function encodingFromBOM(buf: Buffer): { encoding: string, length: number } {
-  const bom = KNOWN_BOMS.find(b => b.bom.compare(buf, 0, b.bom.length) === 0);
+  const bom = KNOWN_BOMS.find(b =>
+    (b.bom.length < buf.length) && (b.bom.compare(buf, 0, b.bom.length) === 0));
 
   if (bom !== undefined) {
     return { encoding: bom.enc, length: bom.bom.length };
@@ -1151,7 +1152,7 @@ export function readFileBOM(filePath: string, fallbackEncoding: string): Promise
       const detectedEnc = encodingFromBOM(buffer);
       if (detectedEnc === undefined) {
         // no bom
-        return decode(buffer, fallbackEncoding);
+        return decode(buffer, fallbackEncoding ?? 'utf8');
       } else {
         return decode(buffer.slice(detectedEnc.length), detectedEnc?.encoding ?? fallbackEncoding);
       }
