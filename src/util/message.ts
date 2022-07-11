@@ -461,6 +461,12 @@ export function prettifyNodeErrorMessage(err: any,
       message: 'Network connect was not permitted, please check your firewall settings',
       allowReport: false,
     };
+  } else if (err.code === 'EPROTO') {
+    return {
+      message: 'Network protocol error. This is usually a temporary error, '
+             + 'please try again later.',
+      allowReport: false,
+    };
   } else if (err.code === 'ENETUNREACH') {
     return {
       message: 'Network server not reachable.',
