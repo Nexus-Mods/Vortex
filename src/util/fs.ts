@@ -22,6 +22,7 @@ import { decodeSystemError } from './nativeErrors';
 import { truthy } from './util';
 
 import PromiseBB from 'bluebird';
+import { decode } from 'iconv-lite';
 import { dialog as dialogIn } from 'electron';
 import * as fs from 'fs-extra';
 import JsonSocket from 'json-socket';
@@ -1117,3 +1118,42 @@ export {
   withTmpDir,
   withTmpFile,
 };
+
+const KNOWN_BOMS: Array<{ bom: Buffer, enc: string }> = [
+  { bom: Buffer.from([0xEF, 0xBB, 0xBF]), enc: 'utf8' },
+  { bom: Buffer.from([0x00, 0x00, 0xFE, 0xFF]), enc: 'utf32-be' },
+  { bom: Buffer.from([0xFF, 0xFE, 0x00, 0x00]), enc: 'utf32-le' },
+  { bom: Buffer.from([0xFE, 0xFF]), enc: 'utf16be' },
+  { bom: Buffer.from([0xFF, 0xFE]), enc: 'utf16le' },
+];
+
+export function encodingFromBOM(buf: Buffer): { encoding: string, length: number } {
+  const bom = KNOWN_BOMS.find(b => b.bom.compare(buf, 0, b.bom.length) === 0);
+
+  if (bom !== undefined) {
+    return { encoding: bom.enc, length: bom.bom.length };
+  }
+  return undefined;
+}
+
+/**
+ * read file, using the BOM to determine the encoding
+ * @param filePath the file to read
+ * @param fallbackEncoding the encoding to use if there is no BOM. Expects one of the iconv-constants,
+ *                         which seem to be a super-set of the regular node buffer encodings
+ * @returns decoded file encoding
+ */
+export function readFileBOM(filePath: string, fallbackEncoding: string): Promise<string> {
+  return Promise.resolve(readFileAsync(filePath))
+    .then((buffer: Buffer) => {
+      // iconv-lite has its own BOM handling but it's weird because you apparently
+      // still have to specify utf-8/utf-16/utf-32 - it just detects the endianness
+      const detectedEnc = encodingFromBOM(buffer);
+      if (detectedEnc === undefined) {
+        // no bom
+        return decode(buffer, fallbackEncoding);
+      } else {
+        return decode(buffer.slice(detectedEnc.length), detectedEnc?.encoding ?? fallbackEncoding);
+      }
+    });
+}
