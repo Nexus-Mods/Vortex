@@ -38,13 +38,13 @@ export default class GameVersionManager {
     } catch (err) {
       // fallback
       log('warn', 'extension getGameVersion call failed',
-        { message: err.message, stack: err.stack, extension: game.extensionPath });
+          { message: err.message, stack: err.stack, extension: game.extensionPath });
       return getExecGameVersion(game, discovery);
     }
   }
 
   private isGameValid(game: IGame, discovery: IDiscoveryResult): boolean {
-    return (discovery?.path !== undefined ||
-      (game?.executable !== undefined && truthy(game.executable(discovery.path))));
+    return (discovery?.path !== undefined)
+        && truthy(game?.executable?.(discovery.path));
   }
 }
