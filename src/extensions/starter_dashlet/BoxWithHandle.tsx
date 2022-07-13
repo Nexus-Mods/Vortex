@@ -1,12 +1,12 @@
 import React, { FC, useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import Icon from '../../controls/Icon';
-import { StarterInfo } from '../../util/api';
+import { IStarterInfo } from '../../util/StarterInfo';
 
 interface IProps {
   children?: any;
   className?: string;
-  item: StarterInfo;
+  item: IStarterInfo;
   index: number;
   onMoveItem: (id: string, id2: string) => void;
 }

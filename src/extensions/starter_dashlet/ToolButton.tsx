@@ -1,13 +1,10 @@
 import IconBar from '../../controls/IconBar';
 import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
-import { truthy } from '../../util/util';
-
-import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-
 import ToolIcon from '../../controls/ToolIcon';
 
-import { IDiscoveryResult } from '../../types/IState';
+import { IStarterInfo } from '../../util/StarterInfo';
+
 import React from 'react';
 import { useDrop } from 'react-dnd';
 
@@ -16,15 +13,15 @@ export type RemoveTool = (gameId: string, toolId: string) => void;
 export interface IToolButtonProps {
   t: TFunction;
   counter: number;
-  item: StarterInfo;
+  item: IStarterInfo;
   valid: boolean;
   primary: boolean;
   running: boolean;
   onMoveItem: (hoverId: string, id: string) => any;
-  onRun: (starter: StarterInfo) => void;
-  onMakePrimary: (starter: StarterInfo) => void;
-  onRemove: (starter: StarterInfo) => void;
-  onEdit: (starter: StarterInfo) => void;
+  onRun: (starter: IStarterInfo) => void;
+  onMakePrimary: (starter: IStarterInfo) => void;
+  onRemove: (starter: IStarterInfo) => void;
+  onEdit: (starter: IStarterInfo) => void;
 }
 
 function ToolButton(props: IToolButtonProps) {

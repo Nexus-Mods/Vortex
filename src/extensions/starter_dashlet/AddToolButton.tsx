@@ -1,11 +1,11 @@
-import StarterInfo from '../../util/StarterInfo';
+import { IStarterInfo } from '../../util/StarterInfo';
 
 import { useTranslation } from 'react-i18next';
 
 import Icon from '../../controls/Icon';
 import { getSafe } from '../../util/storeHelper';
 
-import React, { useState } from 'react';
+import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { MenuItem } from 'react-bootstrap';
 import { useSelector, useStore } from 'react-redux';
@@ -16,15 +16,14 @@ import PortalMenu from '../../controls/PortalMenu';
 import { setToolVisible } from '../gamemode_management/actions/settings';
 
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IRunningTool, IState } from '../../types/IState';
+import { IState } from '../../types/IState';
 import * as selectors from '../../util/selectors';
 
-import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 
 interface IBaseProps {
   onAddNewTool: () => void;
-  tools: StarterInfo[];
+  tools: IStarterInfo[];
   onSetToolOrder: (order: string[]) => void;
 }
 
