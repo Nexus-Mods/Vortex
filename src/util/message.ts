@@ -10,7 +10,7 @@ import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
-import { HTTPError, StalledError, ThirdPartyError } from './CustomErrors';
+import { HTTPError, StalledError, TemporaryError, ThirdPartyError } from './CustomErrors';
 import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
@@ -403,6 +403,11 @@ export function prettifyNodeErrorMessage(err: any,
 
   if ((err instanceof ThirdPartyError)
       || (err instanceof ArchiveBrokenError)) {
+    return {
+      message: err.message,
+      allowReport: false,
+    };
+  } else if (err instanceof TemporaryError) {
     return {
       message: err.message,
       allowReport: false,
