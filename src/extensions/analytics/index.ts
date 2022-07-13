@@ -1,6 +1,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
-import { activeGameId, discoveryByGame, gameName } from '../../util/selectors';
+import { log } from '../../util/log';
+import { activeGameId, discoveryByGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
 import Analytics from './analytics/Analytics';
@@ -94,66 +95,73 @@ function init(context: IExtensionContext): boolean {
     }
 
     async function initializeAnalytics() {
-      const info = userInfo();
-      if (info === undefined) {
-        return;
-      }
-      const gameId = activeGameId(context.api.store.getState());
-      let gameVersion = '';
-      if (gameId) {
-        gameVersion = await getGame(gameId)
-          .getInstalledVersion(discoveryByGame(context.api.store.getState(), gameId));
-      }
-      const theme = context.api.store.getState().settings.interface.currentTheme;
+      try {
+        const info = userInfo();
+        if (info === undefined) {
+          return;
+        }
+        const gameId = activeGameId(context.api.store.getState());
+        let gameVersion = '';
+        if (gameId) {
+          gameVersion = await getGame(gameId)
+            .getInstalledVersion(discoveryByGame(context.api.store.getState(), gameId));
+        }
+        const theme = context.api.store.getState().settings.interface.currentTheme;
 
-      Analytics.start(instanceId, updateChannel, {
-        vortexVersion: getApplication().version,
-        membership: info.isPremium
-          ? 'Premium'
-          : info.isSupporter
-            ? 'Supporter'
-            : 'Member',
-        gameId,
-        gameVersion,
-        theme,
-      });
+        Analytics.start(instanceId, updateChannel, {
+          vortexVersion: getApplication().version,
+          membership: info.isPremium
+            ? 'Premium'
+            : info.isSupporter
+              ? 'Supporter'
+              : 'Member',
+          gameId,
+          gameVersion,
+          theme,
+        });
 
-      Analytics.trackEvent('Vortex', 'Version', getApplication().version);
-    }
+        Analytics.trackEvent('Vortex', 'Version', getApplication().version);
+      } catch (err) {
+        // there is no error handling anywhere invoking initializeAnalytics,
+        // the results aren't even adviced, so any unhandled exception here would
+        // crash the application.
+        log('warn', 'failed to initialize analytics', { error: err.message });
+      }
 
     function showConsentDialog() {
-      context.api.showDialog('question', 'Diagnostics & usage data',
-        {
-          bbcode:
-            `Help us provide you with the best modding experience possible![br][/br]
+        context.api.showDialog('question', 'Diagnostics & usage data',
+          {
+            bbcode:
+              `Help us provide you with the best modding experience possible![br][/br]
           With your permission, Vortex can automatically collect analytics information and send it to our team to help us improve quality and performance.[br][/br]
           This information is sent to our team entirely anonymously and only with your express consent. [url=${HELP_ARTICLE}]More about the data we track.[/url]`,
-        },
-        [
-          { label: 'Deny' },
-          { label: 'Allow', default: true },
-        ],
-      )
-        .then(result => {
-          if (result.action === 'Allow') {
-            initializeAnalytics();
-            Analytics.trackClickEvent('Tracking', 'Allow');
-            ignoreNextAnalyticsStateChange = true;
-            context.api.store.dispatch(setAnalytics(true));
-          } else if (result.action === 'Deny') {
-            context.api.store.dispatch(setAnalytics(false));
-          }
-          return Promise.resolve();
-        });
-    }
+          },
+          [
+            { label: 'Deny' },
+            { label: 'Allow', default: true },
+          ],
+        )
+          .then(result => {
+            if (result.action === 'Allow') {
+              initializeAnalytics();
+              Analytics.trackClickEvent('Tracking', 'Allow');
+              ignoreNextAnalyticsStateChange = true;
+              context.api.store.dispatch(setAnalytics(true));
+            } else if (result.action === 'Deny') {
+              context.api.store.dispatch(setAnalytics(false));
+            }
+            return Promise.resolve();
+          });
+      }
 
-    if (enabled() === undefined && !!userInfo()) {
-      // Is logged in, show consent dialog
-      showConsentDialog();
-    }
+      if (enabled() === undefined && !!userInfo()) {
+        // Is logged in, show consent dialog
+        showConsentDialog();
+      }
 
-    if (enabled()) {
-      initializeAnalytics();
+      if (enabled()) {
+        initializeAnalytics();
+      }
     }
   });
 
