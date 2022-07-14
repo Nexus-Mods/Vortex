@@ -171,7 +171,7 @@ export default function Tools(props: IStarterProps) {
 
   const onStateUpdate = () => {
     const gameStarter = generateGameStarter(connectedProps);
-    const tools = generateToolStarters(connectedProps);
+    const tools = generateToolStarters(connectedProps, gameStarter?.id);
     dispatch([
       { type: propOf<IWelcomeScreenState>('gameStarter'), value: gameStarter },
       { type: propOf<IWelcomeScreenState>('tools'), value: tools },
@@ -332,7 +332,7 @@ function generateGameStarter(props: IConnectedProps): StarterInfo {
   return null;
 }
 
-function generateToolStarters(props: IConnectedProps): StarterInfo[] {
+function generateToolStarters(props: IConnectedProps, gameStarterId: string): StarterInfo[] {
   const { discoveredGames, discoveredTools,
     gameMode, knownGames, toolsOrder } = props;
 
@@ -361,7 +361,7 @@ function generateToolStarters(props: IConnectedProps): StarterInfo[] {
 
   // finally, add those tools that were added manually
   Object.keys(discoveredTools)
-    .filter(toolId => !preConfTools.has(toolId) && (toolId !== this.state?.gameStarter?.id))
+    .filter(toolId => !preConfTools.has(toolId) && (toolId !== gameStarterId))
     .sort((lhs, rhs) => {
       const tlhs = discoveredTools[lhs]?.timestamp || 0;
       const trhs = discoveredTools[rhs]?.timestamp || 0;
