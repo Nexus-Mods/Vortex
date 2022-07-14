@@ -231,6 +231,10 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     dlPromise = Promise.reject(new ProcessCanceled('Failed to download'));
   }
 
+  const sourceName: string = truthy(ext.modId)
+    ? 'nexusmods.com'
+    : 'github.com';
+
   return dlPromise
     .then((dlIds: string[]) => {
       const state: IState = api.store.getState();
@@ -269,7 +273,15 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     .catch(UserCanceled, () => null)
     .catch(ProcessCanceled, () => {
       api.showDialog('error', 'Installation failed', {
-        text: 'Failed to install the extension, please check the notifications.',
+        text: 'Failed to install the extension "{{extensionName}}" from "{{sourceName}}", '
+            + 'please check the notifications.',
+        parameters: {
+          extensionName: ext.name,
+          sourceName,
+        },
+        options: {
+          hideMessage: true,
+        },
       }, [
         { label: 'Close' },
       ]);
@@ -281,8 +293,15 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     })
     .catch(err => {
       api.showDialog('error', 'Installation failed', {
-        text: 'Failed to install the extension',
+        text: 'Failed to install the extension "{{extensionName}}" from "{{sourceName}}"',
+        parameters: {
+          extensionName: ext.name,
+          sourceName,
+        },
         message: err.stack,
+        options: {
+          hideMessage: true,
+        },
       }, [
         { label: 'Close' },
       ]);
