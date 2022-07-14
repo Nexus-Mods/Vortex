@@ -28,7 +28,7 @@ import {
 } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
 
-import { CONTAINER_NAME, NET_CORE_DOWNLOAD } from './constants';
+import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
 import Bluebird from 'bluebird';
 import { createIPC } from 'fomod-installer';
@@ -40,6 +40,8 @@ import * as winapi from 'winapi-bindings';
 import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
+import { apiKey } from '../nexus_integration/selectors';
+import opn from '../../util/opn';
 
 function transformError(err: any): Error {
   let result: Error;
@@ -126,6 +128,9 @@ function transformError(err: any): Error {
 
   if (result === undefined) {
     result = new Error(err.name ?? err.Message ?? 'unknown error: ' + util.inspect(err));
+    if (err['code'] !== undefined) {
+      result['code'] = err['code'];
+    }
   }
   [
     { in: 'StackTrace', out: 'stack' },
@@ -210,7 +215,7 @@ function spawnRetry(api: IExtensionApi, command: string, args: string[], tries =
     });
 }
 
-async function installDotNet(api: IExtensionApi): Promise<void> {
+async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void> {
   const dlId: string = await toPromise(cb =>
     api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
 
@@ -239,7 +244,12 @@ async function installDotNet(api: IExtensionApi): Promise<void> {
     { label: 'Ok' },
   ]);
 
-  return spawnRetry(api, fullPath, ['/passive']);
+  const args = ['/passive'];
+  if (repair) {
+    args.push('/repair');
+  }
+
+  return spawnRetry(api, fullPath, args);
 }
 
 async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
@@ -266,7 +276,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
             + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
         replace: { stderr: stderr.replace('\n', '[br][/br]') },
       },
-      automaticFix: () => installDotNet(api),
+      automaticFix: () => installDotNet(api, false),
       severity: 'fatal',
     })
     : Promise.resolve(undefined);
@@ -448,6 +458,7 @@ class ConnectionIPC {
     };
 
     let pid: number;
+    let exitCode: number;
     let onExitCBs: (code: number) => void;
 
     if (!debug) {
@@ -490,6 +501,9 @@ class ConnectionIPC {
             const errStack = lines.slice(isErr + 1).join('\n');
             const err = new Error(lines[isErr]);
             err.stack = errStack;
+            if (exitCode !== undefined) {
+              err['code'] = exitCode;
+            }
             err['attachLogOnReport'] = true;
             setConnectOutcome(err);
             wasConnected = true;
@@ -502,12 +516,18 @@ class ConnectionIPC {
         const onStdout = (dat: string) => {
           msg += dat;
           stdoutDebouncer.schedule();
-
         };
 
         onExitCBs = (code: number) => {
+          exitCode = code;
+
           stdoutDebouncer.runNow(() => {
+            // if there is an error message logged, the stdout debouncer will already have
+            // assigned a connection outcome so this call wouldn't have an effect.
+            // This is merely a fallback in case the log output isn't recognized as an
+            // error.
             const err = new Error('Fomod installer startup failed, please review your log file');
+            err['code'] = code;
             err['attachLogOnReport'] = true;
             setConnectOutcome(err);
           });
@@ -709,7 +729,7 @@ class ConnectionIPC {
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
-        this.sendMessageInner(`Reply`, { request: data, data: response, error: this.copyErr(err) })
+        this.sendMessageInner('Reply', { request: data, data: response, error: this.copyErr(err) })
           .catch(e => {
             log('info', 'process data', e.message);
           });
@@ -759,12 +779,12 @@ const ensureConnected = (() => {
 })();
 
 async function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
-  const connection = await ensureConnected();
-
   try {
+    const connection = await ensureConnected();
+
     log('debug', '[installer] test supported');
-    const res = await connection.sendMessage('TestSupported',
-      { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+    const res = await connection.sendMessage(
+      'TestSupported', { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
     log('debug', '[installer] test supported result', JSON.stringify(res));
     return res;
   } catch (err) {
@@ -773,16 +793,18 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
 }
 
 async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
-  const connection = await ensureConnected();
+  try {
+    const connection = await ensureConnected();
 
-  return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] })
-    .then((result: ISupportedResult) => {
-      if (!result.supported) {
-        log('warn', 'fomod fallback installer not supported, that shouldn\'t happen');
-      }
-      return result;
-    })
-    .catch(err => Promise.reject(transformError(err)));
+    const res = await connection.sendMessage(
+      'TestSupported', { files, allowedTypes: ['Basic'] })
+    if (!res.supported) {
+      log('warn', 'fomod fallback installer not supported, that shouldn\'t happen');
+    }
+    return res;
+  } catch (err) {
+    throw transformError(err);
+  }
 }
 
 async function install(files: string[],
@@ -793,11 +815,16 @@ async function install(files: string[],
                        validate: boolean,
                        progressDelegate: ProgressDelegate,
                        coreDelegates: Core): Promise<IInstallResult> {
-  const connection = await ensureConnected();
+  try {
+    const connection = await ensureConnected();
 
-  return connection.sendMessage('Install',
-    { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
-    coreDelegates);
+    return await connection.sendMessage(
+      'Install',
+      { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
+      coreDelegates);
+  } catch (err) {
+    throw transformError(err);
+  }
 }
 
 function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
@@ -888,10 +915,38 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
+  const wrapper = <T>(cb: (...args: any[]) => Promise<T>) => {
+    return (...args: any[]) =>
+      toBlue(cb)(...args)
+        .catch(err => {
+          if ((err['code'] === 0xE0434352)
+            && (err.message.includes('Could not load file or assembly'))) {
+            context.api.showDialog('error', 'Mod installation failed', {
+              text: 'The mod installation failed with an error message that indicates '
+                + 'your .NET installation is damaged. '
+                + 'We can download & repair the installation for you, otherwise '
+                + 'you have to do that manually.\n'
+                + '',
+              links: [{ label: 'Open PAGE', action: () => opn(NET_CORE_DOWNLOAD_SITE).catch(() => null) }],
+            }, [
+              { label: 'Cancel' },
+              { label: 'Repair' },
+            ])
+              .then(result => {
+                if (result.action === 'Repair') {
+                  return installDotNet(context.api, true);
+                }
+              });
+            err['allowReport'] = false;
+          }
+          return Promise.reject(err);
+        });
+  }
+
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
-  context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
-  context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
+  context.registerInstaller('fomod', 20, wrapper(testSupportedScripted), wrapper(installWrap));
+  context.registerInstaller('fomod', 100, wrapper(testSupportedFallback), wrapper(installWrap));
 
   if (process.platform === 'win32') {
     context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
