@@ -179,9 +179,10 @@ function spawnAsync(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       spawn(command, args)
-        .on('close', () => resolve());
+        .on('close', () => resolve())
+        .on('error', err => reject(err));
     } catch (err) {
-      reject(err)    ;
+      reject(err);
     }
   });
 }
