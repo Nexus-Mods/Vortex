@@ -928,7 +928,7 @@ function init(context: IExtensionContext): boolean {
                 + 'We can download & repair the installation for you, otherwise '
                 + 'you have to do that manually.\n'
                 + '',
-              links: [{ label: 'Open PAGE', action: () => opn(NET_CORE_DOWNLOAD_SITE).catch(() => null) }],
+              links: [{ label: 'Open page', action: () => opn(NET_CORE_DOWNLOAD_SITE).catch(() => null) }],
             }, [
               { label: 'Cancel' },
               { label: 'Repair' },
