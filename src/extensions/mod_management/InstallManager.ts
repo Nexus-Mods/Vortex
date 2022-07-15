@@ -83,12 +83,14 @@ export class ArchiveBrokenError extends Error {
   }
 }
 
+type ReplaceChoice = 'replace' | 'variant';
 interface IReplaceChoice {
   id: string;
   variant: string;
   enable: boolean;
   attributes: { [key: string]: any };
   rules: IRule[];
+  replaceChoice: ReplaceChoice;
 }
 
 interface IInvalidInstruction {
@@ -424,19 +426,33 @@ class InstallManager {
         // mod or provided a new, unused name
 
         let variantCounter: number = 0;
-        const checkNameLoop = () => this.checkModExists(testModId, api, installGameId)
-          ? this.queryUserReplace(api, modId, installGameId, ++variantCounter)
-            .then((choice: IReplaceChoice) => {
-              testModId = choice.id;
-              if (choice.enable) {
-                enable = true;
-              }
-              setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
-              rules = choice.rules || [];
-              fullInfo.previous = choice.attributes;
-              return checkNameLoop();
-            })
-          : Promise.resolve(testModId);
+        let replacementChoice: ReplaceChoice = undefined;
+        const checkNameLoop = () => {
+          if (replacementChoice === 'replace') {
+            return Promise.resolve(testModId);
+          }
+          const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
+          const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
+          const existingIds = (replacementChoice === 'variant')
+            ? modNameMatches
+            : Array.from(new Set([].concat(modNameMatches, variantMatches)));
+          if (existingIds.length === 0) {
+            return Promise.resolve(testModId);
+          } else {
+            return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
+              .then((choice: IReplaceChoice) => {
+                testModId = choice.id;
+                replacementChoice = choice.replaceChoice;
+                if (choice.enable) {
+                  enable = true;
+                }
+                setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
+                rules = choice.rules || [];
+                fullInfo.previous = choice.attributes;
+                return checkNameLoop();
+              });
+          }
+        }
         return checkNameLoop();
       })
       // TODO: this is only necessary to get at the fileId and the fileId isn't
@@ -1039,7 +1055,6 @@ class InstallManager {
       const actions = [
         { label: 'Cancel', action: () => reject(new UserCanceled()) },
         { label: 'Delete', action: () => {
-          const state: IState = api.store.getState();
           fs.removeAsync(archivePath)
             .catch(err => api.showErrorNotification('Failed to remove archive', err,
                                                     { allowReport: false }))
@@ -1391,8 +1406,18 @@ class InstallManager {
       ;
   }
 
-  private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
-    return installName in (api.store.getState().persistent.mods[gameMode] || {});
+  private checkModVariantsExist(api: IExtensionApi, gameMode: string, archiveId: string): string[] {
+    const state = api.getState();
+    const mods = Object.values(state.persistent.mods[gameMode] || []);
+    return mods.filter(mod => mod.archiveId === archiveId).map(mod => mod.id);
+  }
+
+  private checkModNameExists(installName: string, api: IExtensionApi, gameMode: string): string[] {
+    const state = api.getState();
+    const mods = Object.values(state.persistent.mods[gameMode] || []);
+    // Yes I know that only 1 mod id can ever match the install name, but it's more consistent
+    //  with the variant check as we don't have to check for undefined too.
+    return mods.filter(mod => mod.id === installName).map(mod => mod.id);
   }
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
@@ -1485,11 +1510,12 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(api: IExtensionApi, modId: string, gameId: string, counter: number) {
+  private queryUserReplace(api: IExtensionApi, modIds: string[], gameId: string, counter: number) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
-      const mod: IMod = state.persistent.mods[gameId][modId];
-      if (mod === undefined) {
+      const mods: IMod[] = Object.values(state.persistent.mods[gameId])
+        .filter(mod => modIds.includes(mod.id));
+      if (mods.length === 0) {
         // Technically for this to happen the timing must be *perfect*,
         //  the replace query dialog will only show if we manage to confirm that
         //  the modId is indeed stored persistently - but if somehow the user
@@ -1499,15 +1525,16 @@ class InstallManager {
         // https://github.com/Nexus-Mods/Vortex/issues/7972
         const currentProfile = activeProfile(api.store.getState());
         return resolve({
-          id: modId,
+          id: modIds[0],
           variant: '',
-          enable: getSafe(currentProfile, ['modState', modId, 'enabled'], false),
+          enable: getSafe(currentProfile, ['modState', modIds[0], 'enabled'], false),
           attributes: {},
           rules: [],
+          replaceChoice: 'replace',
         });
       }
 
-      const context = getBatchContext('install-mod', mod.archiveId);
+      const context = getBatchContext('install-mod', mods[0].archiveId);
 
       const queryVariantNameDialog = (remember: boolean) => {
         const checkVariantRemember: ICheckbox[] = [];
@@ -1529,14 +1556,14 @@ class InstallManager {
           text: 'Enter a variant name for "{{modName}}" to differentiate it from the original',
           input: [{
             id: 'variant',
-            value: '2',
+            value: counter > 2 ? counter.toString() : '2',
             label: 'Variant',
           }],
           checkboxes: checkVariantRemember,
           md: '**Remember:** You can switch between variants by clicking in the version '
             + 'column in your mod list and selecting from the dropdown.',
           parameters: {
-            modName: modName(mod, { version: false }),
+            modName: modName(mods[0], { version: false }),
           },
           condition: (content: IDialogContent) => validateVariantName(api.translate, content),
           options: {
@@ -1585,7 +1612,7 @@ class InstallManager {
             order: ['choices', 'checkboxes'],
           },
           parameters: {
-            modName: modName(mod, { version: false }),
+            modName: modName(mods[0], { version: false }),
           },
         },
         [
@@ -1610,6 +1637,35 @@ class InstallManager {
             };
           }
         });
+
+        const queryVariantReplacement = () => api.showDialog('question', 'Select Variant to Replace',
+        {
+          text: '"{{modName}}" has several variants installed - please choose which one to replace:',
+          choices: modIds.map((id, idx) => {
+            const modAttributes = mods[idx].attributes;
+            const variant = getSafe(modAttributes, ['variant'], '');
+            return {
+              id,
+              value: idx === 0,
+              text: `modId: ${id}`,
+              subText: api.translate('Version: {{version}}; InstallTime: {{installTime}}; Variant: {{variant}}',
+              {
+                replace: {
+                  version: getSafe(modAttributes, ['version'], 'Unknown'),
+                  installTime: new Date(getSafe(modAttributes, ['installTime'], 0)),
+                  variant: truthy(variant) ? variant : 'Not set',
+                }
+              }),
+            }
+          }),
+          parameters: {
+            modName: modName(mods[0], { version: false }),
+          },
+        },
+        [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ]);
 
       let choices: Promise<{ action: string, variant?: string, remember: boolean }>;
 
@@ -1663,10 +1719,29 @@ class InstallManager {
       choices
         .then((result: { action: string, variant: string, remember: boolean }) => {
           const currentProfile = activeProfile(api.store.getState());
-          const wasEnabled = () => {
+          const wasEnabled = (modId: string) => {
             return (currentProfile?.gameId === gameId)
               ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
               : false;
+          };
+
+          const replaceMod = (modId: string) => {
+            const mod = mods.find(m => m.id === modId);
+            const variant = mod !== undefined ? getSafe(mod.attributes, ['variant'], '') : '';
+            api.events.emit('remove-mod', gameId, modId, (err) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve({
+                  id: modId,
+                  variant,
+                  enable: wasEnabled(modId),
+                  attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
+                  rules: mod.rules,
+                  replaceChoice: 'replace',
+                });
+              }
+            }, { willBeReplaced: true });
           };
 
           if (result.action === 'variant') {
@@ -1674,32 +1749,44 @@ class InstallManager {
               context.set('replace-or-variant', 'variant');
             }
             if (currentProfile !== undefined) {
-              api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
+              const actions = modIds.map(id => setModEnabled(currentProfile.id, id, false));
+              batchDispatch(api.store.dispatch, actions);
             }
+            // We want the shortest possible modId paired against this archive
+            //  before adding the variant name to it.
+            const archiveId = mods[0].archiveId;
+            const relevantIds = Object.keys(state.persistent.mods[gameId])
+              .filter(id => state.persistent.mods[gameId][id]?.archiveId === archiveId);
+            const modId = relevantIds.reduce((prev, iter) => iter.length < prev.length ? iter : prev, relevantIds[0]);
+            // We just disabled all variants - if any of the variants was enabled previously
+            //  it's safe to assume that the user wants this new variant enabled.
+            const enable = modIds.reduce((prev, iter) => wasEnabled(iter) ? true : prev, false);
             resolve({
               id: modId + '+' + result.variant,
               variant: result.variant,
-              enable: wasEnabled(),
+              enable,
               attributes: {},
               rules: [],
+              replaceChoice: 'variant',
             });
           } else if (result.action === 'replace') {
             if (result.remember === true) {
               context.set('replace-or-variant', 'replace');
             }
-            api.events.emit('remove-mod', gameId, modId, (err) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve({
-                  id: modId,
-                  variant: '',
-                  enable: wasEnabled(),
-                  attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
-                  rules: mod.rules,
-                });
-              }
-            }, { willBeReplaced: true });
+            if (modIds.length > 1) {
+              queryVariantReplacement()
+                .then((res: IDialogResult) => {
+                  if (res.action === 'Cancel') {
+                    context?.set?.('canceled', true);
+                    reject(new UserCanceled());
+                  } else {
+                    const selected = Object.keys(res.input).find(iter => res.input[iter]);
+                    replaceMod(selected);
+                  }
+                })
+            } else {
+              replaceMod(modIds[0]);
+            }
           } else {
             if (result.action === 'Cancel') {
               log('error', 'invalid action in "queryUserReplace"', { action: result.action });
