@@ -40,7 +40,6 @@ import * as winapi from 'winapi-bindings';
 import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
-import { apiKey } from '../nexus_integration/selectors';
 import opn from '../../util/opn';
 
 function transformError(err: any): Error {
@@ -106,8 +105,7 @@ function transformError(err: any): Error {
              || (err.stack.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseDocumentContent') !== -1)
              || (err.stack.indexOf('XmlScriptType.Validate') !== -1)
-             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1))
-             ) {
+             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1))) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.Xml.XmlException')
              && ((err.stack.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
@@ -816,16 +814,12 @@ async function install(files: string[],
                        validate: boolean,
                        progressDelegate: ProgressDelegate,
                        coreDelegates: Core): Promise<IInstallResult> {
-  try {
-    const connection = await ensureConnected();
+  const connection = await ensureConnected();
 
-    return await connection.sendMessage(
-      'Install',
-      { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
-      coreDelegates);
-  } catch (err) {
-    throw transformError(err);
-  }
+  return await connection.sendMessage(
+    'Install',
+    { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
+    coreDelegates);
 }
 
 function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
