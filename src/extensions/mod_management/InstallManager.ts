@@ -1407,6 +1407,9 @@ class InstallManager {
   }
 
   private checkModVariantsExist(api: IExtensionApi, gameMode: string, archiveId: string): string[] {
+    if (archiveId === null) {
+      return [];
+    }
     const state = api.getState();
     const mods = Object.values(state.persistent.mods[gameMode] || []);
     return mods.filter(mod => mod.archiveId === archiveId).map(mod => mod.id);
