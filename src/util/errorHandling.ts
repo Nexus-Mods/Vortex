@@ -114,11 +114,13 @@ ${error.stack}
 
 export function createErrorReport(type: string, error: IError, context: IErrorContext,
                                   labels: string[], state: any, sourceProcess?: string) {
-  const reportPath = path.join(getVortexPath('userData'), 'crashinfo.json');
+  const userData = getVortexPath('userData');
+  const reportPath = path.join(userData, 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
     type, error, labels: labels || [], context,
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
     reportProcess: process.type, sourceProcess,
+    userData,
   }));
   spawnSelf(['--report', reportPath]);
 }
@@ -197,14 +199,20 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       reportInfo = JSON.parse(reportData.toString());
+      const userData = reportInfo['userData'] ?? getVortexPath('userData');
       // currently attaching a log for any crash-type report
       // if (reportInfo.error.attachLog) {
       return bundleAttachment({
         attachments: [{
           id: 'logfile',
           type: 'file',
-          data: path.join(getVortexPath('userData'), 'vortex.log'),
+          data: path.join(userData, 'vortex.log'),
           description: 'Vortex Log',
+        }, {
+          id: 'logfile2',
+          type: 'file',
+          data: path.join(userData, 'vortex1.log'),
+          description: 'Vortex Log 2',
         }],
       });
     })
