@@ -48,6 +48,7 @@ export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
   secondary: boolean;
   columns: (props: () => IDownloadViewProps) => Array<ITableAttribute<IDownload>>;
+  downloadPathForGame: (game: string) => string;
 }
 
 interface IConnectedProps {
@@ -55,7 +56,6 @@ interface IConnectedProps {
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
-  downloadPathForGame: (gameId: string) => string;
   showDropzone: boolean;
   showGraph: boolean;
   maxBandwidth: number;
@@ -83,6 +83,8 @@ interface IComponentState {
 }
 
 const nop = () => null;
+
+const DROPZONE_ACCEPT: DropType[] = ['urls', 'files'];
 
 function MountTrigger(props: { cb: () => void }) {
   React.useCallback(() => {
@@ -300,7 +302,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         <Panel.Collapse>
           <Panel.Body>
             <Dropzone
-              accept={['urls', 'files']}
+              accept={DROPZONE_ACCEPT}
               drop={this.dropDownload}
               dialogHint={t('Enter download URL')}
               icon='folder-download'
@@ -681,7 +683,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),
-    downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
     maxBandwidth: state.settings.downloads.maxBandwidth,

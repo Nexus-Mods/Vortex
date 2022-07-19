@@ -54,6 +54,10 @@ function ResizeHandle(props: { corner: string }) {
   );
 }
 
+const emptyObject = {};
+const FULL_SIZE = { width: '100%', height: '100%' };
+const handleComponent = { bottomRight: <ResizeHandle corner='br'/> };
+
 class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
   private mRef: HTMLElement = null;
   private mResizeRef: Resizable = null;
@@ -123,8 +127,8 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
         onContextMenu={this.onContext}
       >
         <Resizable
-            ref={x => { this.mResizeRef = x; }}
-            defaultSize={{ width: '100%', height: '100%' }}
+            ref={this.setResizableRef}
+            defaultSize={FULL_SIZE}
             minWidth={resizing ? this.mMinWidth / 2 : undefined}
             minHeight={resizing ? this.mMinHeight / 2 : undefined}
             maxWidth={resizing ? 3 * this.mCellWidth : undefined}
@@ -132,8 +136,8 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
             onResizeStart={this.resizeStart}
             onResizeStop={this.resizeEnd}
             onResize={this.resizeCallback}
-            enable={editable ? undefined : {}}
-            handleComponent={{ bottomRight: <ResizeHandle corner='br'/> }}
+            enable={editable ? undefined : emptyObject}
+            handleComponent={handleComponent}
         >
           {this.props.children}
           <div key='drag-handle' className='drag-handle'/>
@@ -158,6 +162,8 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
     }
     return this.mPackeryItem;
   }
+
+  private setResizableRef = x => { this.mResizeRef = x; }
 
   private resizeStart = (e: React.MouseEvent<HTMLElement>, dir: ResizeDirection) => {
     try {

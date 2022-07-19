@@ -632,15 +632,15 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
 
+  const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
+  const onSelectPath = (basePath: string): Promise<string> =>
+    Promise.resolve(context.api.selectDir({
+      defaultPath: basePath,
+    }));
+
   context.registerDialog('game-search-paths', PathSelectionDialog, () => ({
-    onScan: (paths: string[]) => {
-      $.gameModeManager.startSearchDiscovery(paths);
-    },
-    onSelectPath: (basePath: string): Promise<string> => {
-      return Promise.resolve(context.api.selectDir({
-        defaultPath: basePath,
-      }));
-    },
+    onScan,
+    onSelectPath,
   }));
 
   context.once(() => {

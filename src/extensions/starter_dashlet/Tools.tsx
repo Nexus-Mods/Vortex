@@ -200,15 +200,16 @@ export default function Tools(props: IStarterProps) {
     if (toolsOrder.length === 0 && state.tools.length > 0) {
       applyOrder(state.tools.map(tool => tool.id));
     }
-  }, [state.tools, toolsOrder ]);
+  }, [state.tools, toolsOrder]);
   let content: JSX.Element;
-  const toolEditDialog = () => (state.editTool !== undefined)
+  const toolEditDialog = React.useCallback(() => (state.editTool !== undefined)
     ? (
       <ToolEditDialog
         tool={state.editTool}
         onClose={closeEditDialog}
       />
-    ) : null;
+    ) : null
+  , [state.editTool, closeEditDialog]);
   if (gameMode === undefined) {
     content = (
       <EmptyPlaceholder
@@ -384,15 +385,19 @@ function generateToolStarters(props: IConnectedProps, gameStarterId: string): St
 }
 
 const emptyObj = {};
+const emptyArray = [];
+
+let lastConnected: IConnectedProps;
+
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode: string = activeGameId(state);
 
-  return {
+  const res = {
     gameMode,
     addToTitleBar: getSafe(state,
       ['settings', 'interface', 'tools', 'addToolsToTitleBar'], false),
     toolsOrder: getSafe(state,
-      ['settings', 'interface', 'tools', 'order', gameMode], []),
+      ['settings', 'interface', 'tools', 'order', gameMode], emptyArray),
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, ['settings', 'gameMode',
@@ -401,6 +406,13 @@ function mapStateToProps(state: any): IConnectedProps {
     toolsRunning: state.session.base.toolsRunning,
     mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObj),
   };
+
+  const keys = Object.keys(res);
+  if ((lastConnected === undefined)
+      || (keys.find(key => res[key] !== lastConnected[key]) !== undefined)) {
+    lastConnected = res;
+  }
+  return lastConnected;
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {

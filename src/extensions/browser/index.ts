@@ -91,9 +91,12 @@ function doBrowse(api: IExtensionApi, navUrl: string,
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['session', 'browser'], sessionReducer);
+
+  const onNavigate = (navUrl: string) => { lastURL = navUrl; }
+
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
-    onNavigate: (navUrl: string) => { lastURL = navUrl; },
+    onNavigate,
     overlay: false,
   }));
 

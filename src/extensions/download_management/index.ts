@@ -777,13 +777,19 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'transactions'], transactionsReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
+  const downloadPathForGame = (gameId: string) =>
+    selectors.downloadPathForGame(context.api.getState(), gameId);
+
+  const downloadColumns = (props: () => IDownloadViewProps) =>
+    downloadAttributes(context.api, props, withAddInProgress);
+
   context.registerMainPage('download', 'Downloads', DownloadView, {
     hotkey: 'D',
     group: 'global',
     badge: downloadCount,
     props: () => ({
-      columns: (props: () => IDownloadViewProps) =>
-        downloadAttributes(context.api, props, withAddInProgress),
+      downloadPathForGame,
+      columns: downloadColumns,
     }),
   });
 

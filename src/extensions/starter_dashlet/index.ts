@@ -73,10 +73,12 @@ const toolsValidation = memoize(validateTools);
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
+  const onGetValidTools = (starters: IStarterInfo[], gameMode: string) =>
+    toolsValidation(context.api, starters, gameMode);
+
   context.registerDashlet('Tools', 2, 2, 100, Tools, undefined,
     () => ({
-      onGetValidTools: (starters: IStarterInfo[], gameMode: string) =>
-        toolsValidation(context.api, starters, gameMode),
+      onGetValidTools,
     }), {
       closable: false,
     });

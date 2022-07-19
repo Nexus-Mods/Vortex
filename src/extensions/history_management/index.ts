@@ -44,6 +44,15 @@ function makeAddToHistory(api: IExtensionApi) {
   };
 }
 
+function onErrorImpl(api: IExtensionApi, err: Error, evt: IHistoryEvent, stackId: string) {
+  const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
+  api.showErrorNotification('Failed to revert event', err, { allowReport });
+  if (evt.reverted) {
+    api.store.dispatch(setHistoryEvent(stackId, { ...evt, reverted: false }));
+  }
+  api.store.dispatch(showHistory(undefined));
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['persistent', 'history'], persistentReducer);
   context.registerReducer(['session', 'history'], sessionReducer);
@@ -53,22 +62,20 @@ function init(context: IExtensionContext): boolean {
   context.registerAPI('showHistory', (stackId: string) => {
     context.api.store.dispatch(showHistory(stackId));
   }, {});
+
+  const onClose = () => context.api.store.dispatch(showHistory(undefined));
+
+  const onReverted = (stackId: string, evt: IHistoryEvent) =>
+    context.api.store.dispatch(markHistoryReverted(stackId, evt));
+
+  const onError = (err: Error, stackId: string, evt: IHistoryEvent) =>
+    onErrorImpl(context.api, err, evt, stackId);
+
   context.registerDialog('history-dialog', HistoryDialog, () => {
     return {
-      onClose: () => {
-        context.api.store.dispatch(showHistory(undefined));
-      },
-      onReverted: (stackId: string, evt: IHistoryEvent) => {
-        context.api.store.dispatch(markHistoryReverted(stackId, evt));
-      },
-      onError: (err: Error, stackId: string, evt: IHistoryEvent) => {
-        const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
-        context.api.showErrorNotification('Failed to revert event', err, { allowReport });
-        if (evt.reverted) {
-          context.api.store.dispatch(setHistoryEvent(stackId, { ...evt, reverted: false }));
-        }
-        context.api.store.dispatch(showHistory(undefined));
-      },
+      onClose,
+      onReverted,
+      onError,
       stacks,
     };
   });

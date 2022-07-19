@@ -1372,6 +1372,61 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   return resolveFunc;
 }
 
+function onUpdated() {
+  bringToFront();
+}
+
+type ResolveFunc = (input: string, name?: string, friendlyName?: string) => Promise<IResolvedURL>;
+
+function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
+  const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
+  if (queueItem === undefined) {
+    log('error', 'failed to find queue item', { inputUrl, queue: JSON.stringify(freeDLQueue) });
+    return;
+  }
+  const { url } = queueItem;
+
+  awaitedLinks.push({
+    gameId: url.gameId,
+    modId: url.modId,
+    fileId: url.fileId,
+    resolve: (resUrl: string) =>
+      resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
+        .then(queueItem.res)
+        .catch(queueItem.rej),
+  });
+
+  opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`)
+    .catch(() => null);
+}
+
+function onSkip(inputUrl: string) {
+  const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
+  if (queueItem !== undefined) {
+    queueItem.rej(new UserCanceled(true));
+  }
+}
+
+function onCancel(inputUrl: string) {
+  const copy = freeDLQueue.slice(0);
+  copy.forEach(item => {
+    item.rej(new UserCanceled(false));
+  });
+}
+
+function onCancelLoginImpl(api: IExtensionApi) {
+  if (cancelLogin !== undefined) {
+    try {
+      cancelLogin();
+    } catch (err) {
+      // the only time we ever see this happen is a case where the websocket connection
+      // wasn't established yet so the cancelation failed because it wasn't necessary.
+      log('info', 'login not canceled', err.message);
+    }
+  }
+  api.store.dispatch(setLoginId(undefined));
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
@@ -1455,58 +1510,22 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDownloadProtocol('nxm', resolveFunc);
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
+
+  const onCancelLogin = () => onCancelLoginImpl(context.api);
+
   context.registerDialog('login-dialog', LoginDialog, () => ({
-    onCancelLogin: () => {
-      if (cancelLogin !== undefined) {
-        try {
-          cancelLogin();
-        } catch (err) {
-          // the only time we ever see this happen is a case where the websocket connection
-          // wasn't established yet so the cancelation failed because it wasn't necessary.
-          log('info', 'login not canceled', err.message);
-        }
-      }
-      context.api.store.dispatch(setLoginId(undefined));
-    },
+    onCancelLogin,
   }));
+
+  const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
+
   context.registerDialog('free-user-download', FreeUserDLDialog, () => ({
     t: context.api.translate,
     nexus,
-    onUpdated: () => {
-      bringToFront();
-    },
-    onDownload: (inputUrl: string) => {
-      const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
-      if (queueItem === undefined) {
-        log('error', 'failed to find queue item', { inputUrl, queue: JSON.stringify(freeDLQueue) });
-        return;
-      }
-      const { url } = queueItem;
-
-      awaitedLinks.push({
-        gameId: url.gameId,
-        modId: url.modId,
-        fileId: url.fileId,
-        resolve: (resUrl: string) =>
-          resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
-            .then(queueItem.res)
-            .catch(queueItem.rej),
-      });
-
-      opn(`${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`)
-          .catch(() => null);
-    },
-    onSkip: (inputUrl: string) => {
-      const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
-      if (queueItem !== undefined) {
-        queueItem.rej(new UserCanceled(true));
-      }
-    },
-    onCancel: (inputUrl: string) => {
-      const copy = freeDLQueue.slice(0);
-      copy.forEach(item => {
-        item.rej(new UserCanceled(false)); });
-    },
+    onUpdated,
+    onDownload,
+    onSkip,
+    onCancel,
   }));
 
   context.registerBanner('downloads', () => {
