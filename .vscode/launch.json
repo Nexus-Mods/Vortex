@@ -22,7 +22,8 @@
         "SIMULATE_FS_ERRORS": "false",
         "HIGHLIGHT_I18N": "false",
         "BLUEBIRD_DEBUG": "0",
-        "FORCE_ALLOW_ELEVATED_SYMLINKING": "yes"
+        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
+        "DEBUG_REACT_RENDERS": "false"
       },
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",

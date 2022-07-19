@@ -228,7 +228,7 @@ class DeploymentMethod extends LinkingDeployment {
         }),
       };
     }
-    if (this.ensureAdmin() && (process.env['FORCE_ALLOW_ELEVATED_SYMLINKING'] !== 'yes')) {
+    if (this.ensureAdmin() && (process.env['FORCE_ALLOW_ELEVATED_SYMLINKING'] !== 'true')) {
       return {
         description: t =>
           t('No need to use the elevated variant, use the regular symlink deployment'),

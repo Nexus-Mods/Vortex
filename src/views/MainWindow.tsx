@@ -376,15 +376,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private setFocus = () => {
-    this.updateState({
-      focused: { $set: true },
-    });
+    if (process.env.DEBUG_REACT_RENDERS !== 'true') {
+      this.updateState({
+        focused: { $set: true },
+      });
+    }
   }
 
   private unsetFocus = () => {
-    this.updateState({
-      focused: { $set: false },
-    });
+    if (process.env.DEBUG_REACT_RENDERS !== 'true') {
+      this.updateState({
+        focused: { $set: false },
+      });
+    }
   }
 
   private renderBody() {
