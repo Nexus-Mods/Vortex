@@ -678,6 +678,7 @@ function checkForUnfinalized(api: IExtensionApi,
                   .catch(err => {
                     log('warn', 'failed to properly finalize download', {
                       fileName: downloads[id].localPath,
+                      error: err.message,
                     });
                   });
               } else {

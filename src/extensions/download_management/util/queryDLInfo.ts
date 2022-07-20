@@ -34,6 +34,7 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
       // almost certainly dl.localPath is undefined with a bugged download
       return;
     }
+    log('info', 'lookup mod meta info', { dlId, md5: dl.fileMD5 });
     // note: this may happen in addition to and in parallel to a separate mod meta lookup
     //   triggered by the file being added to application state, but that should be fine because
     //   the mod meta information is cached locally, as is the md5 hash if it's not available here

@@ -248,6 +248,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
     args.push('/repair');
   }
 
+  log('info', 'spawning dotnet installer', { fullPath, args });
   return spawnRetry(api, fullPath, args);
 }
 
@@ -929,7 +930,13 @@ function init(context: IExtensionContext): boolean {
             ])
               .then(result => {
                 if (result.action === 'Repair') {
-                  return installDotNet(context.api, true);
+                  return installDotNet(context.api, true)
+                    .catch(err => {
+                      const allowReport: boolean = err.code !== 'ENOENT';
+                      context.api.showErrorNotification('Failed to repair .NET installation, try installing it manually', err, {
+                        allowReport,
+                      });
+                    })
                 }
               });
             err['allowReport'] = false;

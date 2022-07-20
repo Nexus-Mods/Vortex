@@ -1,10 +1,16 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { toPromise } from '../../../util/util';
+import { delayed, toPromise } from '../../../util/util';
 import { finalizingDownload, finalizingProgress,
          finishDownload, setDownloadHash } from '../actions/state';
 import queryInfo from './queryDLInfo';
 
 import { fileMD5 } from 'vortexmt';
+
+function fileMD5Async(filePath: string,
+                      progressFunc: (progress: number, total: number) => void)
+                      : Promise<string> {
+  return Promise.resolve(toPromise(cb => fileMD5(filePath, cb, progressFunc)));
+}
 
 export function finalizeDownload(api: IExtensionApi, id: string,
                                  filePath: string, allowInstall: boolean) {
@@ -19,7 +25,14 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     }
   };
 
-  return toPromise(cb => (fileMD5 as any)(filePath, cb, progressHash))
+  return fileMD5Async(filePath , progressHash)
+    .catch(err => {
+      if (['EBUSY', 'ENOENT'].includes(err.code)) {
+        // try a second time, might be the AV interfering with the new file
+        return delayed(1000).then(() => fileMD5Async(filePath, progressHash))
+      }
+      return Promise.reject(err);
+    })
     .then((md5Hash: string) => {
       api.store.dispatch(setDownloadHash(id, md5Hash));
     })
