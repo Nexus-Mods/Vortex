@@ -7,6 +7,7 @@ import { Checkbox, Col, ControlLabel,
          FormControl, FormGroup,
          InputGroup } from 'react-bootstrap';
 import { ComponentEx } from '../util/ComponentEx';
+import FormInput from './FormInput';
 
 export interface IFormItemProps {
   t: TFunction;
@@ -42,7 +43,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
           {label}
         </Col>
         <Col sm={9}>
-          <FormControl
+          <FormInput
             type='text'
             placeholder={placeholder}
             value={value || ''}
@@ -65,9 +66,9 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
     return validator(value);
   }
 
-  private onChangeValue = (evt) => {
+  private onChangeValue = (value) => {
     const { stateKey, onChangeValue } = this.props;
-    onChangeValue(stateKey, evt.currentTarget.value);
+    onChangeValue(stateKey, value);
   }
 }
 

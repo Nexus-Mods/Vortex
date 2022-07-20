@@ -26,6 +26,7 @@ export interface IProps {
   debounceTimer?: number;
   clearable?: boolean;
   emptyIcon?: string;
+  maxLength?: number;
 }
 
 interface IComponentState {
@@ -66,7 +67,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { className, clearable, emptyIcon, groupClass, id, label, min, max,
+    const { className, clearable, emptyIcon, groupClass, id, label, min, max, maxLength,
             placeholder, readOnly, style, type, validate } = this.props;
     const { cachedValue } = this.state;
     const classes = ['form-input-container'];
@@ -103,6 +104,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
           onFocus={this.onFocus}
           min={min}
           max={max}
+          maxLength={maxLength}
         />
         {icon}
       </div>

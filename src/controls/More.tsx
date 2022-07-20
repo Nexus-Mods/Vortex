@@ -137,4 +137,4 @@ class More extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate(['common'])(More) as React.ComponentClass<IMoreProps>;
+export default translate(['common'])(React.memo(More)) as React.ComponentClass<IMoreProps>;

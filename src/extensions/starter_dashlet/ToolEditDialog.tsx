@@ -71,11 +71,10 @@ export default function ToolEditDialog(props: IProps) {
   const haveEnvironment: boolean = Object.keys(editTool.environment).length > 0;
 
   const handleChange = React.useCallback((field: string, value: any): void => {
-    const editToolChange = {
-      ...editTool,
-      [field]: value,
-    };
-    setEditTool(editToolChange);
+    setEditTool(oldState => ({
+      ...oldState,
+      [field]: value
+    }));
   }, [editTool, setEditTool]);
 
   const addEnv = React.useCallback((key: string, value: string) => {
@@ -129,13 +128,13 @@ export default function ToolEditDialog(props: IProps) {
     }
   }, [tool, handleChange, editTool, onShowError, onUpdateImage]);
 
-  const toggleShell = () => {
+  const toggleShell = React.useCallback(() => {
     handleChange('shell', !editTool.shell);
-  }
+  }, [editTool, handleChange]);
 
-  const toggleDetached = () => {
+  const toggleDetached = React.useCallback(() => {
     handleChange('detach', !editTool.detach);
-  }
+  }, [editTool, handleChange]);
 
   const setStartEvent = React.useCallback((mode: 'nothing' | 'hide' | 'hide_recover' | 'close') => {
     editTool.onStart = mode === 'nothing' ? undefined : mode;
@@ -152,14 +151,14 @@ export default function ToolEditDialog(props: IProps) {
         { name: 'Executables', extensions: ['exe'] },
       ],
     })
-    .then((filePath: string) => {
-      if (filePath !== undefined) {
-        onUpdateImage(filePath);
-      }
-    });
+      .then((filePath: string) => {
+        if (filePath !== undefined) {
+          onUpdateImage(filePath);
+        }
+      });
   }
 
-  const saveAndClose = () => {
+  const saveAndClose = React.useCallback(() => {
     if (editTool.isGame) {
       const envCustomized = !isEqual(editTool.environment, tool.originalEnvironment);
       onSetGameParameters(editTool.gameId, {
@@ -177,7 +176,7 @@ export default function ToolEditDialog(props: IProps) {
     }
     onClose();
     context.api.events.emit('analytics-track-click-event', 'Tools', 'Edited tool');
-  }
+  }, [editTool, onAddTool, onClose]);
 
   return (
     <Modal show={true} onHide={onClose} id='tool-edit-dialog'>
