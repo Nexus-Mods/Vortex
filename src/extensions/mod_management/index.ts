@@ -1,4 +1,4 @@
-import { dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
+import { dismissDialog, dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
 import {
   IExtensionApi,
@@ -37,10 +37,11 @@ import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 import { setAutoDeployment } from '../settings_interface/actions/automation';
 
+import { setDialogVisible } from '../../actions';
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
-import { IEnableOptions, setModEnabled } from '../profile_management/actions/profiles';
+import { IEnableOptions, setModEnabled, forgetMod } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
@@ -78,11 +79,14 @@ import { setResolvedCB } from './util/testModReference';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
+import { IDuplicatesMap, IRemoveDuplicateMap } from './views/DuplicatesDialog';
 import {} from './views/FixDeploymentDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
 import URLInput from './views/URLInput';
 import Workarounds from './views/Workarounds';
+
+import { opn } from '../../util/api';
 
 import { DEPLOY_BLACKLIST } from './constants';
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
@@ -1322,6 +1326,130 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   return Promise.resolve(result);
 }
 
+
+function openDuplicateLocation(api: IExtensionApi, modId: string) {
+  const state = api.getState();
+  const gameMode = activeGameId(state);
+  const installPath = installPathForGame(state, gameMode);
+  const modPath = path.join(installPath, modId);
+  opn(modPath).catch(() => null);
+}
+function getModInfo(api: IExtensionApi, gameMode: string, modId: string) {
+  const state = api.getState();
+  const mods = state.persistent.mods[gameMode] ?? {};
+  const profiles = state.persistent.profiles ?? {};
+  const mod = Object.values(mods).find(mod => mod.id === modId);
+  const version = getSafe(mod, ['attributes', 'version'], 'Unknown');
+  const installTime = getSafe(mod, ['attributes', 'installTime'], 0);
+  const profileId = Object.keys(profiles).find(id => getSafe(profiles[id], ['modState', modId, 'enabled'], false));
+  const profName = profiles[profileId]?.name ?? 'None';
+  return `Profile: ${profName}(${profileId}); Version: ${version}; InstallTime: ${new Date(installTime)}`;
+}
+
+function getDuplicateMods(api: IExtensionApi): IDuplicatesMap {
+  const state: IState = api.store.getState();
+  const gameMode = activeGameId(state);
+  if (gameMode === undefined) {
+    return undefined;
+  }
+
+  if (state.persistent.mods[gameMode] === undefined) {
+    return undefined;
+  }
+
+  const mods = Object.values(state.persistent.mods[gameMode]);
+  const profiles = Object.values(state.persistent.profiles)
+    .reduce((accum, profile) => {
+      if (profile.gameId === gameMode) {
+        accum[profile.id] = { modState: profile.modState, name: profile.name };
+      }
+      return accum;
+    }, {});
+
+  const getVariantValue = (mod: IMod) => {
+    const variant = getSafe(mod.attributes, ['variant'], '');
+    return truthy(variant) ? variant : 'default';
+  };
+
+  const hasProfileReference = (modId: string) => {
+    for (const prof of Object.values(profiles)) {
+      const enabled = getSafe(prof, ['modState', modId, 'enabled'], false);
+      if (enabled) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const arcIdsChecked: string[] = [];
+  const preselected: string[] = [];
+  const duplicates = mods.reduce((accum, m1) => {
+    const name = renderModName(m1)
+    if (arcIdsChecked.includes(m1.archiveId)) {
+      return accum;
+    }
+
+    const filtered = mods.filter(m2 => (m1.id !== m2.id)
+      && (m1.archiveId === m2.archiveId)
+      && (getVariantValue(m1) === getVariantValue(m2)));
+    if (filtered.length > 0) {
+      if (accum[name] === undefined) {
+        accum[name] = [];
+      }
+      accum[name].push(m1.id);
+      if (!hasProfileReference(m1.id)) {
+        preselected.push(m1.id);
+        return accum;
+      }
+      for (const m of filtered) {
+        accum[name].push(m.id);
+        if (!hasProfileReference(m.id)) {
+          preselected.push(m.id);
+          continue;
+        }
+      }
+    }
+    arcIdsChecked.push(m1.archiveId);
+    return accum;
+  }, {});
+  return (Object.keys(duplicates).length > 0)
+    ? { duplicates, preselected }
+    : undefined;
+}
+
+function checkDuplicateMods(api: IExtensionApi): Promise<ITestResult> {
+  let result: ITestResult;
+  const duplicateMap = getDuplicateMods(api);
+  if (duplicateMap === undefined) {
+    return Promise.resolve(result);
+  }
+
+  const preSelectedTxt = (duplicateMap.preselected.length > 0)
+    ? ', Vortex has identified and pre-selected some of the duplicate mods as they were not referenced by '
+    + 'any of your profiles. Given that the mod is not used it should be safe to remove it, but please '
+    + 'bear in mind that Vortex does not check for manual file modifications - you should double check '
+    + 'any mod before agreeing to remove it.<br/><br/>'
+    : '.<br/><br/>';
+  result = {
+    severity: 'warning',
+    description: {
+      short: 'Potential Duplicate Mods',
+      long: 'Due to a bug in older versions of Vortex, it was possible to duplicate mod entries '
+        + 'when re-installing recently updated mods.<br/><br/>'
+        + `Unfortunately your machine has some of these potential duplicates${preSelectedTxt}`
+        + 'Proceeding past this point will allow you to select which mods to remove.',
+    },
+    automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+      api.store.dispatch(setDialogVisible('duplicates-dialog'));
+      api.events.on('duplicates-removed', () => {
+        fixResolve();
+      });
+    }),
+  };
+
+  return Promise.resolve(result);
+}
+
 function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
@@ -1432,6 +1560,42 @@ function init(context: IExtensionContext): boolean {
       // nop
     });
 
+  context.registerDialog('duplicates-dialog',
+    LazyComponent(() => require('./views/DuplicatesDialog')), () => ({
+      onGetDuplicates: () => getDuplicateMods(context.api),
+      onRemoveMods: (dupMap: IRemoveDuplicateMap) => {
+        const state = context.api.getState();
+        const gameMode = activeGameId(state);
+        const profiles = getSafe(state, ['persistent', 'profiles'], {});
+        const batchedActions = [];
+        const modIds = Object.keys(dupMap);
+        for (const modId of modIds) {
+          for (const profileId in profiles) {
+            const enabled = getSafe(profiles[profileId], ['modState', modId, 'enabled'], false);
+            batchedActions.push(forgetMod(profileId, modId));
+            if (enabled) {
+              if (dupMap[modId] !== undefined) {
+                batchedActions.push(setModEnabled(profileId, dupMap[modId], enabled));
+              }
+            }
+          }
+        }
+        context.api.closeDialog('duplicates-dialog');
+        if (batchedActions.length > 0) {
+          context.api.events.emit('remove-mods', gameMode, modIds, (err) => {
+            if (!err) {
+              context.api.events.emit('duplicates-removed');
+              batchDispatch(context.api.store.dispatch, batchedActions);
+            } else {
+              context.api.showErrorNotification('Failed to remove mods', err);
+            }
+          });
+        }
+      },
+      openDuplicateLocation: (modId: string) => openDuplicateLocation(context.api, modId),
+      getModInfo: (gameMode: string, modId: string) => getModInfo(context.api, gameMode, modId),
+    }));
+
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
   context.registerTableAttribute('mods', genWebsiteAttribute(context.api));
 
@@ -1441,6 +1605,8 @@ function init(context: IExtensionContext): boolean {
     () => checkStagingFolder(context.api));
   context.registerTest('verify-mod-transfers', 'gamemode-activated',
     () => checkPendingTransfer(context.api));
+  context.registerTest('verify-mod-duplicates', 'gamemode-activated',
+    () => checkDuplicateMods(context.api));
 
   context.registerDeploymentMethod = registerDeploymentMethod;
   context.registerInstaller = registerInstaller;
