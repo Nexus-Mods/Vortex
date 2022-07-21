@@ -145,6 +145,8 @@ function transformError(err: any): Error {
     }
   });
 
+  result['attachLogOnReport'] = true;
+
   return result;
 }
 
@@ -926,7 +928,9 @@ function init(context: IExtensionContext): boolean {
       toBlue(cb)(...args)
         .catch(err => {
           if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
-              || (err['code'] === 0x80008083) && err.message.includes('the required library')) {
+            || ((err['code'] === 0x80008083) && err.message.includes('the required library'))
+            || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
+          ) {
             context.api.showDialog('error', 'Mod installation failed', {
               text: 'The mod installation failed with an error message that indicates '
                 + 'your .NET installation is damaged. '
