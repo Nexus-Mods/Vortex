@@ -435,7 +435,7 @@ class ConnectionIPC {
     // yuck. This is necessary to avoid race conditions between this process and the
     // fomod installer, though there is probably a simpler way...
     let connectOutcome: null | Error;
-    let setConnectOutcome = (error: Error) => {
+    let setConnectOutcome = (error: Error, send: boolean) => {
       if (connectOutcome === undefined) {
         connectOutcome = error;
       }
@@ -445,13 +445,21 @@ class ConnectionIPC {
       if (connectOutcome !== undefined) {
         return connectOutcome === null ? Promise.resolve() : Promise.reject(connectOutcome);
       } else {
-        setConnectOutcome = (error: Error) => {
-          if (error === null) {
-            onResolve?.();
-          } else {
-            onReject?.(error);
+        setConnectOutcome = (error: Error, send: boolean) => {
+          if (connectOutcome === undefined) {
+            connectOutcome = error;
+          } else if (error['code'] !== undefined) {
+            connectOutcome['code'] = error['code'];
           }
-          onResolve = onReject = undefined;
+
+          if (send) {
+            if (connectOutcome === null) {
+              onResolve?.();
+            } else {
+              onReject?.(connectOutcome);
+            }
+            onResolve = onReject = undefined;
+          }
         };
         return connectedPromise;
       }
@@ -485,14 +493,16 @@ class ConnectionIPC {
               (async () => {
                 try {
                   res = await ConnectionIPC.bind(true);
-                  setConnectOutcome(null);
+                  setConnectOutcome(null, true);
                 } catch (err) {
-                  setConnectOutcome(err);
+                  setConnectOutcome(err, true);
                 }
               })();
             }
 
-            if (line.startsWith('Failed') || line.includes('Exception')) {
+            if (line.startsWith('Failed')
+                || line.includes('Exception')
+                || line.includes('fatal error')) {
               isErr = idx;
             }
           });
@@ -505,7 +515,7 @@ class ConnectionIPC {
               err['code'] = exitCode;
             }
             err['attachLogOnReport'] = true;
-            setConnectOutcome(err);
+            setConnectOutcome(err, false);
             wasConnected = true;
           } else {
             log('info', 'from installer:', lines.join(';'));
@@ -529,13 +539,13 @@ class ConnectionIPC {
             const err = new Error('Fomod installer startup failed, please review your log file');
             err['code'] = code;
             err['attachLogOnReport'] = true;
-            setConnectOutcome(err);
+            setConnectOutcome(err, true);
           });
         };
 
         pid = await createIPC(pipe, ipcId, onExit, onStdout, CONTAINER_NAME);
       } catch (err) {
-        setConnectOutcome(err);
+        setConnectOutcome(err, true);
       }
     }
 
@@ -915,8 +925,8 @@ function init(context: IExtensionContext): boolean {
     return (...args: any[]) =>
       toBlue(cb)(...args)
         .catch(err => {
-          if ((err['code'] === 0xE0434352)
-            && (err.message.includes('Could not load file or assembly'))) {
+          if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
+              || (err['code'] === 0x80008083) && err.message.includes('the required library')) {
             context.api.showDialog('error', 'Mod installation failed', {
               text: 'The mod installation failed with an error message that indicates '
                 + 'your .NET installation is damaged. '
