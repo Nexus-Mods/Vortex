@@ -73,6 +73,12 @@ class Application {
       return true;
     }
 
+    if (error.message === 'Object has been destroyed') {
+      // This happens when Vortex crashed because of something else so there is no point
+      // reporting this, it might otherwise obfuscate the actual problem
+      return true;
+    }
+
     // this error message appears to happen as the result of some other problem crashing the
     // renderer process, so all this may do is obfuscate what's actually going on.
     if (error.message.includes('Error processing argument at index 0, conversion failure from')) {
