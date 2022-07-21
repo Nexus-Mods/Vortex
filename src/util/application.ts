@@ -8,6 +8,8 @@ export interface IApplication {
   memory: {
     total: number;
   };
+  platform: string;
+  platformVersion: string;
   quit: (exitCode?: number) => void;
 }
 
@@ -16,6 +18,8 @@ const app: { inst: IApplication } = local('application_global', { inst: {
   version: '0.0.1',
   isFocused: true,
   window: null,
+  platform: 'fallback',
+  platformVersion: '1.0.0',
   memory: {
     total: 0,
   },

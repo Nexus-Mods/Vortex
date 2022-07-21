@@ -1,5 +1,6 @@
 import { app as appIn, BrowserWindow } from 'electron';
-import { getApplication, IApplication, setApplication } from './application';
+import * as os from 'os';
+import { IApplication, setApplication } from './application';
 
 class ElectronApplication implements IApplication {
   private mName: string;
@@ -38,6 +39,14 @@ class ElectronApplication implements IApplication {
 
   public get memory(): { total: number } {
     return process.getSystemMemoryInfo();
+  }
+
+  public get platform(): string {
+    return os.platform();
+  }
+
+  public get platformVersion(): string {
+    return os.release();
   }
 
   /**
