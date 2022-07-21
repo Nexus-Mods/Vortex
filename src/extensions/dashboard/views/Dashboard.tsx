@@ -242,7 +242,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     //   testing
 
     this.mUpdateTimer = setTimeout(() => {
-      if (this.mWindowFocused) {
+      if (this.mWindowFocused && (process.env['DEBUG_REACT_RENDERS'] !== 'true')) {
         this.nextState.counter++;
       }
       this.startUpdateCycle();

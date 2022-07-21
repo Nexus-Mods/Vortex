@@ -27,7 +27,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
 
   return fileMD5Async(filePath , progressHash)
     .catch(err => {
-      if (['EBUSY', 'ENOENT'].includes(err.code)) {
+      if (['EBUSY', 'ENOENT', 'EPERM'].includes(err.code)) {
         // try a second time, might be the AV interfering with the new file
         return delayed(1000).then(() => fileMD5Async(filePath, progressHash))
       }

@@ -22,7 +22,7 @@ export interface IExtendedProps {
 
 type IProps = IBaseProps & IExtendedProps;
 
-class DialogContainer extends React.Component<IProps, {}> {
+class DialogContainer extends React.Component<IProps, never> {
   public render(): JSX.Element {
     const { objects } = this.props;
     return (

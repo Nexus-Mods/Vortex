@@ -266,6 +266,11 @@ function errorHandler(evt: any) {
     }
   }
 
+  if (error.name === 'EvalError') {
+    // seems to happen only when using the chrome inspector when using certain debug tools
+    return;
+  }
+
   if ((error.name === 'TypeError')
       && (error.message === 'Cannot read property \'forEach\' of undefined')) {
     // seems to be a completely electron-internal error where the webview receives an event
