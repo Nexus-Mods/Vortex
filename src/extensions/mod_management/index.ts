@@ -1385,7 +1385,8 @@ function getDuplicateMods(api: IExtensionApi): IDuplicatesMap {
   const preselected: string[] = [];
   const duplicates = mods.reduce((accum, m1) => {
     const name = renderModName(m1)
-    if (arcIdsChecked.includes(m1.archiveId)) {
+    if ((m1.archiveId === null)
+        || arcIdsChecked.includes(m1.archiveId)) {
       return accum;
     }
 
