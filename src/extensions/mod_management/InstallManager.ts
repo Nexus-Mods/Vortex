@@ -296,7 +296,8 @@ class InstallManager {
                 progress([], perc);
               },
               installChoices,
-              unattended);
+              unattended,
+              archivePath);
         });
 
   }
@@ -1015,7 +1016,8 @@ class InstallManager {
                 progress([], perc);
               },
               installChoices,
-              unattended);
+              unattended,
+              archivePath);
         });
   }
 
