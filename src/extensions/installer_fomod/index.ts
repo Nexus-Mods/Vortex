@@ -216,6 +216,16 @@ function spawnRetry(api: IExtensionApi, command: string, args: string[], tries =
     });
 }
 
+let onFoundDotNet: () => void;
+const dotNetAssert = new Promise<void>((resolve) => {
+  onFoundDotNet = () => {
+    resolve();
+    onFoundDotNet = () => {
+      // nop
+    };
+  };
+});
+
 async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void> {
   const dlId: string = await toPromise(cb =>
     api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
@@ -257,6 +267,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
 async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
   if (process.platform !== 'win32') {
     // currently only supported/tested on windows
+    onFoundDotNet();
     return Promise.resolve(undefined);
   }
 
@@ -267,21 +278,26 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
     proc.stderr.on('data', dat => stderr += dat.toString());
   });
 
-  return (exitCode !== 0)
-    ? Promise.resolve({
-      description: {
-        short: 'Microsoft .NET installation required',
-        long: 'Vortex requires Microsoft .NET to perform important tasks.'
-            + '[br][/br]Click "Fix" below to install the required version.'
-            + '[br][/br]If you already have Microsoft .NET 6 or later installed, there may be a problem with your installation, '
-            + 'please click below for technical details.'
-            + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
-        replace: { stderr: stderr.replace('\n', '[br][/br]') },
-      },
-      automaticFix: () => installDotNet(api, false),
-      severity: 'fatal',
-    })
-    : Promise.resolve(undefined);
+  if (exitCode === 0) {
+    onFoundDotNet();
+    return Promise.resolve(undefined);
+  }
+
+  const result: ITestResult = {
+    description: {
+      short: 'Microsoft .NET installation required',
+      long: 'Vortex requires Microsoft .NET to perform important tasks.'
+        + '[br][/br]Click "Fix" below to install the required version.'
+        + '[br][/br]If you already have Microsoft .NET 6 or later installed, there may be a problem with your installation, '
+        + 'please click below for technical details.'
+        + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
+      replace: { stderr: stderr.replace('\n', '[br][/br]') },
+    },
+    automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
+    severity: 'fatal',
+  };
+
+  return Promise.resolve(result);
 }
 
 interface IAwaitingPromise {
@@ -544,6 +560,9 @@ class ConnectionIPC {
             setConnectOutcome(err, true);
           });
         };
+
+        log('info', 'waiting until we know .NET is installed');
+        await dotNetAssert;
 
         pid = await createIPC(pipe, ipcId, onExit, onStdout, CONTAINER_NAME);
       } catch (err) {
@@ -928,7 +947,7 @@ function init(context: IExtensionContext): boolean {
       toBlue(cb)(...args)
         .catch(err => {
           if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
-            || ((err['code'] === 0x80008083) && err.message.includes('the required library'))
+            || ((err['code'] === 0x80008083) && err.message.includes('The required library'))
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
           ) {
             context.api.showDialog('error', 'Mod installation failed', {
@@ -966,6 +985,8 @@ function init(context: IExtensionContext): boolean {
 
   if (process.platform === 'win32') {
     context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
+  } else {
+    onFoundDotNet();
   }
   context.registerDialog('fomod-installer', InstallerDialog);
 
