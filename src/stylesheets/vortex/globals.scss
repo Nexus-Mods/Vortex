@@ -36,9 +36,10 @@ body {
   }
 }
 
-.modal-open #main-window-content,
-.modal-open #notifications-popover,
-.modal-open #window-controls {
+// filters are quite slow without gpu acceleration
+.modal-open #content > div:not(.no-gpu-acceleration) #main-window-content,
+.modal-open #content > div:not(.no-gpu-acceleration) #notifications-popover,
+.modal-open #content > div:not(.no-gpu-acceleration) #window-controls {
   filter: blur(5px);
 }
 

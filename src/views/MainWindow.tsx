@@ -21,6 +21,7 @@ import { IRegisteredExtension } from '../util/ExtensionManager';
 import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { createQueue, MutexProvider } from '../util/MutexContext';
+import startupSettings from '../util/startupSettings';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 import Dialog from './Dialog';
@@ -234,6 +235,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
     if (menuOpen) {
       classes.push('menu-open');
+    }
+
+    if (startupSettings.disableGPU) {
+      classes.push('no-gpu-acceleration');
     }
 
     const uiBlocker = truthy(uiBlockers)
