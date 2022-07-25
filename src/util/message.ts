@@ -303,7 +303,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
         id: 'log2',
         type: 'file',
         data: path.join(getVortexPath('userData'), 'vortex1.log'),
-        description: 'Vortex Log 2',
+        description: 'Vortex Log (old)',
       },
     ]);
   }

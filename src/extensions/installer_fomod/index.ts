@@ -867,6 +867,8 @@ function init(context: IExtensionContext): boolean {
     const pluginPath = getPluginPath(gameId);
     // await currentInstallPromise;
 
+    log('info', 'granting app container access to',
+        { scriptPath, grant: winapi?.GrantAppContainer !== undefined });
     winapi?.GrantAppContainer?.(
       CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     context.api.store.dispatch(setInstallerDataPath(scriptPath));

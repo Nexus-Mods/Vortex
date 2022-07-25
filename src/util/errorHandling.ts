@@ -212,7 +212,7 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
           id: 'logfile2',
           type: 'file',
           data: path.join(userData, 'vortex1.log'),
-          description: 'Vortex Log 2',
+          description: 'Vortex Log (old)',
         }],
       });
     })

@@ -106,8 +106,8 @@ function mergeArchive(api: IExtensionApi,
                   hash !== baseContent[relPath].hash);
               }
               return isDifferentProm.then(different => different
-                ? (fs as any).moveAsync(iterPath, path.join(resultPath, relPath),
-                                        { overwrite: true })
+                ? fs.moveAsync(iterPath, path.join(resultPath, relPath),
+                               { overwrite: true })
                 : Promise.resolve());
             })
             .then(() => fs.removeAsync(outputPath)));
