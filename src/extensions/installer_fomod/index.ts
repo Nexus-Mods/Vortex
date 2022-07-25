@@ -965,6 +965,9 @@ function init(context: IExtensionContext): boolean {
                 if (result.action === 'Repair') {
                   return installDotNet(context.api, true)
                     .catch(err => {
+                      if (err instanceof UserCanceled) {
+                        return;
+                      }
                       const allowReport: boolean = err.code !== 'ENOENT';
                       context.api.showErrorNotification('Failed to repair .NET installation, try installing it manually', err, {
                         allowReport,
