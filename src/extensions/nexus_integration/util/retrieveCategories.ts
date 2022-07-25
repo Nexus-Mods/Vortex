@@ -8,6 +8,30 @@ interface IGameInfo {
   categories: IModCategory[];
 }
 
+function hasLoop(categories: ICategoryDictionary, category: string): boolean {
+  const visited: string[] = [];
+
+  let iter = category;
+  while ((iter !== undefined) && (categories[iter] !== undefined)) {
+    if (visited.includes(iter)) {
+      return true;
+    }
+
+    visited.push(iter);
+    iter = categories[iter].parentCategory;
+  }
+
+  return false;
+}
+
+function fixLoops(dict: ICategoryDictionary) {
+  Object.keys(dict).forEach(key => {
+    if (hasLoop(dict, key)) {
+      dict[key].parentCategory = undefined;
+    }
+  });
+}
+
 /**
  * retrieve the categories by the server call
  *
@@ -40,10 +64,10 @@ function retrieveCategoryList(
             ++counter;
           });
 
+          fixLoops(res);
           resolve(res);
         }
-      },
-    )
+      })
       .catch((err) => {
         log('error', 'Failed to retrieve game information', { err: err.message });
         reject(err);

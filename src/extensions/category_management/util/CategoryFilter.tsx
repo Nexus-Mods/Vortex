@@ -71,7 +71,10 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     Object.keys(mods || {}).forEach(modId => {
       const mod = mods[modId];
       let category = getSafe(mod.attributes, ['category'], undefined);
-      while (category !== undefined) {
+      const visited = [];
+
+      while ((category !== undefined) && (!visited.includes(category))) {
+        visited.push(category);
         if (categories[category] !== undefined) {
           modCategories.add(category.toString());
           category = categories[category].parentCategory;
@@ -245,7 +248,7 @@ class CategoryFilter implements ITableFilter {
     const categories = state.persistent.categories[gameId] || {};
     const result: string[] = [];
     let iter = category;
-    while (truthy(iter) && (categories[iter] !== undefined)) {
+    while (truthy(iter) && (categories[iter] !== undefined) && (!result.includes(iter))) {
       result.push(iter);
       iter = categories[iter].parentCategory;
     }
