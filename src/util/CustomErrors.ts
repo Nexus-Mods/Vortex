@@ -120,9 +120,15 @@ export class DocumentsPathMissing extends Error {
 }
 
 export class SetupError extends Error {
-  constructor(message: string) {
+  private mComponent: string;
+  constructor(message: string, component?: string) {
     super(message);
     this.name = this.constructor.name;
+    this.mComponent = component;
+  }
+
+  public get component(): string {
+    return this.mComponent;
   }
 }
 

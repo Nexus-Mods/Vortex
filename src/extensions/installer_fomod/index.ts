@@ -42,6 +42,8 @@ import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 import opn from '../../util/opn';
 
+const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*The system cannot find the file specified.');
+
 function transformError(err: any): Error {
   let result: Error;
   if (err === undefined) {
@@ -56,16 +58,16 @@ function transformError(err: any): Error {
   } else if (err.name === 'System.Threading.Tasks.TaskCanceledException') {
     result = new UserCanceled();
   } else if (err.name === 'System.IO.FileNotFoundException') {
-    if (err.FileName !== undefined) {
-      if (err.FileName.indexOf('PublicKeyToken') !== -1) {
-        const fileName = err.FileName.split(',')[0];
-        result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part `
-                               + 'of the .NET Framework. Please reinstall it.');
-      } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
-        const fileName = err.FileName.replace(/^file:\/*/, '');
-        result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
-          + 'Vortex installer. This would only happen if you use an unofficial installer or the '
-          + 'Vortex installation was modified.');
+    if (err.message.includes('node_modules\\fomod-installer')) {
+      const fileName: string = err.FileName.replace(/^file:\/*/, '');
+      result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
+        + 'Vortex installer. This would only happen if you use an unofficial installer or the '
+        + 'Vortex installation was modified.');
+    } else {
+      const match = err.message.match(assemblyMissing);
+      if (match !== null) {
+        result = new SetupError(`Your system is missing "${match[1]}" which is supposed to be part `
+          + 'of the .NET Runtime. Please reinstall it.', 'netruntime');
       }
     }
   } else if (err.name === 'System.IO.DirectoryNotFoundException') {
@@ -134,7 +136,6 @@ function transformError(err: any): Error {
     { in: 'StackTrace', out: 'stack' },
     { in: 'stack', out: 'stack' },
     { in: 'FileName', out: 'path' },
-    { in: 'message', out: 'message' },
     { in: 'HResult', out: 'code' },
     { in: 'name', out: 'Name' },
     { in: 'Source', out: 'Module' },
@@ -250,12 +251,13 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
 
   api.showDialog('info', '.NET is being installed', {
     text: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden '
-        + 'behind another window.',
+        + 'behind another window.\n'
+        + 'Please note: In rare cases .NET will still not work until you restarted windows',
   }, [
     { label: 'Ok' },
   ]);
 
-  const args = ['/passive'];
+  const args = ['/passive', '/norestart'];
   if (repair) {
     args.push('/repair');
   }
@@ -948,9 +950,11 @@ function init(context: IExtensionContext): boolean {
     return (...args: any[]) =>
       toBlue(cb)(...args)
         .catch(err => {
+          
           if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
             || ((err['code'] === 0x80008083) && err.message.includes('The required library'))
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
+            || ((err instanceof SetupError) && (err.component === 'netruntime'))
           ) {
             context.api.showDialog('error', 'Mod installation failed', {
               text: 'The mod installation failed with an error message that indicates '
