@@ -46,7 +46,7 @@ import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import { ENABLED_TIME, INSTALL_TIME } from '../modAttributes';
+import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from '../modAttributes';
 import getText from '../texts';
 
 import Author from './Author';
@@ -287,6 +287,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modSizeAttribute,
       INSTALL_TIME(() => this.context.api.locale()),
       ENABLED_TIME(() => this.context.api.locale()),
+      DOWNLOAD_TIME(() => this.context.api),
     ]
     .map((attr, idx) => ({ ...attr, position: (idx + 1) * 10 }));
 
