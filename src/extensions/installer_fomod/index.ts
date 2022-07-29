@@ -21,12 +21,15 @@ import { IMod } from '../mod_management/types/IMod';
 import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
+import { settingsReducer } from './reducers/settings';
 import { IGroupList, IInstallerState } from './types/interface';
 import {
   getPluginPath,
   getStopPatterns,
 } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
+
+import Workarounds from './views/Workarounds';
 
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
@@ -43,6 +46,17 @@ import { downloadPathForGame } from '../download_management/selectors';
 import opn from '../../util/opn';
 
 const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*The system cannot find the file specified.');
+
+// TODO: Running the fomod installer as a low integrity process is implemented and basically functional
+//   (and should be mostly secure) except the host process can't connect to a named pipe the installer
+//   process opened and the installer process can't create a pipe for writing.
+//   There may be a solution using unnamed pipes inherited to the process or communicating via stdout
+//   but that would require a considerable rewrite of this functionality
+enum SecurityLevel {
+  Regular,
+  LowIntegrity,
+  Sandbox,
+}
 
 function transformError(err: any): Error {
   let result: Error;
@@ -341,6 +355,7 @@ interface ICreateSocketOptions {
   // if true, use a fixed id/port for the connection
   debug: boolean;
   pipeId?: string;
+  useAppContainer: boolean;
 }
 
 /**
@@ -361,7 +376,9 @@ function createSocket(options: ICreateSocketOptions)
         log('info', 'listen', { pipePath });
         server.listen(pipePath, () => {
           try {
-            winapi?.GrantAppContainer?.(CONTAINER_NAME, pipePath, 'named_pipe', ['all_access']);
+            if (options.useAppContainer) {
+              winapi?.GrantAppContainer?.(CONTAINER_NAME, pipePath, 'named_pipe', ['all_access']);
+            }
           } catch (err) {
             log('error', 'Failed to allow access to pipe', { pipePath, message: err.message });
           }
@@ -381,7 +398,9 @@ function createSocket(options: ICreateSocketOptions)
 }
 
 class ConnectionIPC {
-  public static async bind(retry: boolean = false): Promise<ConnectionIPC> {
+  public static async bind(securityLevel: SecurityLevel,
+                           retry: boolean = false)
+                           : Promise<ConnectionIPC> {
     let onResolve: () => void;
     let onReject: (err: Error) => void;
     const connectedPromise = new Promise<void>((resolve, reject) => {
@@ -398,17 +417,21 @@ class ConnectionIPC {
 
     const pipeId = pipe ? (debug ? 'debug' : shortid()) : undefined;
 
+    const useAppContainer = securityLevel === SecurityLevel.Sandbox;
+
     if ((ConnectionIPC.sListenOut === undefined) || retry) {
       // only set up the listening server once, otherwise we might end
       // up creating orphaned connections if a connection later dies
-      ConnectionIPC.sListenOut = await createSocket({ debug, pipeId });
+      ConnectionIPC.sListenOut = await createSocket(
+        { debug, pipeId, useAppContainer });
     } else {
       ConnectionIPC.sListenOut.server.removeAllListeners('connection');
     }
 
     if (pipe) {
       if ((ConnectionIPC.sListenIn === undefined) || retry) {
-        ConnectionIPC.sListenIn = await createSocket({ debug, pipeId: pipeId + '_reply' });
+        ConnectionIPC.sListenIn = await createSocket(
+          { debug, pipeId: pipeId + '_reply', useAppContainer });
       } else {
         ConnectionIPC.sListenIn.server.removeAllListeners('connection');
       }
@@ -512,7 +535,7 @@ class ConnectionIPC {
             if (retry && line.includes('The operation has timed out')) {
               (async () => {
                 try {
-                  res = await ConnectionIPC.bind(true);
+                  res = await ConnectionIPC.bind(securityLevel, true);
                   setConnectOutcome(null, true);
                 } catch (err) {
                   setConnectOutcome(err, true);
@@ -566,7 +589,11 @@ class ConnectionIPC {
         log('info', 'waiting until we know .NET is installed');
         await dotNetAssert;
 
-        pid = await createIPC(pipe, ipcId, onExit, onStdout, CONTAINER_NAME);
+        pid = await createIPC(
+          pipe, ipcId, onExit, onStdout,
+          securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
+          false);
+          // securityLevel === SecurityLevel.LowIntegrity);
       } catch (err) {
         setConnectOutcome(err, true);
       }
@@ -801,9 +828,9 @@ class ConnectionIPC {
 
 const ensureConnected = (() => {
   let conn: ConnectionIPC;
-  return async (): Promise<ConnectionIPC> => {
+  return async (securityLevel: SecurityLevel): Promise<ConnectionIPC> => {
     if ((conn === undefined) || !conn.isActive()) {
-      conn = await ConnectionIPC.bind();
+      conn = await ConnectionIPC.bind(securityLevel);
       log('debug', '[installer] connection bound');
       conn.handleMessages();
     }
@@ -811,9 +838,11 @@ const ensureConnected = (() => {
   };
 })();
 
-async function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
+async function testSupportedScripted(securityLevel: SecurityLevel,
+                                     files: string[])
+                                     : Promise<ISupportedResult> {
   try {
-    const connection = await ensureConnected();
+    const connection = await ensureConnected(securityLevel);
 
     log('debug', '[installer] test supported');
     const res = await connection.sendMessage(
@@ -825,9 +854,11 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
   }
 }
 
-async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
+async function testSupportedFallback(securityLevel: SecurityLevel,
+                                     files: string[])
+                                     : Promise<ISupportedResult> {
   try {
-    const connection = await ensureConnected();
+    const connection = await ensureConnected(securityLevel);
 
     const res = await connection.sendMessage(
       'TestSupported', { files, allowedTypes: ['Basic'] })
@@ -840,7 +871,8 @@ async function testSupportedFallback(files: string[]): Promise<ISupportedResult>
   }
 }
 
-async function install(files: string[],
+async function install(securityLevel: SecurityLevel,
+                       files: string[],
                        stopPatterns: string[],
                        pluginPath: string,
                        scriptPath: string,
@@ -848,7 +880,7 @@ async function install(files: string[],
                        validate: boolean,
                        progressDelegate: ProgressDelegate,
                        coreDelegates: Core): Promise<IInstallResult> {
-  const connection = await ensureConnected();
+  const connection = await ensureConnected(securityLevel);
 
   return await connection.sendMessage(
     'Install',
@@ -861,18 +893,22 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
 }
 
 function init(context: IExtensionContext): boolean {
-  const installWrap =
-      async (files, scriptPath, gameId, progressDelegate, choicesIn, unattended) => {
+  const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
+
+  const installWrap = async (useAppContainer, files, scriptPath, gameId,
+                             progressDelegate, choicesIn, unattended) => {
     const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
     const coreDelegates = new Core(context.api, gameId, canBeUnattended && (unattended === true));
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
     const pluginPath = getPluginPath(gameId);
     // await currentInstallPromise;
 
-    log('info', 'granting app container access to',
-        { scriptPath, grant: winapi?.GrantAppContainer !== undefined });
-    winapi?.GrantAppContainer?.(
-      CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
+    if (useAppContainer) {
+      log('info', 'granting app container access to',
+          { scriptPath, grant: winapi?.GrantAppContainer !== undefined });
+      winapi?.GrantAppContainer?.(
+        CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
+    }
     context.api.store.dispatch(setInstallerDataPath(scriptPath));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
@@ -880,26 +916,27 @@ function init(context: IExtensionContext): boolean {
       : undefined;
 
     const invokeInstall = async (validate: boolean) => {
-      const result = await install(files, stopPatterns, pluginPath,
+      const result = await install(
+        useAppContainer, files, stopPatterns, pluginPath,
         scriptPath, fomodChoices, validate, progressDelegate, coreDelegates);
 
       const state = context.api.store.getState();
       const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
 
       const choices = (dialogState === undefined)
-      ? undefined
-      : dialogState.installSteps.map(step => {
-        const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-        return {
-          name: step.name,
-          groups: (ofg.group || []).map(group => ({
-            name: group.name,
-            choices: group.options
-              .filter(opt => opt.selected)
-              .map(opt => ({ name: opt.name, idx: opt.id })),
-          })),
-        };
-      });
+        ? undefined
+        : dialogState.installSteps.map(step => {
+          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+          return {
+            name: step.name,
+            groups: (ofg.group || []).map(group => ({
+              name: group.name,
+              choices: group.options
+                .filter(opt => opt.selected)
+                .map(opt => ({ name: opt.name, idx: opt.id })),
+            })),
+          };
+        });
 
       result.instructions.push({
         type: 'attribute',
@@ -947,10 +984,24 @@ function init(context: IExtensionContext): boolean {
   };
 
   const wrapper = <T>(cb: (...args: any[]) => Promise<T>) => {
-    return (...args: any[]) =>
-      toBlue(cb)(...args)
+    return (...args: any[]) => {
+      const state = context.api.getState();
+      // TODO: if it was working we'd want to use the low integrity mode as the alternative
+      const securityLevel = osSupportsAppContainer && state.settings.mods.installerSandbox
+        ? SecurityLevel.Sandbox : SecurityLevel.Regular;
+
+      return toBlue(cb)(securityLevel, ...args)
         .catch(err => {
-          
+          if (err['code'] === 0x80008093) {
+            // invalid runtime configuration? Very likely caused by permission errors due to the process
+            // being low integrity, otherwise it would mean Vortex has been modified and then the user
+            // already received an error message about that.
+            return toBlue(cb)(SecurityLevel.Regular, ...args);
+          } else {
+            return Promise.reject(err);
+          }
+        })
+        .catch(err => {
           if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
             || ((err['code'] === 0x80008083) && err.message.includes('The required library'))
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
@@ -960,8 +1011,7 @@ function init(context: IExtensionContext): boolean {
               text: 'The mod installation failed with an error message that indicates '
                 + 'your .NET installation is damaged. '
                 + 'We can download & repair the installation for you, otherwise '
-                + 'you have to do that manually.\n'
-                + '',
+                + 'you have to do that manually.\n',
               links: [{ label: 'Open page', action: () => opn(NET_CORE_DOWNLOAD_SITE).catch(() => null) }],
             }, [
               { label: 'Cancel' },
@@ -985,9 +1035,11 @@ function init(context: IExtensionContext): boolean {
           }
           return Promise.reject(err);
         });
+    };
   }
 
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
+  context.registerReducer(['settings', 'mods'], settingsReducer);
 
   context.registerInstaller('fomod', 20, wrapper(testSupportedScripted), wrapper(installWrap));
   context.registerInstaller('fomod', 100, wrapper(testSupportedFallback), wrapper(installWrap));
@@ -998,6 +1050,10 @@ function init(context: IExtensionContext): boolean {
     onFoundDotNet();
   }
   context.registerDialog('fomod-installer', InstallerDialog);
+
+  context.registerSettings('Workarounds', Workarounds, () => ({
+    osSupportsAppContainer,
+  }));
 
   context.registerTableAttribute('mods', {
     id: 'installer',

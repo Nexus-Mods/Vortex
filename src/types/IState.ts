@@ -225,6 +225,7 @@ export interface ISettingsMods {
   showDropzone: boolean;
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;
+  installerSandbox: boolean;
 }
 
 export interface ISettingsNotification {

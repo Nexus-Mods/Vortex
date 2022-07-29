@@ -497,7 +497,7 @@ export function onDownloadUpdate(api: IExtensionApi,
     const fileIdNum = parseInt(fileId, 10);
 
     return Promise.resolve(nexus.getModFiles(parseInt(modId, 10),
-                           nexusGameId(game, gameId) || gameId))
+                                             nexusGameId(game, gameId) || gameId))
       .then(files => {
         let updateFileId: number;
 
