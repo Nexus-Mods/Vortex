@@ -1007,12 +1007,13 @@ function init(context: IExtensionContext): boolean {
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
             || ((err instanceof SetupError) && (err.component === 'netruntime'))
           ) {
+            const t = context.api.translate;
             context.api.showDialog('error', 'Mod installation failed', {
-              text: 'The mod installation failed with an error message that indicates '
+              bbcode: 'The mod installation failed with an error message that indicates '
                 + 'your .NET installation is damaged. '
-                + 'We can download & repair the installation for you, otherwise '
-                + 'you have to do that manually.\n',
-              links: [{ label: 'Open page', action: () => opn(NET_CORE_DOWNLOAD_SITE).catch(() => null) }],
+                + 'More information on .NET, and manual download options, can be found on the {{url}}{{br}}{{br}}'
+                + 'Click "Repair" below to automatically download and repair the installation.',
+              parameters: { br: '[br][/br]', url: `[url=${NET_CORE_DOWNLOAD_SITE}]${t('.NET website.')}[/url]` },
             }, [
               { label: 'Cancel' },
               { label: 'Repair' },
