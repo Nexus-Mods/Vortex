@@ -31,6 +31,15 @@
       "hashValue": "38a0935f8c9906670ffdc2753ab192ff",
       "userFacingVersion": "1.4.0.525",
       "variant": "xbox(english)"
+    },
+    "ceb14f9c7d5398a6c1e9049e404db0ff": {
+      "files": [
+        "Data\\Update.bsa",
+        "Data\\FalloutNV.esm"
+      ],
+      "hashValue": "ceb14f9c7d5398a6c1e9049e404db0ff",
+      "userFacingVersion": "1.4.0.525",
+      "variant": "steam(TTW)"
     }
   },
   "fallout3": {
