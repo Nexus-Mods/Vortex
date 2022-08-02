@@ -70,8 +70,12 @@ class LinkTag extends Tag {
 
     if ((parsed.protocol === 'cb:') && (callbacks?.[parsed.host] !== undefined)) {
       try {
-        const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
-        callbacks[parsed.host](...args);
+        if (parsed.path === null) {
+          callbacks[parsed.host]();
+        } else {
+          const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
+          callbacks[parsed.host](...args);
+        }
       } catch (err) {
         throw new Error(`invalid callback url "${uri}"`);
       }
