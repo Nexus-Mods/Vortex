@@ -1,5 +1,5 @@
 {
-  "last_updated": 1659347216354,
+  "last_updated": 1659521647308,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -5052,8 +5052,8 @@
         "short": "Adds Stray as a moddable game in Vortex.",
         "long": "This extension adds Stray as a game supported in Vortex for mod management. The load order page allows you to set the priority of PAK files by dragging and dropping mods into a new order. Mods installed with this extension will be placed under Hk_project/Content/Paks/~mods and each mod will have its own folder (to enable load ordering). Stray only appears to load PAKs from this folder if the PAK filename ends with \"_P\", so when installing a mod without this naming convention Vortex will offer to rename the files. You can ignore this prompt on a per-mod basis and will need to reinstall it to see the prompt again. \n<br />\n<br />Special thanks to [url=https://www.nexusmods.com/stray/users/4196370]Narknon[/url] for help with the load ordering information. \n<br />\n<br />\n<br />[size=4]Vortex Install (Easy)\n<br />[/size]\n<br />[list]\n<br />[*]In Vortex, locate Stray  in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Vortex Install (Advanced)\n<br />[/size]\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Manual Install\n<br />[/size]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Stray"
       },
-      "downloads": 853,
-      "endorsements": 15,
+      "downloads": 1136,
+      "endorsements": 26,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/430/430-1659346895-1354923130.jpeg",
       "name": "Stray Support",
       "timestamp": 1659105978,
@@ -5061,6 +5061,93 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Stray"
+    },
+    {
+      "modId": 431,
+      "fileId": 1604,
+      "author": "Nagev",
+      "uploader": "Nagev",
+      "description": {
+        "short": "This extension intends to simplify modding for Capcom's RE Engine games (RE2, RE3, DMC5, RE: Village, etc) - Vortex game extensions that require this functionality will download this extension automatically.",
+        "long": "Vortex game extensions that require this functionality will download this extension automatically, no need to download it manually unless you intend to develop a game extension of your own for an RE Engine game.\n<br />\n<br />To download the extension, look it up in the extensions browser inside Vortex."
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/431/431-1659506886-1278340055.png",
+      "name": "re-engine-wrapper",
+      "timestamp": 1659506948,
+      "tags": [],
+      "version": "0.2.3",
+      "type": null,
+      "dependencies": {
+        "vortex": ">=1.6.5"
+      }
+    },
+    {
+      "modId": 433,
+      "fileId": 1608,
+      "author": "Nagev",
+      "uploader": "Nagev",
+      "description": {
+        "short": "Adds Vortex game support for Resident Evil 3 (2020)",
+        "long": "Adds Vortex game support for Resident Evil 3 (2020)\n<br />\n<br />Download the game extension through Vortex's extensions browser - requires the RE Engine Wrapper extension which will be installed automatically when managing the game.\n<br />\n<br />Important note: the game extension will only function with the DX11 non-RT version of the game!"
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/433/433-1659507424-1196646885.jpeg",
+      "name": "Resident Evil 3 (2020)",
+      "timestamp": 1659508472,
+      "tags": [],
+      "version": "0.1.5",
+      "type": "game",
+      "gameName": "Resident Evil 3 (2020)",
+      "dependencies": {
+        "vortex": ">=1.6.5"
+      }
+    },
+    {
+      "modId": 432,
+      "fileId": 1605,
+      "author": "Nagev",
+      "uploader": "Nagev",
+      "description": {
+        "short": "Adds Vortex game support for Resident Evil 2 (2019)",
+        "long": "Adds Vortex game support for Resident Evil 2 (2019)\n<br />\n<br />Use Vortex's extension browser to download - requires the RE Engine Wrapper extension which will be installed automatically when you manage your game.\n<br />\n<br />Important note: the game extension will only function with the DX11 non-RT version of the game!"
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/432/432-1659507200-1088278393.jpeg",
+      "name": "Resident Evil 2 (2019)",
+      "timestamp": 1659507256,
+      "tags": [],
+      "version": "0.2.6",
+      "type": "game",
+      "gameName": "Resident Evil 2 (2019)",
+      "dependencies": {
+        "vortex": ">=1.6.5"
+      }
+    },
+    {
+      "modId": 434,
+      "fileId": 1607,
+      "author": "Nagev",
+      "uploader": "Nagev",
+      "description": {
+        "short": "Adds Vortex game support for Devil May Cry 5",
+        "long": "Adds Vortex game support for Devil May Cry 5\n<br />\n<br />Use Vortex's extensions browser to download - requires the RE Engine Wrapper extension which will be downloaded automatically when managing the game."
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/434/434-1659507596-539567659.jpeg",
+      "name": "Devil May Cry 5 Game Support",
+      "timestamp": 1659507633,
+      "tags": [],
+      "version": "0.1.6",
+      "type": "game",
+      "gameName": "Devil May Cry 5",
+      "dependencies": {
+        "vortex": ">=1.6.5"
+      }
     }
   ]
 }

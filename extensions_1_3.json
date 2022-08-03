@@ -1,5 +1,5 @@
 {
-  "last_updated": 1659347216354,
+  "last_updated": 1659521647308,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -4890,8 +4890,8 @@
         "short": "Adds Stray as a moddable game in Vortex.",
         "long": "This extension adds Stray as a game supported in Vortex for mod management. The load order page allows you to set the priority of PAK files by dragging and dropping mods into a new order. Mods installed with this extension will be placed under Hk_project/Content/Paks/~mods and each mod will have its own folder (to enable load ordering). Stray only appears to load PAKs from this folder if the PAK filename ends with \"_P\", so when installing a mod without this naming convention Vortex will offer to rename the files. You can ignore this prompt on a per-mod basis and will need to reinstall it to see the prompt again. \n<br />\n<br />Special thanks to [url=https://www.nexusmods.com/stray/users/4196370]Narknon[/url] for help with the load ordering information. \n<br />\n<br />\n<br />[size=4]Vortex Install (Easy)\n<br />[/size]\n<br />[list]\n<br />[*]In Vortex, locate Stray  in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Vortex Install (Advanced)\n<br />[/size]\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Manual Install\n<br />[/size]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Stray"
       },
-      "downloads": 853,
-      "endorsements": 15,
+      "downloads": 1136,
+      "endorsements": 26,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/430/430-1659346895-1354923130.jpeg",
       "name": "Stray Support",
       "timestamp": 1659105978,
