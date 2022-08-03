@@ -1,3 +1,4 @@
+import { setSettingsPage } from '../../actions/session';
 import {
   IExtensionApi,
   IExtensionContext,
@@ -19,6 +20,7 @@ import { ArchiveBrokenError } from '../mod_management/InstallManager';
 import { IMod } from '../mod_management/types/IMod';
 
 import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
+import { setInstallerSandbox } from './actions/settings';
 import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
 import { settingsReducer } from './reducers/settings';
@@ -159,6 +161,10 @@ function transformError(err: any): Error {
       result[transform.out] = err[transform.in];
     }
   });
+
+  if ((result['name'] === undefined) || (err['name'] !== undefined)) {
+    result['name'] = err['name'];
+  }
 
   result['attachLogOnReport'] = true;
 
@@ -845,7 +851,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
     const connection = await ensureConnected(securityLevel);
 
     log('debug', '[installer] test supported');
-    const res = await connection.sendMessage(
+    const res: ISupportedResult = await connection.sendMessage(
       'TestSupported', { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
     log('debug', '[installer] test supported result', JSON.stringify(res));
     return res;
@@ -992,7 +998,9 @@ function init(context: IExtensionContext): boolean {
 
       return toBlue(cb)(securityLevel, ...args)
         .catch(err => {
-          if (err['code'] === 0x80008093) {
+          // afaik 0x80008085 would only happen if our installer wasn't used or if running in
+          // dev environment
+          if ([0x80008085, 0x80008093].includes(err['code'])) {
             // invalid runtime configuration? Very likely caused by permission errors due to the process
             // being low integrity, otherwise it would mean Vortex has been modified and then the user
             // already received an error message about that.
@@ -1033,6 +1041,49 @@ function init(context: IExtensionContext): boolean {
                 }
               });
             err['allowReport'] = false;
+          }
+
+          if (err.name === 'WinApiException') {
+            // this almost certainly means the sandbox failed to set up
+            const dialogId = shortid();
+            return new Promise((resolve, reject) => {
+              context.api.showDialog('error', 'Mod installation failed', {
+                bbcode: 'Vortex was unable to set up a security sandbox to protect your system against '
+                      + 'mod installers that could potentially contain malicious C# code. '
+                      + 'These mod installers are most commonly used in older Bethesda games '
+                      + '(Fallout 3, Oblivion, Fallout: New Vegas).[br][/br][br][/br]'
+                      + 'The security sandbox is a Windows feature, so this could indicate a '
+                      + 'configuration issue with your operating system.[br][/br][br][/br]'
+                      + 'You can disable the security sandbox and allow these mod types to install '
+                      + 'unprotected at your own risk. '
+                      + 'This option can be re-enabled under [url="cb://opensettings"]Settings->Workarounds[/url] '
+                      + 'later on.',
+                options: {
+                  bbcodeContext: {
+                    callbacks: {
+                      opensettings: () => {
+                        context.api.events.emit('show-main-page', 'application_settings');
+                        context.api.store.dispatch(setSettingsPage('Workarounds'));
+                        context.api.highlightControl('#dotnet-appcontainer', 5000);
+                        context.api.closeDialog(dialogId);
+                        reject(err);
+                      },
+                    },
+                  },
+                },
+              }, [
+                { label: 'Close' },
+                { label: 'Disable Sandbox' },
+              ], dialogId)
+                .then(result => {
+                  if (result.action === 'Disable Sandbox') {
+                    context.api.store.dispatch(setInstallerSandbox(false));
+                    resolve(toBlue(cb)(SecurityLevel.Regular, ...args));
+                  } else {
+                    reject(err);
+                  }
+                });
+            });
           }
           return Promise.reject(err);
         });

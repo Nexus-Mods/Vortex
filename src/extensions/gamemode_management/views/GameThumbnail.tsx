@@ -77,10 +77,13 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       `game-thumbnail-${(discovered !== false) ? 'discovered' : 'undiscovered'}`,
     ];
 
-    const protocol = url.parse(logoPath).protocol;
-    const imgurl = ((protocol !== null) && (protocol.startsWith('http')))
-      ? logoPath
-      : url.pathToFileURL(logoPath).href;
+    let imgurl = null;
+    if (logoPath !== null) {
+      const protocol = url.parse(logoPath).protocol;
+      imgurl = ((protocol !== null) && (protocol.startsWith('http')))
+        ? logoPath
+        : url.pathToFileURL(logoPath).href;
+    }
 
     return (
       <Panel className={classes.join(' ')} bsStyle={active ? 'primary' : 'default'}>
