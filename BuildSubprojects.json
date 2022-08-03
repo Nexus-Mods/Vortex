@@ -192,14 +192,6 @@
     },
     {
       "type": "build-copy",
-      "name": "re-engine-wrapper",
-      "path": "extensions/re-engine-wrapper",
-      "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/re-engine-wrapper"
-    },
-    {
-      "type": "build-copy",
       "name": "mo-import",
       "path": "extensions/mo-import",
       "removeModules": ["vortex-api"],
