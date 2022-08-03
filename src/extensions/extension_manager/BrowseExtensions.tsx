@@ -347,6 +347,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       ? <Spinner />
       : installed
         ? <div>{t('Installed')}</div>
+        : !this.isCompatible(ext)
+        ? <div>{t('Incompatible')}</div>
         : (
           <a
             className='extension-subscribe'
