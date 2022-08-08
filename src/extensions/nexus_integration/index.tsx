@@ -1189,7 +1189,7 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
       const hasArchive = (mod.archiveId !== undefined)
                       && (downloads[mod.archiveId] !== undefined);
 
-      if (mod.attributes.fileMD5 !== undefined) {
+      if (mod.attributes?.fileMD5 !== undefined) {
         return fillNexusIdByMD5(api, gameMode, mod, fileName, downloadPath, hasArchive)
           .catch(err => {
             api.showErrorNotification('Query failed', err, { allowReport: false });
