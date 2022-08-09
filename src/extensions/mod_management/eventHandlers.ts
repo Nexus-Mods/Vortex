@@ -12,7 +12,7 @@ import { log } from '../../util/log';
 import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import {batchDispatch, truthy} from '../../util/util';
+import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
