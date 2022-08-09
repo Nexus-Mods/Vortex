@@ -2391,9 +2391,7 @@ class InstallManager {
                     .then(() => dep['reresolveDownloadHint']())
                     .then(() => doDownload(dep));
                 })
-            : !_.isEqual(dep.mod.attributes?.installerChoices?.options, dep.installerChoices?.options)
-              ? installDownload(dep, downloadId)
-              : Promise.resolve(dep.mod.id);
+            : Promise.resolve(dep.mod.id);
         });
     };
 
@@ -2474,10 +2472,9 @@ class InstallManager {
     interface IDependencySplit {
       success: IDependency[];
       existing: IDependency[];
-      mismatchedInstallerChoices: IDependency[];
       error: IDependencyError[];
     }
-    const { success, existing, error, mismatchedInstallerChoices } = dependencies.reduce(
+    const { success, existing, error } = dependencies.reduce(
       (prev: IDependencySplit, dep: Dependency) => {
         if (dep['error'] !== undefined) {
           prev.error.push(dep as IDependencyError);
@@ -2485,28 +2482,25 @@ class InstallManager {
           const { mod } = dep as IDependency;
           if ((mod === undefined) || (!getSafe(profile?.modState, [mod.id, 'enabled'], false))) {
             prev.success.push(dep as IDependency);
-          } else if (!_.isEqual(mod.attributes?.installerChoices?.options ?? {}, dep['installerChoices']?.options)) {
-            prev.mismatchedInstallerChoices.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
           }
         }
         return prev;
-      }, { success: [], existing: [], error: [], mismatchedInstallerChoices: [] });
+      }, { success: [], existing: [], error: [] });
 
     log('debug', 'determined unfulfilled dependencies',
       { count: success.length, errors: error.length });
 
-    const required = [].concat(success, mismatchedInstallerChoices);
     if (silent && (error.length === 0)) {
-      return this.doInstallDependencies(api, gameId, modId, required, false, silent)
+      return this.doInstallDependencies(api, gameId, modId, success, false, silent)
         .then(updated => this.updateRules(api, gameId, modId, [].concat(existing, updated), false));
     }
 
     const state: IState = api.store.getState();
     const downloads = state.persistent.downloads.files;
 
-    const requiredInstalls = required.filter(dep => dep.mod === undefined);
+    const requiredInstalls = success.filter(dep => dep.mod === undefined);
     const requiredDownloads = requiredInstalls.filter(dep => {
       return (dep.download === undefined)
         || (downloads[dep.download].state === 'paused');
@@ -2520,12 +2514,6 @@ class InstallManager {
         + '{{dlCount}} of them have to be downloaded first.<br/><br/>';
     }
 
-    if (mismatchedInstallerChoices.length > 0) {
-      bbcode += '{{modName}} has {{mismatched}} dependencies with mismatched installer choices. '
-        + 'to fully fulfill {{modName}}\'s dependencies, they must all be re-installed, '
-        + 'some of them may have to be downloaded first.<br/><br/>';
-    }
-
     if (error.length > 0) {
       bbcode += '[color=red]'
         + '{{modName}} has unsolved dependencies that could not be found automatically. '
@@ -2534,11 +2522,11 @@ class InstallManager {
         + '[/color]';
     }
 
-    if (required.length === 0) {
+    if (success.length === 0) {
       return Promise.resolve();
     }
 
-    const actions = required.length > 0
+    const actions = success.length > 0
       ? [
         { label: 'Don\'t install' },
         { label: 'Install' },
@@ -2550,7 +2538,6 @@ class InstallManager {
         bbcode, parameters: {
           modName: name,
           count: success.length,
-          mismatched: mismatchedInstallerChoices.length,
           instCount: requiredInstalls.length,
           dlCount: requiredDownloads.length,
           errors: error.map(err => err.error).join('<br/>'),
