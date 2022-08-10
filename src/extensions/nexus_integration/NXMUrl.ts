@@ -3,7 +3,7 @@ import { DataInvalid } from '../../util/CustomErrors';
 import { URL } from 'url';
 
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
-const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+)/i;
+const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+|latest)/i;
 
 class NXMUrl {
   private mGameId: string;
@@ -53,7 +53,11 @@ class NXMUrl {
       } else {
         this.mCollectionId = undefined;
         this.mCollectionSlug = collMatches[1];
-        this.mRevisionNumber = parseInt(collMatches[2], 10);
+        if  (collMatches[2] === 'latest') {
+          this.mRevisionNumber = -1;
+        } else {
+          this.mRevisionNumber = parseInt(collMatches[2], 10);
+        }
       }
     } else {
       throw new DataInvalid(`invalid nxm url "${input}"`);

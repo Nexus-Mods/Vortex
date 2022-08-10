@@ -762,7 +762,8 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         if (nxmUrl.collectionSlug !== undefined) {
           actions.push(setDownloadModInfo(dlId, 'collectionSlug', nxmUrl.collectionSlug));
         }
-        if (nxmUrl.revisionNumber !== undefined) {
+        if ((nxmUrl.revisionNumber !== undefined)
+            && (nxmUrl.revisionNumber > 0)) {
           actions.push(setDownloadModInfo(dlId, 'revisionNumber', nxmUrl.revisionNumber));
         }
         batchDispatch(api.store, actions);

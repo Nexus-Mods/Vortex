@@ -503,8 +503,8 @@ function init() {
     });
   }
 
-  eventEmitter.on('start-download-url', (url: string, fileName: string) => {
-    startDownloadFromURL(url, fileName);
+  eventEmitter.on('start-download-url', (url: string, fileName?: string, install?: boolean) => {
+    startDownloadFromURL(url, fileName, install);
   });
 
   ipcRenderer.on(
