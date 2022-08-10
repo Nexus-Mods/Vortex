@@ -765,6 +765,18 @@ function checkDownloadsWithMissingMeta(api: IExtensionApi) {
   }
 }
 
+function processCommandline(api: IExtensionApi) {
+  const state = api.getState();
+
+  const { commandLine } = state.session.base;
+
+  const cliUrl = commandLine.download ?? commandLine.install;
+
+  if (cliUrl) {
+    api.events.emit('start-download-url', cliUrl, undefined, commandLine.install !== undefined);
+  }
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -1056,6 +1068,8 @@ function init(context: IExtensionContextExt): boolean {
       processInterruptedDownloads(context.api, downloads, gameMode);
       checkForUnfinalized(context.api, downloads, gameMode);
       removeDownloadsWithoutFile(store, downloads);
+
+      processCommandline(context.api);
     }
   });
 

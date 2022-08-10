@@ -1051,24 +1051,9 @@ class Application {
   }
 
   private applyArguments(args: IParameters) {
-    if (args.download || args.install) {
-      const prom: Promise<void> = (this.mMainWindow === undefined)
-        // give the main instance a moment to fully start up
-        ? Promise.delay(2000)
-        : Promise.resolve(undefined);
-
-      prom.then(() => {
-        if (this.mMainWindow !== undefined) {
-          this.mMainWindow.sendExternalURL(args.download || args.install,
-                                           args.install !== undefined);
-        } else {
-          // TODO: this instructions aren't very correct because we know Vortex doesn't have
-          // a UI and needs to be shut down from the task manager
-          dialog.showErrorBox('Vortex unresponsive',
-            'Vortex appears to be frozen, please close Vortex and try again');
-        }
-      });
-    } else {
+    // in the past we'd queue the download right here but that
+    // has been moved to the download_management extension
+    if (!args.download && !args.install) {
       if (this.mMainWindow !== undefined) {
         // Vortex's executable has been run without download/install arguments;
         //  this is potentially down to the user not realizing that Vortex is minimized
