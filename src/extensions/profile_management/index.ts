@@ -88,7 +88,7 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
                         direction: 'import' | 'export'): Promise<void> {
-  log('debug', 'refresh profile', profile);
+  log('debug', 'refresh profile', { profile, direction });
   if (profile === undefined || profile?.pendingRemove === true) {
     return Promise.resolve();
   }
@@ -525,7 +525,8 @@ function manageGame(api: IExtensionApi, gameId: string) {
   const profiles = state.persistent.profiles || {};
 
   if (getSafe(discoveredGames, [gameId, 'path'], undefined) !== undefined) {
-    if (Object.values(profiles).find(prof => prof.gameId === gameId) !== undefined) {
+    const profile = Object.values(profiles).find(prof => prof.gameId === gameId);
+    if (profile !== undefined) {
       activateGame(api.store, gameId);
     } else {
       manageGameDiscovered(api, gameId);
@@ -893,7 +894,10 @@ function init(context: IExtensionContext): boolean {
       const initProfile = activeProfile(state);
       refreshProfile(store, initProfile, 'import')
           .then(() => {
-            if (initProfile !== undefined) {
+            const { commandLine } = state.session.base;
+            if ((initProfile !== undefined)
+                && (commandLine?.profile === undefined)
+                && (commandLine?.game === undefined)) {
               context.api.events.emit('profile-did-change', initProfile.id);
             }
             return null;

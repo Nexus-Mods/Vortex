@@ -20,10 +20,10 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
-import { activeGameId, activeProfile, downloadPathForGame } from '../../util/selectors';
+import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
-import { batchDispatch, wrapExtCBAsync } from '../../util/util';
+import { batchDispatch } from '../../util/util';
 
 import { IExtensionDownloadInfo } from '../extension_manager/types';
 import { setModType } from '../mod_management/actions/mods';
@@ -864,7 +864,10 @@ function init(context: IExtensionContext): boolean {
 
     {
       const profile: IProfile = activeProfile(store.getState());
-      if (profile !== undefined) {
+      const { commandLine } = store.getState().session.base;
+      if ((profile !== undefined)
+          && (commandLine.game === undefined)
+          && (commandLine.profile === undefined)) {
         const gameMode = profile.gameId;
         const discovery = store.getState().settings.gameMode.discovered[gameMode];
         if ((discovery !== undefined)
