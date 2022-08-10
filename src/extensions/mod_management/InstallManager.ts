@@ -459,6 +459,10 @@ class InstallManager {
       // TODO: this is only necessary to get at the fileId and the fileId isn't
       //   even a particularly good way to discover conflicts
       .then(newModId => {
+        if (newModId === undefined) {
+          // this shouldn't be possible, how would checkNameLoop return undefined?
+          return Promise.reject(new Error('failed to generate mod id'));
+        }
         modId = newModId;
         log('debug', 'mod id for newly installed mod', { archivePath, modId });
         return filterModInfo(fullInfo, undefined);

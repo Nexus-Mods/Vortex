@@ -620,6 +620,8 @@ export function onRemoveMods(api: IExtensionApi,
   const store = api.store;
   const state: IState = store.getState();
 
+  modIds = modIds.filter(modId => truthy(modId));
+
   log('debug', 'removing mods', { game: gameMode, mods: modIds });
 
   // reject trying to remove mods that are actively being installed/downloaded
@@ -732,6 +734,10 @@ export function onRemoveMod(api: IExtensionApi,
                             modId: string,
                             callback?: (error: Error) => void,
                             options?: IRemoveModOptions) {
+  if (!truthy(modId)) {
+    callback?.(null);
+    return;
+  }
   return onRemoveMods(api, activators, gameMode, [modId], callback, options);
 }
 
