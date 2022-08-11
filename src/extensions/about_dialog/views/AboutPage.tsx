@@ -145,7 +145,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                   <div>
                     {t('Released on {{date}}', { replace:
                       { date: releaseDate.toLocaleDateString(I18next.language) } })}
-                    <More id='about-vortex-changelog' name='changelog'>
+                    <More id='about-vortex-changelog' name='Changelog'>
                       {changelog}
                     </More>
                  </div>
