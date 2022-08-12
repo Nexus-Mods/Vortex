@@ -126,7 +126,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     return {
       name: bbcode(input.title),
       link: input.link,
-      imageUrl: image.url,
+      imageUrl: image?.url,
       category: input.categories?.[0],
       summary,
       extra: extras.map(iter => ({
