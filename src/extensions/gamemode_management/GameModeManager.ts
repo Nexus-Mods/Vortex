@@ -165,18 +165,22 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setupGameMode(gameMode: string): Promise<void> {
-    const game = this.mKnownGames.find(knownGame => knownGame.id === gameMode);
+    const game = getGame(gameMode);
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
     log('debug', 'setup game mode', gameMode);
-    if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+    if (gameDiscovery?.path === undefined) {
       return Promise.reject(new Error('game not discovered'));
-    } else if ((game === undefined) || (game.setup === undefined)) {
-      return Promise.resolve();
+    } else if (game?.setup === undefined) {
+      return game.getInstalledVersion(gameDiscovery)
+        .then(() => Promise.resolve());
     } else {
       try {
         return assertToolDir(game, gameDiscovery.path)
           .then(() => fs.statAsync(gameDiscovery.path))
+          // We check the game's version before calling the setup function to avoid
+          //  locking game files if the gameversion hash extension is used.
+          .then(() => game.getInstalledVersion(gameDiscovery))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
             ? Promise.reject(new ProcessCanceled(
