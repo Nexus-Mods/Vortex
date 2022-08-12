@@ -143,7 +143,7 @@ function transformError(err: any): Error {
   }
 
   if (result === undefined) {
-    result = new Error(err.name ?? err.Message ?? 'unknown error: ' + util.inspect(err));
+    result = new Error(err.message ?? err.Message ?? err.name ?? 'unknown error: ' + util.inspect(err));
     if (err['code'] !== undefined) {
       result['code'] = err['code'];
     }
@@ -550,6 +550,7 @@ class ConnectionIPC {
             }
 
             if (line.startsWith('Failed')
+                || line.startsWith('Unhandled exception')
                 || line.includes('Exception')
                 || line.includes('fatal error')) {
               isErr = idx;

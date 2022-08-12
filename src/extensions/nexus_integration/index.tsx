@@ -774,7 +774,8 @@ function makeNXMLinkCallback(api: IExtensionApi) {
           if (download === undefined) {
             return reject(new ProcessCanceled(`Download not found "${dlId}"`));
           }
-          if (install) {
+          // collections always get installed automatically.
+          if (install && (nxmUrl.type !== 'collection')) {
             api.events.emit('start-install-download', dlId, (err: Error, id: string) => {
               if (err !== null) {
                 reject(err);
