@@ -731,7 +731,7 @@ class Application {
 
     // storing the last version that ran in the startup.json settings file.
     // We have that same information in the leveldb store but what if we need
-    // to react to an upgrade before the state us loaded?
+    // to react to an upgrade before the state is loaded?
     // In development of 1.4 I assumed we had a case where this was necessary.
     // Turned out it wasn't, still feel it's sensible to have this
     // information available asap

@@ -45,7 +45,6 @@ import * as winapi from 'winapi-bindings';
 import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
-import opn from '../../util/opn';
 
 const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*The system cannot find the file specified.');
 

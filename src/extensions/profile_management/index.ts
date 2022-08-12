@@ -854,6 +854,10 @@ function init(context: IExtensionContext): boolean {
 
               if (game !== undefined) {
                 manageGame(context.api, game.id);
+              } else {
+                log('warn', 'game specified on command line not found', {
+                  game: commandLine.game,
+                });
               }
             });
         }
