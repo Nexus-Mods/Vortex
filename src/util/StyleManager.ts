@@ -1,4 +1,5 @@
 import { IExtensionApi } from '../types/IExtensionContext';
+import { getApplication } from './application';
 import Debouncer from './Debouncer';
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
@@ -10,7 +11,7 @@ import { ipcMain, ipcRenderer } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as sassT from 'sass';
-import { getApplication } from './application';
+import { pathToFileURL } from 'url';
 
 function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
@@ -49,9 +50,21 @@ if (ipcMain !== undefined) {
       log('debug', 'updating css cache, just to be sure');
     }
 
-    const sassIndex: string =
+    let themePath: string = '.';
+
+    let sassIndex: string =
       stylesheets.map(name => {
         const imp = `@import "${name.replace(/\\/g, '\\\\')}";`;
+        // slightly hackish but I think this should work.
+        // imports ending in .scss are extensions,
+        // imports with no path are the core files.
+        // what's left is the imports for the theme.
+        // In addition, the style.scss from the theme should be the very last
+        // import so even without the condition, the very last item should have
+        // the correct path
+        if ((path.dirname(name) !== '.') && (path.extname(name) !== '.scss')) {
+          themePath = path.dirname(name);
+        }
         if (path.extname(name) === '.scss') {
           // nest every extension-provided rule in '*, #added_by_<extname>'
           // this way it's easier to find out where a rule comes from
@@ -65,6 +78,8 @@ if (ipcMain !== undefined) {
           return imp + '\n';
         }
       }).join('\n');
+
+    sassIndex = `$theme-path: "${pathToFileURL(themePath)}";\n` + sassIndex;
 
     // development builds are always versioned as 0.0.1
     const isDevel: boolean = getApplication().version === '0.0.1';
