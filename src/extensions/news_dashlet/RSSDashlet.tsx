@@ -89,7 +89,8 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     .then(result => {
       if (this.mMounted) {
         this.setState({
-          messages: result.map(item => this.transformMessage(item)),
+          messages: result.map(item => this.transformMessage(item))
+                          .filter(item => truthy(item)),
           error: undefined,
         });
       }
@@ -109,6 +110,10 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     const image = input.enclosures.find(enc =>
       (!truthy(enc.type) || enc.type.startsWith('image/')) && truthy(enc.url));
 
+    if (!image) {
+      return undefined;
+    }
+
     const messageInput = getSafe(input, ['nexusmods:summary', '#'], input.description);
 
     let summary = stripBBCode(messageInput);
@@ -126,7 +131,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     return {
       name: bbcode(input.title),
       link: input.link,
-      imageUrl: image?.url,
+      imageUrl: image.url,
       category: input.categories?.[0],
       summary,
       extra: extras.map(iter => ({
