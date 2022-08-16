@@ -2,7 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { DataInvalid, NotFound, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -59,6 +59,30 @@ function checkForUpdates(api: IExtensionApi) {
 
       return prev;
     }, []);
+  
+  let forceRestart: boolean = false;
+
+  {
+    const state = api.getState();
+    const { commandLine } = state.session.base;
+    if (commandLine.installExtension !== undefined) {
+      const request = parseInstallCmdLine(commandLine.installExtension);
+      const update = available.find(ext =>
+        (request.modId !== undefined) && (ext.modId === request.modId));
+
+      if (update !== undefined) {
+        forceRestart = true;
+        updateable.push({
+          current: {
+            author: update.author,
+            description: update.description.short,
+            name: update.name,
+            version: '',
+          }, update
+        });
+      }
+    }
+  }
 
   if (updateable.length === 0) {
     return Promise.resolve();
@@ -79,18 +103,22 @@ function checkForUpdates(api: IExtensionApi) {
     .then((success: boolean[]) => {
       localState.reloadNecessary = true;
       if (success.find(iter => iter === true)) {
-        api.sendNotification({
-          id: 'extension-updates',
-          type: 'success',
-          message: 'Extensions updated, please restart to apply them',
-          actions: [
-            {
-              title: 'Restart now', action: () => {
-                relaunch();
+        if (forceRestart) {
+          relaunch();
+        } else {
+          api.sendNotification({
+            id: 'extension-updates',
+            type: 'success',
+            message: 'Extensions updated, please restart to apply them',
+            actions: [
+              {
+                title: 'Restart now', action: () => {
+                  relaunch();
+                },
               },
-            },
-          ],
-        });
+            ],
+          });
+        }
       }
     });
 }
@@ -235,6 +263,18 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
         });
       });
   };
+}
+
+function parseInstallCmdLine(argument: string): IExtensionDownloadInfo {
+  const modIdMatch = argument.match(/modId:(\d+)/);
+  if (modIdMatch != null) {
+    return {
+      name: 'Commandline Request',
+      modId: parseInt(modIdMatch[1], 10),
+    };
+  } else {
+    throw new Error(`invalid command line argument "${argument}"`);
+  }
 }
 
 function init(context: IExtensionContext) {

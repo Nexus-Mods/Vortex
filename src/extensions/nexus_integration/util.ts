@@ -1,3 +1,4 @@
+import * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
@@ -10,17 +11,20 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
-import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
+import WebSocket from 'ws';
+import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute, setUserAPIKey } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
 import { getApplication } from '../../util/application';
-import { DataInvalid, HTTPError, ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, HTTPError, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import github, { RateLimitExceeded } from '../../util/github';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
-import { calcDuration, showError } from '../../util/message';
+import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { jsonRequest } from '../../util/network';
+import opn from '../../util/opn';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
@@ -29,16 +33,208 @@ import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
+import { setLoginError, setLoginId } from './actions/session';
+import { NEXUS_DOMAIN } from './constants';
 import NXMUrl from './NXMUrl';
+import * as sel from './selectors';
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
+import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
+
+const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const GAMES_JSON_URL = 'https://data.nexusmods.com/file/nexus-data/games.json';
+
+interface INexusLoginMessage {
+  id: string;
+  appid: string;
+  protocol: number;
+  token?: string;
+}
+
+let cancelLogin: () => void;
+
+export function onCancelLoginImpl(api: IExtensionApi) {
+  if (cancelLogin !== undefined) {
+    try {
+      cancelLogin();
+    } catch (err) {
+      // the only time we ever see this happen is a case where the websocket connection
+      // wasn't established yet so the cancelation failed because it wasn't necessary.
+      log('info', 'login not canceled', err.message);
+    }
+  }
+  api.store.dispatch(setLoginId(undefined));
+}
+
+export function bringToFront() {
+  remote.getCurrentWindow().setAlwaysOnTop(true);
+  remote.getCurrentWindow().show();
+  remote.getCurrentWindow().setAlwaysOnTop(false);
+}
+
+function genId() {
+  try {
+    const uuid = require('uuid');
+    return uuid.v4();
+  } catch (err) {
+    // odd, still unidentified bugs where bundled modules fail to load.
+    log('warn', 'failed to import uuid module', err.message);
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.apply(null, Array(10))
+      .map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+    // the probability that this fails for another user at exactly the same time
+    // and they both get the same random number is practically 0
+  }
+}
+
+export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
+  const stackErr = new Error();
+
+  let connection: WebSocket;
+
+  const loginMessage: INexusLoginMessage = {
+    id: genId(),
+    appid: 'Vortex',
+    protocol: 2,
+  };
+
+  let keyReceived: boolean = false;
+  let connectionAlive: boolean = true;
+  let error: Error;
+  let attempts = 5;
+
+  const connect = () => {
+    connection = new WebSocket(`wss://sso.${NEXUS_DOMAIN}`)
+      .on('open', () => {
+        cancelLogin = () => {
+          connection.close();
+        };
+        connection.send(JSON.stringify(loginMessage), err => {
+          api.store.dispatch(setLoginId(loginMessage.id));
+          if (err) {
+            api.showErrorNotification('Failed to start login', err);
+            connection.close();
+          }
+        });
+        // open the authorization page - but not on reconnects!
+        if (loginMessage.token === undefined) {
+          opn(getPageURL(loginMessage.id)).catch(err => undefined);
+        }
+        const keepAlive = setInterval(() => {
+          if (!connectionAlive) {
+            connection.terminate();
+            clearInterval(keepAlive);
+          } else if (connection.readyState === WebSocket.OPEN) {
+            connection.ping();
+          } else {
+            clearInterval(keepAlive);
+          }
+        }, 30000);
+      })
+      .on('close', (code: number, reason: string) => {
+        if (!keyReceived) {
+          if (code === 1005) {
+            api.store.dispatch(setLoginId(undefined));
+            cancelLogin = undefined;
+            bringToFront();
+            callback(new UserCanceled());
+          } else if (attempts-- > 0) {
+            // automatic reconnect
+            connect();
+          } else {
+            cancelLogin = undefined;
+            bringToFront();
+            api.store.dispatch(setLoginId('__failed'));
+            api.store.dispatch(setLoginError((error !== undefined)
+              ? prettifyNodeErrorMessage(error).message
+              : 'Log-in connection closed prematurely'));
+
+            let err = error;
+            if (err === undefined) {
+              err = new ProcessCanceled(
+                `Log-in connection closed prematurely (Code ${code})`);
+              err.stack = stackErr.stack;
+            }
+            callback(err);
+          }
+        }
+      })
+      .on('pong', () => {
+        connectionAlive = true;
+        attempts = 5;
+      })
+      .on('message', data => {
+        try {
+          const response = JSON.parse(data.toString());
+
+          if (response.success) {
+              if (response.data.connection_token !== undefined) {
+                loginMessage.token = response.data.connection_token;
+              } else if (response.data.api_key !== undefined) {
+                connection.close();
+                api.store.dispatch(setLoginId(undefined));
+                api.store.dispatch(setUserAPIKey(response.data.api_key));
+                bringToFront();
+                keyReceived = true;
+                callback(null);
+              }
+          } else {
+            const err = new Error(response.error);
+            err.stack = stackErr.stack;
+            callback(err);
+          }
+        } catch (err) {
+          if (err.message.startsWith('Unexpected token')) {
+            err.message = 'Failed to parse: ' + data.toString();
+          }
+          err.stack = stackErr.stack;
+          callback(err);
+        }
+      })
+      .on('error', err => {
+        // Cloudflare will serve 503 service unavailable errors when/if
+        //  it is unable to reach the SSO server.
+        error = err.message.startsWith('Unexpected server response')
+          ? new ServiceTemporarilyUnavailable('Login')
+          : err;
+
+        connection.close();
+      });
+  };
+
+  try {
+    connect();
+  } catch (err) {
+    callback(err);
+  }
+}
+
+export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
+  if (sel.apiKey(api.store.getState()) === undefined) {
+    log('info', 'user not logged in, triggering log in dialog');
+    return api.showDialog('info', 'Not logged in', {
+      text: 'Nexus Mods requires Vortex to be logged in for downloading',
+    }, [
+      { label: 'Cancel' },
+      { label: 'Log in' },
+    ])
+      .then(result => {
+        if (result.action === 'Log in') {
+          return toPromise(cb => requestLogin(api, cb));
+        } else {
+          return Promise.reject(new UserCanceled());
+        }
+      });
+  } else {
+    return Promise.resolve();
+  }
+}
 
 export function startDownload(api: IExtensionApi,
                               nexus: Nexus,

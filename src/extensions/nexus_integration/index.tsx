@@ -60,12 +60,12 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseThing, getCollectionInfo, getInfo, IRemoteInfo, nexusGames, nexusGamesProm,
-         processErrorMessage, retrieveNexusGames, startDownload, updateKey } from './util';
+import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, IRemoteInfo,
+         nexusGames, nexusGamesProm, onCancelLoginImpl,
+         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
-import * as RemoteT from '@electron/remote';
 import NexusT, { IDateTime, IDownloadURL, IFileInfo, IModFile, IModFileQuery,
   IModInfo, IRevision, IRevisionQuery, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
@@ -77,12 +77,9 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Action } from 'redux';
 import {} from 'uuid';
-import WebSocket from 'ws';
 import { IComponentContext } from '../../types/IComponentContext';
 import { MainContext } from '../../views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
-
-const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 let nexus: NexusT;
 
@@ -495,193 +492,20 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
   });
 }
 
-function bringToFront() {
-  remote.getCurrentWindow().setAlwaysOnTop(true);
-  remote.getCurrentWindow().show();
-  remote.getCurrentWindow().setAlwaysOnTop(false);
-}
-
-let cancelLogin: () => void;
-
-function genId() {
-  try {
-    const uuid = require('uuid');
-    return uuid.v4();
-  } catch (err) {
-    // odd, still unidentified bugs where bundled modules fail to load.
-    log('warn', 'failed to import uuid module', err.message);
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.apply(null, Array(10))
-      .map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
-    // the probability that this fails for another user at exactly the same time
-    // and they both get the same random number is practically 0
-  }
-}
-
-interface INexusLoginMessage {
-  id: string;
-  appid: string;
-  protocol: number;
-  token?: string;
-}
-
-function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
-  const stackErr = new Error();
-
-  let connection: WebSocket;
-
-  const loginMessage: INexusLoginMessage = {
-    id: genId(),
-    appid: 'Vortex',
-    protocol: 2,
-  };
-
-  let keyReceived: boolean = false;
-  let connectionAlive: boolean = true;
-  let error: Error;
-  let attempts = 5;
-
-  const connect = () => {
-    connection = new WebSocket(`wss://sso.${NEXUS_DOMAIN}`)
-      .on('open', () => {
-        cancelLogin = () => {
-          connection.close();
-        };
-        connection.send(JSON.stringify(loginMessage), err => {
-          api.store.dispatch(setLoginId(loginMessage.id));
-          if (err) {
-            api.showErrorNotification('Failed to start login', err);
-            connection.close();
-          }
-        });
-        // open the authorization page - but not on reconnects!
-        if (loginMessage.token === undefined) {
-          opn(getPageURL(loginMessage.id)).catch(err => undefined);
-        }
-        const keepAlive = setInterval(() => {
-          if (!connectionAlive) {
-            connection.terminate();
-            clearInterval(keepAlive);
-          } else if (connection.readyState === WebSocket.OPEN) {
-            connection.ping();
-          } else {
-            clearInterval(keepAlive);
-          }
-        }, 30000);
-      })
-      .on('close', (code: number, reason: string) => {
-        if (!keyReceived) {
-          if (code === 1005) {
-            api.store.dispatch(setLoginId(undefined));
-            cancelLogin = undefined;
-            bringToFront();
-            callback(new UserCanceled());
-          } else if (attempts-- > 0) {
-            // automatic reconnect
-            connect();
-          } else {
-            cancelLogin = undefined;
-            bringToFront();
-            api.store.dispatch(setLoginId('__failed'));
-            api.store.dispatch(setLoginError((error !== undefined)
-              ? prettifyNodeErrorMessage(error).message
-              : 'Log-in connection closed prematurely'));
-
-            let err = error;
-            if (err === undefined) {
-              err = new ProcessCanceled(
-                `Log-in connection closed prematurely (Code ${code})`);
-              err.stack = stackErr.stack;
-            }
-            callback(err);
-          }
-        }
-      })
-      .on('pong', () => {
-        connectionAlive = true;
-        attempts = 5;
-      })
-      .on('message', data => {
-        try {
-          const response = JSON.parse(data.toString());
-
-          if (response.success) {
-              if (response.data.connection_token !== undefined) {
-                loginMessage.token = response.data.connection_token;
-              } else if (response.data.api_key !== undefined) {
-                connection.close();
-                api.store.dispatch(setLoginId(undefined));
-                api.store.dispatch(setUserAPIKey(response.data.api_key));
-                bringToFront();
-                keyReceived = true;
-                callback(null);
-              }
-          } else {
-            const err = new Error(response.error);
-            err.stack = stackErr.stack;
-            callback(err);
-          }
-        } catch (err) {
-          if (err.message.startsWith('Unexpected token')) {
-            err.message = 'Failed to parse: ' + data.toString();
-          }
-          err.stack = stackErr.stack;
-          callback(err);
-        }
-      })
-      .on('error', err => {
-        // Cloudflare will serve 503 service unavailable errors when/if
-        //  it is unable to reach the SSO server.
-        error = err.message.startsWith('Unexpected server response')
-          ? new ServiceTemporarilyUnavailable('Login')
-          : err;
-
-        connection.close();
-      });
-  };
-
-  try {
-    connect();
-  } catch (err) {
-    callback(err);
-  }
-}
-
 function doDownload(api: IExtensionApi, url: string): Promise<string> {
   return startDownload(api, nexus, url)
-  .catch(DownloadIsHTML, () => undefined)
-  // DataInvalid is used here to indicate invalid user input or invalid
-  // data from remote, so it's presumably not a bug in Vortex
-  .catch(DataInvalid, () => {
-    api.showErrorNotification('Failed to start download', url, { allowReport: false });
-    return Promise.resolve(undefined);
-  })
-  .catch(UserCanceled, () => Promise.resolve(undefined))
-  .catch(err => {
-    api.showErrorNotification('Failed to start download', err);
-    return Promise.resolve(undefined);
-  });
-}
-
-function ensureLoggedIn(api: IExtensionApi): Promise<void> {
-  if (sel.apiKey(api.store.getState()) === undefined) {
-    log('info', 'user not logged in, triggering log in dialog');
-    return api.showDialog('info', 'Not logged in', {
-        text: 'Nexus Mods requires Vortex to be logged in for downloading',
-      }, [
-        { label: 'Cancel' },
-        { label: 'Log in' },
-      ])
-      .then(result => {
-        if (result.action === 'Log in') {
-          return toPromise(cb => requestLogin(api, cb));
-        } else {
-          return Promise.reject(new UserCanceled());
-        }
-      });
-  } else {
-    return Promise.resolve();
-  }
+    .catch(DownloadIsHTML, () => undefined)
+    // DataInvalid is used here to indicate invalid user input or invalid
+    // data from remote, so it's presumably not a bug in Vortex
+    .catch(DataInvalid, () => {
+      api.showErrorNotification('Failed to start download', url, { allowReport: false });
+      return Promise.resolve(undefined);
+    })
+    .catch(UserCanceled, () => Promise.resolve(undefined))
+    .catch(err => {
+      api.showErrorNotification('Failed to start download', err);
+      return Promise.resolve(undefined);
+    });
 }
 
 function onceMain(api: IExtensionApi) {
@@ -1414,19 +1238,6 @@ function onCancel(inputUrl: string) {
   copy.forEach(item => {
     item.rej(new UserCanceled(false));
   });
-}
-
-function onCancelLoginImpl(api: IExtensionApi) {
-  if (cancelLogin !== undefined) {
-    try {
-      cancelLogin();
-    } catch (err) {
-      // the only time we ever see this happen is a case where the websocket connection
-      // wasn't established yet so the cancelation failed because it wasn't necessary.
-      log('info', 'login not canceled', err.message);
-    }
-  }
-  api.store.dispatch(setLoginId(undefined));
 }
 
 function init(context: IExtensionContextExt): boolean {

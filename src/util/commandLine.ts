@@ -1,12 +1,16 @@
 import program from 'commander';
 import { app, ipcMain, ipcRenderer } from 'electron';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import * as process from 'process';
 import { getApplication } from './application';
+import { log } from './log';
 import startupSettings from './startupSettings';
 
 export interface IParameters {
   download?: string;
   install?: string;
+  installExtension?: string;
   report?: string;
   restore?: string;
   startMinimized?: boolean;
@@ -36,6 +40,7 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--install-extension': 1,
   '--start-minimized': 1,
   '--game': 1,
   '--profile': 1,
@@ -88,6 +93,30 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   return res;
 }
 
+function readPreset(): IParameters {
+  let result: IParameters = {};
+  const presetPath = path.join(app.getPath('temp'), 'vortex_preset.json');
+  try {
+    const instructionsList: IParameters[] = JSON.parse(fs.readFileSync(presetPath, { encoding: 'utf-8' }));
+    if (instructionsList.length > 0) {
+      result = instructionsList.shift();
+    }
+
+    if (instructionsList.length === 0) {
+      fs.removeSync(presetPath);
+    } else {
+      fs.writeFileSync(presetPath, JSON.stringify(instructionsList, undefined, 2), { encoding: 'utf-8' });
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      log('warn', 'failed to parse preset.json', { error: err.message });
+      fs.removeSync(presetPath);
+    }
+  }
+
+  return result;
+}
+
 function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);
@@ -112,6 +141,8 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                   + '(any supported protocol like nxm:, https:, ...).')
     .option('-i, --install [url]', 'Start downloadling & installing the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
+    .option('--install-extension [id]', 'Start downloadling & installing the specified '
+                                       + 'vortex extension. id can be "modId:<number>".')
     .option('-g, --get [path]', 'Print the state variable at the specified path and quit. '
                               + 'For debugging')
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
@@ -140,6 +171,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   return {
     ...startupSettings,
     ...commandLine,
+    ...readPreset(),
   };
 }
 
@@ -152,6 +184,7 @@ const SKIP_ARGS = {
   '--game': 1,
   '--profile': 1,
   '--install': 1,
+  '--install-extension': 1,
   '--restore': 1,
   '--merge': 1,
 };

@@ -316,6 +316,7 @@ function installGameExtension(api: IExtensionApi,
 
 function awaitProfileSwitch(api: IExtensionApi): Promise<string> {
   const { activeProfileId, nextProfileId } = api.getState().settings.profiles;
+  log('info', 'wait for profile switch to complete', { nextProfileId, activeProfileId });
   if (activeProfileId !== nextProfileId) {
     return new Promise(resolve => api.events.once('profile-did-change', resolve));
   } else {
@@ -648,6 +649,8 @@ function init(context: IExtensionContext): boolean {
     const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+
+    context.api.ext['awaitProfileSwitch'] = () => awaitProfileSwitch(context.api);
 
     $.gameModeManager = new GameModeManagerImpl(
       $.extensionGames,

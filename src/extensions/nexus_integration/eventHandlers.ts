@@ -26,7 +26,7 @@ import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseThing, processErrorMessage,
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
          resolveGraphError, startDownload, updateKey } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
@@ -318,32 +318,24 @@ export function onNexusDownload(api: IExtensionApi,
   return (gameId: string, modId: number, fileId: number,
           fileName?: string, allowInstall?: boolean): Promise<string> => {
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
-    const APIKEY = getSafe(api.store.getState(),
-                           ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
-      api.showErrorNotification('Failed to start download',
-                                'You are not logged in to Nexus Mods!',
-                                { allowReport: false });
-      return Promise.resolve(undefined);
-    } else {
-      log('debug', 'on nexus download', fileName);
-      return downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall)
-        .catch(ProcessCanceled, err => {
-          api.sendNotification({
-            type: 'error',
-            message: err.message,
-          });
-        })
-        .catch(AlreadyDownloaded, err => {
-          const { files } = api.getState().persistent.downloads;
-          const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
-          return Promise.resolve(dlId);
-        })
-        .catch(err => {
-          api.showErrorNotification('Nexus download failed', err);
-          return Promise.resolve(undefined);
+    log('debug', 'on nexus download', fileName);
+    return ensureLoggedIn(api)
+      .then(() => downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall))
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'error',
+          message: err.message,
         });
-    }
+      })
+      .catch(AlreadyDownloaded, err => {
+        const { files } = api.getState().persistent.downloads;
+        const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
+        return Promise.resolve(dlId);
+      })
+      .catch(err => {
+        api.showErrorNotification('Nexus download failed', err);
+        return Promise.resolve(undefined);
+      });
   };
 }
 
