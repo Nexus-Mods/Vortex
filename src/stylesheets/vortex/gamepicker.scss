@@ -1,5 +1,4 @@
 $thumbnail-width: 256px;
-$thumbnail-height: 144px;
 
 #gamepicker-layout {
   text-align: right;
@@ -9,7 +8,6 @@ $thumbnail-height: 144px;
   display: grid;
   justify-content: center;
   grid-template-columns: repeat(auto-fill, $thumbnail-width + $gutter-width);
-  grid-auto-rows: $thumbnail-height + $gutter-width;
 
   > .game-thumbnail {
     margin: $half-gutter !important;
@@ -115,7 +113,7 @@ $thumbnail-height: 144px;
 
   .thumbnail-img {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
   }
 }
