@@ -21,6 +21,7 @@ export interface IBaseDashletProps {
 interface INewsItemProps {
   t: TFunction;
   item: IListItem;
+  title: string;
 }
 
 interface INewsExtraProps {
@@ -49,17 +50,17 @@ function NewsExtra(props: INewsExtraProps) {
 }
 
 function NewsItem(props: INewsItemProps) {
-  const { t, item } = props;
+  const { t, item, title } = props;
 
   const { category, extra, imageUrl, link, name, summary } = item;
 
   const context = React.useContext(MainContext);
 
   const openMore = React.useCallback((evt: React.MouseEvent<any>) => {
-    context.api.events.emit('analytics-track-click-event', 'Dashboard', `View ${name}`);
+    context.api.events.emit('analytics-track-click-event', 'Dashboard', `View ${title}`);
     evt.preventDefault();
     opn(link).catch(err => undefined);
-  }, [link, name]);
+  }, [link, title]);
 
   return (
     <ListGroupItem className='rss-item'>
@@ -100,7 +101,7 @@ function BaseDashlet(props: IBaseDashletProps) {
 
       {((items ?? []).length !== 0) ? (
         <ListGroup className='list-news'>
-          {items.map((msg, idx) => <NewsItem key={idx} t={t} item={msg} />)}
+          {items.map((msg, idx) => <NewsItem key={idx} t={t} item={msg} title={title} />)}
         </ListGroup>
       ) : (
         <EmptyPlaceholder
