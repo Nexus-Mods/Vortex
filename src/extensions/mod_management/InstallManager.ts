@@ -2114,11 +2114,13 @@ class InstallManager {
           }
 
           if (err.name === 'HTTPError') {
+            err['attachLogOnReport'] = true;
             api.showErrorNotification('Failed to install dependency', err);
           } else {
             const pretty = prettifyNodeErrorMessage(err);
             const newErr = new Error(pretty.message);
             newErr.stack = err.stack;
+            newErr['attachLogOnReport'] = true;
             api.showErrorNotification('Failed to install dependency', newErr, {
               message: renderModReference(dep.reference, undefined),
               allowReport: pretty.allowReport,
