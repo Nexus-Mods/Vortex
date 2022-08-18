@@ -279,7 +279,7 @@ class InstallManager {
           if (truthy(extractList) && extractList.length > 0) {
             return makeListInstaller(extractList, tempPath);
           } else {
-            return this.getInstaller(fileList, gameId);
+            return this.getInstaller(fileList, gameId, archivePath);
           }
         })
         .then(supportedInstaller => {
@@ -989,10 +989,10 @@ class InstallManager {
           if (truthy(extractList) && extractList.length > 0) {
             return makeListInstaller(extractList, tempPath);
           } else if (forceInstaller === undefined) {
-            return this.getInstaller(fileList, gameId);
+            return this.getInstaller(fileList, gameId, archivePath);
           } else {
             const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
-            return forced.testSupported(fileList, gameId)
+            return forced.testSupported(fileList, gameId, archivePath)
               .then((testResult: ISupportedResult) => {
                 if (!testResult.supported) {
                   return undefined;
@@ -1819,12 +1819,14 @@ class InstallManager {
   private getInstaller(
     fileList: string[],
     gameId: string,
-    offsetIn?: number): Promise<ISupportedInstaller> {
+    archivePath: string,
+    offsetIn?: number,
+    ): Promise<ISupportedInstaller> {
     const offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
-    return Promise.resolve(this.mInstallers[offset].testSupported(fileList, gameId))
+    return Promise.resolve(this.mInstallers[offset].testSupported(fileList, gameId, archivePath))
       .then((testResult: ISupportedResult) => {
           if (testResult === undefined) {
             log('error', 'Buggy installer', this.mInstallers[offset].id);
@@ -1834,7 +1836,7 @@ class InstallManager {
               installer: this.mInstallers[offset],
               requiredFiles: testResult.requiredFiles,
             })
-            : this.getInstaller(fileList, gameId, offset + 1);
+            : this.getInstaller(fileList, gameId, archivePath, offset + 1);
       });
   }
 
