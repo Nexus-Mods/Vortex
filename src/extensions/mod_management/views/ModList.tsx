@@ -1181,8 +1181,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const filtered = modIds.filter(modId =>
       (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
 
-    Promise.all(filtered.map(modId => this.installIfNecessary(modId)))
-    .then((updatedModIds: string[]) => this.setModsEnabled(updatedModIds, true));
+    Promise.all(filtered.map(modId =>
+      this.installIfNecessary(modId).catch(err => {
+        if ((err instanceof UserCanceled)
+            || (err instanceof ProcessCanceled)) {
+          return;
+        }
+        const message = modName(this.state.modsWithState[modId]);
+        this.context.api.showErrorNotification(
+          'Failed to install mod', err,
+          { allowReport: false, message });
+      })))
+      .then((updatedModIds: string[]) => this.setModsEnabled(updatedModIds, true));
   }
 
   private disableSelected = (modIds: string[]) => {
