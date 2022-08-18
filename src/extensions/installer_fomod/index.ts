@@ -671,9 +671,18 @@ class ConnectionIPC {
         }
       }
     })
-    .on('error', (err) => {
-      log('error', 'ipc socket error', err.message);
-    });
+      .on('error', (err) => {
+        log('error', 'ipc socket error', err.message);
+      });
+  }
+
+  public quit(): boolean {
+    try {
+      process.kill(this.mPid);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 
   public isActive(): boolean {
@@ -834,10 +843,15 @@ class ConnectionIPC {
 
 const ensureConnected = (() => {
   let conn: ConnectionIPC;
+  let lastSecurityLevel: SecurityLevel;
   return async (securityLevel: SecurityLevel): Promise<ConnectionIPC> => {
-    if ((conn === undefined) || !conn.isActive()) {
+    if ((conn === undefined) || !conn.isActive() || (lastSecurityLevel !== securityLevel)) {
+      if (conn !== undefined) {
+        conn.quit();
+      }
       conn = await ConnectionIPC.bind(securityLevel);
       log('debug', '[installer] connection bound');
+      lastSecurityLevel = securityLevel;
       conn.handleMessages();
     }
     return Promise.resolve(conn);
@@ -989,7 +1003,7 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  const wrapper = <T>(cb: (...args: any[]) => Promise<T>) => {
+  const wrapper = <T>(func: 'test' | 'install', cb: (...args: any[]) => Promise<T>) => {
     return (...args: any[]) => {
       const state = context.api.getState();
       // TODO: if it was working we'd want to use the low integrity mode as the alternative
@@ -1005,6 +1019,45 @@ function init(context: IExtensionContext): boolean {
             // being low integrity, otherwise it would mean Vortex has been modified and then the user
             // already received an error message about that.
             return toBlue(cb)(SecurityLevel.Regular, ...args);
+          } else if (err['name'] === 'System.UnauthorizedAccessException') {
+            const archivePath = (func === 'test' ? args[2] : args[6]) ?? '';
+
+            if ((func === 'install') && err.message.includes(args[1])) {
+              context.api.sendNotification({
+                id: 'failed-to-setup-sandbox',
+                type: 'warning',
+                title: 'Vortex was not able to run the installer in a secure sandbox. This is likely a misconfiguration '
+                      + 'in your setup or a bug in windows.',
+                message: archivePath,
+              });
+              return toBlue(cb)(SecurityLevel.Regular, ...args);
+            }
+            const dialogId = shortid();
+            return new Promise((resolve, reject) => {
+              context.api.showDialog('error', 'Unauthorized Access', {
+                bbcode: 'The sandbox prevented the installer "{{name}}" from accessing parts of your system '
+                      + 'that it shouldn\'t need access to:[br][/br][br][/br]'
+                      + '[spoiler]{{errorMessage}}[/spoiler][br][/br][br][/br]'
+                      + 'This may mean the installer is malicious and dangerous. If the mod author '
+                      + 'is convinced this is a mistake, please ask them to contact us.[br][/br][br][/br]'
+                      + 'Continue at your own risk, you have been warned!',
+                parameters: {
+                  errorMessage: err.message,
+                  name: path.basename(archivePath),
+                }
+              }, [
+                { label: 'Cancel', default: true },
+                { label: 'Run Insecure' },
+              ], dialogId)
+                .then(result => {
+                  if (result.action === 'Run Insecure') {
+                    resolve(toBlue(cb)(SecurityLevel.Regular, ...args));
+                  } else {
+                    err['allowReport'] = false;
+                    reject(err);
+                  }
+                });
+            });
           } else {
             return Promise.reject(err);
           }
@@ -1093,8 +1146,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);
 
-  context.registerInstaller('fomod', 20, wrapper(testSupportedScripted), wrapper(installWrap));
-  context.registerInstaller('fomod', 100, wrapper(testSupportedFallback), wrapper(installWrap));
+  context.registerInstaller('fomod', 20, wrapper('test', testSupportedScripted), wrapper('install', installWrap));
+  context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
 
   if (process.platform === 'win32') {
     context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
