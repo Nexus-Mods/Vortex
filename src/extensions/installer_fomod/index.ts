@@ -46,7 +46,8 @@ import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 
-const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*The system cannot find the file specified.');
+// The rest of the error message is localized
+const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*');
 
 // TODO: Running the fomod installer as a low integrity process is implemented and basically functional
 //   (and should be mostly secure) except the host process can't connect to a named pipe the installer
@@ -1096,7 +1097,7 @@ function init(context: IExtensionContext): boolean {
             err['allowReport'] = false;
           }
 
-          if (err.name === 'WinApiException') {
+          if (['WinApiException', 'HResultException'].includes(err.name)) {
             // this almost certainly means the sandbox failed to set up
             const dialogId = shortid();
             return new Promise((resolve, reject) => {
