@@ -556,6 +556,8 @@ class ConnectionIPC {
             }
           });
 
+          log('info', 'from installer:', lines.join(';'));
+
           if (isErr !== -1) {
             const errStack = lines.slice(isErr + 1).join('\n');
             const err = new Error(lines[isErr]);
@@ -566,8 +568,6 @@ class ConnectionIPC {
             err['attachLogOnReport'] = true;
             setConnectOutcome(err, false);
             wasConnected = true;
-          } else {
-            log('info', 'from installer:', lines.join(';'));
           }
           return Promise.resolve();
         }, 100);
