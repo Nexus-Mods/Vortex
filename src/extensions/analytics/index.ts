@@ -4,7 +4,7 @@ import { log } from '../../util/log';
 import { activeGameId, discoveryByGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
-import Analytics from './analytics/Analytics';
+import Analytics, { DIMENSIONS } from './analytics/Analytics';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
 import { HELP_ARTICLE } from './constants';
@@ -100,24 +100,28 @@ function init(context: IExtensionContext): boolean {
         if (info === undefined) {
           return;
         }
-        const gameId = activeGameId(context.api.store.getState());
+        const state = context.api.getState();
+        const gameId = activeGameId(state);
         let gameVersion = '';
         if (gameId) {
           gameVersion = await getGame(gameId)
-            .getInstalledVersion(discoveryByGame(context.api.store.getState(), gameId));
+            .getInstalledVersion(discoveryByGame(state, gameId));
         }
-        const theme = context.api.store.getState().settings.interface.currentTheme;
+        const theme = state.settings.interface['currentTheme'];
+
+        const membership = info.isPremium
+          ? 'Premium'
+          : info.isSupporter
+            ? 'Supporter'
+            : 'Member';
 
         Analytics.start(instanceId, updateChannel, {
-          vortexVersion: getApplication().version,
-          membership: info.isPremium
-            ? 'Premium'
-            : info.isSupporter
-              ? 'Supporter'
-              : 'Member',
-          gameId,
-          gameVersion,
-          theme,
+          [DIMENSIONS.VortexVersion]: getApplication().version,
+          [DIMENSIONS.Membership]: membership,
+          [DIMENSIONS.Game]: gameId,
+          [DIMENSIONS.GameVersion]: gameVersion,
+          [DIMENSIONS.Theme]: theme,
+          [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'],
         });
 
         Analytics.trackEvent('Vortex', 'Version', getApplication().version);

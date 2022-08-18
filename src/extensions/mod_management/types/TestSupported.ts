@@ -5,4 +5,5 @@ export interface ISupportedResult {
   requiredFiles: string[];
 }
 
-export type TestSupported = (files: string[], gameId: string) => Promise<ISupportedResult>;
+export type TestSupported =
+  (files: string[], gameId: string, archivePath?: string) => Promise<ISupportedResult>;

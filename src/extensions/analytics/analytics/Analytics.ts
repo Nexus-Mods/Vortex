@@ -19,16 +19,14 @@ class Analytics {
   /**
    * Sets and Initializes the Universal Analytics tracking
    */
-  public start(uuidV4: string, updateChannel: string, dimensionsPayload: IDimensionsPaylaod) {
+  public start(uuidV4: string, updateChannel: string, dimensionsPayload: Record<DIMENSIONS, any>) {
     this.key = ANALYTICS_KEYS[updateChannel] ?? ANALYTICS_KEYS.stable;
     this.uuidV4 = uuidV4;
     if (this.key && this.uuidV4) {
       this.user = ua(this.key.key, uuidV4);
-      this.user.set('cd1', dimensionsPayload.vortexVersion);
-      this.user.set('cd2', dimensionsPayload.gameId);
-      this.user.set('cd3', dimensionsPayload.gameVersion);
-      this.user.set('cd4', dimensionsPayload.membership);
-      this.user.set('cd5', dimensionsPayload.theme);
+      for (const key in dimensionsPayload) {
+        this.user.set(`cd${key}`, dimensionsPayload[key]);
+      }
     }
   }
 
@@ -81,14 +79,6 @@ class Analytics {
   }
 }
 
-interface IDimensionsPaylaod {
-  vortexVersion: string;
-  membership: string;
-  gameId: string;
-  gameVersion: string;
-  theme: string;
-}
-
 const ANALYTICS_KEYS = {
   stable: {
     key: 'UA-3620483-22',
@@ -109,6 +99,9 @@ export enum DIMENSIONS {
   Game,
   GameVersion,
   Membership,
+  Theme,
+  // ThemeOld
+  Sandbox = 7,
 }
 
 const analytics = new Analytics();
