@@ -100,8 +100,7 @@ export enum DIMENSIONS {
   GameVersion,
   Membership,
   Theme,
-  // ThemeOld
-  Sandbox = 7,
+  Sandbox,
 }
 
 const analytics = new Analytics();
