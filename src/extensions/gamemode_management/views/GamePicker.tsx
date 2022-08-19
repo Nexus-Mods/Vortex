@@ -377,11 +377,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private setSortManaged = (value: { value: string, label: string }) => {
-    this.props.onSetSortManaged(value.value);
+    if (truthy(value)) {
+      this.props.onSetSortManaged(value.value);
+    }
   }
 
   private setSortUnmanaged = (value: { value: string, label: string }) => {
-    this.props.onSetSortUnmanaged(value.value);
+    if (truthy(value)) {
+      this.props.onSetSortUnmanaged(value.value);
+    }
   }
 
   private toggleManaged = (evt: React.MouseEvent<any>) => {
