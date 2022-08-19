@@ -1,4 +1,4 @@
-import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
+import {setApplicationVersion, setInstallType, setInstanceId, setWarnedAdmin} from '../actions/app';
 import { NEXUS_DOMAIN } from '../extensions/nexus_integration/constants';
 import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
@@ -347,6 +347,8 @@ class Application {
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
+        .tap(() => log('debug', 'checking how Vortex was installed'))
+        .then(() => this.identifyInstallType())
         .tap(() => log('debug', 'checking if migration is required'))
         .then(() => this.checkUpgrade())
         .tap(() => log('debug', 'setting up error handlers'))
@@ -479,6 +481,16 @@ class Application {
       })
       // Perfectly ok not to have the registry keys.
       .catch(err => Promise.resolve(true));
+  }
+
+  private identifyInstallType(): Promise<void> {
+    return fs.statAsync(path.join(getVortexPath('application'), 'Uninstall Vortex.exe'))
+      .then(() => {
+        this.mStore.dispatch(setInstallType('regular'));
+      })
+      .catch(() => {
+        this.mStore.dispatch(setInstallType('managed'));
+      });
   }
 
   private warnAdmin(): Promise<void> {

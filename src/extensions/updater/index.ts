@@ -13,13 +13,19 @@ function init(context: IExtensionContext): boolean {
 
   context.onceMain(() => {
     try {
-      setupAutoUpdater(context.api);
+      if (context.api.getState().app.installType === 'regular') {
+        setupAutoUpdater(context.api);
+      }
     } catch (err) {
       log('error', 'failed to check for update', err.message);
     }
   });
 
   context.once(() => {
+    if (context.api.getState().app.installType !== 'regular') {
+      return;
+    }
+
     let haveSetChannel = false;
     // check for update when the user changes the update channel
     context.api.onStateChange(['settings', 'update', 'channel'],
