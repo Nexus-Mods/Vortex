@@ -93,7 +93,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   return res;
 }
 
-function readPreset(): IParameters {
+export function addPreset(input: IParameters): IParameters {
   let result: IParameters = {};
   const presetPath = path.join(app.getPath('temp'), 'vortex_preset.json');
   try {
@@ -114,7 +114,7 @@ function readPreset(): IParameters {
     }
   }
 
-  return result;
+  return { ...input, ...result };
 }
 
 function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
@@ -171,7 +171,6 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   return {
     ...startupSettings,
     ...commandLine,
-    ...readPreset(),
   };
 }
 

@@ -108,7 +108,7 @@ import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import commandLine from './util/commandLine';
+import commandLine, { addPreset } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
@@ -119,6 +119,8 @@ import './util/monkeyPatching';
 import './util/webview';
 
 import * as child_processT from 'child_process';
+import * as fs from './util/fs';
+import { log } from './util/log';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -132,14 +134,56 @@ const handleError = (error: any) => {
   terminate(toError(error), {});
 };
 
-function main() {
-  const mainArgs = commandLine(process.argv, false);
+async function firstTimeInit() {
+  const from = path.resolve(getVortexPath('package'), '..', 'vortex_preset.json');
+  const to = path.resolve(getVortexPath('temp'), 'vortex_preset.json');
+  try {
+    await fs.ensureDirWritableAsync(getVortexPath('temp'));
+    await fs.copyAsync(from, to);
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      log('error', 'failed to install presets', err.message);
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  // important: The following has to be synchronous!
+  let mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
-    .then(() => {
-      app.quit();
-    });
+      .then(() => {
+        app.quit();
+      });
   }
+
+  const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
+  process.env.NODE_OPTIONS = NODE_OPTIONS
+    + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
+    + ' --no-force-async-hooks-checks';
+
+  if (mainArgs.disableGPU) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('--disable-software-rasterizer');
+    app.commandLine.appendSwitch('--disable-gpu');
+  }
+  // async code only allowed from here on out
+
+  try {
+    await fs.statAsync(getVortexPath('userData'));
+  } catch (err) {
+    await firstTimeInit();
+  }
+
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
+
+  if (process.env.NODE_ENV === 'development') {
+    app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
+  }
+
+  // add presets from config file to arguments
+  mainArgs = addPreset(mainArgs);
 
   // tslint:disable-next-line:no-submodule-imports
   require('@electron/remote/main').initialize();
@@ -171,24 +215,6 @@ function main() {
     // quit this process, the new one is detached
     app.quit();
     return;
-  }
-
-  const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
-  process.env.NODE_OPTIONS = NODE_OPTIONS
-    + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
-    + ' --no-force-async-hooks-checks';
-
-  if (mainArgs.disableGPU) {
-    app.disableHardwareAcceleration();
-    app.commandLine.appendSwitch('--disable-software-rasterizer');
-    app.commandLine.appendSwitch('--disable-gpu');
-  }
-
-  process.on('uncaughtException', handleError);
-  process.on('unhandledRejection', handleError);
-
-  if (process.env.NODE_ENV === 'development') {
-    app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 
   /* allow application controlled scaling
