@@ -43,6 +43,9 @@ $tools-border-width: 2px;
     justify-content: space-between;
     align-items: baseline;
     height: auto;
+    .dashlet-title {
+      filter: unset;
+    }
   }
 
   .media-body {

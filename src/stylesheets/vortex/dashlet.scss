@@ -276,7 +276,7 @@
 
   .dashlet {
     border: 2px solid $brand-primary;
-    > *:not(.dashlet-title) {
+    > * > * :not(dashlet-title:only-of-type) {
       pointer-events: none;
       filter: blur(1px);
     }

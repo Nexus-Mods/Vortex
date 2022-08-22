@@ -180,6 +180,7 @@ class Packery extends React.Component<IProps, {}> {
       if (this.mPackery !== undefined) {
         this.mPackery.reloadItems();
         this.forceUpdate();
+        this.scheduleLayout();
         if (this.props.items.length !== (this.mPackery.getItemElements().length)) {
           // almost certainly a bug, refresh again
           this.scheduleRefresh();
