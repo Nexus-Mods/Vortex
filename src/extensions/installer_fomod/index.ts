@@ -549,7 +549,9 @@ class ConnectionIPC {
               })();
             }
 
-            if (line.startsWith('Failed')
+            if (line.includes('  at ')) {
+              // stack line
+            } else if (line.startsWith('Failed')
                 || line.startsWith('Unhandled exception')
                 || line.includes('Exception')
                 || line.includes('fatal error')) {
