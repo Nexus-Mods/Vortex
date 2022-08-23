@@ -7,6 +7,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
+import presetManager, { IPresetStep, IPresetStepInstallMod } from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -54,6 +55,7 @@ import {generate as shortid} from 'shortid';
 import winapi from 'winapi-bindings';
 import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
+import { ensureLoggedIn } from '../nexus_integration/util';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -1057,7 +1059,7 @@ function init(context: IExtensionContextExt): boolean {
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => result.action === 'Continue');
+          .then(result => result.action === 'Continue');
       });
       observer = observeImpl(context.api, manager);
 
@@ -1070,6 +1072,22 @@ function init(context: IExtensionContextExt): boolean {
       removeDownloadsWithoutFile(store, downloads);
 
       processCommandline(context.api);
+      presetManager.on('installmod', (stepIn: IPresetStep) => {
+        const step = stepIn as IPresetStepInstallMod;
+        log('info', 'preset starting download', { url: step.url });
+        return ensureLoggedIn(context.api)
+          .then(() => toPromise(cb => context.api.events.emit(
+            'start-download', [step.url], {}, undefined, cb, 'always', {
+              allowInstall: false,
+            })))
+          .tapCatch(err => {
+            log('error', 'download failed', { url: step.url, error: err.message });
+          })
+          .then(dlId => {
+            log('info', 'download finished', { dlId });
+            return toPromise(cb => context.api.events.emit('start-install-download', dlId, undefined, cb));
+          });
+      });
     }
   });
 

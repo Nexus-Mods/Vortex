@@ -109,6 +109,7 @@ import { relaunch } from './util/commandLine';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import getVortexPath, { setVortexPath } from './util/getVortexPath';
+import presetManager from './util/PresetManager';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
@@ -650,6 +651,9 @@ function renderer(extensions: ExtensionManager) {
           details: err,
         }, store.getState());
       }))
+    .then(() => {
+      presetManager.start();
+    })
     .then(() => {
       extensions.setUIReady();
       log('debug', 'render with language', { language: i18n.language });

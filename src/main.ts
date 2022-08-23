@@ -108,7 +108,7 @@ import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import commandLine, { addPreset } from './util/commandLine';
+import commandLine, { addPreset, relaunch } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
@@ -120,7 +120,7 @@ import './util/webview';
 
 import * as child_processT from 'child_process';
 import * as fs from './util/fs';
-import { log } from './util/log';
+import presetManager, { IPresetStep, IPresetStepCommandLine } from './util/PresetManager';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -135,16 +135,10 @@ const handleError = (error: any) => {
 };
 
 async function firstTimeInit() {
-  const from = path.resolve(getVortexPath('package'), '..', 'vortex_preset.json');
-  const to = path.resolve(getVortexPath('temp'), 'vortex_preset.json');
-  try {
-    await fs.ensureDirWritableAsync(getVortexPath('temp'));
-    await fs.copyAsync(from, to);
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      log('error', 'failed to install presets', err.message);
-    }
-  }
+  // use this to do first time setup, that is: code to be run
+  // only the very first time vortex starts up.
+  // This functionality was introduced but then we ended up solving
+  // the problem in a different way that's why this is unused currently
 }
 
 async function main(): Promise<void> {
@@ -169,6 +163,25 @@ async function main(): Promise<void> {
   }
   // async code only allowed from here on out
 
+  if (!presetManager.now('commandline', (step: IPresetStep): Promise<void> => {
+    (step as IPresetStepCommandLine).arguments.forEach(arg => {
+      mainArgs[arg.key] = arg.value;
+    });
+    return Promise.resolve();
+  })) {
+    // if the first step was not a command-line instruction but we encounter one
+    // further down the preset queue, Vortex has to restart to process it.
+    // this is only relevant for the main process, if the renderer process encounters
+    // this it will have its own handler and can warn the user the restart is coming
+    presetManager.on('commandline', (): Promise<void> => {
+      // return a promise that doesn't finish
+      relaunch();
+      return new Promise(() => {
+        // nop
+      });
+    });
+  }
+
   try {
     await fs.statAsync(getVortexPath('userData'));
   } catch (err) {
@@ -181,9 +194,6 @@ async function main(): Promise<void> {
   if (process.env.NODE_ENV === 'development') {
     app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
-
-  // add presets from config file to arguments
-  mainArgs = addPreset(mainArgs);
 
   // tslint:disable-next-line:no-submodule-imports
   require('@electron/remote/main').initialize();
