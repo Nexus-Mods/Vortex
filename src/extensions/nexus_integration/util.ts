@@ -381,6 +381,11 @@ export function getCollectionInfo(nexus: Nexus,
       total: true,
     },
   };
+
+  if (revisionNumber <= 1) {
+    revisionNumber = undefined;
+  }
+
   return Promise.resolve(
       nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
     .then(revision => ({ revisionInfo: revision }))

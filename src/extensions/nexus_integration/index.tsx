@@ -1108,6 +1108,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     let revisionInfo: Partial<IRevision>;
 
+  const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
+
     return Promise.resolve()
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
@@ -1125,7 +1127,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                 },
               } as any,
           }))
-        : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, url.revisionNumber)
+        : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, revNumber)
           .catch(err => {
             err['collectionSlug'] = url.collectionSlug;
             err['revisionNumber'] = url.revisionNumber;

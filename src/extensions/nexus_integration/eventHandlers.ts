@@ -392,8 +392,8 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
         new Error('invalid parameter, revisionNumber has to be a number, '
                   + `got: ${revisionNumber}`));
     }
-    return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
-                                                            collectionSlug, revisionNumber))
+    return Promise.resolve(nexus.getCollectionRevisionGraph(
+      FULL_REVISION_INFO, collectionSlug, revisionNumber > 0 ? revisionNumber : undefined))
       .catch(err => {
         const allowReport = !err.message.includes('network disconnected')
           && !err.message.includes('Cannot return null for non-nullable field CollectionRevision.collection')
