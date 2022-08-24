@@ -1031,29 +1031,29 @@ function init(context: IExtensionContext): boolean {
                 type: 'warning',
                 title: 'Vortex was not able to run the installer in a secure sandbox. This is likely a misconfiguration '
                       + 'in your setup or a bug in windows.',
-                message: archivePath,
+                message: path.basename(archivePath),
               });
               return toBlue(cb)(SecurityLevel.Regular, ...args);
             }
             const dialogId = shortid();
             return new Promise((resolve, reject) => {
               context.api.showDialog('error', 'Unauthorized Access', {
-                bbcode: 'The sandbox prevented the installer "{{name}}" from accessing parts of your system '
-                      + 'that it shouldn\'t need access to:[br][/br][br][/br]'
-                      + '[spoiler]{{errorMessage}}[/spoiler][br][/br][br][/br]'
-                      + 'This may mean the installer is malicious and dangerous. If the mod author '
-                      + 'is convinced this is a mistake, please ask them to contact us.[br][/br][br][/br]'
-                      + 'Continue at your own risk, you have been warned!',
+                bbcode: 'Vortex has prevented the mod installer for "{{name}}" from accessing a protected area of your system '
+                      + 'that it shouldn\'t need access to. This indicates that the installer may have an error in it '
+                      + 'or that it was attempting to insert malicious code onto your machine.[br][/br][br][/br]'
+                      + 'If you feel this mod is safe, please report this issue to the mod author who can work with our team '
+                      + 'to investigate the issue.[br][/br][br][/br]'
+                      + 'Alternatively, you can ignore this warning and continue the installation at your own risk.',
                 parameters: {
                   errorMessage: err.message,
                   name: path.basename(archivePath),
                 }
               }, [
-                { label: 'Cancel', default: true },
-                { label: 'Run Insecure' },
+                { label: 'Cancel Install', default: true },
+                { label: 'Install (not recommended)' },
               ], dialogId)
                 .then(result => {
-                  if (result.action === 'Run Insecure') {
+                  if (result.action === 'Install (not recommended)') {
                     resolve(toBlue(cb)(SecurityLevel.Regular, ...args));
                   } else {
                     err['allowReport'] = false;
