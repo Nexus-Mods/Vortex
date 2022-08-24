@@ -246,6 +246,7 @@
     "modmeta-db": "Nexus-Mods/modmeta-db",
     "native-errors": "Nexus-Mods/node-native-errors",
     "node-7z": "Nexus-Mods/node-7z",
+    "node-gyp": "^9.0.0",
     "normalize-url": "^6.0.1",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
@@ -296,6 +297,6 @@
     "xxhash-addon": "^1.3.0"
   },
   "resolutions": {
-    "node-gyp": "^8.4.1"
+    "node-gyp": "^9.0.0"
   }
 }

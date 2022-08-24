@@ -21,6 +21,12 @@ function queryGameId(store: ThunkStore<any>,
     downloadGameIds = [ downloadGameIds ];
   }
 
+  if (gameMode === undefined && downloadGameIds.length === 1) {
+    // Surely if there's no active game, and the downloaded game id
+    //  array contains a single element, then we can just use that.
+    return Promise.resolve(downloadGameIds[0]);
+  }
+
   if (downloadGameIds.indexOf(gameMode) !== -1) {
     // the managed game is compatible to the archive so use that
     return Promise.resolve(gameMode);
