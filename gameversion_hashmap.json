@@ -98,6 +98,14 @@
       "hashValue": "41760b8b303d36ea3796c5d4f9003d71",
       "userFacingVersion": "Alpha 20.4 B42",
       "variant": "steam"
+    },
+    "c3c6028c6aff2178364c47342b23e6c6": {
+      "files": [
+        "7DaysToDie_Data\\Managed\\Assembly-CSharp.dll"
+      ],
+      "hashValue": "c3c6028c6aff2178364c47342b23e6c6",
+      "userFacingVersion": "Alpha 20.6 B9",
+      "variant": "Steam"
     }
   },
   "darkestdungeon": {
