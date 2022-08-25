@@ -140,8 +140,10 @@ function validateVariantName(t: TFunction, content: IDialogContent): IConditionR
       id: 'variant',
       actions: ['Continue'],
       errorText: t('Name must be between {{min}}-{{max}} characters long', {
-        min: MIN_VARIANT_NAME,
-        max: MAX_VARIANT_NAME,
+        replace: {
+          min: MIN_VARIANT_NAME,
+          max: MAX_VARIANT_NAME,
+        },
       }),
     }];
   } else {

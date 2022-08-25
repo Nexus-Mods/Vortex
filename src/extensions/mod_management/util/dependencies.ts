@@ -113,9 +113,20 @@ function lookupDownloadHint(api: IExtensionApi,
   }
 
   if (input.mode === 'direct') {
-    return Promise.resolve({ url: normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' }) });
+    let urlNorm: string = '';
+    try {
+      urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
+    } catch (err) {
+      return Promise.reject(new NotFound(`Invalid url set for external dependency: "${input.url ?? '<unset>'}"`));
+    }
+    return Promise.resolve({ url: urlNorm });
   } else if (input.mode === 'browse') {
-    const urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
+    let urlNorm: string = '';
+    try {
+      urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
+    } catch (err) {
+      return Promise.reject(new NotFound(`Invalid url set for external dependency: "${input.url ?? '<unset>'}"`));
+    }
     return browseForDownload(api, urlNorm, input.instructions)
       .then(result => {
         if (result === undefined) {
@@ -326,7 +337,7 @@ function gatherDependenciesGraph(
     .then((details: ILookupResult[]) => {
       lookupResults = details;
 
-      const subRules = [].concat(rule.extra['rules'] ?? [], details?.[0]?.value?.rules ?? [])
+      const subRules = [].concat(rule.extra?.['rules'] ?? [], details?.[0]?.value?.rules ?? [])
         .filter(iter => (iter.type === recommendations ? 'recommends' : 'requires'));
 
       return Promise.all(subRules
@@ -387,6 +398,10 @@ function gatherDependenciesGraph(
     })
     .catch(err => {
       if (!(err instanceof ProcessCanceled)) {
+        api.showErrorNotification('Failed to look up dependency', err, {
+          allowReport: false,
+          message: rule.downloadHint?.url ?? rule.comment ?? rule.reference.description,
+        });
         log('error', 'failed to look up',
             { rule: JSON.stringify(rule), ex: err.name, message: err.message, stack: err.stack });
       }
