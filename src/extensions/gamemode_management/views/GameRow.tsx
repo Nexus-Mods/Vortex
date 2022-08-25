@@ -65,19 +65,13 @@ class GameRow extends ComponentEx<IProps, {}> {
       classes.push('game-list-undiscovered');
     }
 
-    const groupType = (type !== 'unmanaged')
-      ? type
-      : discovery !== undefined
-      ? 'discovered'
-      : 'undiscovered';
-
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <Provider store={this.context.api.store}>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'
-            group={`game-${groupType}-buttons`}
+            group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
             collapse={false}
@@ -134,7 +128,7 @@ class GameRow extends ComponentEx<IProps, {}> {
             <IconBar
               t={t}
               className='btngroup-game-list'
-              group={`game-${groupType}-buttons`}
+              group={`game-${type}-buttons`}
               instanceId={game.id}
               staticElements={[]}
               collapse={false}
