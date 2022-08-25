@@ -337,7 +337,7 @@ function gatherDependenciesGraph(
     .then((details: ILookupResult[]) => {
       lookupResults = details;
 
-      const subRules = [].concat(rule.extra['rules'] ?? [], details?.[0]?.value?.rules ?? [])
+      const subRules = [].concat(rule.extra?.['rules'] ?? [], details?.[0]?.value?.rules ?? [])
         .filter(iter => (iter.type === recommendations ? 'recommends' : 'requires'));
 
       return Promise.all(subRules
