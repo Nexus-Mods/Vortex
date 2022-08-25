@@ -31,7 +31,7 @@ interface IBaseState {
   loading: boolean;
   updating: boolean;
   sortType: SortType;
-  itemRenderer: React.ComponentClass<{
+  itemRenderer: React.ComponentType<{
     className?: string,
     item: ILoadOrderDisplayItem,
     onRef: (ref: any) => any }>;
