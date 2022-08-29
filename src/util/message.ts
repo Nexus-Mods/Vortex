@@ -533,6 +533,14 @@ export function prettifyNodeErrorMessage(err: any,
              + 'Proxies, ...)',
       allowReport: false,
     };
+  } else if (['CERT_HAS_EXPIRED', 'CERT_NOT_YET_VALID'].includes(err.code)) {
+    return {
+      message: 'A secure connection was rejected because the server certificate is not valid. '
+             + 'If this problem persists it probably indicates an issue with your setup, either your '
+             + 'ISP or Anti Virus interfering with the certification or your system is infected '
+             + 'with malicious software.',
+      allowReport: false,
+    };
   } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'SELF_SIGNED_CERT_IN_CHAIN',
               'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'].includes(err.code)) {
     return {
