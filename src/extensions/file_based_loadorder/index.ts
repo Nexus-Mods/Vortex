@@ -175,7 +175,7 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, newLO);
     }
-    await gameEntry.serializeLoadOrder(newLO);
+    await gameEntry.serializeLoadOrder(newLO, prev);
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
   }
