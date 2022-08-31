@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../types/IDialog';
@@ -12,6 +12,9 @@ import { log } from '../../util/log';
 import { activeGameId, installPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
+
+import { suggestStagingPath } from '../gamemode_management/util/discovery';
+
 import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
 
@@ -30,7 +33,7 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
 }
 
-function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
+function validateStagingTag(api: IExtensionApi, tagPath: string): Bluebird<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
     .then(data => {
       const state: IState = api.store.getState();
@@ -44,15 +47,15 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
+          .then(result => (result.action === 'Cancel')
+            ? Bluebird.reject(new UserCanceled())
+            : Bluebird.resolve());
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
     .catch(err => {
       if (err instanceof UserCanceled) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       return api.showDialog('question', 'Confirm', {
         text: 'This directory is not marked as a staging folder. '
@@ -61,9 +64,9 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
         { label: 'Cancel' },
         { label: 'I\'m sure' },
       ])
-      .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
+        .then(result => result.action === 'Cancel'
+          ? Bluebird.reject(new UserCanceled())
+          : Bluebird.resolve());
     });
 }
 
@@ -71,7 +74,7 @@ function queryStagingFolderInvalid(api: IExtensionApi,
                                    err: Error,
                                    dirExists: boolean,
                                    instPath: string)
-                                   : Promise<IDialogResult> {
+                                   : Bluebird<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog('error', 'Mod Staging Folder invalid', {
@@ -109,17 +112,26 @@ function queryStagingFolderInvalid(api: IExtensionApi,
     ]);
 }
 
-export function ensureStagingDirectory(api: IExtensionApi,
-                                       instPath?: string,
-                                       gameId?: string)
-                                       : Promise<string> {
-  const state = api.store.getState();
+async function ensureStagingDirectoryImpl(api: IExtensionApi,
+                                          instPath?: string,
+                                          gameId?: string) 
+                                          : Promise<string>
+{
+  const state = api.getState();
   if (gameId === undefined) {
     gameId = activeGameId(state);
   }
+
   if (instPath === undefined) {
-    instPath = installPathForGame(state, gameId);
+    // no staging folder set yet
+    if (state.settings.mods.installPathMode === 'suggested') {
+      instPath = await suggestStagingPath(api, gameId);
+      api.store.dispatch(setInstallPath(gameId, instPath));
+    } else {
+      instPath = installPathForGame(state, gameId);
+    }
   }
+
   let partitionExists = true;
   try {
     winapi.GetVolumePathName(instPath);
@@ -134,81 +146,88 @@ export function ensureStagingDirectory(api: IExtensionApi,
     }
   }
   let dirExists = false;
-  return fs.statAsync(instPath)
-    .then(() => {
-      dirExists = true;
-      // staging dir exists, does the tag exist?
-      return fs.statAsync(path.join(instPath, STAGING_DIR_TAG));
-    })
-    .catch(err => {
-      const mods = getSafe(state, ['persistent', 'mods', gameId], undefined);
-      if ((partitionExists === true) && (dirExists === false) && (mods === undefined)) {
-        // If the mods state branch for this game is undefined - this must be the
-        //  first time we manage this game - just create the staging path.
-        //
-        // This code should never be hit because the directory is created in
-        // profile_management/index.ts as soon as we start managing the game for the
-        // first time but we probably still don't want to report an error if we have
-        // no meta information about any mods anyway
-        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
-      }
-      return queryStagingFolderInvalid(api, err, dirExists, instPath)
-        .then(dialogResult => {
-          if (dialogResult.action === 'Quit Vortex') {
-            getApplication().quit(0);
-            return Promise.reject(new UserCanceled());
-          } else if (dialogResult.action === 'Reinitialize') {
-            const id = shortid();
-            api.sendNotification({
-              id,
-              type: 'activity',
-              message: 'Purging mods',
-            });
-            return fallbackPurge(api)
-              .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-              .catch(purgeErr => {
-                if (!partitionExists) {
-                  // Can't purge a non-existing partition!
-                  return Promise.reject(new ProcessCanceled('Invalid/Missing partition'));
-                }
-                if (purgeErr instanceof ProcessCanceled) {
-                  log('warn', 'Mods not purged', purgeErr.message);
-                } else {
-                  api.showDialog('error', 'Mod Staging Folder missing!', {
-                    bbcode: 'The staging folder could not be created. '
-                      + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
-                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
-                      + 'or you will get further error messages.',
-                  }, [
-                    { label: 'Close' },
-                  ]);
-                }
-                return Promise.reject(new ProcessCanceled('Not purged'));
-              })
-              .finally(() => {
-                api.dismissNotification(id);
-              });
-          } else if (dialogResult.action === 'Ignore') {
-            return Promise.resolve();
-          } else { // Browse...
-            return api.selectDir({
-              defaultPath: instPath,
-              title: api.translate('Select staging folder'),
-            })
-              .then((selectedPath) => {
-                if (!truthy(selectedPath)) {
-                  return Promise.reject(new UserCanceled());
-                }
-                return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
-                  .then(() => {
-                    instPath = selectedPath;
-                    api.store.dispatch(setInstallPath(gameId, instPath));
-                  });
-              })
-              .catch(() => ensureStagingDirectory(api, instPath, gameId));
-          }
+
+  try {
+    await fs.statAsync(instPath);
+    dirExists = true;
+    // staging dir exists, does the tag exist?
+    await fs.statAsync(path.join(instPath, STAGING_DIR_TAG));
+  } catch (err) {
+    const mods = getSafe(state, ['persistent', 'mods', gameId], undefined);
+    if ((partitionExists === true) && (dirExists === false) && (mods === undefined)) {
+      // If the mods state branch for this game is undefined - this must be the
+      //  first time we manage this game - just create the staging path.
+      //
+      // This code should never be hit because the directory is created in
+      // profile_management/index.ts as soon as we start managing the game for the
+      // first time but we probably still don't want to report an error if we have
+      // no meta information about any mods anyway
+      await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+    } else {
+      const dialogResult = await queryStagingFolderInvalid(api, err, dirExists, instPath)
+      if (dialogResult.action === 'Quit Vortex') {
+        getApplication().quit(0);
+        throw new UserCanceled();
+      } else if (dialogResult.action === 'Reinitialize') {
+        const id = shortid();
+        api.sendNotification({
+          id,
+          type: 'activity',
+          message: 'Purging mods',
         });
-      })
-    .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId))
-    .then(() => instPath);
+        try {
+          await fallbackPurge(api, gameId);
+          await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+        } catch (purgeErr) {
+          if (!partitionExists) {
+            // Can't purge a non-existing partition!
+            throw new ProcessCanceled('Invalid/Missing partition');
+          }
+          if (purgeErr instanceof ProcessCanceled) {
+            log('warn', 'Mods not purged', purgeErr.message);
+          } else {
+            api.showDialog('error', 'Mod Staging Folder missing!', {
+              bbcode: 'The staging folder could not be created. '
+                + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
+                + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
+                + 'or you will get further error messages.',
+            }, [
+              { label: 'Close' },
+            ]);
+          }
+          throw new ProcessCanceled('Not purged');
+        }
+        api.dismissNotification(id);
+      } else if (dialogResult.action === 'Ignore') {
+        // nop
+      } else { // Browse...
+        const selectedPath = await api.selectDir({
+          defaultPath: instPath,
+          title: api.translate('Select staging folder'),
+        });
+
+        if (!truthy(selectedPath)) {
+          throw new UserCanceled();
+        }
+
+        try {
+          await validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG));
+          instPath = selectedPath;
+          api.store.dispatch(setInstallPath(gameId, instPath));
+        } catch (validateErr) {
+          await ensureStagingDirectory(api, instPath, gameId);
+        }
+      }
+    }
+  }
+
+  await writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId);
+  return instPath;
+}
+
+export function ensureStagingDirectory(api: IExtensionApi,
+                                       instPath?: string,
+                                       gameId?: string)
+                                       : Bluebird<string> {
+  return Bluebird.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
 }

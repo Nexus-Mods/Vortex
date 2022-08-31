@@ -12,6 +12,10 @@ export const settingsReducer: IReducerSpec = {
       const { gameId, path } = payload;
       return setSafe(state, ['installPath', gameId], path);
     },
+    [actions.setInstallPathMode as any]: (state, payload) =>
+      setSafe(state, ['installPathMode'], payload),
+    [actions.setSuggestInstallPathDirectory as any]: (state, payload) =>
+      setSafe(state, ['suggestInstallPathDirectory'], payload),
     [actions.setActivator as any]: (state, payload) => {
       const { gameId, activatorId } = payload;
       return setSafe(state, ['activator', gameId], activatorId);
@@ -25,6 +29,8 @@ export const settingsReducer: IReducerSpec = {
   },
   defaults: {
     installPath: {},
+    installPathMode: 'userData',
+    suggestInstallPathDirectory: 'Vortex Mods',
     modlistState: {},
     activator: {},
     showDropzone: true,

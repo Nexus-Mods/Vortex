@@ -127,7 +127,6 @@ interface IActionProps {
   onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onRemoveMod: (gameMode: string, modId: string) => void;
   onRemoveMods: (gameMode: string, modIds: string[]) => void;
   onShowDropzone: (show: boolean) => void;
 }
@@ -1529,7 +1528,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
     onRemoveMods: (gameMode: string, modIds: string[]) =>
       batchDispatch(dispatch, modIds.map(modId => removeMod(gameMode, modId))),
     onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),

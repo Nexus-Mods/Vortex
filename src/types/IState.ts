@@ -220,10 +220,14 @@ export interface IStatePaths {
   install: string;
 }
 
+export type InstallPathMode = 'userData' | 'suggested';
+
 export interface ISettingsMods {
   installPath: { [gameId: string]: string };
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
+  installPathMode: InstallPathMode;
+  suggestInstallPathDirectory: string;
   showDropzone: boolean;
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;

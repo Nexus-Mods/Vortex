@@ -411,13 +411,12 @@ function genOnProfileChange(api: IExtensionApi,
 
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   const profileId = shortid();
-  const instPath = installPathForGame(api.store.getState(), gameId);
   // initialize the staging directory.
   // It's not great that this is here, the code would better fit into mod_management
   // but I'm not entirely sure what could happen if it's not initialized right away.
   // Since the dir has to be tagged we can't just sprinkle "ensureDir" anywhere we want
   // to access it.
-  return ensureStagingDirectory(api, instPath, gameId)
+  return ensureStagingDirectory(api, undefined, gameId)
     .then(() => {
       log('info', 'user managing game for the first time', { gameId });
       api.store.dispatch(setProfile({
@@ -425,10 +424,12 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
         gameId,
         name: 'Default',
         modState: {},
+        lastActivated: undefined,
       }));
       api.store.dispatch(setNextProfile(profileId));
     })
     .catch(err => {
+      const instPath = installPathForGame(api.store.getState(), gameId);
       api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
         err, {
         allowReport: false,

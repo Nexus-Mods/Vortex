@@ -8,7 +8,7 @@ import { writeFileAtomic } from '../../../util/fsAtomic';
 import getVortexPath from '../../../util/getVortexPath';
 import { TFunction } from '../../../util/i18n';
 import { log } from '../../../util/log';
-import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
+import { activeGameId, discoveryByGame, installPathForGame } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { deBOM, makeQueue, truthy } from '../../../util/util';
 
@@ -269,14 +269,15 @@ export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMeth
 /**
  * purge files using information from the manifest
  */
-export function fallbackPurge(api: IExtensionApi): Promise<void> {
+export function fallbackPurge(api: IExtensionApi, gameId?: string): Promise<void> {
   const state: IState = api.store.getState();
-  const gameId = activeGameId(state);
-  const gameDiscovery = currentGameDiscovery(state);
+  if (gameId === undefined) {
+    gameId = activeGameId(state);
+  }
+  const gameDiscovery = discoveryByGame(state, gameId);
   const game: IGame = getGame(gameId);
   if ((game === undefined)
-      || (gameDiscovery === undefined)
-      || (gameDiscovery.path === undefined)) {
+      || (gameDiscovery?.path === undefined)) {
     return Promise.reject(new ProcessCanceled('game got disabled'));
   }
   const modPaths = game.getModPaths(gameDiscovery.path);

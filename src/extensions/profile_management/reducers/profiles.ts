@@ -3,13 +3,14 @@ import { log } from '../../../util/log';
 import { deleteOrNop, getSafe, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/profiles';
+import { IProfile } from '../types/IProfile';
 
 /**
  * reducer for changes to ephemeral session state
  */
 export const profilesReducer: IReducerSpec = {
   reducers: {
-    [actions.setProfile as any]: (state, payload) =>
+    [actions.setProfile as any]: (state, payload: IProfile) =>
       setSafe(state, [payload.id], {
         ...getSafe(state, [payload.id], {}),
         ...payload,

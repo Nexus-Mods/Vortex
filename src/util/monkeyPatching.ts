@@ -1,3 +1,5 @@
+import * as pathT from 'path';
+
 /**
  * Monkey patching is obviously considered evil but there may be cases where the alternative
  * would be for us to require all extension developers to follow certain rules and so
@@ -87,8 +89,9 @@ function applyMonkeyPatches() {
       }
   });
 
-  const path = require('path');
+  const path: typeof pathT = require('path');
   const oldJoin = path.join;
+  const oldResolve = path.resolve;
   // tslint:disable-next-line:only-arrow-functions
   path.join = function(...paths: string[]) {
     try {
@@ -98,6 +101,15 @@ function applyMonkeyPatches() {
       throw err;
     }
   };
+
+  path.resolve = function(...paths: string[]) {
+    try {
+      return oldResolve(...paths);
+    } catch (err) {
+      err['paths'] = paths;
+      throw err;
+    }
+  }
 }
 
 applyMonkeyPatches();

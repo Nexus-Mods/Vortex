@@ -141,7 +141,6 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
   const { gameId } = profile;
   const stagingPath = installPathForGame(state, gameId);
   const gameDiscovery = discoveryByGame(state, gameId);
-  const t = api.translate;
 
   log('info', 'current deployment method is',
     { method: getCurrentActivator(state, gameId, false)?.id });

@@ -18,7 +18,7 @@ export interface IParameters {
   profile?: string;
   get?: string[];
   set?: ISetItem[];
-  del?: string;
+  del?: string[];
   merge?: string;
   run?: string;
   shared?: boolean;
@@ -159,7 +159,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('-s, --set <path=value>', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
-    .option('--del <path>', 'Remove a value in state')
+    .option('--del <path>', 'Remove a value in state', collect)
     .option('--user-data <path>', 'Starts Vortex with a custom directory for the user data. '
                                   + 'Only use if you know what you\'re doing.')
     .option('--start-minimized', 'Starts Vortex in the task bar')
