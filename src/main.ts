@@ -161,11 +161,20 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch('--disable-software-rasterizer');
     app.commandLine.appendSwitch('--disable-gpu');
   }
+
+  if (!app.requestSingleInstanceLock()) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('--in-process-gpu');
+    app.commandLine.appendSwitch('--disable-software-rasterizer');
+    app.quit();
+    return;
+  }
+
   // async code only allowed from here on out
 
   if (!presetManager.now('commandline', (step: IPresetStep): Promise<void> => {
     (step as IPresetStepCommandLine).arguments.forEach(arg => {
-      mainArgs[arg.key] = arg.value;
+      mainArgs[arg.key] = arg.value ?? true;
     });
     return Promise.resolve();
   })) {

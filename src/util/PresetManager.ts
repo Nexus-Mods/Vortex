@@ -1,11 +1,12 @@
 import { ipcMain, ipcRenderer } from 'electron';
 import * as path from 'path';
+import { IState } from '../types/api';
 
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-const StepTypeList = ['commandline', 'setgame', 'installmod', 'restart'] as const;
+const StepTypeList = ['commandline', 'hydrate', 'setgame', 'installmod', 'restart'] as const;
 
 export type PresetStepType = typeof StepTypeList[number];
 
@@ -15,12 +16,17 @@ export interface IPresetStepBase {
 
 export interface ICommandLineArg {
   key: string;
-  value: any;
+  value?: any;
 }
 
 export interface IPresetStepCommandLine extends IPresetStepBase {
   type: 'commandline';
   arguments: ICommandLineArg[];
+}
+
+export interface IPresetStepHydrateState extends IPresetStepBase {
+  type: 'hydrate';
+  state: IState;
 }
 
 export interface IPresetStepSetGame extends IPresetStepBase {
@@ -37,8 +43,11 @@ export interface IPresetStepRestart extends IPresetStepBase {
   type: 'restart';
 }
 
-export type IPresetStep =
-  IPresetStepCommandLine | IPresetStepInstallMod | IPresetStepSetGame | IPresetStepCommandLine;
+export type IPresetStep = IPresetStepCommandLine
+                        | IPresetStepInstallMod
+                        | IPresetStepHydrateState
+                        | IPresetStepSetGame
+                        | IPresetStepCommandLine;
 
 interface IPresetState {
   step: number;
@@ -61,9 +70,11 @@ class PresetManager {
     // we have to be able to process this before electron is initialized and for all
     // intends and purposes that has started the moment Vortex was started.
     const presetPath = path.resolve(getVortexPath('package'), '..', 'vortex_preset.json');
+    log('debug', 'trying to read preset', { presetPath });
     try {
       this.mPresets = JSON.parse(fs.readFileSync(presetPath, { encoding: 'utf-8' }));
     } catch (err) {
+      log('error', 'failed to read prest', { error: err.message });
       if (err.code !== 'ENOENT') {
         this.mError = err;
         return;
@@ -75,6 +86,7 @@ class PresetManager {
     // to support command line instructions this state has to be available well before the store
     // is loaded
     this.mStatePath = path.resolve(getVortexPath('appData'), 'vortex', 'presetState.json');
+    log('debug', 'read preset state', { statePath: this.mStatePath });
     this.readState();
 
     if (ipcMain !== undefined) {
@@ -175,8 +187,8 @@ class PresetManager {
     try {
       this.mState = JSON.parse(fs.readFileSync(this.mStatePath, { encoding: 'utf-8' }));
     } catch (err) {
-      log('error', 'failed to read preset state', { error: err.message });
       if (err.code !== 'ENOENT') {
+        log('error', 'failed to read preset state', { error: err.message });
         this.mError = err;
         return;
       }
