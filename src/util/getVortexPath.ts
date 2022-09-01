@@ -128,7 +128,7 @@ export function setVortexPath(id: AppPath, value: string | (() => string)) {
  * or process.resourcesPath don't do a great job of abstracting away
  * how the application is being built, e.g. development or not, asar or not,
  * webpack or not, portable or not.
- * This function aims to provide paths to application data independent
+ * This function aims to provide reasonable paths to application data independent
  * of any of that.
  */
 function getVortexPath(id: AppPath): string {

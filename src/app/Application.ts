@@ -909,7 +909,7 @@ class Application {
       .then(() => {
         const hydrateHandler = (stepIn: IPresetStep): Promise<void> => {
           newStore.dispatch({
-            type: '__hydrate_replace',
+            type: '__hydrate',
             payload: (stepIn as IPresetStepHydrateState).state,
           });
 
