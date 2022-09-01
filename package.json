@@ -36,7 +36,8 @@
     "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
-    "buildext": "node ./tools/buildScripts/buildSingleExtension.js"
+    "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
+    "generate_validation": "generate-validation ."
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -175,6 +176,7 @@
     "json-loader": "^0.5.7",
     "license-checker": "^25.0.1",
     "minimist": "^1.2.6",
+    "node-gyp": "^9.0.0",
     "prebuild-install": "^7.1.0",
     "prettier": "^2.0.5",
     "react-docgen-typescript-loader": "^3.6.0",
@@ -194,6 +196,7 @@
     "tslint": "^5.20.1",
     "tslint-eslint-rules": "^5.4.0",
     "tslint-react": "^4.1.0",
+    "ts-v-gen": "^1.0.1",
     "typescript": "^4.4.3",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.57.1",
@@ -246,7 +249,6 @@
     "modmeta-db": "Nexus-Mods/modmeta-db",
     "native-errors": "Nexus-Mods/node-native-errors",
     "node-7z": "Nexus-Mods/node-7z",
-    "node-gyp": "^9.0.0",
     "normalize-url": "^6.0.1",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
