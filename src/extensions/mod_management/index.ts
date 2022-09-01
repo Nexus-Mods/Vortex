@@ -1587,7 +1587,7 @@ function init(context: IExtensionContext): boolean {
             if (!err) {
               context.api.events.emit('duplicates-removed');
               batchDispatch(context.api.store.dispatch, batchedActions);
-            } else {
+            } else if (!(err instanceof UserCanceled) && !(err instanceof ProcessCanceled)) {
               context.api.showErrorNotification('Failed to remove mods', err);
             }
           });

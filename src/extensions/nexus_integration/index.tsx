@@ -401,6 +401,14 @@ function toTimestamp(time?: string): number {
   return (new Date(time)).getTime();
 }
 
+function safeParseInt(input: any, radix: number = 10): number {
+  const res = parseInt(input, radix);
+  if (isNaN(res)) {
+    return undefined;
+  }
+  return res;
+}
+
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
@@ -459,9 +467,9 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
 
     return {
       modId: input.download?.modInfo?.nexus?.ids?.modId
-          ?? input.meta?.details?.modId,
+          ?? safeParseInt(input.meta?.details?.modId),
       fileId: input.download?.modInfo?.nexus?.ids?.fileId
-          ?? input.meta?.details?.fileId,
+          ?? safeParseInt(input.meta?.details?.fileId),
       collectionId: input.download?.modInfo?.nexus?.ids?.collectionId
                  ?? nexusCollectionInfo?.collection?.id,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId

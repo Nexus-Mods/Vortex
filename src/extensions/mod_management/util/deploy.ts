@@ -141,7 +141,16 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
   const { gameId } = profile;
   const stagingPath = installPathForGame(state, gameId);
   const gameDiscovery = discoveryByGame(state, gameId);
-  const t = api.translate;
+
+  if (gameDiscovery?.path === undefined) {
+    api.sendNotification({
+      type: 'info',
+      id: 'purge-not-possible',
+      message: 'Can\'t purge because game is not discovered',
+      displayMS: 5000,
+    });
+    return Promise.resolve();
+  }
 
   log('info', 'current deployment method is',
     { method: getCurrentActivator(state, gameId, false)?.id });

@@ -121,7 +121,7 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Game]: gameId,
           [DIMENSIONS.GameVersion]: gameVersion,
           [DIMENSIONS.Theme]: theme,
-          [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'],
+          [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
 
         Analytics.trackEvent('Vortex', 'Version', getApplication().version);
