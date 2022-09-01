@@ -51,7 +51,7 @@ class Description extends React.Component<IProps, IComponentState> {
           ? (
             <a
               onClick={nop}
-              className='fake-link'
+              className='fake-link-disabled'
               title={t('Description is synchronized with an online source')}
             >
               <Icon name='edit'/>{t('Edit Description')}
@@ -61,7 +61,7 @@ class Description extends React.Component<IProps, IComponentState> {
           ? (
             <a
               onClick={nop}
-              className='fake-link'
+              className='fake-link-disabled'
               title={t('Description can only be changed for installed mods')}
             >
               <Icon name='edit'/>{t('Edit Description')}
