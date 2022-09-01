@@ -1,70 +1,42 @@
 import { ipcMain, ipcRenderer } from 'electron';
 import * as path from 'path';
 
-import { IState } from '../types/IState';
+import { IPreset, IPresetsState, IPresetStep, PresetStepType } from '../types/IPreset';
+
+import * as validation from '../validationCode/validation';
 
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-const StepTypeList = ['commandline', 'hydrate', 'setgame', 'installmod', 'restart'] as const;
-
-export type PresetStepType = typeof StepTypeList[number];
-
-export interface IPresetStepBase {
-  type: PresetStepType;
-  id: string;
-}
-
-export interface ICommandLineArg {
-  key: string;
-  value?: any;
-}
-
-export interface IPresetStepCommandLine extends IPresetStepBase {
-  type: 'commandline';
-  arguments: ICommandLineArg[];
-}
-
-export interface IPresetStepHydrateState extends IPresetStepBase {
-  type: 'hydrate';
-  state: IState;
-}
-
-export interface IPresetStepSetGame extends IPresetStepBase {
-  type: 'setgame';
-  game: string;
-}
-
-export interface IPresetStepInstallMod extends IPresetStepBase {
-  type: 'installmod';
-  url: string;
-}
-
-export interface IPresetStepRestart extends IPresetStepBase {
-  type: 'restart';
-}
-
-export type IPresetStep = IPresetStepCommandLine
-                        | IPresetStepInstallMod
-                        | IPresetStepHydrateState
-                        | IPresetStepSetGame
-                        | IPresetStepCommandLine;
-
-interface IPresetState {
-  completed: string[];
-  data: any;
-}
-
-interface IPresetsState {
-  presets: { [presetId: string]: IPresetState };
-  processing: string;
-}
-
 type StepCB = (step: IPresetStep, data: any) => PromiseLike<void>;
 
+interface ISchemaViolation {
+  message: string;
+}
+
+function validatePreset(input: any): IPreset {
+  const validationErrors: ISchemaViolation[] = validation.validateIPreset(input);
+
+  if (validationErrors.length !== 0) {
+    throw new Error(validationErrors.map(error => error.message).join('; '));
+  }
+
+  return input as IPreset;
+}
+
+function validateState(input: any): IPresetsState {
+  const validationErrors: ISchemaViolation[] = validation.validateIPresetsState(input);
+
+  if (validationErrors.length !== 0) {
+    throw new Error(validationErrors.map(error => error.message).join('; '));
+  }
+
+  return input as IPresetsState;
+}
+
 class PresetManager {
-  private mPresets: { [presetId: string]: IPresetStep[] } = {};
+  private mPresets: { [presetId: string]: IPreset } = {};
   private mState: IPresetsState = { presets: {}, processing: undefined };
   private mStepHandlers: Map<PresetStepType, StepCB> = new Map();
 
@@ -101,10 +73,11 @@ class PresetManager {
       const presetPath = path.join(basePath, presetFile);
       try {
         const presetId = path.basename(presetFile, '.json');
-        this.mPresets[presetId] = JSON.parse(fs.readFileSync(presetPath, { encoding: 'utf-8' }));
+        const presetData = validatePreset(JSON.parse(fs.readFileSync(presetPath, { encoding: 'utf-8' })));
+        this.mPresets[presetId] = presetData;
       } catch (err) {
-        log('error', 'failed to read prest', { error: err.message });
         if (err.code !== 'ENOENT') {
+          log('error', 'failed to read preset', { presetFile, error: err.message });
           this.mError = err;
           return;
         }
@@ -227,7 +200,7 @@ class PresetManager {
     }
 
     // return first step that has not yet been completed
-    const incompleteStep = this.mPresets[presetId].find(step =>
+    const incompleteStep = this.mPresets[presetId].steps.find(step =>
       !((this.mState.presets[presetId]?.completed ?? []).includes(step.id)));
     return incompleteStep?.id;
   }
@@ -236,7 +209,7 @@ class PresetManager {
     // find a preset with incomplete steps
     return Object.keys(this.mPresets)
       .find(presetId =>
-        this.mPresets[presetId].find(step =>
+        this.mPresets[presetId].steps.find(step =>
           !this.mState.presets[presetId].completed.includes(step.id)) !== undefined);
   }
 
@@ -259,7 +232,7 @@ class PresetManager {
   }
 
   private stepById(presetId: string, stepId: string): IPresetStep {
-    return this.mPresets[presetId].find(step => step.id === stepId);
+    return this.mPresets[presetId].steps.find(step => step.id === stepId);
   }
 
   private async processNext() {
@@ -284,14 +257,14 @@ class PresetManager {
 
   private readState() {
     try {
-      this.mState = JSON.parse(fs.readFileSync(this.mStatePath, { encoding: 'utf-8' }));
+      this.mState = validateState(JSON.parse(fs.readFileSync(this.mStatePath, { encoding: 'utf-8' })));
     } catch (err) {
       if (err.code !== 'ENOENT') {
         log('error', 'failed to read preset state', { error: err.message });
         this.mError = err;
         return;
       }
-      // ENOENT, meaning there is no preset, is fine
+      // ENOENT, meaning there is no state yet, that is fine
     }
   }
 }

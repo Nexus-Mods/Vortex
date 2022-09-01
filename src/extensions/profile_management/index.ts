@@ -20,6 +20,7 @@ import { addNotification, IDialogResult, showDialog } from '../../actions/notifi
 
 import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session';
 import { IAttachment, IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
+import type { IPresetStep, IPresetStepSetGame } from '../../types/IPreset';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -29,7 +30,7 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
-import presetManager, { IPresetStep, IPresetStepSetGame } from '../../util/PresetManager';
+import presetManager from '../../util/PresetManager';
 import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';

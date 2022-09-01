@@ -108,7 +108,9 @@ import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import commandLine, { addPreset, relaunch } from './util/commandLine';
+import type { IPresetStep, IPresetStepCommandLine } from './types/IPreset';
+
+import commandLine, { relaunch } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
@@ -120,7 +122,7 @@ import './util/webview';
 
 import * as child_processT from 'child_process';
 import * as fs from './util/fs';
-import presetManager, { IPresetStep, IPresetStepCommandLine } from './util/PresetManager';
+import presetManager from './util/PresetManager';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

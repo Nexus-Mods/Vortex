@@ -103,30 +103,6 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   return res;
 }
 
-export function addPreset(input: IParameters): IParameters {
-  let result: IParameters = {};
-  const presetPath = path.join(app.getPath('temp'), 'vortex_preset.json');
-  try {
-    const instructionsList: IParameters[] = JSON.parse(fs.readFileSync(presetPath, { encoding: 'utf-8' }));
-    if (instructionsList.length > 0) {
-      result = instructionsList.shift();
-    }
-
-    if (instructionsList.length === 0) {
-      fs.removeSync(presetPath);
-    } else {
-      fs.writeFileSync(presetPath, JSON.stringify(instructionsList, undefined, 2), { encoding: 'utf-8' });
-    }
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      log('warn', 'failed to parse preset.json', { error: err.message });
-      fs.removeSync(presetPath);
-    }
-  }
-
-  return { ...input, ...result };
-}
-
 function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);

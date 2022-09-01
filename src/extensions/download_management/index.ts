@@ -1,4 +1,5 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IPresetStep, IPresetStepInstallMod } from '../../types/IPreset';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { getApplication } from '../../util/application';
@@ -7,7 +8,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import presetManager, { IPresetStep, IPresetStepInstallMod } from '../../util/PresetManager';
+import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';

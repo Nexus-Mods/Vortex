@@ -1,7 +1,8 @@
 import {setApplicationVersion, setInstallType, setInstanceId, setWarnedAdmin} from '../actions/app';
 import { NEXUS_DOMAIN } from '../extensions/nexus_integration/constants';
 import { STATE_BACKUP_PATH } from '../reducers/index';
-import { ThunkStore } from '../types/api';
+import { ThunkStore } from '../types/IExtensionContext';
+import type { IPresetStep, IPresetStepHydrateState } from '../types/IPreset';
 import {IState} from '../types/IState';
 import { getApplication } from '../util/application';
 import commandLine, {IParameters, ISetItem, relaunch} from '../util/commandLine';
@@ -19,7 +20,7 @@ import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
-import presetManager, { IPresetStep, IPresetStepHydrateState } from '../util/PresetManager';
+import presetManager from '../util/PresetManager';
 import { StateError } from '../util/reduxSanity';
 import startupSettings from '../util/startupSettings';
 import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
