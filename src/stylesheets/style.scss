@@ -144,6 +144,15 @@
   color: currentColor;
   &:hover {
     color: currentColor;
+    text-decoration: none;
+  }
+}
+
+.fake-link-disabled {
+  color: $text-color-disabled;
+  &:hover {
+    color: $text-color-disabled;
+    text-decoration: none;
   }
 }
 
