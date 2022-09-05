@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent, IDialogResult,
+import { DialogActions, DialogType, IDialogContent,
          showDialog } from '../../../actions/notifications';
 import { IMod, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -147,8 +147,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       (lhs: string, rhs: string): number =>
         (profiles[lhs].gameId !== profiles[rhs].gameId)
           ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
-          : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
-            { sensitivity: 'base' }));
+          : profiles[lhs].name.localeCompare(profiles[rhs].name, language, { sensitivity: 'base' }));
   }
 
   private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
@@ -209,12 +208,13 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private setShortcut = (profileId: string) => {
     const { t, profiles } = this.props;
     const profile = profiles[profileId];
-    const appDir = (process.env.NODE_ENV !== 'development')
-      ? path.dirname(getVortexPath('exe'))
-      : 'C:/Program Files/Black Tree Gaming Ltd/Vortex';
+    const appDir = (process.env.NODE_ENV === 'development')
+      ? path.join(process.env.ProgramFiles, 'Black Tree Gaming Ltd', 'Vortex')
+      : path.dirname(getVortexPath('exe'));
 
     const desktopLocation = getVortexPath('desktop');
-    const shortcutPath = path.join(desktopLocation, `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`);
+    const shortcutPath =
+      path.join(desktopLocation, `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`);
     const created = shell.writeShortcutLink(shortcutPath, 'create', {
       target: path.join(appDir, 'Vortex.exe'),
       args: `--profile ${profileId}`,
@@ -278,9 +278,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <Button bsStyle='ghost' className='profile-add' onClick={this.editNewProfile}>
-        {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
-      </Button>
+        <Button bsStyle='ghost' className='profile-add' onClick={this.editNewProfile}>
+          {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
+        </Button>
       </div>
     );
   }
@@ -291,9 +291,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       const newId: string = shortid();
       const newProf: IProfile = update(profile, { id: { $set: newId } });
       fs.ensureDirAsync(profilePath(newProf))
-      .then(() => {
-        onAddProfile(newProf);
-      });
+        .then(() => {
+          onAddProfile(newProf);
+        });
     } else {
       onAddProfile(profile);
     }
@@ -318,13 +318,14 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
     fs.ensureDirAsync(profilePath(profiles[profileId]))
-    .then(() => fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)))
-    .then(() => {
-      onAddProfile(newProfile);
-      this.editExistingProfile(newProfile.id);
-    })
-    .catch(err => this.context.api.showErrorNotification('Failed to clone profile',
-      err, { allowReport: err.code !== 'EPERM' }));
+      .then(() => fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)))
+      .then(() => {
+        onAddProfile(newProfile);
+        this.editExistingProfile(newProfile.id);
+      })
+      .catch(err => this.context.api.showErrorNotification(
+        'Failed to clone profile',
+        err, { allowReport: err.code !== 'EPERM' }));
   }
 
   private onRemoveProfile = (profileId: string) => {
@@ -347,14 +348,14 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       text: confirmText,
       parameters: { profileName: profiles[profileId].name },
     }, [
-        { label: 'Cancel', default: true },
-        {
-          label: 'Remove', action:
-            () => {
-              log('info', 'user removing profile', { id: profileId });
-              removeProfile(this.context.api, profileId);
-            },
-        },
+      { label: 'Cancel', default: true },
+      {
+        label: 'Remove', action:
+          () => {
+            log('info', 'user removing profile', { id: profileId });
+            removeProfile(this.context.api, profileId);
+          },
+      },
     ]);
   }
 
@@ -396,4 +397,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 export default
   translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
-      ProfileView)) as React.ComponentClass<{}>;
+      ProfileView)) as React.ComponentClass<IBaseProps>;
