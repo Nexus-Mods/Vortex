@@ -34,4 +34,10 @@ export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
     showGraph: true,
     copyOnIFF: false,
   },
+  verifiers: {
+    path: {
+      description: () => 'Severe! The download folder is invalid and will be reset',
+      type: 'string',
+    }
+  }
 };
