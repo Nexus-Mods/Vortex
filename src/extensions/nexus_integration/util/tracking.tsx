@@ -84,11 +84,15 @@ class Tracking {
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode] ?? {};
     const downloads = state.persistent.downloads.files;
+
+    const game: IGameStored = gameById(state, gameMode);
+    const nexusId = nexusGameId(game);
+
     modIds.forEach(modId => {
       if (truthy(mods[modId]?.attributes?.modId)) {
-        this.trackMod(gameMode, mods[modId].attributes.modId.toString?.());
+        this.trackMod(nexusId, mods[modId].attributes.modId.toString?.());
       } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
-        this.trackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
+        this.trackMod(nexusId, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
   }
@@ -98,11 +102,15 @@ class Tracking {
     const gameMode = activeGameId(state);
     const mods = state.persistent.mods[gameMode] ?? {};
     const downloads = state.persistent.downloads.files;
+
+    const game: IGameStored = gameById(state, gameMode);
+    const nexusId = nexusGameId(game);
+
     modIds.forEach(modId => {
       if (truthy(mods[modId]?.attributes?.modId)) {
-        this.untrackMod(gameMode, mods[modId].attributes.modId.toString?.());
+        this.untrackMod(nexusId, mods[modId].attributes.modId.toString?.());
       } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
-        this.untrackMod(gameMode, downloads[modId].modInfo.nexus.ids.modId.toString());
+        this.untrackMod(nexusId, downloads[modId].modInfo.nexus.ids.modId.toString());
       }
     });
   }

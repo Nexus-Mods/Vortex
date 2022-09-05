@@ -148,7 +148,7 @@ export interface IGameLoadOrderEntry {
   // Provides game extensions with relevant props that the extension writer
   //  can use to build the information panel. Providing a string here instead
   //  of a react component will create a default component instead.
-  createInfoPanel: (props: IInfoPanelProps) => string | React.Component;
+  createInfoPanel: (props: IInfoPanelProps) => string | React.ComponentType;
 
   // Give the game extension the opportunity to modify the load order
   //  before we start sorting the mods.
@@ -166,7 +166,7 @@ export interface IGameLoadOrderEntry {
 
   // Add option to provide a custom item renderer if wanted.
   //  Default item renderer will be used if left undefined.
-  itemRenderer?: React.ComponentClass<{
+  itemRenderer?: React.ComponentType<{
     className?: string;
     item: ILoadOrderDisplayItem;
     onRef: (ref: any) => any;

@@ -107,8 +107,10 @@ export interface ILoadOrderGameInfo {
    *  @param loadOrder An array consisting of load order objects which we want stored on disk.
    *    Please note that the load order array sent to the game extension's
    *    serialize functor will be sorted in the expected load order
+   *
+   *  @param prev the load order array state before serialization.
    */
-  serializeLoadOrder: (loadOrder: LoadOrder) => Promise<void>;
+  serializeLoadOrder: (loadOrder: LoadOrder, prev: LoadOrder) => Promise<void>;
 
   /**
    * Game extension should parse the Load Order file stored on disk using the

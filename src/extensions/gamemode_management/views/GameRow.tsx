@@ -55,7 +55,7 @@ class GameRow extends ComponentEx<IProps, {}> {
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
       ? <a onClick={this.openLocation}>{discovery.path}</a>
-      : <a onClick={this.changeLocation}>{t('Browse...')}</a>;
+      : null;
 
     const classes = [ 'game-list-item' ];
     if (active) {
@@ -105,7 +105,7 @@ class GameRow extends ComponentEx<IProps, {}> {
           </Media.Left>
           <Media.Body>
             <Media.Heading>{t(game.name.replace(/\t/g, ' '))}</Media.Heading>
-            <p>{t('Location')}: {location}</p>
+            {(location !== null) ? (<p>{t('Location')}: {location}</p>) : null}
           </Media.Body>
           <Media.Right>
             <OverlayTrigger

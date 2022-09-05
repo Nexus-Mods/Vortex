@@ -17,7 +17,7 @@ interface IItemBaseProps {
   index: number;
   item: ILoadOrderDisplayItem;
   isLocked: boolean;
-  itemRenderer: React.ComponentClass<{
+  itemRenderer: React.ComponentType<{
     className?: string,
     item: ILoadOrderDisplayItem,
     onRef: (ref: any) => any,
@@ -147,7 +147,7 @@ interface IBaseProps {
   id: string;
   items: ILoadOrderDisplayItem[];
   loadOrder: ILoadOrder;
-  itemRenderer: React.ComponentClass<{
+  itemRenderer: React.ComponentType<{
     className?: string,
     item: ILoadOrderDisplayItem,
     onRef: (ref: any) => any }>;
@@ -342,4 +342,4 @@ function containerCollect(connect: DropTargetConnector,
 }
 
 export default DropTarget(DND_TYPE, containerTarget, containerCollect)(
-  DraggableList) as React.ComponentClass<IBaseProps>;
+  DraggableList) as React.ComponentType<IBaseProps>;

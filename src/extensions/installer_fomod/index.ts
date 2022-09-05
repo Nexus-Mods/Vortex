@@ -530,7 +530,7 @@ class ConnectionIPC {
         // stdout can be emitted in arbitrary chunks, using a debouncer to ensure
         // (more or less) we get full messages in a single call
         const stdoutDebouncer = new Debouncer(() => {
-          const lines = msg.split('\n');
+          const lines = msg.split('\n').filter(line => line.trim().length !== 0);
           msg = '';
 
           let isErr: number = -1;
@@ -614,7 +614,9 @@ class ConnectionIPC {
 
     if (res === undefined) {
       res = new ConnectionIPC({ in: cliSocket, out: servSocket }, pid);
-      onExitCBs = code => res.onExit(code);
+      onExitCBs = code => {
+        res.onExit(code);
+      };
     }
     return res;
   }
@@ -713,14 +715,14 @@ class ConnectionIPC {
     ]);
   }
 
-  public async onExit(code) {
+  public async onExit(code: number) {
     log(code === 0 ? 'info' : 'error', 'remote process exited', { code });
     try {
       await toPromise(cb => this.mSocket.out.end(cb));
-      this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
     } catch (err) {
       log('warn', 'failed to close connection to fomod installer process', err.message);
     }
+    this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
   }
 
   private logAction(message: string) {
@@ -1018,6 +1020,7 @@ function init(context: IExtensionContext): boolean {
           // afaik 0x80008085 would only happen if our installer wasn't used or if running in
           // dev environment
           if ([0x80008085, 0x80008093].includes(err['code'])) {
+            log('info', 'retrying without security sandbox', { error: err.message });
             // invalid runtime configuration? Very likely caused by permission errors due to the process
             // being low integrity, otherwise it would mean Vortex has been modified and then the user
             // already received an error message about that.
