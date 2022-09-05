@@ -132,11 +132,21 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.removeModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
-      return removeValueIf(state, [gameId, modId, 'rules'],
+
+      if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
+
+      return removeValueIf(
+        state, [gameId, modId, 'rules'],
         (iterRule: IRule) => ruleEqual(iterRule, rule));
     },
     [actions.cacheModReference as any]: (state, payload) => {
       const { gameId, modId, reference, refModId } = payload;
+
+      if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
 
       const indices: number[] = [];
       const rules: IRule[] = getSafe(state, [gameId, modId, 'rules'], []);
@@ -152,12 +162,22 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.setINITweakEnabled as any]: (state, payload) => {
       const { gameId, modId, tweak, enabled } = payload;
+
+      if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
+
       return (enabled)
         ? pushSafe(state, [gameId, modId, 'enabledINITweaks'], tweak)
         : removeValue(state, [gameId, modId, 'enabledINITweaks'], tweak);
     },
     [actions.setFileOverride as any]: (state, payload) => {
       const { gameId, modId, files }  = payload;
+
+      if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
+
       return setSafe(state, [gameId, modId, 'fileOverrides'], files);
     },
   },
