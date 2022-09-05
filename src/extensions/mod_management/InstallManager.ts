@@ -2684,8 +2684,14 @@ class InstallManager {
 
         const requiredDownloads =
           success.reduce((prev: number, current: IDependency) => {
-            const isDownloaded = current.download !== undefined
-                              && downloads[current.download].state !== 'paused';
+            // the download could have been removed in the time
+            // between resolving dependencies and now
+            if ((current.download !== undefined)
+                && (downloads[current.download] === undefined)) {
+              current.download = undefined;
+            }
+            const isDownloaded = (current.download !== undefined)
+                              && (downloads[current.download].state !== 'paused');
             return prev + (isDownloaded ? 0 : 1);
           }, 0);
 
