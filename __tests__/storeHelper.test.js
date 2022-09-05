@@ -235,6 +235,14 @@ describe('removeValue', () => {
   });
 });
 
+describe('removeValueIf', () => {
+  it('returns empty list if input undefined', () => {
+    let input = { foobar: undefined };
+    let res = helper.removeValueIf(input, ['foobar'], () => true);
+    expect(res).toEqual({ foobar: [] });
+  });
+});
+
 describe('merge', () => {
   it('leaves the original unmodified', () => {
     let input = { someobj: { a: 1, b: 2 } };
