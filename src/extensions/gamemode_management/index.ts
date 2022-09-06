@@ -197,6 +197,17 @@ function findGamePath(game: IGame, selectedPath: string,
 
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
+  
+  if (gameById(state, gameId) === undefined) {
+    return api.showDialog('question', 'Game support not installed', {
+      text: 'Support for this game is provided through an extension. '
+          + 'Please click "Manage" to install the extension and set it up.',
+    }, [
+      { label: 'Close' },
+    ])
+      .then(() => null);
+  }
+
   const game = getGame(gameId);
 
   if (game === undefined) {
@@ -600,34 +611,32 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
+  const gameIsDiscovered = (gameIds: string[]) =>
+    context.api.getState().settings.gameMode.discovered[gameIds[0]]?.path !== undefined;
+
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
-  context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
-  context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
+  context.registerAction('game-unmanaged-buttons', 100, HideGameIcon, {});
   context.registerAction('game-managed-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-  context.registerAction('game-discovered-buttons', 105, 'open-ext', {},
+  context.registerAction('game-unmanaged-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
-                         openGameFolder);
+                         openGameFolder,
+                         gameIsDiscovered);
   context.registerAction('game-managed-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-discovered-buttons', 110, 'open-ext', {},
+  context.registerAction('game-unmanaged-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
-                         openModFolder);
+                         openModFolder,
+                         gameIsDiscovered);
   context.registerAction('game-managed-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerAction('game-discovered-buttons', 120, 'browse', {},
+  context.registerAction('game-unmanaged-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
-
-  context.registerAction('game-undiscovered-buttons', 120, 'browse', {},
-    context.api.translate('Manually Set Location'),
-    (gameIds: string[]) => { browseGameLocation(context.api, gameIds[0]); },
-    (gameIds: string[]) => gameById(context.api.getState(), gameIds[0]) !== undefined,
-    );
 
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
