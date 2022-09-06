@@ -4,10 +4,14 @@ import * as path from 'path';
 import { IPreset, IPresetsState, IPresetStep, PresetStepType } from '../types/IPreset';
 
 import * as validation from '../validationCode/validation';
+import { makeRemoteCallSync } from './electronRemote';
 
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
+
+const getAppName = makeRemoteCallSync('get-application-name', (electron) =>
+  electron.app.getName());
 
 type StepCB = (step: IPresetStep, data: any) => PromiseLike<void>;
 
@@ -90,7 +94,7 @@ class PresetManager {
     // we can't store this state in the regular application state because
     // to support command line instructions this state has to be available well before the store
     // is loaded
-    this.mStatePath = path.resolve(getVortexPath('appData'), 'vortex', 'presetState.json');
+    this.mStatePath = path.resolve(getVortexPath('appData'), getAppName(), 'presetState.json');
     log('debug', 'read preset state', { statePath: this.mStatePath });
     this.readState();
 

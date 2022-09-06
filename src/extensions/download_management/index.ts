@@ -57,6 +57,9 @@ import winapi from 'winapi-bindings';
 import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
 import { ensureLoggedIn } from '../nexus_integration/util';
+import NXMUrl from '../nexus_integration/NXMUrl';
+import { knownGames } from '../../util/selectors';
+import { convertNXMIdReverse } from '../nexus_integration/util/convertGameId';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -1076,6 +1079,39 @@ function init(context: IExtensionContextExt): boolean {
       presetManager.on('installmod', (stepIn: IPresetStep) => {
         const step = stepIn as IPresetStepInstallMod;
         log('info', 'preset starting download', { url: step.url });
+
+        const onDidInstallDependencies = (dlId: string, cb: () => void) => {
+          const callback = (gameId: string, modId: string) => {
+            const installedDLId =
+              context.api.getState().persistent.mods[gameId]?.[modId]?.archiveId;
+            if (installedDLId === dlId) {
+              context.api.events.off('did-install-dependencies', callback);
+              cb();
+            }
+          };
+          context.api.events.on('did-install-dependencies', callback);
+        }
+
+        try {
+          const urlParsed = new NXMUrl(step.url);
+          if (urlParsed.collectionSlug !== undefined) {
+            const state = context.api.getState();
+            const games = knownGames(state);
+            const gameId = convertNXMIdReverse(games, urlParsed.gameId);
+            const mods = state.persistent.mods[gameId];
+            const existing = Object.keys(mods)
+              .find(modId => mods[modId].attributes?.collectionSlug === urlParsed.collectionSlug);
+            if (existing !== undefined) {
+              return new Promise((resolve) => {
+                onDidInstallDependencies(mods[existing].archiveId, resolve);
+                context.api.events.emit('resume-collection', gameId, existing);
+              });
+            }
+          }
+        } catch (err) {
+          // ignore if this is not nxm-protocol
+        }
+
         return ensureLoggedIn(context.api)
           .then(() => toPromise(cb => context.api.events.emit(
             'start-download', [step.url], {}, undefined, cb, 'always', {
@@ -1084,9 +1120,12 @@ function init(context: IExtensionContextExt): boolean {
           .tapCatch(err => {
             log('error', 'download failed', { url: step.url, error: err.message });
           })
-          .then(dlId => {
+          .then((dlId: string) => {
             log('info', 'download finished', { dlId });
-            return toPromise(cb => context.api.events.emit('start-install-download', dlId, undefined, cb));
+            return new Promise((resolve) => {
+              onDidInstallDependencies(dlId, resolve);
+              context.api.events.emit('start-install-download', dlId);
+            });
           });
       });
     }
