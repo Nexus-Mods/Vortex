@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "20.0.0"
+    "electron": "19.0.0"
   },
   "scripts": {
     "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
@@ -162,7 +162,7 @@
     "concurrently": "^5.0.0",
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
-    "electron": "^20.0.0",
+    "electron": "^19.0.0",
     "electron-builder": "^22.13.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-rebuild": "^1.8.8",
@@ -193,10 +193,10 @@
     "terser-webpack-plugin": "^5.2.4",
     "ts-jest": "^27.1.2",
     "ts-loader": "^9.2.6",
+    "ts-v-gen": "^1.0.1",
     "tslint": "^5.20.1",
     "tslint-eslint-rules": "^5.4.0",
     "tslint-react": "^4.1.0",
-    "ts-v-gen": "^1.0.1",
     "typescript": "^4.4.3",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.57.1",
