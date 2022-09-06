@@ -17,6 +17,7 @@ import { suggestStagingPath } from '../gamemode_management/util/discovery';
 
 import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
+import { resolveInstallPath } from './util/getInstallPath';
 
 import * as winapiT from 'winapi-bindings';
 
@@ -125,7 +126,7 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
   if (instPath === undefined) {
     // no staging folder set yet
     if (state.settings.mods.installPathMode === 'suggested') {
-      instPath = await suggestStagingPath(api, gameId);
+      instPath = resolveInstallPath(await suggestStagingPath(api, gameId), gameId);
       api.store.dispatch(setInstallPath(gameId, instPath));
     } else {
       instPath = installPathForGame(state, gameId);
