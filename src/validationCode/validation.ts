@@ -1,7 +1,7 @@
-import validateeBCskdwG from "./IPreset.validate";export function validateIPreset(data): any[] {
-    var res = validateeBCskdwG(data);
-    return (res === false) ? validateeBCskdwG.prototype.constructor.errors : [];
+import validateLnwojjqti from "./IPreset.validate";export function validateIPreset(data): any[] {
+    var res = validateLnwojjqti(data);
+    return (res === false) ? validateLnwojjqti.prototype.constructor.errors : [];
 }export function validateIPresetsState(data): any[] {
-    var res = validateeBCskdwG(data);
-    return (res === false) ? validateeBCskdwG.prototype.constructor.errors : [];
+    var res = validateLnwojjqti(data);
+    return (res === false) ? validateLnwojjqti.prototype.constructor.errors : [];
 }

@@ -1076,6 +1076,7 @@ function init(context: IExtensionContextExt): boolean {
       removeDownloadsWithoutFile(store, downloads);
 
       processCommandline(context.api);
+
       presetManager.on('installmod', (stepIn: IPresetStep) => {
         const step = stepIn as IPresetStepInstallMod;
         log('info', 'preset starting download', { url: step.url });
@@ -1090,11 +1091,27 @@ function init(context: IExtensionContextExt): boolean {
             }
           };
           context.api.events.on('did-install-dependencies', callback);
-        }
+        };
+
+        const onDidInstallCollection = (dlId: string, cb: () => void) => {
+          const callback = (gameId: string, modId: string) => {
+            const installedDLId =
+              context.api.getState().persistent.mods[gameId]?.[modId]?.archiveId;
+            if (installedDLId === dlId) {
+              context.api.events.off('did-install-collection', callback);
+              cb();
+            }
+          };
+          context.api.events.on('did-install-collection', callback);
+        };
+
+        let isCollection: boolean = false;
 
         try {
           const urlParsed = new NXMUrl(step.url);
           if (urlParsed.collectionSlug !== undefined) {
+            isCollection = true;
+
             const state = context.api.getState();
             const games = knownGames(state);
             const gameId = convertNXMIdReverse(games, urlParsed.gameId);
@@ -1103,7 +1120,7 @@ function init(context: IExtensionContextExt): boolean {
               .find(modId => mods[modId].attributes?.collectionSlug === urlParsed.collectionSlug);
             if (existing !== undefined) {
               return new Promise((resolve) => {
-                onDidInstallDependencies(mods[existing].archiveId, resolve);
+                onDidInstallCollection(mods[existing].archiveId, resolve);
                 context.api.events.emit('resume-collection', gameId, existing);
               });
             }
@@ -1123,7 +1140,11 @@ function init(context: IExtensionContextExt): boolean {
           .then((dlId: string) => {
             log('info', 'download finished', { dlId });
             return new Promise((resolve) => {
-              onDidInstallDependencies(dlId, resolve);
+              if (isCollection) {
+                onDidInstallCollection(dlId, resolve);
+              } else {
+                onDidInstallDependencies(dlId, resolve);
+              }
               context.api.events.emit('start-install-download', dlId);
             });
           });

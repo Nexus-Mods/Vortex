@@ -63,7 +63,9 @@ class PresetManager {
     let presetFiles: string[] = [];
     
     try {
-      presetFiles = fs.readdirSync(basePath).filter(fileName => path.extname(fileName) === '.json');
+      presetFiles = fs.readdirSync(basePath)
+        .filter(fileName => path.extname(fileName) === '.json')
+        .sort();
     } catch (err) {
       log((err.code === 'ENOENT') ? 'debug' : 'error', 'no preset files', { basePath, error: err.message });
     }

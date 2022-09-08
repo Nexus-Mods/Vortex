@@ -53,5 +53,5 @@ export interface IPreset {
 
 export interface IPresetsState {
   presets: { [presetId: string]: IPresetState };
-  processing: string;
+  processing?: string;
 }
