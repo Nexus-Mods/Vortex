@@ -100,3 +100,7 @@ export const FULL_REVISION_INFO: IRevisionQuery = {
   ...revisionInfo,
   collection: FULL_COLLECTION_INFO,
 };
+
+export const CURRENT_REVISION_INFO: ICollectionQuery = {
+  currentRevision: FULL_REVISION_INFO,
+};

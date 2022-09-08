@@ -22,7 +22,7 @@ import { IModListItem } from '../news_dashlet/types';
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId } from './util/convertGameId';
-import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
+import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
@@ -334,6 +334,19 @@ export function onNexusDownload(api: IExtensionApi,
       })
       .catch(err => {
         api.showErrorNotification('Nexus download failed', err);
+        return Promise.resolve(undefined);
+      });
+  };
+}
+
+export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
+    : (gameId: string, count?: number, offset?: number) => Promise<ICollection[]> {
+  return (gameId: string, count?: number, offset?: number): Promise<ICollection[]> => {
+    const game = gameById(api.getState(), gameId);
+    return Promise.resolve(nexus.getMyCollections(
+      CURRENT_REVISION_INFO, nexusGameId(game), count, offset))
+      .catch(err => {
+        api.showErrorNotification('Failed to get list of collections', err);
         return Promise.resolve(undefined);
       });
   };
