@@ -342,13 +342,18 @@ export function onNexusDownload(api: IExtensionApi,
 export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
     : (gameId: string, count?: number, offset?: number) => Promise<IRevision[]> {
   return (gameId: string, count?: number, offset?: number): Promise<IRevision[]> => {
+    if (api.getState().persistent['nexus']?.userInfo?.userId === undefined) {
+      return Promise.resolve([]);
+    }
     const game = gameById(api.getState(), gameId);
     return Promise.resolve(nexus.getMyCollections(
       CURRENT_REVISION_INFO, nexusGameId(game), count, offset))
-      .then(res => res.map(coll => coll.currentRevision))
+      .then(res => (res ?? []).map(coll => coll.currentRevision))
       .catch(err => {
-        api.showErrorNotification('Failed to get list of collections', err);
-        return Promise.resolve(undefined);
+        if (err.code !== 'UNAUTHORIZED') {
+          api.showErrorNotification('Failed to get list of collections', err);
+        }
+        return Promise.resolve([]);
       });
   };
 }
