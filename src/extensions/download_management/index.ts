@@ -680,7 +680,7 @@ function checkForUnfinalized(api: IExtensionApi,
               const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
               if (downloads[id].state === 'finalizing') {
-                return finalizeDownload(api, id, filePath, false)
+                return finalizeDownload(api, id, filePath)
                   .catch(err => {
                     log('warn', 'failed to properly finalize download', {
                       fileName: downloads[id].localPath,

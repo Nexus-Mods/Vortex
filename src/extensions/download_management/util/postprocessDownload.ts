@@ -13,7 +13,7 @@ function fileMD5Async(filePath: string,
 }
 
 export function finalizeDownload(api: IExtensionApi, id: string,
-                                 filePath: string, allowInstall: boolean) {
+                                 filePath: string) {
   api.store.dispatch(finalizingDownload(id));
 
   let lastProgress: number = 0;

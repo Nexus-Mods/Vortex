@@ -382,7 +382,7 @@ export function getCollectionInfo(nexus: Nexus,
     },
   };
 
-  if (revisionNumber <= 1) {
+  if (revisionNumber <= 0) {
     revisionNumber = undefined;
   }
 
