@@ -14,6 +14,7 @@ import lazyRequire from '../../util/lazyRequire';
 import { log, LogLevel } from '../../util/log';
 import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
+import presetManager from '../../util/PresetManager';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { batchDispatch, decodeHTML, nexusModsURL, Section, toPromise, truthy } from '../../util/util';
@@ -157,6 +158,7 @@ class Disableable {
             .then((userInfo) => {
               if (truthy(userInfo)) {
                 that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+                that.mApi.events.emit('did-login', null);
               }
               return obj[prop](...args);
             });
@@ -928,6 +930,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     });
 
   checkModsWithMissingMeta(api);
+
+  presetManager.on('login_nexus', () => ensureLoggedIn(api));
 
   callbacks.forEach(cb => cb(nexus));
 }

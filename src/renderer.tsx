@@ -435,6 +435,7 @@ function init() {
   replayActionRenderer(store);
   extensions.setStore(store);
   setOutdated(extensions.getApi());
+  presetManager.setApi(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log('debug', 'renderer connected to store');
 

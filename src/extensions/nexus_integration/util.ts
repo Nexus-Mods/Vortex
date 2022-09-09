@@ -12,7 +12,7 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute, setUserAPIKey } from '../../actions';
+import { addNotification, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setUserAPIKey } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
 import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -70,6 +70,7 @@ export function onCancelLoginImpl(api: IExtensionApi) {
     }
   }
   api.store.dispatch(setLoginId(undefined));
+  api.events.emit('did-login', new UserCanceled());
 }
 
 export function bringToFront() {
@@ -217,20 +218,16 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   if (sel.apiKey(api.store.getState()) === undefined) {
-    log('info', 'user not logged in, triggering log in dialog');
-    return api.showDialog('info', 'Not logged in', {
-      text: 'Nexus Mods requires Vortex to be logged in for downloading',
-    }, [
-      { label: 'Cancel' },
-      { label: 'Log in' },
-    ])
-      .then(result => {
-        if (result.action === 'Log in') {
-          return toPromise(cb => requestLogin(api, cb));
+    return new Promise((resolve, reject) => {
+      api.events.on('did-login', (err: Error) => {
+        if (err !== null) {
+          reject(err);
         } else {
-          return Promise.reject(new UserCanceled());
+          resolve();
         }
       });
+      api.store.dispatch(setDialogVisible('login-dialog'));
+    });
   } else {
     return Promise.resolve();
   }
@@ -1162,6 +1159,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     .then(userInfo => {
       if (userInfo !== null) {
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+        api.events.emit('did-login', null);
       }
       return github.fetchConfig('api')
         .then(configObj => {
@@ -1190,7 +1188,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     })
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve(true))
-    .catch(TimeoutError, () => {
+    .catch(TimeoutError, err => {
       api.sendNotification({
         type: 'error',
         message: 'API Key validation timed out',
@@ -1199,6 +1197,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
       return false;
     })
     .catch(NexusError, err => {
@@ -1215,6 +1214,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
       return false;
     })
     .catch(ProcessCanceled, err => {
@@ -1232,6 +1232,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
       return false;
     })
     .catch(err => {
@@ -1249,6 +1250,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
           }],
         });
       api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
       return false;
     });
 }

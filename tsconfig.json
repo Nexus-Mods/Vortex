@@ -4,6 +4,7 @@
         "target": "esnext",
         "module": "commonjs",
         "moduleResolution": "node",
+        "allowJs": true,
         "noImplicitAny": false,
         "removeComments": true,
         "preserveConstEnums": true,

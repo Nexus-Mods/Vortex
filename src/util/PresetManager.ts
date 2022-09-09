@@ -1,9 +1,11 @@
 import { ipcMain, ipcRenderer } from 'electron';
 import * as path from 'path';
+import { IExtensionApi } from '../types/IExtensionContext';
 
 import { IPreset, IPresetsState, IPresetStep, PresetStepType } from '../types/IPreset';
 
 import * as validation from '../validationCode/validation';
+import { getApplication } from './application';
 import { makeRemoteCallSync } from './electronRemote';
 
 import * as fs from './fs';
@@ -47,10 +49,15 @@ class PresetManager {
   private mStatePath: string;
 
   private mError: Error;
+  private mApi: IExtensionApi;
 
   constructor() {
     this.readPresets();
     this.setupState();
+  }
+
+  public setApi(api: IExtensionApi) {
+    this.mApi = api;
   }
 
   public readPresets() {
@@ -104,7 +111,7 @@ class PresetManager {
       this.mState.presets = {};
     }
 
-    Object.keys(this.mPresets).forEach(presetId => {
+    this.presetIds().forEach(presetId => {
       if (this.mState.presets[presetId] === undefined) {
         this.mState.presets[presetId] = { completed: [], data: {} };
       }
@@ -182,6 +189,31 @@ class PresetManager {
       log('info', 'done processing preset step', { step, forwarded });
     } catch (err) {
       log('error', 'preset step failed', { step: JSON.stringify(step), error: err.message, process: process.type });
+      this.mApi?.sendNotification?.({
+        type: 'warning',
+        message: 'Automatic setup interrupted',
+        noDismiss: true,
+        actions: [{
+          title: 'More',
+          action: () => {
+            this.mApi.showDialog('info', 'Automatic setup interrupted', {
+              text: 'Your copy of Vortex is set up to run a sequence of setup steps on startup. '
+                + 'Since one step failed, that sequence was interrupted. '
+                + 'If you have resolved the issue you can retry the failed step.',
+            }, [
+              { label: 'Close' },
+              { label: 'Retry' },
+            ])
+              .then(result => {
+                if (result.action === 'Retry') {
+                  this.processNext();
+                } else {
+                  return Promise.resolve();
+                }
+              });
+          },
+        }]
+      });
       return true;
     }
     try {
@@ -211,9 +243,14 @@ class PresetManager {
     return incompleteStep?.id;
   }
 
+  private presetIds(): string[] {
+    return Object.keys(this.mPresets).sort();
+  }
+
   private nextIncompletePreset(): string {
+    log('info', 'next incomplete preset', this.mState.processing ?? 'not yet set');
     // find a preset with incomplete steps
-    return Object.keys(this.mPresets)
+    return this.presetIds()
       .find(presetId =>
         this.mPresets[presetId].steps.find(step =>
           !this.mState.presets[presetId].completed.includes(step.id)) !== undefined);
@@ -226,6 +263,7 @@ class PresetManager {
   private nextStep(): { presetId: string, stepId: string } {
     let { processing } = this.mState;
     let nextStepId = this.nextStepInPreset(processing);
+    log('info', 'next step', { processing, nextStepId });
 
     if (nextStepId === undefined) {
       processing = this.mState.processing = this.nextIncompletePreset();

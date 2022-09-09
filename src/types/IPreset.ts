@@ -1,4 +1,4 @@
-const StepTypeList = ['commandline', 'hydrate', 'setgame', 'installmod', 'restart'] as const;
+const StepTypeList = ['commandline', 'hydrate', 'setgame', 'installmod', 'restart', 'login_nexus'] as const;
 
 export type PresetStepType = typeof StepTypeList[number];
 
@@ -10,6 +10,10 @@ export interface IPresetStepBase {
 export interface ICommandLineArg {
   key: string;
   value?: any;
+}
+
+export interface IPresetStepLoginNexus extends IPresetStepBase {
+  type: 'login_nexus';
 }
 
 export interface IPresetStepCommandLine extends IPresetStepBase {
@@ -40,7 +44,8 @@ export type IPresetStep = IPresetStepCommandLine
                         | IPresetStepInstallMod
                         | IPresetStepHydrateState
                         | IPresetStepSetGame
-                        | IPresetStepRestart;
+                        | IPresetStepRestart
+                        | IPresetStepLoginNexus;
 
 export interface IPresetState {
   completed: string[];
