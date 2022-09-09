@@ -69,6 +69,15 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   return Promise.resolve(undefined);
 }
 
+const onDeploymentEvent = (api: IExtensionApi): Promise<void> => {
+  const state = api.store.getState();
+  const gameMode = activeGameId(state);
+  if (gameMode !== undefined) {
+    return api.emitAndAwait('discover-tools', gameMode);
+  }
+  return Promise.resolve();
+}
+
 const toolsValidation = memoize(validateTools);
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
@@ -85,6 +94,13 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTest('primary-tool', 'gamemode-activated',
     () => testPrimaryTool(context.api));
+
+  context.once(() => {
+    // Purging and deploying may change the tool state. We need to kick off
+    //  a discovery event.
+    context.api.onAsync('did-deploy', () => onDeploymentEvent(context.api));
+    context.api.onAsync('did-purge', () => onDeploymentEvent(context.api));
+  });
   return true;
 }
 
