@@ -2511,10 +2511,8 @@ class InstallManager {
     const downloads = state.persistent.downloads.files;
 
     const requiredInstalls = success.filter(dep => dep.mod === undefined);
-    const requiredDownloads = requiredInstalls.filter(dep => {
-      return (dep.download === undefined)
-        || (downloads[dep.download].state === 'paused');
-    });
+    const requiredDownloads = requiredInstalls.filter(dep =>
+      (dep.download === undefined) || [undefined, 'paused'].includes(downloads[dep.download]?.state));
 
     let bbcode = '';
 
