@@ -336,7 +336,7 @@ export function getIniFilePath(gameMode: string): string {
 }
 
 export function getStopPatterns(gameMode: string, game: IGame): string[] {
-  if ((game.details !== undefined) && (game.details.stopPatterns !== undefined)) {
+  if ((game?.details?.stopPatterns !== undefined)) {
     return game.details.stopPatterns;
   }
   if ((gameSupport[gameMode] === undefined)
