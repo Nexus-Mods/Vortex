@@ -156,7 +156,16 @@ class Disableable {
         const now = Date.now();
         if (now > that.mLastValidation + REVALIDATION_FREQUENCY) {
           that.mLastValidation = now;
-          return obj.revalidate()
+          // the purpose of this is to renew our user info, in case the user
+          // has bought premium since the last validation but technically
+          // it's possible we never logged in successfully in the first place
+          // because the internet was offline at startup.
+          // In that case we can use this opportunity to try to log in now
+          const prom = truthy(obj.getValidationResult())
+            ? obj.revalidate()
+            : obj.setKey(sel.apiKey(this.mApi.getState()));
+
+          return prom
             .then((userInfo) => {
               if (truthy(userInfo)) {
                 that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
