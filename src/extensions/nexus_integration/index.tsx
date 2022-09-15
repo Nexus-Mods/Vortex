@@ -67,7 +67,7 @@ import transformUserInfo from './util/transformUserInfo';
 
 import * as RemoteT from '@electron/remote';
 import NexusT, { IDateTime, IDownloadURL, IFileInfo, IModFile, IModFileQuery,
-  IModInfo, IRevision, IRevisionQuery, NexusError, RateLimitError, TimeoutError,
+  IModInfo, IRevision, IRevisionQuery, IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
@@ -161,9 +161,12 @@ class Disableable {
           // it's possible we never logged in successfully in the first place
           // because the internet was offline at startup.
           // In that case we can use this opportunity to try to log in now
-          const prom = truthy(obj.getValidationResult())
-            ? obj.revalidate()
-            : obj.setKey(sel.apiKey(this.mApi.getState()));
+          const key = sel.apiKey(that.mApi.getState());
+          const prom: Promise<IValidateKeyResponse> = (key === undefined)
+            ? Promise.resolve(undefined as IValidateKeyResponse)
+            : Promise.resolve(truthy(obj.getValidationResult())
+              ? obj.revalidate()
+              : obj.setKey(key));
 
           return prom
             .then((userInfo) => {
