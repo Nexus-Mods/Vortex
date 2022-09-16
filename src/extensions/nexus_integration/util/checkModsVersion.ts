@@ -171,7 +171,7 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
                                     file: IFileInfo) {
   update(dispatch, gameId, mod, 'newestVersion', file.version);
 
-  if ((file.category_name === 'OLD_VERSION') || !truthy(file.category_name)) {
+  if (['OLD_VERSION', 'ARCHIVED'].includes(file.category_name) || !truthy(file.category_name)) {
     // file was removed from mod or is old, either way there should be a new version available
     // but we have no way of determining which it is.
     update(dispatch, gameId, mod, 'newestFileId', 'unknown');
