@@ -6,7 +6,6 @@
     "bundledPlugins",
     "lib/modinstaller",
     "node_modules/7z-bin",
-    "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
@@ -22,13 +21,6 @@
     "target": "nsis",
     "forceCodeSigning": false,
     "publisherName": "Black Tree Gaming Limited",
-    "extraFiles": [
-      {
-        "from": "assets/vcruntime",
-        "to": ".",
-        "filter": "*.dll"
-      }
-    ]
   },
   "nsis": {
     "perMachine": true,
