@@ -254,7 +254,7 @@ class InstallContext implements IInstallContext {
 
   private outcomeNotification(outcome: InstallOutcome, id: string,
                               isEnabled: boolean, modName: string,
-                              mod: IMod): INotification {
+                              mod?: IMod): INotification {
     const type = mod !== undefined ? getModType(mod.type) : undefined;
     const typeName = (type !== undefined)
                   && (type.options !== undefined)
@@ -265,7 +265,7 @@ class InstallContext implements IInstallContext {
       case 'success':
         // TODO: bit of a hack, I'd prefer if we controlled this from the collections
         //   extension
-        if ((mod.type === 'collection') || this.mSilent) {
+        if ((mod?.type === 'collection') || this.mSilent) {
           return null;
         }
         return {

@@ -64,8 +64,8 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   // installed file is in the OLD_VERSION group or not available at all
   const hasUpdate = (newestFileId === 'unknown')
     // we know the newest file id and the current file id and they are not the same
-    || ((newestFileId !== undefined)
-        && (fileId !== undefined)
+    || (truthy(newestFileId)
+        && truthy(fileId)
         && (newestFileId.toString() !== fileId.toString()))
     // we know the newest version and the current version and the are not the same
     || hasNewerVersion;
