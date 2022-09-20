@@ -2260,9 +2260,9 @@
   integrity sha512-YofkM6fGv4gDJq78g4j0mMuGMkZVxZDgtU0JRdx6FgiJDG+0fY0GKVolOV8WqVmEhLCXkQRjwDdKyPxJp/uucg==
 
 "@types/node@^16.11.26":
-  version "16.11.58"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.58.tgz#0a3698dee3492617a8d5fe7998d18d7520b63026"
-  integrity sha512-uMVxJ111wpHzkx/vshZFb6Qni3BOMnlWLq7q9jrwej7Yw/KvjsEbpxCCxw+hLKxexFMc8YmpG8J9tnEe/rKsIg==
+  version "16.11.59"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.59.tgz#823f238b9063ccc3b3b7f13186f143a57926c4f6"
+  integrity sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==
 
 "@types/node@^16.5.0":
   version "16.11.19"
@@ -5473,9 +5473,9 @@ electron-updater@^4.2.0:
     semver "^7.3.5"
 
 electron@^19.0.0:
-  version "19.0.16"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-19.0.16.tgz#9773478e2607e458e3a353beccdfaa5aee65a9c6"
-  integrity sha512-iL6Bnh+kmlZHam1s77dZZ31J0vbtkkUoR3Y/GXBfqbTinXupBtYmx0+SnvjGnpVzRYoZoSbJs6Qfrfn13BQoMw==
+  version "19.0.17"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-19.0.17.tgz#850d806e88b1ef141b88b491dc41661778691c27"
+  integrity sha512-3Offu61K+d19EZIc76MhKRsSCqfe3jDiqtD0p8jXr6p/TW7+7/jOQp407ZaZu0nQN6/xDIEi2sP4XQBom6GjTQ==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"
@@ -6535,10 +6535,19 @@ get-intrinsic@^1.0.2:
     has "^1.0.3"
     has-symbols "^1.0.1"
 
-get-intrinsic@^1.1.0, get-intrinsic@^1.1.1:
+get-intrinsic@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/get-intrinsic/-/get-intrinsic-1.1.2.tgz#336975123e05ad0b7ba41f152ee4aadbea6cf598"
   integrity sha512-Jfm3OyCxHh9DJyc28qGk+JmfkpO41A4XkneDSujN9MDXrm4oDKdHvndhZ2dN94+ERNfkYJWDclW6k2L/ZGHjXA==
+  dependencies:
+    function-bind "^1.1.1"
+    has "^1.0.3"
+    has-symbols "^1.0.3"
+
+get-intrinsic@^1.1.1:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/get-intrinsic/-/get-intrinsic-1.1.3.tgz#063c84329ad93e83893c7f4f243ef63ffa351385"
+  integrity sha512-QJVz1Tj7MS099PevUG5jvnt9tSkXN8K14dxQlikJuPt4uD9hHAHjLyLBiLR5zELelBdD9QNRAXZzsJx0WaDL9A==
   dependencies:
     function-bind "^1.1.1"
     has "^1.0.3"
