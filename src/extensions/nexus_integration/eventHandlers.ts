@@ -442,6 +442,10 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
     api.showErrorNotification('Rating collection failed, please try again later', err, {
       allowReport: false,
     });
+  } else if (err.message.startsWith('getaddrinfo ENOTFOUND')) {
+    api.showErrorNotification('Rating collection failed, please try again later', err, {
+      allowReport: false,
+    });
   } else {
     const detail = processErrorMessage(err as NexusError);
     detail.Revision = revisionId;

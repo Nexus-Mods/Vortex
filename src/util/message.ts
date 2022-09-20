@@ -492,9 +492,15 @@ export function prettifyNodeErrorMessage(err: any,
       message: 'Network connection closed unexpectedly.',
       allowReport: false,
     };
-  } else if (['ETIMEDOUT', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
+  } else if (['ETIMEDOUT', 'ESOCKETTIMEDOUT'].includes(err.code)) {
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
+      replace: { address: err.address },
+      allowReport: false,
+    };
+  } else if (err.message.startsWith('connect ETIMEDOUT')) {
+    return {
+      message: 'Network connection timed out, please try again.',
       replace: { address: err.address },
       allowReport: false,
     };
