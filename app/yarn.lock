@@ -1164,12 +1164,14 @@ detect-libc@^2.0.0:
   resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.0.1.tgz#e1897aa88fa6ad197862937fbc0441ef352ee0cd"
   integrity sha512-463v3ZeIrcWtdgIg6vI6XUncguvr2TnGl4SzDXinkt9mSLpBJKXT3mW6xT3VQdDN11+WVs29pgvivTc4Lp8v+w==
 
-diskusage@blagoev/node-diskusage:
-  version "2.0.0"
-  resolved "https://codeload.github.com/blagoev/node-diskusage/tar.gz/635d4236ee41a14ca4ff8adf9f4b89aee109eb02"
+diskusage@TanninOne/node-diskusage:
+  version "2.0.1"
+  resolved "https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d"
   dependencies:
     es6-promise "^4.2.5"
     node-addon-api "^2.0.0"
+    node-gyp "^9.0.0"
+    prebuild-install "^7.1.0"
 
 dnd-core@^10.0.2:
   version "10.0.2"

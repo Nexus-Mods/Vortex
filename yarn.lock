@@ -5155,12 +5155,14 @@ discontinuous-range@1.0.0:
   resolved "https://registry.yarnpkg.com/discontinuous-range/-/discontinuous-range-1.0.0.tgz#e38331f0844bba49b9a9cb71c771585aab1bc65a"
   integrity sha1-44Mx8IRLukm5qctxx3FYWqsbxlo=
 
-diskusage@blagoev/node-diskusage:
-  version "2.0.0"
-  resolved "https://codeload.github.com/blagoev/node-diskusage/tar.gz/635d4236ee41a14ca4ff8adf9f4b89aee109eb02"
+diskusage@TanninOne/node-diskusage:
+  version "2.0.1"
+  resolved "https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d"
   dependencies:
     es6-promise "^4.2.5"
     node-addon-api "^2.0.0"
+    node-gyp "^9.0.0"
+    prebuild-install "^7.1.0"
 
 dmg-builder@22.14.5:
   version "22.14.5"
@@ -11624,6 +11626,8 @@ ssri@^9.0.0:
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/ssri/-/ssri-9.0.1.tgz#544d4c357a8d7b71a19700074b6883fcb4eae057"
   integrity sha512-o57Wcn66jMQvfHG1FlYbWeZWW/dHZhJXjpIcTfXldXEk5nz5lStPo3mK0OJQfGR3RbZUlbISexbljkJzuEj/8Q==
+  dependencies:
+    minipass "^3.1.1"
 
 stack-trace@0.0.x:
   version "0.0.10"
