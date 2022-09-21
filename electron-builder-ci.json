@@ -1,4 +1,5 @@
 {
+  "$schema": "node_modules/electron-builder/node_modules/app-builder-lib/scheme.json",
   "asar": true,
   "asarUnpack": [
     "7z.exe",
@@ -6,7 +7,6 @@
     "bundledPlugins",
     "lib/modinstaller",
     "node_modules/7z-bin",
-    "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
@@ -21,14 +21,7 @@
   "win": {
     "target": "nsis",
     "forceCodeSigning": false,
-    "publisherName": "Black Tree Gaming Limited",
-    "extraFiles": [
-      {
-        "from": "assets/vcruntime",
-        "to": ".",
-        "filter": "*.dll"
-      }
-    ]
+    "publisherName": "Black Tree Gaming Limited"
   },
   "nsis": {
     "perMachine": true,
@@ -38,14 +31,31 @@
     "include": "build/installer_ci.nsh"
   },
   "linux": {
-    "target": "tar.bz2",
+    "target": [
+      "tar.bz2",
+      "AppImage",
+      "deb",
+      "freebsd",
+      "pacman",
+      "rpm",
+      "snap"
+    ],
     "icon": "assets/images/vortex.png",
-    "files": [
-      {
-        "from": "node_modules/fomod-installer/dist",
-        "to": "node_modules/fomod-installer/dist"
-      } 
-    ]
+    "category": "Network;Development;Game;",
+    "synopsis": "Mod Manager",
+    "description": "The elegant, powerful, and open-source mod manager from Nexus Mods.",
+    "maintainer": "Black Tree Gaming Ltd. <support@nexusmods.com> (https://www.nexusmods.com/)",
+    "mimeTypes": ["x-scheme-handler/nxm"]
+  },
+  "flatpak": {},
+  "freebsd": {
+    "compression": "bzip2"
+  },
+  "rpm": {
+    "compression": "bzip2"
+  },
+  "snap": {
+    "confinement": "devmode"
   },
   "extraResources": [
     "locales"
@@ -72,7 +82,10 @@
     "!**/binding.gyp",
     "!**/binding.map",
     "!**/build/src/Release/obj${/*}",
-    "!**/node_modules/7z-bin/linux",
+    "!**/node_modules/7z-bin/**/*",
+    "**/node_modules/7z-bin/*",
+    "**/node_modules/7z-bin/${os}/*",
+    "**/node_modules/7z-bin/bin/*",
     "!**/node_modules/edge/lib/native${/*}",
     "!**/node_modules/edge/src${/*}",
     "!**/node_modules/leveldown/deps${/*}",
@@ -85,10 +98,8 @@
     "!**/node_modules/recharts/node_modules/d3-scale/img",
     "!**/node_modules/recharts/node_modules/d3-shape/img",
     "!**/node_modules/d3-geo/img",
-    "!**/node_modules/*/prebuilds/linux-*",
-    "!**/node_modules/*/prebuilds/darwin-*",
-    "!**/node_modules/*/prebuilds/android-*",
-    "!**/node_modules/*/prebuilds/*-ia32",
+    "!**/node_modules/*/prebuilds/**/*",
+    "**/node_modules/*/prebuilds/${platform}-${arch}/*",
     "!**/node_modules/fomod-installer/Build",
     "!**/node_modules/fomod-installer/lib",
     "!**/node_modules/fomod-installer/InstallScripting",

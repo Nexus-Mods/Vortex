@@ -1,4 +1,5 @@
 {
+  "$schema": "node_modules/electron-builder/node_modules/app-builder-lib/scheme.json",
   "directories": {
     "output": "dist_web"
   },

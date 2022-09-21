@@ -190,10 +190,9 @@ function purgeOldMethod(api: IExtensionApi,
     }));
 }
 
-export async function updateDeploymentMethod(api: IExtensionApi) {
+export async function updateDeploymentMethod(api: IExtensionApi, profile: IProfile) {
   const store = api.store;
   const state: IState = store.getState();
-  const profile: IProfile = activeProfile(state);
   const gameId = profile.gameId;
 
   const selected: IDeploymentMethod = getSelectedActivator(state, gameId);
@@ -427,7 +426,8 @@ export function onPathsChanged(api: IExtensionApi,
                                current: { [gameId: string]: string }) {
   const { store } = api;
   const state = store.getState();
-  const gameMode = activeGameId(state);
+  const profile = activeProfile(state);
+  const gameMode = profile.gameId;
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
     refreshMods(api, gameMode, installPath(state), knownMods || {}, (mod: IMod) =>
@@ -439,7 +439,7 @@ export function onPathsChanged(api: IExtensionApi,
           }
         });
       })
-      .then(() => updateDeploymentMethod(api))
+      .then(() => updateDeploymentMethod(api, profile))
       .catch((err: Error) => {
         showError(store.dispatch, 'Failed to refresh mods', err, {
           allowReport: !(err instanceof UserCanceled),

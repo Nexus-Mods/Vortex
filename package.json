@@ -218,7 +218,7 @@
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "d3": "^5.14.1",
     "date-fns": "^2.8.0",
-    "diskusage": "blagoev/node-diskusage",
+    "diskusage": "TanninOne/node-diskusage",
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",

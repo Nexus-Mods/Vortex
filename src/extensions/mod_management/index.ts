@@ -1176,6 +1176,9 @@ function once(api: IExtensionApi) {
     const state: IState = api.store.getState();
     const profile = profileById(state, profileId);
     const mod = state.persistent.mods[profile.gameId]?.[modId];
+    if (mod === undefined) {
+      return;
+    }
     const modType = getModType(mod.type);
     if (modType?.options?.customDependencyManagement === true) {
       return;
@@ -1183,7 +1186,11 @@ function once(api: IExtensionApi) {
 
     installManager.installDependencies(api, profile, profile.gameId, modId, false)
       .then(() => installManager.installRecommendations(api, profile, profile.gameId, modId))
-      .catch(err => api.showErrorNotification('Failed to install dependencies', err));
+      .catch(err => {
+        if (!(err instanceof ProcessCanceled)) {
+          api.showErrorNotification('Failed to install dependencies', err);
+        }
+      });
   });
 
   api.onStateChange(

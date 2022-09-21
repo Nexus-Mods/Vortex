@@ -1,49 +1,62 @@
-# Usage
+# Vortex
+
+#### Building from source code
 
 To build from source you have two choices.
+### 1) Automatic (mostly):
+- Download _bootstrap.ps1_ and run as a powershell script
+  - In the dialog that shows up, select a build directory (should be a clean/new one)
+  - This script will try to download and install all dependencies, then check out and build vortex
+  - The dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
 
-Automatic (mostly):
-- download _bootstrap.ps1_ and run as a powershell script
-  - in the dialog that shows up, select a build directory (should be a clean/new one)
-  - this script will try to download and install all dependencies, then check out and build vortex
-  - the dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+### 2) Manual:
+- Before you can build vortex you need to download and install a couple of dependencies. If any of the download links is no longer valid, try google or a search engine of your choice.
 
-Manual:
-- Before you can build vortex you need to download and install a couple of dependencies.
-  If any of the download links is no longer valid, try google or a search engine of your choice.
-  - node.js
-    * download installer from https://nodejs.org and run
-    * version doesn't matter much, latest lts should be fine
-  - yarn
-    * install through npm _"npm install --global yarn"_
-  - git
-    * download installer (64-bit) from https://git-scm.com and run
-    * default settings are fine
-  - python
-    * required for one of the build tools (node-gyp). At the time of writing versions 3.7-3.10 are known to work
-    * download installer (64-bit) from https://www.python.org/downloads/ and run
-    * make sure to have it added to PATH, otherwise defaults are fine. You can disable samples and documentation if you want
-  - visual c++ build tools 2022 or visual studio 2022 (community edition)
-    * https://visualstudio.microsoft.com/de/downloads/ (You may have to google around for this as Microsoft tends to change their site layout all the bloody time)
-    * In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers, everything else is optional
-  - Call _"yarn config set msvs_version 2022 --global"_
-    * This sets up yarn to use the c++ build tools we just installed, you probably only need to do this
-      if you've also installed other versions of Visual Studio. Can't hurt though
-- Check out the repository
-  * create and _cd_ to an appropriate directory (i.e. c:\projects)
-  * _git clone https://github.com/Nexus-Mods/Vortex.git vortex_
-    * this creates a new directory _vortex_ below the current working directory
-  * _cd vortex_
-- Switch to the appropriate branch if necessary
-  * _git checkout somebranch_
+##### Node.js
+- Download installer from [nodejs.org](https://nodejs.org) and run the installer
+- Version should not matter, the latest LTS version should be fine
+- Verify that Node has installed successfully by running `node --version` in your _cmd_ or _terminal_
+
+##### Yarn
+- Run `npm install --global yarn`
+- Verify that Yarn has installed successfully by running `yarn --version` in your _cmd_ or _terminal_
+
+##### Git
+- Download installer (64-bit) from [git-scm.com](https://git-scm.com/downloads) and run installer
+- Verify that Git has installed successfully byb running `git --version` in your _cmd_ or _terminal_
+
+##### Python
+- Required for one of the build tools (_node-gyp_). At the time of writing versions _3.7-3.10_ are known to work
+- Download installer (64-bit) from [python.org](https://www.python.org/downloads/) and run installer
+- Make sure to have it added to `PATH`, otherwise defaults are fine.
+  - If you have trouble refer to [How to add Python to PATH variable in Windows](https://www.educative.io/answers/how-to-add-python-to-path-variable-in-windows)
+  - You can disable samples and documentation if you want
+
+##### Visual c++ build tools 2022 or Visual Studio 2022 (Community Edition)
+- Download installer from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/en/downloads/) 
+  - You may have to google around for this as Microsoft tends to change their sitemap all the bloody time
+- In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers. Everything else is optional.
+
+##### Set up yarn to use C++ build tools
+- Run `yarn config set msvs_version 2022 --global`
+  - This sets up yarn to use the c++ build tools we just installed, you probably only need to do this if you've also installed other versions of Visual Studio. Can't hurt though
+
+#### Cloning and building the Vortex source code
+- Create and `cd` to an appropriate directory (i.e. _c:\projects_)
+- `git clone https://github.com/Nexus-Mods/Vortex.git` from the created directory
+  - this should create a new directory _vortex_ in the current working directory (i.e. _c:\projects\vortex_)
+- Go into the vortex directory `cd vortex`
+- Switch to an appropriate branch, if necessary
+  - `git checkout some_branch`
 - For development
-  * _"yarn install"_ followed by _"yarn run build"_ to build
-  * _"yarn run start"_ to run
+  - `yarn install` to install dependencies
+  - `yarn build` to build
+  - `yarn start` to run
 - For production
-  * The scripts  (electron-builder-oneclick.json and electron-builder-advanced.json) are set up to require code signing with
+  - The scripts (_electron-builder-oneclick.json_ and _electron-builder-advanced.json_) are set up to require code signing with
     a certificate you don't have so change that
-  * _"yarn dist"_ to build (this will take a while)
-  * Find the installer and an alread unpacked version in dist
+  - `yarn dist` to build (this will take a while)
+  - Find the installer and an already unpacked version in dist
 
 ### If something goes wrong:
 
@@ -52,12 +65,12 @@ In that case you will have to see if the error is something that needs to be fix
 
 The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
 
+------
 # Further Information
 
 - see [structure.md](structure.md) for an overview of how the project is organized
 - see [https://nexus-mods.github.io/vortex-api](https://nexus-mods.github.io/vortex-api/) for a description of the extension api
 - see [https://wiki.nexusmods.com/index.php/Vortex](https://wiki.nexusmods.com/index.php/Vortex) for usage information
-- run "yarn run doc" the create an html page from code documentation
 
 # Reporting bugs
 

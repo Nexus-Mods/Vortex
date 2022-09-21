@@ -1,4 +1,5 @@
 {
+  "$schema": "node_modules/electron-builder/node_modules/app-builder-lib/scheme.json",
   "asar": true,
   "asarUnpack": [
     "7z.exe",
@@ -37,14 +38,31 @@
     "uninstallDisplayName": "${productName}"
   },
   "linux": {
-    "target": "tar.bz2",
+    "target": [
+      "tar.bz2",
+      "AppImage",
+      "deb",
+      "freebsd",
+      "pacman",
+      "rpm",
+      "snap"
+    ],
     "icon": "assets/images/vortex.png",
-    "files": [
-      {
-        "from": "node_modules/fomod-installer/dist",
-        "to": "node_modules/fomod-installer/dist"
-      } 
-    ]
+    "category": "Network;Development;Game;",
+    "synopsis": "Mod Manager",
+    "description": "The elegant, powerful, and open-source mod manager from Nexus Mods.",
+    "maintainer": "Black Tree Gaming Ltd. <support@nexusmods.com> (https://www.nexusmods.com/)",
+    "mimeTypes": ["x-scheme-handler/nxm"]
+  },
+  "flatpak": {},
+  "freebsd": {
+    "compression": "bzip2"
+  },
+  "rpm": {
+    "compression": "bzip2"
+  },
+  "snap": {
+    "confinement": "devmode"
   },
   "extraResources": [
     "locales"
@@ -81,9 +99,8 @@
     "!**/node_modules/recharts/node_modules/d3-scale/img",
     "!**/node_modules/recharts/node_modules/d3-shape/img",
     "!**/node_modules/d3-geo/img",
-    "!**/node_modules/electron-edge-js/lib/native/win32/ia32",
-    "!**/node_modules/electron-edge-js/lib/native/win32/x64/{6.5.0, 7.4.0, 7.9.0, 8.2.1, 8.9.3, 10.2.0}",
-    "!**/node_modules/electron-edge-js/lib/native/win32/x64/*/*.dll",
+    "!**/node_modules/*/prebuilds/**/*",
+    "**/node_modules/*/prebuilds/${platform}-${arch}/*",
     "!**/node_modules/fomod-installer/Build",
     "!**/node_modules/fomod-installer/lib",
     "!**/node_modules/fomod-installer/InstallScripting",

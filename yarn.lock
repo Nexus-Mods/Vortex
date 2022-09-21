@@ -2265,9 +2265,9 @@
   integrity sha512-YofkM6fGv4gDJq78g4j0mMuGMkZVxZDgtU0JRdx6FgiJDG+0fY0GKVolOV8WqVmEhLCXkQRjwDdKyPxJp/uucg==
 
 "@types/node@^16.11.26":
-  version "16.11.49"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.49.tgz#560b1ea774b61e19a89c3fc72d2dcaa3863f38b2"
-  integrity sha512-Abq9fBviLV93OiXMu+f6r0elxCzRwc0RC5f99cU892uBITL44pTvgvEqlRlPRi8EGcO1z7Cp8A4d0s/p3J/+Nw==
+  version "16.11.59"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.59.tgz#823f238b9063ccc3b3b7f13186f143a57926c4f6"
+  integrity sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==
 
 "@types/node@^16.3.2":
   version "16.11.56"
@@ -4982,13 +4982,6 @@ decompress-response@^3.3.0:
   dependencies:
     mimic-response "^1.0.0"
 
-decompress-response@^4.2.0:
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/decompress-response/-/decompress-response-4.2.1.tgz#414023cc7a302da25ce2ec82d0d5238ccafd8986"
-  integrity sha512-jOSne2qbyE+/r8G1VU+G/82LBs2Fs4LAsTiLSHOCOMZQl2OKZ6i8i4IyHemTe+/yIXOtTcRQMzPcgyhoFlqPkw==
-  dependencies:
-    mimic-response "^2.0.0"
-
 decompress-response@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/decompress-response/-/decompress-response-6.0.0.tgz#ca387612ddb7e104bd16d85aab00d5ecf09c66fc"
@@ -5175,12 +5168,14 @@ discontinuous-range@1.0.0:
   resolved "https://registry.yarnpkg.com/discontinuous-range/-/discontinuous-range-1.0.0.tgz#e38331f0844bba49b9a9cb71c771585aab1bc65a"
   integrity sha1-44Mx8IRLukm5qctxx3FYWqsbxlo=
 
-diskusage@blagoev/node-diskusage:
-  version "2.0.0"
-  resolved "https://codeload.github.com/blagoev/node-diskusage/tar.gz/635d4236ee41a14ca4ff8adf9f4b89aee109eb02"
+diskusage@TanninOne/node-diskusage:
+  version "2.0.1"
+  resolved "https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d"
   dependencies:
     es6-promise "^4.2.5"
     node-addon-api "^2.0.0"
+    node-gyp "^9.0.0"
+    prebuild-install "^7.1.0"
 
 dmg-builder@22.14.5:
   version "22.14.5"
@@ -5339,13 +5334,13 @@ draggabilly@^2.2.0:
     unidragger "^2.3.0"
 
 drivelist@TanninOne/drivelist:
-  version "10.0.0"
-  resolved "https://codeload.github.com/TanninOne/drivelist/tar.gz/62a9f489a9a359caa90cc7f66d39df1aa7620234"
+  version "10.0.2"
+  resolved "https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd"
   dependencies:
     bindings "^1.3.0"
     debug "^3.1.0"
     node-addon-api "^4.0.0"
-    prebuild-install "^5.2.4"
+    prebuild-install "7.1.0"
 
 duplexer3@^0.1.4:
   version "0.1.5"
@@ -5498,9 +5493,9 @@ electron-updater@^4.2.0:
     semver "^7.3.5"
 
 electron@^19.0.0:
-  version "19.0.12"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-19.0.12.tgz#73d11cc2a3e4dbcd61fdc1c39561e7a7911046e9"
-  integrity sha512-GOvG0t2NCeJYIfmC3g/dnEAQ71k3nQDbRVqQhpi2YbsYMury0asGJwqnVAv2uZQEwCwSx4XOwOQARTFEG/msWw==
+  version "19.0.17"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-19.0.17.tgz#850d806e88b1ef141b88b491dc41661778691c27"
+  integrity sha512-3Offu61K+d19EZIc76MhKRsSCqfe3jDiqtD0p8jXr6p/TW7+7/jOQp407ZaZu0nQN6/xDIEi2sP4XQBom6GjTQ==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"
@@ -6560,10 +6555,19 @@ get-intrinsic@^1.0.2:
     has "^1.0.3"
     has-symbols "^1.0.1"
 
-get-intrinsic@^1.1.0, get-intrinsic@^1.1.1:
+get-intrinsic@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/get-intrinsic/-/get-intrinsic-1.1.2.tgz#336975123e05ad0b7ba41f152ee4aadbea6cf598"
   integrity sha512-Jfm3OyCxHh9DJyc28qGk+JmfkpO41A4XkneDSujN9MDXrm4oDKdHvndhZ2dN94+ERNfkYJWDclW6k2L/ZGHjXA==
+  dependencies:
+    function-bind "^1.1.1"
+    has "^1.0.3"
+    has-symbols "^1.0.3"
+
+get-intrinsic@^1.1.1:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/get-intrinsic/-/get-intrinsic-1.1.3.tgz#063c84329ad93e83893c7f4f243ef63ffa351385"
+  integrity sha512-QJVz1Tj7MS099PevUG5jvnt9tSkXN8K14dxQlikJuPt4uD9hHAHjLyLBiLR5zELelBdD9QNRAXZzsJx0WaDL9A==
   dependencies:
     function-bind "^1.1.1"
     has "^1.0.3"
@@ -8983,11 +8987,6 @@ mimic-response@^1.0.0, mimic-response@^1.0.1:
   resolved "https://registry.yarnpkg.com/mimic-response/-/mimic-response-1.0.1.tgz#4923538878eef42063cb8a3e3b0798781487ab1b"
   integrity sha512-j5EctnkH7amfV/q5Hgmoal1g2QHFJRraOtmx0JpIqkxhBhI/lJSl1nMpQ45hVarwNETOoWEimndZ4QK0RHxuxQ==
 
-mimic-response@^2.0.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/mimic-response/-/mimic-response-2.1.0.tgz#d13763d35f613d09ec37ebb30bac0469c0ee8f43"
-  integrity sha512-wXqjST+SLt7R009ySCglWBCFpjUygmCIfD790/kVbiGmUgfYGuB14PiTd5DwVxSV4NcYHjzMkoj5LjQZwTQLEA==
-
 mimic-response@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/mimic-response/-/mimic-response-3.1.0.tgz#2d1d59af9c1b129815accc2c46a022a5ce1fa3c9"
@@ -9248,13 +9247,13 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.7.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/a722ceaa52107bbe2a2c0e0da113543120bfa15d"
+  version "0.7.5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/c1defb6408154660d05232342b89a5d35509180a"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"
 
-node-abi@^2.11.0, node-abi@^2.7.0:
+node-abi@^2.11.0:
   version "2.30.1"
   resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-2.30.1.tgz#c437d4b1fe0e285aaf290d45b45d4d7afedac4cf"
   integrity sha512-/2D0wOQPgaUWzVSVgRMx+trKJRC2UG4SUc4oCJoXx9Uxjtp0Vy3/kt7zcbxHF8+Z/pK3UloLWzBISg72brfy1w==
@@ -9331,11 +9330,6 @@ noms@0.0.0:
   dependencies:
     inherits "^2.0.1"
     readable-stream "~1.0.31"
-
-noop-logger@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/noop-logger/-/noop-logger-0.1.1.tgz#94a2b1633c4f1317553007d8966fd0e841b6a4c2"
-  integrity sha1-lKKxYzxPExdVMAfYlm/Q6EG2pMI=
 
 nopt@^4.0.1:
   version "4.0.3"
@@ -9942,27 +9936,6 @@ prebuild-install@7.1.0, prebuild-install@^7.1.0:
     simple-get "^4.0.0"
     tar-fs "^2.0.0"
     tunnel-agent "^0.6.0"
-
-prebuild-install@^5.2.4:
-  version "5.3.6"
-  resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-5.3.6.tgz#7c225568d864c71d89d07f8796042733a3f54291"
-  integrity sha512-s8Aai8++QQGi4sSbs/M1Qku62PFK49Jm1CbgXklGz4nmHveDq0wzJkg7Na5QbnO1uNH8K7iqx2EQ/mV0MZEmOg==
-  dependencies:
-    detect-libc "^1.0.3"
-    expand-template "^2.0.3"
-    github-from-package "0.0.0"
-    minimist "^1.2.3"
-    mkdirp-classic "^0.5.3"
-    napi-build-utils "^1.0.1"
-    node-abi "^2.7.0"
-    noop-logger "^0.1.1"
-    npmlog "^4.0.1"
-    pump "^3.0.0"
-    rc "^1.2.7"
-    simple-get "^3.0.3"
-    tar-fs "^2.0.0"
-    tunnel-agent "^0.6.0"
-    which-pm-runs "^1.0.0"
 
 prelude-ls@^1.2.1:
   version "1.2.1"
@@ -11364,15 +11337,6 @@ simple-concat@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/simple-concat/-/simple-concat-1.0.1.tgz#f46976082ba35c2263f1c8ab5edfe26c41c9552f"
   integrity sha512-cSFtAPtRhljv69IK0hTVZQ+OfE9nePi/rtJmw5UjHeVyVroEqJXP1sFztKUy1qU+xvz3u/sfYJLa947b7nAN2Q==
-
-simple-get@^3.0.3:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/simple-get/-/simple-get-3.1.1.tgz#cc7ba77cfbe761036fbfce3d021af25fc5584d55"
-  integrity sha512-CQ5LTKGfCpvE1K0n2us+kuMPbk/q0EKl82s4aheV9oXjFEz6W/Y7oQFVJuU6QG77hRT4Ghb5RURteF5vnWjupA==
-  dependencies:
-    decompress-response "^4.2.0"
-    once "^1.3.1"
-    simple-concat "^1.0.0"
 
 simple-get@^4.0.0:
   version "4.0.1"
@@ -12963,11 +12927,6 @@ which-module@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/which-module/-/which-module-2.0.0.tgz#d9ef07dce77b9902b8a3a8fa4b31c3e3f7e6e87a"
   integrity sha1-2e8H3Od7mQK4o6j6SzHD4/fm6Ho=
-
-which-pm-runs@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/which-pm-runs/-/which-pm-runs-1.0.0.tgz#670b3afbc552e0b55df6b7780ca74615f23ad1cb"
-  integrity sha1-Zws6+8VS4LVd9rd4DKdGFfI60cs=
 
 which@^1.2.9:
   version "1.3.1"
