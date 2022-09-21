@@ -92,7 +92,7 @@
     "!**/build/src/Release/obj${/*}",
     "!**/node_modules/7z-bin/**/*",
     "**/node_modules/7z-bin/*",
-    "**/node_modules/7z-bin/${os}/*",
+    "**/node_modules/7z-bin/${platform}/*",
     "**/node_modules/7z-bin/bin/*",
     "!**/node_modules/edge/lib/native${/*}",
     "!**/node_modules/edge/src${/*}",
