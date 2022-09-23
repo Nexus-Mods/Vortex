@@ -598,6 +598,7 @@ class ConnectionIPC {
         log('info', 'waiting until we know .NET is installed');
         await dotNetAssert;
 
+        log('info', 'start fomod installer process', { securityLevel })
         pid = await createIPC(
           pipe, ipcId, onExit, onStdout,
           securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
@@ -1019,7 +1020,8 @@ function init(context: IExtensionContext): boolean {
         .catch(err => {
           // afaik 0x80008085 would only happen if our installer wasn't used or if running in
           // dev environment
-          if ([0x80008085, 0x80008093].includes(err['code'])) {
+          // I have found no documentation of what 80008096 means
+          if ([0x80008085, 0x80008093, 0x80008096].includes(err['code'])) {
             log('info', 'retrying without security sandbox', { error: err.message });
             // invalid runtime configuration? Very likely caused by permission errors due to the process
             // being low integrity, otherwise it would mean Vortex has been modified and then the user
@@ -1069,8 +1071,9 @@ function init(context: IExtensionContext): boolean {
           }
         })
         .catch(err => {
-          if (((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
-            || ((err['code'] === 0x80008083) && err.message.includes('The required library'))
+            // 80008083 indicates a version conflict
+          if ((err['code'] === 0x80008083)
+            || ((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
             || ((err instanceof SetupError) && (err.component === 'netruntime'))
           ) {
