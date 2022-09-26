@@ -129,7 +129,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
         <Panel>
           <PanelX.Body>
             <Media style={{ marginBottom: 5, display: 'block' }}>
-              <Media.Left><Image src={imgPath} /></Media.Left>
+              <Media.Left><Image className='vortex-logo' src={imgPath} /></Media.Left>
               <Media.Body>
                 <h2 className='media-heading'>
                   Vortex {this.mVersion}
