@@ -636,6 +636,7 @@ export function resolveGraphError(t: TFunction, err: Error): string {
     NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
     TOO_SOON_AFTER_DOWNLOAD: 'You have to wait {{waitingTime}} after downloading before you can endorse/rate things.',
     IS_OWN_MOD: 'You can\'t endorse your own mods.',
+    IS_OWN_CONTENT: 'You can\'t endorse your own content.',
     UNAUTHORIZED: 'You have to be logged in to vote.',
   }[err['code']];
 

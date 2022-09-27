@@ -368,10 +368,19 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
     return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, slug))
       .catch(err => {
         if (!['COLLECTION_DISCARDED', 'NOT_FOUND'].includes(err.code)) {
-          api.showErrorNotification('Failed to get collection info', err, {
-            id: 'failed-get-collection-info',
-            allowReport: !(err instanceof ProcessCanceled),
-          });
+          if (err.code === 'COLLECTION_UNDER_MODERATION') {
+            api.showErrorNotification(
+              'Failed to get collection info',
+              'The collection is under moderation', {
+                allowReport: false,
+              });
+          } else {
+            const allowReport = !(err instanceof ProcessCanceled);
+            api.showErrorNotification('Failed to get collection info', err, {
+              id: 'failed-get-collection-info',
+              allowReport,
+            });
+          }
         }
         return Promise.resolve(undefined);
       });

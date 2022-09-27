@@ -533,6 +533,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return box.id === evt.currentTarget.id;
     });
 
+    if (idx < 0) {
+      return;
+    }
+
     const newChoices = dialogState.choices.map((choice: ICheckbox) => ({
       ...choice,
       value: false,

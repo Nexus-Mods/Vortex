@@ -1384,7 +1384,7 @@ function init(context: IExtensionContextExt): boolean {
     };
     return (
       <div className='nexus-download-banner'>
-        {t('Nexus downloads are capped at 1-2MB/s - '
+        {t('Nexus downloads are capped at 1.5-3MB/s - '
           + 'Go Premium for uncapped download speeds')}
         <Button
           bsStyle='ad'
