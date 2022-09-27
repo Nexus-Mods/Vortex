@@ -2265,9 +2265,9 @@
   integrity sha512-YofkM6fGv4gDJq78g4j0mMuGMkZVxZDgtU0JRdx6FgiJDG+0fY0GKVolOV8WqVmEhLCXkQRjwDdKyPxJp/uucg==
 
 "@types/node@^16.11.26":
-  version "16.11.59"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.59.tgz#823f238b9063ccc3b3b7f13186f143a57926c4f6"
-  integrity sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==
+  version "16.11.62"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.62.tgz#bab2e6208531321d147eda20c38e389548cd5ffc"
+  integrity sha512-K/ggecSdwAAy2NUW4WKmF4Rc03GKbsfP+k326UWgckoS+Rzd2PaWbjk76dSmqdLQvLTJAO9axiTUJ6488mFsYQ==
 
 "@types/node@^16.5.0":
   version "16.11.19"
@@ -5473,9 +5473,9 @@ electron-updater@^4.2.0:
     semver "^7.3.5"
 
 electron@^19.0.0:
-  version "19.0.17"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-19.0.17.tgz#850d806e88b1ef141b88b491dc41661778691c27"
-  integrity sha512-3Offu61K+d19EZIc76MhKRsSCqfe3jDiqtD0p8jXr6p/TW7+7/jOQp407ZaZu0nQN6/xDIEi2sP4XQBom6GjTQ==
+  version "19.1.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-19.1.0.tgz#ba37cd7419b645c82ac627af7be81b6d5e2828de"
+  integrity sha512-5o9EEYx0bI0p+L0eSoS8n3gLrEvkdnzwSZ/hnkPoUfuAs/CONCI/TEqswSppeeJ/pi5gXf3/B7hVTNaZZbIdnw==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"
@@ -6293,8 +6293,8 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 fomod-installer@Nexus-Mods/fomod-installer#net6:
-  version "0.7.15"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/7c67f3526c88239774b7e0cb6a4856962fff8e7d"
+  version "0.7.16"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/82d818ce41c7133dfaa3312eaa97a85f345361b2"
   dependencies:
     async "^3.2.2"
     copyfiles "*"

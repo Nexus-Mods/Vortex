@@ -1,7 +1,7 @@
 import { ILookupResult } from 'modmeta-db';
 
 function metaLookupMatch(input: ILookupResult[], archiveName: string, gameId: string) {
-  const filtered = input.filter(iter => !['revoked', 'unpublished'].includes(iter.value.status));
+  const filtered = input.filter(iter => !['revoked', 'unpublished'].includes(iter.value?.status));
   if (filtered.length > 0) {
     // for the case where there are multiple matches (same hash, same file size so it's
     // practically guaranteed to be the same file), prefer the one with the exact
