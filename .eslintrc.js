@@ -7,7 +7,8 @@ module.exports = {
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "airbnb"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -53,7 +54,7 @@ module.exports = {
     "prefer-spread": "warn",
 
     "@typescript-eslint/prefer-as-const": "warn",
-    "@typescript-eslint/no-extra-semi": "warn",    
+    "@typescript-eslint/no-extra-semi": "warn",
     "@typescript-eslint/no-var-requires": "warn",
     "@typescript-eslint/no-this-alias": "warn",
     "@typescript-eslint/no-empty-function": "warn",
@@ -84,7 +85,7 @@ module.exports = {
     "@typescript-eslint/no-empty-interface": "warn",
 
     // !!! Vortex specific rules mentioned in the Vortex code standards and style guides !!!
-    
+
     // Massimo and Sebastian agreed on turning this off
     "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/no-explicit-any": "off",
@@ -104,7 +105,7 @@ module.exports = {
       "warn",
       {
         "name": "bluebird",
-        "message": "Please avoid using Bluebird. Use ES6 promises instead"
+        "message": "Please avoid using Bluebird. Use ES6 Promises instead!"
       }
     ],
     "max-lines-per-function": [
