@@ -170,4 +170,16 @@ export interface IGameStore {
    *  game stores when a discovery scan is initiated.
    */
   reloadGames?: () => Promise<void>;
+
+  /**
+   * determine if the specified game is managed by/installed through this store.
+   * Stores don't have to implement this, as a fallback Vortex will go through
+   * allGames from this store and see if one matches the path.
+   * This function should only be implemented if there is a more reliable way to
+   * connect this store to the game, like every gog game contains a gog.ico file
+   * in the game root directory.
+   * The fallback function can be used to invoke the "default" behavior on top.
+   */
+  identifyGame?: (gamePath: string,
+                  fallback: (gamePath: string) => PromiseLike<boolean>) => Promise<boolean>;
 }

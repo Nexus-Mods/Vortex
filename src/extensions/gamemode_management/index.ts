@@ -14,6 +14,7 @@ import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import { COMPANY_ID } from '../../util/constants';
 import {DataInvalid, ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import GameStoreHelper from '../../util/GameStoreHelper';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
 import { log } from '../../util/log';
@@ -222,8 +223,11 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         if (result !== undefined) {
           findGamePath(game, result, 0, searchDepth(game.requiredFiles))
-            .then((corrected: string) => {
-              api.store.dispatch(setGamePath(game.id, corrected));
+            .then((corrected: string) =>
+              GameStoreHelper.identifyStore(corrected)
+                .then(store => ({ corrected, store })))
+            .then(({ corrected, store }) => {
+              api.store.dispatch(setGamePath(game.id, corrected, store));
               resolve();
             })
             .catch(err => {

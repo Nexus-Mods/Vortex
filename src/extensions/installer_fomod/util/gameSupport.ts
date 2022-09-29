@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { IState } from '../../../types/IState';
 import getVortexPath from '../../../util/getVortexPath';
+import { discoveryByGame } from '../../gamemode_management/selectors';
 
 function bethIni(gamePath: string, iniName: string) {
   return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
@@ -98,6 +99,12 @@ interface IGameSupport {
   pluginPath?: string;
   nativePlugins?: string[];
 }
+
+const gameSupportGOG: { [gameId: string]: {  iniPath: () => string } } = {
+  skyrimse: {
+    iniPath: () => bethIni('Skyrim Special Edition GOG', 'Skyrim'),
+  },
+};
 
 const gameSupport: { [gameId: string]: IGameSupport } = {
   dragonsdogma: {
@@ -302,8 +309,12 @@ function isXboxPath(discoveryPath: string) {
   return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
 }
 
+let gameStoreForGame: (gameId: string) => string = () => undefined;
+
 export function initGameSupport(store: Redux.Store<IState>) {
   const state: IState = store.getState();
+
+  gameStoreForGame = (gameId: string) => discoveryByGame(store.getState(), gameId).store;
 
   const {discovered} = state.settings.gameMode;
 
@@ -332,7 +343,9 @@ export function getIniFilePath(gameMode: string): string {
     return '';
   }
 
-  return gameSupport[gameMode].iniPath();
+  return (gameStoreForGame(gameMode) === 'gog')
+    ? gameSupportGOG[gameMode].iniPath()
+    : gameSupport[gameMode].iniPath();
 }
 
 export function getStopPatterns(gameMode: string, game: IGame): string[] {

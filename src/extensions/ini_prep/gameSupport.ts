@@ -24,6 +24,17 @@ const gameSupportGamePass = {
   },
 }
 
+const gameSupportGOG = {
+  skyrimse: {
+    iniFiles: [
+      path.join('{mygames}', 'Skyrim Special Edition GOG', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimPrefs.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimCustom.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
+}
+
 const gameSupport = {
   skyrim: {
     iniFiles: [
@@ -128,7 +139,11 @@ export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
     }
   }
 
-  return getSafe(gameSupport, [gameMode, 'iniFiles'], [])
+  const gameSupportEffective = (discovery.store === 'gog')
+    ? gameSupportGOG
+    : gameSupport;
+
+  return getSafe(gameSupportEffective, [gameMode, 'iniFiles'], [])
     .map(file => format(file, { mygames, game: discovery.path }));
 }
 
