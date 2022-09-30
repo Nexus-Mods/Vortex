@@ -139,7 +139,7 @@ export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
     }
   }
 
-  const gameSupportEffective = (discovery.store === 'gog')
+  const gameSupportEffective = (discovery.store === 'gog') && !!gameSupportGOG[gameMode]
     ? gameSupportGOG
     : gameSupport;
 

@@ -343,7 +343,7 @@ export function getIniFilePath(gameMode: string): string {
     return '';
   }
 
-  return (gameStoreForGame(gameMode) === 'gog')
+  return (gameStoreForGame(gameMode) === 'gog') && !!gameSupportGOG[gameMode]
     ? gameSupportGOG[gameMode].iniPath()
     : gameSupport[gameMode].iniPath();
 }
