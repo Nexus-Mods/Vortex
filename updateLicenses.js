@@ -26,7 +26,7 @@ checker.init(
       // make the license path relative. license-checker has an option
       // to do that for us but that causes errors
       if (json[key].licenseFile) {
-        json[key].licenseFile = path.relative(basePath, json[key].licenseFile);
+        json[key].licenseFile = path.relative(basePath, json[key].licenseFile).split(path.sep);
       }
       delete json[key].path;
     });
