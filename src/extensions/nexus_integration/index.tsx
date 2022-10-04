@@ -505,7 +505,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,
-      logicalFileName: fileName,
+      logicalFileName: input.meta?.logicalFileName ?? fileName,
       changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
       uploadedTimestamp: nexusFileInfo?.uploaded_timestamp
                       ?? toTimestamp(nexusCollectionInfo?.createdAt),

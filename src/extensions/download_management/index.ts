@@ -130,13 +130,15 @@ function attributeExtractor(input: any) {
   if (Array.isArray(downloadGame)) {
     downloadGame = downloadGame[0];
   }
+  const logicalFileName = input?.meta?.logicalFileName
+                       || input?.download?.modInfo?.name;
   return Promise.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
-    logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
+    logicalFileName,
     modId: getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined),
     fileId: getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined),
     downloadGame,

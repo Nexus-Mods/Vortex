@@ -1235,8 +1235,8 @@ class ExtensionManager {
     const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
 
     return [].concat(
-      Object.keys(this.mProgrammaticMetaServers).map(id => this.mProgrammaticMetaServers[id]),
       Object.keys(servers).map(id => servers[id]),
+      Object.keys(this.mProgrammaticMetaServers).map(id => this.mProgrammaticMetaServers[id]),
     );
   }
 

@@ -789,11 +789,21 @@ class InstallManager {
 
     this.repairRules(api, mod, gameId);
 
+    const rules = (mod.rules ?? []).slice();
+
     const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing dependencies');
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
-    return this.installDependenciesImpl(api, profile, gameId, mod.id, modName(mod), mod.rules,
-                                        installPath, allowAutoDeploy)
+    return api.lookupModMeta({
+      fileMD5: mod.attributes['fileMD5'],
+      fileSize: mod.attributes['fileSize'],
+      gameId: mod.attributes['downloadGame'] ?? gameId,
+    })
+      .then(results => {
+        rules.push(...(results[0]?.value?.rules ?? []));
+      })
+      .then(() => this.installDependenciesImpl(api, profile, gameId, mod.id, modName(mod), rules,
+                                               installPath, allowAutoDeploy))
       .finally(() => {
         log('info', 'done installing dependencies');
         api.store.dispatch(stopActivity('installing_dependencies', mod.id));
@@ -2344,7 +2354,7 @@ class InstallManager {
             }, recommended).reference;
 
             // now at this point there may in fact already be a mod for the updated reference tag
-            if (dep.mod === undefined) {
+            if ((dep.mod === undefined) && (dep.reference !== undefined)) {
               dep.mod = findModByRef(
                 dep.reference, api.getState().persistent.mods[gameId]);
               log('info', 'updated mod', JSON.stringify(dep.mod));
@@ -2445,6 +2455,10 @@ class InstallManager {
     const rules: IModRule[] =
       getSafe(state.persistent.mods, [gameId, sourceModId, 'rules'], []);
     const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
+
+    if (oldRule === undefined) {
+      return undefined;
+    }
 
     const updatedRule: IRule = {
       ...(oldRule || {}),
