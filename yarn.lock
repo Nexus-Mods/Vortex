@@ -6313,8 +6313,8 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 fomod-installer@Nexus-Mods/fomod-installer#net6:
-  version "0.7.16"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/82d818ce41c7133dfaa3312eaa97a85f345361b2"
+  version "0.7.17"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/d7b3780bf6f35c67acdf94c1adfd5f8b5c57b1b3"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
