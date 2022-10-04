@@ -186,7 +186,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const mod: ILicense = modules[modKey];
     const license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
     const licenseFile = mod.licenseFile !== undefined
-      ? path.resolve(getVortexPath('modules'), '..', mod.licenseFile)
+      ? path.resolve(getVortexPath('modules'), '..', ...mod.licenseFile)
       : path.join(getVortexPath('assets'), 'licenses', license + '.md');
     fs.readFile(licenseFile, { }, (err, licenseText) => {
       if (!this.mMounted) {

@@ -16,6 +16,7 @@ export interface IDiscoveryResult {
   // base path of the game (NOT including the executable name)
   path?: string;
   pathSetManually?: boolean;
+  store?: string;
   tools?: {
     [id: string]: IDiscoveredTool;
   };

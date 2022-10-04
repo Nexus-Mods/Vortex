@@ -277,6 +277,10 @@ class ConnectionIPC {
     });
 
     if (!debug) {
+      // avoid issues for users missing icu components.
+      const oldGlobInvariant = process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
+      process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = '1';
+
       // for debugging purposes, the user has to run the injector manually
       // invoke the c# injector, passing the id/port
       try {
@@ -284,6 +288,12 @@ class ConnectionIPC {
       } catch (err) {
         onReject(new ProcessCanceled(err.message));
       }
+      if (oldGlobInvariant === undefined) {
+        delete process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
+      } else {
+        process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = oldGlobInvariant;
+      }
+
       proc.stdout.on('data', (dat: Buffer) => {
         log('debug', 'received from injector:', dat.toString());
       });

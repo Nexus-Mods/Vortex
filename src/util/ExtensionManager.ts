@@ -43,7 +43,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
+import { filteredEnvironment, isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -1763,7 +1763,7 @@ class ExtensionManager {
       // across all language variants and versions
       const pathEnvName = Object.keys(process.env).find(key => key.toLowerCase() === 'path');
       const env = {
-        ...process.env,
+        ...filteredEnvironment(),
         [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
         ...options.env,
       };

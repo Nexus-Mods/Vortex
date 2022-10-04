@@ -1,6 +1,4 @@
-import Promise from 'bluebird';
-import { GameEntryNotFound, GameStoreNotFound,
-  IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
+import Bluebird from 'bluebird';
 
 import * as fs from '../util/fs';
 import { log } from '../util/log';
@@ -14,6 +12,10 @@ import { makeExeId } from '../reducers/session';
 import { getGameStores } from '../extensions/gamemode_management/util/getGame';
 
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
+import { GameEntryNotFound, GameStoreNotFound, IGameStore } from '../types/IGameStore';
+import { IGameStoreEntry } from '../types/IGameStoreEntry';
+import { IExtensionApi } from '../types/IExtensionContext';
+import getNormalizeFunc from './getNormalizeFunc';
 
 type SearchType = 'name' | 'id';
 
@@ -40,43 +42,43 @@ class GameStoreHelper {
   // If a store id is specified, it will return the provided
   //  store id if the game is installed using the specified store id;
   //  otherwise will return undefined.
-  public isGameInstalled(id: string, storeId?: string): Promise<string> {
+  public isGameInstalled(id: string, storeId?: string): Bluebird<string> {
     return ((storeId !== undefined)
       ? this.findGameEntry('id', id, storeId)
       : this.findGameEntry('id', id))
-      .then(entry => Promise.resolve(entry?.gameStoreId))
-      .catch(err => Promise.resolve(undefined));
+      .then(entry => Bluebird.resolve(entry?.gameStoreId))
+      .catch(() => Bluebird.resolve(undefined));
   }
 
-  public isGameStoreInstalled(storeId: string): Promise<boolean> {
+  public isGameStoreInstalled(storeId: string): Bluebird<boolean> {
     try {
       const gameStore = this.getGameStore(storeId);
       return (!!gameStore.isGameStoreInstalled)
         ? gameStore.isGameStoreInstalled()
         : gameStore.getGameStorePath()
         .then(execPath => (execPath === undefined)
-            ? Promise.reject(new Error(`failed to determine path for ${storeId}`))
+            ? Bluebird.reject(new Error(`failed to determine path for ${storeId}`))
             : fs.statAsync(execPath))
-        .then(() => Promise.resolve(true))
+        .then(() => Bluebird.resolve(true))
         .catch(err => {
           log('debug', 'gamestore is not installed', err);
-          return Promise.resolve(false);
+          return Bluebird.resolve(false);
         });
     } catch (err) {
-      return Promise.resolve(false);
+      return Bluebird.resolve(false);
     }
   }
 
-  public findByName(name: string | string[], storeId?: string): Promise<IGameStoreEntry> {
+  public findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
     return this.findGameEntry('name', name, storeId);
   }
 
-  public findByAppId(appId: string | string[], storeId?: string): Promise<IGameStoreEntry> {
+  public findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
     return this.findGameEntry('id', appId, storeId);
   }
 
   public launchGameStore(api: IExtensionApi, gameStoreId: string,
-                         parameters?: string[], askConsent: boolean = false): Promise<void> {
+                         parameters?: string[], askConsent: boolean = false): Bluebird<void> {
     let gameStore: IGameStore;
     try {
       gameStore = this.getGameStore(gameStoreId);
@@ -85,7 +87,7 @@ class GameStoreHelper {
       }
     } catch (err) {
       api.showErrorNotification('Failed to launch game store', err);
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const t = api.translate;
@@ -95,7 +97,7 @@ class GameStoreHelper {
           api.showErrorNotification('Game store is not installed',
             t('Please install/reinstall {{storeId}} to be able to launch this game store.',
               { replace: { storeId: gameStoreId } }), { allowReport: false });
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
 
         // Game Store specific launch has priority.
@@ -103,7 +105,7 @@ class GameStoreHelper {
           return gameStore.launchGameStore(api, parameters)
             .catch(err => {
               api.showErrorNotification('Failed to launch game store', err);
-              return Promise.resolve();
+              return Bluebird.resolve();
             });
         }
 
@@ -115,19 +117,19 @@ class GameStoreHelper {
                 suggestDeploy: false,
               });
             }
-            return Promise.resolve();
+            return Bluebird.resolve();
         });
     });
 
     const isGameStoreRunning = () => (!!gameStore.getGameStorePath)
       ? gameStore.getGameStorePath()
         .then(launcherPath => !!launcherPath && this.isStoreRunning(launcherPath))
-      : Promise.resolve(false);
+      : Bluebird.resolve(false);
 
     const askConsentDialog = () => {
       return isGameStoreRunning().then(res => (res)
-        ? Promise.resolve()
-        : new Promise((resolve, reject) => {
+        ? Bluebird.resolve()
+        : new Bluebird((resolve, reject) => {
         api.showDialog('info', api.translate('Game Store not Started'), {
           text: api.translate('The game requires {{storeid}} to be running in parallel. '
             + 'Vortex will now attempt to start up the store for you.',
@@ -143,18 +145,41 @@ class GameStoreHelper {
     const startStore = () => (askConsent)
       ? askConsentDialog()
           .then(() => launchStore())
-          .catch(err => Promise.resolve())
+          .catch(err => Bluebird.resolve())
       : launchStore();
 
     // Start up the store.
     return startStore();
   }
 
-  public reloadGames(): Promise<void> {
+  public async identifyStore(gamePath: string): Promise<string> {
+    const normalize = await getNormalizeFunc(gamePath);
+
+    const fallback = async (store: IGameStore, gamePath: string): Promise<boolean> => {
+      const gameInfo = (await store.allGames()).find(game =>
+        normalize(game.gamePath) === normalize(gamePath));
+      return gameInfo !== undefined;
+    };
+
+    for (const store of this.getstores()) {
+      if (store.identifyGame !== undefined) {
+        if (await store.identifyGame?.(gamePath, gamePath => fallback(store, gamePath))) {
+          return store.id;
+        }
+      } else {
+        if (await fallback(store, gamePath)) {
+          return store.id;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  public reloadGames(): Bluebird<void> {
     const stores = this.getstores().filter(store => !!store);
     log('info', 'reloading game store games', stores.map(store => store.id)
                                                     .join(', '));
-    return Promise.each(stores, (store: IGameStore) =>
+    return Bluebird.each(stores, (store: IGameStore) =>
       (store?.reloadGames !== undefined)
         ? store.reloadGames()
             .catch(err => {
@@ -162,10 +187,10 @@ class GameStoreHelper {
               //  we log this and jump to the next store.
               err['gameStore'] = store.id;
               log('error', 'gamestore failed to reload its games', err);
-              return Promise.resolve();
+              return Bluebird.resolve();
             })
-        : Promise.resolve())
-      .then(() => Promise.resolve());
+        : Bluebird.resolve())
+      .then(() => Bluebird.resolve());
   }
 
   private isStoreRunning(storeExecPath: string) {
@@ -198,7 +223,7 @@ class GameStoreHelper {
    */
   private findGameEntry(searchType: SearchType,
                         pattern: string | string[],
-                        storeId?: string): Promise<IGameStoreEntry> {
+                        storeId?: string): Bluebird<IGameStoreEntry> {
     const entryInfo = (entry: IGameStoreEntry): string =>
       (searchType === 'id') ? entry.appid : entry.name;
 
@@ -245,7 +270,7 @@ class GameStoreHelper {
         //  especially if it is added by a 3rd party extension.
         log('warn', 'Game entry not found in specified store',
             { pattern: name, storeId, availableStores: stores });
-        return Promise.reject(new GameEntryNotFound(name, stores));
+        return Bluebird.reject(new GameEntryNotFound(name, stores));
       }
     }
 
@@ -258,10 +283,10 @@ class GameStoreHelper {
         ? gameStores.map(store => store.id).join(', ')
         : '';
       log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
-      return Promise.reject(new GameEntryNotFound(name, stores));
+      return Bluebird.reject(new GameEntryNotFound(name, stores));
     }
 
-    return Promise.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
+    return Bluebird.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
       store.allGames()
         .then(entries => {
           const entry = (searchType === 'id')
@@ -272,19 +297,19 @@ class GameStoreHelper {
             accum.push(entry);
           }
 
-          return Promise.resolve(accum);
+          return Bluebird.resolve(accum);
         })
-        .catch(GameEntryNotFound, () => Promise.resolve([]))
-        .catch(GameNotFound, () => Promise.resolve([])), [])
+        .catch(GameEntryNotFound, () => Bluebird.resolve([]))
+        .catch(GameNotFound, () => Bluebird.resolve([])), [])
       .then(foundEntries => {
         // TODO: A cool future feature here would be to allow the user to select
         //  the gamestore he wants to use. But for now, we just return the
         //  first instance we found.
         if (foundEntries.length > 0) {
-          return Promise.resolve(foundEntries[0]);
+          return Bluebird.resolve(foundEntries[0]);
         } else {
           log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
-          return Promise.reject(new GameEntryNotFound(name, stores));
+          return Bluebird.reject(new GameEntryNotFound(name, stores));
         }
       });
   }

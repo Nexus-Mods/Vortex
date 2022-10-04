@@ -36,9 +36,11 @@ export const settingsReducer: IReducerSpec = {
       return deleteOrNop(state, ['discovered', id, 'path']);
     },
     [actions.setGamePath as any]: (state, payload) =>
-      setOrNop(
-        setOrNop(state, ['discovered', payload.gameId, 'path'], payload.gamePath),
-        ['discovered', payload.gameId, 'pathSetManually'], payload.gamePath !== undefined),
+      merge(state, ['discovered', payload.gameId], {
+        path: payload.gamePath,
+        pathSetManually: payload.gamePath !== undefined,
+        store: payload.store,
+      }),
     [actions.addDiscoveredTool as any]: (state, payload) => {
       if (state.discovered[payload.gameId] === undefined) {
         return state;
