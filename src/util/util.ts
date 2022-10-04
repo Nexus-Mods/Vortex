@@ -836,3 +836,15 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
 
   return url.format(urlParameters);
 }
+
+// environment variables we might have set for ourselves or passed in by chrome/electron/node
+const noInheritEnv: string[] = [
+  'BLUEBIRD_DEBUG', 'CHROME_CRASHPAD_PIPE_NAME', 'DEBUG_REACT_RENDERS',
+  'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT',
+  'FORCE_ALLOW_ELEVATED_SYMLINKING', 'HIGHLIGHT_I18N', 'IS_PREVIEW_BUILD',
+  'NEXUS_NEXT_URL', 'NODE_ENV', 'NODE_OPTIONS', 'SIMULATE_FS_ERRORS', 'UV_THREADPOOL_SIZE',
+];
+
+export function filteredEnvironment(): NodeJS.ProcessEnv {
+  return _.omit(process.env, noInheritEnv);
+}

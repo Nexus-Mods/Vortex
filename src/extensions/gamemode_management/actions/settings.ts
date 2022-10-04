@@ -21,7 +21,7 @@ export const clearDiscoveredGame = safeCreateAction('UNDISCOVER_GAME', (id: stri
  * override the path of a game that's already been discovered
  */
 export const setGamePath = safeCreateAction('SET_GAME_PATH',
-  (gameId: string, gamePath: string) => ({ gameId, gamePath }));
+  (gameId: string, gamePath: string, store: string) => ({ gameId, gamePath, store }));
 
 /**
  * add info about a discovered tool

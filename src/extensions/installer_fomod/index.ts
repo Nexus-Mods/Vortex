@@ -599,11 +599,25 @@ class ConnectionIPC {
         await dotNetAssert;
 
         log('info', 'start fomod installer process', { securityLevel })
+
+        // avoid issues for users missing icu components.
+        // Bit of a hack, would be better to pass the environment to createIPC and
+        // create the process with that environment but that would require some
+        // considerable and errorprone changes to the underlying api
+        const oldGlobInvariant = process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
+        process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = '1';
+
         pid = await createIPC(
           pipe, ipcId, onExit, onStdout,
           securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
           false);
           // securityLevel === SecurityLevel.LowIntegrity);
+
+        if (oldGlobInvariant === undefined) {
+          delete process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
+        } else {
+          process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = oldGlobInvariant;
+        }
       } catch (err) {
         setConnectOutcome(err, true);
       }

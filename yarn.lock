@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "21.0.7"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/9205dbef515b92696299a67fd4eafbc2c2d3d99d"
+  version "22.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/018d9229edf5ae962ede43a2ef30a68bc739d42c"
 
 "7zip-bin@~5.1.1":
   version "5.1.1"
@@ -5473,9 +5473,9 @@ electron-updater@^4.2.0:
     semver "^7.3.5"
 
 electron@^19.0.0:
-  version "19.1.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-19.1.0.tgz#ba37cd7419b645c82ac627af7be81b6d5e2828de"
-  integrity sha512-5o9EEYx0bI0p+L0eSoS8n3gLrEvkdnzwSZ/hnkPoUfuAs/CONCI/TEqswSppeeJ/pi5gXf3/B7hVTNaZZbIdnw==
+  version "19.1.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-19.1.1.tgz#f2b7b0dbc02701091a451e2f807097f387231455"
+  integrity sha512-cVjX+vYH431iNdIpDXU1cfx83heS/lkPVorpaiERSPcycwiZYFtE5xjL8XAARV11TG+AmN4gxBFMSb9R7DhStw==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"
@@ -9217,8 +9217,8 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.7.5"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/c1defb6408154660d05232342b89a5d35509180a"
+  version "0.7.6"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/488d7f8c5884ec0fe0494989a3b4fe2d6e06e8cb"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"

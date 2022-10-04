@@ -67,6 +67,14 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
               ticks={ticks}
               domain={[0, maxRounded]}
             />
+            <CartesianGrid strokeDasharray='3 3' vertical={false} />
+            <Area
+              type='monotone'
+              dataKey='speed'
+              isAnimationActive={false}
+              dot={false}
+              fill='url(#graph-gradient)'
+            />
             {showLimit ? (
               <ReferenceLine y={maxBandwidth} strokeDasharray='6 2'>
                 <Label
@@ -76,14 +84,6 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
                 />
               </ReferenceLine>
             ) : null}
-            <CartesianGrid strokeDasharray='3 3' vertical={false} />
-            <Area
-              type='monotone'
-              dataKey='speed'
-              isAnimationActive={false}
-              dot={false}
-              fill='url(#graph-gradient)'
-            />
             {
               // updating the tooltip is extremely costy for some reason, ~22ms every time we update
               /* <recharts.Tooltip

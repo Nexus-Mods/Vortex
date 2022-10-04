@@ -3,6 +3,7 @@ import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
 import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
+import GameStoreHelper from '../../../util/GameStoreHelper';
 import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 import { log } from '../../../util/log';
 import StarterInfo from '../../../util/StarterInfo';
@@ -115,7 +116,26 @@ export function quickDiscovery(knownGames: IGame[],
             ? Promise.resolve(gamePath)
             : gamePath;
 
+          let store: string;
+
           prom
+            .then(resolvedInfo => {
+              if (typeof(resolvedInfo) === 'string') {
+                return GameStoreHelper.identifyStore(resolvedInfo)
+                  .catch(err => {
+                    log('error', 'failed to identify store for game', err.message);
+                    return undefined;
+                  })
+                  .then((storeDetected: string) => {
+                    // storeDetected may be undefined, in that case we use default handling
+                    store = storeDetected;
+                    return resolvedInfo;
+                  });
+              } else {
+                store = resolvedInfo.gameStoreId;
+                return resolvedInfo.gamePath;
+              }
+            })
             .then(resolvedPath => resolvedPath === undefined
               ? Promise.resolve(undefined)
               : fs.statAsync(resolvedPath)
@@ -132,11 +152,12 @@ export function quickDiscovery(knownGames: IGame[],
               if (!truthy(resolvedPath)) {
                 return resolve(undefined);
               }
-              log('info', 'found game', { name: game.name, location: resolvedPath });
+              log('info', 'found game', { name: game.name, location: resolvedPath, store });
               const exe = game.executable(resolvedPath);
               const disco: IDiscoveryResult = {
                 path: resolvedPath,
                 executable: (exe !== game.executable()) ? exe : undefined,
+                store,
               };
               onDiscoveredGame(game.id, disco);
               return getNormalizeFunc(resolvedPath)
