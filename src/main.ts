@@ -68,10 +68,6 @@ if (process.env.NODE_ENV !== 'development') {
   setEnv('IS_PREVIEW_BUILD', 'no');
 }
 
-// run all .NET stuff in globalization invariant mode to avoid problems with users missing
-// icu components
-setEnv('DOTNET_SYSTEM_GLOBALIZATION_INVARIANT', '1');
-
 if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
   // On windows dlls may be loaded from directories in the path variable
   // (which I don't know why you'd ever want that) so I filter path quite aggressively here
