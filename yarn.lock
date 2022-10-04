@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "21.0.7"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/9205dbef515b92696299a67fd4eafbc2c2d3d99d"
+  version "22.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/018d9229edf5ae962ede43a2ef30a68bc739d42c"
 
 "7zip-bin@~5.1.1":
   version "5.1.1"
@@ -9204,8 +9204,8 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.7.5"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/c1defb6408154660d05232342b89a5d35509180a"
+  version "0.7.6"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/488d7f8c5884ec0fe0494989a3b4fe2d6e06e8cb"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"
