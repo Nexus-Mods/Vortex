@@ -15,6 +15,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import getVortexPath from './getVortexPath';
 
 const STORE_ID = 'steam';
+const STORE_NAME = 'Steam';
 const STEAM_EXEC = 'Steam.exe';
 
 export interface ISteamEntry extends IGameStoreEntry {
@@ -41,12 +42,12 @@ export class GameNotFound extends Error {
  */
 class Steam implements IGameStore {
   public static GameNotFound = GameNotFound;
-  public id: string;
+  public id: string = STORE_ID;
+  public name: string = STORE_NAME;
   private mBaseFolder: Promise<string>;
   private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
-    this.id = STORE_ID;
     if (process.platform === 'win32') {
       // windows
       try {

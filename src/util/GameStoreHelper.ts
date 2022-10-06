@@ -24,7 +24,7 @@ class GameStoreHelper {
 
   // Search for a specific game store.
   public getGameStore(storeId: string): IGameStore {
-    const gameStores = this.getstores();
+    const gameStores = this.getStores();
     const gameStore = gameStores.find(store => store.id === storeId);
     if ((gameStores.length) > 0 && (gameStore === undefined)) {
       // The game stores are guaranteed to have loaded at this point,
@@ -156,12 +156,17 @@ class GameStoreHelper {
     const normalize = await getNormalizeFunc(gamePath);
 
     const fallback = async (store: IGameStore, gamePath: string): Promise<boolean> => {
-      const gameInfo = (await store.allGames()).find(game =>
-        normalize(game.gamePath) === normalize(gamePath));
-      return gameInfo !== undefined;
+      try {
+        const gameInfo = (await store.allGames()).find(game =>
+          normalize(game.gamePath) === normalize(gamePath));
+
+        return gameInfo !== undefined;
+      } catch (err) {
+        return false;
+      }
     };
 
-    for (const store of this.getstores()) {
+    for (const store of this.getStores()) {
       if (store.identifyGame !== undefined) {
         if (await store.identifyGame?.(gamePath, gamePath => fallback(store, gamePath))) {
           return store.id;
@@ -176,7 +181,7 @@ class GameStoreHelper {
   }
 
   public reloadGames(): Bluebird<void> {
-    const stores = this.getstores().filter(store => !!store);
+    const stores = this.getStores().filter(store => !!store);
     log('info', 'reloading game store games', stores.map(store => store.id)
                                                     .join(', '));
     return Bluebird.each(stores, (store: IGameStore) =>
@@ -200,14 +205,14 @@ class GameStoreHelper {
       (exeId === runningProc.exeFile.toLowerCase())) !== undefined;
   }
 
-  private getstores(): IGameStore[] {
+  private getStores(): IGameStore[] {
     if (!!this.mStores) {
       return this.mStores;
     }
     // It's possible that the game mode manager has yet
     //  to load the stores.
     try {
-      this.mStores = [Steam, EpicGamesLauncher, ...getGameStores()];
+      this.mStores = getGameStores();
       return this.mStores;
     } catch (err) {
       log('debug', 'stores have yet to load', err);
@@ -276,7 +281,7 @@ class GameStoreHelper {
 
     const gameStores: IGameStore[] = ((!!queriedStore)
       ? [queriedStore]
-      : this.getstores()).filter(store => !!store);
+      : this.getStores()).filter(store => !!store);
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
       const stores = (gameStores !== undefined)

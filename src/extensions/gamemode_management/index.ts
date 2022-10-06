@@ -42,7 +42,7 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import getDriveList from './util/getDriveList';
-import { getGame } from './util/getGame';
+import { getGame, getGameStore } from './util/getGame';
 import { getModTypeExtensions, registerModType } from './util/modTypeExtensions';
 import ProcessMonitor from './util/ProcessMonitor';
 import queryGameInfo from './util/queryGameInfo';
@@ -533,6 +533,9 @@ function init(context: IExtensionContext): boolean {
     }
 
     try {
+      if (gameStore.name === undefined) {
+        gameStore.name = gameStore.id;
+      }
       gameStoreLaunchers.push(gameStore);
     } catch (err) {
       context.api.showErrorNotification('Game store launcher extension not loaded', err, {
@@ -584,6 +587,12 @@ function init(context: IExtensionContext): boolean {
       : Promise.resolve({
         path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
       }));
+
+  context.registerGameInfoProvider('game-store', 15, 60 * 1000,
+    ['store'], (game: IGame & IDiscoveryResult) => Promise.resolve({ store: {
+      title: 'Game Store',
+      value: getGameStore(game.store)?.name ?? context.api.translate('Unknown'),
+      type: 'string' } }));
 
   context.registerGameInfoProvider('main', 30, 86400000,
     ['size', 'size_nolinks'], queryGameInfo);

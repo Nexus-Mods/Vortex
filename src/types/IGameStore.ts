@@ -64,15 +64,21 @@ export interface ICustomExecutionInfo {
 }
 
 /**
- * interface for game store launcher extensions
+ * interface for game store extensions
  *
  * @interface IGameStore
  */
 export interface IGameStore {
   /**
-   * This launcher's id.
+   * This store's id.
    */
   id: string;
+
+  /**
+   * This store's name. If unset, will use the id instead of the name when
+   * displaying to users
+   */
+  name?: string;
 
   /**
    * Returns all recognized/installed games which are currently

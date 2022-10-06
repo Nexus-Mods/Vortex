@@ -113,7 +113,20 @@ export function quickDiscovery(knownGames: IGame[],
         }
         // don't override manually set game location
         if (getSafe(discoveredGames, [game.id, 'pathSetManually'], false)) {
-          return resolve();
+          if ((discoveredGames[game.id] !== undefined)
+              && (discoveredGames[game.id]?.store === undefined)) {
+            return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+              .then(store => {
+                if (store !== undefined) {
+                  onDiscoveredGame(game.id, {
+                    ...discoveredGames[game.id],
+                    store,
+                  });
+                }
+              });
+          } else {
+            return resolve();
+          }
         }
         try {
           const gamePath = game.queryPath();
