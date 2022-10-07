@@ -57,8 +57,8 @@ export interface ITool {
    * will query the path from the registry or from steam.
    * This function may return a promise and it should do that if it's doing I/O
    *
-   * This may be left undefined but then the tool/game can only be discovered
-   * by searching the disk which is slow and only happens manually.
+   * This may be left undefined but then the location for the tool/game can only be set
+   * manually
    */
   queryPath?: () => string | Promise<string | IGameStoreEntry>;
 

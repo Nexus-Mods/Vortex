@@ -1,6 +1,7 @@
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
+import { IGameStoreEntry } from '../../../types/IGameStoreEntry';
 import { ITool } from '../../../types/ITool';
 import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
@@ -94,116 +95,174 @@ export function quickDiscoveryTools(gameId: string,
   .then(() => null);
 }
 
+function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResult},
+                                  game: IGame,
+                                  onDiscoveredGame: DiscoveredCB)
+                                  : Bluebird<void> {
+  if ((discoveredGames[game.id] !== undefined)
+    && (discoveredGames[game.id]?.store === undefined)) {
+    return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+      .then(store => {
+        if (store !== undefined) {
+          onDiscoveredGame(game.id, {
+            ...discoveredGames[game.id],
+            store,
+          });
+        }
+      });
+  } else {
+    return Bluebird.resolve();
+  }
+}
+
+function queryByArgs(discoveredGames: { [id: string]: IDiscoveryResult },
+                     game: IGame): Bluebird<IGameStoreEntry> {
+  return GameStoreHelper.find(game.queryArgs)
+    .then(results => Bluebird.all<IGameStoreEntry>(results.map(res =>
+      fs.statAsync(res.gamePath)
+        .then(() => res)
+        .catch(() => undefined)
+    )))
+    .then(results => results.filter(res => res !== undefined))
+    .then(results => {
+      if (results.length === 0) {
+        return Bluebird.resolve(undefined);
+      }
+      const discoveredStore = discoveredGames[game.id]?.store;
+      const prio = (entry: IGameStoreEntry) => {
+        if ((discoveredStore !== undefined)
+          && (entry.gameStoreId === discoveredStore)) {
+          return 0;
+        } else {
+          return entry.priority ?? 100;
+        }
+      };
+
+      results = results.sort((lhs: IGameStoreEntry, rhs: IGameStoreEntry) =>
+        prio(lhs) - prio(rhs));
+      return Bluebird.resolve(results[0]);
+    });
+}
+
+function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
+  const gamePath = game.queryPath();
+  const prom = (typeof (gamePath) === 'string')
+    ? Bluebird.resolve(gamePath)
+    : gamePath;
+
+  let store: string;
+
+  return prom
+    .then(resolvedInfo => {
+      if (typeof (resolvedInfo) === 'string') {
+        return GameStoreHelper.identifyStore(resolvedInfo)
+          .catch(err => {
+            log('error', 'failed to identify store for game', err.message);
+            return undefined;
+          })
+          .then((storeDetected: string) => {
+            // storeDetected may be undefined, in that case we use default handling
+            store = storeDetected;
+            return resolvedInfo;
+          });
+      } else {
+        store = resolvedInfo.gameStoreId;
+        return resolvedInfo.gamePath;
+      }
+    })
+    .then(resolvedPath => resolvedPath === undefined
+      ? Bluebird.resolve(undefined)
+      : fs.statAsync(resolvedPath)
+        .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            log('info', 'rejecting game discovery, directory doesn\'t exist',
+                resolvedPath);
+            return Bluebird.resolve(undefined);
+          }
+          return Bluebird.reject(err);
+        }))
+}
+
+function handleDiscoveredGame(game: IGame,
+                              resolvedPath: string,
+                              store: string,
+                              discoveredGames: {[id: string]: IDiscoveryResult},
+                              onDiscoveredGame: DiscoveredCB,
+                              onDiscoveredTool: DiscoveredToolCB)
+                              : Bluebird<string> {
+  if (!truthy(resolvedPath)) {
+    return undefined;
+  }
+  log('info', 'found game', { name: game.name, location: resolvedPath, store });
+  const exe = game.executable(resolvedPath);
+  const disco: IDiscoveryResult = {
+    path: resolvedPath,
+    executable: (exe !== game.executable()) ? exe : undefined,
+    store,
+  };
+  onDiscoveredGame(game.id, disco);
+  return getNormalizeFunc(resolvedPath)
+    .then(normalize =>
+      discoverRelativeTools(
+        game, resolvedPath, discoveredGames,
+        onDiscoveredTool, normalize))
+    .then(() => game.id)
+    .catch((err) => {
+      onDiscoveredGame(game.id, undefined);
+      if (err.message !== undefined) {
+        log('debug', 'game not found',
+            { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
+      } else {
+        log('warn', 'game not found - invalid exception', { id: game.id, err });
+      }
+      return undefined;
+    });
+}
+
 /**
  * run the "quick" discovery using functions provided by the game extension
  *
  * @export
  * @param {IGame[]} knownGames
  * @param {DiscoveredCB} onDiscoveredGame
+ * @return the list of gameIds that were discovered
  */
 export function quickDiscovery(knownGames: IGame[],
                                discoveredGames: {[id: string]: IDiscoveryResult},
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Bluebird<string[]> {
-  return Bluebird.map(knownGames, game => new Bluebird<string>((resolve, reject) => {
-    return quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool)
+  return Bluebird.all(knownGames.map(game =>
+    quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool)
       .then(() => {
-        if (game.queryPath === undefined) {
-          return resolve();
-        }
-        // don't override manually set game location
         if (getSafe(discoveredGames, [game.id, 'pathSetManually'], false)) {
-          if ((discoveredGames[game.id] !== undefined)
-              && (discoveredGames[game.id]?.store === undefined)) {
-            return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
-              .then(store => {
-                if (store !== undefined) {
-                  onDiscoveredGame(game.id, {
-                    ...discoveredGames[game.id],
-                    store,
-                  });
-                }
-              });
-          } else {
-            return resolve();
-          }
+          // don't override manually set game location but maybe update some settings
+          return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame)
+            .then(() => Bluebird.resolve(undefined));
         }
-        try {
-          const gamePath = game.queryPath();
-          const prom = (typeof (gamePath) === 'string')
-            ? Bluebird.resolve(gamePath)
-            : gamePath;
+        let prom: Bluebird<string>;
 
-          let store: string;
-
-          prom
-            .then(resolvedInfo => {
-              if (typeof(resolvedInfo) === 'string') {
-                return GameStoreHelper.identifyStore(resolvedInfo)
-                  .catch(err => {
-                    log('error', 'failed to identify store for game', err.message);
-                    return undefined;
-                  })
-                  .then((storeDetected: string) => {
-                    // storeDetected may be undefined, in that case we use default handling
-                    store = storeDetected;
-                    return resolvedInfo;
-                  });
-              } else {
-                store = resolvedInfo.gameStoreId;
-                return resolvedInfo.gamePath;
-              }
-            })
-            .then(resolvedPath => resolvedPath === undefined
-              ? Bluebird.resolve(undefined)
-              : fs.statAsync(resolvedPath)
-                .then(() => resolvedPath)
-                .catch(err => {
-                  if (err.code === 'ENOENT') {
-                    log('info', 'rejecting game discovery, directory doesn\'t exist',
-                        resolvedPath);
-                    return Bluebird.resolve(undefined);
-                  }
-                  return Bluebird.reject(err);
-                }))
-            .then(resolvedPath => {
-              if (!truthy(resolvedPath)) {
-                return resolve(undefined);
-              }
-              log('info', 'found game', { name: game.name, location: resolvedPath, store });
-              const exe = game.executable(resolvedPath);
-              const disco: IDiscoveryResult = {
-                path: resolvedPath,
-                executable: (exe !== game.executable()) ? exe : undefined,
-                store,
-              };
-              onDiscoveredGame(game.id, disco);
-              return getNormalizeFunc(resolvedPath)
-                .then(normalize =>
-                  discoverRelativeTools(game, resolvedPath, discoveredGames,
-                                        onDiscoveredTool, normalize))
-                .then(() => resolve(game.id));
-            })
-            .catch((err) => {
-              onDiscoveredGame(game.id, undefined);
-              if (err.message !== undefined) {
-                log('debug', 'game not found',
-                  { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
-              } else {
-                log('warn', 'game not found - invalid exception', { id: game.id, err });
-              }
-              resolve();
-            });
-        } catch (err) {
+        if (game.queryArgs !== undefined) {
+          prom = queryByArgs(discoveredGames, game)
+            .then(result => handleDiscoveredGame(
+              game, result.gamePath, result.gameStoreId,
+              discoveredGames, onDiscoveredGame, onDiscoveredTool));
+        } else if (game.queryPath !== undefined) {
+          prom = queryByCB(game)
+            .then(result => handleDiscoveredGame(
+              game, result.gamePath, result.gameStoreId,
+              discoveredGames, onDiscoveredGame, onDiscoveredTool));
+        } else {
+          prom = Bluebird.resolve(undefined);
+        }
+        return prom.catch(err => {
           log('error', 'failed to use game support plugin',
               { id: game.id, err: err.message, stack: err.stack });
           // don't escalate exception because a single game shouldn't break everything
-          return resolve();
-        }
-      });
-  }))
-  .then(gameNames => gameNames.filter(name => name !== undefined))
-  ;
+          return Bluebird.resolve(undefined);
+        });
+      })))
+    .then(gameNames => gameNames.filter(name => name !== undefined));
 }
 
 /**

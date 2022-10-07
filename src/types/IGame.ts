@@ -4,6 +4,7 @@ import { IDiscoveryResult, IMod } from './IState';
 import { ITool } from './ITool';
 
 import Promise from 'bluebird';
+import { IStoreQuery } from '../util/GameStoreHelper';
 
 export { IModType };
 
@@ -28,6 +29,11 @@ export interface IGame extends ITool {
    * @memberOf IGame
    */
   queryModPath: (gamePath: string) => string;
+
+  /**
+   * use instead of queryPath for simpler specification of search arguments
+   */
+  queryArgs?: { [storeId: string]: IStoreQuery[] };
 
   /**
    * returns all directories where mods for this game
