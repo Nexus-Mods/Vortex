@@ -8,7 +8,7 @@ import BrowserView, { SubscriptionResult } from './views/BrowserView';
 import { closeBrowser, showURL } from './actions';
 import { sessionReducer } from './reducers';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { generate as shortid } from 'shortid';
 import * as url from 'url';
@@ -48,7 +48,7 @@ let lastURL: string;
 function doBrowse(api: IExtensionApi, navUrl: string,
                   instructions: string, subscriptionId: string,
                   skippable: boolean) {
-  return new Promise<string>((resolve, reject) => {
+  return new Bluebird<string>((resolve, reject) => {
     lastURL = navUrl;
     subscribe(subscriptionId, 'close', (skip: boolean) => {
       reject(new UserCanceled(skip));

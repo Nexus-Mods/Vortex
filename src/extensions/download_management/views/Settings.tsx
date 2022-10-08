@@ -33,7 +33,7 @@ import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
 import getText from '../texts';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as process from 'process';
 import * as React from 'react';
@@ -61,7 +61,7 @@ interface IActionProps {
   onSetTransfer: (dest: string) => void;
   onSetMaxDownloads: (value: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
   onShowError: (message: string, details: string | Error,
                 allowReport: boolean, isBBCode?: boolean) => void;
   onSetCopyOnIFF: (enabled: boolean) => void;
@@ -443,7 +443,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           return this.transferPath()
             .then(() => writeDownloadsTag(this.context.api, newPath));
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
@@ -463,7 +463,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + 'Clean-up of the old downloads folder has been cancelled.<br /><br />'
             + `Old downloads folder: [url]{{thePath}}[/url]`,
             { replace: { thePath: oldPath } }),
-        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+        }, [ { label: 'Close', action: () => Bluebird.resolve() } ]);
 
         if (!(err.errorObject instanceof UserCanceled)) {
           this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
@@ -549,7 +549,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }));
   }
 
-  private confirmElevate = (): Promise<void> => {
+  private confirmElevate = (): Bluebird<void> => {
     const { t, onShowDialog } = this.props;
     return onShowDialog('question', 'Access denied', {
       text: 'This directory is not writable to the current windows user account. '
@@ -560,12 +560,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       { label: 'Create as Administrator' },
     ])
     .then(result => (result.action === 'Cancel')
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve());
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.resolve());
   }
 
   private checkTargetEmpty(oldDownloadPath: string, newDownloadPath: string) {
-    let queue = Promise.resolve();
+    let queue = Bluebird.resolve();
     let fileCount = 0;
     let hasDownloadTag: boolean = false;
     let tagInstance: string;
@@ -595,7 +595,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         ;
     }
     // ensure the destination directories are empty
-    return queue.then(() => new Promise((resolve, reject) => {
+    return queue.then(() => new Bluebird((resolve, reject) => {
       if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
         if (tagInstance !== undefined) {
           return this.props.onShowDialog('question', 'Confirm', {
@@ -642,12 +642,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         sourceIsMissing = (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1);
         log('warn', 'Transfer failed - missing source directory', err);
         return (sourceIsMissing)
-          ? Promise.resolve(undefined)
-          : Promise.reject(err);
+          ? Bluebird.resolve(undefined)
+          : Bluebird.reject(err);
       })
       .then(stats => {
         const queryReset = (stats !== undefined)
-          ? Promise.resolve()
+          ? Bluebird.resolve()
           : onShowDialog('question', 'Missing downloads folder', {
             bbcode: 'Vortex is unable to find your current downloads folder; '
               + 'this can happen when: <br />'
@@ -666,8 +666,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               { label: 'Reinitialize' },
             ])
             .then(result => (result.action === 'Cancel')
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve());
+              ? Bluebird.reject(new UserCanceled())
+              : Bluebird.resolve());
 
         return queryReset
           .then(() => {
@@ -683,8 +683,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               }
             })
               .catch(err => (sourceIsMissing && (err.path === oldPath))
-                ? Promise.resolve()
-                : Promise.reject(err));
+                ? Bluebird.resolve()
+                : Bluebird.reject(err));
           });
       });
   }

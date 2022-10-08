@@ -23,7 +23,7 @@ import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
 import Usage from './Usage';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -173,7 +173,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     this.mHeaderUpdateDebouncer = new Debouncer(() => {
       this.updateColumnWidth();
-      return Promise.resolve();
+      return Bluebird.resolve();
     }, 200, false);
 
     this.mUpdateCalculatedDebouncer = new Debouncer(() => {
@@ -1067,7 +1067,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION)
           .then((cont: boolean) => cont && (iterations > 0)
             ? this.scrollToItem(item, false, iterations - 1)
-            : Promise.resolve());
+            : Bluebird.resolve());
       } else {
         this.mScrollRef.scrollTop = targetPos;
 
@@ -1132,10 +1132,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeaderRef = ref;
   }
 
-  private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<string[]> {
+  private updateCalculatedValues(props: IProps, forceUpdateId?: string): Bluebird<string[]> {
     this.mNextUpdateState = props;
     if (this.mUpdateInProgress) {
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     }
     this.mUpdateInProgress = true;
 
@@ -1149,21 +1149,21 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
-    return Promise.map(Object.keys(data), (rowId: string) => {
+    return Bluebird.map(Object.keys(data), (rowId: string) => {
       const delta: any = {};
 
-      return Promise.map(objects, (attribute: ITableAttribute) => {
+      return Bluebird.map(objects, (attribute: ITableAttribute) => {
         // avoid recalculating if the source data hasn't changed. To support
         // isVolatile we still go through each attribute even if the entire row didn't change
         if (!attribute.isVolatile
             && (attribute.id !== forceUpdateId)
             && (oldState.data[rowId] === data[rowId])) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         if (attribute.calc === undefined) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
-        return Promise.resolve(attribute.calc(data[rowId], t))
+        return Bluebird.resolve(attribute.calc(data[rowId], t))
           .then(newValue => {
             if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
               changedColumns.add(attribute.id);
@@ -1191,14 +1191,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
       });
     })
-    .then(() => Promise.map(Object.keys(oldState.data), rowId => {
+    .then(() => Bluebird.map(Object.keys(oldState.data), rowId => {
       if (data[rowId] === undefined) {
         delete newValues[rowId];
       }
     }))
     .then(() =>
       // once everything is recalculated, update the cache
-      new Promise<void>((resolve, reject) => {
+      new Bluebird<void>((resolve, reject) => {
         this.updateState(update(this.mNextState, {
           calculatedValues: { $set: newValues },
         }), () => resolve());
@@ -1214,12 +1214,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         // another update was queued while this was active
         return this.updateCalculatedValues(this.mNextUpdateState);
       } else {
-        return Promise.resolve(Array.from(changedColumns));
+        return Bluebird.resolve(Array.from(changedColumns));
       }
     })
     .catch(err => {
       this.mUpdateInProgress = false;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     });
   }
 

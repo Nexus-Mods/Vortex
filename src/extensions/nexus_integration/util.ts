@@ -2,7 +2,7 @@ import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
@@ -47,19 +47,19 @@ export function startDownload(api: IExtensionApi,
                               fileName?: string,
                               allowInstall?: boolean,
                               handleErrors: boolean = true)
-                              : Promise<string> {
+                              : Bluebird<string> {
   let url: NXMUrl;
 
   log('debug', 'start download', fileName);
   try {
     url = new NXMUrl(nxmurl);
   } catch (err) {
-    return Promise.reject(err);
+    return Bluebird.reject(err);
   }
 
   if ((['vortex', 'site'].includes(url.gameId)) && url.view) {
     api.events.emit('show-extension-page', url.modId);
-    return Promise.reject(new DownloadIsHTML(nxmurl));
+    return Bluebird.reject(new DownloadIsHTML(nxmurl));
   }
 
   return (url.type === 'mod')
@@ -72,7 +72,7 @@ function startDownloadCollection(api: IExtensionApi,
                                  urlStr: string,
                                  url: NXMUrl,
                                  handleErrors: boolean = true)
-                                 : Promise<string> {
+                                 : Bluebird<string> {
   const state: IState = api.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
@@ -81,7 +81,7 @@ function startDownloadCollection(api: IExtensionApi,
 
   const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
 
-  return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
+  return Bluebird.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
                                                           url.collectionSlug,
                                                           revNumber))
     .then(revision => {
@@ -111,14 +111,14 @@ function startDownloadCollection(api: IExtensionApi,
           revisionInfo,
         },
       }, (revisionInfo as any).file_name, cb, undefined, { allowInstall: false }))
-      .catch(err => Promise.reject(contextify(err)));
+      .catch(err => Bluebird.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId))
     .catch(err => {
       err['collectionSlug'] = url.collectionSlug;
       err['revisionNumber'] = revisionInfo?.revisionNumber ?? url.revisionNumber;
       if (!handleErrors) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       if (err.code === 'NOT_FOUND') {
         api.showErrorNotification('Failed to download collection',
@@ -140,18 +140,18 @@ export interface IRemoteInfo {
 }
 
 export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
-                        : Promise<IRemoteInfo> {
-  return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
+                        : Bluebird<IRemoteInfo> {
+  return Bluebird.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
     .catch(err => {
       err['attachLogOnReport'] = true;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     })
     .then(([ modInfo, fileInfo ]) => ({ modInfo, fileInfo }));
 }
 
 export function getCollectionInfo(nexus: Nexus,
                                   collectionSlug: string, revisionNumber: number,
-                                  revisionId: number): Promise<IRemoteInfo> {
+                                  revisionId: number): Bluebird<IRemoteInfo> {
   const query: IRevisionQuery = {
     adultContent: true,
     id: true,
@@ -185,14 +185,14 @@ export function getCollectionInfo(nexus: Nexus,
       total: true,
     },
   };
-  return Promise.resolve(
+  return Bluebird.resolve(
       nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
     .then(revision => ({ revisionInfo: revision }))
     .catch(err => {
       err['collectionSlug'] = collectionSlug;
       err['revisionNumber'] = revisionNumber;
       err['revisionId'] = revisionId;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     });
 }
 
@@ -203,7 +203,7 @@ function startDownloadMod(api: IExtensionApi,
                           redownload?: RedownloadMode,
                           fileName?: string,
                           allowInstall?: boolean,
-                          handleErrors: boolean = true): Promise<string> {
+                          handleErrors: boolean = true): Bluebird<string> {
   log('info', 'start download mod', { urlStr, allowInstall });
   let state = api.getState();
   const games = knownGames(state);
@@ -215,7 +215,7 @@ function startDownloadMod(api: IExtensionApi,
   return getInfo(nexus, pageId, url.modId, url.fileId)
     .then(({ modInfo, fileInfo }) => {
       nexusFileInfo = fileInfo;
-      return new Promise<string>((resolve, reject) => {
+      return new Bluebird<string>((resolve, reject) => {
         api.events.emit('start-download', [urlStr], {
           game: gameId,
           source: 'nexus',
@@ -276,7 +276,7 @@ function startDownloadMod(api: IExtensionApi,
     })
     .catch((err) => {
       if (!handleErrors) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {
         const userName = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
@@ -495,7 +495,7 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
 
 export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
                                   gameId: string, nexusId: number, version: string,
-                                  endorsedStatus: string): Promise<string> {
+                                  endorsedStatus: string): Bluebird<string> {
   return endorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
       reportEndorseError(api, err, 'mod', gameId, nexusId, version);
@@ -623,7 +623,7 @@ function nexusLink(state: IState, mod: IMod, gameMode: string) {
 }
 
 export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
-  return Promise.resolve(nexus.getEndorsements())
+  return Bluebird.resolve(nexus.getEndorsements())
     .then(endorsements => {
       const endorseMap: { [gameId: string]: { [modId: string]: EndorsedStatus } } =
         endorsements.reduce((prev, endorsement: IEndorsement) => {
@@ -664,7 +664,7 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
 function filterByUpdateList(store: Redux.Store<any>,
                             nexus: Nexus,
                             gameId: string,
-                            input: IMod[]): Promise<IMod[]> {
+                            input: IMod[]): Bluebird<IMod[]> {
   const getGameId = (mod: IMod) => getSafe(mod.attributes, ['downloadGame'], undefined) || gameId;
 
   // all game ids for which we have mods installed
@@ -684,7 +684,7 @@ function filterByUpdateList(store: Redux.Store<any>,
     return prev;
   }, {});
 
-  return Promise.reduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
+  return Bluebird.reduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
     // minAge map may be missing certain gameIds when none of the installed mods
     //  for that gameId have the lastUpdateTime attribute. We still want to check for
     //  updates in this scenario - the lastUpdateTime attribute will be populated immediately
@@ -727,11 +727,11 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
                                           nexus: Nexus,
                                           gameId: string,
                                           mods: { [modId: string]: IMod })
-    : Promise<{ errorMessages: string[], updatedIds: string[] }> {
+    : Bluebird<{ errorMessages: string[], updatedIds: string[] }> {
   const collectionIds = Object.keys(mods)
     .filter(modId => mods[modId].attributes?.collectionId !== undefined);
 
-  return Promise.all(collectionIds.map(modId => {
+  return Bluebird.all(collectionIds.map(modId => {
     const query: Partial<ICollectionQuery> = {
       revisions: {
         revisionNumber: true,
@@ -781,7 +781,7 @@ function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
 function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
                                 gameId: string, modsList: IMod[], filteredMods: IMod[],
                                 forceFull: boolean | 'silent', now: number)
-                                : Promise<{ errorMessages: string[], updatedIds: string[] }> {
+                                : Bluebird<{ errorMessages: string[], updatedIds: string[] }> {
   const filtered = new Set(filteredMods.map(mod => mod.id));
   const tStore = (store as ThunkStore<any>);
   let pos = 0;
@@ -811,7 +811,7 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
   const newWerP = ['attributes', 'newestVersion'];
   const newFileIdP = ['attributes', 'newestFileId'];
 
-  return Promise.map(modsList, (mod: IMod) => {
+  return Bluebird.map(modsList, (mod: IMod) => {
     if (!forceFull && !filtered.has(mod.id)) {
       store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
       return;
@@ -862,16 +862,16 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
       })
       .catch(TimeoutError, err => {
         const name = modName(mod, { version: true });
-        return Promise.resolve(`${name}:\nRequest timeout`);
+        return Bluebird.resolve(`${name}:\nRequest timeout`);
       })
       .catch(err => {
         const detail = processErrorMessage(err);
         if (detail.fatal) {
-          return Promise.reject(detail);
+          return Bluebird.reject(detail);
         }
 
         if (detail.message === undefined) {
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         }
 
         const name = modName(mod, { version: true });
@@ -922,7 +922,7 @@ export function checkModVersionsImpl(
   nexus: Nexus,
   gameId: string,
   mods: { [modId: string]: IMod },
-  forceFull: boolean | 'silent'): Promise<{ errors: string[], modIds: string[] }> {
+  forceFull: boolean | 'silent'): Bluebird<{ errors: string[], modIds: string[] }> {
 
   const now = Date.now();
 
@@ -938,7 +938,7 @@ export function checkModVersionsImpl(
   const updatedIds: string[] = [];
 
   return refreshEndorsements(store, nexus)
-    .then(() => Promise.all([
+    .then(() => Bluebird.all([
       checkForCollectionUpdates(store, nexus, gameId, mods),
       checkForModUpdates(store, nexus, gameId, modsList, forceFull, now),
     ]))
@@ -956,9 +956,9 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
+export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Bluebird<boolean> {
   setApiKey(key);
-  return Promise.resolve(nexus.setKey(key))
+  return Bluebird.resolve(nexus.setKey(key))
     .then(userInfo => {
       if (userInfo !== null) {
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
@@ -989,7 +989,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         .then(() => true);
     })
     // don't stop the login just because the github rate limit is exceeded
-    .catch(RateLimitExceeded, () => Promise.resolve(true))
+    .catch(RateLimitExceeded, () => Bluebird.resolve(true))
     .catch(TimeoutError, () => {
       api.sendNotification({
         type: 'error',
@@ -1056,7 +1056,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
 let nexusGamesCache: IGameListEntry[] = [];
 
 let onCacheLoaded: () => void;
-const cachePromise = new Promise(resolve => onCacheLoaded = resolve);
+const cachePromise = new Bluebird(resolve => onCacheLoaded = resolve);
 
 function cachePath() {
   return path.join(getVortexPath('temp'), 'nexus_gamelist.json');
@@ -1070,7 +1070,7 @@ export function retrieveNexusGames(nexus: Nexus) {
     .catch(() => {
       // ignore missing cache
     })
-    .then(() => Promise.resolve(jsonRequest<IGameListEntry[]>(GAMES_JSON_URL)))
+    .then(() => Bluebird.resolve(jsonRequest<IGameListEntry[]>(GAMES_JSON_URL)))
     .then(gamesList => {
       nexusGamesCache = gamesList.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
       return fs.writeFileAsync(cachePath(), JSON.stringify(gamesList));
@@ -1099,6 +1099,6 @@ export function nexusGames(): IGameListEntry[] {
   return nexusGamesCache;
 }
 
-export function nexusGamesProm(): Promise<IGameListEntry[]> {
+export function nexusGamesProm(): Bluebird<IGameListEntry[]> {
   return cachePromise.then(() => nexusGamesCache);
 }

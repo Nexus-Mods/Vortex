@@ -7,14 +7,14 @@ import { bytesToString } from '../../../util/util';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
   t: TFunction;
   game: IGameStored;
-  onRefreshGameInfo: (gameId: string) => Promise<void>;
+  onRefreshGameInfo: (gameId: string) => Bluebird<void>;
   onChange: () => void;
 }
 

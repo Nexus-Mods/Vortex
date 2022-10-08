@@ -1,5 +1,5 @@
 import NexusT from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 /**
  * endorse the mod by the server call
@@ -13,7 +13,7 @@ import Promise from 'bluebird';
  */
 
 function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
-                    version: string, endorseStatus: string): Promise<string> {
+                    version: string, endorseStatus: string): Bluebird<string> {
   endorseStatus = endorseStatus.toLowerCase();
   if (endorseStatus === 'undecided' || endorseStatus === 'abstained' ||
       endorseStatus === '') {
@@ -22,7 +22,7 @@ function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
     endorseStatus = 'abstain';
   }
 
-  return Promise.resolve(nexus.endorseMod(nexusModId, version, endorseStatus as any, gameId))
+  return Bluebird.resolve(nexus.endorseMod(nexusModId, version, endorseStatus as any, gameId))
       .then(result => result.status);
 }
 
@@ -36,7 +36,7 @@ function endorseCollection(nexus: NexusT, gameId: string, collectionId: number,
     endorseStatus = 'abstain';
   }
 
-  return Promise.resolve(nexus.endorseCollection(collectionId, endorseStatus as any, gameId));
+  return Bluebird.resolve(nexus.endorseCollection(collectionId, endorseStatus as any, gameId));
 }
 
 export { endorseCollection, endorseMod };

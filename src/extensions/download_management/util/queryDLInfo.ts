@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { Action } from 'redux';
 import { IExtensionApi, ILookupResult } from '../../../types/IExtensionContext';
@@ -14,14 +14,14 @@ import { setDownloadModInfo } from '../actions/state';
 import { downloadPathForGame } from '../selectors';
 
 function queryInfo(api: IExtensionApi, dlIds: string[],
-                   ignoreCache: boolean): Promise<void> {
+                   ignoreCache: boolean): Bluebird<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
 
   const knownGames = selectors.knownGames(state);
 
-  return Promise.map(dlIds ?? [], dlId => {
+  return Bluebird.map(dlIds ?? [], dlId => {
     const dl = state.persistent.downloads.files[dlId];
     if (dl === undefined) {
       log('warn', 'download no longer exists', dlId);
@@ -70,7 +70,7 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
           // incorrect data, so ignore all of it
           if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
               && (dlNow?.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
 
           setInfo('source', 'nexus');
@@ -87,7 +87,7 @@ function queryInfo(api: IExtensionApi, dlIds: string[],
         }
         return (gameId !== metaGameId)
           ? api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId])
-          : Promise.resolve();
+          : Bluebird.resolve();
       }
     })
     .catch(err => {

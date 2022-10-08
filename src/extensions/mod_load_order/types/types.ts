@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import * as Bluebird from 'bluebird';
 import { IActionDefinitionEx } from '../../../controls/ActionControl';
 import { IMod } from '../../../types/IState';
 import { ICollection } from '../types/collections';
@@ -154,7 +154,7 @@ export interface IGameLoadOrderEntry {
   //  before we start sorting the mods.
   preSort?: (items: ILoadOrderDisplayItem[],
              sortDir: SortType,
-             updateType?: UpdateType) => Promise<ILoadOrderDisplayItem[]>;
+             updateType?: UpdateType) => Bluebird<ILoadOrderDisplayItem[]>;
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.

@@ -6,7 +6,7 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 
 import { activeGameId } from './selectors';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as Redux from 'redux';
 
 function clone<T>(input: T): T {
@@ -331,8 +331,8 @@ export function rehydrate<T extends object>(
     : state;
 }
 
-function waitUntil(predicate: () => boolean, interval: number = 100): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+function waitUntil(predicate: () => boolean, interval: number = 100): Bluebird<void> {
+  return new Bluebird<void>((resolve, reject) => {
     setTimeout(() => {
       if (predicate()) {
         resolve();
@@ -352,15 +352,15 @@ function waitUntil(predicate: () => boolean, interval: number = 100): Promise<vo
  *
  * @export
  * @param {*} state
- * @returns {Promise<IGameStored>}
+ * @returns {Bluebird<IGameStored>}
  */
-export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
+export function currentGame(store: Redux.Store<any>): Bluebird<IGameStored> {
   const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
   let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
   if ((knownGames !== null) && (knownGames !== undefined)) {
     const gameMode = activeGameId(store.getState());
     const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
-    return Promise.resolve(res || fallback);
+    return Bluebird.resolve(res || fallback);
   } else {
     return waitUntil(() => {
              knownGames =
@@ -371,7 +371,7 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
           const gameMode = activeGameId(store.getState());
 
           const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
-          return Promise.resolve(res || fallback);
+          return Bluebird.resolve(res || fallback);
         });
   }
 }

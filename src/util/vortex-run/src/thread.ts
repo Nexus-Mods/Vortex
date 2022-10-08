@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';
@@ -58,8 +58,8 @@ function writeProgram(func: (...args: any[]) => any, moduleBase: string, args?: 
 }
 
 function runThreaded(func: (...args: any[]) => any,
-                     moduleBase: string, ...args: any[]): Promise<any> {
-  return new Promise((resolve, reject) => {
+                     moduleBase: string, ...args: any[]): Bluebird<any> {
+  return new Bluebird((resolve, reject) => {
     tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);

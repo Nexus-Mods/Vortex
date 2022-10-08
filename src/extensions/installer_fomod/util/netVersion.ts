@@ -1,6 +1,6 @@
 import * as fs from '../../../util/fs';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 
@@ -63,10 +63,10 @@ export function getNetVersion(): string {
     : undefined;
 }
 
-export function checkAssemblies(): Promise<boolean> {
+export function checkAssemblies(): Bluebird<boolean> {
   const instPath = getRegValue('InstallPath', 'REG_SZ');
   if (instPath === undefined) {
-    return Promise.resolve(false);
+    return Bluebird.resolve(false);
   }
   return fs.readdirAsync(instPath)
     .map((iter: string) => iter.toLowerCase())
@@ -74,6 +74,6 @@ export function checkAssemblies(): Promise<boolean> {
     .then(files => {
       const installed = new Set(files);
       const missing = REQUIRED_ASSEMBLIES.find(name => !installed.has(name));
-      return Promise.resolve(missing === undefined);
+      return Bluebird.resolve(missing === undefined);
     });
 }

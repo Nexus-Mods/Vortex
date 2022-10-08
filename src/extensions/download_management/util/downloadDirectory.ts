@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../../types/IDialog';
@@ -14,7 +14,7 @@ import getDownloadPath from './getDownloadPath';
 
 export const DOWNLOADS_DIR_TAG = '__vortex_downloads_folder';
 
-export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
+export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Bluebird<void> {
   const state: IState = api.store.getState();
   const data = {
     instance: state.app.instanceId,
@@ -41,27 +41,27 @@ export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Promise<
         { label: 'Proceed' },
       ]).then(res => (res.action === 'Proceed')
           ? fs.removeAsync(path.join(tagPath, DOWNLOADS_DIR_TAG))
-          : Promise.reject(err))
-        .catch({ code: 'ENOENT' }, remErr => Promise.resolve())
+          : Bluebird.reject(err))
+        .catch({ code: 'ENOENT' }, remErr => Bluebird.resolve())
         .then(() => writeTag())
-        .catch(innerErr => Promise.reject(err));
+        .catch(innerErr => Bluebird.reject(err));
     });
 }
 
-function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
+function removeDownloadsMetadata(api: IExtensionApi): Bluebird<void> {
   const state: IState = api.store.getState();
   const downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
-  return Promise.each(Object.keys(downloads), dlId => {
+  return Bluebird.each(Object.keys(downloads), dlId => {
     api.store.dispatch(removeDownload(dlId));
-    return Promise.resolve();
-  }).then(() => Promise.resolve());
+    return Bluebird.resolve();
+  }).then(() => Bluebird.resolve());
 }
 
 function queryDownloadFolderInvalid(api: IExtensionApi,
                                     err: Error,
                                     dirExists: boolean,
                                     currentDownloadPath: string)
-                                    : Promise<IDialogResult> {
+                                    : Bluebird<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog('error', 'Downloads Folder invalid', {
@@ -99,7 +99,7 @@ function queryDownloadFolderInvalid(api: IExtensionApi,
       ]);
 }
 
-function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
+function validateDownloadsTag(api: IExtensionApi, tagPath: string): Bluebird<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
     .then(data => {
       const state: IState = api.store.getState();
@@ -114,10 +114,10 @@ function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void
           { label: 'Continue' },
         ])
         .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
+          ? Bluebird.reject(new UserCanceled())
+          : Bluebird.resolve());
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
     .catch(() => {
       return api.showDialog('question', 'Confirm', {
@@ -128,12 +128,12 @@ function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void
         { label: 'I\'m sure' },
       ])
       .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
+        ? Bluebird.reject(new UserCanceled())
+        : Bluebird.resolve());
     });
 }
 
-export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
+export function ensureDownloadsDirectory(api: IExtensionApi): Bluebird<void> {
   const state: IState = api.getState();
 
   let currentDownloadPath = getDownloadPath(state.settings.downloads.path);
@@ -148,13 +148,13 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
     .catch(err => {
       if (!dirExists
           && (Object.keys(state.persistent.downloads.files ?? {}).length === 0)) {
-        return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
+        return fs.ensureDirWritableAsync(currentDownloadPath, () => Bluebird.resolve())
           .catch({ code: 'ENOENT' }, () => {
             // user has no downloads yet so no point asking them for the location but
             // the current one is invalid so we reset
             api.store.dispatch(setDownloadPath(''));
             currentDownloadPath = getDownloadPath(api.getState().settings.downloads.path);
-            return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
+            return fs.ensureDirWritableAsync(currentDownloadPath, () => Bluebird.resolve())
               .then(() => ensureDownloadsDirectory(api))
               .then(() => api.sendNotification({
                 type: 'info',
@@ -167,7 +167,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
         .then(result => {
         if (result.action === 'Quit Vortex') {
           getApplication().quit(0);
-          return Promise.reject(new UserCanceled());
+          return Bluebird.reject(new UserCanceled());
         } else if (result.action === 'Reinitialize') {
           const id = shortid();
           api.sendNotification({
@@ -176,7 +176,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
             message: 'Cleaning downloads metadata',
           });
           return removeDownloadsMetadata(api)
-            .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve()))
+            .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Bluebird.resolve()))
             .catch(() => {
               api.showDialog('error', 'Downloads Folder missing!', {
                 bbcode: 'The downloads folder could not be created. '
@@ -186,27 +186,27 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
               }, [
                 { label: 'Close' },
               ]);
-              return Promise.reject(new ProcessCanceled(
+              return Bluebird.reject(new ProcessCanceled(
                 'Failed to reinitialize download directory'));
             })
             .finally(() => {
               api.dismissNotification(id);
             });
         } else if (result.action === 'Ignore') {
-          return Promise.resolve();
+          return Bluebird.resolve();
         } else { // Browse...
           return api.selectDir({
             defaultPath: currentDownloadPath,
             title: api.translate('Select downloads folder'),
           }).then((selectedPath) => {
             if (!truthy(selectedPath)) {
-              return Promise.reject(new UserCanceled());
+              return Bluebird.reject(new UserCanceled());
             }
             return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
               .then(() => {
                 currentDownloadPath = selectedPath;
                 api.store.dispatch(setDownloadPath(currentDownloadPath));
-                return Promise.resolve();
+                return Bluebird.resolve();
               });
           })
           .catch(() => ensureDownloadsDirectory(api));

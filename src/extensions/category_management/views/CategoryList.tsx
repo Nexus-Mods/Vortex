@@ -21,7 +21,7 @@ import { ICategory, ICategoryDictionary } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
@@ -45,7 +45,7 @@ interface IActionProps {
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
 }
 
 interface IConnectedProps {

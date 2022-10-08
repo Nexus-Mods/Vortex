@@ -5,13 +5,13 @@ import { deBOM } from '../../../util/util';
 
 import chromePath from './chromePath';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 /**
  * changes the chrome config file to allow for handling of the specified url scheme.
  * This has no effect if chrome is running
  */
-function chromeAllowScheme(scheme: string): Promise<boolean> {
+function chromeAllowScheme(scheme: string): Bluebird<boolean> {
   let changed = false;
 
   return chromePath()
@@ -28,10 +28,10 @@ function chromeAllowScheme(scheme: string): Promise<boolean> {
         .then(() => fs.unlinkAsync(statePath))
         .then(() => fs.renameAsync(statePath + '.temp', statePath));
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     }))
-  .then(() => Promise.resolve(changed));
+  .then(() => Bluebird.resolve(changed));
 }
 
 export default chromeAllowScheme;

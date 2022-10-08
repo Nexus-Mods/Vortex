@@ -13,7 +13,7 @@ import Notification from '../../../views/Notification';
 
 import { closeBrowser } from '../actions';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { clipboard } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -89,7 +89,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       if (loading !== this.state.loading) {
         this.nextState.loading = loading;
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     }, 100, false);
 
     this.mCallbacks = {

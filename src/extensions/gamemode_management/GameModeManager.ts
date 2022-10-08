@@ -36,7 +36,7 @@ import {
 } from './util/discovery';
 import { getGame } from './util/getGame';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -57,7 +57,7 @@ class GameModeManager {
   private mKnownGames: IGame[];
   private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
-  private mActiveSearch: Promise<void>;
+  private mActiveSearch: Bluebird<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
@@ -98,14 +98,14 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string,
-                     profileId: string): Promise<void> {
+                     profileId: string): Bluebird<void> {
     log('debug', 'set game mode', { oldMode, newMode });
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const gameDiscovery = discoveredGames[newMode];
     if ((game === undefined) || (gameDiscovery?.path === undefined)) {
       // new game mode is not valid
-      return Promise.reject(new ProcessCanceled('game mode not found'));
+      return Bluebird.reject(new ProcessCanceled('game mode not found'));
     }
 
     let modPath;
@@ -115,7 +115,7 @@ class GameModeManager {
         modPath = path.resolve(gameDiscovery.path, modPath);
       }
     } catch (err) {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
     // the game is listed and available to be activated if it was found in any store
     // but in that case we haven't verified yet whether the directory actually contains the game
@@ -151,8 +151,8 @@ class GameModeManager {
       })
       .catch(err => {
         return ['ENOENT', 'ENOTFOUND'].includes(err.code)
-        ? Promise.reject(new SetupError('Missing: ' + (err.filename || modPath)))
-        : Promise.reject(err);
+        ? Bluebird.reject(new SetupError('Missing: ' + (err.filename || modPath)))
+        : Bluebird.reject(err);
       });
   }
 
@@ -160,20 +160,20 @@ class GameModeManager {
    * prepare change to a different game mode
    *
    * @param {string} gameMode
-   * @returns {Promise<void>}
+   * @returns {Bluebird<void>}
    *
    * @memberOf GameModeManager
    */
-  public setupGameMode(gameMode: string): Promise<void> {
+  public setupGameMode(gameMode: string): Bluebird<void> {
     const game = getGame(gameMode);
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
     log('debug', 'setup game mode', gameMode);
     if (gameDiscovery?.path === undefined) {
-      return Promise.reject(new Error('game not discovered'));
+      return Bluebird.reject(new Error('game not discovered'));
     } else if (game?.setup === undefined) {
       return game.getInstalledVersion(gameDiscovery)
-        .then(() => Promise.resolve());
+        .then(() => Bluebird.resolve());
     } else {
       try {
         return assertToolDir(game, gameDiscovery.path)
@@ -183,11 +183,11 @@ class GameModeManager {
           .then(() => game.getInstalledVersion(gameDiscovery))
           .then(() => game.setup(gameDiscovery))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
-            ? Promise.reject(new ProcessCanceled(
+            ? Bluebird.reject(new ProcessCanceled(
               `Game folder \"${gameDiscovery.path}\" doesn\'t exist (any more).`))
-            : Promise.reject(err));
+            : Bluebird.reject(err));
       } catch (err) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
     }
   }
@@ -228,7 +228,7 @@ class GameModeManager {
         .then(() => getNormalizeFunc(discovery.path))
         .then(normalize => discoverRelativeTools(game, discovery.path, discoveredGames, this.onDiscoveredTool, normalize));
     } else {
-      return Promise.reject(new Error('unknown game id: ' + gameId));
+      return Bluebird.reject(new Error('unknown game id: ' + gameId));
     }
   }
 
@@ -311,9 +311,9 @@ class GameModeManager {
   private postDiscovery() {
     const { discovered } = this.mStore.getState().settings.gameMode;
     this.mStore.dispatch(clearGameDisabled());
-    Promise.map(Object.keys(discovered), gameId => {
+    Bluebird.map(Object.keys(discovered), gameId => {
       if (discovered[gameId].path === undefined) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       return getNormalizeFunc(discovered[gameId].path)
@@ -333,8 +333,8 @@ class GameModeManager {
     });
   }
 
-  private ensureWritable(modPath: string): Promise<void> {
-    return fs.ensureDirWritableAsync(modPath, () => new Promise<void>((resolve, reject) => {
+  private ensureWritable(modPath: string): Bluebird<void> {
+    return fs.ensureDirWritableAsync(modPath, () => new Bluebird<void>((resolve, reject) => {
       this.mStore.dispatch(showDialog('question', 'Access Denied', {
         text: 'The mod directory for this game is not writable to your user account.\n'
             + 'If you have admin rights on this system, Vortex can change the permissions '

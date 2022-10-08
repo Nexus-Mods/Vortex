@@ -1,10 +1,10 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import {ILookupResult, IModInfo} from 'modmeta-db';
 import { IFileListItem, IMod, IModReference } from './IMod';
 
 export interface IModInfoEx extends IModInfo {
-  referer?: string | (() => Promise<string>);
-  sourceURI: string | (() => Promise<string>);
+  referer?: string | (() => Bluebird<string>);
+  sourceURI: string | (() => Bluebird<string>);
 }
 
 export interface ILookupResultEx extends ILookupResult {

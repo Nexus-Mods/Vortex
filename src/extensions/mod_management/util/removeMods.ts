@@ -1,10 +1,10 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { INotification } from '../../../types/INotification';
 import { toPromise } from '../../../util/util';
 
-export function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+export function removeMod(api: IExtensionApi, gameId: string, modId: string): Bluebird<void> {
+  return new Bluebird((resolve, reject) => {
     api.events.emit('remove-mod', gameId, modId, err => {
       if (err) {
         reject(err);
@@ -15,9 +15,9 @@ export function removeMod(api: IExtensionApi, gameId: string, modId: string): Pr
   });
 }
 
-export function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Promise<void> {
+export function removeMods(api: IExtensionApi, gameId: string, modIds: string[]): Bluebird<void> {
   if (modIds.length === 0) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const notiParams: INotification = {

@@ -56,7 +56,7 @@ import { STUCK_TIMEOUT } from './constants';
 import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
@@ -69,7 +69,7 @@ function profilePath(profile: IProfile): string {
   return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
-function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promise<void> {
+function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Bluebird<void> {
   return fs.ensureDirAsync(profilePath(currentProfile));
 }
 
@@ -87,13 +87,13 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 }
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
-                        direction: 'import' | 'export'): Promise<void> {
+                        direction: 'import' | 'export'): Bluebird<void> {
   log('debug', 'refresh profile', { profile, direction });
   if (profile === undefined || profile?.pendingRemove === true) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   if ((profile.gameId === undefined) || (profile.id === undefined)) {
-    return Promise.reject(new CorruptActiveProfile(profile));
+    return Bluebird.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
       .then(() => profilePath(profile))
@@ -105,7 +105,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         // loaded then it has no copies of the files but that if fine.
         const gameId = profile.gameId;
         if (profileFiles[gameId] === undefined) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         if (direction === 'import') {
           return syncToProfile(currentProfilePath, profileFiles[gameId],
@@ -121,7 +121,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         // why are we catching here at all? shouldn't a failure here cancel the
         // entire operation?
         if (err instanceof UserCanceled) {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
         showError(store.dispatch, 'Failed to set profile', err);
       })
@@ -187,23 +187,23 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
   }
 }
 
-function deploy(api: IExtensionApi, profileId: string): Promise<void> {
+function deploy(api: IExtensionApi, profileId: string): Bluebird<void> {
   const state: IState = api.store.getState();
   if ((profileId === undefined) || (state.persistent.profiles[profileId] === undefined)) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const profile = profileById(state, profileId);
   if ((profileId === lastActiveProfileForGame(state, profile.gameId))
       && !needToDeployForGame(state, profile.gameId)) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const gameDiscovery =
     getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
   if (gameDiscovery?.path === undefined) {
     // can't deploy a game that hasn't been discovered
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   let lastProgress: number = Date.now();
@@ -215,7 +215,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     }
   }, 1000);
 
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     api.events.emit('deploy-mods', onceCB((err: Error) => {
         clearInterval(watchdog);
         if (err === null) {
@@ -240,7 +240,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
  */
 function genOnProfileChange(api: IExtensionApi,
                             onFinishProfileSwitch: (callback: () => void) => void) {
-  let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
+  let finishProfileSwitchPromise: Bluebird<void> = Bluebird.resolve();
   const { store } = api;
 
   let cancelPromise: () => void;
@@ -289,7 +289,7 @@ function genOnProfileChange(api: IExtensionApi,
 
       const profile = state.persistent.profiles[current];
       if ((profile === undefined) && (current !== undefined)) {
-        return Promise.reject(new Error('Tried to set invalid profile'));
+        return Bluebird.reject(new Error('Tried to set invalid profile'));
       }
 
       if (profile !== undefined) {
@@ -299,7 +299,7 @@ function genOnProfileChange(api: IExtensionApi,
           showError(store.dispatch,
             'Game no longer supported, please install the game extension',
             undefined, { message: profile.gameId, allowReport: false });
-          return Promise.reject(new ProcessCanceled('Game no longer supported'));
+          return Bluebird.reject(new ProcessCanceled('Game no longer supported'));
         }
 
         const discovery = state.settings.gameMode.discovered[profile.gameId];
@@ -308,11 +308,11 @@ function genOnProfileChange(api: IExtensionApi,
             'Game is no longer discoverable, please go to the games page and scan for, or '
           + 'manually select the game folder.',
             profile.gameId, { allowReport: false });
-          return Promise.reject(new ProcessCanceled('Game no longer discovered'));
+          return Bluebird.reject(new ProcessCanceled('Game no longer discovered'));
         }
       }
 
-      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+      finishProfileSwitchPromise = new Bluebird<void>((resolve, reject) => {
         cancelPromise = resolve;
         onFinishProfileSwitch(() => {
           cancelPromise = undefined;
@@ -320,7 +320,7 @@ function genOnProfileChange(api: IExtensionApi,
         });
       }).catch(err => {
         showError(store.dispatch, 'Profile switch failed', err);
-        return Promise.resolve();
+        return Bluebird.resolve();
       })
       ;
 
@@ -329,17 +329,17 @@ function genOnProfileChange(api: IExtensionApi,
       //   allow the next profile switch
       //   any error handler *has* to cancel this confirmation!
 
-      let queue: Promise<void> = Promise.resolve();
+      let queue: Bluebird<void> = Bluebird.resolve();
       // emit an event notifying about the impending profile change.
       // every listener can return a cb returning a promise which will be
       // awaited before continuing.
       // It would be fun if we could cancel the profile change if one of
       // these promises is rejected but that would only work if we could roll back
       // changes that happened.
-      const enqueue = (cb: () => Promise<void>) => {
+      const enqueue = (cb: () => Bluebird<void>) => {
         queue = queue.then(cb).catch(err => {
           log('error', 'error in profile-will-change handler', err.message);
-          Promise.resolve();
+          Bluebird.resolve();
         });
       };
 
@@ -368,7 +368,7 @@ function genOnProfileChange(api: IExtensionApi,
         .then(() => {
           const prof = profileById(api.store.getState(), current);
           if (prof === undefined) {
-            return Promise.reject(
+            return Bluebird.reject(
               new ProcessCanceled('Profile was deleted during deployment. '
                                   + 'Why would you do something like that???'));
           }
@@ -469,7 +469,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
             })
           .catch(err => {
             if (err instanceof UserCanceled) {
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
 
             const allowReport = !(err instanceof ProcessCanceled)
@@ -491,7 +491,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
   }, [
     { label: 'Continue' },
   ])
-    .then(() => new Promise((resolve, reject) => {
+    .then(() => new Bluebird((resolve, reject) => {
       api.events.emit('manually-set-game-location', gameId, (err: Error) => {
         if (err !== null) {
           return reject(err);
@@ -505,7 +505,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
       const discovered = state.settings.gameMode.discovered[gameId];
       if (discovered?.path === undefined) {
         // this probably means the "manually set location" was canceled
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       return manageGameDiscovered(api, gameId);
@@ -544,7 +544,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
 
   if (profiles[profileId] === undefined) {
     // nothing to do
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const currentProfile = activeProfile(state);
@@ -556,8 +556,8 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
 
   return fs.removeAsync(profilePath(profiles[profileId]))
     .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve()
-      : Promise.reject(err))
+      ? Bluebird.resolve()
+      : Bluebird.reject(err))
     .then(() => {
       const gameMode = profiles[profileId].gameId;
       const lastProfileId = lastActiveProfileForGame(state, gameMode);
@@ -572,8 +572,8 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
     });
 }
 
-function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+function removeMod(api: IExtensionApi, gameId: string, modId: string): Bluebird<void> {
+  return new Bluebird((resolve, reject) => {
     api.events.emit('remove-mod', gameId, modId, err => {
       if (err) {
         reject(err);
@@ -584,7 +584,7 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<v
   });
 }
 
-function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Promise<void> {
+function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Bluebird<void> {
   const state = api.getState();
   const game = getGame(gameId);
   const { mods, profiles } = state.persistent;
@@ -618,11 +618,11 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
   .then(result => {
     if (result.action === 'Delete profiles') {
       return purgeMods(api, gameId, true)
-        .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
+        .then(() => Bluebird.map(Object.keys(mods[gameId] ?? {}),
           modId => removeMod(api, gameId, modId)))
-        .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
-        .then(() => Promise.resolve())
-        .catch(UserCanceled, () => Promise.resolve())
+        .then(() => Bluebird.map(profileIds, profileId => removeProfileImpl(api, profileId)))
+        .then(() => Bluebird.resolve())
+        .catch(UserCanceled, () => Bluebird.resolve())
         .catch(err => {
           const isSetupError = (err instanceof NoDeployment) || (err instanceof TemporaryError);
           if (isSetupError) {
@@ -641,7 +641,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
           }
         });
     } else {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   });
 }
@@ -658,12 +658,12 @@ function addDescriptionFeature() {
   });
 }
 
-function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
+function checkOverridden(api: IExtensionApi, gameId: string): Bluebird<void> {
   const state = api.getState();
   const { disabled } = state.session.gameMode;
 
   if (disabled[gameId] === undefined) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   return api.showDialog('question', 'Game disabled', {
@@ -672,7 +672,7 @@ function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
   }, [
     { label: 'Cancel' },
   ])
-  .then(() => Promise.reject(new UserCanceled()));
+  .then(() => Bluebird.reject(new UserCanceled()));
 }
 
 function init(context: IExtensionContext): boolean {

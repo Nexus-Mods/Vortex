@@ -2,7 +2,7 @@ import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { deBOM, truthy } from '../../../util/util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 
 /**
@@ -10,7 +10,7 @@ import * as path from 'path';
  *
  * @returns
  */
-function chromePath(): Promise<string> {
+function chromePath(): Bluebird<string> {
   const appPath = getVortexPath('appData');
   if (process.platform === 'win32') {
     const userData = process.env.LOCALAPPDATA !== undefined
@@ -23,16 +23,16 @@ function chromePath(): Promise<string> {
           const prof = truthy(dat) && truthy(dat.profile) && truthy(dat.profile.last_used)
             ? dat.profile.last_used
             : 'Default';
-          return Promise.resolve(path.join(userData, prof, 'Preferences'));
+          return Bluebird.resolve(path.join(userData, prof, 'Preferences'));
         } catch (err) {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
       })
       .catch(err => (['ENOENT', 'EBUSY', 'EPERM', 'EISDIR'].indexOf(err.code) !== -1)
-        ? Promise.resolve(path.join(userData, 'Default', 'Preferences'))
-        : Promise.reject(err));
+        ? Bluebird.resolve(path.join(userData, 'Default', 'Preferences'))
+        : Bluebird.reject(err));
   } else {
-    return Promise.resolve((process.platform === 'linux')
+    return Bluebird.resolve((process.platform === 'linux')
       ? path.resolve(appPath, 'google-chrome', 'Local State')
       : path.resolve(appPath, 'Google', 'Chrome', 'Local State'));
   }

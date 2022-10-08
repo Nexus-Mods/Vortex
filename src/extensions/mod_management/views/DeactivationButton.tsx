@@ -13,7 +13,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { NoDeployment } from '../util/exceptions';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -27,7 +27,7 @@ interface IConnectedProps {
 interface IActionProps {
   onShowError: (message: string, details?: string | any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
   onShowWarning: (message: string, dialogAction: INotificationAction, id: string) => void;
   onSetSettingsPage: (pageId: string) => void;
@@ -58,9 +58,9 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
   private activate = () => {
     const { confirmPurge, onShowError } = this.props;
-    const prom = (confirmPurge !== false) ? this.confirmPurge() : Promise.resolve();
+    const prom = (confirmPurge !== false) ? this.confirmPurge() : Bluebird.resolve();
     prom
-      .then(() => new Promise((resolve, reject) => {
+      .then(() => new Bluebird((resolve, reject) => {
         this.context.api.events.emit('purge-mods', false, (err) => {
           if (err !== null) {
             reject(err);
@@ -101,7 +101,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     }, 'select-deployment-method-first');
   }
 
-  private confirmPurge(): Promise<void> {
+  private confirmPurge(): Bluebird<void> {
     const { onSetConfirmPurge, onShowDialog } = this.props;
     return onShowDialog('question', 'Confirm purge', {
       text: 'Purging will remove all links deployed to the game directory.\n'
@@ -116,12 +116,12 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     ])
     .then(result => {
       if (result.action === 'Cancel') {
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       } else {
         if (result.input.confirm_purge) {
           onSetConfirmPurge(false);
         }
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
   }

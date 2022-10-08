@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../types/IDialog';
@@ -30,7 +30,7 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
 }
 
-function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
+function validateStagingTag(api: IExtensionApi, tagPath: string): Bluebird<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
     .then(data => {
       const state: IState = api.store.getState();
@@ -45,14 +45,14 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
           { label: 'Continue' },
         ])
         .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
+          ? Bluebird.reject(new UserCanceled())
+          : Bluebird.resolve());
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
     .catch(err => {
       if (err instanceof UserCanceled) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       return api.showDialog('question', 'Confirm', {
         text: 'This directory is not marked as a staging folder. '
@@ -62,8 +62,8 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
         { label: 'I\'m sure' },
       ])
       .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
+        ? Bluebird.reject(new UserCanceled())
+        : Bluebird.resolve());
     });
 }
 
@@ -71,7 +71,7 @@ function queryStagingFolderInvalid(api: IExtensionApi,
                                    err: Error,
                                    dirExists: boolean,
                                    instPath: string)
-                                   : Promise<IDialogResult> {
+                                   : Bluebird<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog('error', 'Mod Staging Folder invalid', {
@@ -112,7 +112,7 @@ function queryStagingFolderInvalid(api: IExtensionApi,
 export function ensureStagingDirectory(api: IExtensionApi,
                                        instPath?: string,
                                        gameId?: string)
-                                       : Promise<string> {
+                                       : Bluebird<string> {
   const state = api.store.getState();
   if (gameId === undefined) {
     gameId = activeGameId(state);
@@ -150,13 +150,13 @@ export function ensureStagingDirectory(api: IExtensionApi,
         // profile_management/index.ts as soon as we start managing the game for the
         // first time but we probably still don't want to report an error if we have
         // no meta information about any mods anyway
-        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
+        return fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
       }
       return queryStagingFolderInvalid(api, err, dirExists, instPath)
         .then(dialogResult => {
           if (dialogResult.action === 'Quit Vortex') {
             getApplication().quit(0);
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           } else if (dialogResult.action === 'Reinitialize') {
             const id = shortid();
             api.sendNotification({
@@ -165,11 +165,11 @@ export function ensureStagingDirectory(api: IExtensionApi,
               message: 'Purging mods',
             });
             return fallbackPurge(api)
-              .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
+              .then(() => fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve()))
               .catch(purgeErr => {
                 if (!partitionExists) {
                   // Can't purge a non-existing partition!
-                  return Promise.reject(new ProcessCanceled('Invalid/Missing partition'));
+                  return Bluebird.reject(new ProcessCanceled('Invalid/Missing partition'));
                 }
                 if (purgeErr instanceof ProcessCanceled) {
                   log('warn', 'Mods not purged', purgeErr.message);
@@ -183,13 +183,13 @@ export function ensureStagingDirectory(api: IExtensionApi,
                     { label: 'Close' },
                   ]);
                 }
-                return Promise.reject(new ProcessCanceled('Not purged'));
+                return Bluebird.reject(new ProcessCanceled('Not purged'));
               })
               .finally(() => {
                 api.dismissNotification(id);
               });
           } else if (dialogResult.action === 'Ignore') {
-            return Promise.resolve();
+            return Bluebird.resolve();
           } else { // Browse...
             return api.selectDir({
               defaultPath: instPath,
@@ -197,7 +197,7 @@ export function ensureStagingDirectory(api: IExtensionApi,
             })
               .then((selectedPath) => {
                 if (!truthy(selectedPath)) {
-                  return Promise.reject(new UserCanceled());
+                  return Bluebird.reject(new UserCanceled());
                 }
                 return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
                   .then(() => {

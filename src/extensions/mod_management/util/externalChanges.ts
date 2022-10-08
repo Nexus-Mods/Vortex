@@ -12,7 +12,7 @@ import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import { MERGED_PATH } from '../modMerging';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 
 /**
@@ -23,7 +23,7 @@ import * as path from 'path';
  * @param {string} outputPath the destination directory where the game expects mods
  * @param {IDeployedFile[]} lastDeployment previous deployment to use as reference
  * @param {IFileEntry[]} fileActions actions the user selected for external changes
- * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
+ * @returns {Bluebird<IDeployedFile[]>} an updated deployment manifest to use as a reference
  *                                     for the new one
  */
 function applyFileActions(api: IExtensionApi,
@@ -31,9 +31,9 @@ function applyFileActions(api: IExtensionApi,
                           sourcePath: string,
                           outputPath: string,
                           lastDeployment: IDeployedFile[],
-                          fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
+                          fileActions: IFileEntry[]): Bluebird<IDeployedFile[]> {
   if (fileActions === undefined || fileActions.length === 0) {
-    return Promise.resolve(lastDeployment);
+    return Bluebird.resolve(lastDeployment);
   }
 
   const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce(
@@ -50,16 +50,16 @@ function applyFileActions(api: IExtensionApi,
   // thing in this case.
 
   // process the actions that the user selected in the dialog
-  return Promise.map(actionGroups['drop'] || [],
+  return Bluebird.map(actionGroups['drop'] || [],
       // delete the links the user wants to drop.
       (entry) => truthy(entry.filePath)
           ? fs.removeAsync(path.join(outputPath, entry.filePath))
-          : Promise.reject(new Error('invalid file path')))
-    .then(() => Promise.map(actionGroups['delete'] || [],
+          : Bluebird.reject(new Error('invalid file path')))
+    .then(() => Bluebird.map(actionGroups['delete'] || [],
       entry => truthy(entry.filePath)
           ? fs.removeAsync(path.join(sourcePath, entry.source, entry.filePath))
-          : Promise.reject(new Error('invalid file path'))))
-    .then(() => Promise.map(actionGroups['import'] || [],
+          : Bluebird.reject(new Error('invalid file path'))))
+    .then(() => Bluebird.map(actionGroups['import'] || [],
       // copy the files the user wants to import
       (entry) => {
         const source = path.join(sourcePath, entry.source, entry.filePath);
@@ -88,7 +88,7 @@ function applyFileActions(api: IExtensionApi,
       ));
       const newDeployment = lastDeployment.filter(entry => !dropSet.has(entry.relPath));
       lastDeployment = newDeployment;
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
     .then(() => {
       const affectedMods = new Set<string>();
@@ -185,9 +185,9 @@ function checkForExternalChanges(api: IExtensionApi,
     ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
     : activeProfile(state);
   if (profile === undefined) {
-    return Promise.reject(new ProcessCanceled('Profile no longer exists.'));
+    return Bluebird.reject(new ProcessCanceled('Profile no longer exists.'));
   }
-  return Promise.each(Object.keys(modPaths),
+  return Bluebird.each(Object.keys(modPaths),
     typeId => {
       log('debug', 'checking external changes',
         { modType: typeId, count: lastDeployment[typeId].length });
@@ -239,10 +239,10 @@ export function dealWithExternalChanges(api: IExtensionApi,
         return api.store.dispatch(showExternalChanges(userChanges))
           .then(userActions => [].concat(automaticActions, userActions));
       } else {
-        return Promise.resolve(automaticActions);
+        return Bluebird.resolve(automaticActions);
       }
     })
-    .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
+    .then((fileActions: IFileEntry[]) => Bluebird.mapSeries(Object.keys(lastDeployment),
       typeId => applyFileActions(api, profileId, stagingPath, modPaths[typeId],
         lastDeployment[typeId],
         fileActions.filter(action => action.modTypeId === typeId))

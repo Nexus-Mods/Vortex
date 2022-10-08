@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 export interface ISupportedResult {
   supported: boolean;
@@ -6,4 +6,4 @@ export interface ISupportedResult {
 }
 
 export type TestSupported =
-  (files: string[], gameId: string, archivePath?: string) => Promise<ISupportedResult>;
+  (files: string[], gameId: string, archivePath?: string) => Bluebird<ISupportedResult>;

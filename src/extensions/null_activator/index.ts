@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { IDeploymentMethod, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { getGame } from '../gamemode_management/util/getGame';
@@ -31,39 +31,39 @@ class DeploymentMethod implements IDeploymentMethod {
   }
 
   public userGate() {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public prepare(dataPath, clean, lastActivation, normalize) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public finalize(gameId, dataPath, installationPath, progressCB) {
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
   public activate(sourcePath, sourceName, dataPath, blackList) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public deactivate(sourcePath, dataPath, sourceName) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public prePurge(installPath) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public purge(installPath, dataPtah, gameId) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public postPurge() {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public externalChanges(gameId, installPath, dataPath, activation) {
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
   public getDeployedPath(input) {
@@ -71,7 +71,7 @@ class DeploymentMethod implements IDeploymentMethod {
   }
 
   public isDeployed(installPath, dataPath, file) {
-    return Promise.resolve(true);
+    return Bluebird.resolve(true);
   }
 }
 

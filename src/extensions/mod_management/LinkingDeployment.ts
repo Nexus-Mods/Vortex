@@ -16,7 +16,7 @@ import {
   IUnavailableReason,
 } from './types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -60,7 +60,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
-  private mQueue: Promise<void> = Promise.resolve();
+  private mQueue: Bluebird<void> = Bluebird.resolve();
   private mContext: IDeploymentContext;
   private mDirCache: Set<string>;
 
@@ -81,11 +81,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * and we don't want auto-deployment to pop up a dialog that takes the focus away
    * from the application without having the user initiate it
    *
-   * @returns {Promise<void>}
+   * @returns {Bluebird<void>}
    * @memberof LinkingActivator
    */
-  public userGate(): Promise<void> {
-    return Promise.resolve();
+  public userGate(): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
   public detailedDescription(t: TFunction): string {
@@ -93,9 +93,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[],
-                 normalize: Normalize): Promise<void> {
+                 normalize: Normalize): Bluebird<void> {
     let queueResolve: () => void;
-    const queueProm = new Promise<void>(resolve => {
+    const queueProm = new Bluebird<void>(resolve => {
       queueResolve = resolve;
     });
 
@@ -125,9 +125,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
-                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+                  progressCB?: (files: number, total: number) => void): Bluebird<IDeployedFile[]> {
     if (this.mContext === undefined) {
-      return Promise.reject(new Error('No deployment in progress'));
+      return Bluebird.reject(new Error('No deployment in progress'));
     }
 
     let added: string[];
@@ -166,7 +166,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const initialDeployment = {...this.mContext.previousDeployment};
 
-    return Promise.map(removed, key =>
+    return Bluebird.map(removed, key =>
         this.removeDeployedFile(installationPath, dataPath, key, true)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
@@ -175,7 +175,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
             ++errorCount;
           }))
-      .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
+      .then(() => Bluebird.map(sourceChanged, (key: string, idx: number) =>
           this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
@@ -185,7 +185,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             ++errorCount;
             sourceChanged.splice(idx, 1);
           })))
-      .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
+      .then(() => Bluebird.map(contentChanged, (key: string, idx: number) =>
           this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
@@ -196,7 +196,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             contentChanged.splice(idx, 1);
           })))
         // then, (re-)link all files that were added
-        .then(() => Promise.map(
+        .then(() => Bluebird.map(
                   added,
                   key => this.deployFile(key, installationPath, dataPath, false, dirTags)
                     .catch(err => {
@@ -213,7 +213,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                     })
                             .then(() => progress()), { concurrency: 100 }))
         // then update modified files
-        .then(() => Promise.map(
+        .then(() => Bluebird.map(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>
                       this.deployFile(key, installationPath, dataPath, true, dirTags)
@@ -284,11 +284,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       this.mContext = undefined;
       context.onComplete();
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   public activate(sourcePath: string, sourceName: string, deployPath: string,
-                  blackList: Set<string>): Promise<void> {
+                  blackList: Set<string>): Bluebird<void> {
     return fs.statAsync(sourcePath)
       .then(() => turbowalk(sourcePath, entries => {
         if (this.mContext === undefined) {
@@ -313,7 +313,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .catch({ code: 'ENOENT' }, () => null);
   }
 
-  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Bluebird<void> {
     return turbowalk(sourcePath, entries => {
       if (this.mContext === undefined) {
         return;
@@ -331,17 +331,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
     }, { skipHidden: false });
   }
 
-  public prePurge(): Promise<void> {
-    return Promise.resolve();
+  public prePurge(): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
   public purge(installPath: string, dataPath: string, gameId?: string,
-               onProgress?: (num: number, total: number) => void): Promise<void> {
+               onProgress?: (num: number, total: number) => void): Bluebird<void> {
     log('debug', 'purging', { installPath, dataPath });
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     if (gameId === undefined) {
       gameId = activeGameId(this.mApi.store.getState());
@@ -356,15 +356,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .then(() => undefined);
   }
 
-  public postPurge(): Promise<void> {
-    return Promise.resolve();
+  public postPurge(): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
   public getDeployedPath(input: string): string {
     return input;
   }
 
-  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Promise<boolean> {
+  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Bluebird<boolean> {
     const fullPath = path.join(dataPath, file.target || '', file.relPath);
 
     return fs.statAsync(fullPath)
@@ -375,10 +375,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public externalChanges(gameId: string,
                          installPath: string,
                          dataPath: string,
-                         activation: IDeployedFile[]): Promise<IFileChange[]> {
+                         activation: IDeployedFile[]): Bluebird<IFileChange[]> {
     const nonLinks: IFileChange[] = [];
 
-    return Promise.map(activation, fileEntry => {
+    return Bluebird.map(activation, fileEntry => {
       const fileDataPath = (truthy(fileEntry.target)
         ? [dataPath, fileEntry.target, fileEntry.relPath]
         : [dataPath, fileEntry.relPath]
@@ -404,7 +404,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           } else {
             log('info', 'source file can\'t be accessed', { fileModPath, error: err.message });
           }
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         })
         .then(sourceStatsIn => {
           sourceStats = sourceStatsIn;
@@ -420,14 +420,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
           } else {
             log('info', 'link can\'t be accessed', { fileModPath, error: err.message });
           }
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         })
         .then(destStats => {
           if (destStats !== undefined) {
             destTime = destStats.mtime;
           }
           return sourceDeleted || destDeleted
-            ? Promise.resolve(false)
+            ? Bluebird.resolve(false)
             : this.isLink(fileDataPath, fileModPath, destStats, sourceStats);
         })
         .then((isLink?: boolean) => {
@@ -460,9 +460,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
           */
           }
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         });
-      }, { concurrency: 200 }).then(() => Promise.resolve(nonLinks));
+      }, { concurrency: 200 }).then(() => Bluebird.resolve(nonLinks));
   }
 
   /**
@@ -470,10 +470,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * Note: This function is expected to replace the target file if it exists
    */
   protected abstract linkFile(linkPath: string, sourcePath: string,
-                              dirTags?: boolean): Promise<void>;
-  protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
+                              dirTags?: boolean): Bluebird<void>;
+  protected abstract unlinkFile(linkPath: string, sourcePath: string): Bluebird<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string,
-                                onProgress?: (num: number, total: number) => void): Promise<void>;
+                                onProgress?: (num: number, total: number) => void): Bluebird<void>;
   /**
    * test if a file is a link to another file. The stats parameters may not be available,
    * they are just intended as an optimization by avoiding doing redundant calls
@@ -485,7 +485,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
    *                    this be a symlink it *was* followed!
    */
   protected abstract isLink(linkPath: string, sourcePath: string,
-                            linkStats?: fs.Stats, sourceStats?: fs.Stats): Promise<boolean>;
+                            linkStats?: fs.Stats, sourceStats?: fs.Stats): Bluebird<boolean>;
   /**
    * must return true if this deployment method is able to restore a file after the
    * "original" was deleted. This is essentially true for hard links (since the file
@@ -505,15 +505,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return this.mContext;
   }
 
-  protected stat(filePath: string): Promise<fs.Stats> {
+  protected stat(filePath: string): Bluebird<fs.Stats> {
     return fs.statAsync(filePath);
   }
 
-  protected statLink(filePath: string): Promise<fs.Stats> {
+  protected statLink(filePath: string): Bluebird<fs.Stats> {
     return fs.lstatAsync(filePath);
   }
 
-  protected ensureDir(dirPath: string, dirTags?: boolean): Promise<boolean> {
+  protected ensureDir(dirPath: string, dirTags?: boolean): Bluebird<boolean> {
     let didCreate = false;
     const onDirCreated = (createdPath: string) => {
       didCreate = true;
@@ -524,7 +524,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             'This directory was created by Vortex deployment and will be removed ' +
             'during purging if it\'s empty');
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     };
 
@@ -535,16 +535,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
         }
         this.mDirCache.add(dirPath);
       })
-      : Promise.resolve())
+      : Bluebird.resolve())
       .then(() => didCreate);
   }
 
   private removeDeployedFile(installationPath: string,
                              dataPath: string,
                              key: string,
-                             restoreBackup: boolean): Promise<void> {
+                             restoreBackup: boolean): Bluebird<void> {
     if (this.mContext.previousDeployment[key] === undefined) {
-      return Promise.reject(new Error(`failed to remove "${key}"`));
+      return Bluebird.reject(new Error(`failed to remove "${key}"`));
     }
     const outputPath = path.join(dataPath,
       this.mContext.previousDeployment[key].target || '',
@@ -556,11 +556,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .catch(err => (err.code !== 'ENOENT')
         // treat an ENOENT error for the unlink as if it was a success.
         // The end result either way is the link doesn't exist now.
-        ? Promise.reject(err)
-        : Promise.resolve())
+        ? Bluebird.reject(err)
+        : Bluebird.resolve())
       .then(() => restoreBackup
         ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
-        : Promise.resolve())
+        : Bluebird.resolve())
       .then(() => {
         delete this.mContext.previousDeployment[key];
       })
@@ -575,12 +575,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
         this.mContext.newDeployment[key] =
           this.mContext.previousDeployment[key];
 
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       });
   }
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
-                     replace: boolean, dirTags: boolean): Promise<IDeployedFile> {
+                     replace: boolean, dirTags: boolean): Bluebird<IDeployedFile> {
     const fullPath =
       [installPathStr, this.mContext.newDeployment[key].source,
         this.mContext.newDeployment[key].relPath].join(path.sep);
@@ -588,18 +588,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
       [dataPath, this.mContext.newDeployment[key].target || null,
         this.mContext.newDeployment[key].relPath].filter(i => i !== null).join(path.sep);
 
-    const backupProm: Promise<void> = replace
-      ? Promise.resolve()
+    const backupProm: Bluebird<void> = replace
+      ? Bluebird.resolve()
       : this.isLink(fullOutputPath, fullPath)
         .then(link => link
-          ? Promise.resolve(undefined) // don't re-create link that's already correct
+          ? Bluebird.resolve(undefined) // don't re-create link that's already correct
           : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG))
         .catch(err => (err.code === 'ENOENT')
           // if the backup fails because there is nothing to backup, that's great,
           // that's the most common outcome. Otherwise we failed to backup an existing
           // file, so continuing could cause data loss
-          ? Promise.resolve(undefined)
-          : Promise.reject(err));
+          ? Bluebird.resolve(undefined)
+          : Bluebird.reject(err));
 
     return backupProm
       .then(() => this.linkFile(fullOutputPath, fullPath, dirTags))
@@ -624,11 +624,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   private postLinkPurge(baseDir: string, doRemove: boolean, restoreBackups: boolean,
                         directoryCleaning: DirectoryCleaningMode,
-                        reportMissing: boolean = true): Promise<boolean> {
+                        reportMissing: boolean = true): Bluebird<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     let empty = true;
-    let queue = Promise.resolve();
+    let queue = Bluebird.resolve();
 
     let allEntries: IEntry[] = [];
 
@@ -637,7 +637,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       : (entries: IEntry[]) => entries.find(entry =>
         !entry.isDirectory && LinkingActivator.isTagName(entry.filePath)) !== undefined;
 
-    return Promise.resolve(turbowalk(baseDir, entries => {
+    return Bluebird.resolve(turbowalk(baseDir, entries => {
       allEntries = allEntries.concat(entries);
     }, { recurse: false, skipHidden: false, skipLinks: false }))
     .then(() => {
@@ -646,7 +646,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const dirs = allEntries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
-        Promise.each(dirs, dir =>
+        Bluebird.each(dirs, dir =>
           this.postLinkPurge(dir.filePath, doRemove,
             restoreBackups, directoryCleaning, false)
             .then(removed => {
@@ -660,14 +660,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
           if (files.length > 0) {
             empty = false;
             return (restoreBackups)
-              ? Promise.map(
+              ? Bluebird.map(
                   files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
                   entry => this.restoreBackup(entry.filePath))
                 .catch(UserCanceled, () => undefined)
                 .then(() => undefined)
-              : Promise.resolve();
+              : Bluebird.resolve();
           } else {
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
         }));
     })
@@ -682,7 +682,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
           } // otherwise ignore missing files
         } else {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
       })
       .then(() => queue)
@@ -691,7 +691,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
             .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
             .catch(err =>
-              err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+              err.code === 'ENOENT' ? Bluebird.resolve() : Bluebird.reject(err))
             .then(() => fs.rmdirAsync(baseDir)
               .catch(err => {
                 log('error', 'failed to remove directory, it was supposed to be empty', {
@@ -700,7 +700,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 });
               }))
             .then(() => true)
-          : Promise.resolve(false));
+          : Bluebird.resolve(false));
   }
 
   private restoreBackup(backupPath: string) {
@@ -745,7 +745,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             { label: 'Really cancel' },
             { label: 'Try again' },
           ]).then(res => (res.action === 'Really cancel')
-            ? Promise.reject(cancelErr)
+            ? Bluebird.reject(cancelErr)
             : this.restoreBackup(backupPath));
       });
   }

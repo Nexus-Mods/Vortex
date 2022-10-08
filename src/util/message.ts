@@ -18,7 +18,7 @@ import { log } from './log';
 import { flatten, setdefault, truthy } from './util';
 
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import ZipT = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
@@ -155,7 +155,7 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
 }
 
 function dataToFile(id, input: any) {
-  return new Promise<string>((resolve, reject) => {
+  return new Bluebird<string>((resolve, reject) => {
     const data: Buffer = Buffer.from(JSON.stringify(input));
     tmpFile({
       prefix: id,
@@ -178,14 +178,14 @@ function dataToFile(id, input: any) {
   });
 }
 
-function zipFiles(files: string[]): Promise<string> {
+function zipFiles(files: string[]): Bluebird<string> {
   if (files.length === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
   const Zip: typeof ZipT = require('node-7z');
   const task: ZipT = new Zip();
 
-  return new Promise<string>((resolve, reject) => {
+  return new Bluebird<string>((resolve, reject) => {
     tmpName({
       postfix: '.7z',
     }, (err, tmpPath: string) => (err !== null)
@@ -197,7 +197,7 @@ function zipFiles(files: string[]): Promise<string> {
         .then(() => tmpPath));
 }
 
-function serializeAttachments(input: IAttachment): Promise<string> {
+function serializeAttachments(input: IAttachment): Bluebird<string> {
   if (input.type === 'file') {
     return input.data;
   } else {
@@ -205,14 +205,14 @@ function serializeAttachments(input: IAttachment): Promise<string> {
   }
 }
 
-export function bundleAttachment(options?: IErrorOptions): Promise<string> {
+export function bundleAttachment(options?: IErrorOptions): Bluebird<string> {
   if ((options === undefined)
       || (options.attachments === undefined)
       || (options.attachments.length === 0)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
-  return Promise.reduce(options.attachments, (accum: string[], iter: IAttachment) => {
+  return Bluebird.reduce(options.attachments, (accum: string[], iter: IAttachment) => {
     if (iter.type === 'file') {
       return fs.statAsync(iter.data)
         .then(() => serializeAttachments(iter))

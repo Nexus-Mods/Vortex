@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import _ from 'lodash';
 import Debouncer from '../../util/Debouncer';
 import { nativeImage } from 'electron';
@@ -114,7 +114,7 @@ export function toToolDiscovery(tool: IEditStarterInfo): IDiscoveredTool {
   };
 }
 
-function toPNG(inputPath: string, outputPath: string): Promise<void> {
+function toPNG(inputPath: string, outputPath: string): Bluebird<void> {
   return fs.writeFileAsync(outputPath, nativeImage.createFromPath(inputPath).toPNG());
 }
 
@@ -125,18 +125,18 @@ export function updateImage(tool: IStarterInfo, filePath: string, cb: (err?: Err
   updateImageDebouncer.schedule(cb, tool, filePath);
 }
 
-function useImage(tool: IStarterInfo, filePath: string): Promise<void> {
+function useImage(tool: IStarterInfo, filePath: string): Bluebird<void> {
   const destPath = tool.iconOutPath;
 
   if (destPath === filePath) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   return fs.statAsync(filePath)
-    .catch(err => Promise.reject(new ProcessCanceled('invalid file')))
+    .catch(err => Bluebird.reject(new ProcessCanceled('invalid file')))
     .then(stats => stats.isDirectory()
-      ? Promise.reject(new ProcessCanceled('is a directory'))
-      : Promise.resolve())
+      ? Bluebird.reject(new ProcessCanceled('is a directory'))
+      : Bluebird.resolve())
     .then(() => fs.ensureDirAsync(path.dirname(destPath)))
     .then(() => (path.extname(filePath) === '.exe')
       ? extractExeIcon(filePath, destPath)

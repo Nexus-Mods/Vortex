@@ -17,7 +17,7 @@ import installExtension from './installExtension';
 import { ExtensionType, IAvailableExtension, IExtension,
          IExtensionDownloadInfo, IExtensionManifest, ISelector } from './types';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import SevenZip from 'node-7z';
 import * as path from 'path';
@@ -25,8 +25,8 @@ import { SemVer } from 'semver';
 import { generate as shortid } from 'shortid';
 
 const caches: {
-  __availableExtensions?: Promise<{ time: Date, extensions: IAvailableExtension[] }>,
-  __installedExtensions?: Promise<{ [extId: string]: IExtension }>,
+  __availableExtensions?: Bluebird<{ time: Date, extensions: IAvailableExtension[] }>,
+  __installedExtensions?: Bluebird<{ [extId: string]: IExtension }>,
 } = {};
 
 // don't fetch more than once per hour
@@ -45,7 +45,7 @@ const EXTENSION_FORMAT = '1_4';
 const EXTENSION_FILENAME = `extensions_${EXTENSION_FORMAT}.json`;
 const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSION_FILENAME);
 
-function getAllDirectories(searchPath: string): Promise<string[]> {
+function getAllDirectories(searchPath: string): Bluebird<string[]> {
   return fs.readdirAsync(searchPath)
     .filter(fileName =>
       fs.statAsync(path.join(searchPath, fileName))
@@ -95,7 +95,7 @@ export function sanitize(input: string): string {
 
 export function readExtensionInfo(extensionPath: string,
                                   bundled: boolean,
-                                  fallback: any = {}): Promise<{ id: string, info: IExtension }> {
+                                  fallback: any = {}): Bluebird<{ id: string, info: IExtension }> {
   const finalPath = extensionPath.replace(/\.installing$/, '');
 
   return fs.readFileAsync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' })
@@ -119,24 +119,24 @@ export function readExtensionInfo(extensionPath: string,
 
 function readExtensionDir(pluginPath: string,
                           bundled: boolean)
-                          : Promise<Array<{ id: string, info: IExtension }>> {
+                          : Bluebird<Array<{ id: string, info: IExtension }>> {
   return getAllDirectories(pluginPath)
     .map((extPath: string) => path.join(pluginPath, extPath))
     .map((fullPath: string) => readExtensionInfo(fullPath, bundled));
 }
 
-export function readExtensions(force: boolean): Promise<{ [extId: string]: IExtension }> {
+export function readExtensions(force: boolean): Bluebird<{ [extId: string]: IExtension }> {
   if ((caches.__installedExtensions === undefined) || force) {
     caches.__installedExtensions = doReadExtensions();
   }
   return caches.__installedExtensions;
 }
 
-function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
+function doReadExtensions(): Bluebird<{ [extId: string]: IExtension }> {
   const bundledPath = getVortexPath('bundledPlugins');
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
-  return Promise.all([readExtensionDir(bundledPath, true),
+  return Bluebird.all([readExtensionDir(bundledPath, true),
                       readExtensionDir(extensionsPath, false)])
     .then(extLists => [].concat(...extLists))
     .reduce((prev, value: { id: string, info: IExtension }) => {
@@ -147,16 +147,16 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
 }
 
 export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boolean = false)
-    : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
+    : Bluebird<{ time: Date, extensions: IAvailableExtension[] }> {
   if ((caches.__availableExtensions === undefined) || forceCache || forceDownload) {
     caches.__availableExtensions = doFetchAvailableExtensions(forceDownload);
   }
   return caches.__availableExtensions;
 }
 
-function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
+function downloadExtensionList(cachePath: string): Bluebird<IAvailableExtension[]> {
   log('info', 'downloading extension list', { url: EXTENSION_URL });
-  return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
+  return Bluebird.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then(manifest => {
       log('debug', 'extension list received');
       return manifest.extensions.filter(ext => ext.name !== undefined);
@@ -168,12 +168,12 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
 }
 
 function doFetchAvailableExtensions(forceDownload: boolean)
-                                    : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
+                                    : Bluebird<{ time: Date, extensions: IAvailableExtension[] }> {
   const cachePath = path.join(getVortexPath('temp'), EXTENSION_FILENAME);
   let time = new Date();
 
   const checkCache = forceDownload
-    ? Promise.resolve(true)
+    ? Bluebird.resolve(true)
     : fs.statAsync(cachePath).then(stat => {
       if ((Date.now() - stat.mtimeMs) > UPDATE_FREQUENCY) {
         return true;
@@ -197,7 +197,7 @@ function doFetchAvailableExtensions(forceDownload: boolean)
             try {
               return JSON.parse(data).extensions;
             } catch (err) {
-              return Promise.reject(
+              return Bluebird.reject(
                 new DataInvalid('Extension cache invalid, please try again later'));
             }
           });
@@ -208,7 +208,7 @@ function doFetchAvailableExtensions(forceDownload: boolean)
     })
     .catch(err => {
       log('error', 'failed to fetch list of extensions', err);
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
     .then(extensions => ({ time, extensions }));
@@ -216,10 +216,10 @@ function doFetchAvailableExtensions(forceDownload: boolean)
 
 export function downloadAndInstallExtension(api: IExtensionApi,
                                             ext: IExtensionDownloadInfo)
-                                            : Promise<boolean> {
+                                            : Bluebird<boolean> {
   let download: IDownload;
 
-  let dlPromise: Promise<string[]>;
+  let dlPromise: Bluebird<string[]>;
 
   if (truthy(ext.modId)) {
     dlPromise = downloadFromNexus(api, ext);
@@ -228,7 +228,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
   } else if (truthy(ext.githubRelease)) {
     dlPromise = downloadGithubRelease(api, ext);
   } else {
-    dlPromise = Promise.reject(new ProcessCanceled('Failed to download'));
+    dlPromise = Bluebird.reject(new ProcessCanceled('Failed to download'));
   }
 
   const sourceName: string = truthy(ext.modId)
@@ -240,12 +240,12 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       const state: IState = api.store.getState();
 
       if ((dlIds === undefined) || (dlIds.length !== 1)) {
-        return Promise.reject(new ProcessCanceled('No download found'));
+        return Bluebird.reject(new ProcessCanceled('No download found'));
       }
       api.store.dispatch(setDownloadModInfo(dlIds[0], 'internal', true));
       download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined);
       if (download === undefined) {
-        return Promise.reject(new Error('Download not found'));
+        return Bluebird.reject(new Error('Download not found'));
       }
 
       return fetchAvailableExtensions(false);
@@ -269,7 +269,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       const downloadPath = downloadPathForGame(state, SITE_ID);
       return installExtension(api, path.join(downloadPath, download.localPath), info);
     })
-    .then(() => Promise.resolve(true))
+    .then(() => Bluebird.resolve(true))
     .catch(UserCanceled, () => null)
     .catch(ProcessCanceled, () => {
       api.showDialog('error', 'Installation failed', {
@@ -285,11 +285,11 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       }, [
         { label: 'Close' },
       ]);
-      return Promise.resolve(false);
+      return Bluebird.resolve(false);
     })
     .catch(ServiceTemporarilyUnavailable, err => {
       log('warn', 'Failed to download from github', { message: err.message });
-      return Promise.resolve(false);
+      return Bluebird.resolve(false);
     })
     .catch(err => {
       api.showDialog('error', 'Installation failed', {
@@ -305,7 +305,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       }, [
         { label: 'Close' },
       ]);
-      return Promise.resolve(false);
+      return Bluebird.resolve(false);
     });
 }
 
@@ -322,14 +322,14 @@ function archiveFileName(ext: IExtensionDownloadInfo): string {
 
 export function downloadFromNexus(api: IExtensionApi,
                                   ext: IExtensionDownloadInfo)
-                                  : Promise<string[]> {
+                                  : Bluebird<string[]> {
   if ((ext.fileId === undefined) && (ext.modId !== undefined)) {
     const state = api.getState();
     const availableExt = state.session.extensions.available.find(iter => iter.modId === ext.modId);
     if (availableExt !== undefined) {
       ext.fileId = availableExt.fileId;
     } else {
-      return Promise.reject(new Error('unavailable nexus extension'));
+      return Bluebird.reject(new Error('unavailable nexus extension'));
     }
   }
 
@@ -340,8 +340,8 @@ export function downloadFromNexus(api: IExtensionApi,
 
 export function downloadGithubRelease(api: IExtensionApi,
                                       ext: IExtensionDownloadInfo)
-                                  : Promise<string[]> {
-  return new Promise<string[]>((resolve, reject) => {
+                                  : Bluebird<string[]> {
+  return new Bluebird<string[]>((resolve, reject) => {
     api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, archiveFileName(ext),
                     (err: Error, dlId: string) => {
       if (err !== null) {
@@ -369,23 +369,23 @@ export function downloadGithubRelease(api: IExtensionApi,
   });
 }
 
-export function downloadFile(url: string, outputPath: string): Promise<void> {
-  return Promise.resolve(rawRequest(url))
+export function downloadFile(url: string, outputPath: string): Bluebird<void> {
+  return Bluebird.resolve(rawRequest(url))
     .then((data: Buffer) => fs.writeFileAsync(outputPath, data));
 }
 
 function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
   const apiUrl = githubApiUrl(repo, 'contents', source) + '?ref=' + GAMES_BRANCH;
 
-  return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
+  return Bluebird.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
     .then((content: string) => {
       const data = JSON.parse(content);
       if (!Array.isArray(data)) {
         if ((typeof (data) === 'object') && (data.message !== undefined)) {
-          return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
+          return Bluebird.reject(new ServiceTemporarilyUnavailable(data.message));
         } else {
           log('info', 'unexpected response from github', content);
-          return Promise.reject(new Error('Unexpected response from github (see log file)'));
+          return Bluebird.reject(new Error('Unexpected response from github (see log file)'));
         }
       }
 
@@ -395,10 +395,10 @@ function downloadGithubRawRecursive(repo: string, source: string, destination: s
       const repoDirs: string[] =
         data.filter(iter => iter.type === 'dir').map(iter => iter.name);
 
-      return Promise.map(repoFiles, fileName => downloadFile(
+      return Bluebird.map(repoFiles, fileName => downloadFile(
         githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
                      path.join(destination, fileName)))
-        .then(() => Promise.map(repoDirs, fileName => {
+        .then(() => Bluebird.map(repoDirs, fileName => {
           const sourcePath = `${source}/${fileName}`;
           const outPath = path.join(destination, fileName);
           return fs.mkdirAsync(outPath)
@@ -409,7 +409,7 @@ function downloadGithubRawRecursive(repo: string, source: string, destination: s
 
 export function downloadGithubRaw(api: IExtensionApi,
                                   ext: IExtensionDownloadInfo)
-                                  : Promise<string[]> {
+                                  : Bluebird<string[]> {
   const state: IState = api.store.getState();
   const downloadPath = downloadPathForGame(state, SITE_ID);
 
@@ -422,10 +422,10 @@ export function downloadGithubRaw(api: IExtensionApi,
   // the only plausible reason the file could already exist is if a previous install failed
   // or if we don't know the version. We could create a new new, numbered, download, but considering
   // these are small files I think that is more likely to frustrate the user
-  const cleanProm: Promise<void> = existing !== undefined
+  const cleanProm: Bluebird<void> = existing !== undefined
     ? fs.removeAsync(path.join(downloadPath, archiveName))
       .then(() => { api.events.emit('remove-download', existing); })
-    : Promise.resolve();
+    : Bluebird.resolve();
 
   return cleanProm.then(() => fs.withTmpDir((tmpPath: string) => {
     const archivePath = path.join(tmpPath, archiveName);
@@ -448,7 +448,7 @@ export function downloadGithubRaw(api: IExtensionApi,
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
-  const readBaseDir = (baseName: string): Promise<string[]> => {
+  const readBaseDir = (baseName: string): Bluebird<string[]> => {
     return fs.readdirAsync(baseName)
       .filter((name: string) => fs.statAsync(path.join(baseName, name))
         .then(stats => stats.isDirectory()))
@@ -462,7 +462,7 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
         .filter(extId => extensions[extId].type === extType)
         .map(extId => extensions[extId].path);
 
-      return Promise.join(
+      return Bluebird.join(
         readBaseDir(bundledPath),
         ...extDirs.map(extPath => readBaseDir(extPath)),
         readBaseDir(customPath),

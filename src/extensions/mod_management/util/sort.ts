@@ -8,7 +8,7 @@ import { IMod } from '../types/IMod';
 
 import testModReference, { isFuzzyVersion } from './testModReference';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { alg, Graph } from 'graphlib';
 import * as _ from 'lodash';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
@@ -33,13 +33,13 @@ function findByRef(mods: IMod[], reference: IReference,
   return mods.find((mod: IMod) => testModReference(mod, reference, source, fuzzy));
 }
 
-let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } = {
-  id: { gameId: undefined, mods: [] }, sorted: Promise.resolve([]) };
+let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Bluebird<IMod[]> } = {
+  id: { gameId: undefined, mods: [] }, sorted: Bluebird.resolve([]) };
 
-function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]> {
+function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Bluebird<IMod[]> {
   if (mods.length === 0) {
     // don't flush the cache if the input is empty
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
   if ((sortModsCache.id.gameId === gameId)
@@ -96,13 +96,13 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
               }
             }
           });
-          return Promise.resolve();
+          return Bluebird.resolve();
         });
   };
 
   mods.forEach(mod => { dependencies.setNode(mod.id); });
 
-  const sorted = Promise.map(mods, modMapper)
+  const sorted = Bluebird.map(mods, modMapper)
     .catch((err: Error) => {
       log('error', 'failed to sort mods',
           {msg: err.message, stack: err.stack});
@@ -117,15 +117,15 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
         }, {});
         const elapsed = Math.floor((Date.now() - startTime) / 100) / 10;
         log('info', 'done sorting mods', { elapsed, numRules });
-        return Promise.resolve(res.map(id => lookup[id]));
+        return Bluebird.resolve(res.map(id => lookup[id]));
       } catch (err) {
         // exception type not included in typings
         if (err instanceof (alg.topsort as any).CycleException) {
           const res = new CycleError(alg.findCycles(dependencies));
           res.stack = stackErr.stack;
-          return Promise.reject(res);
+          return Bluebird.reject(res);
         } else {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
       }
     });

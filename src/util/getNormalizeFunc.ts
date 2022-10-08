@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 // we don't want errors from this function to be reported to the user, there is
 // sensible fallbacks for if fs calls fail
 import * as fsOrig from 'fs-extra';
@@ -32,21 +32,21 @@ export interface INormalizeParameters {
   relative?: boolean;
 }
 
-function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolean> {
+function isCaseSensitiveFailed(testPath: string, reason: string): Bluebird<boolean> {
   if (testPath === undefined) {
-    return Promise.resolve(process.platform !== 'win32');
+    return Bluebird.resolve(process.platform !== 'win32');
   }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
     // on windows, assume case insensitive, everywhere else: case sensitive
-    return Promise.resolve(process.platform !== 'win32');
+    return Bluebird.resolve(process.platform !== 'win32');
   } else {
     return isCaseSensitive(parentPath);
   }
 }
 
-function isCaseSensitive(testPath: string): Promise<boolean> {
-  return Promise.resolve(fsOrig.readdir(testPath))
+function isCaseSensitive(testPath: string): Bluebird<boolean> {
+  return Bluebird.resolve(fsOrig.readdir(testPath))
     .then(files => {
       // we need a filename that contains letters with case variants, otherwise we can't
       // determine case sensitivity
@@ -59,10 +59,10 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
 
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
       // if they are all the same file, it's case insensitive
-      return Promise.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()],
-        file => Promise.resolve(fsOrig.stat(path.join(testPath, file))).reflect());
+      return Bluebird.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()],
+        file => Bluebird.resolve(fsOrig.stat(path.join(testPath, file))).reflect());
     })
-    .then((stats: Array<Promise.Inspection<fsOrig.Stats>>) => {
+    .then((stats: Array<Bluebird.Inspection<fsOrig.Stats>>) => {
       if (stats === null) {
         return isCaseSensitiveFailed(testPath, 'Not found');
       }
@@ -90,9 +90,9 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
  * normalization anyway.
  *
  * @param {string} path
- * @returns {Promise<Normalize>}
+ * @returns {Bluebird<Normalize>}
  */
-function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): Promise<Normalize> {
+function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): Bluebird<Normalize> {
   if (parameters === undefined) {
     parameters = {};
   }
@@ -117,10 +117,10 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
       if (err.code === 'ENOENT') {
         const parent = path.dirname(testPath);
         return (parent === testPath)
-          ? Promise.reject(err)
+          ? Bluebird.reject(err)
           : getNormalizeFunc(parent);
       } else {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
     });
 }

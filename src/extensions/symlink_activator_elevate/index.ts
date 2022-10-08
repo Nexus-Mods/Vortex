@@ -24,7 +24,7 @@ import { remoteCode } from './remoteCode';
 import Settings from './Settings';
 import walk from './walk';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import JsonSocket from 'json-socket';
 import * as net from 'net';
@@ -101,7 +101,7 @@ class DeploymentMethod extends LinkingDeployment {
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mIPCServer: net.Server;
   private mDone: () => void;
-  private mWaitForUser: () => Promise<void>;
+  private mWaitForUser: () => Bluebird<void>;
   private mOnReport: (report: string) => void;
   private mTmpFilePath: string;
 
@@ -114,7 +114,7 @@ class DeploymentMethod extends LinkingDeployment {
         api);
     this.mElevatedClient = null;
 
-    this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
+    this.mWaitForUser = () => new Bluebird<void>((resolve, reject) => api.sendNotification({
         type: 'info',
         message: 'Deployment requires elevation',
         noDismiss: true,
@@ -172,23 +172,23 @@ class DeploymentMethod extends LinkingDeployment {
       + 'your regular account has write access to source and destination.');
   }
 
-  public userGate(): Promise<void> {
+  public userGate(): Bluebird<void> {
     const state: IState = this.api.store.getState();
 
     return state.settings.workarounds.userSymlinks
-      ? Promise.resolve()
+      ? Bluebird.resolve()
       : this.mWaitForUser();
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
-                 normalize: Normalize): Promise<void> {
+                 normalize: Normalize): Bluebird<void> {
     this.mCounter = 0;
     this.mOpenRequests = {};
     return super.prepare(dataPath, clean, lastActivation, normalize);
   }
 
   public finalize(gameId: string, dataPath: string,
-                  installationPath: string): Promise<IDeployedFile[]> {
+                  installationPath: string): Bluebird<IDeployedFile[]> {
     Object.keys(this.mOpenRequests).forEach(num => {
       this.mOpenRequests[num].reject(new ProcessCanceled('unfinished'));
     });
@@ -241,7 +241,7 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Bluebird<void> {
     const dirName = path.dirname(linkPath);
     return this.ensureDir(dirName, dirTags)
       .then(created => !created
@@ -249,32 +249,32 @@ class DeploymentMethod extends LinkingDeployment {
         // exists
         ? fs.removeAsync(linkPath)
           .catch(err => (err.code === 'ENOENT')
-            ? Promise.resolve()
-            : Promise.reject(err))
-        : Promise.resolve())
+            ? Bluebird.resolve()
+            : Bluebird.reject(err))
+        : Bluebird.resolve())
       .then(() => this.emitOperation('link-file', {
         source: sourcePath, destination: linkPath,
       }));
   }
 
-  protected unlinkFile(linkPath: string): Promise<void> {
+  protected unlinkFile(linkPath: string): Bluebird<void> {
     return this.emitOperation('remove-link', {
       destination: linkPath,
     });
   }
 
-  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installPath: string, dataPath: string): Bluebird<void> {
     let hadErrors = false;
     // purge by removing all symbolic links that point to a file inside
     // the install directory
     return this.startElevated()
       .then(() => walk(dataPath, (iterPath: string, stats: fs.Stats) => {
             if (!stats.isSymbolicLink()) {
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
             return fs.readlinkAsync(iterPath)
               .then((symlinkPath) => path.relative(installPath, symlinkPath).startsWith('..')
-                ? Promise.resolve()
+                ? Bluebird.resolve()
                 : this.emitOperation('remove-link', { destination: iterPath }))
               .catch(err => {
                 if (err.code === 'ENOENT') {
@@ -290,14 +290,14 @@ class DeploymentMethod extends LinkingDeployment {
         if (hadErrors) {
           const err = new Error('Some files could not be purged, please check the log file');
           err['attachLogOnReport'] = true;
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       });
   }
 
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+  protected isLink(linkPath: string, sourcePath: string): Bluebird<boolean> {
     return fs.readlinkAsync(linkPath)
     .then(symlinkPath => symlinkPath === sourcePath)
     // readlink throws an "unknown" error if the file is no link at all. Super helpful...
@@ -310,12 +310,12 @@ class DeploymentMethod extends LinkingDeployment {
     return false;
   }
 
-  private closeServer(): Promise<void> {
+  private closeServer(): Bluebird<void> {
     if ((this.mIPCServer === undefined)
         || (this.mQuitTimer !== undefined)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
-    return new Promise((resolve,  reject) => {
+    return new Bluebird((resolve,  reject) => {
       this.mIPCServer.close((err?: Error) => {
         // note: err may be undefined instead of null
         if (!!err) {
@@ -356,22 +356,22 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private emitAsync(command: string, args: any, requestNum: number) {
-    return new Promise<void>((resolve, reject) => {
+    return new Bluebird<void>((resolve, reject) => {
       this.emit(command, { ...args, num: requestNum });
       this.mOpenRequests[requestNum] = { resolve, reject };
     });
   }
 
-  private emitOperation(command: string, args: any, tries: number = 3): Promise<void> {
+  private emitOperation(command: string, args: any, tries: number = 3): Bluebird<void> {
     const requestNum = this.mCounter++;
     return this.emitAsync(command, args, requestNum)
     .timeout(5000)
-    .catch(Promise.TimeoutError, (err) => {
+    .catch(Bluebird.TimeoutError, (err) => {
       if (this.mOpenRequests[requestNum] === undefined) {
         // this makes no sense, why would the timeout expire if the request
         // was resolved?
         log('warn', 'request timed out after being fulfilled?');
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       delete this.mOpenRequests[requestNum];
@@ -379,19 +379,19 @@ class DeploymentMethod extends LinkingDeployment {
         log('debug', 'retrying fs op', { command, args, tries });
         return this.emitOperation(command, args, tries - 1);
       } else {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
     });
   }
 
-  private startElevated(): Promise<void> {
+  private startElevated(): Bluebird<void> {
     return this.startElevatedImpl()
       .tapCatch(() => {
         this.api.store.dispatch(clearUIBlocker('elevating'));
       });
   }
 
-  private startElevatedImpl(): Promise<void> {
+  private startElevatedImpl(): Bluebird<void> {
     this.mOpenRequests = {};
     this.mDone = null;
 
@@ -403,7 +403,7 @@ class DeploymentMethod extends LinkingDeployment {
       ? IPC_ID
       : `${IPC_ID}_${shortid()}`;
 
-    return new Promise<void>((resolve, reject) => {
+    return new Bluebird<void>((resolve, reject) => {
       let elevating = false;
 
       if (this.mQuitTimer !== undefined) {
@@ -478,8 +478,8 @@ class DeploymentMethod extends LinkingDeployment {
       }
 
       const remoteProm = useTask
-        ? Promise.resolve()
-        : Promise.delay(0).then(() => runElevated(ipcPath, remoteCode, {}))
+        ? Bluebird.resolve()
+        : Bluebird.delay(0).then(() => runElevated(ipcPath, remoteCode, {}))
         .tap(tmpPath => {
           this.mTmpFilePath = tmpPath;
           log('debug', 'started elevated process');
@@ -537,7 +537,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private stopElevated() {
-    return new Promise<void>((resolve, reject) => {
+    return new Bluebird<void>((resolve, reject) => {
       this.mDone = () => {
         resolve();
       };
@@ -598,7 +598,7 @@ const __req = undefined; // dummy
 
 // copy&pasted from elevatedMain
 function baseFunc(moduleRoot: string, ipcPath: string,
-                  main: (ipc, req: NodeRequireFunction) => void | Promise<void>) {
+                  main: (ipc, req: NodeRequireFunction) => void | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -720,8 +720,8 @@ function installTask(scriptPath: string) {
     ipc.sendMessage({ message: 'quit' });
   }, { scriptPath, taskName, exePath, exeArgs })
     .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err));
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.reject(err));
 }
 
 function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
@@ -733,7 +733,7 @@ function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
         // not checking if the task is actually set up correctly
         // (proper path and arguments for the action) so if we change any of those we
         // need migration code. If the user changes the task, screw them.
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       if (delayed) {
@@ -780,7 +780,7 @@ function findTask() {
   }
 }
 
-function removeTask(): Promise<void> {
+function removeTask(): Bluebird<void> {
   const ipcPath = `ipc_${shortid()}`;
   const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
     if (message === 'log') {
@@ -802,13 +802,13 @@ function removeTask(): Promise<void> {
     ipc.sendMessage({ message: 'quit' });
   }, { taskName })
   .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err));
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.reject(err));
 }
 
-function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> {
+function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Bluebird<void> {
   if (findTask() === undefined) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   if (delayed) {
@@ -831,13 +831,13 @@ function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> 
       ],
     });
     // ensureTaskDeleted returns immediately even though nothing has been done yet
-    return Promise.resolve();
+    return Bluebird.resolve();
   } else {
     return removeTask();
   }
 }
 
-function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Promise<void> {
+function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Bluebird<void> {
   if (enabled) {
     return ensureTaskEnabled(api, delayed)
       .catch(err => {
@@ -869,7 +869,7 @@ function migrate(api: IExtensionApi, oldVersion: string) {
       displayMS: null,
     });
   }
-  return Promise.resolve();
+  return Bluebird.resolve();
 }
 
 const localState: { symlinkRight: boolean } = makeReactive({
@@ -936,8 +936,8 @@ function giveSymlinkRight(enable: boolean) {
     }
   }, { sid, enable })
   .catch(err => (err['nativeCode'] === 1223) || (err['systemCode'] === 1223)
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err));
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.reject(err));
 }
 
 function init(context: IExtensionContextEx): boolean {

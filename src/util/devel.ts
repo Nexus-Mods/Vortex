@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 /**
  * downloads and installs development extensions that help with redux / react development.
@@ -9,8 +9,8 @@ import Promise from 'bluebird';
  * @export
  * @returns
  */
-export function installDevelExtensions(): Promise<void> {
-  return new Promise<void>((resolved, reject) => {
+export function installDevelExtensions(): Bluebird<void> {
+  return new Bluebird<void>((resolved, reject) => {
     if (process.env.NODE_ENV === 'development') {
       const installExtension = require('electron-devtools-installer').default;
       const {

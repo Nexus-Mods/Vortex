@@ -1,6 +1,6 @@
 import walk from './walk';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fs from 'fs';
 
 export interface IFileEntry {
@@ -8,7 +8,7 @@ export interface IFileEntry {
   stats: fs.Stats;
 }
 
-function getFileList(basePath: string): Promise<IFileEntry[]> {
+function getFileList(basePath: string): Bluebird<IFileEntry[]> {
 
   const result: IFileEntry[] = [];
 
@@ -16,15 +16,15 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
     if (!filePath.startsWith('__')) {
       result.push({filePath, stats});
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   })
   .then(() => result)
   .catch(err => {
     if (err.code === 'ENOENT') {
       // if the directory doesn't exist it obviously doesn't contain files, right?
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     } else {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
   });
 }

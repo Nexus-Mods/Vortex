@@ -10,11 +10,11 @@ import renderModName from './util/modName';
 
 import { MERGED_PATH } from './modMerging';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { UserCanceled } from '../../util/api';
 
-function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
+function ensureWritable(api: IExtensionApi, modPath: string): Bluebird<void> {
   return fs.ensureDirWritableAsync(modPath, () => api.showDialog('question', 'Access Denied', {
     text: 'The mod folder for this game is not writable to your user account.\n'
       + 'If you have admin rights on this system, Vortex can change the permissions '
@@ -23,8 +23,8 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
       { label: 'Cancel' },
       { label: 'Allow access' },
     ]).then(result => (result.action === 'Cancel')
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve()));
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.resolve()));
 }
 
 /**
@@ -36,7 +36,7 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
  * @param {IMod[]} mods list of mods to activate (sorted from lowest to highest
  * priority)
  * @param {IDeploymentMethod} method the activator to use
- * @returns {Promise<void>}
+ * @returns {Bluebird<void>}
  */
 function deployMods(api: IExtensionApi,
                     gameId: string,
@@ -49,9 +49,9 @@ function deployMods(api: IExtensionApi,
                     skipFiles: Set<string>,
                     subDir: (mod: IMod) => string,
                     progressCB?: (name: string, progress: number) => void,
-                   ): Promise<IDeployedFile[]> {
+                   ): Bluebird<IDeployedFile[]> {
   if (!truthy(destinationPath)) {
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
   log('info', 'deploying', { gameId, typeId, installationPath, destinationPath });
@@ -63,7 +63,7 @@ function deployMods(api: IExtensionApi,
       normalize = norm;
       return method.prepare(destinationPath, true, lastActivation, norm);
     })
-    .then(() => Promise.each(mods, (mod, idx, length) => {
+    .then(() => Bluebird.each(mods, (mod, idx, length) => {
       try {
         if (progressCB !== undefined) {
           progressCB(renderModName(mod), Math.round((idx * 50) / length));

@@ -4,16 +4,16 @@ import onceCB from '../../util/onceCB';
 
 import { needToDeploy } from './selectors';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import getText from './texts';
 import { UserCanceled } from '../../util/CustomErrors';
 
 type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
 
-function queryDeploy(api: IExtensionApi): Promise<DeployResult> {
+function queryDeploy(api: IExtensionApi): Bluebird<DeployResult> {
   const state: IState = api.store.getState();
   if (!needToDeploy(state)) {
-    return Promise.resolve<DeployResult>('auto');
+    return Bluebird.resolve<DeployResult>('auto');
   } else {
     const t = api.translate;
     return api.showDialog('question', t('Pending deployment'), {
@@ -27,19 +27,19 @@ function queryDeploy(api: IExtensionApi): Promise<DeployResult> {
     }, [{ label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' }])
       .then((result) => {
         switch (result.action) {
-          case 'Skip': return Promise.resolve<DeployResult>('skip');
-          case 'Deploy': return Promise.resolve<DeployResult>('yes');
-          default: return Promise.resolve<DeployResult>('cancel');
+          case 'Skip': return Bluebird.resolve<DeployResult>('skip');
+          case 'Deploy': return Bluebird.resolve<DeployResult>('yes');
+          default: return Bluebird.resolve<DeployResult>('cancel');
         }
       });
   }
 }
 
-function checkDeploy(api: IExtensionApi): Promise<void> {
+function checkDeploy(api: IExtensionApi): Bluebird<void> {
   return queryDeploy(api)
     .then(shouldDeploy => {
       if (shouldDeploy === 'yes') {
-        return new Promise<void>((resolve, reject) => {
+        return new Bluebird<void>((resolve, reject) => {
           api.events.emit('deploy-mods', onceCB((err) => {
             if (err !== null) {
               reject(err);
@@ -49,7 +49,7 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
           }));
         });
       } else if (shouldDeploy === 'auto') {
-        return new Promise<void>((resolve, reject) => {
+        return new Bluebird<void>((resolve, reject) => {
           api.events.emit('await-activation', (err: Error) => {
             if (err !== null) {
               reject(err);
@@ -59,17 +59,17 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
           });
         });
       } else if (shouldDeploy === 'cancel') {
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       } else { // skip
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
 }
 
-function preStartDeployHook(api: IExtensionApi, input: IRunParameters): Promise<IRunParameters> {
+function preStartDeployHook(api: IExtensionApi, input: IRunParameters): Bluebird<IRunParameters> {
    return (input.options.suggestDeploy === true)
     ? checkDeploy(api).then(() => input)
-    : Promise.resolve(input);
+    : Bluebird.resolve(input);
 }
 
 export default preStartDeployHook;

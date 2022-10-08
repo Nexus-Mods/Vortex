@@ -29,7 +29,7 @@ import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
 import { IGameListEntry } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ratio } from 'fuzzball';
 import update from 'immutability-helper';
 import memoizeOne from 'memoize-one';
@@ -59,8 +59,8 @@ function byGameName(lhs: IGameStored, rhs: IGameStored): number {
 }
 
 interface IBaseProps {
-  onRefreshGameInfo: (gameId: string) => Promise<void>;
-  onBrowseGameLocation: (gameId: string) => Promise<void>;
+  onRefreshGameInfo: (gameId: string) => Bluebird<void>;
+  onBrowseGameLocation: (gameId: string) => Bluebird<void>;
   nexusGames: IGameListEntry[];
 }
 

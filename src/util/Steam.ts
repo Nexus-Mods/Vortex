@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 import * as fs from './fs';
 import { log } from './log';
@@ -42,8 +42,8 @@ export class GameNotFound extends Error {
 class Steam implements IGameStore {
   public static GameNotFound = GameNotFound;
   public id: string;
-  private mBaseFolder: Promise<string>;
-  private mCache: Promise<ISteamEntry[]>;
+  private mBaseFolder: Bluebird<string>;
+  private mCache: Bluebird<ISteamEntry[]>;
 
   constructor() {
     this.id = STORE_ID;
@@ -52,33 +52,33 @@ class Steam implements IGameStore {
       try {
         const steamPath =
           winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
-        this.mBaseFolder = Promise.resolve(steamPath.value as string);
+        this.mBaseFolder = Bluebird.resolve(steamPath.value as string);
       } catch (err) {
         log('info', 'steam not found', { error: err.message });
-        this.mBaseFolder = Promise.resolve(undefined);
+        this.mBaseFolder = Bluebird.resolve(undefined);
       }
     } else {
-      this.mBaseFolder = Promise.resolve(path.resolve(getVortexPath('home'), '.steam', 'steam'));
+      this.mBaseFolder = Bluebird.resolve(path.resolve(getVortexPath('home'), '.steam', 'steam'));
     }
   }
 
   /**
    * find the first game that matches the specified name pattern
    */
-  public findByName(namePattern: string): Promise<ISteamEntry> {
+  public findByName(namePattern: string): Bluebird<ISteamEntry> {
     const re = new RegExp('^' + namePattern + '$');
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new Steam.GameNotFound(namePattern));
+          return Bluebird.reject(new Steam.GameNotFound(namePattern));
         } else {
-          return Promise.resolve(entry);
+          return Bluebird.resolve(entry);
         }
       });
   }
 
-  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Bluebird<void> {
     // We expect appInfo to be one of three things at this point:
     //  - The game extension's details object if provided, in which case
     //      we want to extract the steamAppId entry. (preferred case as this
@@ -87,7 +87,7 @@ class Steam implements IGameStore {
     //  - The directory path which contains the game's executable.
     if (this.isCustomExecObject(appInfo) && (appInfo.launchType === 'gamestore')) {
       return this.getPosixPath(appInfo)
-        .then(posix => opn(posix).catch(err => Promise.resolve()));
+        .then(posix => opn(posix).catch(err => Bluebird.resolve()));
     }
     const info = (!!appInfo.steamAppId)
       ? appInfo.steamAppId.toString() : appInfo;
@@ -102,10 +102,10 @@ class Steam implements IGameStore {
 
   public getPosixPath(appInfo: any) {
     const posixCommand = `steam://launch/${appInfo.appId}/${appInfo.parameters.join()}`;
-    return Promise.resolve(posixCommand);
+    return Bluebird.resolve(posixCommand);
   }
 
-  public getExecInfo(appInfo: any): Promise<IExecInfo> {
+  public getExecInfo(appInfo: any): Bluebird<IExecInfo> {
     // Steam uses numeric values to id games internally; if the provided appId
     //  contains path separators, it's a clear indication that the game
     //  extension did not provide a steam id and the starter info object
@@ -129,14 +129,14 @@ class Steam implements IGameStore {
           //  provided information...
           : (appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1));
         if (found === undefined) {
-          return Promise.reject(new GameNotFound(appId));
+          return Bluebird.reject(new GameNotFound(appId));
         }
         return this.mBaseFolder.then((basePath) => {
           const steamExec = {
             execPath: path.join(basePath, STEAM_EXEC),
             arguments: ['-applaunch', appId, ...parameters],
           };
-          return Promise.resolve(steamExec);
+          return Bluebird.resolve(steamExec);
         });
       });
   }
@@ -144,7 +144,7 @@ class Steam implements IGameStore {
   /**
    * find the first game with the specified appid or one of the specified appids
    */
-  public findByAppId(appId: string | string[]): Promise<ISteamEntry> {
+  public findByAppId(appId: string | string[]): Bluebird<ISteamEntry> {
     // support searching for one app id or one out of a list (when there are multiple
     // variants of a game)
     const matcher = Array.isArray(appId)
@@ -155,31 +155,31 @@ class Steam implements IGameStore {
       .then(entries => {
         const entry = entries.find(matcher);
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
+          return Bluebird.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
         } else {
-          return Promise.resolve(entry);
+          return Bluebird.resolve(entry);
         }
       });
   }
 
-  public allGames(): Promise<ISteamEntry[]> {
+  public allGames(): Bluebird<ISteamEntry[]> {
     if (!this.mCache) {
       this.mCache = this.parseManifests();
     }
     return this.mCache;
   }
 
-  public getGameStorePath(): Promise<string> {
+  public getGameStorePath(): Bluebird<string> {
     return this.mBaseFolder.then(baseFolder => {
       if (baseFolder === undefined) {
-        return Promise.resolve(undefined);
+        return Bluebird.resolve(undefined);
       }
-      return Promise.resolve(path.join(baseFolder, STEAM_EXEC));
+      return Bluebird.resolve(path.join(baseFolder, STEAM_EXEC));
     });
   }
 
-  public reloadGames(): Promise<void> {
-    return new Promise((resolve) => {
+  public reloadGames(): Bluebird<void> {
+    return new Bluebird((resolve) => {
       this.mCache = this.parseManifests();
       return resolve();
     });
@@ -192,26 +192,26 @@ class Steam implements IGameStore {
     return ('appId' in object) && ('parameters' in object);
   }
 
-  private resolveSteamPaths(): Promise<string[]> {
+  private resolveSteamPaths(): Bluebird<string[]> {
     log('debug', 'resolving Steam game paths');
     return this.mBaseFolder.then((basePath: string) => {
       if (basePath === undefined) {
         // Steam not found/installed
-        return Promise.resolve([]);
+        return Bluebird.resolve([]);
       }
 
       const steamPaths: string[] = [basePath];
       return fs.readFileAsync(path.resolve(basePath, 'config', 'libraryfolders.vdf'))
         .then((data: Buffer) => {
           if (data === undefined) {
-            return Promise.resolve(steamPaths);
+            return Bluebird.resolve(steamPaths);
           }
           let parsedObj;
           try {
             parsedObj = parse(data.toString());
           } catch (err) {
             log('warn', 'unable to parse steamfolders.vdf', err);
-            return Promise.resolve(steamPaths);
+            return Bluebird.resolve(steamPaths);
           }
           const libObj: any = getSafeCI(parsedObj, ['libraryfolders'], {});
           let counter = libObj.hasOwnProperty('0') ? 0 : 1;
@@ -223,7 +223,7 @@ class Steam implements IGameStore {
             ++counter;
           }
           log('debug', 'found steam install folders', { steamPaths });
-          return Promise.resolve(steamPaths);
+          return Bluebird.resolve(steamPaths);
         })
         .catch(err => {
           // A Steam update has changed the way we resolve the steam library paths
@@ -233,15 +233,15 @@ class Steam implements IGameStore {
           //  part of the base Steam installation folder)
           log('warn', 'failed to read steam library folders file', err);
           return ['EPERM', 'ENOENT'].includes(err.code)
-            ? Promise.resolve(steamPaths)
-            : Promise.reject(err);
+            ? Bluebird.resolve(steamPaths)
+            : Bluebird.reject(err);
         });
     });
   }
 
-  private parseManifests(): Promise<ISteamEntry[]> {
+  private parseManifests(): Bluebird<ISteamEntry[]> {
     return this.resolveSteamPaths()
-      .then((steamPaths: string[]) => Promise.mapSeries(steamPaths, steamPath => {
+      .then((steamPaths: string[]) => Bluebird.mapSeries(steamPaths, steamPath => {
         log('debug', 'reading steam install folder', { steamPath });
         const steamAppsPath = path.join(steamPath, 'steamapps');
         return fs.readdirAsync(steamAppsPath)
@@ -249,7 +249,7 @@ class Steam implements IGameStore {
             const filtered = names.filter(name =>
               name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
             log('debug', 'got steam manifests', { manifests: filtered });
-            return Promise.map(filtered, (name: string) =>
+            return Bluebird.map(filtered, (name: string) =>
               fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
                 manifestData, name,
               })));

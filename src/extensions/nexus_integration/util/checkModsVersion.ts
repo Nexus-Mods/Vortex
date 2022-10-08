@@ -12,7 +12,7 @@ import { setLastUpdateCheck } from '../actions/session';
 
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -31,12 +31,12 @@ const UPDATE_CHECK_TIMEOUT = 5 * ONE_MINUTE;
  * @param {NexusT} nexus
  * @param {string} gameId game to fetch for
  * @param {number} minAge timestamp of the least recently updated mod we're interested in
- * @returns {Promise<IUpdateEntry[]>}
+ * @returns {Bluebird<IUpdateEntry[]>}
  */
 export function fetchRecentUpdates(store: Redux.Store<any>,
                                    nexus: NexusT,
                                    gameId: string,
-                                   minAge: number): Promise<IUpdateEntry[]> {
+                                   minAge: number): Bluebird<IUpdateEntry[]> {
   const state = store.getState();
   const now = Date.now();
   const lastUpdate = getSafe(state, ['session', 'nexus', 'lastUpdate', gameId], {
@@ -49,7 +49,7 @@ export function fetchRecentUpdates(store: Redux.Store<any>,
 
   if ((timeSinceUpdate < UPDATE_CHECK_TIMEOUT) && ((now - minAge) < lastUpdate.range)) {
     // don't fetch same or smaller range again within 5 minutes
-    return Promise.resolve(
+    return Bluebird.resolve(
       getSafe(state, ['session', 'nexus', 'lastUpdate', gameId, 'updateList'], []));
   } else {
     log('debug', '[update check] lru', (new Date(minAge)).toISOString());
@@ -69,13 +69,13 @@ export function fetchRecentUpdates(store: Redux.Store<any>,
 
     log('debug', '[update check] using range', { gameId, period });
 
-    return Promise.resolve(nexus.getRecentlyUpdatedMods(
+    return Bluebird.resolve(nexus.getRecentlyUpdatedMods(
           period, nexusGameId(gameById(state, gameId), gameId)))
       .then(recentUpdates => {
         // store 5 minutes ago for the time of the last update check, since
         // the list is cached and might be that outdated
         store.dispatch(setLastUpdateCheck(gameId, now - 5 * ONE_MINUTE, range, recentUpdates));
-        return Promise.resolve(recentUpdates);
+        return Bluebird.resolve(recentUpdates);
       });
   }
 }
@@ -89,16 +89,16 @@ export function fetchRecentUpdates(store: Redux.Store<any>,
  * @param {number} newestFileId
  * @param {string} version
  * @param {number} uploadedTimestamp
- * @return {Promise<IFileInfo>}
+ * @return {Bluebird<IFileInfo>}
  *
  */
 export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
-                                gameMode: string, mod: IMod): Promise<void> {
+                                gameMode: string, mod: IMod): Bluebird<void> {
   const nexusModId: number =
       parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
   if (isNaN(nexusModId)) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
@@ -106,7 +106,7 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
   const fallBackGameId = gameId === 'site'
     ? 'site' : undefined;
 
-  return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
+  return Bluebird.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
       .tapCatch(err => {
         log('warn', 'dropping update info', { gameMode, id: mod.id, err: err.message });
@@ -303,16 +303,16 @@ export function retrieveModInfo(
     api: IExtensionApi,
     gameMode: string,
     mod: IMod,
-    t: TFunction): Promise<void> {
+    t: TFunction): Bluebird<void> {
   const store = api.store;
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
   const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
-  return Promise.resolve(nexus.getModInfo(nexusIdNum,
+  return Bluebird.resolve(nexus.getModInfo(nexusIdNum,
                                           nexusGameId(gameById(store.getState(), gameId))))
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {

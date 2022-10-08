@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as winapiT from 'winapi-bindings';
 import * as fs from './fs';
@@ -23,9 +23,9 @@ const STORE_ID = 'epic';
  */
 class EpicGamesLauncher implements IGameStore {
   public id: string;
-  private mDataPath: Promise<string>;
+  private mDataPath: Bluebird<string>;
   private mLauncherExecPath: string;
-  private mCache: Promise<IGameStoreEntry[]>;
+  private mCache: Bluebird<IGameStoreEntry[]>;
 
   constructor() {
     this.id = STORE_ID;
@@ -35,33 +35,33 @@ class EpicGamesLauncher implements IGameStore {
         const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
           'AppDataPath');
-        this.mDataPath = Promise.resolve(epicDataPath.value as string);
+        this.mDataPath = Bluebird.resolve(epicDataPath.value as string);
       } catch (err) {
         log('info', 'Epic games launcher not found', { error: err.message });
-        this.mDataPath = Promise.resolve(undefined);
+        this.mDataPath = Bluebird.resolve(undefined);
       }
     } else {
       // TODO: Is epic launcher even available on non-windows platforms?
-      this.mDataPath = Promise.resolve(undefined);
+      this.mDataPath = Bluebird.resolve(undefined);
     }
   }
 
-  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Bluebird<void> {
     const appId = ((typeof(appInfo) === 'object') && ('appId' in appInfo))
       ? appInfo.appId : appInfo.toString();
 
     return this.getPosixPath(appId)
-      .then(posPath => opn(posPath).catch(err => Promise.resolve()));
+      .then(posPath => opn(posPath).catch(err => Bluebird.resolve()));
   }
 
-  public launchGameStore(api: IExtensionApi, parameters?: string[]): Promise<void> {
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): Bluebird<void> {
     const launchCommand = 'com.epicgames.launcher://start';
-    return opn(launchCommand).catch(err => Promise.resolve());
+    return opn(launchCommand).catch(err => Bluebird.resolve());
   }
 
   public getPosixPath(name) {
     const posixPath = `com.epicgames.launcher://apps/${name}?action=launch&silent=true`;
-    return Promise.resolve(posixPath);
+    return Bluebird.resolve(posixPath);
   }
 
   public queryPath() {
@@ -73,14 +73,14 @@ class EpicGamesLauncher implements IGameStore {
    * Please keep in mind that epic seems to internally give third-party games animal names. Kinky.
    * @param name
    */
-  public isGameInstalled(name: string): Promise<boolean> {
+  public isGameInstalled(name: string): Bluebird<boolean> {
     return this.findByAppId(name)
       .catch(() => this.findByName(name))
-      .then(() => Promise.resolve(true))
-      .catch(() => Promise.resolve(false));
+      .then(() => Bluebird.resolve(true))
+      .catch(() => Bluebird.resolve(false));
   }
 
-  public findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): Bluebird<IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: IGameStoreEntry) => (appId.includes(entry.appid))
       : (entry: IGameStoreEntry) => (appId === entry.appid);
@@ -88,9 +88,9 @@ class EpicGamesLauncher implements IGameStore {
     return this.allGames()
       .then(entries => entries.find(matcher))
       .then(entry => (entry === undefined)
-        ? Promise.reject(
+        ? Bluebird.reject(
             new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
-        : Promise.resolve(entry));
+        : Bluebird.resolve(entry));
   }
 
   /**
@@ -98,30 +98,30 @@ class EpicGamesLauncher implements IGameStore {
    *  e.g. "Flour" === "Untitled Goose Game" lol
    * @param name
    */
-  public findByName(name: string): Promise<IGameStoreEntry> {
+  public findByName(name: string): Bluebird<IGameStoreEntry> {
     const re = new RegExp('^' + name + '$');
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => (entry === undefined)
-        ? Promise.reject(new GameEntryNotFound(name, STORE_ID))
-        : Promise.resolve(entry));
+        ? Bluebird.reject(new GameEntryNotFound(name, STORE_ID))
+        : Bluebird.resolve(entry));
   }
 
-  public allGames(): Promise<IGameStoreEntry[]> {
+  public allGames(): Bluebird<IGameStoreEntry[]> {
     if (!this.mCache) {
       this.mCache = this.parseManifests();
     }
     return this.mCache;
   }
 
-  public reloadGames(): Promise<void> {
-    return new Promise((resolve) => {
+  public reloadGames(): Bluebird<void> {
+    return new Bluebird((resolve) => {
       this.mCache = this.parseManifests();
       return resolve();
     });
   }
 
-  public getGameStorePath(): Promise<string> {
+  public getGameStorePath(): Bluebird<string> {
     const getExecPath = () => {
       try {
         const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
@@ -129,15 +129,15 @@ class EpicGamesLauncher implements IGameStore {
           '(Default)');
         const val = epicLauncher.value;
         this.mLauncherExecPath = val.toString().split(',')[0];
-        return Promise.resolve(this.mLauncherExecPath);
+        return Bluebird.resolve(this.mLauncherExecPath);
       } catch (err) {
         log('info', 'Epic games launcher not found', { error: err.message });
-        return Promise.resolve(undefined);
+        return Bluebird.resolve(undefined);
       }
     };
 
     return (!!this.mLauncherExecPath)
-      ? Promise.resolve(this.mLauncherExecPath)
+      ? Bluebird.resolve(this.mLauncherExecPath)
       : getExecPath();
   }
 
@@ -149,12 +149,12 @@ class EpicGamesLauncher implements IGameStore {
       : 'EpicGamesLauncher';
   }
 
-  private parseManifests(): Promise<IGameStoreEntry[]> {
+  private parseManifests(): Bluebird<IGameStoreEntry[]> {
     let manifestsLocation;
     return this.mDataPath
       .then(dataPath => {
         if (dataPath === undefined) {
-          return Promise.resolve([]);
+          return Bluebird.resolve([]);
         }
 
         manifestsLocation = path.join(dataPath, 'Manifests');
@@ -162,11 +162,11 @@ class EpicGamesLauncher implements IGameStore {
       })
       .catch({ code: 'ENOENT' }, err => {
         log('info', 'Epic launcher manifests could not be found', err.code);
-        return Promise.resolve([]);
+        return Bluebird.resolve([]);
       })
       .then(entries => {
         const manifests = entries.filter(entry => entry.endsWith(ITEM_EXT));
-        return Promise.map(manifests, manifest =>
+        return Bluebird.map(manifests, manifest =>
           fs.readFileAsync(path.join(manifestsLocation, manifest), { encoding: 'utf8' })
             .then(data => {
               try {
@@ -182,17 +182,17 @@ class EpicGamesLauncher implements IGameStore {
                 //  game entry is actually valid.
                 return (!!gamePath && !!name && !!appid && !!gameExec)
                   ? fs.statSilentAsync(path.join(gamePath, gameExec))
-                      .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
-                      .catch(() => Promise.resolve(undefined))
-                  : Promise.resolve(undefined);
+                      .then(() => Bluebird.resolve({ appid, name, gamePath, gameStoreId }))
+                      .catch(() => Bluebird.resolve(undefined))
+                  : Bluebird.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
-                return Promise.resolve(undefined);
+                return Bluebird.resolve(undefined);
               }
         })
         .catch(err => {
           log('error', 'Cannot read Epic Games manifest', err);
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         }));
       })
       .then((games) => games.filter(game => game !== undefined));

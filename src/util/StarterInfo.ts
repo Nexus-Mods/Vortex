@@ -19,7 +19,7 @@ import { MissingDependency, MissingInterpreter,
          ProcessCanceled, UserCanceled } from './CustomErrors';
 import getVortexPath from './getVortexPath';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GameEntryNotFound } from '../types/IGameStore';
@@ -76,14 +76,14 @@ class StarterInfo implements IStarterInfo {
 
   public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
-    const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
+    const launcherPromise: Bluebird<{ launcher: string, addInfo?: any }> =
       (game.requiresLauncher !== undefined) && info.isGame
       ? game.requiresLauncher(path.dirname(info.exePath))
         .catch(err => {
           onShowError('Failed to determine if launcher is required', err, true);
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         })
-      : Promise.resolve(undefined);
+      : Bluebird.resolve(undefined);
 
     const onSpawned = () => {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
@@ -146,7 +146,7 @@ class StarterInfo implements IStarterInfo {
                              api: IExtensionApi,
                              onShowError: OnShowErrorFunc,
                              onSpawned: () => void,
-                             ): Promise<void> {
+                             ): Bluebird<void> {
     const spawned = () => {
       onSpawned();
       if (['hide', 'hide_recover'].includes(info.onStart)) {
@@ -227,18 +227,18 @@ class StarterInfo implements IStarterInfo {
   private static runThroughLauncher(launcher: string,
                                     info: IStarterInfo,
                                     api: IExtensionApi,
-                                    addInfo: any): Promise<void> {
+                                    addInfo: any): Bluebird<void> {
     let gameLauncher;
     try {
       gameLauncher = GameStoreHelper.getGameStore(launcher);
     } catch (err) {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
     const infoObj = (addInfo !== undefined)
       ? addInfo : path.dirname(info.exePath);
     return (gameLauncher !== undefined)
       ? gameLauncher.launchGame(infoObj, api)
-      : Promise.reject(new Error(`unsupported launcher ${launcher}`));
+      : Bluebird.reject(new Error(`unsupported launcher ${launcher}`));
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {

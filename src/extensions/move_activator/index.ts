@@ -12,7 +12,7 @@ import { installPathForGame } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -109,7 +109,7 @@ class DeploymentMethod extends LinkingDeployment {
                 },
               });
           },
-          fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
+          fixCallback: (api: IExtensionApi) => new Bluebird((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
             api.store.dispatch(setSettingsPage('Mods'));
             api.highlightControl('#install-path-form', 5000,
@@ -129,7 +129,7 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  public onSelected(api: IExtensionApi): Promise<void> {
+  public onSelected(api: IExtensionApi): Bluebird<void> {
     return api.showDialog('question', 'Move Deployment', {
       text: 'You\'re about to enable "Move Deployment".\n'
           + 'Please note that move deployment is slightly slower, uses more disk space and is less '
@@ -142,14 +142,14 @@ class DeploymentMethod extends LinkingDeployment {
       { label: 'Continue' },
     ])
     .then(result => result.action === 'Cancel'
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve());
+      ? Bluebird.reject(new UserCanceled())
+      : Bluebird.resolve());
   }
 
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
-                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+                  progressCB?: (files: number, total: number) => void): Bluebird<IDeployedFile[]> {
     const deployment: IDeployment = this.context.newDeployment;
     const lnkExtUpper = LNK_EXT.toUpperCase();
     const extLen = LNK_EXT.length;
@@ -168,7 +168,7 @@ class DeploymentMethod extends LinkingDeployment {
     return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
-  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Bluebird<void> {
     return turbowalk(sourcePath, entries => {
       if (this.context === undefined) {
         return;
@@ -194,7 +194,7 @@ class DeploymentMethod extends LinkingDeployment {
     return input;
   }
 
-  protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installationPath: string, dataPath: string): Bluebird<void> {
     let links: IEntry[] = [];
 
     // find lnk files in our mods directory
@@ -205,24 +205,24 @@ class DeploymentMethod extends LinkingDeployment {
       {
         details: true,
       })
-      .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
+      .then(() => Bluebird.map(links, entry => this.restoreLink(entry.filePath)));
   }
 
-  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Bluebird<void> {
     if (path.extname(sourcePath) === LNK_EXT) {
       // sanity check, don't link the links
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const basePath = path.dirname(linkPath);
     return this.ensureDir(basePath)
         .then(() => this.createLink(sourcePath, linkPath));
   }
 
-  protected unlinkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected unlinkFile(linkPath: string, sourcePath: string): Bluebird<void> {
     return this.restoreLink(sourcePath + LNK_EXT);
   }
 
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+  protected isLink(linkPath: string, sourcePath: string): Bluebird<boolean> {
     return fs.readFileAsync(sourcePath + LNK_EXT, { encoding: 'utf-8' })
       .then(data => {
         try {
@@ -233,26 +233,26 @@ class DeploymentMethod extends LinkingDeployment {
         }
       })
       .catch(err => (err.code === 'ENOENT')
-        ? Promise.resolve(false)
-        : Promise.reject(err));
+        ? Bluebird.resolve(false)
+        : Bluebird.reject(err));
   }
 
   protected canRestore(): boolean {
     return true;
   }
 
-  protected stat(filePath: string): Promise<fs.Stats> {
+  protected stat(filePath: string): Bluebird<fs.Stats> {
     return fs.statAsync(filePath)
       .catch(err => (err.code === 'ENOENT')
         ? this.statVortexLink(filePath)
-        : Promise.reject(err));
+        : Bluebird.reject(err));
   }
 
-  protected statLink(filePath: string): Promise<fs.Stats> {
-    return Promise.resolve(fs.lstatAsync(filePath));
+  protected statLink(filePath: string): Bluebird<fs.Stats> {
+    return Bluebird.resolve(fs.lstatAsync(filePath));
   }
 
-  private readLink(filePath: string): Promise<ILinkData> {
+  private readLink(filePath: string): Bluebird<ILinkData> {
     return fs.readFileAsync(filePath + LNK_EXT, { encoding: 'utf-8' })
       .then(data => {
         try {
@@ -260,22 +260,22 @@ class DeploymentMethod extends LinkingDeployment {
           if (obj.target === undefined) {
             throw new Error('target missing');
           }
-          return Promise.resolve(obj);
+          return Bluebird.resolve(obj);
         } catch (err) {
           const error: any = new Error('Invalid link');
           error.code = 'ENOENT';
           error.path = filePath;
-          return Promise.reject(error);
+          return Bluebird.reject(error);
         }
       });
   }
 
-  private statVortexLink(filePath: string): Promise<fs.Stats> {
+  private statVortexLink(filePath: string): Bluebird<fs.Stats> {
     return this.readLink(filePath)
       .then(linkInfo => fs.statAsync(linkInfo.target));
   }
 
-  private createLink(sourcePath: string, linkPath: string): Promise<void> {
+  private createLink(sourcePath: string, linkPath: string): Bluebird<void> {
     const linkInfo = JSON.stringify({
       target: linkPath,
     });
@@ -294,7 +294,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => fs.renameAsync(sourcePath, linkPath));
   }
 
-  private restoreLink(linkPath: string): Promise<void> {
+  private restoreLink(linkPath: string): Bluebird<void> {
     return fs.readFileAsync(linkPath, { encoding: 'utf-8' })
       .then(data => {
         try {
@@ -303,20 +303,20 @@ class DeploymentMethod extends LinkingDeployment {
           return fs.renameAsync(dat.target, outPath)
             .catch(err => (err.code === 'ENOENT')
               // file was deleted. Well, the user is the boss...
-              ? Promise.resolve()
+              ? Bluebird.resolve()
               // how did we successfully deploy if this is on a different drive?
               // if the game was moved the links shouldn't point to a valid location,
               // if the staging folder was moved we should have purged
               : (err.code === 'EXDEV')
               ? fs.moveAsync(dat.target, outPath)
-              : Promise.reject(err))
+              : Bluebird.reject(err))
             .then(() => fs.removeAsync(linkPath));
         } catch (err) {
           log('error', 'invalid link', { linkPath, data });
           const error: any = new Error('Invalid link');
           error.code = 'ENOENT';
           error.path = linkPath;
-          return Promise.reject(error);
+          return Bluebird.reject(error);
         }
       });
   }

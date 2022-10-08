@@ -6,7 +6,7 @@ import { ComponentEx } from '../../util/ComponentEx';
 
 import { enableUserSymlinks } from './actions';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 import { Alert, ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ interface IConnectedProps {
 interface IActionProps {
   onEnableUserSymlinks: (enable: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;

@@ -10,7 +10,7 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -114,7 +114,7 @@ class DeploymentMethod extends LinkingDeployment {
                 },
               });
           },
-          fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
+          fixCallback: (api: IExtensionApi) => new Bluebird((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
             api.store.dispatch(setSettingsPage('Mods'));
             api.highlightControl('#install-path-form',
@@ -163,7 +163,7 @@ class DeploymentMethod extends LinkingDeployment {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
-      Promise.delay(100)
+      Bluebird.delay(100)
         .then(() => fs.removeAsync(canary + '.link'))
         .then(() => fs.removeAsync(canary))
         .catch(err => {
@@ -179,23 +179,23 @@ class DeploymentMethod extends LinkingDeployment {
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
-                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+                  progressCB?: (files: number, total: number) => void): Bluebird<IDeployedFile[]> {
     return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
-  public postPurge(): Promise<void> {
+  public postPurge(): Bluebird<void> {
     delete this.mInstallationFiles;
     this.mInstallationFiles = undefined;
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   protected purgeLinks(installationPath: string, dataPath: string,
-                       onProgress?: (num: number, total: number) => void): Promise<void> {
-    let installEntryProm: Promise<Set<number>>;
+                       onProgress?: (num: number, total: number) => void): Bluebird<void> {
+    let installEntryProm: Bluebird<Set<number>>;
 
     // find ids of all files in our mods directory
     if (this.mInstallationFiles !== undefined) {
-      installEntryProm = Promise.resolve(this.mInstallationFiles);
+      installEntryProm = Bluebird.resolve(this.mInstallationFiles);
     } else {
       this.mInstallationFiles = new Set<number>();
       installEntryProm = turbowalk(installationPath,
@@ -216,9 +216,9 @@ class DeploymentMethod extends LinkingDeployment {
           skipHidden: false,
         })
         .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
-          ? Promise.resolve()
-          : Promise.reject(err))
-        .then(() => Promise.resolve(this.mInstallationFiles));
+          ? Bluebird.resolve()
+          : Bluebird.reject(err))
+        .then(() => Bluebird.resolve(this.mInstallationFiles));
     }
 
     // now remove all files in the game directory that have the same id
@@ -227,13 +227,13 @@ class DeploymentMethod extends LinkingDeployment {
       const total = inos.size;
       let purged: number = 0;
 
-      let queue = Promise.resolve();
+      let queue = Bluebird.resolve();
       if (inos.size === 0) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       return turbowalk(dataPath, entries => {
         queue = queue
-          .then(() => Promise.map(entries,
+          .then(() => Bluebird.map(entries,
             entry => {
               if ((entry.linkCount > 1) && inos.has(entry.id)) {
                 ++purged;
@@ -244,7 +244,7 @@ class DeploymentMethod extends LinkingDeployment {
                   .catch(err =>
                     log('warn', 'failed to remove', entry.filePath));
               } else {
-                return Promise.resolve();
+                return Bluebird.resolve();
               }
             })
             .then(() => undefined));
@@ -253,34 +253,34 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Bluebird<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
         .catch(err => (err.code !== 'EEXIST')
-          ? Promise.reject(err)
+          ? Bluebird.reject(err)
           : fs.removeAsync(linkPath)
             .then(() => fs.linkAsync(sourcePath, linkPath)));
   }
 
-  protected unlinkFile(linkPath: string): Promise<void> {
+  protected unlinkFile(linkPath: string): Bluebird<void> {
     return fs.unlinkAsync(linkPath);
   }
 
   protected isLink(linkPath: string, sourcePath: string,
-                   linkStatsIn: fs.Stats, sourceStatsIn: fs.Stats): Promise<boolean> {
+                   linkStatsIn: fs.Stats, sourceStatsIn: fs.Stats): Bluebird<boolean> {
     if ((linkStatsIn !== undefined) && (sourceStatsIn !== undefined)) {
-      return Promise.resolve((linkStatsIn.nlink > 1)
+      return Bluebird.resolve((linkStatsIn.nlink > 1)
                           && (linkStatsIn.ino === sourceStatsIn.ino));
     }
 
     return fs.lstatAsync(linkPath)
       .then(linkStats => linkStats.nlink === 1
-        ? Promise.resolve(false)
+        ? Bluebird.resolve(false)
         : fs.lstatAsync(sourcePath)
             .then(sourceStats => linkStats.ino === sourceStats.ino))
       .catch(err => (err.code === 'ENOENT')
-        ? Promise.resolve(false)
-        : Promise.reject(err));
+        ? Bluebird.resolve(false)
+        : Bluebird.reject(err));
   }
 
   protected canRestore(): boolean {

@@ -34,7 +34,7 @@ import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import _ from 'lodash';
 import * as path from 'path';
@@ -66,7 +66,7 @@ type DownloadFinishState = 'finished' | 'failed' | 'redirect';
 interface IActionProps {
   onSetAttribute: (id: string, time: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
                 notificationId?: string, allowReport?: boolean,
                 attachments?: IAttachment[]) => void;

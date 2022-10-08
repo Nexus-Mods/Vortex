@@ -55,7 +55,7 @@ import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import GameModeManager, { IGameStub } from './GameModeManager';
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -83,7 +83,7 @@ interface IProvider {
 
 const gameInfoProviders: IProvider[] = [];
 
-function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<void> {
+function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Bluebird<void> {
   interface IKeyProvider {
     [key: string]: { priority: number, provider: string };
   }
@@ -129,7 +129,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
     }
   };
 
-  return Promise.map(providersToQuery, prov => {
+  return Bluebird.map(providersToQuery, prov => {
     const expires = now + prov.expireMS;
     return prov.query({ ...game, ...gameDiscovery }).then(details => {
       const receivedKeys = Object.keys(details);
@@ -156,9 +156,9 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
   .then(() => undefined);
 }
 
-function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
-  return Promise.map(game.requiredFiles || [], file =>
-    Promise.resolve(fsExtra.stat(path.join(gamePath, file))))
+function verifyGamePath(game: IGame, gamePath: string): Bluebird<void> {
+  return Bluebird.map(game.requiredFiles || [], file =>
+    Bluebird.resolve(fsExtra.stat(path.join(gamePath, file))))
     .then(() => undefined)
     .catch(err => {
       // if the error is anything other than "the file doesn't exist" we assume
@@ -168,7 +168,7 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
       if (err.code !== 'ENOENT') {
         return undefined;
       }
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     });
 }
 
@@ -185,9 +185,9 @@ function searchDepth(files: string[]): number {
 // if the game contains a directory hierarchy like Game/Binaries/Win64/foobar.exe, the user
 // may have selected the "Win64" directory instead of "Game"
 function findGamePath(game: IGame, selectedPath: string,
-                      depth: number, maxDepth: number): Promise<string> {
+                      depth: number, maxDepth: number): Bluebird<string> {
   if (depth > maxDepth) {
-    return Promise.reject(new ProcessCanceled('not found'));
+    return Bluebird.reject(new ProcessCanceled('not found'));
   }
 
   return verifyGamePath(game, selectedPath)
@@ -196,9 +196,9 @@ function findGamePath(game: IGame, selectedPath: string,
       findGamePath(game, path.dirname(selectedPath), depth + 1, maxDepth));
 }
 
-function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
+function browseGameLocation(api: IExtensionApi, gameId: string): Bluebird<void> {
   const state: IState = api.store.getState();
-  
+
   if (gameById(state, gameId) === undefined) {
     return api.showDialog('question', 'Game support not installed', {
       text: 'Support for this game is provided through an extension. '
@@ -212,12 +212,12 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const game = getGame(gameId);
 
   if (game === undefined) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const discovery = state.settings.gameMode.discovered[gameId];
 
-  return new Promise<void>((resolve, reject) => {
+  return new Bluebird<void>((resolve, reject) => {
     if ((discovery !== undefined) && (discovery.path !== undefined)) {
       api.selectDir({ defaultPath: discovery.path })
       .then(result => {
@@ -285,7 +285,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 function installGameExtension(api: IExtensionApi,
                               gameId: string,
                               dlInfo: IExtensionDownloadInfo)
-                              : Promise<void> {
+                              : Bluebird<void> {
   if (dlInfo !== undefined) {
     log('info', 'installing missing game extension', { gameId });
     const name = dlInfo.name.replace(/^Game: /, '');
@@ -314,34 +314,34 @@ function installGameExtension(api: IExtensionApi,
           );
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
-          return Promise.resolve(false);
+          return Bluebird.resolve(false);
         }
       })
       .catch(err => {
         if ((err instanceof UserCanceled)
           || (err instanceof ProcessCanceled)) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         api.showErrorNotification('Failed to install game extension', err);
       });
   } else {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 }
 
-function awaitProfileSwitch(api: IExtensionApi): Promise<string> {
+function awaitProfileSwitch(api: IExtensionApi): Bluebird<string> {
   const { activeProfileId, nextProfileId } = api.getState().settings.profiles;
   if (activeProfileId !== nextProfileId) {
-    return new Promise(resolve => api.events.once('profile-did-change', resolve));
+    return new Bluebird(resolve => api.events.once('profile-did-change', resolve));
   } else {
-    return Promise.resolve(activeProfileId);
+    return Bluebird.resolve(activeProfileId);
   }
 }
 
 function removeDisappearedGames(api: IExtensionApi,
                                 discoveredGames: Set<string>,
                                 gameStubs?: { [gameId: string]: IExtensionDownloadInfo })
-                                : Promise<void> {
+                                : Bluebird<void> {
   let state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
@@ -350,23 +350,23 @@ function removeDisappearedGames(api: IExtensionApi,
 
   log('info', 'remove disappeared games');
 
-  const assertRequiredFiles = (requiredFiles: string[], gameId: string): Promise<void> => {
+  const assertRequiredFiles = (requiredFiles: string[], gameId: string): Bluebird<void> => {
     if (requiredFiles === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
-    return Promise.map(requiredFiles,
+    return Bluebird.map(requiredFiles,
           file => fsExtra.stat(path.join(discovered[gameId].path, file)))
           .then(() => undefined)
           .catch(err => {
             if (err.code === 'ENOENT') {
-              return Promise.reject(err);
+              return Bluebird.reject(err);
             } else {
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
           });
   };
 
-  return Promise.map(
+  return Bluebird.map(
     Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
     gameId => {
       const stored = known.find(iter => iter.id === gameId);
@@ -374,13 +374,13 @@ function removeDisappearedGames(api: IExtensionApi,
         .then(() => assertRequiredFiles(stored?.requiredFiles, gameId))
         .catch(err => {
           if (err.code === 'ENOENT') {
-            return Promise.reject(err);
+            return Bluebird.reject(err);
           }
           // if we can't stat the game directory for any other reason than it being missing
           // (almost certainly permission error) we just assume the game is installed and
           // can be launched through the store because that's how it works with the xbox store
           // and we have to support that.
-          return Promise.resolve();
+          return Bluebird.resolve();
         })
         .catch(err => {
           const gameName = stored?.name ?? discovered[gameId].name;
@@ -421,15 +421,15 @@ function removeDisappearedGames(api: IExtensionApi,
 
       if (gameStubs !== undefined) {
         const knownGameIds = new Set(known.map(game => game.id));
-        return Promise.all(Array.from(managedGames).map(gameId => {
+        return Bluebird.all(Array.from(managedGames).map(gameId => {
           if (knownGameIds.has(gameId)) {
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
           return installGameExtension(api, gameId, gameStubs[gameId]);
         }))
-          .then(() => Promise.resolve());
+          .then(() => Bluebird.resolve());
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
 }
@@ -579,8 +579,8 @@ function init(context: IExtensionContext): boolean {
 
   context.registerGameInfoProvider('game-path', 0, 1000,
     ['path'], (game: IGame & IDiscoveryResult) => (game.path === undefined)
-      ? Promise.resolve({})
-      : Promise.resolve({
+      ? Bluebird.resolve({})
+      : Bluebird.resolve({
         path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
       }));
 
@@ -646,8 +646,8 @@ function init(context: IExtensionContext): boolean {
                           undefined, undefined, undefined);
 
   const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
-  const onSelectPath = (basePath: string): Promise<string> =>
-    Promise.resolve(context.api.selectDir({
+  const onSelectPath = (basePath: string): Bluebird<string> =>
+    Bluebird.resolve(context.api.selectDir({
       defaultPath: basePath,
     }));
 
@@ -688,7 +688,7 @@ function init(context: IExtensionContext): boolean {
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
 
@@ -719,9 +719,9 @@ function init(context: IExtensionContext): boolean {
     events.on('start-discovery', () => {
       try {
         const state = context.api.getState();
-        const initPromise: Promise<void> = state.settings.gameMode.searchPaths.length > 0
-          ? Promise.resolve()
-          : Promise.resolve(getDriveList(context.api))
+        const initPromise: Bluebird<void> = state.settings.gameMode.searchPaths.length > 0
+          ? Bluebird.resolve()
+          : Bluebird.resolve(getDriveList(context.api))
               .catch(() => ([]))
               .then(drives => { context.api.store.dispatch(setGameSearchPaths(drives)); });
 
@@ -751,14 +751,14 @@ function init(context: IExtensionContext): boolean {
     });
 
     const changeGameMode = (oldGameId: string, newGameId: string,
-                            currentProfileId: string): Promise<void> => {
+                            currentProfileId: string): Bluebird<void> => {
       if (newGameId === undefined) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       log('debug', 'change game mode', { oldGameId, newGameId });
 
       if (getGame(newGameId) === undefined) {
-        return Promise.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
+        return Bluebird.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
       }
 
       const id = context.api.sendNotification({
@@ -776,7 +776,7 @@ function init(context: IExtensionContext): boolean {
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
           if ((discovery === undefined) || (discovery.path === undefined)) {
-            return Promise.reject(new ProcessCanceled('The game is no longer discovered'));
+            return Bluebird.reject(new ProcessCanceled('The game is no longer discovered'));
           }
           getGame(newGameId).getModPaths(discovery.path);
         })
@@ -839,7 +839,7 @@ function init(context: IExtensionContext): boolean {
         log('debug', 'active profile id changed', { prev, current, oldGameId, newGameId });
         const prom = (oldGameId !== newGameId)
           ? changeGameMode(oldGameId, newGameId, current)
-          : Promise.resolve();
+          : Bluebird.resolve();
 
         prom.then(() => {
           const game = {

@@ -6,12 +6,12 @@ import { ISupportedInstaller } from './types/IModInstaller';
 import { ProgressDelegate } from './types/InstallFunc';
 import { ISupportedResult } from './types/TestSupported';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { XXHash64 } from 'xxhash-addon';
 
-function testSupported(): Promise<ISupportedResult> {
-  return Promise.resolve({
+function testSupported(): Bluebird<ISupportedResult> {
+  return Bluebird.resolve({
     supported: true,
     requiredFiles: [],
   });
@@ -20,7 +20,7 @@ function testSupported(): Promise<ISupportedResult> {
 function makeXXHash64() {
   // using seed 0
   const xxh64 = new XXHash64();
-  return (filePath: string): Promise<string> => {
+  return (filePath: string): Bluebird<string> => {
     return fs.readFileAsync(filePath)
       .then(data => {
         const buf: Buffer = xxh64.hash(data);
@@ -35,9 +35,9 @@ function makeXXHash64() {
  */
 function makeListInstaller(extractList: IFileListItem[],
                            basePath: string)
-                           : Promise<ISupportedInstaller> {
-  let lookupFunc: (filePath: string) => Promise<string> =
-    (filePath: string) => Promise.resolve(fileMD5(filePath));
+                           : Bluebird<ISupportedInstaller> {
+  let lookupFunc: (filePath: string) => Bluebird<string> =
+    (filePath: string) => Bluebird.resolve(fileMD5(filePath));
 
   let idxId = 'md5';
 
@@ -48,7 +48,7 @@ function makeListInstaller(extractList: IFileListItem[],
     idxId = 'xxh64';
   }
 
-  return Promise.resolve({
+  return Bluebird.resolve({
     installer: {
       id: 'list-installer',
       priority: 0,
@@ -57,7 +57,7 @@ function makeListInstaller(extractList: IFileListItem[],
                 progressDelegate: ProgressDelegate) => {
         let prog = 0;
         // build lookup table of the existing files on disk md5 -> source path
-        return Promise.reduce(files.filter(relPath => !relPath.endsWith(path.sep)),
+        return Bluebird.reduce(files.filter(relPath => !relPath.endsWith(path.sep)),
                               (prev, relPath, idx, length) => {
           return lookupFunc(path.join(basePath, relPath))
             .then(checksum => {

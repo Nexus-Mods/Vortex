@@ -20,7 +20,7 @@ import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
 import { EndorsedStatus } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -195,14 +195,14 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     const { downloads } = this.props;
     let success = false;
     log('info', 'installing extension(s) via drag and drop', { extPaths });
-    const prop: Promise<void[]> = (type === 'files')
-      ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
+    const prop: Bluebird<void[]> = (type === 'files')
+      ? Bluebird.map(extPaths, extPath => installExtension(this.context.api, extPath)
           .then(() => { success = true; })
           .catch(err => {
             this.context.api.showErrorNotification('Failed to install extension', err,
                                                    { allowReport: false });
           }))
-      : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
+      : Bluebird.map(extPaths, url => new Bluebird<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);

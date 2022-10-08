@@ -1,18 +1,18 @@
 import * as fs from '../../../util/fs';
 
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';
 
-function zipFiles(files: string[]): Promise<string> {
+function zipFiles(files: string[]): Bluebird<string> {
   if (files.length === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
   const Zip: typeof ZipT = require('node-7z');
   const task: ZipT = new Zip();
 
-  return new Promise<string>((resolve, reject) => {
+  return new Bluebird<string>((resolve, reject) => {
     tmpName({
       postfix: '.7z',
     }, (err, tmpPath: string) => (err !== null)
@@ -25,7 +25,7 @@ function zipFiles(files: string[]): Promise<string> {
 }
 
 function submitFeedback(nexus: NexusT, title: string, message: string, feedbackFiles: string[],
-                        anonymous: boolean, hash: string): Promise<IFeedbackResponse> {
+                        anonymous: boolean, hash: string): Bluebird<IFeedbackResponse> {
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {

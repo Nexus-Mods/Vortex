@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 function step(startTime: number, endTime: number, time: number) {
   if (time <= startTime) {
@@ -27,7 +27,7 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
     scrollJobs[element.id]();
   }
 
-  return new Promise<boolean>((resolve, reject) => {
+  return new Bluebird<boolean>((resolve, reject) => {
     let canceled = false;
     let timer: number;
 

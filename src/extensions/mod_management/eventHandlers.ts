@@ -44,13 +44,13 @@ import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
 import { ensureStagingDirectory } from './stagingDirectory';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import { RuleType } from 'modmeta-db';
 import * as path from 'path';
 
 function checkStagingGame(api: IExtensionApi, gameId: string, manifestGameId: string)
-  : Promise<boolean> {
+  : Bluebird<boolean> {
   if ((manifestGameId !== undefined) && (gameId !== manifestGameId)) {
     return api.showDialog('error', 'Game managed by different game extension', {
       text: 'You seem to have multiple games inside Vortex trying to manage the same game '
@@ -64,27 +64,27 @@ function checkStagingGame(api: IExtensionApi, gameId: string, manifestGameId: st
     ])
     .then(result => {
       if (result.action === 'Cancel') {
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       } else {
         return purgeMods(api, manifestGameId)
           .then(() => true);
       }
     });
   } else {
-    return Promise.resolve(false);
+    return Bluebird.resolve(false);
   }
 }
 
 // check staging folder against deployment manifest
 function checkStagingFolder(api: IExtensionApi, gameId: string,
                             manifestPath: string, configuredPath: string)
-                            : Promise<boolean> {
+                            : Bluebird<boolean> {
   const t = api.translate;
 
   // manifestPath can be undefined if the manifest is older
   return ((manifestPath !== undefined)
           ? getNormalizeFunc(manifestPath)
-          : Promise.resolve(undefined))
+          : Bluebird.resolve(undefined))
     .then(normalize => {
       if ((manifestPath !== undefined)
           && (normalize(manifestPath) !== normalize(configuredPath))) {
@@ -121,7 +121,7 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
             if (result.action === 'Quit Vortex') {
               getApplication().quit();
               // resolve never
-              return new Promise(() => null);
+              return new Bluebird(() => null);
             } else if ((result.action === 'Use selected')
               && (result.input.manifest)) {
               return true;
@@ -130,7 +130,7 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
             }
           });
       } else {
-        return Promise.resolve(false);
+        return Bluebird.resolve(false);
       }
     });
 }
@@ -146,7 +146,7 @@ function purgeOldMethod(api: IExtensionApi,
   const manifests: { [typeId: string]: IDeploymentManifest } = {};
   const deployments: { [typeId: string]: IDeployedFile[] } = {};
 
-  return Promise.all(Object.keys(modPaths).map((modType) =>
+  return Bluebird.all(Object.keys(modPaths).map((modType) =>
     getManifest(api, modType, gameId)
       .then(manifest => {
         manifests[modType] = manifest;
@@ -154,7 +154,7 @@ function purgeOldMethod(api: IExtensionApi,
       })))
     .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
     .then(() => oldActivator.prePurge(instPath))
-    .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
+    .then(() => Bluebird.mapSeries(Object.keys(modPaths), typeId => {
       return getNormalizeFunc(modPaths[typeId])
         .then(normalize => {
           // test for the special case where the game has been moved since the deployment
@@ -176,12 +176,12 @@ function purgeOldMethod(api: IExtensionApi,
         ;
     }))
     // save (empty) activation
-    .then(() => Promise.map(Object.keys(modPaths), typeId =>
+    .then(() => Bluebird.map(Object.keys(modPaths), typeId =>
       saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId],
         stagingPath, [], oldActivator.id)))
     .then(() => undefined)
     .finally(() => oldActivator.postPurge())
-    .catch(ProcessCanceled, () => Promise.resolve())
+    .catch(ProcessCanceled, () => Bluebird.resolve())
     .catch(TemporaryError, err =>
       api.showErrorNotification('Purge failed, please try again',
         err.message, { allowReport: false }))
@@ -198,7 +198,7 @@ export async function updateDeploymentMethod(api: IExtensionApi, profile: IProfi
   const selected: IDeploymentMethod = getSelectedActivator(state, gameId);
   if (selected !== undefined) {
     // do nothing if there already is a selected activator
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const valid = getCurrentActivator(state, gameId, true);
@@ -250,18 +250,18 @@ export function onGameModeActivated(
 
   let existingManifest: IDeploymentManifest;
 
-  let initProm: () => Promise<void> = () => getManifest(api, '', gameId)
+  let initProm: () => Bluebird<void> = () => getManifest(api, '', gameId)
     .then((manifest: IDeploymentManifest) => {
       if (manifest.instance !== state.app.instanceId) {
         // if the manifest is from a different instance we do nothing with it, there
         // is other code to deal with that during deployment
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       existingManifest = manifest;
 
       return checkStagingGame(api, gameId, manifest.gameId)
         .then((purged: boolean) => purged
-          ? Promise.resolve(false)
+          ? Bluebird.resolve(false)
           : checkStagingFolder(api, gameId, manifest.stagingPath, instPath))
         .then(useManifest => {
           if (useManifest) {
@@ -365,8 +365,8 @@ export function onGameModeActivated(
         initProm = () => oldInit()
           .then(() => (safeFB === undefined)
             ? purgeOldMethod(api, oldActivator, profile, gameId, instPath, modPaths)
-            : Promise.resolve())
-          .catch(ProcessCanceled, () => Promise.resolve());
+            : Bluebird.resolve())
+          .catch(ProcessCanceled, () => Bluebird.resolve());
       }
 
       {
@@ -492,7 +492,7 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
 function undeploy(api: IExtensionApi,
                   activators: IDeploymentMethod[],
                   gameMode: string,
-                  mods: IMod[]): Promise<void> {
+                  mods: IMod[]): Bluebird<void> {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -500,14 +500,14 @@ function undeploy(api: IExtensionApi,
 
   if ((discovery === undefined) || (discovery.path === undefined)) {
     // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const game = getGame(gameMode);
 
   if (game === undefined) {
     log('info', 'tried to undeploy for unknown game', gameMode);
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const modPaths = game.getModPaths(discovery.path);
@@ -524,7 +524,7 @@ function undeploy(api: IExtensionApi,
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes).errors.length === 0);
 
   if (activator === undefined) {
-    return Promise.reject(new ProcessCanceled('No deployment method active'));
+    return Bluebird.reject(new ProcessCanceled('No deployment method active'));
   }
 
   const stagingPath = installPathForGame(state, gameMode);
@@ -537,11 +537,11 @@ function undeploy(api: IExtensionApi,
     return prev;
   }, {});
 
-  return Promise.all(Object.keys(byModTypes).map(typeId => {
+  return Bluebird.all(Object.keys(byModTypes).map(typeId => {
     const subdir = genSubDirFunc(game, getModType(typeId));
     const deployPath = modPaths[typeId || ''];
     if (deployPath === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     let normalize: Normalize;
     return getNormalizeFunc(deployPath)
@@ -550,7 +550,7 @@ function undeploy(api: IExtensionApi,
         return loadActivation(api, gameMode, typeId, deployPath, stagingPath, activator);
       })
       .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
-      .then(() => Promise.all(byModTypes[typeId].map(mod =>
+      .then(() => Bluebird.all(byModTypes[typeId].map(mod =>
         activator.deactivate(path.join(stagingPath, mod.installationPath),
                              subdir(mod), mod.installationPath))))
       .tapCatch(() => {
@@ -567,7 +567,7 @@ function undeploy(api: IExtensionApi,
     log('debug', 'done undeploying single mod',
       { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
   })
-  .then(() => Promise.resolve());
+  .then(() => Bluebird.resolve());
 }
 
 function undeployMods(api: IExtensionApi,
@@ -581,7 +581,7 @@ function undeployMods(api: IExtensionApi,
   return undeploy(api, activators, gameId, mods)
     .catch((err) => {
       if (!['ENOENT', 'ENOTFOUND'].includes(err.code)) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       return api.showDialog('error', 'Mod not found', {
         text: 'The mod you\'re removing has already been deleted on disk.\n'
@@ -596,7 +596,7 @@ function undeployMods(api: IExtensionApi,
       ])
         .then(result => {
           if (result.action === 'Deploy') {
-            return new Promise<void>((resolve, reject) => {
+            return new Bluebird<void>((resolve, reject) => {
               api.events.emit('deploy-mods', (deployErr) => {
                 if (deployErr !== null) {
                   return reject(deployErr);
@@ -605,7 +605,7 @@ function undeployMods(api: IExtensionApi,
               });
             });
           } else {
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
         });
     });
@@ -667,7 +667,7 @@ export function onRemoveMods(api: IExtensionApi,
 
   api.emitAndAwait('will-remove-mods', gameMode, removeMods.map(mod => mod.id))
     .then(() => undeployMods(api, activators, gameMode, removeMods))
-    .then(() => Promise.mapSeries(removeMods,
+    .then(() => Bluebird.mapSeries(removeMods,
         (mod: IMod, idx: number, length: number) => {
       options?.progressCB?.(idx, length, modName(mod));
       const forwardOptions = { ...(options || {}), modData: { ...mod } };
@@ -679,9 +679,9 @@ export function onRemoveMods(api: IExtensionApi,
               { game: gameMode, mod: mod.id });
           return fs.removeAsync(fullModPath)
             .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+            .catch(err => err.code === 'ENOENT' ? Bluebird.resolve() : Bluebird.reject(err));
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
@@ -762,7 +762,7 @@ export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
                                        options: IInstallOptions,
-                                       callback?: (error, id: string) => void): Promise<void> {
+                                       callback?: (error, id: string) => void): Bluebird<void> {
   const store = api.store;
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -778,7 +778,7 @@ export function onStartInstallDownload(api: IExtensionApi,
         + 'available either - sorry.',
       { allowReport: false });
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   return queryGameId(api.store, download.game, download.localPath)
@@ -790,7 +790,7 @@ export function onStartInstallDownload(api: IExtensionApi,
             + 'tried to refresh it, please try again.',
             { allowReport: false });
         });
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       const downloadGame: string[] = getDownloadGames(download);

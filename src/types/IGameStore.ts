@@ -2,7 +2,7 @@ import { IExecInfo } from './IExecInfo';
 import { IExtensionApi } from './IExtensionContext';
 import { IGameStoreEntry } from './IGameStoreEntry';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 export type GameLaunchType = 'gamestore' | 'commandline';
 
@@ -53,7 +53,7 @@ export class GameEntryNotFound extends Error {
 // Allows game extensions to pass arguments and attempt to partially
 //  control how the game gets started. Please use the optional addInfo
 //  parameter when returning from IGame::requiresLauncher
-// requiresLauncher?: (gamePath: string) => Promise<{
+// requiresLauncher?: (gamePath: string) => Bluebird<{
 //   launcher: string;
 //   addInfo?: any; <- return a ICustomExecutionInfo object here.
 // }>;
@@ -81,38 +81,38 @@ export interface IGameStore {
    *  resource intensive operation for each game the user attempts to
    *  manage.
    */
-  allGames: () => Promise<IGameStoreEntry[]>;
+  allGames: () => Bluebird<IGameStoreEntry[]>;
 
   /**
    * Attempt to find a game entry using its game store Id/Ids.
    *
    * @param appId of the game entry. This is obviously game store specific.
    */
-  findByAppId: (appId: string | string[]) => Promise<IGameStoreEntry>;
+  findByAppId: (appId: string | string[]) => Bluebird<IGameStoreEntry>;
 
   /**
    * Attempt to find a game store entry using the game's name.
    *
    * @param appName the game name which the game store uses to identify this game.
    */
-  findByName: (appName: string) => Promise<IGameStoreEntry>;
+  findByName: (appName: string) => Bluebird<IGameStoreEntry>;
 
   /**
    * Returns the full path to the launcher's executable.
    *  As of 1.4, this function is no longer optional - gamestores
    *  such as the Xbox app which do not have a stat-able store path
-   *  should return Promise.resolve(undefined) and define the
+   *  should return Bluebird.resolve(undefined) and define the
    *  "isGameStoreInstalled" function so that the game store helper
    *  is able to confirm that the gamestore is installed on the user's PC
    */
-  getGameStorePath: () => Promise<string>;
+  getGameStorePath: () => Bluebird<string>;
 
   /**
    * Launches the game using this game launcher.
    * @param appId whatever the game store uses to identify a game.
    * @param api gives access to API functions if needed.
    */
-  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
+  launchGame: (appId: any, api?: IExtensionApi) => Bluebird<void>;
 
   /**
    * Determine whether the game has been installed by this game store launcher.
@@ -120,7 +120,7 @@ export interface IGameStore {
    *
    * @param name of the game we're looking for.
    */
-  isGameInstalled?: (name: string) => Promise<boolean>;
+  isGameInstalled?: (name: string) => Bluebird<boolean>;
 
   /**
    * In most cases the game store helper is fully capable of determining
@@ -130,7 +130,7 @@ export interface IGameStore {
    *  executable path MUST provide this function so that the game store helper
    *  can confirm that the store is installed correctly!
    */
-  isGameStoreInstalled?: () => Promise<boolean>;
+  isGameStoreInstalled?: () => Bluebird<boolean>;
 
   /**
    * Some launchers may support Posix paths when attempting to launch a
@@ -143,7 +143,7 @@ export interface IGameStore {
    *
    * @param name of the game we want the posix path for.
    */
-  getPosixPath?: (name: string) => Promise<string>;
+  getPosixPath?: (name: string) => Bluebird<string>;
 
   /**
    * Game store may support command line arguments when launching the game.
@@ -152,14 +152,14 @@ export interface IGameStore {
    *
    * @param appId - Whatever the game store uses to identify a game.
    */
-  getExecInfo?: (appId: any) => Promise<IExecInfo>;
+  getExecInfo?: (appId: any) => Bluebird<IExecInfo>;
 
   /**
    * Generally the game store helper should be able to launch games directly.
    *  This functor allows game stores to define their own custom start up logic
    *  if needed. e.g. gamestore-xbox
    */
-  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Promise<void>;
+  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Bluebird<void>;
 
   /**
    * Allows game stores to provide functionality to reload/refresh their
@@ -169,7 +169,7 @@ export interface IGameStore {
    * The game store helper is configured to call this function for all known
    *  game stores when a discovery scan is initiated.
    */
-  reloadGames?: () => Promise<void>;
+  reloadGames?: () => Bluebird<void>;
 
   /**
    * determine if the specified game is managed by/installed through this store.
@@ -181,5 +181,5 @@ export interface IGameStore {
    * The fallback function can be used to invoke the "default" behavior on top.
    */
   identifyGame?: (gamePath: string,
-                  fallback: (gamePath: string) => PromiseLike<boolean>) => Promise<boolean>;
+                  fallback: (gamePath: string) => PromiseLike<boolean>) => Bluebird<boolean>;
 }

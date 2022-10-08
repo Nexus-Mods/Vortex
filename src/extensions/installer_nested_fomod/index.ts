@@ -12,11 +12,11 @@ import {
 } from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 
-function testSupported(files: string[]): Promise<ISupportedResult> {
-  return new Promise((resolve, reject) => {
+function testSupported(files: string[]): Bluebird<ISupportedResult> {
+  return new Bluebird((resolve, reject) => {
     const fomod = files.find((file) => path.extname(file) === '.fomod');
     if (fomod !== undefined) {
       resolve({ supported: true, requiredFiles: [ fomod ] });
@@ -29,8 +29,8 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 function install(api: IExtensionApi,
                  files: string[], destinationPath: string,
                  gameId: string, choicesIn: any, unattended: boolean,
-                 progress: ProgressDelegate): Promise<any> {
-  return new Promise((resolve, reject) => {
+                 progress: ProgressDelegate): Bluebird<any> {
+  return new Bluebird((resolve, reject) => {
     const fomod = files.find((file) => path.extname(file) === '.fomod');
     const filePath = path.join(destinationPath, fomod);
     log('debug', 'install nested', filePath);

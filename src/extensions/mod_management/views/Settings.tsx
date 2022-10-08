@@ -40,7 +40,7 @@ import { STAGING_DIR_TAG } from '../stagingDirectory';
 import getText from '../texts';
 
 import * as remote from '@electron/remote';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import {
@@ -76,7 +76,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => Bluebird<IDialogResult>;
   onShowError: (message: string, details: string | Error | any,
                 allowReport?: boolean, isBBCode?: boolean) => void;
 }
@@ -234,12 +234,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  error cases pop up.
         log('warn', 'Transfer failed - missing source directory', err);
         return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
-          ? Promise.resolve(undefined)
-          : Promise.reject(err);
+          ? Bluebird.resolve(undefined)
+          : Bluebird.reject(err);
       })
       .then(stats => {
         const queryReset = (stats !== undefined)
-          ? Promise.resolve(false)
+          ? Bluebird.resolve(false)
           : onShowDialog('question', 'Missing staging folder', {
             bbcode: 'Vortex is unable to find your current mods staging folder. '
               + 'This can happen when: <br />'
@@ -258,8 +258,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               { label: 'Reinitialize' },
             ])
             .then(result => (result.action === 'Cancel')
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve(true));
+              ? Bluebird.reject(new UserCanceled())
+              : Bluebird.resolve(true));
 
         return queryReset
           .then((didReset) => {
@@ -275,8 +275,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               }
             })
             .catch({ code: 'ENOENT' }, (err) => didReset
-              ? Promise.resolve()
-              : Promise.reject(err));
+              ? Bluebird.resolve()
+              : Bluebird.reject(err));
           });
       }));
   }
@@ -364,8 +364,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     // written out. In this case we update the setting without purging or moving anything
     const doPurge = () => oldInstallPath !== newInstallPath
       // ignore if there is no deployment method because in that case there is nothing to purge
-      ? this.purgeActivation().catch(NoDeployment, () => Promise.resolve())
-      : Promise.resolve();
+      ? this.purgeActivation().catch(NoDeployment, () => Bluebird.resolve())
+      : Bluebird.resolve();
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Calculating required disk space');
@@ -382,7 +382,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           this.nextState.busy = t('Moving mod staging folder');
           return this.transferPath();
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
@@ -403,7 +403,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
             + 'Old staging folder: [url]{{thePath}}[/url]',
             { replace: { thePath: oldInstallPath } }),
-        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+        }, [ { label: 'Close', action: () => Bluebird.resolve() } ]);
 
         if (!(err.errorObject instanceof UserCanceled)) {
           this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
@@ -493,7 +493,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private checkTargetEmpty(oldInstallPath: string, newInstallPath: string) {
-    let queue = Promise.resolve();
+    let queue = Bluebird.resolve();
     let fileCount = 0;
     let hasStagingTag: boolean = false;
     let tagInstance: string;
@@ -523,7 +523,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         ;
     }
     // ensure the destination directories are empty
-    return queue.then(() => new Promise((resolve, reject) => {
+    return queue.then(() => new Bluebird((resolve, reject) => {
       if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
         if (tagInstance !== undefined) {
           return this.props.onShowDialog('question', 'Confirm', {
@@ -549,7 +549,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
-  private purgeActivation(): Promise<void> {
+  private purgeActivation(): Bluebird<void> {
     const { currentActivator } = this.props;
     const { supportedActivators } = this.state;
 
@@ -558,21 +558,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if ((supportedActivators === undefined)
         || (supportedActivators.length === 0)
         || (currentActivator === undefined)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
-    return new Promise((resolve, reject) => {
+    return new Bluebird((resolve, reject) => {
       this.context.api.events.emit('purge-mods', true, err => err !== null
         ? reject(err)
         : resolve());
     });
   }
 
-  private querySwitch(newActivatorId: string): Promise<void> {
+  private querySwitch(newActivatorId: string): Bluebird<void> {
     const { activators } = this.props;
     const activator = activators.find(iter => iter.id === newActivatorId);
     if ((activator === undefined) || (activator.onSelected === undefined)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     return activator.onSelected(this.context.api);
@@ -596,8 +596,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           { label: 'Continue' },
         ])
         .then(result => result.action === 'Cancel'
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve()))
+          ? Bluebird.reject(new UserCanceled())
+          : Bluebird.resolve()))
       .then(() => {
         onSetActivator(gameMode, currentActivator);
       })
@@ -789,7 +789,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private suggestPath = () => {
     const { modPaths, onShowError } = this.props;
-    Promise.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
+    Bluebird.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
         if (stats[0].dev === stats[1].dev) {

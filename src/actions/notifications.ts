@@ -6,7 +6,7 @@ import {truthy} from '../util/util';
 
 import safeCreateAction from './safeCreateAction';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcMain, ipcRenderer } from 'electron';
 
 import * as reduxAct from 'redux-act';
@@ -120,7 +120,7 @@ export function addNotification(notification: INotification) {
     const noti = { ...notification };
 
     if ((noti.id !== undefined) && (suppressNotification(noti.id))) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     if (noti.id === undefined) {
@@ -149,7 +149,7 @@ export function addNotification(notification: INotification) {
 
     dispatch(startNotification(storeNoti));
     if (noti.displayMS !== undefined) {
-      return new Promise((resolve) => {
+      return new Bluebird((resolve) => {
         timers[noti.id] = setTimeout(() =>
           resolve()
           , noti.displayMS);
@@ -161,7 +161,7 @@ export function addNotification(notification: INotification) {
 }
 
 export function dismissNotification(id: string) {
-  return dispatch => new Promise<void>((resolve, reject) => {
+  return dispatch => new Bluebird<void>((resolve, reject) => {
     delete timers[id];
     delete notificationActions[id];
     dispatch(stopNotification(id));
@@ -195,7 +195,7 @@ export function showDialog(type: DialogType, title: string,
                            content: IDialogContent, actions: DialogActions,
                            inId?: string) {
   return (dispatch) => {
-    return new Promise<IDialogResult>((resolve, reject) => {
+    return new Bluebird<IDialogResult>((resolve, reject) => {
       const id = inId || shortid();
       const defaultAction = actions.find(iter => iter.default === true);
       const defaultLabel = defaultAction !== undefined ? defaultAction.label : undefined;

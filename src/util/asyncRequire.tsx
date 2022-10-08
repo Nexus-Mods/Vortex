@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as React from 'react';
@@ -17,10 +17,10 @@ const Module = require('module');
  * @export
  * @param {string} id
  * @param {string} [basedir]
- * @returns {Promise<any>}
+ * @returns {Bluebird<any>}
  */
-export default function(id: string, basedir?: string): Promise<any> {
-  return new Promise((resolve, reject) => {
+export default function(id: string, basedir?: string): Bluebird<any> {
+  return new Bluebird((resolve, reject) => {
     const options = basedir !== undefined ? { basedir } : undefined;
     reqResolve(id, options, (resErr, filePath) => {
       if (resErr) {

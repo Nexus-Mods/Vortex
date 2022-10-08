@@ -154,7 +154,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
                   [info.gameId, ...downloads[mod.archiveId].game]);
               }
             }
-            return Promise.resolve();
+            return Bluebird.resolve();
           })
           .catch(err => api.showErrorNotification('Failed to update mod ids', err));
       } else {

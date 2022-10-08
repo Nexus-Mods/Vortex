@@ -7,7 +7,7 @@ import { truthy } from '../util/util';
 
 import Icon from './Icon';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
@@ -34,7 +34,7 @@ interface IConnectedProps {}
 
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
 }
 
 type DropMode = 'no' | 'url' | 'file' | 'hover' | 'invalid';

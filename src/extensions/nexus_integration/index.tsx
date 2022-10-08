@@ -69,7 +69,7 @@ import * as RemoteT from '@electron/remote';
 import NexusT, { IDateTime, IDownloadURL, IFileInfo, IModFile, IModFileQuery,
   IModInfo, IRevision, IRevisionQuery, IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
 import * as path from 'path';
@@ -133,10 +133,10 @@ class Disableable {
       return () => {
         const e = new ProcessCanceled(`network disconnected: ${prop}`);
         e.stack = cErr.stack;
-        return Promise.reject(e);
+        return Bluebird.reject(e);
       };
     } else if (this.mDisabled) {
-      return () => Promise.reject(new APIDisabled(prop));
+      return () => Bluebird.reject(new APIDisabled(prop));
     } else if (prop === 'getFileByMD5') {
       return (hash: string, gameId?: string) => {
         if (gameId?.toLowerCase() === 'skyrimse') {
@@ -162,9 +162,9 @@ class Disableable {
           // because the internet was offline at startup.
           // In that case we can use this opportunity to try to log in now
           const key = sel.apiKey(that.mApi.getState());
-          const prom: Promise<IValidateKeyResponse> = (key === undefined)
-            ? Promise.resolve(undefined as IValidateKeyResponse)
-            : Promise.resolve(truthy(obj.getValidationResult())
+          const prom: Bluebird<IValidateKeyResponse> = (key === undefined)
+            ? Bluebird.resolve(undefined as IValidateKeyResponse)
+            : Bluebird.resolve(truthy(obj.getValidationResult())
               ? obj.revalidate()
               : obj.setKey(key));
 
@@ -247,7 +247,7 @@ const requestLog = {
             } else {
               this.log(prop, args || [], caller);
             }
-            return Promise.resolve(res);
+            return Bluebird.resolve(res);
           })
           .catch(err => {
             if (typeof(err) === 'string') {
@@ -263,7 +263,7 @@ const requestLog = {
               + stack.map(frame =>
                 `  at ${frame.getFunctionName()} (${framePos(frame)})`)
                 .join('\n');
-            return Promise.reject(err);
+            return Bluebird.reject(err);
           });
         } else {
           return prom;
@@ -276,11 +276,11 @@ const requestLog = {
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
-    handler: (inputUrl: string, name: string) => Promise<{ urls: string[], meta: any }>) => void;
+    handler: (inputUrl: string, name: string) => Bluebird<{ urls: string[], meta: any }>) => void;
 }
 
 function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
-  let askUser: Promise<boolean>;
+  let askUser: Bluebird<boolean>;
   if (isUpdate) {
     askUser = api.store.dispatch(
       showDialog('question', 'Retrieve Categories', {
@@ -290,7 +290,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         return result.action === 'Retrieve';
       });
   } else {
-    askUser = Promise.resolve(true);
+    askUser = Bluebird.resolve(true);
   }
 
   askUser.then((userContinue: boolean) => {
@@ -314,7 +314,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             // for all we know there could be another extension providing categories for this game
             // so we can't really display an error message or anything
             log('debug', 'game unknown on nexus', { gameId: nexusId });
-            return Promise.reject(new ProcessCanceled('unsupported game'));
+            return Bluebird.reject(new ProcessCanceled('unsupported game'));
           }
           log('info', 'retrieve categories for game', gameId);
           return retrieveCategoryList(nexusId, nexus);
@@ -426,7 +426,7 @@ function safeParseInt(input: any, radix: number = 10): number {
   return res;
 }
 
-function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
+function processAttributes(state: IState, input: any, quick: boolean): Bluebird<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
   const modName = decodeHTML(input.download?.modInfo?.nexus?.modInfo?.name);
@@ -435,7 +435,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
     ? fuzz.ratio(modName, fileName)
     : 100;
 
-  let fetchPromise: Promise<IRemoteInfo> = Promise.resolve(undefined);
+  let fetchPromise: Bluebird<IRemoteInfo> = Bluebird.resolve(undefined);
 
   let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
 
@@ -672,23 +672,23 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   }
 }
 
-function doDownload(api: IExtensionApi, url: string): Promise<string> {
+function doDownload(api: IExtensionApi, url: string): Bluebird<string> {
   return startDownload(api, nexus, url)
   .catch(DownloadIsHTML, () => undefined)
   // DataInvalid is used here to indicate invalid user input or invalid
   // data from remote, so it's presumably not a bug in Vortex
   .catch(DataInvalid, () => {
     api.showErrorNotification('Failed to start download', url, { allowReport: false });
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   })
-  .catch(UserCanceled, () => Promise.resolve(undefined))
+  .catch(UserCanceled, () => Bluebird.resolve(undefined))
   .catch(err => {
     api.showErrorNotification('Failed to start download', err);
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   });
 }
 
-function ensureLoggedIn(api: IExtensionApi): Promise<void> {
+function ensureLoggedIn(api: IExtensionApi): Bluebird<void> {
   if (sel.apiKey(api.store.getState()) === undefined) {
     log('info', 'user not logged in, triggering log in dialog');
     return api.showDialog('info', 'Not logged in', {
@@ -701,11 +701,11 @@ function ensureLoggedIn(api: IExtensionApi): Promise<void> {
         if (result.action === 'Log in') {
           return toPromise(cb => requestLogin(api, cb));
         } else {
-          return Promise.reject(new UserCanceled());
+          return Bluebird.reject(new UserCanceled());
         }
       });
   } else {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 }
 
@@ -744,7 +744,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         } else {
           api.events.emit('show-extension-page', nxmUrl.modId);
           bringToFront();
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       } else {
         const { foregroundDL } = api.store.getState().settings.interface;
@@ -772,7 +772,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
       .then(() => doDownload(api, url))
       .then(dlId => {
         if ((dlId === undefined) || (dlId === null)) {
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         }
 
         // downloading via a nxm link so definitively a nexus source
@@ -793,7 +793,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         }
         batchDispatch(api.store, actions);
 
-        return new Promise((resolve, reject) => {
+        return new Bluebird((resolve, reject) => {
           const state: IState = api.store.getState();
           const download = state.persistent.downloads.files[dlId];
           if (download === undefined) {
@@ -888,14 +888,14 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
     });
   }, 100, true);
 
-  const queue = (repoInfo: IModRepoId): Promise<Partial<IModFile>> => {
-    return new Promise((resolve, reject) => {
+  const queue = (repoInfo: IModRepoId): Bluebird<Partial<IModFile>> => {
+    return new Bluebird((resolve, reject) => {
       pendingQueries.push({ repoInfo, resolve, reject });
       uidLookupDebouncer.schedule();
     });
   };
 
-  return (repoInfo: IModRepoId): Promise<IModLookupResult[]> => {
+  return (repoInfo: IModRepoId): Bluebird<IModLookupResult[]> => {
     const modId = parseInt(repoInfo.modId, 10);
     const fileId = parseInt(repoInfo.fileId, 10);
 
@@ -930,7 +930,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
     /*
     let modInfo: IModInfo;
     let fileInfo: IFileInfo;
-    return Promise.resolve(nexusConn.getModInfo(modId, repoInfo.gameId))
+    return Bluebird.resolve(nexusConn.getModInfo(modId, repoInfo.gameId))
       .then(modInfoIn => {
         modInfo = modInfoIn;
         return nexusConn.getFileInfo(modId, fileId, repoInfo.gameId);
@@ -1181,9 +1181,9 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
   const downloads = state.persistent.downloads.files;
-  return Promise.all(instanceIds.map(id => {
+  return Bluebird.all(instanceIds.map(id => {
     if (idValid(id, mods, downloads)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     let fileName: string;
@@ -1232,12 +1232,12 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
           });
       }
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }))
   .then(() => null);
 }
 
-type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
+type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Bluebird<string>;
 
 interface IDLQueueItem {
   input: string;
@@ -1269,7 +1269,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   function freeUserDownload(input: string, url: NXMUrl, name: string, friendlyName: string) {
     // non-premium user trying to download a file with no id, have to send the user to the
     // corresponding site to generate a proper link
-    return new Promise<IResolvedURL>((resolve, reject, onCancel) => {
+    return new Bluebird<IResolvedURL>((resolve, reject, onCancel) => {
       const res = (result: IResolvedURL) => {
         if (resolve !== undefined) {
           // just to make sure we remove the correct item, idx should always be 0
@@ -1302,14 +1302,14 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     });
   }
 
-  function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+  function premiumUserDownload(input: string, url: NXMUrl): Bluebird<IResolvedURL> {
     const state = api.getState();
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     let revisionInfo: Partial<IRevision>;
 
-    return Promise.resolve()
+    return Bluebird.resolve()
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
           .then((res: IDownloadURL[]) =>
@@ -1330,7 +1330,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           .catch(err => {
             err['collectionSlug'] = url.collectionSlug;
             err['revisionNumber'] = url.revisionNumber;
-            return Promise.reject(err);
+            return Bluebird.reject(err);
           })
           .then((revision: Partial<IRevision>) => {
             revisionInfo = revision;
@@ -1354,25 +1354,25 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
-        return Promise.reject(newError);
+        return Bluebird.reject(newError);
       })
       .catch(RateLimitError, err => {
         api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       });
   }
 
   const resolveFunc = (input: string,
                        name?: string,
                        friendlyName?: string)
-                       : Promise<IResolvedURL> => {
+                       : Bluebird<IResolvedURL> => {
     const state = api.store.getState();
 
     let url: NXMUrl;
     try {
       url = new NXMUrl(input);
     } catch (err) {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
 
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
@@ -1383,7 +1383,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         'The link was not created for this account ({{userName}}). '
         + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
         { allowReport: false, replace: { userName } });
-      return Promise.reject(new ProcessCanceled('Wrong user id'));
+      return Bluebird.reject(new ProcessCanceled('Wrong user id'));
     }
 
     if ((!userInfo?.isPremium || (process.env['FORCE_FREE_DOWNLOADS'] === 'yes'))
@@ -1403,7 +1403,7 @@ function onUpdated() {
   bringToFront();
 }
 
-type ResolveFunc = (input: string, name?: string, friendlyName?: string) => Promise<IResolvedURL>;
+type ResolveFunc = (input: string, name?: string, friendlyName?: string) => Bluebird<IResolvedURL>;
 
 function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
@@ -1529,7 +1529,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
   const resolveFunc = makeNXMProtocol(context.api,
-    (gameId: string, modId: number, fileId: number) => new Promise(resolve => {
+    (gameId: string, modId: number, fileId: number) => new Bluebird(resolve => {
       awaitedLinks.push({ gameId, modId, fileId, resolve });
     }));
 

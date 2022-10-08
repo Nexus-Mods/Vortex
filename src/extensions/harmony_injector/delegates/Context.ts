@@ -15,7 +15,7 @@ import { getGame } from '../../gamemode_management/util/getGame';
 
 import DelegateBase from './DelegateBase';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import getVersion from 'exe-version';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -154,7 +154,7 @@ export class Context extends DelegateBase {
   private readDir = (rootPath: string,
                      recurse: boolean,
                      filterFunc: (entry: IEntry) => boolean)
-                     : Promise<string[]> => {
+                     : Bluebird<string[]> => {
     let fileList: string[] = [];
 
     return turbowalk(rootPath, entries => {

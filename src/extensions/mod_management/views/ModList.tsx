@@ -54,7 +54,7 @@ import CheckModVersionsButton from './CheckModVersionsButton';
 import Description from './Description';
 import InstallArchiveButton from './InstallArchiveButton';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import path from 'path';
@@ -126,7 +126,7 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModsEnabled: (profileId: string, modIds: string[], enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
   onRemoveMods: (gameMode: string, modIds: string[]) => void;
   onShowDropzone: (show: boolean) => void;
@@ -852,6 +852,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           return download?.size ?? -1;
         }
         return mod.attributes?.modSize ?? -1;
+
       },
       placement: 'table',
       isDefaultVisible: false,
@@ -896,20 +897,20 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const stagingFolder = this.props.installPath;
     const mod = this.props.mods[modId];
     if (mod === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const modPath = path.join(stagingFolder, mod.installationPath);
     return calculateFolderSize(modPath)
     .then((totalSize) => {
       api.store.dispatch(setModAttribute(this.props.gameMode, mod.id, 'modSize', totalSize));
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
     .catch(err => {
-      return Promise.resolve();
+      return Bluebird.resolve();
     });
   }
 
-  private updateModsWithState(newProps: IProps): Promise<void> {
+  private updateModsWithState(newProps: IProps): Bluebird<void> {
     const { gameMode } = newProps;
     let changed = false;
     const newModsWithState = {};
@@ -937,7 +938,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // insert downloads. Since this requires deriving mod attributes from
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
-    return Promise.map(Object.keys(newProps.downloads), archiveId => {
+    return Bluebird.map(Object.keys(newProps.downloads), archiveId => {
       if ((getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !== -1)
         && (newProps.downloads[archiveId].state === 'finished')
         && !installedIds.has(archiveId)) {
@@ -952,7 +953,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }, undefined)
         .then(info => ({ archiveId, info }));
       } else {
-        return Promise.resolve(undefined);
+        return Bluebird.resolve(undefined);
       }
     })
       .then((modAttributes: Array<{ archiveId: string, info: any }>) => {
@@ -1004,7 +1005,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModState(profileId: string, modId: string, value: string,
                       onSetModEnabled: (modId: string, value: boolean) => void)
-                      : Promise<void> {
+                      : Bluebird<void> {
     const { gameMode } = this.props;
     const { modsWithState } = this.state;
     if (modsWithState[modId] === undefined) {
@@ -1039,7 +1040,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else if (modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
-      return new Promise((resolve) => {
+      return new Bluebird((resolve) => {
         this.context.api.events.emit('start-install-download', modId, false, (err, id) => {
           if ((err === null) && (value === 'enabled')) {
             this.setModsEnabled([id], true);
@@ -1052,7 +1053,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.setModsEnabled([modId], value === 'enabled');
     }
 
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private changeModEnabled = (mod: IModWithState, value: any) => {
@@ -1164,14 +1165,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return setModsEnabled(this.context.api, profileId, modIds, enabled);
   }
 
-  private installIfNecessary(modId: string): Promise<string> {
+  private installIfNecessary(modId: string): Bluebird<string> {
     const { modsWithState } = this.state;
 
     if (modsWithState[modId]?.state === 'downloaded') {
       return toPromise(cb =>
         this.context.api.events.emit('start-install-download', modId, false, cb));
     } else {
-      return Promise.resolve(modId);
+      return Bluebird.resolve(modId);
     }
   }
 
@@ -1181,7 +1182,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const filtered = modIds.filter(modId =>
       (mods[modId] === undefined) || (modState[modId]?.enabled !== true));
 
-    Promise.all(filtered.map(modId =>
+    Bluebird.all(filtered.map(modId =>
       this.installIfNecessary(modId).catch(err => {
         if ((err instanceof UserCanceled)
             || (err instanceof ProcessCanceled)) {
@@ -1294,14 +1295,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return (doRemoveMods
         ? removeMods(this.context.api, gameMode, wereInstalled)
           .then(() => onRemoveMods(gameMode, wereInstalled))
-        : Promise.resolve())
+        : Bluebird.resolve())
       .then(() => {
         if (removeArchives) {
           archiveIds.forEach(archiveId => {
             this.context.api.events.emit('remove-download', archiveId);
           });
         }
-        return Promise.resolve();
+        return Bluebird.resolve();
       });
   }
 
@@ -1403,7 +1404,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         return prev;
       }, {});
       withBatchContext<void>('install-mod', validIds.map(modId => mods[modId].archiveId), () => {
-        return Promise.all(
+        return Bluebird.all(
           validIds.map(modId => {
             const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);
             return toPromise(cb => this.context.api.events.emit('start-install-download',

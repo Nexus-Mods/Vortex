@@ -9,7 +9,7 @@ import makeCI from '../util/makeCaseInsensitive';
 import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -22,12 +22,12 @@ interface IMigration {
   maySkip: boolean;
   doQuery: boolean;
   description: string;
-  apply: (window: BrowserWindow, store: Redux.Store<IState>) => Promise<void>;
+  apply: (window: BrowserWindow, store: Redux.Store<IState>) => Bluebird<void>;
 }
 
-function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Promise<string> {
+function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Bluebird<string> {
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
-  return fs.ensureDirWritableAsync(defaultPath, () => Promise.resolve())
+  return fs.ensureDirWritableAsync(defaultPath, () => Bluebird.resolve())
     .then(() => dialog.showOpenDialog(window, {
         title: 'Select empty directory to store downloads',
         properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
@@ -36,30 +36,30 @@ function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Pro
     .then(result => {
       const { filePaths } = result;
       if ((filePaths === undefined) || (filePaths.length === 0)) {
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       }
       return fs.readdirAsync(filePaths[0])
         .catch(err => err.code === 'ENOENT'
-          ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
-          : Promise.reject(err))
+          ? fs.ensureDirWritableAsync(filePaths[0], () => Bluebird.resolve()).then(() => [])
+          : Bluebird.reject(err))
         .then(files => {
           if (files.length > 0) {
             dialog.showErrorBox('Invalid path selected',
               'The directory needs to be empty');
             return selectDirectory(window, defaultPathPattern);
           } else {
-            return Promise.resolve(filePaths[0]);
+            return Bluebird.resolve(filePaths[0]);
           }
         });
     });
 }
 
-function transferPath(from: string, to: string): Promise<void> {
-  return Promise.join(fs.statAsync(from), fs.statAsync(to),
-      (statOld: fs.Stats, statNew: fs.Stats) => Promise.resolve(statOld.dev === statNew.dev))
+function transferPath(from: string, to: string): Bluebird<void> {
+  return Bluebird.join(fs.statAsync(from), fs.statAsync(to),
+      (statOld: fs.Stats, statNew: fs.Stats) => Bluebird.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
       const func = sameVolume ? fs.renameAsync : fs.copyAsync;
-      return Promise.resolve(fs.readdirAsync(from))
+      return Bluebird.resolve(fs.readdirAsync(from))
         .map((fileName: string) =>
           func(path.join(from, fileName), path.join(to, fileName))
           .catch(err => (err.code === 'EXDEV')
@@ -67,17 +67,17 @@ function transferPath(from: string, to: string): Promise<void> {
               // not in fact on the same volume. This is what comparing the stat.dev
               // was supposed to prevent.
               ? fs.copyAsync(path.join(from, fileName), path.join(to, fileName))
-              : Promise.reject(err)))
+              : Bluebird.reject(err)))
         .then(() => fs.removeAsync(from));
     })
     .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve()
-      : Promise.reject(err));
+      ? Bluebird.resolve()
+      : Bluebird.reject(err));
 }
 
 function dialogProm(window: BrowserWindow, type: string, title: string,
-                    message: string, options: string[]): Promise<string> {
-  return Promise.resolve(dialog.showMessageBox(window, {
+                    message: string, options: string[]): Bluebird<string> {
+  return Bluebird.resolve(dialog.showMessageBox(window, {
       type,
       buttons: options,
       title,
@@ -86,7 +86,7 @@ function dialogProm(window: BrowserWindow, type: string, title: string,
     })).then(result => options[result.response]);
 }
 
-function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
+function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Bluebird<void> {
   const state = store.getState();
   log('info', 'importing downloads from pre-0.16.0 version');
   return dialogProm(window,
@@ -97,7 +97,7 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
     .then(() => selectDirectory(window, state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
-      return Promise.map(Object.keys(state.settings.gameMode.discovered),
+      return Bluebird.map(Object.keys(state.settings.gameMode.discovered),
         gameId => {
           const resolvedPath = path.join(downloadPath, gameId);
           return fs.ensureDirAsync(resolvedPath)
@@ -109,10 +109,10 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
     });
 }
 
-function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
+function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState>): Bluebird<void> {
   const state = store.getState();
   const { paths } = (state.settings.mods as any);
-  return Promise.map(Object.keys(paths || {}), gameId => {
+  return Bluebird.map(Object.keys(paths || {}), gameId => {
     const base = resolvePath('base', paths, gameId);
     log('info', 'set install path',
         format(paths[gameId].install || pathDefaults.install, { base }));
@@ -122,7 +122,7 @@ function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState
         game: '{GAME}',
         userData: '{USERDATA}',
       }))));
-    return Promise.resolve();
+    return Bluebird.resolve();
   })
   .then(() => null);
 }
@@ -147,11 +147,11 @@ const migrations: IMigration[] = [
   },
 ];
 
-function queryMigration(window: BrowserWindow, migration: IMigration): Promise<boolean> {
+function queryMigration(window: BrowserWindow, migration: IMigration): Bluebird<boolean> {
   if (!migration.doQuery) {
-    return Promise.resolve(true);
+    return Bluebird.resolve(true);
   }
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     const buttons = migration.maySkip
       ? ['Cancel', 'Skip', 'Continue']
       : ['Cancel', 'Continue'];
@@ -170,7 +170,7 @@ function queryMigration(window: BrowserWindow, migration: IMigration): Promise<b
   });
 }
 
-function queryContinue(window: BrowserWindow, err: Error): Promise<void> {
+function queryContinue(window: BrowserWindow, err: Error): Bluebird<void> {
   return dialogProm(window,
     'error',
     'Migration failed',
@@ -179,22 +179,22 @@ function queryContinue(window: BrowserWindow, err: Error): Promise<void> {
     ['Ignore', 'Quit'],
   )
   .then(selection => selection === 'Ignore'
-    ? Promise.resolve()
-    : Promise.reject(err));
+    ? Bluebird.resolve()
+    : Bluebird.reject(err));
 }
 
-function migrate(store: Redux.Store<IState>, window: BrowserWindow): Promise<void> {
+function migrate(store: Redux.Store<IState>, window: BrowserWindow): Bluebird<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || '0.0.0';
   const neccessaryMigrations = migrations
     .filter(mig => semver.lt(oldVersion, mig.minVersion))
     .filter(mig => state.app.migrations.indexOf(mig.id) === -1);
-  return Promise.each(neccessaryMigrations, migration =>
+  return Bluebird.each(neccessaryMigrations, migration =>
       queryMigration(window, migration)
-        .then((proceed: boolean) => proceed ? migration.apply(window, store) : Promise.resolve())
+        .then((proceed: boolean) => proceed ? migration.apply(window, store) : Bluebird.resolve())
         .then(() => {
           store.dispatch(completeMigration(migration.id));
-          return Promise.resolve();
+          return Bluebird.resolve();
         })
         .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(window, err)))
     .then(() => null);

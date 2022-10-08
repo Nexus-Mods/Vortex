@@ -2,7 +2,7 @@ import {IPersistor, PersistorKey} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 import { log } from '../util/log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any, hive: string) {
@@ -43,7 +43,7 @@ class ReduxPersistor<T> {
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};
   private mHydrating: Set<string> = new Set();
-  private mUpdateQueue: Promise<void> = Promise.resolve();
+  private mUpdateQueue: Bluebird<void> = Bluebird.resolve();
 
   constructor(store: Redux.Store<T>) {
     this.mStore = store;
@@ -51,11 +51,11 @@ class ReduxPersistor<T> {
     store.subscribe(this.handleChange);
   }
 
-  public finalizeWrite(): Promise<void> {
+  public finalizeWrite(): Bluebird<void> {
     return this.mUpdateQueue;
   }
 
-  public insertPersistor(hive: string, persistor: IPersistor): Promise<void> {
+  public insertPersistor(hive: string, persistor: IPersistor): Bluebird<void> {
     return this.resetData(hive, persistor)
         .then(() => {
           this.mPersistors[hive] = persistor;
@@ -63,15 +63,15 @@ class ReduxPersistor<T> {
         });
   }
 
-  private resetData(hive: string, persistor: IPersistor): Promise<void> {
-    const kvProm: Promise<Array<{ key: PersistorKey, value: string }>> =
+  private resetData(hive: string, persistor: IPersistor): Bluebird<void> {
+    const kvProm: Bluebird<Array<{ key: PersistorKey, value: string }>> =
       (persistor.getAllKVs !== undefined)
       ? persistor.getAllKVs()
         .map((kv: { key: PersistorKey, value: string }) =>
           ({ key: kv.key, value: this.deserialize(kv.value) }))
       : persistor.getAllKeys()
       .then(keys =>
-        Promise.map(keys, key => persistor.getItem(key)
+        Bluebird.map(keys, key => persistor.getItem(key)
           .then(value => ({ key, value: this.deserialize(value) }))
           .catch(err => {
             if (err.name === 'NotFoundError') {
@@ -81,9 +81,9 @@ class ReduxPersistor<T> {
               // The more worrying part is: If getAllKeys may return keys that don't exist,
               // may it be missing keys that do? Why is this happening in the first place?
               log('error', 'key missing from database', { key });
-              return Promise.resolve(undefined);
+              return Bluebird.resolve(undefined);
             }
-            return Promise.reject(err);
+            return Bluebird.reject(err);
           })))
       .filter(kvPair => kvPair !== undefined);
 
@@ -101,7 +101,7 @@ class ReduxPersistor<T> {
         return this.storeDiff(persistor, [], res, this.mStore.getState()[hive])
           .then(() => {
             this.mHydrating.delete(hive);
-            return Promise.resolve();
+            return Bluebird.resolve();
           });
       });
   }
@@ -133,7 +133,7 @@ class ReduxPersistor<T> {
 
   private doProcessChange(oldState: any, newState: any) {
     if (oldState === newState) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     return this.ensureStoreDiffHive(oldState, newState);
@@ -167,8 +167,8 @@ class ReduxPersistor<T> {
     return (state !== null) && (typeof(state) === 'object') && !Array.isArray(state);
   }
 
-  private storeDiffHive(oldState: any, newState: any): Promise<void> {
-    let res = Promise.resolve();
+  private storeDiffHive(oldState: any, newState: any): Bluebird<void> {
+    let res = Bluebird.resolve();
 
     Object.keys(oldState).forEach(key => {
       if ((oldState[key] !== newState[key])
@@ -182,9 +182,9 @@ class ReduxPersistor<T> {
   }
 
   private storeDiff(persistor: IPersistor, statePath: string[],
-                    oldState: any, newState: any): Promise<void> {
+                    oldState: any, newState: any): Bluebird<void> {
     if ((persistor === undefined) || (oldState === newState)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     try {
@@ -192,18 +192,18 @@ class ReduxPersistor<T> {
         const oldkeys = Object.keys(oldState);
         const newkeys = Object.keys(newState);
 
-        return Promise.mapSeries(oldkeys,
+        return Bluebird.mapSeries(oldkeys,
           key => (newState[key] === undefined)
               // keys that exist in oldState but not newState
             ? this.remove(persistor, [].concat(statePath, key), oldState[key])
               // keys that exist in both
             : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
-          .then(() => Promise.mapSeries(newkeys,
+          .then(() => Bluebird.mapSeries(newkeys,
             key => ((oldState[key] === undefined) && (newState[key] !== undefined))
               // keys that exist in newState but not oldState
               ? this.add(persistor, [].concat(statePath, key), newState[key])
               // keys that exist in both - already handled above
-              : Promise.resolve()))
+              : Bluebird.resolve()))
           .then(() => undefined);
       } else {
         return (newState !== undefined)
@@ -211,24 +211,24 @@ class ReduxPersistor<T> {
           : this.remove(persistor, statePath, oldState);
       }
     } catch (err) {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
   }
 
-  private remove(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
+  private remove(persistor: IPersistor, statePath: string[], state: any): Bluebird<void> {
     return this.isObject(state)
-      ? Promise.mapSeries(Object.keys(state), key =>
+      ? Bluebird.mapSeries(Object.keys(state), key =>
           this.remove(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.removeItem(statePath);
   }
 
-  private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
+  private add(persistor: IPersistor, statePath: string[], state: any): Bluebird<void> {
     if (state === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     return this.isObject(state)
-      ? Promise.mapSeries(Object.keys(state), key =>
+      ? Bluebird.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));

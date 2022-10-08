@@ -2,25 +2,25 @@
 
 import * as fs from 'fs-extra';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 
 function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
+              callback: (iterPath: string, stats: fs.Stats) => Bluebird<any>): Bluebird<any> {
   let allFileNames: string[];
 
-  return Promise.resolve(fs.readdir(target))
+  return Bluebird.resolve(fs.readdir(target))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
-      return Promise.mapSeries(fileNames, (statPath: string) => {
+      return Bluebird.mapSeries(fileNames, (statPath: string) => {
         const fullPath: string = path.join(target, statPath);
-        return Promise.resolve(fs.lstat(fullPath)).reflect();
+        return Bluebird.resolve(fs.lstat(fullPath)).reflect();
       });
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+    }).then((res: Array<Bluebird.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
-      const cbPromises: Array<Promise<any>> = [];
+      const cbPromises: Array<Bluebird<any>> = [];
       res.forEach((stat, idx) => {
         if (!stat.isFulfilled()) {
           return;
@@ -31,8 +31,8 @@ function walk(target: string,
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(
-        cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback))));
+      return Bluebird.all(
+        cbPromises.concat(Bluebird.mapSeries(subDirs, (subDir) => walk(subDir, callback))));
     }).then(() => null);
 }
 

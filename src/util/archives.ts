@@ -1,6 +1,6 @@
 import { IArchiveHandler } from '../types/IExtensionContext';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 /**
  * wrapper around an format-specific archive handler
@@ -18,7 +18,7 @@ export class Archive {
   /**
    * list files at the specified path
    */
-  public get readDir(): (archivePath: string) => Promise<string[]> {
+  public get readDir(): (archivePath: string) => Bluebird<string[]> {
     return (this.mHandler.readDir !== undefined)
       ? (archivePath: string) => this.mHandler.readDir(archivePath)
       : undefined;
@@ -36,7 +36,7 @@ export class Archive {
   /**
    * extract a single file
    */
-  public get extractFile(): (filePath: string, outputPath: string) => Promise<void> {
+  public get extractFile(): (filePath: string, outputPath: string) => Bluebird<void> {
     return (this.mHandler.extractFile !== undefined)
       ? (filePath: string, outputPath: string) => this.mHandler.extractFile(filePath, outputPath)
       : undefined;
@@ -45,7 +45,7 @@ export class Archive {
   /**
    * extract the entire archive
    */
-  public get extractAll(): (outputPath: string) => Promise<void> {
+  public get extractAll(): (outputPath: string) => Bluebird<void> {
     return (this.mHandler.extractAll !== undefined)
       ? (outputPath: string) => this.mHandler.extractAll(outputPath)
       : undefined;
@@ -54,7 +54,7 @@ export class Archive {
   /**
    * create this archive from the files in sourcePath
    */
-  public get create(): (sourcePath: string) => Promise<void> {
+  public get create(): (sourcePath: string) => Bluebird<void> {
     return (this.mHandler.create !== undefined)
       ? (sourcePath: string) => this.mHandler.create(sourcePath)
       : undefined;
@@ -63,13 +63,13 @@ export class Archive {
   /**
    * add a single file to the archive
    */
-  public get addFile(): (filePath: string, sourcePath: string) => Promise<void> {
+  public get addFile(): (filePath: string, sourcePath: string) => Bluebird<void> {
     return (this.mHandler.addFile !== undefined)
       ? (filePath: string, sourcePath: string) => this.mHandler.addFile(filePath, sourcePath)
       : undefined;
   }
 
-  public get write(): () => Promise<void> {
+  public get write(): () => Bluebird<void> {
     return (this.mHandler.write !== undefined)
       ? () => this.mHandler.write()
       : undefined;

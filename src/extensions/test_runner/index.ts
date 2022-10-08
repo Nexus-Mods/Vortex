@@ -40,7 +40,7 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 
 interface ICheckEntry {
@@ -57,7 +57,7 @@ const fixTriggered: { [id: string]: boolean } = {};
 
 function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
   if (fixTriggered[check.id]) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   fixTriggered[check.id] = true;
   return result.automaticFix()
@@ -78,8 +78,8 @@ function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
     });
 }
 
-function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
-  let res: Promise<ITestResult>;
+function runCheck(api: IExtensionApi, check: ICheckEntry): Bluebird<void> {
+  let res: Bluebird<ITestResult>;
   try {
     res = check.check();
   } catch (err) {
@@ -90,7 +90,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
     });
   }
   if ((res === undefined) || (res.then === undefined)) {
-    res = Promise.resolve(undefined);
+    res = Bluebird.resolve(undefined);
   }
   return res
     .then(result => {
@@ -137,7 +137,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               action: () => {
                 const preCheck = (result.onRecheck !== undefined)
                   ? result.onRecheck()
-                  : Promise.resolve();
+                  : Bluebird.resolve();
                 return preCheck.then(() => runCheck(api, check));
               },
             });
@@ -178,14 +178,14 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
   triggerDelays[event] = setTimeout(() => {
     const eventChecks = getSafe(checks, [event], []);
     log('debug', 'running checks', { event, count: eventChecks.length });
-    Promise.map(eventChecks, (par: ICheckEntry) => runCheck(api, par))
+    Bluebird.map(eventChecks, (par: ICheckEntry) => runCheck(api, par))
       .then(() => {
         log('debug', 'all checks completed', { event });
       });
   }, delay || 500);
 }
 
-function withSuppressedTests(tests: string[], cb: () => Promise<void>) {
+function withSuppressedTests(tests: string[], cb: () => Bluebird<void>) {
   tests.forEach(test => {
     setdefault(suppressedTests, test, 0);
     suppressedTests[test] += 1;

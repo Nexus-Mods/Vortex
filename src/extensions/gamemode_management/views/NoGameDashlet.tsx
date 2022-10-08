@@ -7,7 +7,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameThumbnail from './GameThumbnail';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 
 export interface IBaseProps {
@@ -98,7 +98,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private refreshGameInfo = gameId => {
-    return new Promise<void>((resolve, reject) => {
+    return new Bluebird<void>((resolve, reject) => {
       this.context.api.events.emit('refresh-game-info', gameId, err => {
         if (err !== null) {
           reject(err);

@@ -44,7 +44,7 @@ import { IDiscoveryResult, IMod, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -70,7 +70,7 @@ export type PropsCallback = () => any;
  */
 export type PersistingType = 'global' | 'game' | 'profile';
 
-export type CheckFunction = () => Promise<ITestResult>;
+export type CheckFunction = () => Bluebird<ITestResult>;
 
 export type RegisterSettings =
   (title: string,
@@ -186,7 +186,7 @@ export interface IRegisterProtocol {
 export interface IRegisterRepositoryLookup {
   (repositoryId: string,
    preferOverMD5: boolean,
-   callback: (id: IModRepoId) => Promise<IModLookupResult[]>);
+   callback: (id: IModRepoId) => Bluebird<IModLookupResult[]>);
 }
 
 export interface IFileFilter {
@@ -231,12 +231,12 @@ export type PersistorKey = string[];
  * @interface IPersistor
  */
 export interface IPersistor {
-  setResetCallback(cb: () => Promise<void>): void;
-  getItem(key: PersistorKey): Promise<string>;
-  setItem(key: PersistorKey, value: string): Promise<void>;
-  removeItem(key: PersistorKey): Promise<void>;
-  getAllKeys(): Promise<PersistorKey[]>;
-  getAllKVs?(prefix?: string): Promise<Array<{ key: PersistorKey, value: string }>>;
+  setResetCallback(cb: () => Bluebird<void>): void;
+  getItem(key: PersistorKey): Bluebird<string>;
+  setItem(key: PersistorKey, value: string): Bluebird<void>;
+  removeItem(key: PersistorKey): Bluebird<void>;
+  getAllKeys(): Bluebird<PersistorKey[]>;
+  getAllKVs?(prefix?: string): Bluebird<Array<{ key: PersistorKey, value: string }>>;
 }
 
 /**
@@ -263,17 +263,17 @@ export interface IArchiveOptions {
  * @interface IArchiveHandler
  */
 export interface IArchiveHandler {
-  readDir(archPath: string): Promise<string[]>;
+  readDir(archPath: string): Bluebird<string[]>;
   readFile?(filePath: string): NodeJS.ReadableStream;
-  extractFile?(filePath: string, outputPath: string): Promise<void>;
-  extractAll(outputPath: string): Promise<void>;
-  addFile?(filePath: string, sourcePath: string): Promise<void>;
-  create?(sourcePath: string): Promise<void>;
-  write?(): Promise<void>;
+  extractFile?(filePath: string, outputPath: string): Bluebird<void>;
+  extractAll(outputPath: string): Bluebird<void>;
+  addFile?(filePath: string, sourcePath: string): Bluebird<void>;
+  create?(sourcePath: string): Bluebird<void>;
+  write?(): Bluebird<void>;
 }
 
 export type ArchiveHandlerCreator =
-  (fileName: string, options: IArchiveOptions) => Promise<IArchiveHandler>;
+  (fileName: string, options: IArchiveOptions) => Bluebird<IArchiveHandler>;
 
 /**
  * callback used to extract download information into mod info.
@@ -282,7 +282,7 @@ export type ArchiveHandlerCreator =
  * not be accessing the disk or network or do any complex coomputation
  */
 export type AttributeExtractor = (modInfo: any, modPath: string) =>
-  Promise<{ [key: string]: any }>;
+  Bluebird<{ [key: string]: any }>;
 
 export interface IGameDetail {
   title: string;
@@ -321,7 +321,7 @@ export interface IErrorOptions {
  * field that doesn't exist in both IGameStored and IDiscoveryResult, please assume
  * it may be undefined.
  */
-export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail }>;
+export type GameInfoQuery = (game: any) => Bluebird<{ [key: string]: IGameDetail }>;
 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
@@ -340,7 +340,7 @@ export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMerge
 /**
  * callback to do the actual merging
  */
-export type MergeFunc = (filePath: string, mergePath: string) => Promise<void>;
+export type MergeFunc = (filePath: string, mergePath: string) => Bluebird<void>;
 
 /**
  * options used when starting an external application through runExecutable
@@ -430,7 +430,7 @@ export interface IExtensionApi {
    * show a dialog
    */
   showDialog?: (type: DialogType, title: string, content: IDialogContent,
-                actions: DialogActions, id?: string) => Promise<IDialogResult>;
+                actions: DialogActions, id?: string) => Bluebird<IDialogResult>;
 
   /**
    * close a dialog
@@ -456,21 +456,21 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  selectFile: (options: IOpenOptions) => Promise<string>;
+  selectFile: (options: IOpenOptions) => Bluebird<string>;
 
   /**
    * show a system dialog to select an executable file
    *
    * @memberOf IExtensionApi
    */
-  selectExecutable: (options: IOpenOptions) => Promise<string>;
+  selectExecutable: (options: IOpenOptions) => Bluebird<string>;
 
   /**
    * show a system dialog to open a single directory
    *
    * @memberOf IExtensionApi
    */
-  selectDir: (options: IOpenOptions) => Promise<string>;
+  selectDir: (options: IOpenOptions) => Bluebird<string>;
 
   /**
    * the redux store containing all application state & data
@@ -578,7 +578,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModReference: (ref: IModReference, options?: ILookupOptions) => Promise<IModLookupResult[]>;
+  lookupModReference: (ref: IModReference, options?: ILookupOptions) => Bluebird<IModLookupResult[]>;
 
   /**
    * add a meta server
@@ -597,20 +597,20 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => Promise<ILookupResult[]>;
+  lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => Bluebird<ILookupResult[]>;
 
   /**
    * save meta information about a mod
    *
    * @memberOf IExtensionApi
    */
-  saveModMeta: (modInfo: IModInfo) => Promise<void>;
+  saveModMeta: (modInfo: IModInfo) => Bluebird<void>;
 
   /**
    * opens an archive
    */
   openArchive: (archivePath: string, options?: IArchiveOptions,
-                extension?: string) => Promise<Archive>;
+                extension?: string) => Bluebird<Archive>;
 
   /**
    * clear the stylesheet cache to ensure it gets rebuilt even if the list of files hasn't changed
@@ -651,14 +651,14 @@ export interface IExtensionApi {
    * The returned promise is resolved when the started process has run to completion.
    * IRunOptions.onSpawned can be used to react to when the process has been started.
    */
-  runExecutable: (executable: string, args: string[], options: IRunOptions) => Promise<void>;
+  runExecutable: (executable: string, args: string[], options: IRunOptions) => Bluebird<void>;
 
   /**
-   * emit an event and allow every receiver to return a Promise. This call will only return
-   * after all these Promises are resolved.
+   * emit an event and allow every receiver to return a Bluebird. This call will only return
+   * after all these Bluebirds are resolved.
    * If the event handlers return a value, this returns an array of results
    */
-  emitAndAwait: <T = any>(eventName: string, ...args: any[]) => Promise<T>;
+  emitAndAwait: <T = any>(eventName: string, ...args: any[]) => Bluebird<T>;
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -676,8 +676,8 @@ export interface IExtensionApi {
    * the result of the callback if any (the result is the first argument because the number
    * of arguments may be variable)
    */
-  withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise<T>)
-    => ((...args: any[]) => Promise<T>);
+  withPrePost: <T>(eventName: string, callback: (...args: any[]) => Bluebird<T>)
+    => ((...args: any[]) => Bluebird<T>);
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
@@ -705,7 +705,7 @@ export interface IExtensionApi {
    * displayed but may require the UI to be processed.
    * Specifically events can only be sent once this event has been triggered
    */
-  awaitUI: () => Promise<void>;
+  awaitUI: () => Bluebird<void>;
 
   /**
    * wrapper for api.store.getState() with the benefit that it automatically assigns a type
@@ -1123,7 +1123,7 @@ export interface IExtensionContext {
    *                                          game
    * @param {(game: IGame) => string} getPath given the specified game, return the absolute path to
    *                                          where games of this type should be installed.
-   * @param {(instructions) => Promise<boolean>} test given the list of install instructions,
+   * @param {(instructions) => Bluebird<boolean>} test given the list of install instructions,
    *                                                  determine if the installed mod is of this type
    * @param {IModTypeOptions} options options controlling the mod type
    */
@@ -1131,7 +1131,7 @@ export interface IExtensionContext {
                     priority: number,
                     isSupported: (gameId: string) => boolean,
                     getPath: (game: IGame) => string,
-                    test: (installInstructions: IInstruction[]) => Promise<boolean>,
+                    test: (installInstructions: IInstruction[]) => Bluebird<boolean>,
                     options?: IModTypeOptions) => void;
 
   /**
@@ -1212,7 +1212,7 @@ export interface IExtensionContext {
    * @param {function} hook the hook to be called
    */
   registerStartHook: (priority: number, id: string,
-                      hook: (call: IRunParameters) => Promise<IRunParameters>) => void;
+                      hook: (call: IRunParameters) => Bluebird<IRunParameters>) => void;
 
   /**
    * register a migration step. This migration is always called when the loaded extension has
@@ -1237,7 +1237,7 @@ export interface IExtensionContext {
    *                           As soon as the promise returned from this is resolved, the stored
    *                           version number is updated.
    */
-  registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
+  registerMigration: (migrate: (oldVersion: string) => Bluebird<void>) => void;
 
   /**
    * register a file to be stored with the profile. It will always be synchronised with the current
@@ -1288,14 +1288,14 @@ export interface IExtensionContext {
    * show a single file doesn't exist because duh.)
    * This way the most feature rich handler supporting a file type will get picked.
    *
-   * Note: If the viewer supports picking the Promise shall resolve after the
+   * Note: If the viewer supports picking the Bluebird shall resolve after the
    *   choice is made and include the selected entry, if it doesn't it can resolve
    *   as soon as the handler knows whether it supports the file.
    */
   registerPreview?: (
     priority: number,
     handler: (files: IPreviewFile[], allowPick: boolean)
-      => Promise<IPreviewFile>) => void;
+      => Bluebird<IPreviewFile>) => void;
 
   /**
    * register a callback that will introduce additional variables that can be used as part of
@@ -1365,7 +1365,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  once: (callback: () => void | Promise<void>) => void;
+  once: (callback: () => void | Bluebird<void>) => void;
 
   /**
    * similar to once but this callback will be run (only) on the electron "main" process.

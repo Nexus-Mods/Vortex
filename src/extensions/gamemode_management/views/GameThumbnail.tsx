@@ -12,7 +12,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -25,7 +25,7 @@ export interface IBaseProps {
   game: IGameStored;
   active: boolean;
   discovered?: boolean;
-  onRefreshGameInfo?: (gameId: string) => Promise<void>;
+  onRefreshGameInfo?: (gameId: string) => Bluebird<void>;
   type: string;
   getBounds?: () => ClientRect;
   container?: HTMLElement;

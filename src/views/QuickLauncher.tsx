@@ -19,7 +19,7 @@ import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
@@ -49,7 +49,7 @@ interface IConnectedProps {
 interface IActionProps {
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
@@ -62,7 +62,7 @@ interface IComponentState {
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   private mCacheDebouncer: Debouncer = new Debouncer(() => {
     this.nextState.gameIconCache = this.genGameIconCache();
-    return Promise.resolve();
+    return Bluebird.resolve();
   }, 100);
 
   constructor(props: IProps) {

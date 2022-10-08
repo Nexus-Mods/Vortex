@@ -13,7 +13,7 @@ import sessionReducer from './reducers';
 import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
 import { setDialogVisible } from '../../actions';
@@ -61,7 +61,7 @@ function checkForUpdates(api: IExtensionApi) {
     }, []);
 
   if (updateable.length === 0) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   api.sendNotification({
@@ -75,7 +75,7 @@ function checkForUpdates(api: IExtensionApi) {
     updateable: updateable.map(ext => `${ext.current.name} v${ext.current.version} `
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
-  return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
+  return Bluebird.map(updateable, update => downloadAndInstallExtension(api, update.update))
     .then((success: boolean[]) => {
       localState.reloadNecessary = true;
       if (success.find(iter => iter === true)) {
@@ -98,7 +98,7 @@ function checkForUpdates(api: IExtensionApi) {
 function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
   const state: IState = api.store.getState();
   if (!state.session.base.networkConnected) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   return fetchAvailableExtensions(true, force)
     .catch(DataInvalid, err => {
@@ -116,14 +116,14 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
         api.store.dispatch(setAvailableExtensions(extensions));
         return checkForUpdates(api);
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
 }
 
 function installDependency(api: IExtensionApi,
                            depId: string,
-                           updateInstalled: (initial: boolean) => Promise<void>): Promise<boolean> {
+                           updateInstalled: (initial: boolean) => Bluebird<void>): Bluebird<boolean> {
   const state: IState = api.store.getState();
   const availableExtensions = state.session.extensions.available;
 
@@ -138,7 +138,7 @@ function installDependency(api: IExtensionApi,
         return success;
       });
   } else {
-    return Promise.resolve(false);
+    return Bluebird.resolve(false);
   }
 }
 
@@ -165,7 +165,7 @@ function checkMissingDependencies(api: IExtensionApi,
                + 'they have missing or incompatible dependencies.',
         actions: [
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
-            Promise.map(Object.keys(missingDependencies), depId =>
+            Bluebird.map(Object.keys(missingDependencies), depId =>
               installDependency(api, depId, updateInstalled)
                 .then(results => {
                   if (!results) {
@@ -205,7 +205,7 @@ function checkMissingDependencies(api: IExtensionApi,
 }
 
 function genUpdateInstalledExtensions(api: IExtensionApi) {
-  return (initial: boolean): Promise<void> => {
+  return (initial: boolean): Bluebird<void> => {
     return readExtensions(true)
       .then(ext => {
         const state: IState = api.store.getState();
@@ -269,18 +269,18 @@ function init(context: IExtensionContext) {
   });
 
   context.registerInstaller('site-installer', 0,
-    (files: string[], gameId: string) => Promise.resolve({
+    (files: string[], gameId: string) => Bluebird.resolve({
       supported: gameId === 'site',
       requiredFiles: [],
     }),
     () => {
-      return Promise.reject(
+      return Bluebird.reject(
         new ProcessCanceled('Extensions have to be installed from the extensions page.'));
     });
 
   context.once(() => {
     let onDidFetch: () => void;
-    const didFetchAvailableExtensions = new Promise((resolve => onDidFetch = resolve));
+    const didFetchAvailableExtensions = new Bluebird((resolve => onDidFetch = resolve));
     updateExtensions(true)
     .then(() => updateAvailableExtensions(context.api))
     .then(() => onDidFetch());
@@ -292,7 +292,7 @@ function init(context: IExtensionContext) {
             return updateExtensions(false)
               .then(() => success);
           } else {
-            return Promise.resolve()
+            return Bluebird.resolve()
               .then(() => success);
           }
         });
@@ -312,7 +312,7 @@ function init(context: IExtensionContext) {
           type: 'info',
           message: 'Vortex extension is already installed',
         });
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       if ((modId !== undefined) && (ext !== undefined)) {
@@ -329,7 +329,7 @@ function init(context: IExtensionContext) {
           title: 'Archive not recognized as a Vortex extension.',
           message: 'If this is a new extension it may not have been approved yet.',
         });
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
 

@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 export interface IResolvedURL {
   urls: string[];
@@ -14,5 +14,5 @@ export interface IResolvedURLs {
 
 export interface IProtocolHandlers {
   [schema: string]: (inputUrl: string, name: string, friendlyName: string)
-    => Promise<IResolvedURL>;
+    => Bluebird<IResolvedURL>;
 }

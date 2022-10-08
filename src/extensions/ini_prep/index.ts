@@ -21,17 +21,17 @@ import {activeGameId} from '../profile_management/selectors';
 import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TFunction, gameMode: string,
-                          discovery: IDiscoveryResult): Promise<void> {
-  return Promise.map(iniFiles(gameMode, discovery), file => {
+                          discovery: IDiscoveryResult): Bluebird<void> {
+  return Bluebird.map(iniFiles(gameMode, discovery), file => {
     const backupFile = file + '.base';
     const bakedFile = file + '.baked';
-    return Promise.map([backupFile, bakedFile],
+    return Bluebird.map([backupFile, bakedFile],
       copy => fs.statAsync(copy)
         .catch(() =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
@@ -39,9 +39,9 @@ function ensureIniBackups(t: TFunction, gameMode: string,
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
-                return Promise.resolve();
+                return Bluebird.resolve();
               } else {
-                return Promise.reject(copyErr);
+                return Bluebird.reject(copyErr);
               }
             })));
   })
@@ -78,17 +78,17 @@ function applyDelta(data: any, delta: any) {
  * updates the .base ini file to reflect changes the user made manually
  */
 function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
-                                 discovery: IDiscoveryResult): Promise<void> {
+                                 discovery: IDiscoveryResult): Bluebird<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const parser = new IniParser(genIniFormat(format));
 
   const t: TFunction = api.translate;
 
-  return Promise.map(iniFiles(gameMode, discovery), iniFileName => {
+  return Bluebird.map(iniFiles(gameMode, discovery), iniFileName => {
     let newContent: any;
     let oldContent: any;
     return parser.read(iniFileName)
@@ -104,7 +104,7 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
         const delta = objDiff(oldContent, newContent);
         // don't bother if there was no change
         if (Object.keys(delta).length === 0) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         applyDelta(ini.data, delta);
         return fs.forcePerm(t, () =>
@@ -138,16 +138,16 @@ function getBaseFile(input: string): string {
   }
 }
 
-type ApplySettings = (fileName: string, parser: IniFile<any>) => Promise<void>;
+type ApplySettings = (fileName: string, parser: IniFile<any>) => Bluebird<void>;
 
 function bakeSettings(t: TFunction,
                       gameMode: string, discovery: IDiscoveryResult,
                       mods: IMod[], state: IState,
-                      onApplySettings: ApplySettings): Promise<void> {
+                      onApplySettings: ApplySettings): Bluebird<void> {
   const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
@@ -160,9 +160,9 @@ function bakeSettings(t: TFunction,
   const parser = new IniParser(genIniFormat(format));
 
   // get a list of all tweaks we need to apply
-  return Promise.each(mods, mod => {
+  return Bluebird.each(mods, mod => {
     if (mod.installationPath === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const tweaksPath = path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
     const modTweaks = getSafe(mod, ['enabledINITweaks'], []).map(name => name.toLowerCase());
@@ -177,7 +177,7 @@ function bakeSettings(t: TFunction,
               });
         })
         .catch(err => undefined);
-  }).then(() => Promise.mapSeries(baseFiles, iniFileName => {
+  }).then(() => Bluebird.mapSeries(baseFiles, iniFileName => {
     // starting with the .base file for each ini, re-bake the file by applying
     // the ini tweaks
     const baseName = path.basename(iniFileName).toLowerCase();
@@ -185,8 +185,8 @@ function bakeSettings(t: TFunction,
     return fs.ensureFileAsync(iniFileName)
       .then(() => fs.unlinkAsync(iniFileName + '.baked')
         .catch(err => (err.code === 'ENOENT')
-          ? Promise.resolve()
-          : Promise.reject(err))
+          ? Bluebird.resolve()
+          : Bluebird.reject(err))
         .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked',
                                  { noSelfCopy: true })
         .then(() => fs.makeFileWritableAsync(iniFileName + '.baked'))
@@ -194,11 +194,11 @@ function bakeSettings(t: TFunction,
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base', { noSelfCopy: true })
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
-              .then(() => Promise.all([fs.makeFileWritableAsync(iniFileName + '.base'),
+              .then(() => Bluebird.all([fs.makeFileWritableAsync(iniFileName + '.base'),
                                        fs.makeFileWritableAsync(iniFileName + '.baked')]))
-            : Promise.reject(err))))
+            : Bluebird.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
-      .then(ini => Promise.each(enabledTweaks[baseName] || [],
+      .then(ini => Bluebird.each(enabledTweaks[baseName] || [],
         tweak => parser.read(tweak).then(patchIni => {
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
@@ -206,7 +206,7 @@ function bakeSettings(t: TFunction,
         .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini) as any))
         .then(() => {
           if (iniFileName === undefined) {
-            return Promise.reject(new Error(
+            return Bluebird.reject(new Error(
               `Path is undefined. Game="${gameMode}"; FileList="${baseFiles.join(', ')}"`));
           }
           return fs.copyAsync(iniFileName + '.baked',
@@ -217,17 +217,17 @@ function bakeSettings(t: TFunction,
 }
 
 function purgeChanges(t: TFunction, gameMode: string, discovery: IDiscoveryResult) {
-  return Promise.map(
+  return Bluebird.map(
       iniFiles(gameMode, discovery),
       iniFileName =>
           fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
             .then(() => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true })));
 }
 
-function testProtectedFolderAccess(): Promise<ITestResult> {
+function testProtectedFolderAccess(): Bluebird<ITestResult> {
   if (process.platform !== 'win32') {
     // Windows only! (for now)
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   let writablePath;
@@ -250,7 +250,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
   const canary = path.join(writablePath, '__vortex_canary.tmp');
   return fs.writeFileAsync(canary, 'Should only exist temporarily, feel free to delete')
     .then(() => fs.removeAsync(canary))
-    .then(() => Promise.resolve(undefined))
+    .then(() => Bluebird.resolve(undefined))
     .catch(err => {
       // Theoretically the only reason why writing/removing this file would fail is if/when
       //  an external application has blocked Vortex from running the file operation.
@@ -334,16 +334,16 @@ function main(context: IExtensionContext) {
     context.api.onAsync('bake-settings', (gameId: string, mods: IMod[], profile: IProfile) => {
       log('debug', 'baking settings', { gameId, deactivated });
       if (deactivated) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       const state: IState = context.api.store.getState();
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[profile.gameId];
 
       if ((discovery === undefined) || (discovery.path === undefined)) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
-      const onApplySettings = (fileName: string, parser: IniFile<any>): Promise<void> =>
+      const onApplySettings = (fileName: string, parser: IniFile<any>): Bluebird<void> =>
         context.api.emitAndAwait('apply-settings', profile, fileName, parser);
 
       return discoverSettingsChanges(context.api, profile.gameId, discovery)

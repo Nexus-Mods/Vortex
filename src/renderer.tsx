@@ -9,7 +9,7 @@ if (process.env.DEBUG_REACT_RENDERS === 'true') {
     trackAllPureComponents: true,
     trackExtraHooks: [
       [require('react-redux'), 'useSelector']
-    ]   
+    ]
   });
 }
 
@@ -83,7 +83,7 @@ import MainWindow from './views/MainWindow';
 
 import * as remote from '@electron/remote';
 import * as msgpackT from '@msgpack/msgpack';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcRenderer, webFrame } from 'electron';
 import { forwardToMain, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
@@ -211,7 +211,7 @@ if (process.platform === 'win32') {
 }
 
 // allow promises to be cancelled.
-Promise.config({
+Bluebird.config({
   cancellation: true,
   // long stack traces would be sooo nice but the performance cost in some places is ridiculous
   longStackTraces: false,
@@ -417,7 +417,7 @@ function init() {
     // if there are outdated extensions
     log('warn', 'outdated extensions discovered in renderer');
     relaunch();
-    return Promise.resolve(null);
+    return Bluebird.resolve(null);
   }
   const extReducers = extensions.getReducers();
 
@@ -468,7 +468,7 @@ function init() {
     lastHeapSize = stat.totalHeapSize;
   }, 5000);
 
-  const startupPromise = new Promise(resolve => (startupFinished = resolve));
+  const startupPromise = new Bluebird(resolve => (startupFinished = resolve));
 
   // tslint:disable-next-line:no-unused-variable
   const globalNotifications = new GlobalNotifications(extensions.getApi());
@@ -522,7 +522,7 @@ function init() {
     const id = args[args.length - 1];
     const cb = (...cbArgs) => {
       const newCBArgs = cbArgs.map(arg => {
-        if (!(arg instanceof Promise)) {
+        if (!(arg instanceof Bluebird)) {
           return arg;
         }
         const promId = shortid();
@@ -572,7 +572,7 @@ function init() {
     }
   });
 
-  return Promise.resolve(extensions);
+  return Bluebird.resolve(extensions);
 }
 
 function renderer(extensions: ExtensionManager) {
@@ -616,7 +616,7 @@ function renderer(extensions: ExtensionManager) {
           path: ext.path,
         }));
 
-      return Promise.map(dynamicExts, ext => {
+      return Bluebird.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');
         return fs.readFile(filePath, { encoding: 'utf-8' })
           .then((fileData: string) => {

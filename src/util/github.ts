@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as semver from 'semver';
@@ -91,32 +91,32 @@ class GitHub {
     return 'https://raw.githubusercontent.com/Nexus-Mods/Vortex';
   }
 
-  private mReleaseCache: Promise<IGitHubRelease[]>;
+  private mReleaseCache: Bluebird<IGitHubRelease[]>;
   private mRatelimitReset: number;
 
-  public releases(): Promise<IGitHubRelease[]> {
+  public releases(): Bluebird<IGitHubRelease[]> {
     if (this.mReleaseCache === undefined) {
       this.mReleaseCache = this.queryReleases()
         .catch(err => {
           this.mReleaseCache = undefined;
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         });
     }
 
     return this.mReleaseCache;
   }
 
-  public fetchConfig(config: string): Promise<any> {
+  public fetchConfig(config: string): Bluebird<any> {
     return this.query(GitHub.rawUrl(), `${GitHub.CONFIG_BRANCH}/${config}.json`);
   }
 
-  private query(baseUrl: string, request: string): Promise<any> {
+  private query(baseUrl: string, request: string): Bluebird<any> {
     if ((this.mRatelimitReset !== undefined) && (this.mRatelimitReset > Date.now())) {
-      return Promise.reject(new RateLimitExceeded());
+      return Bluebird.reject(new RateLimitExceeded());
     }
     const stackErr = new Error();
 
-    return new Promise((resolve, reject) => {
+    return new Bluebird((resolve, reject) => {
         const relUrl = url.parse(`${baseUrl}/${request}`);
         const options: https.RequestOptions = {
           ..._.pick(relUrl, ['port', 'hostname', 'path']),
@@ -157,17 +157,17 @@ class GitHub {
       });
   }
 
-  private queryReleases(): Promise<IGitHubRelease[]> {
+  private queryReleases(): Bluebird<IGitHubRelease[]> {
     return this.query(GitHub.repoUrl(), 'releases')
       .then((releases: IGitHubRelease[]) => {
         if (!Array.isArray(releases)) {
-          return Promise.reject(new DataInvalid('expected array of github releases'));
+          return Bluebird.reject(new DataInvalid('expected array of github releases'));
         }
         const current = releases
           .filter(rel => semver.valid(rel.name) && semver.gte(rel.name, GitHub.RELEASE_CUTOFF))
           .sort((lhs, rhs) => semver.compare(lhs.name, rhs.name));
 
-        return Promise.resolve(current);
+        return Bluebird.resolve(current);
       });
   }
 }

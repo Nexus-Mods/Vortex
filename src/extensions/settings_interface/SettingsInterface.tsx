@@ -25,7 +25,7 @@ import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import * as remoteT from '@electron/remote';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { app } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
@@ -76,7 +76,7 @@ interface IActionProps {
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
+                 content: IDialogContent, actions: DialogActions) => Bluebird<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
@@ -317,10 +317,10 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     }
     const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
     const { value } = target;
-    const dlProm: Promise<boolean[]> = ext.modId !== undefined
+    const dlProm: Bluebird<boolean[]> = ext.modId !== undefined
       ? this.context.api.emitAndAwait('install-extension', ext)
-        .tap(success => success ? this.props.onReloadLanguages() : Promise.resolve())
-      : Promise.resolve([true]);
+        .tap(success => success ? this.props.onReloadLanguages() : Bluebird.resolve())
+      : Bluebird.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
         this.props.onSetLanguage(value);
@@ -529,7 +529,7 @@ function isValidLanguageCode(langId: string) {
   }
 }
 
-function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
+function readLocales(extensions: IAvailableExtension[]): Bluebird<ILanguage[]> {
   const bundledLanguages = getVortexPath('locales');
   const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
 
@@ -537,7 +537,7 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
 
   let local: string[] = [];
 
-  return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
+  return Bluebird.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
     .map((file: string) => path.basename(file))
     .tap(files => local = files),
     translationExts.map(ext => ext.language))

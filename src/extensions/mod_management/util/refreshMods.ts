@@ -8,7 +8,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { setModArchiveId } from '../actions/mods';
 import {IMod} from '../types/IMod';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 
 /**
@@ -25,7 +25,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
     .then(() => fs.readdirAsync(installPath))
     .filter((modName: string) => fs.statAsync(path.join(installPath, modName))
       .then(stats => stats.isDirectory())
-      .catch(() => Promise.resolve(false)))
+      .catch(() => Bluebird.resolve(false)))
     .then((modNames: string[]) => {
       const filtered = modNames
         .filter(name => !name.startsWith('__'))
@@ -36,7 +36,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
           knownModNames.filter((name: string) => filtered.indexOf(name) === -1);
 
       if ((addedMods.length === 0) && (removedMods.length === 0)) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       log('warn', 'manual mod changed', {
@@ -79,7 +79,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
         { label: 'Apply Changes' },
       ]).then(res => {
         if (res.action === 'Apply Changes') {
-          return Promise.map(addedMods, (modName: string) => {
+          return Bluebird.map(addedMods, (modName: string) => {
             const fullPath: string = path.join(installPath, modName);
             return fs.statAsync(fullPath)
               .then((stat: fs.Stats) => {

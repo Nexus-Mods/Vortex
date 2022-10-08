@@ -12,7 +12,7 @@ import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
 import { closeAllViews } from '../util/webview';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcMain, screen, webContents } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -88,9 +88,9 @@ class MainWindow {
     }, 500);
   }
 
-  public create(store: ThunkStore<IState>): Promise<Electron.WebContents> {
+  public create(store: ThunkStore<IState>): Bluebird<Electron.WebContents> {
     if (this.mWindow !== null) {
-      return Promise.resolve(undefined);
+      return Bluebird.resolve(undefined);
     }
 
     const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
@@ -197,7 +197,7 @@ class MainWindow {
 
     this.initEventHandlers(store);
 
-    return new Promise<Electron.WebContents>((resolve) => {
+    return new Bluebird<Electron.WebContents>((resolve) => {
       this.mWindow.once('ready-to-show', () => {
         if ((resolve !== undefined) && (this.mWindow !== null)) {
           resolve(this.mWindow.webContents);

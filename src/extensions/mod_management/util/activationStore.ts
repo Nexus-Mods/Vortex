@@ -21,7 +21,7 @@ import { getActivator, getCurrentActivator } from './deploymentMethods';
 import format_1 from './manifest_formats/format_1';
 
 import msgpackT from '@msgpack/msgpack';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';
 
@@ -92,19 +92,19 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
 }
 
 export function purgeDeployedFiles(basePath: string,
-                                   files: IDeployedFile[]): Promise<void> {
-  return Promise.map(files, file => {
+                                   files: IDeployedFile[]): Bluebird<void> {
+  return Bluebird.map(files, file => {
     const fullPath = path.join(basePath, file.relPath);
     return fs.statAsync(fullPath).then(
       stats => {
         // the timestamp from stat has ms precision but the one from the manifest doesn't
         return ((stats.mtime.getTime() - file.time) < 1000)
           ? fs.unlinkAsync(fullPath)
-          : Promise.resolve();
+          : Bluebird.resolve();
       })
     .catch(err => {
       if (err.code !== 'ENOENT') {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       } // otherwise ignore
     });
   })
@@ -140,7 +140,7 @@ function queryPurgeTextUnsafe(t: TFunction) {
 function queryPurge(api: IExtensionApi,
                     basePath: string,
                     files: IDeployedFile[],
-                    safe: boolean): Promise<void> {
+                    safe: boolean): Bluebird<void> {
   const t = api.translate;
   const text = safe ? queryPurgeTextSafe(t) : queryPurgeTextUnsafe(t);
   return api.store.dispatch(showDialog('info', t('Purge files from different instance?'), {
@@ -153,20 +153,20 @@ function queryPurge(api: IExtensionApi,
             api.showErrorNotification('Purging failed', err, {
               allowReport: false,
             });
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           });
       } else {
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       }
     });
 }
 
-function readManifestFile(filePath: string): Promise<any> {
+function readManifestFile(filePath: string): Bluebird<any> {
   return fs.readFileAsync(filePath, 'utf8')
     .then(data => readManifest(data));
 }
 
-function readManifestFileBinary(filePath: string): Promise<any> {
+function readManifestFileBinary(filePath: string): Bluebird<any> {
   return fs.readFileAsync(filePath)
     .then(data => readManifest(data));
 }
@@ -176,11 +176,11 @@ function getManifestImpl(api: IExtensionApi,
                          filePath: string,
                          backupPath: string,
                          backup2Path: string)
-                         : Promise<IDeploymentManifest> {
+                         : Bluebird<IDeploymentManifest> {
   return readManifestFile(filePath)
     .catch(err => {
       if (err instanceof UserCanceled) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
       if (err.code === 'ENOENT') {
         return emptyManifest(instanceId);
@@ -190,7 +190,7 @@ function getManifestImpl(api: IExtensionApi,
           + 'insufficient permissions.\nPlease ensure your Windows user account '
           + 'has full read/write permissions to the manifest file and try again.';
         err.allowReport = false;
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
 
       if (err.message.startsWith('Unexpected token')
@@ -216,14 +216,14 @@ function getManifestImpl(api: IExtensionApi,
           .then(result => {
             if (result.action === 'Cancel') {
               err.allowReport = false;
-              return Promise.reject(err);
+              return Bluebird.reject(err);
             } else {
-              return Promise.resolve(data);
+              return Bluebird.resolve(data);
             }
           }))
         .catch(backupErr => {
           err.message += '\nBackup couldn\'t be read: ' + backupErr.message;
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         });
     })
     .then(manifest => (manifest !== undefined)
@@ -233,7 +233,7 @@ function getManifestImpl(api: IExtensionApi,
 
 export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
                                   gameId: string, modType: string, deployPath: string,
-                                  stagingPath: string): Promise<void> {
+                                  stagingPath: string): Bluebird<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFileName = `vortex.deployment.${typeTag}json`;
@@ -244,7 +244,7 @@ export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMeth
 
   return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
       .then(tagObject => {
-        let result: Promise<void>;
+        let result: Bluebird<void>;
         if (tagObject.files.length > 0) {
           let safe = true;
           if (tagObject.deploymentMethod !== undefined) {
@@ -257,19 +257,19 @@ export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMeth
               .then(() => saveActivation(gameId, modType, state.app.instanceId,
                                          deployPath, stagingPath,
                                          [], activator !== undefined ? activator.id : undefined))
-              .then(() => Promise.resolve());
+              .then(() => Bluebird.resolve());
         } else {
-          result = Promise.resolve();
+          result = Bluebird.resolve();
         }
         return result;
       })
-      .catch(err => Promise.reject(err));
+      .catch(err => Bluebird.reject(err));
 }
 
 /**
  * purge files using information from the manifest
  */
-export function fallbackPurge(api: IExtensionApi): Promise<void> {
+export function fallbackPurge(api: IExtensionApi): Bluebird<void> {
   const state: IState = api.store.getState();
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
@@ -277,20 +277,20 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   if ((game === undefined)
       || (gameDiscovery === undefined)
       || (gameDiscovery.path === undefined)) {
-    return Promise.reject(new ProcessCanceled('game got disabled'));
+    return Bluebird.reject(new ProcessCanceled('game got disabled'));
   }
   const modPaths = game.getModPaths(gameDiscovery.path);
   const stagingPath = installPathForGame(state, gameId);
   const activator = getCurrentActivator(state, gameId, false);
 
-  return Promise.each(Object.keys(modPaths), typeId =>
+  return Bluebird.each(Object.keys(modPaths), typeId =>
     fallbackPurgeType(api, activator, gameId, typeId, modPaths[typeId], stagingPath))
     .then(() => undefined);
 }
 
 const activationQueue = makeQueue();
 
-export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = false) {
+export function withActivationLock(func: () => Bluebird<any>, tryOnly: boolean = false) {
   return activationQueue(func, tryOnly);
 }
 
@@ -310,7 +310,7 @@ export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = 
 export function getManifest(api: IExtensionApi,
                             modType?: string,
                             gameId?: string)
-    : Promise<IDeploymentManifest> {
+    : Bluebird<IDeploymentManifest> {
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
 
@@ -326,13 +326,13 @@ export function getManifest(api: IExtensionApi,
     const game = getGame(gameId);
     const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     if ((discovery?.path === undefined) || (game === undefined)) {
-      return Promise.resolve(emptyManifest(instanceId));
+      return Bluebird.resolve(emptyManifest(instanceId));
     }
 
     const stagingPath: string = installPathForGame(state, gameId);
     const deployPath: string = game.getModPaths(discovery.path)[modType];
     if ((stagingPath === undefined) || (deployPath === undefined)) {
-      return Promise.resolve(emptyManifest(instanceId));
+      return Bluebird.resolve(emptyManifest(instanceId));
     }
 
     const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
@@ -343,15 +343,15 @@ export function getManifest(api: IExtensionApi,
 
     return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
   } catch (err) {
-    return Promise.reject(err);
+    return Bluebird.reject(err);
   }
 }
 
 export function loadActivation(api: IExtensionApi, gameId: string, modType: string,
                                deployPath: string, stagingPath: string,
-                               activator: IDeploymentMethod): Promise<IDeployedFile[]> {
+                               activator: IDeploymentMethod): Bluebird<IDeployedFile[]> {
   if (deployPath === undefined) {
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFileName = `vortex.deployment.${typeTag}json`;
@@ -362,7 +362,7 @@ export function loadActivation(api: IExtensionApi, gameId: string, modType: stri
   const instanceId = state.app.instanceId;
   return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
       .then(tagObject => {
-        let result: Promise<IDeployedFile[]>;
+        let result: Bluebird<IDeployedFile[]>;
         if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
           let safe = true;
           if (tagObject.deploymentMethod !== undefined) {
@@ -374,9 +374,9 @@ export function loadActivation(api: IExtensionApi, gameId: string, modType: stri
           result = queryPurge(api, deployPath, tagObject.files, safe)
               .then(() => saveActivation(gameId, modType, state.app.instanceId, deployPath,
                                          stagingPath, [], activator.id))
-              .then(() => Promise.resolve([]));
+              .then(() => Bluebird.resolve([]));
         } else {
-          result = Promise.resolve(tagObject.files);
+          result = Bluebird.resolve(tagObject.files);
         }
         return result;
       });
@@ -404,7 +404,7 @@ export function saveActivation(gameId: string, modType: string, instance: string
     fs.writeFileSync(failedPath, dataJSON, { encoding: 'utf8' });
     const repErr = new Error(`failed to serialize deployment information: "${err.message}"`);
     repErr['attachFilesOnReport'] = [failedPath];
-    return Promise.reject(repErr);
+    return Bluebird.reject(repErr);
   }
   const tagFileName = `vortex.deployment.${typeTag}json`;
   const tagFilePath = path.join(gamePath, tagFileName);

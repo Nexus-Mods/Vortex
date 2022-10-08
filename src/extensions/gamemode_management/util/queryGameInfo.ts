@@ -6,11 +6,11 @@ import walk from '../../../util/walk';
 
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
-function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
+function queryGameInfo(game: IGame & IDiscoveryResult): Bluebird<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {
-    return Promise.resolve({});
+    return Bluebird.resolve({});
   }
   let totalSize = 0;
   let sizeWithoutLinks = 0;
@@ -22,7 +22,7 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
     if (stats.nlink === 1) {
       sizeWithoutLinks += stats.size;
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   })
   .then(() => {
     return {

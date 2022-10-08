@@ -1,9 +1,9 @@
 import { IPersistor, PersistorKey } from '../types/IExtensionContext';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 class SubPersistor implements IPersistor {
-  public getAllKVs: () => Promise<Array<{ key: string[], value: string }>> = undefined;
+  public getAllKVs: () => Bluebird<Array<{ key: string[], value: string }>> = undefined;
 
   private mWrapped: IPersistor;
   private mHive: string;
@@ -20,23 +20,23 @@ class SubPersistor implements IPersistor {
     }
   }
 
-  public setResetCallback(cb: () => Promise<void>): void {
+  public setResetCallback(cb: () => Bluebird<void>): void {
     this.mWrapped.setResetCallback(cb);
   }
 
-  public getItem(key: string[]): Promise<string> {
+  public getItem(key: string[]): Bluebird<string> {
     return this.mWrapped.getItem([].concat(this.mHive, key));
   }
 
-  public setItem(key: string[], value: string): Promise<void> {
+  public setItem(key: string[], value: string): Bluebird<void> {
     return this.mWrapped.setItem([].concat(this.mHive, key), value);
   }
 
-  public removeItem(key: string[]): Promise<void> {
+  public removeItem(key: string[]): Bluebird<void> {
     return this.mWrapped.removeItem([].concat(this.mHive, key));
   }
 
-  public getAllKeys(): Promise<string[][]> {
+  public getAllKeys(): Bluebird<string[][]> {
     return this.mWrapped.getAllKeys()
       .then(keys => keys
         .filter(key => key[0] === this.mHive)

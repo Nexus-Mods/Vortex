@@ -1,6 +1,6 @@
 import { AttributeExtractor } from '../../../types/IExtensionContext';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 
 const attributeExtractors: Array<{ priority: number, extractor: AttributeExtractor}> = [];
@@ -13,8 +13,8 @@ function filterUndefined(input: { [key: string]: any }) {
   return _.omitBy(input, val => val === undefined);
 }
 
-function filterModInfo(input: any, modPath: string): Promise<any> {
-  return Promise.map(
+function filterModInfo(input: any, modPath: string): Bluebird<any> {
+  return Bluebird.map(
     attributeExtractors.sort((lhs, rhs) => rhs.priority - lhs.priority),
     extractor => extractor.extractor(input, modPath),
   ).then(infoBlobs => Object.assign({}, ...infoBlobs.map(filterUndefined)));

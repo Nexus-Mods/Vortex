@@ -15,7 +15,7 @@ import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
 import * as RemoteT from '@electron/remote';
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import {
   BrowserWindow,
   dialog as dialogIn,
@@ -127,11 +127,11 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
                      context: IErrorContext, apiKey: string, reporterProcess: string,
-                     sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+                     sourceProcess: string, attachment: string): Bluebird<IFeedbackResponse> {
   const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  return Promise.resolve(Nexus.create(apiKey, 'Vortex', getApplication().version, undefined))
+  return Bluebird.resolve(Nexus.create(apiKey, 'Vortex', getApplication().version, undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
       createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess),
@@ -194,9 +194,9 @@ if (ipcRenderer !== undefined) {
   });
 }
 
-export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
+export function sendReportFile(fileName: string): Bluebird<IFeedbackResponse> {
   let reportInfo: any;
-  return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
+  return Bluebird.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       reportInfo = JSON.parse(reportData.toString());
       const userData = reportInfo['userData'] ?? getVortexPath('userData');
@@ -226,7 +226,7 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
 export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
                            reporterId: string, reporterProcess: string,
-                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+                           sourceProcess: string, attachment: string): Bluebird<IFeedbackResponse> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
@@ -237,7 +237,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
       attachment,
     }, undefined, 2));
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   } else {
     return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
                        reporterProcess, sourceProcess, attachment);
@@ -536,7 +536,7 @@ export function clearErrorContext(id: string) {
  * @param value context value
  * @param fun the function to set
  */
-export function withContext(id: string, value: string, fun: () => Promise<any>) {
+export function withContext(id: string, value: string, fun: () => Bluebird<any>) {
   setErrorContext(id, value);
   return fun().finally(() => {
     clearErrorContext(id);

@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { IGameStoreEntry } from './IGameStoreEntry';
 
 /**
@@ -60,7 +60,7 @@ export interface ITool {
    * This may be left undefined but then the tool/game can only be discovered
    * by searching the disk which is slow and only happens manually.
    */
-  queryPath?: () => string | Promise<string | IGameStoreEntry>;
+  queryPath?: () => string | Bluebird<string | IGameStoreEntry>;
 
   /**
    * return the path of the tool executable relative to the tool base path,

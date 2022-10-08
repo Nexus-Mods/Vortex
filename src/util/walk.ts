@@ -1,6 +1,6 @@
 import * as fs from './fs';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fsOrig from 'fs-extra';
 import * as path from 'path';
 
@@ -16,27 +16,27 @@ export interface IWalkOptions {
  *                       corresponding fs stats as parameter. Should return a promise that will be
  *                       awaited before proceeding to the next directory. If this promise is
  *                       rejected, the walk is interrupted
- * @returns {Promise<void>} a promise that is resolved once the search is complete
+ * @returns {Bluebird<void>} a promise that is resolved once the search is complete
  */
 function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>,
-              options?: IWalkOptions): Promise<void> {
+              callback: (iterPath: string, stats: fs.Stats) => Bluebird<any>,
+              options?: IWalkOptions): Bluebird<void> {
   const opt = options || {};
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
     .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve([])
-      : Promise.reject(err))
+      ? Bluebird.resolve([])
+      : Bluebird.reject(err))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
-      return Promise.map(fileNames, (statPath: string) =>
-        Promise.resolve(fsOrig.lstat([target, statPath].join(path.sep))).reflect());
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+      return Bluebird.map(fileNames, (statPath: string) =>
+        Bluebird.resolve(fsOrig.lstat([target, statPath].join(path.sep))).reflect());
+    }).then((res: Array<Bluebird.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
-      const cbPromises: Array<Promise<any>> = [];
+      const cbPromises: Array<Bluebird<any>> = [];
       res.forEach((stat, idx) => {
         if (!stat.isFulfilled()) {
           return;
@@ -47,19 +47,19 @@ function walk(target: string,
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
+      return Bluebird.all(cbPromises.concat(Bluebird.mapSeries(subDirs, (subDir) =>
                          walk(subDir, callback))));
     })
     .catch(err => {
       if ((opt.ignoreErrors !== undefined)
           && ((opt.ignoreErrors === true)
               || (opt.ignoreErrors.indexOf(err.code) !== -1))) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       } else {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
     })
-    .then(() => Promise.resolve());
+    .then(() => Bluebird.resolve());
 }
 
 export default walk;

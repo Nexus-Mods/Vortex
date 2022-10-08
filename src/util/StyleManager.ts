@@ -6,7 +6,7 @@ import getVortexPath from './getVortexPath';
 import {log} from './log';
 import { sanitizeCSSId } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { ipcMain, ipcRenderer } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -139,7 +139,7 @@ class StyleManager {
   private mRenderDebouncer: Debouncer;
   private mExpectingResult: { resolve: (css: string) => void, reject: (err: Error) => void };
   private mAutoRefresh: boolean = false;
-  private mSetQueue: Promise<void> = Promise.resolve();
+  private mSetQueue: Bluebird<void> = Bluebird.resolve();
 
   constructor(api: IExtensionApi) {
     this.mPartials = [
@@ -224,9 +224,9 @@ class StyleManager {
     log('debug', 'setting stylesheet', { key, filePath });
     try {
       const statProm = () => (filePath === undefined)
-        ? Promise.resolve<void>(undefined)
+        ? Bluebird.resolve<void>(undefined)
         : (path.extname(filePath) === '')
-        ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
+        ? Bluebird.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
             .then(() => null)
         : fs.statAsync(filePath).then(() => null);
       this.mSetQueue = this.mSetQueue
@@ -250,8 +250,8 @@ class StyleManager {
     }
   }
 
-  public renderNow(): Promise<void> {
-    this.mSetQueue = this.mSetQueue.then(() => new Promise<void>((resolve, reject) => {
+  public renderNow(): Bluebird<void> {
+    this.mSetQueue = this.mSetQueue.then(() => new Bluebird<void>((resolve, reject) => {
       this.mRenderDebouncer.runNow(err => {
         if (err !== null) {
           return reject(err);
@@ -263,14 +263,14 @@ class StyleManager {
     return this.mSetQueue;
   }
 
-  private render(): Promise<void> {
+  private render(): Bluebird<void> {
     const stylesheets: string[] = this.mPartials
       .filter(partial => partial.file !== undefined)
       .map(partial => path.isAbsolute(partial.file)
         ? asarUnpacked(partial.file)
         : partial.file);
 
-    return new Promise<string>((resolve, reject) => {
+    return new Bluebird<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send('__renderSASS', stylesheets);
     })

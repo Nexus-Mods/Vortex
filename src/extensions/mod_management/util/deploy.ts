@@ -17,7 +17,7 @@ import { getActivator, getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { generate as shortid } from 'shortid';
 
 const MERGE_SUBDIR = 'zzz_merge';
@@ -51,8 +51,8 @@ export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => st
 function filterManifest(activator: IDeploymentMethod,
                         deployPath: string,
                         stagingPath: string,
-                        deployment: IDeployedFile[]): Promise<IDeployedFile[]> {
-  return Promise.filter(deployment, file =>
+                        deployment: IDeployedFile[]): Bluebird<IDeployedFile[]> {
+  return Bluebird.filter(deployment, file =>
     activator.isDeployed(stagingPath, deployPath, file));
 }
 
@@ -63,7 +63,7 @@ export function loadAllManifests(api: IExtensionApi,
                                  stagingPath: string) {
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
-  return Promise.reduce(modTypes, (prev, typeId) =>
+  return Bluebird.reduce(modTypes, (prev, typeId) =>
         loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, deploymentMethod)
           .then(deployment => {
             prev[typeId] = deployment;
@@ -73,7 +73,7 @@ export function loadAllManifests(api: IExtensionApi,
 
 export function purgeMods(api: IExtensionApi,
                           gameId?: string,
-                          isUnmanaging?: boolean): Promise<void> {
+                          isUnmanaging?: boolean): Bluebird<void> {
   const state = api.store.getState();
   let profile = gameId !== undefined
     ? profileById(state, lastActiveProfileForGame(state, gameId))
@@ -97,7 +97,7 @@ export function purgeMods(api: IExtensionApi,
   }
 
   if (profile === undefined) {
-    return Promise.reject(new TemporaryError('No active profile'));
+    return Bluebird.reject(new TemporaryError('No active profile'));
   }
 
   return getManifest(api, '', gameId)
@@ -118,17 +118,17 @@ export function purgeMods(api: IExtensionApi,
               const discovery = getSafe(state,
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
               if ((game === undefined) || (discovery?.path === undefined)) {
-                return Promise.reject(err);
+                return Bluebird.reject(err);
               }
               const modTypePaths = game.getModPaths(discovery.path);
               const modPaths = Object.keys(modTypePaths).map(modType => modTypePaths[modType]);
               if (modPaths.includes(err.path)) {
                 // This confirms it - the mods folder is missing - user removed it.
                 //  In this case we still want to allow the removal.
-                return Promise.resolve();
+                return Bluebird.resolve();
               }
             } else {
-              return Promise.reject(err);
+              return Bluebird.reject(err);
             }
           });
       }
@@ -136,7 +136,7 @@ export function purgeMods(api: IExtensionApi,
 }
 
 function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
-                       profile: IProfile): Promise<void> {
+                       profile: IProfile): Bluebird<void> {
   const state = api.store.getState();
   const { gameId } = profile;
   const stagingPath = installPathForGame(state, gameId);
@@ -149,7 +149,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       message: 'Can\'t purge because game is not discovered',
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   log('info', 'current deployment method is',
@@ -162,7 +162,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
     // throwing this exception on stagingPath === undefined isn't exactly
     // accurate but the effect is the same: User has to activate the game
     // and review settings before deployment is possible
-    return Promise.reject(new NoDeployment());
+    return Bluebird.reject(new NoDeployment());
   }
 
   if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
@@ -172,7 +172,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       message: 'Can\'t purge while the game or a tool is running',
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const notificationId: string = shortid();
@@ -215,7 +215,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
                                           modPaths, lastDeployment))
       .tap(() => onProgress(25, 'Removing links'))
       // purge all mod types
-      .then(() => Promise.mapSeries(modTypes, (typeId: string, idx: number) => {
+      .then(() => Bluebird.mapSeries(modTypes, (typeId: string, idx: number) => {
         // calculating progress for the actual file removal is a bit awkward, we get the idx
         // and total for each mod type separately. The total removal progress should cover 50%
         // of our progress bar, each mod type is then a fraction of that.
@@ -227,7 +227,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       }))
       .tap(() => onProgress(75, 'Saving updated manifest'))
       // save (empty) activation
-      .then(() => Promise.map(modTypes, typeId =>
+      .then(() => Bluebird.map(modTypes, typeId =>
           saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                          [], activator.id)))
       // the deployment may be changed so on an exception we still need to update it
@@ -237,14 +237,14 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
           // to clean up
           return;
         }
-        return Promise.map(modTypes, typeId =>
+        return Bluebird.map(modTypes, typeId =>
           filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
             .then(files =>
               saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                 files, activator.id)));
       })
       .catch(ProcessCanceled, () => null)
-      .then(() => Promise.resolve())
+      .then(() => Bluebird.resolve())
       .tap(() => onProgress(85, 'Post purge events'))
       .finally(() => activator.postPurge())
       .then(() => api.emitAndAwait('did-purge', profile.id));
@@ -257,7 +257,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
 }
 
 export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: string,
-                                modPath: string): Promise<void> {
+                                modPath: string): Bluebird<void> {
   const state = api.store.getState();
   const profile: IProfile = (gameId !== undefined)
     ? profileById(state, lastActiveProfileForGame(state, gameId))
@@ -272,7 +272,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
   const activator = getCurrentActivator(state, gameId, false);
 
   if (activator === undefined) {
-    return Promise.reject(new NoDeployment());
+    return Bluebird.reject(new NoDeployment());
   }
 
   if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
@@ -282,7 +282,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       message: 'Can\'t purge while the game or a tool is running',
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const notificationId: string = shortid();
@@ -323,7 +323,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       .then(() => saveActivation(gameId, typeId, state.app.instanceId, modPath, stagingPath,
                          [], activator.id))
       .catch(ProcessCanceled, () => null)
-      .then(() => Promise.resolve())
+      .then(() => Bluebird.resolve())
       .finally(() => activator.postPurge())
       .tap(() => onProgress(75, 'Post purge events'))
       .then(() => api.emitAndAwait('did-purge', profile.id));

@@ -1,6 +1,3 @@
-import chromePath from './util/chromePath';
-
-import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 
 function getText(id: string, t: TFunction): string {

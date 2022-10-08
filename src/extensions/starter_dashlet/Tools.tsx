@@ -26,7 +26,7 @@ import { setPrimaryTool, setToolOrder } from './actions';
 
 import ToolEditDialog from './ToolEditDialog';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 import { Media } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -46,7 +46,7 @@ import { useSelector } from 'react-redux';
 import Tool from './Tool';
 
 interface IBaseProps {
-  onGetValidTools: (starters: IStarterInfo[], gameMode: string) => Promise<string[]>;
+  onGetValidTools: (starters: IStarterInfo[], gameMode: string) => Bluebird<string[]>;
 }
 
 interface IConnectedProps {
@@ -92,7 +92,7 @@ interface IActionProps {
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Bluebird<IDialogResult>;
   onSetPrimary: (gameId: string, toolId: string) => void;
   onSetToolOrder: (gameId: string, tools: string[]) => void;
 }

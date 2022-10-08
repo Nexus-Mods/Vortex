@@ -1,4 +1,4 @@
-import PromiseBB from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
@@ -26,7 +26,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => PromiseBB<IDialogResult>;
+                 content: IDialogContent, actions: DialogActions) => Bluebird<IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;

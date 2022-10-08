@@ -5,7 +5,7 @@ import { UserCanceled } from '../../../util/CustomErrors';
 import { activeGameId, discoveryByGame, gameName } from '../../../util/selectors';
 import { SITE_ID } from '../../gamemode_management/constants';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 /**
  * Determine which game to install a download for.
@@ -13,7 +13,7 @@ import Promise from 'bluebird';
  */
 function queryGameId(store: ThunkStore<any>,
                      downloadGameIds: string[],
-                     fileName: string): Promise<string> {
+                     fileName: string): Bluebird<string> {
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
@@ -24,16 +24,16 @@ function queryGameId(store: ThunkStore<any>,
   if (gameMode === undefined && downloadGameIds.length === 1) {
     // Surely if there's no active game, and the downloaded game id
     //  array contains a single element, then we can just use that.
-    return Promise.resolve(downloadGameIds[0]);
+    return Bluebird.resolve(downloadGameIds[0]);
   }
 
   if (downloadGameIds.indexOf(gameMode) !== -1) {
     // the managed game is compatible to the archive so use that
-    return Promise.resolve(gameMode);
+    return Bluebird.resolve(gameMode);
   }
 
   if ((downloadGameIds.length === 1) && (downloadGameIds[0] === SITE_ID)) {
-    return Promise.resolve(downloadGameIds[0]);
+    return Bluebird.resolve(downloadGameIds[0]);
   }
 
   const profiles = state.persistent.profiles;
@@ -46,7 +46,7 @@ function queryGameId(store: ThunkStore<any>,
     profileGames.has(gameId) && (discoveryByGame(state, gameId)?.path !== undefined));
 
   // ask the user
-  return new Promise<string>((resolve, reject) => {
+  return new Bluebird<string>((resolve, reject) => {
     const options = [
       { label: 'Cancel', action: () => reject(new UserCanceled()) },
     ];

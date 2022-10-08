@@ -31,7 +31,7 @@ import { finalizeDownload } from './util/postprocessDownload';
 
 import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -77,7 +77,7 @@ export class DownloadObserver {
   private static INTERCEPT_TIMEOUT = 60000;
   private mApi: IExtensionApi;
   private mManager: DownloadManager;
-  private mOnFinishCBs: { [dlId: string]: Array<() => Promise<void>> } = {};
+  private mOnFinishCBs: { [dlId: string]: Array<() => Bluebird<void>> } = {};
   private mInterceptedDownloads: Array<{ time: number, tag: string }> = [];
 
   constructor(api: IExtensionApi, manager: DownloadManager) {
@@ -106,8 +106,8 @@ export class DownloadObserver {
   }
 
   // enqueues an operation to be run when a download finishes
-  private queueFinishCB(id: string, cb: () => Promise<void>): Promise<void> {
-    return new Promise((resolve) => {
+  private queueFinishCB(id: string, cb: () => Bluebird<void>): Bluebird<void> {
+    return new Bluebird((resolve) => {
       setdefault(this.mOnFinishCBs, id, []).push(() => cb().then(resolve));
     });
   }
@@ -133,7 +133,7 @@ export class DownloadObserver {
 
   private handleDownloadError(err: Error, id: string, downloadPath: string,
                               allowOpenHTML: boolean,
-                              callback?: (err: Error, id: string) => void): Promise<void> {
+                              callback?: (err: Error, id: string) => void): Bluebird<void> {
     const innerState: IState = this.mApi.getState();
     if (err instanceof DownloadIsHTML) {
       const filePath: string =
@@ -153,17 +153,17 @@ export class DownloadObserver {
     } else if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
-      const prom: Promise<void> = (filePath !== undefined)
+      const prom: Bluebird<void> = (filePath !== undefined)
         ? fs.removeAsync(path.join(downloadPath, filePath))
           .catch(cleanupErr => {
             // this is a cleanup step. If the file doesn' exist that's fine with me
             if ((cleanupErr instanceof UserCanceled) || (cleanupErr['code'] === 'ENOENT')) {
-              return Promise.resolve();
+              return Bluebird.resolve();
             } else {
-              return Promise.reject(cleanupErr);
+              return Bluebird.reject(cleanupErr);
             }
           })
-        : Promise.resolve();
+        : Bluebird.resolve();
 
       return prom
         .catch(innerErr => {
@@ -192,7 +192,7 @@ export class DownloadObserver {
       return this.handleUnknownDownloadError(err, id, callback);
     }
 
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private handleStartDownload(urls: string[],
@@ -261,7 +261,7 @@ export class DownloadObserver {
       ensureDownloadsDirectory(this.mApi)
         .then(() => {
           if (this.wasIntercepted(modInfo?.referenceTag)) {
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           }
 
           return this.mManager.enqueue(id, urls, fileName, processCB,
@@ -274,9 +274,9 @@ export class DownloadObserver {
           log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           if ((dlId !== undefined) && (downloads[dlId].state !== 'failed')) {
             err.downloadId = dlId;
-            return Promise.reject(err);
+            return Bluebird.reject(err);
           } else if (this.wasIntercepted(modInfo?.referenceTag)) {
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           } else {
             // there is a file but with no meta data. force the download instead
             downloadOptions.redownload = 'replace';
@@ -320,9 +320,9 @@ export class DownloadObserver {
 
     const onceFinished = () => {
       if (this.mOnFinishCBs[id] !== undefined) {
-        return Promise.all(this.mOnFinishCBs[id].map(cb => cb())).then(() => null);
+        return Bluebird.all(this.mOnFinishCBs[id].map(cb => cb())).then(() => null);
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     };
 
@@ -391,7 +391,7 @@ export class DownloadObserver {
       }
     };
 
-    const onceStopped = (): Promise<void> => {
+    const onceStopped = (): Bluebird<void> => {
       if (truthy(download.localPath) && truthy(download.game)) {
         // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
         // would put manually added downloads into the download root if no game was being managed.
@@ -419,7 +419,7 @@ export class DownloadObserver {
           });
       } else {
         this.mApi.store.dispatch(removeDownload(downloadId));
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     };
 
@@ -586,7 +586,7 @@ export class DownloadObserver {
         });
       }
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private getExtraDlOptions(modInfo: any, redownload: RedownloadMode): IDownloadOptions {

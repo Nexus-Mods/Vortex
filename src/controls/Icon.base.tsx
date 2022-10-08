@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as React from 'react';
 
 const debugMissingIcons = process.env.NODE_ENV === 'development';
@@ -42,7 +42,7 @@ export interface IIconProps {
    * get access to the specified set. This allows implementations to lazy-load icon sets
    * on demand
    */
-  getSet: (set: string) => Promise<Set<string>>;
+  getSet: (set: string) => Bluebird<Set<string>>;
 
   onContextMenu?: React.MouseEventHandler<any>;
 }

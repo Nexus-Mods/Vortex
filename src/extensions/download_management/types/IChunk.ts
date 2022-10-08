@@ -1,7 +1,7 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 export interface IChunk {
-  url: () => Promise<string>;
+  url: () => Bluebird<string>;
   received: number;
   offset: number;
   size: number;

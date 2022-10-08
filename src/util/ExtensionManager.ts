@@ -45,7 +45,7 @@ import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
 import { filteredEnvironment, isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { ipcMain, ipcRenderer, OpenDialogOptions, WebContents } from 'electron';
 import { EventEmitter } from 'events';
@@ -630,7 +630,7 @@ class EventProxy extends EventEmitter {
           if (arg.__promise === undefined) {
             return arg;
           } else {
-            return new Promise((resolve, reject) => {
+            return new Bluebird((resolve, reject) => {
               this.mRemotePromises[arg.__promise] = { resolve, reject };
             });
           }
@@ -681,7 +681,7 @@ type CBFunc = (...args: any[]) =>  void;
 interface IStartHook {
   priority: number;
   id: string;
-  hook: (input: IRunParameters) => Promise<IRunParameters>;
+  hook: (input: IRunParameters) => Bluebird<IRunParameters>;
 }
 
 function convertMD5Result(input: ILookupResult): IModLookupResult {
@@ -690,7 +690,7 @@ function convertMD5Result(input: ILookupResult): IModLookupResult {
 
 interface IRepositoryLookup {
   preferOverMD5: boolean;
-  func: (id: IModRepoId) => Promise<IModLookupResult[]>;
+  func: (id: IModRepoId) => Bluebird<IModLookupResult[]>;
 }
 
 /**
@@ -726,7 +726,7 @@ class ExtensionManager {
   private mRepositoryLookup: { [repository: string]: IRepositoryLookup } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
-  private mModDBPromise: Promise<void>;
+  private mModDBPromise: Bluebird<void>;
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
@@ -740,7 +740,7 @@ class ExtensionManager {
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
-  private mUIStartedPromise: Promise<void>;
+  private mUIStartedPromise: Bluebird<void>;
   private mOutdated: string[] = [];
   private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
@@ -753,7 +753,7 @@ class ExtensionManager {
       this.mEventEmitter.setMaxListeners(100);
     }
 
-    this.mUIStartedPromise = new Promise(resolve => {
+    this.mUIStartedPromise = new Bluebird(resolve => {
       this.mOnUIStarted = resolve;
     });
 
@@ -1019,7 +1019,7 @@ class ExtensionManager {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
     this.apply('registerStartHook', (priority: number, id: string,
-                                     hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+                                     hook: (input: IRunParameters) => Bluebird<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
     this.apply('registerToolVariables', (func: ToolParameterCB) => {
@@ -1078,7 +1078,7 @@ class ExtensionManager {
    * call the "once" function for all extensions. This should really only be called
    * once.
    */
-  public doOnce(): Promise<void> {
+  public doOnce(): Bluebird<void> {
     const calls = this.mContextProxyHandler.getCalls(
       process.type === 'renderer' ? 'once' : 'onceMain');
 
@@ -1092,7 +1092,7 @@ class ExtensionManager {
         err, { allowReport });
     };
 
-    return Promise.mapSeries(calls, (call, idx) => {
+    return Bluebird.mapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
       const ext = this.mExtensions.find(iter => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
@@ -1100,7 +1100,7 @@ class ExtensionManager {
         this.mLoadingCallbacks.forEach(cb => {
           cb(call.extension, idx);
         });
-        const prom = call.arguments[0]() || Promise.resolve();
+        const prom = call.arguments[0]() || Bluebird.resolve();
 
         const start = Date.now();
         return timeout(prom, 60000, {
@@ -1165,8 +1165,8 @@ class ExtensionManager {
     }
   }
 
-  private queryLoadTimeout(extension: string): Promise<boolean> {
-    return Promise.resolve(showMessageBox({
+  private queryLoadTimeout(extension: string): Bluebird<boolean> {
+    return Bluebird.resolve(showMessageBox({
       type: 'warning',
       title: 'Extension slow',
       message: `An extension (${extension}) is taking unusually long to load. `
@@ -1177,7 +1177,7 @@ class ExtensionManager {
     .then(result => result.response === 1);
   }
 
-  private getModDB = (): Promise<modmetaT.ModDB> => {
+  private getModDB = (): Bluebird<modmetaT.ModDB> => {
     const gameMode = activeGameId(this.mApi.store.getState());
     const currentKey =
       getSafe(this.mApi.store.getState(),
@@ -1187,13 +1187,13 @@ class ExtensionManager {
 
     let onDone: () => void;
     if (this.mModDBPromise === undefined) {
-      this.mModDBPromise = new Promise<void>((resolve, reject) => {
+      this.mModDBPromise = new Bluebird<void>((resolve, reject) => {
         onDone = () => {
           this.mModDBPromise = undefined;
           resolve();
         };
       });
-      init = Promise.resolve();
+      init = Bluebird.resolve();
     } else {
       init = this.mModDBPromise;
     }
@@ -1210,10 +1210,10 @@ class ExtensionManager {
             .then(() => this.mModDB = undefined);
         }
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
       .then(() => (this.mModDB !== undefined)
-        ? Promise.resolve()
+        ? Bluebird.resolve()
         : this.connectMetaDB(gameMode, currentKey)
           .then(modDB => {
             this.mModDB = modDB;
@@ -1240,7 +1240,7 @@ class ExtensionManager {
     );
   }
 
-  private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
+  private connectMetaDB(gameId: string, apiKey: string): Bluebird<modmetaT.ModDB> {
     const dbPath = path.join(getVortexPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
@@ -1256,7 +1256,7 @@ class ExtensionManager {
           .then(result => {
             if (result.action === 'Quit') {
               getApplication().quit();
-              return Promise.reject(new ProcessCanceled('meta db locked'));
+              return Bluebird.reject(new ProcessCanceled('meta db locked'));
             }
             return this.connectMetaDB(gameId, apiKey);
           });
@@ -1377,7 +1377,7 @@ class ExtensionManager {
   }
 
   private migrateExtensions() {
-    type MigrationFunc = (oldVersion: string) => Promise<void>;
+    type MigrationFunc = (oldVersion: string) => Bluebird<void>;
 
     const migrations: { [ext: string]: MigrationFunc[] } = {};
 
@@ -1400,7 +1400,7 @@ class ExtensionManager {
             if (migrations[ext.name] === undefined) {
               this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
-              Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
+              Bluebird.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
                   log('info', 'set extension version',
                       { name: ext.name, info: JSON.stringify(ext.info) });
@@ -1427,7 +1427,7 @@ class ExtensionManager {
     return getVortexPath(name as any);
   }
 
-  private selectFile(options: IOpenOptions): Promise<string> {
+  private selectFile(options: IOpenOptions): Bluebird<string> {
     const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
@@ -1435,7 +1435,7 @@ class ExtensionManager {
     if (options.create === true) {
       fullOptions.properties.push('promptToCreate');
     }
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1453,7 +1453,7 @@ class ExtensionManager {
         { name: 'Python', extensions: ['py'] },
       ],
     };
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1464,7 +1464,7 @@ class ExtensionManager {
       ..._.omit(options, ['create']),
       properties: ['openDirectory'],
     };
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1486,7 +1486,7 @@ class ExtensionManager {
   private registerRepositoryLookup =
        (repository: string,
         preferOverMD5: boolean,
-        func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
+        func: (id: IModRepoId) => Bluebird<IModLookupResult[]>) => {
     this.mRepositoryLookup[repository] = { preferOverMD5, func };
   }
 
@@ -1500,15 +1500,15 @@ class ExtensionManager {
   }
 
   private lookupModReference =
-      (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
+      (reference: IModReference, options?: ILookupOptions): Bluebird<IModLookupResult[]> => {
     if (options === undefined) {
       options = {};
     }
 
     log('debug', 'lookup mod reference', { reference });
 
-    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
-    let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
+    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Bluebird<IModLookupResult[]> };
+    let preMD5: Bluebird<IModLookupResult[]> = Bluebird.resolve([]);
     if (reference.repo !== undefined) {
       lookup = this.mRepositoryLookup[reference.repo.repository];
     }
@@ -1573,7 +1573,7 @@ class ExtensionManager {
   }
 
   private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
-      : Promise<ILookupResult[]> => {
+      : Bluebird<ILookupResult[]> => {
     if ((detail.fileName !== undefined) && (detail.fileSize === 0)) {
       log('error', 'trying to calculate hash for an empty file', {
         name: detail.fileName,
@@ -1581,23 +1581,23 @@ class ExtensionManager {
       });
       const err = new ProcessCanceled('trying to calculate hash for an empty file');
       err['fileName'] = detail.fileName;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     }
     let lookupId = this.modLookupId(detail);
     if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
-      return Promise.resolve(this.mModDBCache[lookupId]);
+      return Bluebird.resolve(this.mModDBCache[lookupId]);
     }
     let fileMD5 = detail.fileMD5;
     let fileSize = detail.fileSize;
 
     if ((fileMD5 === undefined) && (detail.filePath === undefined)) {
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     }
 
-    let promise: Promise<void>;
+    let promise: Bluebird<void>;
 
     if (fileMD5 === undefined) {
       promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
@@ -1613,14 +1613,14 @@ class ExtensionManager {
       })
       .catch(err => {
         log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
-        return Promise.resolve();
+        return Bluebird.resolve();
       });
     } else {
-      promise = Promise.resolve();
+      promise = Bluebird.resolve();
     }
     // lookup id may be updated now
     if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
-      return Promise.resolve(this.mModDBCache[lookupId]);
+      return Bluebird.resolve(this.mModDBCache[lookupId]);
     }
     return promise
       .then(() => this.getModDB())
@@ -1630,7 +1630,7 @@ class ExtensionManager {
       .then((result: ILookupResult[]) => {
         const resultSorter = this.makeSorter(detail);
         this.mModDBCache[lookupId] = result.sort(resultSorter);
-        return Promise.resolve(this.mModDBCache[lookupId]);
+        return Bluebird.resolve(this.mModDBCache[lookupId]);
       });
   }
 
@@ -1680,7 +1680,7 @@ class ExtensionManager {
     };
   }
 
-  private saveModMeta = (modInfo: IModInfo): Promise<void> => {
+  private saveModMeta = (modInfo: IModInfo): Bluebird<void> => {
     const lookupId = this.modLookupId({
       fileMD5: modInfo.fileMD5,
       filePath: modInfo.fileName,
@@ -1690,7 +1690,7 @@ class ExtensionManager {
     delete this.mModDBCache[lookupId];
     return this.getModDB()
       .then(modDB => {
-        return new Promise<void>((resolve, reject) => {
+        return new Bluebird<void>((resolve, reject) => {
           modDB.insert([modInfo]);
           resolve();
         });
@@ -1699,7 +1699,7 @@ class ExtensionManager {
 
   private openArchive = (archivePath: string,
                          options?: IArchiveOptions,
-                         ext?: string): Promise<Archive> => {
+                         ext?: string): Bluebird<Archive> => {
     if (this.mArchiveHandlers === undefined) {
       // lazy loading the archive handlers
       this.mArchiveHandlers = {};
@@ -1710,25 +1710,25 @@ class ExtensionManager {
     }
     const creator = this.mArchiveHandlers[ext];
     if (creator === undefined) {
-      return Promise.reject(new NotSupportedError());
+      return Bluebird.reject(new NotSupportedError());
     }
     return creator(archivePath, options || {})
-      .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
+      .then((handler: IArchiveHandler) => Bluebird.resolve(new Archive(handler)));
   }
 
-  private applyStartHooks(input: IRunParameters): Promise<IRunParameters> {
+  private applyStartHooks(input: IRunParameters): Bluebird<IRunParameters> {
     let updated = input;
-    return Promise.each(this.mStartHooks, hook => hook.hook(updated)
+    return Bluebird.each(this.mStartHooks, hook => hook.hook(updated)
       .then((newParameters: IRunParameters) => {
         updated = newParameters;
       })
       .catch(UserCanceled, err => {
         log('debug', 'start canceled by user');
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       })
       .catch(ProcessCanceled, err => {
         log('debug', 'hook canceled start', err.message);
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       })
       .catch(err => {
         if (err instanceof UserCanceled) {
@@ -1738,22 +1738,22 @@ class ExtensionManager {
         } else {
           log('error', 'hook failed', err);
         }
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }))
     .then(() => updated);
   }
 
   private runExecutable =
-    (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+    (executable: string, args: string[], options: IRunOptions): Bluebird<void> => {
       if (!truthy(executable)) {
-        return Promise.reject(new ProcessCanceled('Executable not set'));
+        return Bluebird.reject(new ProcessCanceled('Executable not set'));
       }
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
         try {
           ({ executable, args, options } = interpreter({ executable, args, options }));
         } catch (err) {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
       }
 
@@ -1771,9 +1771,9 @@ class ExtensionManager {
       return this.applyStartHooks({ executable, args, options })
       .then(updatedParameters => {
         ({ executable, args, options } = updatedParameters);
-        return Promise.resolve();
+        return Bluebird.resolve();
       })
-      .then(() => new Promise<void>((resolve, reject) => {
+      .then(() => new Bluebird<void>((resolve, reject) => {
         try {
           const runExe = options.shell
             ? `"${executable}"`
@@ -1892,19 +1892,19 @@ class ExtensionManager {
         .catch(ProcessCanceled, () => null)
         .catch({ code: 'EACCES' }, () =>
           this.runElevated(executable, cwd, args, env, options.onSpawned))
-        .catch({ code: 'ECANCELED' }, () => Promise.reject(new UserCanceled()))
-        .catch({ systemCode: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch({ code: 'ECANCELED' }, () => Bluebird.reject(new UserCanceled()))
+        .catch({ systemCode: 1223 }, () => Bluebird.reject(new UserCanceled()))
         // Is errno still used ? looks like shellEx call returns systemCode instead
-        .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch({ errno: 1223 }, () => Bluebird.reject(new UserCanceled()))
         .catch((err) => {
           if (err.message.toLowerCase().indexOf('the operation was canceled by the user') !== -1) {
             // This is more of a sanity check than anything else as one user report
             //  contained none of the properties we rely on to detect when a user
             //  cancels the UAC dialog.
             //  https://github.com/Nexus-Mods/Vortex/issues/8524
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           }
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         });
   }
 
@@ -1912,7 +1912,7 @@ class ExtensionManager {
                       env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
     const ipcPath = shortid();
     let tmpFilePath: string;
-    return new Promise((resolve, reject) => {
+    return new Bluebird((resolve, reject) => {
       this.startIPC(ipcPath, err => {
         if (err !== null) {
           reject(err);
@@ -1945,10 +1945,10 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
-    let queue = Promise.resolve();
+  private emitAndAwait = (event: string, ...args: any[]): Bluebird<any> => {
+    let queue = Bluebird.resolve();
     const results: any[] = [];
-    const enqueue = (prom: Promise<any>) => {
+    const enqueue = (prom: Bluebird<any>) => {
       if (prom !== undefined) {
         queue = queue.then(() => prom
           .then(res => {
@@ -1992,7 +1992,7 @@ class ExtensionManager {
     });
   }
 
-  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Promise<T>) => {
+  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Bluebird<T>) => {
     return (...args: any[]) => {
       return this.emitAndAwait(`will-${eventName}`, ...args)
       .then(() => cb(...args))

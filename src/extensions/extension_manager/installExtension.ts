@@ -13,7 +13,7 @@ import { countryExists, languageExists } from '../settings_interface/languagemap
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
@@ -22,7 +22,7 @@ import * as vortexRunT from 'vortex-run';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
 
-const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
+const rimrafAsync: (removePath: string, options: any) => Bluebird<void> = Bluebird.promisify(rimraf);
 
 class ContextProxyHandler implements ProxyHandler<any> {
   private mDependencies: string[] = [];
@@ -52,7 +52,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 }
 
-function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
+function installExtensionDependencies(api: IExtensionApi, extPath: string): Bluebird<void> {
   const handler = new ContextProxyHandler();
   const context = new Proxy({}, handler);
 
@@ -62,14 +62,14 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 
     const state: IState = api.store.getState();
 
-    return Promise.map(handler.dependencies, depId => {
+    return Bluebird.map(handler.dependencies, depId => {
       const ext = state.session.extensions.available.find(iter =>
         (!iter.type && ((iter.name === depId) || (iter.id === depId))));
 
       if (ext !== undefined) {
         return api.emitAndAwait('install-extension', ext);
       } else {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     })
     .then(() => null);
@@ -78,9 +78,9 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
     //   and registers actions
     if ((err.name === 'TypeError')
         && (err.message.startsWith('Duplicate action type'))) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
-    return Promise.reject(err);
+    return Bluebird.reject(err);
   }
 }
 
@@ -94,7 +94,7 @@ function sanitize(input: string): string {
   }
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
+function removeOldVersion(api: IExtensionApi, info: IExtension): Bluebird<void> {
   const state: IState = api.store.getState();
   const { installed }  = state.session.extensions;
 
@@ -113,7 +113,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
   }
 
   previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
-  return Promise.resolve();
+  return Bluebird.resolve();
 }
 
 /**
@@ -121,26 +121,26 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
  * per theme, each is expected to contain at least one of
  * "variables.scss", "style.scss" or "fonts.scss"
  */
-function validateTheme(extPath: string): Promise<void> {
+function validateTheme(extPath: string): Bluebird<void> {
   return fs.readdirAsync(extPath)
     .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
       if (dirNames.length === 0) {
-        return Promise.reject(
+        return Bluebird.reject(
           new DataInvalid('Expected a subdirectory containing the stylesheets'));
       }
-      return Promise.map(dirNames, dirName =>
+      return Bluebird.map(dirNames, dirName =>
         fs.readdirAsync(path.join(extPath, dirName))
           .then(files => {
             if (!files.includes('variables.scss')
                 && !files.includes('style.scss')
                 && !files.includes('fonts.scss')) {
-              return Promise.reject(
+              return Bluebird.reject(
                 new DataInvalid('Theme not found'));
             } else {
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
           }))
         .then(() => null);
@@ -160,7 +160,7 @@ function isLocaleCode(input: string): boolean {
  * validate a translation extension. Can only contain one iso-code named directory (other
  * directories are ignored) which needs to contain at least one json file
  */
-function validateTranslation(extPath: string): Promise<void> {
+function validateTranslation(extPath: string): Bluebird<void> {
   return fs.readdirAsync(extPath)
     .filter((fileName: string) => isLocaleCode(fileName))
     .filter((fileName: string) =>
@@ -168,7 +168,7 @@ function validateTranslation(extPath: string): Promise<void> {
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
       if (dirNames.length !== 1) {
-        return Promise.reject(
+        return Bluebird.reject(
           new DataInvalid('Expected exactly one language subdirectory'));
       }
       // the check in isLocaleCode is extremely unreliable because it will fall back to
@@ -177,15 +177,15 @@ function validateTranslation(extPath: string): Promise<void> {
       const [language, country] = dirNames[0].split('-');
       if (!languageExists(language)
           || (country !== undefined) && !countryExists(country)) {
-        return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
+        return Bluebird.reject(new DataInvalid('Directory isn\'t a language code'));
       }
       return fs.readdirAsync(path.join(extPath, dirNames[0]))
         .then(files => {
           if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
-            return Promise.reject(new DataInvalid('No translation files'));
+            return Bluebird.reject(new DataInvalid('No translation files'));
           }
 
-          return Promise.resolve();
+          return Bluebird.resolve();
         });
     });
 }
@@ -193,19 +193,19 @@ function validateTranslation(extPath: string): Promise<void> {
 /**
  * validate an extension. It has to contain an index.js and info.json on the top-level
  */
-function validateExtension(extPath: string): Promise<void> {
-  return Promise.all([
+function validateExtension(extPath: string): Bluebird<void> {
+  return Bluebird.all([
     fs.statAsync(path.join(extPath, 'index.js')),
     fs.statAsync(path.join(extPath, 'info.json')),
   ])
     .then(() => null)
     .catch({ code: 'ENOENT' }, () => {
-      return Promise.reject(
+      return Bluebird.reject(
         new DataInvalid('Extension needs to include index.js and info.json on top-level'));
     });
 }
 
-function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
+function validateInstall(extPath: string, info?: IExtension): Bluebird<ExtensionType> {
   if (info === undefined) {
     let validAsTheme: boolean = true;
     let validAsTranslation: boolean = true;
@@ -221,34 +221,34 @@ function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionT
       .catch(DataInvalid, () => validAsExtension = false)
       .then(() => {
         if (!validAsExtension && !validAsTheme && !validAsTranslation) {
-          return Promise.reject(
+          return Bluebird.reject(
             new DataInvalid('Doesn\'t seem to contain a correctly packaged extension, '
               + 'theme or translation'));
         }
 
         // at least one type was valid, let's guess what it really is
         if (validAsExtension) {
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         } else if (validAsTranslation) {
           // it's unlikely we would mistake a theme for a translation since it would require
           // it to contain a directory named like a iso language code including json files.
-          return Promise.resolve('translation' as ExtensionType);
+          return Bluebird.resolve('translation' as ExtensionType);
         } else {
-          return Promise.resolve('theme' as ExtensionType);
+          return Bluebird.resolve('theme' as ExtensionType);
         }
       });
   } else if (info.type === 'theme') {
-    return validateTheme(extPath).then(() => Promise.resolve('theme' as ExtensionType));
+    return validateTheme(extPath).then(() => Bluebird.resolve('theme' as ExtensionType));
   } else if (info.type === 'translation') {
-    return validateTranslation(extPath).then(() => Promise.resolve('translation' as ExtensionType));
+    return validateTranslation(extPath).then(() => Bluebird.resolve('translation' as ExtensionType));
   } else {
-    return validateExtension(extPath).then(() => Promise.resolve(undefined));
+    return validateExtension(extPath).then(() => Bluebird.resolve(undefined));
   }
 }
 
 function installExtension(api: IExtensionApi,
                           archivePath: string,
-                          info?: IExtension): Promise<void> {
+                          info?: IExtension): Bluebird<void> {
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
   let destPath: string;
   const tempPath = path.join(extensionsPath, path.basename(archivePath)) + '.installing';
@@ -281,11 +281,11 @@ function installExtension(api: IExtensionApi,
         return res;
       })
       .catch({ code: 'ENOENT' }, () => (info !== undefined)
-        ? Promise.resolve({
+        ? Bluebird.resolve({
             id: path.basename(archivePath, path.extname(archivePath)),
             info,
           })
-        : Promise.reject(new Error('not an extension, info.json missing')))
+        : Bluebird.reject(new Error('not an extension, info.json missing')))
       .then(manifestInfo =>
         // update the manifest on disc, in case we had new info from the caller
         fs.writeFileAsync(path.join(tempPath, 'info.json'),
@@ -311,14 +311,14 @@ function installExtension(api: IExtensionApi,
               .then(stat => ({ name: entry, stat })))
             .then(() => null);
         } else if (type === 'theme') {
-          return Promise.resolve();
+          return Bluebird.resolve();
         } else {
           // don't install dependencies for extensions that are already loaded because
           // doing so could cause an exception
           if (api.getLoadedExtensions().find(ext => ext.name === extName) === undefined) {
             return installExtensionDependencies(api, destPath);
           } else {
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
         }
       })
@@ -328,7 +328,7 @@ function installExtension(api: IExtensionApi,
                                               { allowReport: false, message: archivePath })))
       .catch(err =>
         rimrafAsync(tempPath, { glob: false })
-        .then(() => Promise.reject(err)));
+        .then(() => Bluebird.reject(err)));
 }
 
 export default installExtension;

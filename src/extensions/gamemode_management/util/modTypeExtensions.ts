@@ -1,7 +1,7 @@
 import { IInstruction, IModTypeOptions } from '../../../types/IExtensionContext';
 import { IGame, IModType } from '../../../types/IGame';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 
 const modTypeExtensions: IModType[] = [];
 
@@ -24,7 +24,7 @@ export function getModType(id: string): IModType {
 export function registerModType(id: string, priority: number,
                                 isSupported: (gameId: string) => boolean,
                                 getPath: (game: IGame) => string,
-                                test: (instructions: IInstruction[]) => Promise<boolean>,
+                                test: (instructions: IInstruction[]) => Bluebird<boolean>,
                                 options?: IModTypeOptions) {
   modTypeExtensions.push({
     typeId: id,

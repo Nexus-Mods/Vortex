@@ -44,7 +44,7 @@ import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as RemoteT from '@electron/remote';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import { genHash, IHashResult } from 'modmeta-db';
 import Zip = require('node-7z');
@@ -73,7 +73,7 @@ const addLocalInProgress = new Set<string>();
 
 function withAddInProgress(fileName: string, cb: () => PromiseLike<void>): PromiseLike<void> {
   addLocalInProgress.add(fileName);
-  return Promise.resolve(cb())
+  return Bluebird.resolve(cb())
     .finally(() => {
       addLocalInProgress.delete(fileName);
     });
@@ -88,9 +88,9 @@ function knownArchiveExt(filePath: string): boolean {
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
                           normalize: (input: string) => string,
-                          onAddDownload: (name: string) => Promise<void>,
-                          onRemoveDownload: (name: string) => Promise<void>,
-                          confirmElevation: () => Promise<void>) {
+                          onAddDownload: (name: string) => Bluebird<void>,
+                          onRemoveDownload: (name: string) => Bluebird<void>,
+                          confirmElevation: () => Bluebird<void>) {
   return fs.ensureDirWritableAsync(downloadPath, confirmElevation)
     .then(() => fs.readdirAsync(downloadPath))
     .filter((filePath: string) => knownArchiveExt(filePath))
@@ -104,12 +104,12 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
       const removedDLs = knownDLs.filter((name: string) =>
         dlsNormalized.indexOf(name) === -1);
 
-      return Promise.map(addedDLs, onAddDownload)
-        .then(() => Promise.map(removedDLs, onRemoveDownload));
+      return Bluebird.map(addedDLs, onAddDownload)
+        .then(() => Bluebird.map(removedDLs, onRemoveDownload));
     });
 }
 
-export type ProtocolHandler = (inputUrl: string, name: string) => Promise<IResolvedURL>;
+export type ProtocolHandler = (inputUrl: string, name: string) => Bluebird<IResolvedURL>;
 
 export interface IExtensionContextExt extends IExtensionContext {
   // register a download protocol handler
@@ -124,7 +124,7 @@ function attributeExtractor(input: any) {
   if (Array.isArray(downloadGame)) {
     downloadGame = downloadGame[0];
   }
-  return Promise.resolve({
+  return Bluebird.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
@@ -138,7 +138,7 @@ function attributeExtractor(input: any) {
 }
 
 function attributeExtractorCustom(input: any) {
-  return Promise.resolve(input.download?.modInfo?.custom || {});
+  return Bluebird.resolve(input.download?.modInfo?.custom || {});
 }
 
 function genDownloadChangeHandler(api: IExtensionApi,
@@ -184,7 +184,7 @@ function genDownloadChangeHandler(api: IExtensionApi,
       // this delay is intended to prevent this from picking up files that Vortex added itself.
       // It is not enough however to prevent this from getting the wrong file size if the file
       // copy/write takes more than this one second.
-      Promise.delay(1000)
+      Bluebird.delay(1000)
         .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
         .then(stats => {
           let dlId = findDownload(fileName);
@@ -257,7 +257,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
     if (gameId === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   }
   const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
@@ -294,9 +294,9 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
           (fileName: string) => {
             // the fileName here is already normalized
             api.store.dispatch(removeDownload(nameIdMap[fileName]));
-            return Promise.resolve();
+            return Bluebird.resolve();
           },
-          () => new Promise((resolve, reject) => {
+          () => new Bluebird((resolve, reject) => {
             api.showDialog('question', 'Access Denied', {
               text: 'The download directory is not writable to your user account.\n'
                 + 'If you have admin rights on this system, Vortex can change the permissions '
@@ -325,16 +325,16 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
     });
 }
 
-function testDownloadPath(api: IExtensionApi): Promise<void> {
+function testDownloadPath(api: IExtensionApi): Bluebird<void> {
   return ensureDownloadsDirectory(api)
-    .catch(ProcessCanceled, () => Promise.resolve())
-    .catch(UserCanceled, () => Promise.resolve())
+    .catch(ProcessCanceled, () => Bluebird.resolve())
+    .catch(UserCanceled, () => Bluebird.resolve())
     .catch(err => {
       const errTitle = (err.code === 'EPERM')
         ? 'Insufficient permissions'
         : 'Downloads folder error';
 
-      return new Promise<void>((resolve) => {
+      return new Bluebird<void>((resolve) => {
         api.showDialog('error', errTitle, {
           text: 'Unable to finalize downloads folder creation/transfer. Please ensure your OS '
               + 'account has full read/write permissions for the target destination and try again. '
@@ -374,7 +374,7 @@ function queryReplace(api: IExtensionApi, destination: string) {
     { label: 'Replace' },
   ])
   .then(result => (result.action === 'Cancel')
-    ? Promise.reject(new UserCanceled())
+    ? Bluebird.reject(new UserCanceled())
     : removeArchive(api.store, destination));
 }
 
@@ -399,7 +399,7 @@ function processInstallError(api: IExtensionApi,
 }
 
 function postImport(api: IExtensionApi, destination: string,
-                    fileSize: number, silent: boolean): Promise<string> {
+                    fileSize: number, silent: boolean): Bluebird<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
@@ -449,7 +449,7 @@ function postImport(api: IExtensionApi, destination: string,
 
 function move(api: IExtensionApi,
               source: string, destination: string,
-              silent: boolean): Promise<string> {
+              silent: boolean): Bluebird<string> {
   const notiId = silent ? undefined : api.sendNotification({
     type: 'activity',
     title: 'Importing file',
@@ -522,7 +522,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
 
     log('debug', 'importing download(s)', downloadPaths);
     const downloadPath = selectors.downloadPathForGame(state, gameMode);
-    Promise.map(downloadPaths, dlPath => {
+    Bluebird.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
       let destination = path.join(downloadPath, fileName);
       return fs.statAsync(dlPath)
@@ -551,19 +551,19 @@ function genImportDownloadsHandler(api: IExtensionApi) {
   };
 }
 
-function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
+function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
   const gameMode = selectors.activeGameId(state);
   if (gameMode === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   result = {
@@ -573,7 +573,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
       long: 'An attempt to move the download folder was interrupted. You should let '
           + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
-    automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+    automaticFix: () => new Bluebird<void>((fixResolve, fixReject) => {
       api.sendNotification({
         id: 'transfer-cleanup',
         message: 'Cleaning up interrupted transfer',
@@ -604,7 +604,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     }),
   };
 
-  return Promise.resolve(result);
+  return Bluebird.resolve(result);
 }
 
 let shutdownPending: boolean = false;
@@ -667,7 +667,7 @@ function checkForUnfinalized(api: IExtensionApi,
       actions: [
         {
           title: 'Repair', action: dismiss => {
-            Promise.map(unfinalized, id => {
+            Bluebird.map(unfinalized, id => {
               const gameId = Array.isArray(downloads[id].game)
                 ? downloads[id].game[0]
                 : gameMode;
@@ -929,13 +929,13 @@ function init(context: IExtensionContextExt): boolean {
 
       updateShutdown(selectors.activeDownloads(state));
 
-      Promise.map(filtered, dlId => {
+      Bluebird.map(filtered, dlId => {
         const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
         if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
           log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         context.api.lookupModMeta({
           filePath: path.join(downloadPath, cur[dlId].localPath),

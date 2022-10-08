@@ -1,7 +1,7 @@
 import { log } from '../util/log';
 import IconBase from './Icon.base';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import * as fs from 'fs';
@@ -29,12 +29,12 @@ export interface IIconProps {
   onContextMenu?: React.MouseEventHandler<Icon>;
 }
 
-export function installIconSet(set: string, setPath: string): Promise<Set<string>> {
+export function installIconSet(set: string, setPath: string): Bluebird<Set<string>> {
   const newset = document.createElement('div');
   newset.id = 'iconset-' + set;
   document.getElementById('icon-sets').appendChild(newset);
   log('info', 'read font', setPath);
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     fs.readFile(setPath, {}, (err, data) => {
       if (err !== null) {
         return reject(err);
@@ -56,7 +56,7 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
 const loadingIconSets = new Set<string>();
 
 class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
-  private mLoadPromise: Promise<any>;
+  private mLoadPromise: Bluebird<any>;
   private mMounted: boolean = false;
 
   constructor(props: IIconProps) {
@@ -82,7 +82,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
     return <IconBase {...this.props} getSet={this.loadSet} />;
   }
 
-  private loadSet = (set: string): Promise<Set<string>> => {
+  private loadSet = (set: string): Bluebird<Set<string>> => {
     const { sets } = this.state;
     if ((sets[set] === undefined) && !loadingIconSets.has(set)) {
       { // mark the set as being loaded
@@ -105,7 +105,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         newSymbols.forEach(ele => {
           newSet.add(ele.id);
         });
-        this.mLoadPromise = Promise.resolve(newSet);
+        this.mLoadPromise = Bluebird.resolve(newSet);
       } else {
         // make sure that no other icon instance tries to render this icon
         const fontPath = path.resolve(getVortexPath('assets'), 'fonts', set + '.svg');
@@ -125,7 +125,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         return newSet;
       });
     } else {
-      return Promise.resolve(sets[set] || null);
+      return Bluebird.resolve(sets[set] || null);
     }
   }
 }
