@@ -208,7 +208,7 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
         });
 
         if (!truthy(selectedPath)) {
-          throw new UserCanceled();
+          return ensureStagingDirectoryImpl(api, instPath, gameId); 
         }
 
         try {
