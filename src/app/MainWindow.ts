@@ -9,7 +9,7 @@ import { log } from '../util/log';
 import opn from '../util/opn';
 import { downloadPath } from '../util/selectors';
 import * as storeHelperT from '../util/storeHelper';
-import { truthy } from '../util/util';
+import { parseBool, truthy } from '../util/util';
 import { closeAllViews } from '../util/webview';
 
 import Promise from 'bluebird';
@@ -104,7 +104,7 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (this.mInspector || process.env.START_DEVTOOLS) {
+    if (this.mInspector || parseBool(process.env.START_DEVTOOLS)) {
       // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }

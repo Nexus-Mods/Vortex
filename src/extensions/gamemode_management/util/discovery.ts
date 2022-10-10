@@ -1,8 +1,10 @@
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
+import { GameEntryNotFound } from '../../../types/IGameStore';
 import { IGameStoreEntry } from '../../../types/IGameStoreEntry';
 import { ITool } from '../../../types/ITool';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
 import GameStoreHelper from '../../../util/GameStoreHelper';
@@ -165,6 +167,8 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
             store = storeDetected;
             return resolvedInfo;
           });
+      } else if (resolvedInfo === undefined) {
+        return Promise.reject(new GameEntryNotFound(game.id, 'unknown'));
       } else {
         store = resolvedInfo.gameStoreId;
         return resolvedInfo.gamePath;
@@ -256,8 +260,14 @@ export function quickDiscovery(knownGames: IGame[],
           prom = Bluebird.resolve(undefined);
         }
         return prom.catch(err => {
-          log('error', 'failed to use game support plugin',
-              { id: game.id, err: err.message, stack: err.stack });
+          if (!(err instanceof GameEntryNotFound)
+              && !(err instanceof ProcessCanceled)
+              // probably an extension using registry for discovery but I don't like
+              // ignoring these
+              && !(err.name === 'WinApiException')) {
+            log('error', 'failed to use game support plugin',
+                { id: game.id, err: err.message, stack: err.stack });
+          }
           // don't escalate exception because a single game shouldn't break everything
           return Bluebird.resolve(undefined);
         });

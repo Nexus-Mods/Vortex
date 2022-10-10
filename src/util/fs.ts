@@ -371,13 +371,18 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
 }
 
 function restackErr(error: Error, stackErr: Error): Error {
+  const newErr = new Error(error.message);
+  Object.keys(error).forEach(key => {
+    newErr[key] = error[key];
+  });
+
   // resolve the stack at the last possible moment because stack is actually a getter
   // that will apply expensive source mapping when called
-  Object.defineProperty(error, 'stack', {
-    get: () => error.message + '\n' + stackErr.stack,
+  Object.defineProperty(newErr, 'stack', {
+    get: () => error.message + '\n' + error.stack + '\nPrior Context:\n' + stackErr.stack.split('\n').slice(1).join('\n'),
     set: () => null,
   });
-  return error;
+  return newErr;
 }
 
 interface IErrorHandlerOptions {
