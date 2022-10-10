@@ -28,6 +28,7 @@ import { IGroupList, IInstallerState } from './types/interface';
 import {
   getPluginPath,
   getStopPatterns,
+  initGameSupport,
 } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
 
@@ -933,6 +934,7 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
 }
 
 function init(context: IExtensionContext): boolean {
+  initGameSupport(context.api);
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
 
   const installWrap = async (useAppContainer, files, scriptPath, gameId,

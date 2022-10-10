@@ -1,11 +1,11 @@
 import { IGame } from '../../../types/IGame';
 
 import * as path from 'path';
-import * as Redux from 'redux';
-import { IState } from '../../../types/IState';
+import { IDiscoveryResult } from '../../../types/IState';
 import getVortexPath from '../../../util/getVortexPath';
 import { discoveryByGame } from '../../gamemode_management/selectors';
 import { makeOverlayableDictionary } from '../../../util/util';
+import { IExtensionApi } from '../../../types/IExtensionContext';
 
 function bethIni(gamePath: string, iniName: string) {
   return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
@@ -308,25 +308,29 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
     },
     fallout4: {
       iniPath: () => bethIni('Fallout4 MS', 'Fallout4'),
-    }
-
+    },
   },
-}, (gameId: string) => gameStoreForGame(gameId));
-
-let gameStoreForGame: (gameId: string) => string = () => undefined;
-
-export function initGameSupport(store: Redux.Store<IState>) {
-  const state: IState = store.getState();
-
-  gameStoreForGame = (gameId: string) => discoveryByGame(store.getState(), gameId).store;
-
-  const {discovered} = state.settings.gameMode;
-
-  if (discovered['enderalspecialedition']?.path !== undefined) {
-    if (discovered['enderalspecialedition']?.path.toLowerCase().includes('skyrim')) {
-      gameSupport['enderalspecialedition'].iniPath = gameSupport['skyrimse'].iniPath;
-    }
+  enderalseOverlay: {
+    enderalspecialedition: {
+      iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
+    },
+  },
+}, (gameId: string) => {
+  const discovery = discoveryForGame(gameId);
+  if ((discovery.path !== undefined)
+      && (gameId === 'enderalspecialedition')
+      && discovery.path.includes('skyrim')) {
+    return 'enderalseOverlay';
   }
+  else {
+    return discovery.store;
+  }
+});
+
+let discoveryForGame: (gameId: string) => IDiscoveryResult = () => undefined;
+
+export function initGameSupport(api: IExtensionApi) {
+  discoveryForGame = (gameId: string) => discoveryByGame(api.store.getState(), gameId);
 }
 
 export function getIniFilePath(gameMode: string): string {
