@@ -2040,6 +2040,7 @@ class InstallManager {
                                      dependencies: IDependency[],
                                      gameId: string,
                                      sourceModId: string,
+                                     recommended: boolean,
                                      downloadAndInstall: (dep: IDependency) => Promise<string>,
                                      abort: AbortController)
                                      : Promise<IDependency[]> {
@@ -2081,12 +2082,45 @@ class InstallManager {
           if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
             return Promise.resolve(undefined);
           }
+          const refName = renderModReference(dep.reference, undefined);
+          if (dep.extra?.dropIfUnfulfilled) {
+            api.store.dispatch(addModRule(gameId, sourceModId, {
+              type: recommended ? 'recommends' : 'requires',
+              ..._.pick(dep, ['reference', 'extra', 'fileList', 'installerChoices']),
+              ignored: true,
+            }));
+            api.sendNotification({
+              type: 'warning',
+              title: 'Unfulfillable rule dropped',
+              message: refName,
+              actions: [
+                { title: 'More', action: () => {
+                  const sourceMod = api.getState().persistent.mods[gameId]?.[sourceModId];
+                  api.showDialog('info', 'Unfulfillable rule dropped', {
+                    text: 'The mod "{{modName}}" has a dependency on "{{refName}}" which '
+                        + 'Vortex is not able to fulfill automatically.\n\n'
+                        + 'Very likely Vortex would also not recognize the rule as '
+                        + 'fulfilled even if you did install it manually. Therefore the rule '
+                        + 'has been disabled.\n\n'
+                        + 'Please consult the mod instructions on if and how to solve this dependency.',
+                    parameters: {
+                      modName: modName(sourceMod),
+                      refName,
+                    },
+                  }, [
+                    { label: 'Close' },
+                  ])
+                } },
+              ],
+            });
+            return Promise.resolve(undefined);
+          }
           api.showErrorNotification('Failed to install dependency',
             '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
             + 'be available. You may want to install a current version of the specified mod '
             + 'and update or remove the dependency for the old one.', {
             allowReport: false,
-            message: renderModReference(dep.reference, undefined),
+            message: refName,
             replace: {
               errorMessage: err.message,
             },
@@ -2431,6 +2465,7 @@ class InstallManager {
           return prev;
         }
         return this.doInstallDependenciesPhase(api, depList, gameId, sourceModId,
+                                               recommended,
                                                doDownload, abort)
           .then((updated: IDependency[]) => {
             if (idx === phaseList.length - 1) {
