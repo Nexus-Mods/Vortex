@@ -109,6 +109,7 @@ import { relaunch } from './util/commandLine';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import getVortexPath, { setVortexPath } from './util/getVortexPath';
+import presetManager from './util/PresetManager';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
@@ -323,6 +324,27 @@ function errorHandler(evt: any) {
     return;
   }
 
+  const dynPaths = ExtensionManager.getExtensionPaths().filter(extPath => !extPath.bundled);
+
+  if (dynPaths.length > 0) {
+    if (error.stack.includes(`at ${dynPaths[0].path}`)) {
+      const extPath = (dynPaths[0].path + path.sep).replace(/[\\]/g, '\\\\');
+      const re = new RegExp(
+        `at ${extPath}(Vortex Extension Update - )?([^/\\\\]*)`);
+      const reMatch = error.stack.match(re);
+      const extName = reMatch?.[2] ?? 'unknown';
+      log('error', 'extension caused an unhandled exception', {
+        name: extName,
+        error: error.stack,
+      });
+      extensions?.getApi()?.showErrorNotification?.('Unhandled exception in extension', error, {
+        message: extName,
+        allowReport: false,
+      });
+      return;
+    }
+  }
+
   if (error.message === 'Cannot read property \'parentNode\' of undefined'
   || (error.message === 'Cannot read properties of undefined (reading \'parentNode\')')) {
     // thrown by packery - seemingly at random
@@ -404,11 +426,12 @@ if (process.env.NODE_ENV === 'development') {
 
 let tFunc: TFunction = fallbackTFunc;
 let startupFinished: () => void;
+let extensions: ExtensionManager;
 
 function init() {
   // extension manager initialized without store, the information about what
   // extensions are to be loaded has to be retrieved from the main process
-  const extensions: ExtensionManager = new ExtensionManager(
+  extensions = new ExtensionManager(
     undefined,
     eventEmitter,
   );
@@ -434,6 +457,7 @@ function init() {
   replayActionRenderer(store);
   extensions.setStore(store);
   setOutdated(extensions.getApi());
+  presetManager.setApi(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log('debug', 'renderer connected to store');
 
@@ -650,6 +674,9 @@ function renderer(extensions: ExtensionManager) {
           details: err,
         }, store.getState());
       }))
+    .then(() => {
+      presetManager.start();
+    })
     .then(() => {
       extensions.setUIReady();
       log('debug', 'render with language', { language: i18n.language });

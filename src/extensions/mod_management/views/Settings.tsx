@@ -4,9 +4,10 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
+import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IState } from '../../../types/IState';
+import { InstallPathMode, IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled, TemporaryError,
@@ -27,7 +28,7 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { setDeploymentNecessary } from '../actions/deployment';
-import { setActivator, setInstallPath } from '../actions/settings';
+import { setActivator, setInstallPath, setInstallPathMode } from '../actions/settings';
 import { setTransferMods } from '../actions/transactions';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
@@ -50,6 +51,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as winapi from 'winapi-bindings';
+import { ProvidePlugin } from 'webpack';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -65,6 +67,8 @@ interface IConnectedProps {
   modActivity: string[];
   modPaths: { [modType: string]: string };
   instanceId: string;
+  installPathMode: InstallPathMode;
+  suggestInstallPathDirectory: string;
 }
 
 interface IActionProps {
@@ -79,6 +83,7 @@ interface IActionProps {
   ) => Promise<IDialogResult>;
   onShowError: (message: string, details: string | Error | any,
                 allowReport?: boolean, isBBCode?: boolean) => void;
+  onSetInstallPathMode: (installPathMode: InstallPathMode) => void;
 }
 
 interface IComponentState {
@@ -138,34 +143,50 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discovery, game } = this.props;
+    const { t, discovery, game, installPathMode, suggestInstallPathDirectory } = this.props;
     const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
-    if ((game === undefined)
-        || (discovery === undefined)
-        || (discovery.path === undefined)) {
-      return (
-        <EmptyPlaceholder
-          icon='settings'
-          text={t('Please select a game to manage first')}
-          subtext={t('Settings on this page can be set for each game individually.')}
-        />
-      );
-    }
-
-    let gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
-    if (gameName !== undefined) {
-      gameName = gameName.split('\t').map(part => t(part)).join(' ');
-    }
-
-    return (
-      // Prevent default submit event for the form as it will
-      //  cause Vortex to refresh (same thing as pressing F5).
-      <form onSubmit={this.submitEvt}>
-        <Panel>
+    const panels: React.ReactNode[] = [
+      (
+        <Panel key='defaults'>
           <Panel.Body>
-            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})',
-                                 { replace: { name: gameName } }), supportedActivators)}
+            <ControlLabel>
+              {t('Defaults')}
+            </ControlLabel>
+            <Toggle checked={installPathMode === 'suggested'} onToggle={this.toggleInstallPathMode}>
+              {t('Automatically use suggested path for staging folder')}
+              <More id='staging_path_mode' name='Staging Path Mode'>
+                {t('Usually, when you first manage a game, the staging folder is initially set to be in '
+                  + '"c:\\Users\\<username>\\AppData\\Roaming\\Vortex\\<game>" because that\'s '
+                  + 'guaranteed to exist and have the necessary file permissions set up.\n\n'
+                  + 'If you enable this option, it will instead put the staging folder on the same drive '
+                  + 'as the primary mod folder of each game, in <drive>:\\{{suggestionPattern}}\\<game id>.\n'
+                  + 'This should usually work fine for most users and ensures deployment is possible.', {
+                  replace: {
+                    suggestionPattern: suggestInstallPathDirectory,
+                  },
+                })}
+              </More>
+            </Toggle>
+          </Panel.Body>
+        </Panel>
+      )
+    ];
+
+    if ((game !== undefined)
+        && (discovery?.path !== undefined)) {
+      let gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
+      if (gameName !== undefined) {
+        gameName = gameName.split('\t').map(part => t(part)).join(' ');
+      }
+
+      panels.push((
+        <Panel key='staging'>
+          <Panel.Body>
+            {this.renderPathCtrl(
+              t('Mod Staging Folder ({{name}})',
+                { replace: { name: gameName } }),
+              supportedActivators)}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -179,8 +200,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </Modal>
           </Panel.Body>
         </Panel>
-        <hr />
-        <Panel>
+      ), (
+        <Panel key='deployment'>
           <Panel.Body>
             <ControlLabel>
               {t('Deployment Method')}
@@ -191,12 +212,39 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {this.renderActivators(supportedActivators, currentActivator)}
           </Panel.Body>
         </Panel>
+      ));
+    } else {
+      panels.push((
+        <EmptyPlaceholder
+          icon='settings'
+          text={t('This screen will have more options once you start managing a game.')}
+          subtext={t('Most settings here can be configured for each game individually.')}
+        />
+      ));
+    }
+
+    return (
+      // Prevent default submit event for the form as it will
+      //  cause Vortex to refresh (same thing as pressing F5).
+      <form onSubmit={this.submitEvt}>
+        {...panels.reduce<React.ReactNode[]>((prev, panel, idx) => {
+          if (idx > 0) {
+            prev.push(<hr/>);
+          }
+          prev.push(panel);
+          return prev;
+        }, [])}
       </form>
     );
   }
 
   private submitEvt = (evt) => {
     evt.preventDefault();
+  }
+
+  private toggleInstallPathMode = () => {
+    const {installPathMode, onSetInstallPathMode} = this.props;
+    onSetInstallPathMode(installPathMode === 'userData' ? 'suggested' : 'userData');
   }
 
   /**
@@ -788,7 +836,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private suggestPath = () => {
-    const { modPaths, onShowError } = this.props;
+    const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
     Promise.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
@@ -796,7 +844,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           suggestion = path.join('{USERDATA}', '{game}', 'mods');
         } else {
           const volume = winapi.GetVolumePathName(modPaths['']);
-          suggestion = path.join(volume, 'Vortex Mods', '{game}');
+          suggestion = path.join(volume, suggestInstallPathDirectory, '{game}');
         }
         this.changePath(suggestion);
       })
@@ -922,6 +970,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
     modPaths: modPathsForGame(state, gameMode),
     instanceId: state.app.instanceId,
+    installPathMode: state.settings.mods.installPathMode,
+    suggestInstallPathDirectory: state.settings.mods.suggestInstallPathDirectory,
   };
 }
 
@@ -938,6 +988,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetActivator: (gameMode: string, id: string): void => {
       dispatch(setActivator(gameMode, id));
     },
+    onSetInstallPathMode: (installPathMode: InstallPathMode) => {
+      dispatch(setInstallPathMode(installPathMode));
+    },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details: string | Error,
@@ -950,4 +1003,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 export default
   translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(Settings),
-  ) as React.ComponentClass<{}>;
+  ) as React.ComponentClass<IBaseProps>;

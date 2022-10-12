@@ -848,3 +848,86 @@ const noInheritEnv: string[] = [
 export function filteredEnvironment(): NodeJS.ProcessEnv {
   return _.omit(process.env, noInheritEnv);
 }
+
+export function parseBool(input: string): boolean {
+  return ['true', 'yes', '1'].includes((input ?? '').toLowerCase());
+}
+
+export class Overlayable<KeyT extends string | number | symbol, ObjT> {
+  private mBaseData: Record<KeyT, ObjT>;
+  private mLayers: { [layer: string]: Record<KeyT, Partial<ObjT>> } = {};
+  private mDeduce: (key: KeyT, extraArg: any) => string;
+
+  public constructor(baseData: Record<KeyT, ObjT>,
+                     deduceLayer: (key: KeyT, extraArg: any) => string) {
+    this.mBaseData = baseData;
+    this.mDeduce = deduceLayer;
+  }
+
+  public setLayer(layerId: string, data: Record<KeyT, Partial<ObjT>>) {
+    this.mLayers[layerId] = data;
+  }
+
+  public keys(): string[] {
+    return Object.keys(this.mBaseData);
+  }
+
+  public has(key: KeyT): boolean {
+    return this.mBaseData[key] !== undefined;
+  }
+
+  public get<AttrT extends keyof ObjT, ValT extends ObjT[AttrT]>(
+    key: KeyT, attr: AttrT, extraArg?: any): ValT {
+
+    const layer = this.mDeduce(key, extraArg);
+    return (this.mLayers[layer]?.[key]?.[attr] as any)
+        ?? this.mBaseData[key]?.[attr];
+  }
+
+  public get baseData() {
+    return this.mBaseData;
+  }
+}
+
+const proxyHandler: ProxyHandler<Overlayable<any, any>> = {
+  ownKeys(target) {
+    return Reflect.ownKeys(target.baseData);
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    if (Reflect.has(target, prop)) {
+      return Reflect.getOwnPropertyDescriptor(target,  prop);
+    } else {
+      return {
+        enumerable: true,
+        configurable: true
+      };
+    }
+  },
+  has(target, prop) {
+    return Reflect.has(target, prop) || target.baseData[prop as any];
+  },
+  get(target, prop, receiver) {
+    return Reflect.get(target, prop, receiver) ?? target.baseData[prop as any];
+  },
+}
+
+/**
+ * helper function to create a dictionary that can have conditional
+ * overlays applied to it
+ * @param baseData the base data object
+ * @param layers keyed layers 
+ * @param deduceLayer determine the layer to be used for a given key. If this returns 
+ * @returns 
+ */
+export function makeOverlayableDictionary<KeyT extends string | number | symbol, ValueT>(
+  baseData: Record<KeyT, ValueT>,
+  layers: { [layerId: string]: Record<KeyT, Partial<ValueT>> },
+  deduceLayer: (key: KeyT, extraArg: any) => string): Overlayable<KeyT, ValueT> {
+
+  const res = new Overlayable<KeyT, ValueT>(baseData, deduceLayer);
+  for (const layerId of Object.keys(layers)) {
+    res.setLayer(layerId, layers[layerId]);
+  }
+
+  return new Proxy(res, proxyHandler);
+}

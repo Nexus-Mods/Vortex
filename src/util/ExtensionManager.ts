@@ -737,7 +737,7 @@ class ExtensionManager {
   private mStartHooks: IStartHook[];
   private mToolParameterCBs: ToolParameterCB[];
   private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
-  private mProgrammaticMetaServers: { [id: string]: any } = {};
+  private mProgrammaticMetaServers: { [id: string]: modmetaT.IServer } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
@@ -1232,12 +1232,11 @@ class ExtensionManager {
 
   private getMetaServerList(): modmetaT.IServer[] {
     const state = this.mApi.store.getState();
-    const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
+    const servers: { [key: string]: modmetaT.IServer } = getSafe(state, ['settings', 'metaserver', 'servers'], {});
 
-    return [].concat(
-      Object.keys(this.mProgrammaticMetaServers).map(id => this.mProgrammaticMetaServers[id]),
-      Object.keys(servers).map(id => servers[id]),
-    );
+    return Object.keys(servers).map(id => servers[id]).slice()
+      .concat(Object.values(this.mProgrammaticMetaServers))
+      .sort((lhs, rhs) => (lhs.priority ?? 100) - (rhs.priority ?? 100));
   }
 
   private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
@@ -2084,7 +2083,7 @@ class ExtensionManager {
     }, duration);
   }
 
-  private addMetaServer = (id: string, server: any) => {
+  private addMetaServer = (id: string, server: modmetaT.IServer) => {
     if (server !== undefined) {
       this.mProgrammaticMetaServers[id] = server;
     } else {

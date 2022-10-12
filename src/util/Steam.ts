@@ -12,15 +12,19 @@ import { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from '..
 import opn from './opn';
 
 import { IExtensionApi } from '../types/IExtensionContext';
+import { GameEntryNotFound } from '../types/IGameStore';
 import getVortexPath from './getVortexPath';
 
 const STORE_ID = 'steam';
+const STORE_NAME = 'Steam';
 const STEAM_EXEC = 'Steam.exe';
+const STORE_PRIORITY = 40;
 
 export interface ISteamEntry extends IGameStoreEntry {
   manifestData?: any;
 }
 
+/// obsolete, no longer used. But it's exported through the api
 export class GameNotFound extends Error {
   private mSearch;
   constructor(search: string) {
@@ -40,13 +44,13 @@ export class GameNotFound extends Error {
  * @class Steam
  */
 class Steam implements IGameStore {
-  public static GameNotFound = GameNotFound;
-  public id: string;
+  public id: string = STORE_ID;
+  public name: string = STORE_NAME;
+  public priority: number = STORE_PRIORITY;
   private mBaseFolder: Promise<string>;
   private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
-    this.id = STORE_ID;
     if (process.platform === 'win32') {
       // windows
       try {
@@ -71,7 +75,7 @@ class Steam implements IGameStore {
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new Steam.GameNotFound(namePattern));
+          return Promise.reject(new GameEntryNotFound(namePattern, STORE_ID));
         } else {
           return Promise.resolve(entry);
         }
@@ -129,7 +133,7 @@ class Steam implements IGameStore {
           //  provided information...
           : (appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1));
         if (found === undefined) {
-          return Promise.reject(new GameNotFound(appId));
+          return Promise.reject(new GameEntryNotFound(appId, STORE_ID));
         }
         return this.mBaseFolder.then((basePath) => {
           const steamExec = {
@@ -155,7 +159,7 @@ class Steam implements IGameStore {
       .then(entries => {
         const entry = entries.find(matcher);
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
+          return Promise.reject(new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID));
         } else {
           return Promise.resolve(entry);
         }

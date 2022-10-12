@@ -108,7 +108,9 @@ import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import commandLine from './util/commandLine';
+import type { IPresetStep, IPresetStepCommandLine } from './types/IPreset';
+
+import commandLine, { relaunch } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
@@ -119,6 +121,8 @@ import './util/monkeyPatching';
 import './util/webview';
 
 import * as child_processT from 'child_process';
+import * as fs from './util/fs';
+import presetManager from './util/PresetManager';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -132,13 +136,74 @@ const handleError = (error: any) => {
   terminate(toError(error), {});
 };
 
-function main() {
-  const mainArgs = commandLine(process.argv, false);
+async function firstTimeInit() {
+  // use this to do first time setup, that is: code to be run
+  // only the very first time vortex starts up.
+  // This functionality was introduced but then we ended up solving
+  // the problem in a different way that's why this is unused currently
+}
+
+async function main(): Promise<void> {
+  // important: The following has to be synchronous!
+  let mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
-    .then(() => {
-      app.quit();
+      .then(() => {
+        app.quit();
+      });
+  }
+
+  const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
+  process.env.NODE_OPTIONS = NODE_OPTIONS
+    + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
+    + ' --no-force-async-hooks-checks';
+
+  if (mainArgs.disableGPU) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('--disable-software-rasterizer');
+    app.commandLine.appendSwitch('--disable-gpu');
+  }
+
+  if (!app.requestSingleInstanceLock()) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('--in-process-gpu');
+    app.commandLine.appendSwitch('--disable-software-rasterizer');
+    app.quit();
+    return;
+  }
+
+  // async code only allowed from here on out
+
+  if (!presetManager.now('commandline', (step: IPresetStep): Promise<void> => {
+    (step as IPresetStepCommandLine).arguments.forEach(arg => {
+      mainArgs[arg.key] = arg.value ?? true;
     });
+    return Promise.resolve();
+  })) {
+    // if the first step was not a command-line instruction but we encounter one
+    // further down the preset queue, Vortex has to restart to process it.
+    // this is only relevant for the main process, if the renderer process encounters
+    // this it will have its own handler and can warn the user the restart is coming
+    presetManager.on('commandline', (): Promise<void> => {
+      // return a promise that doesn't finish
+      relaunch();
+      return new Promise(() => {
+        // nop
+      });
+    });
+  }
+
+  try {
+    await fs.statAsync(getVortexPath('userData'));
+  } catch (err) {
+    await firstTimeInit();
+  }
+
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
+
+  if (process.env.NODE_ENV === 'development') {
+    app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 
   // tslint:disable-next-line:no-submodule-imports
@@ -171,24 +236,6 @@ function main() {
     // quit this process, the new one is detached
     app.quit();
     return;
-  }
-
-  const NODE_OPTIONS = process.env.NODE_OPTIONS || '';
-  process.env.NODE_OPTIONS = NODE_OPTIONS
-    + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
-    + ' --no-force-async-hooks-checks';
-
-  if (mainArgs.disableGPU) {
-    app.disableHardwareAcceleration();
-    app.commandLine.appendSwitch('--disable-software-rasterizer');
-    app.commandLine.appendSwitch('--disable-gpu');
-  }
-
-  process.on('uncaughtException', handleError);
-  process.on('unhandledRejection', handleError);
-
-  if (process.env.NODE_ENV === 'development') {
-    app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 
   /* allow application controlled scaling

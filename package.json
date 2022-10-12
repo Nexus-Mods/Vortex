@@ -36,7 +36,8 @@
     "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
-    "buildext": "node ./tools/buildScripts/buildSingleExtension.js"
+    "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
+    "generate_validation": "generate-validation ."
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -161,7 +162,7 @@
     "concurrently": "^5.0.0",
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
-    "electron": "^19.0.0",
+    "electron": "^21.0.0",
     "electron-builder": "^22.13.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-rebuild": "^1.8.8",
@@ -192,6 +193,7 @@
     "terser-webpack-plugin": "^5.2.4",
     "ts-jest": "^27.1.2",
     "ts-loader": "^9.2.6",
+    "ts-v-gen": "^1.0.1",
     "tslint": "^5.20.1",
     "tslint-eslint-rules": "^5.4.0",
     "tslint-react": "^4.1.0",

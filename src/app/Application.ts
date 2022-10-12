@@ -1,10 +1,11 @@
-import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
+import {setApplicationVersion, setInstallType, setInstanceId, setWarnedAdmin} from '../actions/app';
 import { NEXUS_DOMAIN } from '../extensions/nexus_integration/constants';
 import { STATE_BACKUP_PATH } from '../reducers/index';
-import { ThunkStore } from '../types/api';
+import { ThunkStore } from '../types/IExtensionContext';
+import type { IPresetStep, IPresetStepHydrateState } from '../types/IPreset';
 import {IState} from '../types/IState';
 import { getApplication } from '../util/application';
-import commandLine, {IParameters, relaunch} from '../util/commandLine';
+import commandLine, {IParameters, ISetItem, relaunch} from '../util/commandLine';
 import { DataInvalid, DocumentsPathMissing, ProcessCanceled,
          UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
@@ -19,6 +20,7 @@ import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
+import presetManager from '../util/PresetManager';
 import { StateError } from '../util/reduxSanity';
 import startupSettings from '../util/startupSettings';
 import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
@@ -225,14 +227,6 @@ class Application {
         });
     });
 
-    if (!app.requestSingleInstanceLock()) {
-      app.disableHardwareAcceleration();
-      app.commandLine.appendSwitch('--in-process-gpu');
-      app.commandLine.appendSwitch('--disable-software-rasterizer');
-      app.quit();
-      return;
-    }
-
     app.on('activate', () => {
       if (this.mMainWindow !== undefined) {
         this.mMainWindow.create(this.mStore);
@@ -265,12 +259,18 @@ class Application {
         this.applyArguments(cfgFile);
       });
 
+      let startupMode: Promise<void>;
       if (args.get) {
-        this.handleGet(args.get, userData);
+        startupMode = this.handleGet(args.get, userData);
       } else if (args.set) {
-        this.handleSet(args.set, userData);
+        startupMode = this.handleSet(args.set, userData);
       } else if (args.del) {
-        this.handleDel(args.del, userData);
+        startupMode = this.handleDel(args.del, userData);
+      }
+      if (startupMode !== undefined) {
+        startupMode.then(() => {
+          app.quit();
+        });
       } else {
         this.regularStart(args);
       }
@@ -347,6 +347,8 @@ class Application {
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
+        .tap(() => log('debug', 'checking how Vortex was installed'))
+        .then(() => this.identifyInstallType())
         .tap(() => log('debug', 'checking if migration is required'))
         .then(() => this.checkUpgrade())
         .tap(() => log('debug', 'setting up error handlers'))
@@ -481,6 +483,16 @@ class Application {
       .catch(err => Promise.resolve(true));
   }
 
+  private identifyInstallType(): Promise<void> {
+    return fs.statAsync(path.join(getVortexPath('application'), 'Uninstall Vortex.exe'))
+      .then(() => {
+        this.mStore.dispatch(setInstallType('regular'));
+      })
+      .catch(() => {
+        this.mStore.dispatch(setInstallType('managed'));
+      });
+  }
+
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
     return timeout(Promise.resolve(isAdmin()), 1000)
@@ -583,14 +595,11 @@ class Application {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/g, '$1'));
   }
 
-  private handleGet(getPath: string | boolean, dbpath: string): Promise<void> {
-    if (typeof(getPath) === 'boolean') {
+  private handleGet(getPaths: string[] | boolean, dbpath: string): Promise<void> {
+    if (typeof(getPaths) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
-      app.quit();
       return;
     }
-
-    const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
 
@@ -600,78 +609,84 @@ class Application {
         return persist.getAllKeys();
       })
       .then(keys => {
-        const matches = keys
-          .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
-        return Promise.map(matches, match => persist.getItem(match)
-          .then(value => `${match.join('.')} = ${value}`));
-      }).then(output => { process.stdout.write(output.join('\n') + '\n'); })
-      .catch(err => { process.stderr.write(err.message + '\n'); })
+        return Promise.all(getPaths.map(getPath => {
+          const pathArray = this.splitPath(getPath);
+          const matches = keys
+            .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
+          return Promise.all(matches.map(match => persist.getItem(match)
+            .then(value => `${match.join('.')} = ${value}`)))
+            .then(output => { process.stdout.write(output.join('\n') + '\n'); })
+            .catch(err => { process.stderr.write(err.message + '\n'); });
+        }))
+          .then(() => null);
+      })
+      .catch(err => {
+        process.stderr.write(err.message + '\n');
+      })
       .finally(() => {
-        app.quit();
+        persist.close();
       });
   }
 
-  private handleSet(setParameters: string[], dbpath: string): Promise<void> {
-    if (setParameters.length !== 2) {
-      process.stdout.write('Usage: vortex --set <path>=<value>\n');
-      app.quit();
-      return;
-    }
-
-    const pathArray = this.splitPath(setParameters[0]);
-
+  private handleSet(setParameters: ISetItem[], dbpath: string): Promise<void> {
     let persist: LevelPersist;
 
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
-        return persist.getItem(pathArray)
-          .catch(() => undefined);
+
+        return Promise.all(setParameters.map((setParameter: ISetItem) => {
+          const pathArray = this.splitPath(setParameter.key);
+
+          return persist.getItem(pathArray)
+            .catch(() => undefined)
+            .then(oldValue => {
+              const newValue = setParameter.value.length === 0
+                ? undefined
+                : (oldValue === undefined) || (typeof (oldValue) === 'object')
+                  ? JSON.parse(setParameter.value)
+                  : oldValue.constructor(setParameter.value);
+              return persist.setItem(pathArray, newValue);
+            })
+            .then(() => { process.stdout.write('changed\n'); })
+            .catch(err => {
+              process.stderr.write(err.message + '\n');
+            })
+        }))
+          .then(() => null);
       })
-      .then(oldValue => {
-        const newValue = setParameters[1].length === 0
-          ? undefined
-          : (oldValue === undefined) || (typeof(oldValue) === 'object')
-            ? JSON.parse(setParameters[1])
-            : oldValue.constructor(setParameters[1]);
-        return persist.setItem(pathArray, newValue);
-      })
-      .then(() => { process.stdout.write('changed\n'); })
       .catch(err => {
         process.stderr.write(err.message + '\n');
       })
       .finally(() => {
-        app.quit();
+        persist.close();
       });
   }
 
-  private handleDel(delPath: string, dbpath: string): Promise<void> {
-    const pathArray = this.splitPath(delPath);
-
+  private handleDel(delPaths: string[], dbpath: string): Promise<void> {
     let persist: LevelPersist;
-
-    let found = false;
 
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
         return persist.getAllKeys();
       })
-      .filter((key: string[]) => _.isEqual(key.slice(0, pathArray.length), pathArray))
-      .map((key: string[]) => {
-        // tslint:disable-next-line:no-console
-        console.log('removing', key.join('.'));
-        found = true;
-        return persist.removeItem(key);
+      .then(keys => {
+        return Promise.all(delPaths.map(delPath => {
+          const pathArray = this.splitPath(delPath);
+          const matches = keys
+            .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
+          return Promise.all(matches.map(match => persist.removeItem(match)
+            .then(() => process.stdout.write(`removed ${delPath}\n`))
+            .catch(err => { process.stderr.write(err.message + '\n'); })));
+        }))
+          .then(() => null);
       })
-      .then(() => {
-        if (!found) {
-          process.stdout.write('not found\n');
-        }
+      .catch(err => {
+        process.stderr.write(err.message + '\n')
       })
-      .catch(err => { process.stderr.write(err.message + '\n'); })
       .finally(() => {
-        app.quit();
+        persist.close();
       });
   }
 
@@ -891,6 +906,18 @@ class Application {
         } else {
           return Promise.resolve();
         }
+      })
+      .then(() => {
+        const hydrateHandler = (stepIn: IPresetStep): Promise<void> => {
+          newStore.dispatch({
+            type: '__hydrate',
+            payload: (stepIn as IPresetStepHydrateState).state,
+          });
+
+          return Promise.resolve();
+        }
+        presetManager.on('hydrate', hydrateHandler);
+        presetManager.now('hydrate', hydrateHandler);
       })
       .then(() => {
         this.mStore = newStore;

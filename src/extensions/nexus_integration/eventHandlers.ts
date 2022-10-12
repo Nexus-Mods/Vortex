@@ -22,15 +22,16 @@ import { IModListItem } from '../news_dashlet/types';
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId } from './util/convertGameId';
-import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
+import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseThing, processErrorMessage,
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
          resolveGraphError, startDownload, updateKey } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
+                IFileInfo,
                 IIssue, IModInfo, IRating, IRevision, NexusError,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
@@ -318,32 +319,43 @@ export function onNexusDownload(api: IExtensionApi,
   return (gameId: string, modId: number, fileId: number,
           fileName?: string, allowInstall?: boolean): Promise<string> => {
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
-    const APIKEY = getSafe(api.store.getState(),
-                           ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
-      api.showErrorNotification('Failed to start download',
-                                'You are not logged in to Nexus Mods!',
-                                { allowReport: false });
-      return Promise.resolve(undefined);
-    } else {
-      log('debug', 'on nexus download', fileName);
-      return downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall)
-        .catch(ProcessCanceled, err => {
-          api.sendNotification({
-            type: 'error',
-            message: err.message,
-          });
-        })
-        .catch(AlreadyDownloaded, err => {
-          const { files } = api.getState().persistent.downloads;
-          const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
-          return Promise.resolve(dlId);
-        })
-        .catch(err => {
-          api.showErrorNotification('Nexus download failed', err);
-          return Promise.resolve(undefined);
+    log('debug', 'on nexus download', fileName);
+    return ensureLoggedIn(api)
+      .then(() => downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall))
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'error',
+          message: err.message,
         });
+      })
+      .catch(AlreadyDownloaded, err => {
+        const { files } = api.getState().persistent.downloads;
+        const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
+        return Promise.resolve(dlId);
+      })
+      .catch(err => {
+        api.showErrorNotification('Nexus download failed', err);
+        return Promise.resolve(undefined);
+      });
+  };
+}
+
+export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
+    : (gameId: string, count?: number, offset?: number) => Promise<IRevision[]> {
+  return (gameId: string, count?: number, offset?: number): Promise<IRevision[]> => {
+    if (api.getState().persistent['nexus']?.userInfo?.userId === undefined) {
+      return Promise.resolve([]);
     }
+    const game = gameById(api.getState(), gameId);
+    return Promise.resolve(nexus.getMyCollections(
+      CURRENT_REVISION_INFO, nexusGameId(game), count, offset))
+      .then(res => (res ?? []).map(coll => coll.currentRevision))
+      .catch(err => {
+        if (err.code !== 'UNAUTHORIZED') {
+          api.showErrorNotification('Failed to get list of collections', err);
+        }
+        return Promise.resolve([]);
+      });
   };
 }
 
@@ -409,8 +421,8 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
         new Error('invalid parameter, revisionNumber has to be a number, '
                   + `got: ${revisionNumber}`));
     }
-    return Promise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
-                                                            collectionSlug, revisionNumber))
+    return Promise.resolve(nexus.getCollectionRevisionGraph(
+      FULL_REVISION_INFO, collectionSlug, revisionNumber > 0 ? revisionNumber : undefined))
       .catch(err => {
         const allowReport = !err.message.includes('network disconnected')
           && !err.message.includes('Cannot return null for non-nullable field CollectionRevision.collection')
@@ -487,6 +499,45 @@ export function onRateRevision(api: IExtensionApi, nexus: Nexus)
 interface IDownloadResult {
   error: Error;
   dlId?: string;
+}
+
+/**
+ * semver.coerce drops pre-release information from a
+ * perfectly valid semantic version string, don't want that
+ */
+function coerce(input: string): semver.SemVer {
+  try {
+    return new semver.SemVer(input);
+  } catch (err) {
+    return semver.coerce(input);
+  }
+}
+
+function semverCompare(lhs: string, rhs: string): number {
+  const l = coerce(lhs);
+  const r = coerce(rhs);
+  if ((l !== null) && (r !== null)) {
+    return semver.compare(l, r);
+  } else {
+    return lhs.localeCompare(rhs, 'en-US');
+  }
+}
+
+export function onGetLatestFile(api: IExtensionApi,
+                                nexus: Nexus)
+                                : (...args: any[]) => Promise<IFileInfo> {
+  return (modId: number, gameId: string, versionPattern?: string): Promise<IFileInfo> => {
+    return Promise.resolve(nexus.getModFiles(modId, gameId))
+      .then(fileResponse => {
+        let { files } = fileResponse;
+        if (versionPattern !== undefined) {
+          files = files.filter(iter =>
+            semver.satisfies(coerce(iter.version), versionPattern));
+        }
+        const sorted = files.sort((lhs, rhs) => semverCompare(rhs.version, lhs.version));
+        return sorted[0];
+      });
+  };
 }
 
 export function onDownloadUpdate(api: IExtensionApi,

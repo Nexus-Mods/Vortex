@@ -9,7 +9,7 @@ import { IProfile } from '../types/IProfile';
 /**
  * add or edit a profile
  */
-export const setProfile = safeCreateAction('SET_PROFILE', profileId => profileId);
+export const setProfile = safeCreateAction('SET_PROFILE', (profile: IProfile) => profile);
 
 export const removeProfile = safeCreateAction('REMOVE_PROFILE', profileId => profileId);
 
@@ -36,6 +36,7 @@ export const setProfileActivated =
 export interface IEnableOptions {
   installed?: boolean;
   allowAutoDeploy?: boolean;
+  willBeReplaced?: boolean;
 }
 
 const setModsEnabled = (() => {

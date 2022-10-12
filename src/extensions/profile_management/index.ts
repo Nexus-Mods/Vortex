@@ -20,6 +20,7 @@ import { addNotification, IDialogResult, showDialog } from '../../actions/notifi
 
 import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session';
 import { IAttachment, IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
+import type { IPresetStep, IPresetStepSetGame } from '../../types/IPreset';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, ServiceTemporarilyUnavailable, SetupError, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -29,6 +30,7 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
+import presetManager from '../../util/PresetManager';
 import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
@@ -134,7 +136,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  *
  * @param {string} gameId
  */
-function activateGame(store: ThunkStore<IState>, gameId: string) {
+function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> {
   log('info', 'activating game', { gameId });
   const state: IState = store.getState();
   if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
@@ -149,18 +151,18 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
     }));
     log('info', 'unselecting profile because game no longer discovered', { gameId });
     store.dispatch(setNextProfile(undefined));
-    return;
+    return Promise.resolve();
   }
 
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
-    undefined);
+                            undefined);
   const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
   if ((profileId === undefined) || (profile === undefined)) {
     const profiles = getSafe(state, ['persistent', 'profiles'], []);
     const gameProfiles: IProfile[] = Object.keys(profiles)
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
-    store.dispatch(showDialog('question', 'Choose profile', {
+    return store.dispatch(showDialog('question', 'Choose profile', {
       text: 'Please choose the profile to use with this game',
       choices: gameProfiles.map((iter: IProfile, idx: number) =>
         ({ id: iter.id, text: iter.name, value: idx === 0 })),
@@ -184,6 +186,7 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
     } else {
       store.dispatch(setNextProfile(undefined));
     }
+    return Promise.resolve();
   }
 }
 
@@ -409,13 +412,12 @@ function genOnProfileChange(api: IExtensionApi,
 
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   const profileId = shortid();
-  const instPath = installPathForGame(api.store.getState(), gameId);
   // initialize the staging directory.
   // It's not great that this is here, the code would better fit into mod_management
   // but I'm not entirely sure what could happen if it's not initialized right away.
   // Since the dir has to be tagged we can't just sprinkle "ensureDir" anywhere we want
   // to access it.
-  return ensureStagingDirectory(api, instPath, gameId)
+  return ensureStagingDirectory(api, undefined, gameId)
     .then(() => {
       log('info', 'user managing game for the first time', { gameId });
       api.store.dispatch(setProfile({
@@ -423,10 +425,12 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
         gameId,
         name: 'Default',
         modState: {},
+        lastActivated: undefined,
       }));
       api.store.dispatch(setNextProfile(profileId));
     })
     .catch(err => {
+      const instPath = installPathForGame(api.store.getState(), gameId);
       api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
         err, {
         allowReport: false,
@@ -435,7 +439,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
     });
 }
 
-function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
+function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<void> {
   let state: IState = api.store.getState();
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find(game => game.id === gameId);
@@ -447,18 +451,19 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);
     }
 
-    api.showDialog('question', 'Game support not installed', {
+    return api.showDialog('question', 'Game support not installed', {
       text: 'Support for this game is provided through an extension. To use it you have to '
         + 'download that extension and restart Vortex.',
     }, [
       { label: 'Cancel' },
       {
         label: 'Download', action: () => {
-          api.store.dispatch(setUIBlocker('installing-game', 'download',
+          api.store.dispatch(setUIBlocker(
+            'installing-game', 'download',
             'Installing Game, Vortex will restart upon completion.', true));
 
           api.ext.ensureLoggedIn()
-          .then(() => api.emitAndAwait('install-extension', extension))
+            .then(() => api.emitAndAwait('install-extension', extension))
             .then((results: boolean[]) => {
               if (results.includes(true)) {
                 relaunch(['--game', gameId]);
@@ -467,27 +472,30 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
             .finally(() => {
               api.store.dispatch(clearUIBlocker('installing-game'));
             })
-          .catch(err => {
-            if (err instanceof UserCanceled) {
-              return Promise.resolve();
-            }
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.resolve();
+              }
 
-            const allowReport = !(err instanceof ProcessCanceled)
-                             && !(err instanceof ServiceTemporarilyUnavailable);
-            api.showErrorNotification('Log-in failed', err, {
-              id: 'failed-get-nexus-key',
-              allowReport,
+              const allowReport = !(err instanceof ProcessCanceled)
+                && !(err instanceof ServiceTemporarilyUnavailable);
+              api.showErrorNotification('Log-in failed', err, {
+                id: 'failed-get-nexus-key',
+                allowReport,
+              });
             });
-          });
         },
       },
-    ]);
-    return;
+    ])
+      .then(() => Promise.resolve());
   }
 
-  api.showDialog('question', 'Game not discovered', {
-    text: 'This game hasn\'t been automatically discovered, you will have to set the game '
+  return api.showDialog('question', 'Game not discovered', {
+    text: '"{{gameName}}" hasn\'t been automatically discovered, you will have to set the game '
       + 'folder manually.',
+    parameters: {
+      gameName: gameStored.name,
+    }
   }, [
     { label: 'Continue' },
   ])
@@ -519,7 +527,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string) {
+function manageGame(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
   const discoveredGames = state.settings.gameMode?.discovered || {};
   const profiles = state.persistent.profiles || {};
@@ -527,12 +535,12 @@ function manageGame(api: IExtensionApi, gameId: string) {
   if (getSafe(discoveredGames, [gameId, 'path'], undefined) !== undefined) {
     const profile = Object.values(profiles).find(prof => prof.gameId === gameId);
     if (profile !== undefined) {
-      activateGame(api.store, gameId);
+      return activateGame(api.store, gameId);
     } else {
-      manageGameDiscovered(api, gameId);
+      return manageGameDiscovered(api, gameId);
     }
   } else {
-    manageGameUndiscovered(api, gameId);
+    return manageGameUndiscovered(api, gameId);
   }
 }
 
@@ -952,6 +960,11 @@ function init(context: IExtensionContext): boolean {
         }
       }
     }
+  
+    presetManager.on('setgame', (step: IPresetStep): Promise<void> => {
+      return manageGame(context.api, (step as IPresetStepSetGame).game)
+        .then(() => context.api.ext['awaitProfileSwitch']?.(context.api))
+    });
   });
 
   context.registerDialog('profile-transfer-connector', Connector);

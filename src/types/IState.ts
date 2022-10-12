@@ -11,6 +11,7 @@ import { IHistoryPersistent, IHistoryState } from '../extensions/history_managem
 import { IMod } from '../extensions/mod_management/types/IMod';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { IParameters } from '../util/commandLine';
+import VortexInstallType from './VortexInstallType';
 
 // re-export these to keep the imports from extensions local
 export { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -136,6 +137,7 @@ export interface IApp {
   appVersion: string;
   extensions: { [id: string]: IExtensionState };
   warnedAdmin: number;
+  installType: VortexInstallType;
   migrations: string[];
 }
 
@@ -218,10 +220,14 @@ export interface IStatePaths {
   install: string;
 }
 
+export type InstallPathMode = 'userData' | 'suggested';
+
 export interface ISettingsMods {
   installPath: { [gameId: string]: string };
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
+  installPathMode: InstallPathMode;
+  suggestInstallPathDirectory: string;
   showDropzone: boolean;
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;

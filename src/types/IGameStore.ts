@@ -64,15 +64,35 @@ export interface ICustomExecutionInfo {
 }
 
 /**
- * interface for game store launcher extensions
+ * interface for game store extensions
  *
  * @interface IGameStore
  */
 export interface IGameStore {
   /**
-   * This launcher's id.
+   * This store's id.
    */
   id: string;
+
+  /**
+   * This store's name. If unset, will use the id instead of the name when
+   * displaying to users
+   */
+  name?: string;
+
+  /**
+   * If a game is found on multiple stores, this controls which store is preferred (by default)
+   * (lower means preferred)
+   * This should be solely based on which store tends to be less problematic for modding
+   * (stuff like DRM and such), not a subjective preference of the store.
+   * 
+   * Values <= 30 are for stores that have features benefiting modding (no DRM GOG)
+   * Values >= 70 are for stores that have features hindering modding (extra DRM Xbox)
+   * Values between should all be ok, we only assign different values so the order is deterministic
+   * and because some stores provide better meta information than others or have more robust
+   * information
+   */
+  priority?: number;
 
   /**
    * Returns all recognized/installed games which are currently

@@ -58,8 +58,9 @@ import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
          makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
-         sanitizeFilename, semverCoerce, setdefault, toPromise, unique } from './util';
-import { Campaign, Section } from './util';
+         sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
+         makeOverlayableDictionary } from './util';
+import { Campaign, Section, Overlayable } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -121,6 +122,7 @@ export {
   lookupFromDownload,
   makeModReference,
   makeNormalizingDict,
+  makeOverlayableDictionary,
   makeQueue,
   makeReactive,
   makeRemoteCall,
@@ -135,6 +137,7 @@ export {
   objDiff,
   onceCB,
   opn,
+  Overlayable,
   pad,
   ProcessCanceled,
   ReduxProp,
@@ -160,6 +163,7 @@ export {
   ISteamEntry,
   terminate,
   testModReference,
+  toBlue,
   toPromise,
   unique,
   UserCanceled,

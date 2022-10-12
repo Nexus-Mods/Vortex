@@ -1,20 +1,24 @@
 import program from 'commander';
 import { app, ipcMain, ipcRenderer } from 'electron';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import * as process from 'process';
 import { getApplication } from './application';
+import { log } from './log';
 import startupSettings from './startupSettings';
 
 export interface IParameters {
   download?: string;
   install?: string;
+  installExtension?: string;
   report?: string;
   restore?: string;
   startMinimized?: boolean;
   game?: string;
   profile?: string;
-  get?: string;
-  set?: string[];
-  del?: string;
+  get?: string[];
+  set?: ISetItem[];
+  del?: string[];
   merge?: string;
   run?: string;
   shared?: boolean;
@@ -25,8 +29,18 @@ export interface IParameters {
   storeVersion?: string;
 }
 
-function assign(input: string): string[] {
-  return input.split('=');
+export interface ISetItem {
+  key: string;
+  value: string;
+}
+
+function assign(input: string, prev: ISetItem[]): ISetItem[] {
+  const [key, value] = input.split('=');
+  return (prev ?? []).concat([{ key, value }]);
+}
+
+function collect(value: string, prev: string[]): string[] {
+  return (prev ?? []).concat([value]);
 }
 
 const ARG_COUNTS = {
@@ -36,6 +50,7 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--install-extension': 1,
   '--start-minimized': 1,
   '--game': 1,
   '--profile': 1,
@@ -108,31 +123,34 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   const commandLine = program
     .command('Vortex')
     .version(version)
-    .option('-d, --download [url]', 'Start downloadling the specified url '
+    .option('-d, --download <url>', 'Start downloadling the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
-    .option('-i, --install [url]', 'Start downloadling & installing the specified url '
+    .option('-i, --install <url>', 'Start downloadling & installing the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
-    .option('-g, --get [path]', 'Print the state variable at the specified path and quit. '
-                              + 'For debugging')
-    .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
+    .option('--install-extension <id>', 'Start downloadling & installing the specified '
+                                       + 'vortex extension. id can be "modId:<number>".')
+    .option('-g, --get <path>', 'Print the state variable at the specified path and quit. '
+                              + 'This can be used repeatedly to print multiple items',
+            collect)
+    .option('-s, --set <path=value>', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
-    .option('--user-data [path]', 'Starts Vortex with a custom directory for the user data. '
+    .option('--del <path>', 'Remove a value in state', collect)
+    .option('--user-data <path>', 'Starts Vortex with a custom directory for the user data. '
                                   + 'Only use if you know what you\'re doing.')
     .option('--start-minimized', 'Starts Vortex in the task bar')
-    .option('--game [game id]', 'Starts Vortex with a different game enabled')
-    .option('--del [path]', 'Remove a value in state')
-    .option('--run [path]', 'Execute the js program instead of Vortex itself.')
-    .option('--report [path]', 'Send an error report. For internal use')
-    .option('--restore [path]', 'Restore a state backup')
-    .option('--merge [path]', 'Merge a state backup. Unlike restore, the content of the specified '
+    .option('--game <game id>', 'Starts Vortex with a different game enabled')
+    .option('--run <path>', 'Execute the js program instead of Vortex itself.')
+    .option('--report <path>', 'Send an error report. For internal use')
+    .option('--restore <path>', 'Restore a state backup')
+    .option('--merge <path>', 'Merge a state backup. Unlike restore, the content of the specified '
                               + 'state file will be merged into the existing state.')
     .option('--shared', 'Used in conjunction with set, get or del, this will access the database'
                                        + 'in the shared location instead of the per-user one')
-    .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
+    .option('--max-memory <size in MB>', 'Maximum amount of memory Vortex may use in MB '
                                        + '(defaults to 4096)')
     .option('--inspector', 'Start Vortex with the chrome inspector opened')
-    .option('--profile [profile id]', 'Start Vortex with a specific profile active')
+    .option('--profile <profile id>', 'Start Vortex with a specific profile active')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []).opts() as IParameters;
@@ -152,6 +170,7 @@ const SKIP_ARGS = {
   '--game': 1,
   '--profile': 1,
   '--install': 1,
+  '--install-extension': 1,
   '--restore': 1,
   '--merge': 1,
 };

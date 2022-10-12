@@ -2,6 +2,8 @@ import * as reduxAct from 'redux-act';
 
 import safeCreateAction from './safeCreateAction';
 
+import VortexInstallType from '../types/VortexInstallType';
+
 const id = input => input;
 
 export const setStateVersion = safeCreateAction('SET_STATE_VERSION',
@@ -28,3 +30,5 @@ export const completeMigration = safeCreateAction('COMPLETE_MIGRATION', id);
 export const setInstanceId = safeCreateAction('SET_INSTANCE_ID', id);
 
 export const setWarnedAdmin = safeCreateAction('SET_WARNED_ADMIN', id);
+
+export const setInstallType = safeCreateAction('SET_INSTALL_TYPE', (type: VortexInstallType) => type);

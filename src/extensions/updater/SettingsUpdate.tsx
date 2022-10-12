@@ -1,5 +1,5 @@
 import More from '../../controls/More';
-import { UPDATE_CHANNELS, UpdateChannel } from '../../types/IState';
+import { UPDATE_CHANNELS, UpdateChannel, IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
@@ -10,9 +10,11 @@ import * as React from 'react';
 import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import VortexInstallType from '../../types/VortexInstallType';
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
+  installType: VortexInstallType;
 }
 
 interface IActionProps {
@@ -23,7 +25,19 @@ type IProps = IActionProps & IConnectedProps;
 
 class SettingsUpdate extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, updateChannel } = this.props;
+    const { t, installType, updateChannel } = this.props;
+
+    if (installType === 'managed') {
+      return (
+        <ControlLabel>
+          {t('Update')}
+          <Alert>
+            {t('Vortex was installed through a third-party service which will take care of updating it.')}
+          </Alert>
+        </ControlLabel>
+      );
+    }
+
     return (
       <form>
         <FormGroup controlId='updateChannel'>
@@ -71,9 +85,10 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     updateChannel: state.settings.update.channel,
+    installType: state.app.installType,
   };
 }
 

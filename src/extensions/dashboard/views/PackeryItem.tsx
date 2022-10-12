@@ -13,7 +13,7 @@ import { Button } from 'react-bootstrap';
 const Draggabilly =
   lazyRequire<typeof DraggabillyT>(() => ({ default: require('draggabilly') }));
 
-export interface IProps {
+export interface IPackeryItemProps {
   t: TFunction;
   id: string;
   width: number;
@@ -58,7 +58,7 @@ const emptyObject = {};
 const FULL_SIZE = { width: '100%', height: '100%' };
 const handleComponent = { bottomRight: <ResizeHandle corner='br'/> };
 
-class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
+class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
   private mRef: HTMLElement = null;
   private mResizeRef: Resizable = null;
   private mPackeryItem: any;
@@ -72,7 +72,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
   private mResizeUp: boolean = false;
   private mResizeLeft: boolean = false;
 
-  constructor(props: IProps) {
+  constructor(props: IPackeryItemProps) {
     super(props);
 
     this.initState({
@@ -82,7 +82,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
     });
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: React.PropsWithChildren<IProps>) {
+  public UNSAFE_componentWillReceiveProps(newProps: React.PropsWithChildren<IPackeryItemProps>) {
     if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
       this.mPackeryItem = undefined;
       this.makeDraggable(newProps);
@@ -250,7 +250,7 @@ class PackeryItem extends ComponentEx<IProps, IPackeryItemState> {
     }
   }
 
-  private makeDraggable(props: IProps) {
+  private makeDraggable(props: IPackeryItemProps) {
     if ((this.mRef === null) || (props.packery === undefined)) {
       return;
     }

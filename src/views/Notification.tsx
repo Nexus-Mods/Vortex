@@ -163,7 +163,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
   private renderAction = (action: INotificationAction, count) => {
     return (
       <Action
-        key={action.title}
+        key={action.title ?? action.icon}
         t={this.props.t}
         icon={action.icon}
         title={action.title}

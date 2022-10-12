@@ -1,4 +1,5 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IPresetStep, IPresetStepInstallMod } from '../../types/IPreset';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { getApplication } from '../../util/application';
@@ -7,6 +8,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
+import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -54,6 +56,10 @@ import {generate as shortid} from 'shortid';
 import winapi from 'winapi-bindings';
 import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
+import { ensureLoggedIn } from '../nexus_integration/util';
+import NXMUrl from '../nexus_integration/NXMUrl';
+import { knownGames } from '../../util/selectors';
+import { convertNXMIdReverse } from '../nexus_integration/util/convertGameId';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -124,13 +130,15 @@ function attributeExtractor(input: any) {
   if (Array.isArray(downloadGame)) {
     downloadGame = downloadGame[0];
   }
+  const logicalFileName = input?.meta?.logicalFileName
+                       || input?.download?.modInfo?.name;
   return Promise.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
-    logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
+    logicalFileName,
     modId: getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined),
     fileId: getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined),
     downloadGame,
@@ -674,7 +682,7 @@ function checkForUnfinalized(api: IExtensionApi,
               const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
               if (downloads[id].state === 'finalizing') {
-                return finalizeDownload(api, id, filePath, false)
+                return finalizeDownload(api, id, filePath)
                   .catch(err => {
                     log('warn', 'failed to properly finalize download', {
                       fileName: downloads[id].localPath,
@@ -1057,7 +1065,7 @@ function init(context: IExtensionContextExt): boolean {
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => result.action === 'Continue');
+          .then(result => result.action === 'Continue');
       });
       observer = observeImpl(context.api, manager);
 
@@ -1070,6 +1078,79 @@ function init(context: IExtensionContextExt): boolean {
       removeDownloadsWithoutFile(store, downloads);
 
       processCommandline(context.api);
+
+      presetManager.on('installmod', (stepIn: IPresetStep) => {
+        const step = stepIn as IPresetStepInstallMod;
+        log('info', 'preset starting download', { url: step.url });
+
+        const onDidInstallDependencies = (dlId: string, cb: () => void) => {
+          const callback = (gameId: string, modId: string) => {
+            const installedDLId =
+              context.api.getState().persistent.mods[gameId]?.[modId]?.archiveId;
+            if (installedDLId === dlId) {
+              context.api.events.off('did-install-dependencies', callback);
+              cb();
+            }
+          };
+          context.api.events.on('did-install-dependencies', callback);
+        };
+
+        const onDidInstallCollection = (dlId: string, cb: () => void) => {
+          const callback = (gameId: string, modId: string) => {
+            const installedDLId =
+              context.api.getState().persistent.mods[gameId]?.[modId]?.archiveId;
+            if (installedDLId === dlId) {
+              context.api.events.off('did-install-collection', callback);
+              cb();
+            }
+          };
+          context.api.events.on('did-install-collection', callback);
+        };
+
+        let isCollection: boolean = false;
+
+        try {
+          const urlParsed = new NXMUrl(step.url);
+          if (urlParsed.collectionSlug !== undefined) {
+            isCollection = true;
+
+            const state = context.api.getState();
+            const games = knownGames(state);
+            const gameId = convertNXMIdReverse(games, urlParsed.gameId);
+            const mods = state.persistent.mods[gameId];
+            const existing = Object.keys(mods)
+              .find(modId => mods[modId].attributes?.collectionSlug === urlParsed.collectionSlug);
+            if (existing !== undefined) {
+              return new Promise((resolve) => {
+                onDidInstallCollection(mods[existing].archiveId, resolve);
+                context.api.events.emit('resume-collection', gameId, existing);
+              });
+            }
+          }
+        } catch (err) {
+          // ignore if this is not nxm-protocol
+        }
+
+        return ensureLoggedIn(context.api)
+          .then(() => toPromise(cb => context.api.events.emit(
+            'start-download', [step.url], {}, undefined, cb, 'always', {
+              allowInstall: false,
+            })))
+          .tapCatch(err => {
+            log('error', 'download failed', { url: step.url, error: err.message });
+          })
+          .then((dlId: string) => {
+            log('info', 'download finished', { dlId });
+            return new Promise((resolve) => {
+              if (isCollection) {
+                onDidInstallCollection(dlId, resolve);
+              } else {
+                onDidInstallDependencies(dlId, resolve);
+              }
+              context.api.events.emit('start-install-download', dlId);
+            });
+          });
+      });
     }
   });
 

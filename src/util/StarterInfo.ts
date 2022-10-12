@@ -23,7 +23,6 @@ import Promise from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GameEntryNotFound } from '../types/IGameStore';
-import { GameNotFound } from './Steam';
 
 function getCurrentWindow() {
   if (process.type === 'renderer') {
@@ -45,6 +44,7 @@ export interface IStarterInfo {
   exclusive: boolean;
   detach: boolean;
   shell: boolean;
+  store: string;
   onStart?: 'hide' | 'hide_recover' | 'close';
   environment: { [key: string]: string };
   defaultPrimary?: boolean;
@@ -78,7 +78,7 @@ class StarterInfo implements IStarterInfo {
     const game: IGame = getGame(info.gameId);
     const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
       (game.requiresLauncher !== undefined) && info.isGame
-      ? game.requiresLauncher(path.dirname(info.exePath))
+      ? game.requiresLauncher(path.dirname(info.exePath), info.store)
         .catch(err => {
           onShowError('Failed to determine if launcher is required', err, true);
           return Promise.resolve(undefined);
@@ -106,10 +106,6 @@ class StarterInfo implements IStarterInfo {
             } else if (info.onStart === 'close') {
               getApplication().quit();
             }
-          })
-          .catch(GameNotFound, () => {
-            onShowError('Failed to start game through launcher',
-              'Please check whether the game is set up correctly.', false);
           })
           .catch(UserCanceled, () => null)
           .catch(GameEntryNotFound, err => {
@@ -297,6 +293,7 @@ class StarterInfo implements IStarterInfo {
   public extensionPath: string;
   public logoName: string;
   public timestamp: number;
+  public store: string;
 
   constructor(game: IGameStored, gameDiscovery: IDiscoveryResult,
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
@@ -333,6 +330,7 @@ class StarterInfo implements IStarterInfo {
     this.logoName = gameDiscovery.logo || game.logo;
     this.details = game.details;
     this.exclusive = true;
+    this.store = gameDiscovery.store;
   }
 
   private initFromTool(gameId: string, tool: IToolStored, toolDiscovery: IDiscoveredTool) {

@@ -1,3 +1,4 @@
+import { setNextProfile } from '../../actions';
 import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ThunkStore } from '../../types/IExtensionContext';
@@ -7,10 +8,12 @@ import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import EpicGamesLauncher from '../../util/EpicGamesLauncher';
 import * as fs from '../../util/fs';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
 import { activeProfile, discoveryByGame } from '../../util/selectors';
+import Steam from '../../util/Steam';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, truthy } from '../../util/util';
 
@@ -40,7 +43,6 @@ import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { setNextProfile } from '../../actions';
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
@@ -67,7 +69,11 @@ class GameModeManager {
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mGameStubs = gameStubs;
-    this.mKnownGameStores = gameStoreExtensions;
+    this.mKnownGameStores = [
+      Steam,
+      EpicGamesLauncher, 
+      ...gameStoreExtensions,
+    ];
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }

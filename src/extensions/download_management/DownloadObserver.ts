@@ -61,7 +61,8 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
 
 export interface IStartDownloadOptions {
   // whether the download may be auto-installed if the user has that set up for mods (default: true)
-  allowInstall?: boolean;
+  // if set to 'force', the download will be installed independent of the user config
+  allowInstall?: boolean | 'force';
   // whether the url should be opened in the embedded browser if it's html (default: true)
   allowOpenHTML?: boolean;
 }
@@ -300,7 +301,7 @@ export class DownloadObserver {
   private handleDownloadFinished(id: string,
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult,
-                                 allowInstall: boolean) {
+                                 allowInstall: boolean | 'force') {
     const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
       // The only way for the download entry to be missing at this point
@@ -337,14 +338,15 @@ export class DownloadObserver {
       callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      return finalizeDownload(this.mApi, id, res.filePath, allowInstall)
+      return finalizeDownload(this.mApi, id, res.filePath)
         .then(() => {
           const flattened = flatten(res.metaInfo ?? {});
           Object.keys(flattened).forEach(key =>
               this.mApi.store.dispatch(setDownloadModInfo(id, key, flattened[key])));
 
           const state = this.mApi.getState();
-          if ((state.settings.automation?.install && allowInstall)
+          if ((state.settings.automation?.install && (allowInstall === true))
+              || (allowInstall === 'force')
               || (download.modInfo?.['startedAsUpdate'] === true)) {
             this.mApi.events.emit('start-install-download', id);
           }

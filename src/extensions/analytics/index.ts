@@ -1,3 +1,4 @@
+import { contextType } from 'react-bootstrap/lib/Accordion';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
 import { log } from '../../util/log';
@@ -134,29 +135,43 @@ function init(context: IExtensionContext): boolean {
     }
 
     function showConsentDialog() {
-      context.api.showDialog('question', 'Diagnostics & usage data',
-        {
-          bbcode:
-            `Help us provide you with the best modding experience possible![br][/br]
-          With your permission, Vortex can automatically collect analytics information and send it to our team to help us improve quality and performance.[br][/br]
-          This information is sent to our team entirely anonymously and only with your express consent. [url=${HELP_ARTICLE}]More about the data we track.[/url]`,
-        },
-        [
-          { label: 'Deny' },
-          { label: 'Allow', default: true },
-        ],
-      )
-        .then(result => {
-          if (result.action === 'Allow') {
-            initializeAnalytics();
-            Analytics.trackClickEvent('Tracking', 'Allow');
-            ignoreNextAnalyticsStateChange = true;
-            context.api.store.dispatch(setAnalytics(true));
-          } else if (result.action === 'Deny') {
-            context.api.store.dispatch(setAnalytics(false));
+      context.api.sendNotification({
+        type: 'info',
+        title: 'Diagnostics & Usage Data',
+        message: 'Find out more about how we use diagnostic and usage data',
+        actions: [
+          {
+            title: 'More', action: dismiss => {
+              context.api.showDialog('question', 'Diagnostics & usage data', {
+                bbcode:
+                  'Help us provide you with the best modding experience possible![br][/br]'
+                  + 'With your permission, Vortex can automatically collect '
+                  + 'analytics information and send it to our team to help us improve quality and performance.[br][/br]'
+                  + 'This information is sent to our team entirely anonymously and only with your express consent. '
+                  + '[url={{url}}]More about the data we track.[/url]',
+                parameters: {
+                  url: HELP_ARTICLE,
+                }
+              }, [
+                { label: 'Deny' },
+                { label: 'Allow', default: true },
+              ])
+                .then(result => {
+                  dismiss();
+                  if (result.action === 'Allow') {
+                    initializeAnalytics();
+                    Analytics.trackClickEvent('Tracking', 'Allow');
+                    ignoreNextAnalyticsStateChange = true;
+                    context.api.store.dispatch(setAnalytics(true));
+                  } else if (result.action === 'Deny') {
+                    context.api.store.dispatch(setAnalytics(false));
+                  }
+                  return Promise.resolve();
+                });
+            }
           }
-          return Promise.resolve();
-        });
+        ],
+      });
     }
 
     if (enabled() === undefined && !!userInfo()) {

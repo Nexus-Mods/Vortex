@@ -97,3 +97,7 @@ export function getGameStores(): IGameStore[] {
 
   return $.gameModeManager.gameStores || [];
 }
+
+export function getGameStore(id: string): IGameStore {
+  return $.gameModeManager.gameStores.find(store => store.id === id);
+}

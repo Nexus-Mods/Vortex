@@ -15,6 +15,8 @@ const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
+const STORE_NAME = 'Epic Games Launcher';
+const STORE_PRIORITY = 60;
 
 /**
  * Epic Store launcher seems to be holding game information inside
@@ -22,13 +24,14 @@ const STORE_ID = 'epic';
  *  "(C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests" by default
  */
 class EpicGamesLauncher implements IGameStore {
-  public id: string;
+  public id: string = STORE_ID;
+  public name: string = STORE_NAME;
+  public priority: number = STORE_PRIORITY;
   private mDataPath: Promise<string>;
   private mLauncherExecPath: string;
   private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
-    this.id = STORE_ID;
     if (process.platform === 'win32') {
       try {
         // We find the launcher's dataPath

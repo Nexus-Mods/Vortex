@@ -1,41 +1,16 @@
 import getVortexPath from '../../util/getVortexPath';
-import { getSafe } from '../../util/storeHelper';
 
 import * as path from 'path';
 import format from 'string-template';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
+import { makeOverlayableDictionary } from '../../util/util';
 
-const gameSupportGamePass = {
-  skyrimse: {
-    iniFiles: [
-      path.join('{mygames}', 'Skyrim Special Edition MS', 'Skyrim.ini'),
-      path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimPrefs.ini'),
-      path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimCustom.ini'),
-    ],
-    iniFormat: 'winapi',
-  },
-  fallout4: {
-    iniFiles: [
-      path.join('{mygames}', 'Fallout4 MS', 'Fallout4.ini'),
-      path.join('{mygames}', 'Fallout4 MS', 'Fallout4Prefs.ini'),
-      path.join('{mygames}', 'Fallout4 MS', 'Fallout4Custom.ini'),
-    ],
-    iniFormat: 'winapi',
-  },
+interface IGameSupport {
+  iniFiles: string[];
+  iniFormat: string;
 }
 
-const gameSupportGOG = {
-  skyrimse: {
-    iniFiles: [
-      path.join('{mygames}', 'Skyrim Special Edition GOG', 'Skyrim.ini'),
-      path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimPrefs.ini'),
-      path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimCustom.ini'),
-    ],
-    iniFormat: 'winapi',
-  },
-}
-
-const gameSupport = {
+const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
   skyrim: {
     iniFiles: [
       path.join('{mygames}', 'Skyrim', 'Skyrim.ini'),
@@ -115,38 +90,64 @@ const gameSupport = {
     ],
     iniFormat: 'winapi',
   },
-};
-
-function isXboxPath(discoveryPath: string) {
-  const hasPathElement = (element) =>
-    discoveryPath.toLowerCase().includes(element);
-  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
-}
+}, {
+  gog: {
+    skyrimse: {
+      iniFiles: [
+        path.join('{mygames}', 'Skyrim Special Edition GOG', 'Skyrim.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimPrefs.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition GOG', 'SkyrimCustom.ini'),
+      ],
+      iniFormat: 'winapi',
+    },
+  },
+  xbox: {
+    skyrimse: {
+      iniFiles: [
+        path.join('{mygames}', 'Skyrim Special Edition MS', 'Skyrim.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimPrefs.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition MS', 'SkyrimCustom.ini'),
+      ],
+      iniFormat: 'winapi',
+    },
+    fallout4: {
+      iniFiles: [
+        path.join('{mygames}', 'Fallout4 MS', 'Fallout4.ini'),
+        path.join('{mygames}', 'Fallout4 MS', 'Fallout4Prefs.ini'),
+        path.join('{mygames}', 'Fallout4 MS', 'Fallout4Custom.ini'),
+      ],
+      iniFormat: 'winapi',
+    },
+  },
+  enderalOverride: {
+    enderalspecialedition: {
+      iniFiles: [
+        path.join('{mygames}', 'Skyrim Special Edition', 'Skyrim.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition', 'SkyrimPrefs.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition', 'SkyrimCustom.ini'),
+      ],
+      iniFormat: 'winapi',
+    },
+  },
+}, (gameId: string, store: string) => store);
 
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
   const mygames = path.join(getVortexPath('documents'), 'My Games');
 
-  if ((gameSupportGamePass[gameMode] !== undefined) && (discovery?.path !== undefined)) {
-    if (isXboxPath(discovery.path)) {
-      return getSafe(gameSupportGamePass, [gameMode, 'iniFiles'], [])
-        .map(file => format(file, { mygames, game: discovery.path }));
-    }
+  let store = discovery?.store;
+
+  // override for the case where enderal se is installed as a total conversion
+  // instead of the stand-alone version
+  if ((gameMode === 'enderalspecialedition')
+      && (discovery?.path !== undefined)
+      && (discovery?.path.toLowerCase().includes('skyrim'))) {
+    store = 'enderaloverride';
   }
 
-  if (discovery?.path !== undefined) {
-    if (discovery.path.toLowerCase().includes('skyrim')) {
-      gameSupport['enderalspecialedition'] = JSON.parse(JSON.stringify(gameSupport['skyrimse']));
-    }
-  }
-
-  const gameSupportEffective = (discovery.store === 'gog') && !!gameSupportGOG[gameMode]
-    ? gameSupportGOG
-    : gameSupport;
-
-  return getSafe(gameSupportEffective, [gameMode, 'iniFiles'], [])
-    .map(file => format(file, { mygames, game: discovery.path }));
+  return (gameSupport.get(gameMode, 'iniFiles', store) ?? [])
+    .map(filePath => format(filePath, { mygames, game: discovery.path }));
 }
 
 export function iniFormat(gameMode: string) {
-  return getSafe(gameSupport, [gameMode, 'iniFormat'], undefined);
+  return gameSupport.get(gameMode, 'iniFormat');
 }

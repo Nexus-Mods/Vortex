@@ -33,7 +33,7 @@ const settingsReducer: IReducerSpec = {
     desktopNotifications: true,
     hideTopLevelCategory: false,
     relativeTimes: true,
-    foregroundDL: false,
+    foregroundDL: true,
     usage: {},
   },
 };

@@ -23,6 +23,8 @@ export const appReducer: IReducerSpec = {
       setSafe(state, ['instanceId'], payload),
     [actions.setWarnedAdmin as any]: (state, payload) =>
       setSafe(state, ['warnedAdmin'], payload),
+    [actions.setInstallType as any]: (state, payload) =>
+      setSafe(state, ['installType'], payload),
     [actions.completeMigration as any]: (state, payload) =>
       pushSafe(state, ['migrations'], payload),
   },
@@ -33,6 +35,7 @@ export const appReducer: IReducerSpec = {
     extensions: {},
     warnedAdmin: 0,
     migrations: [],
+    installType: 'official',
   },
   verifiers: {
     instanceId: {

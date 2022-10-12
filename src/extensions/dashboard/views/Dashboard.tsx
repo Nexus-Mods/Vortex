@@ -14,7 +14,7 @@ import { IDashletProps } from '../types/IDashletProps';
 
 import FixedItem from './FixedItem';
 import PackeryGrid from './PackeryGrid';
-import PackeryItem from './PackeryItem';
+import PackeryItem, { IPackeryItemProps } from './PackeryItem';
 
 import * as remoteT from '@electron/remote';
 import * as _ from 'lodash';
@@ -45,6 +45,12 @@ interface IActionProps {
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+function BackgroundGrid(props: Partial<IPackeryItemProps> & { editMode: boolean }) {
+  return props.editMode
+    ? <div key='background-grid' className='dashboard-background-grid' />
+    : <div key='background-grid' />
+}
 
 interface IComponentState {
   counter: number;
@@ -155,9 +161,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
               settings={dashletSettings}
               items={dynamic.map(iter => iter.title).sort()}
             >
-              {editMode
-                ? <div key='background-grid' className='dashboard-background-grid' />
-                : <div key='background-grid' />}
+              <BackgroundGrid editMode={editMode} />
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
           </div>

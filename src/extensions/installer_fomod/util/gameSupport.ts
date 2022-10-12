@@ -1,10 +1,11 @@
 import { IGame } from '../../../types/IGame';
 
 import * as path from 'path';
-import * as Redux from 'redux';
-import { IState } from '../../../types/IState';
+import { IDiscoveryResult } from '../../../types/IState';
 import getVortexPath from '../../../util/getVortexPath';
 import { discoveryByGame } from '../../gamemode_management/selectors';
+import { makeOverlayableDictionary } from '../../../util/util';
+import { IExtensionApi } from '../../../types/IExtensionContext';
 
 function bethIni(gamePath: string, iniName: string) {
   return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
@@ -100,13 +101,7 @@ interface IGameSupport {
   nativePlugins?: string[];
 }
 
-const gameSupportGOG: { [gameId: string]: {  iniPath: () => string } } = {
-  skyrimse: {
-    iniPath: () => bethIni('Skyrim Special Edition GOG', 'Skyrim'),
-  },
-};
-
-const gameSupport: { [gameId: string]: IGameSupport } = {
+const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
   dragonsdogma: {
     stopPatterns: stopPatterns('dragonsdogma'),
   },
@@ -301,79 +296,59 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   thesims4: {
     stopPatterns: stopPatterns('thesims4'),
   },
-};
-
-function isXboxPath(discoveryPath: string) {
-  const hasPathElement = (element) =>
-    discoveryPath.toLowerCase().includes(element);
-  return ['modifiablewindowsapps', '3275kfvn8vcwc'].find(hasPathElement) !== undefined;
-}
-
-let gameStoreForGame: (gameId: string) => string = () => undefined;
-
-export function initGameSupport(store: Redux.Store<IState>) {
-  const state: IState = store.getState();
-
-  gameStoreForGame = (gameId: string) => discoveryByGame(store.getState(), gameId).store;
-
-  const {discovered} = state.settings.gameMode;
-
-  if (discovered['enderalspecialedition']?.path !== undefined) {
-    if (discovered['enderalspecialedition']?.path.toLowerCase().includes('skyrim')) {
-      gameSupport['enderalspecialedition'].iniPath = gameSupport['skyrimse'].iniPath;
-    }
+}, {
+  gog: {
+    skyrimse: {
+      iniPath: () => bethIni('Skyrim Special Edition GOG', 'Skyrim'),
+    },
+  },
+  xbox: {
+    skyrimse: {
+      iniPath: () => bethIni('Skyrim Special Edition MS', 'Skyrim'),
+    },
+    fallout4: {
+      iniPath: () => bethIni('Fallout4 MS', 'Fallout4'),
+    },
+  },
+  enderalseOverlay: {
+    enderalspecialedition: {
+      iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
+    },
+  },
+}, (gameId: string) => {
+  const discovery = discoveryForGame(gameId);
+  if ((discovery.path !== undefined)
+      && (gameId === 'enderalspecialedition')
+      && discovery.path.includes('skyrim')) {
+    return 'enderalseOverlay';
   }
-
-  if (discovered['skyrimse']?.path !== undefined) {
-    if (isXboxPath(discovered['skyrimse'].path)) {
-      gameSupport['skyrimse'].iniPath = () => bethIni('Skyrim Special Edition MS', 'Skyrim');
-    }
+  else {
+    return discovery.store;
   }
+});
 
-  if (discovered['fallout4']?.path !== undefined) {
-    if (isXboxPath(discovered['fallout4'].path)) {
-      gameSupport['fallout4'].iniPath = () => bethIni('Fallout4 MS', 'Fallout4');
-    }
-  }
+let discoveryForGame: (gameId: string) => IDiscoveryResult = () => undefined;
+
+export function initGameSupport(api: IExtensionApi) {
+  discoveryForGame = (gameId: string) => discoveryByGame(api.store.getState(), gameId);
 }
 
 export function getIniFilePath(gameMode: string): string {
-  if ((gameSupport[gameMode] === undefined)
-      || (gameSupport[gameMode].iniPath === undefined)) {
-    return '';
-  }
-
-  return (gameStoreForGame(gameMode) === 'gog') && !!gameSupportGOG[gameMode]
-    ? gameSupportGOG[gameMode].iniPath()
-    : gameSupport[gameMode].iniPath();
+  return gameSupport.get(gameMode, 'iniPath')?.() ?? '';
 }
 
 export function getStopPatterns(gameMode: string, game: IGame): string[] {
   if ((game?.details?.stopPatterns !== undefined)) {
     return game.details.stopPatterns;
   }
-  if ((gameSupport[gameMode] === undefined)
-      || (gameSupport[gameMode].stopPatterns === undefined)) {
-    return [];
-  }
-
-  return gameSupport[gameMode].stopPatterns;
+  return gameSupport.get(gameMode, 'stopPatterns') ?? [];
 }
 
 export function getPluginPath(gameMode: string): string {
-  if ((gameSupport[gameMode] === undefined)
-      || (gameSupport[gameMode].pluginPath === undefined)) {
-    return null;
-  }
-
-  return gameSupport[gameMode].pluginPath;
+  return gameSupport.get(gameMode, 'pluginPath') ?? null;
 }
 
 export function getNativePlugins(gameMode: string): string[] {
-  if ((gameSupport[gameMode] === undefined)
-    || (gameSupport[gameMode].nativePlugins === undefined)) {
-    return [];
-  }
-
-  return gameSupport[gameMode].nativePlugins;
+  const x = gameSupport.get(gameMode, 'nativePlugins');
+  return gameSupport.get(gameMode, 'nativePlugins') ?? [];
 }
