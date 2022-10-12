@@ -43,6 +43,9 @@ export function querySanitize(errors: string[]): Decision {
 }
 
 export function finalizeStoreWrite(): Promise<void> {
+  if (basePersistor === undefined) {
+    return Promise.resolve();
+  }
   return basePersistor.finalizeWrite();
 }
 
