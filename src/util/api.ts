@@ -58,7 +58,7 @@ import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
          makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
-         sanitizeFilename, semverCoerce, setdefault, toPromise, unique,
+         sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
          makeOverlayableDictionary } from './util';
 import { Campaign, Section, Overlayable } from './util';
 import walk from './walk';
@@ -163,6 +163,7 @@ export {
   ISteamEntry,
   terminate,
   testModReference,
+  toBlue,
   toPromise,
   unique,
   UserCanceled,

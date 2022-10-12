@@ -850,7 +850,7 @@ export function filteredEnvironment(): NodeJS.ProcessEnv {
 }
 
 export function parseBool(input: string): boolean {
-  return ['true', 'yes', '1'].includes(input.toLowerCase());
+  return ['true', 'yes', '1'].includes((input ?? '').toLowerCase());
 }
 
 export class Overlayable<KeyT extends string | number | symbol, ObjT> {

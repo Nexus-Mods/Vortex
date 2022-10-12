@@ -45,14 +45,14 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import Promise from 'bluebird';
-import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
+import { ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ComplexActionCreator } from 'redux-act';
 import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
-         IFileChange, ILookupResult, IModInfo, InstructionType, IReference, InstallFunc,
+         IFileChange, ILookupResult, IModInfo, IQuery, InstructionType, IReference, InstallFunc,
          ISupportedResult, ProgressDelegate };
 
 // tslint:disable-next-line:interface-name
@@ -585,7 +585,7 @@ export interface IExtensionApi {
    * Please note that setting a server with the same id again will replace the existing one
    * with that id and setting it to undefined removes it
    */
-  addMetaServer: (id: string, server?: any) => void;
+  addMetaServer: (id: string, server: IServer) => void;
 
   /**
    * find meta information about a mod

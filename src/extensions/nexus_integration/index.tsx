@@ -926,6 +926,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
+  api.onAsync('get-latest-file', eh.onGetLatestFile(api, nexus));
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
     eh.onChangeNXMAssociation(registerFunc, api));
