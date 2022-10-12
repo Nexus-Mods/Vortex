@@ -2691,6 +2691,11 @@ class InstallManager {
             return prev;
           }, { success: [], existing: [], error: [] });
 
+        // all recommendations already installed
+        if ((success.length === 0) && (error.length === 0)) {
+          return Promise.resolve();
+        }
+
         const state: IState = api.store.getState();
         const downloads = state.persistent.downloads.files;
 
