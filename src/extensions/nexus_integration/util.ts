@@ -239,7 +239,8 @@ export function startDownload(api: IExtensionApi,
                               redownload?: RedownloadMode,
                               fileName?: string,
                               allowInstall?: boolean,
-                              handleErrors: boolean = true)
+                              handleErrors: boolean = true,
+                              referenceTag?: string)
                               : Promise<string> {
   let url: NXMUrl;
 
@@ -256,15 +257,16 @@ export function startDownload(api: IExtensionApi,
   }
 
   return (url.type === 'mod')
-    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall, handleErrors)
-    : startDownloadCollection(api, nexus, nxmurl, url, handleErrors);
+    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall, handleErrors, referenceTag)
+    : startDownloadCollection(api, nexus, nxmurl, url, handleErrors, referenceTag);
 }
 
 function startDownloadCollection(api: IExtensionApi,
                                  nexus: Nexus,
                                  urlStr: string,
                                  url: NXMUrl,
-                                 handleErrors: boolean = true)
+                                 handleErrors: boolean = true,
+                                 referenceTag?: string)
                                  : Promise<string> {
   const state: IState = api.getState();
   const games = knownGames(state);
@@ -293,6 +295,7 @@ function startDownloadCollection(api: IExtensionApi,
         game: gameId,
         source: 'nexus',
         name: revisionInfo.collection?.name,
+        referenceTag,
         nexus: {
           ids: {
             gameId: pageId,
@@ -401,7 +404,8 @@ function startDownloadMod(api: IExtensionApi,
                           redownload?: RedownloadMode,
                           fileName?: string,
                           allowInstall?: boolean,
-                          handleErrors: boolean = true): Promise<string> {
+                          handleErrors: boolean = true,
+                          referenceTag?: string): Promise<string> {
   log('info', 'start download mod', { urlStr, allowInstall });
   let state = api.getState();
   const games = knownGames(state);
@@ -418,6 +422,7 @@ function startDownloadMod(api: IExtensionApi,
           game: gameId,
           source: 'nexus',
           name: fileInfo.name,
+          referenceTag,
           nexus: {
             ids: { gameId: pageId, modId: url.modId, fileId: url.fileId },
             modInfo,

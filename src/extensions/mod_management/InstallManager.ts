@@ -1930,7 +1930,7 @@ class InstallManager {
                                         lookupResult.domainName || lookupResult.gameId);
 
     return api.emitAndAwait('start-download-update',
-      lookupResult.source, gameId, modId, fileId, pattern, campaign)
+      lookupResult.source, gameId, modId, fileId, pattern, campaign, referenceTag)
       .then((results: Array<{ error: Error, dlId: string }>) => {
         if ((results === undefined) || (results.length === 0)) {
           return Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`));

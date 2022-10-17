@@ -545,7 +545,7 @@ export function onDownloadUpdate(api: IExtensionApi,
                                  : (...args: any[]) => Promise<IDownloadResult> {
   return (source: string, gameId: string, modId: string,
           fileId: string, versionPattern: string,
-          campaign: string): Promise<IDownloadResult> => {
+          campaign: string, referenceTag?: string): Promise<IDownloadResult> => {
     if (source !== 'nexus') {
       return Promise.resolve(undefined);
     }
@@ -617,7 +617,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           }
         }
 
-        return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false)
+        return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
           .then(dlId => ({ error: null, dlId }))
           .catch(err => {
             return { error: err };
@@ -631,7 +631,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           if (campaign !== undefined) {
             urlParsed.searchParams.set('campaign', campaign);
           }
-          return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false)
+          return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
             .then(dlId => ({ error: null, dlId }))
             .catch(innerErr => ({ error: innerErr }));
         } else {

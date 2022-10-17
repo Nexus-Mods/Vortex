@@ -262,21 +262,25 @@ export class DownloadObserver {
       ensureDownloadsDirectory(this.mApi)
         .then(() => {
           if (this.wasIntercepted(modInfo?.referenceTag)) {
+            this.mInterceptedDownloads = this.mInterceptedDownloads
+              .filter(iter => iter.tag !== modInfo?.referenceTag);
             return Promise.reject(new UserCanceled());
           }
 
+          log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           return this.mManager.enqueue(id, urls, fileName, processCB,
                                        downloadPath, downloadOptions);
-          })
+        })
         .catch(AlreadyDownloaded, err => {
           const downloads = this.mApi.getState().persistent.downloads.files;
           const dlId = Object.keys(downloads)
             .find(iter => downloads[iter].localPath === err.fileName);
-          log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           if ((dlId !== undefined) && (downloads[dlId].state !== 'failed')) {
             err.downloadId = dlId;
             return Promise.reject(err);
           } else if (this.wasIntercepted(modInfo?.referenceTag)) {
+            this.mInterceptedDownloads = this.mInterceptedDownloads
+              .filter(iter => iter.tag !== modInfo?.referenceTag);
             return Promise.reject(new UserCanceled());
           } else {
             // there is a file but with no meta data. force the download instead
