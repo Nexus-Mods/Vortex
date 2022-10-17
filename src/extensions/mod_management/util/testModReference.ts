@@ -15,6 +15,7 @@ export interface IModLookupInfo {
   fileName: string;
   name?: string;
   logicalFileName?: string;
+  additionalLogicalFileNames?: string[];
   customFileName?: string;
   version: string;
   game?: string[];
@@ -155,9 +156,15 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // right file?
-  if ((ref.logicalFileName !== undefined)
-    && (ref.logicalFileName !== mod.logicalFileName)) {
-    return false;
+  if (ref.logicalFileName !== undefined) {
+    if (mod.additionalLogicalFileNames !== undefined) {
+      if (!mod.additionalLogicalFileNames.includes(ref.logicalFileName)
+          && (ref.logicalFileName !== mod.logicalFileName)) {
+        return false;
+      }
+    } else if (ref.logicalFileName !== mod.logicalFileName) {
+      return false;
+    }
   }
 
   if (ref.fileExpression !== undefined) {

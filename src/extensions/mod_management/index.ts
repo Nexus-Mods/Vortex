@@ -1544,6 +1544,19 @@ function init(context: IExtensionContext): boolean {
     getActivators: getAllActivators,
   }));
 
+  context.registerAction(
+    'mods-action-icons', 150, 'start-install', {},
+    'Install Recommendations', (instanceIds: string[]) => {
+      const profile = activeProfile(context.api.getState());
+      // installRecommendations should already do nothing if there are no recommendations
+      // on a mod so no need to make the code more complicated here
+      Promise.mapSeries(instanceIds, modId =>
+        installManager.installRecommendations(context.api, profile, profile.gameId, modId))
+        .catch(err => {
+          context.api.showErrorNotification('Failed to install recommendations', err);
+        });
+    });
+
   const validActivatorCheck = genValidActivatorCheck(context.api);
 
   context.registerActionCheck('SET_MOD_INSTALLATION_PATH', (state, action: any) => {
