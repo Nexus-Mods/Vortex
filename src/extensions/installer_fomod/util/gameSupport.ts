@@ -302,6 +302,11 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
       iniPath: () => bethIni('Skyrim Special Edition GOG', 'Skyrim'),
     },
   },
+  epic: {
+    skyrimse: {
+      iniPath: () => bethIni('Skyrim Special Edition EPIC', 'Skyrim'),
+    },
+  },
   xbox: {
     skyrimse: {
       iniPath: () => bethIni('Skyrim Special Edition MS', 'Skyrim'),

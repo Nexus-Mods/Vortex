@@ -101,6 +101,16 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
       iniFormat: 'winapi',
     },
   },
+  epic: {
+    skyrimse: {
+      iniFiles: [
+        path.join('{mygames}', 'Skyrim Special Edition EPIC', 'Skyrim.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition EPIC', 'SkyrimPrefs.ini'),
+        path.join('{mygames}', 'Skyrim Special Edition EPIC', 'SkyrimCustom.ini'),
+      ],
+      iniFormat: 'winapi',
+    },
+  },
   xbox: {
     skyrimse: {
       iniFiles: [
