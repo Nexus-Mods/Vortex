@@ -1139,7 +1139,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     let revisionInfo: Partial<IRevision>;
 
-  const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
+    const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
 
     return Promise.resolve()
       .then(() => (url.type === 'mod')

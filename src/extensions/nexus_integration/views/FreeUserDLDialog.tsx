@@ -54,25 +54,25 @@ type RecursivePartial<T> = {
 
 const makeUnknown: (t: TFunction, url: NXMUrl) => RecursivePartial<IModFile> =
     (t: TFunction, url: NXMUrl) => {
-  return {
-    modId: undefined,
-    mod: {
-      summary: t('N/A'),
-      name: t('Mod with id {{modId}}', { modId: url.modId }),
-      pictureUrl: null,
-      uploader: {
+      return {
+        modId: undefined,
+        mod: {
+          summary: t('N/A'),
+          name: t('Mod with id {{modId}}', { modId: url.modId }),
+          pictureUrl: null,
+          uploader: {
+            name: t('N/A'),
+            avatar: undefined,
+          },
+        },
+        game: {
+          domainName: undefined,
+        },
         name: t('N/A'),
-        avatar: undefined,
-      },
-    },
-    game: {
-      domainName: undefined,
-    },
-    name: t('N/A'),
-    owner: {
-      member_id: undefined,
-    } as any,
-  };
+        owner: {
+          member_id: undefined,
+        } as any,
+      };
 };
 
 function nop() {
@@ -99,7 +99,8 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       setCampaign(url.getParam('campaign'));
 
       try {
-        const fileInfoList = await nexus.modFilesByUid(FILE_QUERY,
+        const fileInfoList = await nexus.modFilesByUid(
+          FILE_QUERY,
           [makeFileUID({ fileId: url.fileId.toString(), gameId: url.gameId })]);
         if (fileInfoList.length > 0) {
           setFileInfo(fileInfoList[0]);
@@ -155,7 +156,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
             <FlexLayout.Fixed>
               {(fileInfo !== null) ? (
                 <Image className='free-user-dl-image' srcs={[fileInfo.mod.pictureUrl]} />
-               ) : <Spinner />}
+              ) : <Spinner />}
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               {(fileInfo !== null) ? (
@@ -179,7 +180,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
                   </div>
                   <div className='free-user-dl-summary'>{fileInfo.mod.summary}</div>
                 </FlexLayout>
-                ) : null}
+              ) : null}
             </FlexLayout.Flex>
           </FlexLayout>
           <PremiumNagBanner t={t} onDownload={download} campaign={campaign} />
