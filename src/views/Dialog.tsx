@@ -293,6 +293,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.checkboxes !== undefined) {
       controls.push({ id: 'checkboxes', control: (
         <div key='dialog-content-checkboxes' className='dialog-content-choices'>
+          {(content.checkboxes.length > 3) ? (
+            <div className='dialog-apply-all-btns'>
+              <a onClick={this.enableAll}>{t('Enable all')}</a>
+              &nbsp;
+              <a onClick={this.disableAll}>{t('Disable all')}</a>
+            </div>
+          ) : null}
           <div>
             {content.checkboxes.map(checkbox => this.renderCheckbox(checkbox, content))}
           </div>
@@ -525,6 +532,34 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     this.setState(newState);
+  }
+
+  private enableMultiple = (enabled: boolean = true) => {
+    const { dialogState } = this.state;
+
+    const newCheckboxes = JSON.parse(JSON.stringify(dialogState.checkboxes.slice(0)))
+      .map(box => ({ ...box, value: enabled }));
+
+    let newState = update(this.state, {
+      dialogState: {
+        checkboxes: { $set: newCheckboxes },
+      },
+    });
+
+    const validationResults = this.validateContent(newState.dialogState);
+    if (validationResults !== undefined) {
+      newState = { ...newState, conditionResults: validationResults };
+    }
+
+    this.setState(newState);
+  }
+
+  private enableAll = () => {
+    this.enableMultiple(true);
+  }
+
+  private disableAll = () => {
+    this.enableMultiple(false);
   }
 
   private toggleRadio = (evt: React.MouseEvent<any>) => {
