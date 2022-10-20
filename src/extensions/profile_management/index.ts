@@ -19,7 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session';
-import { IAttachment, IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import type { IPresetStep, IPresetStepSetGame } from '../../types/IPreset';
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
@@ -791,6 +791,9 @@ function init(context: IExtensionContext): boolean {
     return undefined;
   });
 
+  context.registerAPI('unmanageGame', (gameId: string, gameName?: string) =>
+    unmanageGame(context.api, gameId, gameName), {});
+
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode
   context.once(() => {
@@ -805,9 +808,6 @@ function init(context: IExtensionContext): boolean {
     // promise used to ensure a new profile switch can't be started before the last one
     // is complete
     let finishProfileSwitch: () => void;
-
-    context.api.ext['unmanageGame'] = (gameId: string, gameName?: string) =>
-      unmanageGame(context.api, gameId, gameName);
 
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
@@ -963,7 +963,8 @@ function init(context: IExtensionContext): boolean {
   
     presetManager.on('setgame', (step: IPresetStep): Promise<void> => {
       return manageGame(context.api, (step as IPresetStepSetGame).game)
-        .then(() => context.api.ext['awaitProfileSwitch']?.(context.api))
+        .then(() => context.api.ext.awaitProfileSwitch?.(context.api))
+        .then(() => null);
     });
   });
 

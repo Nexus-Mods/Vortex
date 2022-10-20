@@ -210,9 +210,9 @@ function init(context: IExtensionContext): boolean {
     });
   };
 
-  context.once(() => {
-    context.api.ext['withSuppressedTests'] = withSuppressedTests;
+  context.registerAPI('withSuppressedTests', withSuppressedTests, {});
 
+  context.once(() => {
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
       runChecks(context.api, eventType, delay);
     });

@@ -38,6 +38,7 @@ import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
+import { INexusAPIExtension } from './types/INexusAPIExtension';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
@@ -839,6 +840,36 @@ function checkModsWithMissingMeta(api: IExtensionApi) {
   batchDispatch(api.store, actions);
 }
 
+function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension
+{
+  return {
+    nexusCheckModsVersion: eh.onCheckModsVersion(api, nexus),
+    nexusDownload: eh.onNexusDownload(api, nexus),
+    nexusGetCollection: eh.onGetNexusCollection(api, nexus),
+    nexusGetCollections: eh.onGetNexusCollections(api, nexus),
+    nexusGetMyCollections: eh.onGetMyCollections(api, nexus),
+    nexusResolveCollectionUrl: eh.onResolveCollectionUrl(api, nexus),
+    nexusGetCollectionRevision: eh.onGetNexusCollectionRevision(api, nexus),
+    nexusRateCollectionRevision: eh.onRateRevision(api, nexus),
+    nexusEndorseDirect: eh.onEndorseDirect(api, nexus),
+    nexusGetLatestMods: eh.onGetLatestMods(api, nexus),
+    nexusGetTrendingMods: eh.onGetTrendingMods(api, nexus),
+    nexusEndorseMod: eh.onEndorseMod(api, nexus),
+    nexusSubmitFeedback: eh.onSubmitFeedback(nexus),
+    nexusSubmitCollection: eh.onSubmitCollection(nexus),
+    nexusModUpdate: eh.onModUpdate(api, nexus),
+    nexusOpenCollectionPage: eh.onOpenCollectionPage(api),
+    nexusOpenModMage: eh.onOpenModPage(api),
+    nexusRequestNexusLogin: callback => requestLogin(api, callback),
+    nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
+    nexusRetrieveCategoryList: (isUpdate: boolean) => {
+      return retrieveCategories(api, isUpdate);
+    },
+    nexusGetModFiles: eh.onGetModFiles(api, nexus),
+    nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
+  };
+}
+
 function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
@@ -926,7 +957,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
-  api.onAsync('get-latest-file', eh.onGetLatestFile(api, nexus));
+  api.onAsync('get-mod-files', eh.onGetModFiles(api, nexus));
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
     eh.onChangeNXMAssociation(registerFunc, api));
@@ -937,6 +968,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
   api.addMetaServer('nexus_api',
     { nexus, url: `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}`, cacheDurationSec: 86400 });
+
+  Object.assign(api.ext, extendAPI(api, nexus));
 
   nexus.getModInfo(1, SITE_ID)
     .then(info => {

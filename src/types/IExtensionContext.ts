@@ -3,7 +3,7 @@ import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/typ
 import {
   GameVersionProviderFunc, GameVersionProviderTest, IGameVersionProviderOptions,
 } from '../extensions/gameversion_management/types/IGameVersionProvider';
-import { IHistoryStack } from '../extensions/history_management/types';
+import { IHistoryEvent, IHistoryStack } from '../extensions/history_management/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
 
 import {
@@ -32,7 +32,7 @@ import { SanityCheck } from '../util/reduxSanity';
 
 import { ICollectionsGameSupportEntry } from './collections/api';
 
-import { DialogActions, IDialogContent, IModReference, IModRepoId } from './api';
+import { DialogActions, IDialogContent, IModReference, IModRepoId, IOverlayOptions, IPosition } from './api';
 import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
 import { DialogType, IDialogResult } from './IDialog';
@@ -50,6 +50,7 @@ import * as React from 'react';
 import * as Redux from 'redux';
 import { ComplexActionCreator } from 'redux-act';
 import { ThunkDispatch } from 'redux-thunk';
+import { INexusAPIExtension } from '../extensions/nexus_integration/types/INexusAPIExtension';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IQuery, InstructionType, IReference, InstallFunc,
@@ -393,6 +394,19 @@ export interface IApiFuncOptions {
   minArguments?: number;
 }
 
+export interface IExtensionApiExtension extends INexusAPIExtension {
+  ensureLoggedIn?: () => Promise<void>;
+  awaitProfileSwitch?: (api: IExtensionApi) => Promise<string>;
+  showOverlay?: (id: string, title: string,
+                 content: string | React.ComponentType<any>,
+                 pos?: IPosition, options?: IOverlayOptions) => void;
+  showHistory?: (stack: string) => void;
+  addToHistory?: (stack: string, entry: IHistoryEvent) => void;
+  [key: string]: (...args: any[]) => any;
+}
+
+// (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) =>
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -721,7 +735,7 @@ export interface IExtensionApi {
    * functions made available from extension to extension. Callers have to make
    * sure they handle gracefully the case where a function doesn't exist
    */
-  ext: { [key: string]: (...args: any[]) => any };
+  ext: IExtensionApiExtension;
 
   // namespace to be used for localization of this extension
   NAMESPACE: string;

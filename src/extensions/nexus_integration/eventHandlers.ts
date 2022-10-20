@@ -262,8 +262,8 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
     }
 }
 
-export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
-  return (gameId: string, modId, fileId, source: string) => {
+export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string, modId: number, fileId: number, source: string) => {
     let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
     if (game === undefined) {
@@ -501,42 +501,11 @@ interface IDownloadResult {
   dlId?: string;
 }
 
-/**
- * semver.coerce drops pre-release information from a
- * perfectly valid semantic version string, don't want that
- */
-function coerce(input: string): semver.SemVer {
-  try {
-    return new semver.SemVer(input);
-  } catch (err) {
-    return semver.coerce(input);
-  }
-}
-
-function semverCompare(lhs: string, rhs: string): number {
-  const l = coerce(lhs);
-  const r = coerce(rhs);
-  if ((l !== null) && (r !== null)) {
-    return semver.compare(l, r);
-  } else {
-    return lhs.localeCompare(rhs, 'en-US');
-  }
-}
-
-export function onGetLatestFile(api: IExtensionApi,
-                                nexus: Nexus)
-                                : (...args: any[]) => Promise<IFileInfo> {
-  return (modId: number, gameId: string, versionPattern?: string): Promise<IFileInfo> => {
+export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
+                                : (...args: any[]) => Promise<IFileInfo[]> {
+  return (gameId: string, modId: number): Promise<IFileInfo[]> => {
     return Promise.resolve(nexus.getModFiles(modId, gameId))
-      .then(fileResponse => {
-        let { files } = fileResponse;
-        if (versionPattern !== undefined) {
-          files = files.filter(iter =>
-            semver.satisfies(coerce(iter.version), versionPattern));
-        }
-        const sorted = files.sort((lhs, rhs) => semverCompare(rhs.version, lhs.version));
-        return sorted[0];
-      });
+      .then(result => result.files);
   };
 }
 
@@ -555,7 +524,12 @@ export function onDownloadUpdate(api: IExtensionApi,
       : gameById(api.store.getState(), gameId);
 
     if (game === undefined) {
-      return Promise.reject(new ArgumentInvalid(gameId));
+      api.sendNotification({
+        type: 'error',
+        title: 'Invalid game id',
+        message: gameId,
+      });
+      return Promise.resolve(undefined);
     }
 
     const fileIdNum = parseInt(fileId, 10);
@@ -641,7 +615,7 @@ export function onDownloadUpdate(api: IExtensionApi,
   };
 }
 
-export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
+export function onSubmitFeedback(nexus: Nexus) {
   return (title: string, message: string, hash: string, feedbackFiles: string[],
           anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => {
     submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
@@ -670,7 +644,7 @@ function sendCollection(nexus: Nexus,
   }
 }
 
-export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
+export function onSubmitCollection(nexus: Nexus) {
   return (collectionInfo: ICollectionManifest,
           assetFilePath: string,
           collectionId: number,
@@ -687,8 +661,8 @@ export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
   };
 }
 
-export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
-  return (gameId, modId, endorsedStatus) => {
+export function onEndorseMod(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string, modId: string, endorsedStatus: EndorsedStatus) => {
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'], '');
     if (APIKEY === '') {

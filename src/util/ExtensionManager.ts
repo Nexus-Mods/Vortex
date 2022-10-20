@@ -1365,8 +1365,7 @@ class ExtensionManager {
 
     // apply api extensions immediately after all extensions are loaded so they
     // become available asap
-    this.apply('registerAPI',
-               (key: string, func: (...args: any[]) => any, options: IApiAddition) => {
+    this.apply('registerAPI', (key: string, func: (...args: any[]) => any, options: IApiAddition) => {
       this.mApi.ext[key] = func;
     });
 
