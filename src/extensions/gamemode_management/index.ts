@@ -198,7 +198,7 @@ function findGamePath(game: IGame, selectedPath: string,
 
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
-  
+
   if (gameById(state, gameId) === undefined) {
     return api.showDialog('question', 'Game support not installed', {
       text: 'Support for this game is provided through an extension. '
@@ -217,68 +217,56 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 
   const discovery = state.settings.gameMode.discovered[gameId];
 
-  return new Promise<void>((resolve, reject) => {
-    if ((discovery !== undefined) && (discovery.path !== undefined)) {
-      api.selectDir({ defaultPath: discovery.path })
-      .then(result => {
-        if (result !== undefined) {
-          findGamePath(game, result, 0, searchDepth(game.requiredFiles))
-            .then((corrected: string) =>
-              GameStoreHelper.identifyStore(corrected)
-                .then(store => ({ corrected, store })))
-            .then(({ corrected, store }) => {
-              api.store.dispatch(setGamePath(game.id, corrected, store));
-              resolve();
-            })
-            .catch(err => {
-              api.store.dispatch(showDialog('error', 'Game not found', {
-                text: api.translate('This directory doesn\'t appear to contain the game.\n'
-                          + 'Usually you need to select the top-level game directory, '
-                          + 'containing the following files:\n{{ files }}',
-                  { replace: { files: game.requiredFiles.join('\n') } }),
-              }, [
-                  { label: 'Cancel', action: () => resolve() },
-                  { label: 'Try Again',
-                    action: () => browseGameLocation(api, gameId).then(() => resolve()) },
-                ]));
-            });
-        } else {
-          resolve();
-        }
-      });
-    } else {
-      api.selectDir({})
+  return new Promise<void>((resolve) => {
+    const defaultPath = discovery?.path;
+
+    api.selectDir(defaultPath !== undefined ? { defaultPath } : {})
       .then(result => {
         if (result !== undefined) {
           findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
-            .then((corrected: string) => {
-              const exe = game.executable(corrected);
-              api.store.dispatch(addDiscoveredGame(game.id, {
-                path: corrected,
-                tools: {},
-                hidden: false,
-                environment: game.environment,
-                executable: (exe !== game.executable()) ? exe : undefined,
-                pathSetManually: true,
-              }));
+            .then((corrected: string) => GameStoreHelper.identifyStore(corrected)
+              .then(store => ({ corrected, store })))
+            .then(({ corrected, store }) => {
+              let executable = game.executable(corrected);
+              if (executable === game.executable()) {
+                executable = undefined;
+              }
+              // different paths depending on whether the game was previously detected
+              // or not so that we don't overwrite user settings
+              if (defaultPath !== undefined) {
+                api.store.dispatch(setGamePath(game.id, corrected, store, executable));
+              } else {
+                api.store.dispatch(addDiscoveredGame(game.id, {
+                  path: corrected,
+                  tools: {},
+                  hidden: false,
+                  environment: game.environment,
+                  executable,
+                  pathSetManually: true,
+                  store,
+                }));
+              }
               resolve();
             })
-            .catch(err => {
+            .catch(() => {
               api.store.dispatch(showDialog('error', 'Game not found', {
-                text: api.translate('This directory doesn\'t appear to contain the game. '
-                  + 'Expected to find these files: {{ files }}',
-                  { replace: { files: game.requiredFiles.join(', ') } }),
+                text: api.translate(
+                  'This directory doesn\'t appear to contain the game.\n'
+                  + 'Usually you need to select the top-level game directory, '
+                  + 'containing the following files:\n{{ files }}',
+                  { replace: { files: game.requiredFiles.join('\n') } }),
               }, [
-                  { label: 'Cancel', action: () => resolve() },
-                  { label: 'Try Again',
-                    action: () => browseGameLocation(api, gameId).then(() => resolve()) },
-                ]));
+                { label: 'Cancel', action: () => resolve() },
+                {
+                  label: 'Try Again',
+                  action: () => browseGameLocation(api, gameId).then(() => resolve())
+                },
+              ]));
             });
         } else {
           resolve();
         }
       });
-    }
   });
 }
 

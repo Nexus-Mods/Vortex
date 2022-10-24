@@ -1,9 +1,9 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { deleteOrNop, getSafe, merge,
-         pushSafe, removeValue, setOrNop, setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, getSafe, merge, setSafe } from '../../../util/storeHelper';
 import * as actions from '../actions/settings';
 
 import * as _ from 'lodash';
+import { log } from '../../../util/log';
 
 /**
  * reducer for changes to the window state
@@ -22,6 +22,12 @@ export const settingsReducer: IReducerSpec = {
         // every startup
         delete merged.executable;
       }
+      if ((payload.path !== undefined) && (payload.store === undefined)) {
+        // new path set but no store? fall back to default
+        res.store = undefined;
+      }
+
+      log('debug', 'add discovered game', { path: res.path, store: res.store });
       // avoid triggerring unnecessary events
       if (_.isEqual(getSafe(res, gamePath, undefined), getSafe(state, gamePath, undefined))) {
         return state;
@@ -35,12 +41,17 @@ export const settingsReducer: IReducerSpec = {
       state = deleteOrNop(state, ['discovered', id, 'pathSetManually']);
       return deleteOrNop(state, ['discovered', id, 'path']);
     },
-    [actions.setGamePath as any]: (state, payload) =>
-      merge(state, ['discovered', payload.gameId], {
+    [actions.setGamePath as any]: (state, payload) => {
+      const input = {
         path: payload.gamePath,
         pathSetManually: payload.gamePath !== undefined,
         store: payload.store,
-      }),
+      };
+      if (payload.exePath !== undefined) {
+        input['executable'] = payload.exePath;
+      }
+      return merge(state, ['discovered', payload.gameId], input);
+    },
     [actions.addDiscoveredTool as any]: (state, payload) => {
       if (state.discovered[payload.gameId] === undefined) {
         return state;
