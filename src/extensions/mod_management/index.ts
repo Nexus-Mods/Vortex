@@ -1,4 +1,4 @@
-import { dismissDialog, dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
+import { dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
 import {
   IExtensionApi,
@@ -1555,6 +1555,20 @@ function init(context: IExtensionContext): boolean {
         .catch(err => {
           context.api.showErrorNotification('Failed to install recommendations', err);
         });
+    }, instanceIds => {
+      // only show the option if there is at least one recommendation not already fulfilled.
+      // though this doesn't do the full mod reference lookup, it just goes by id hint
+      const state = context.api.getState();
+      const gameMode = activeGameId(state);
+      const mods = state.persistent.mods[gameMode];
+
+      const hasUnfulfilled = (modId: string) => (mods[modId].rules ?? [])
+        .find(rule => !rule.ignored
+            && (!rule.reference.idHint
+              || (mods[rule.reference.idHint] === undefined)));
+
+      return (instanceIds.find(hasUnfulfilled) !== undefined)
+          || 'No unfulfilled recommendations';
     });
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
