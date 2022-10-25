@@ -95,11 +95,19 @@ function previousBatch(keys: string[], context: BatchContext): BatchContext {
   return undefined;
 }
 
-export function getBatchContext(operation: string, key: string): IBatchContext {
-  const res = contexts[makeKey(operation, key)];
+export function getBatchContext(operation: string,
+                                key: string,
+                                create: boolean = false): IBatchContext {
+  const fullKey = makeKey(operation, key);
+  const res = contexts[fullKey];
   if (res !== undefined) {
     return res[0];
   } else {
+    if (create) {
+      const newContext = new BatchContext(operation, [key]);
+      contexts[fullKey] = [newContext];
+      return newContext;
+    }
     return undefined;
   }
 }

@@ -5,7 +5,7 @@ import { IConditionResult, IDialogContent, showDialog } from '../../actions/noti
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
-import { getBatchContext } from '../../util/BatchContext';
+import { getBatchContext, IBatchContext } from '../../util/BatchContext';
 import { fileMD5 } from '../../util/checksum';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
@@ -20,7 +20,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
+import { batchDispatch, isPathValid, makeQueue, setdefault, toBlue, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
@@ -172,33 +172,37 @@ class InstallManager {
     this.mGetInstallPath = installPath;
     this.mQueue = Promise.resolve();
 
-    api.onAsync('install-from-dependencies',
-        (dependentId: string, rules: IModRule[], recommended: boolean) => {
-      const profile = activeProfile(api.getState());
-      if (profile === undefined) {
-        return Promise.reject(new ProcessCanceled('No game active'));
-      }
-      const { mods } = api.getState().persistent;
-      const collection = mods[profile.gameId]?.[dependentId];
+    api.onAsync(
+      'install-from-dependencies',
+      (dependentId: string, rules: IModRule[], recommended: boolean) => {
+        const profile = activeProfile(api.getState());
+        if (profile === undefined) {
+          return Promise.reject(new ProcessCanceled('No game active'));
+        }
+        const { mods } = api.getState().persistent;
+        const collection = mods[profile.gameId]?.[dependentId];
 
-      if (collection === undefined) {
-        return Promise.resolve();
-      }
+        if (collection === undefined) {
+          return Promise.resolve();
+        }
 
-      const instPath = this.mGetInstallPath(profile.gameId);
+        const instPath = this.mGetInstallPath(profile.gameId);
 
-      const filtered = rules.filter(iter =>
-        collection.rules.find(rule => _.isEqual(iter, rule)) !== undefined);
+        const filtered = rules.filter(iter =>
+          collection.rules.find(rule => _.isEqual(iter, rule)) !== undefined);
 
-      if (recommended) {
-        return this.installRecommendationsImpl(api, profile, profile.gameId, dependentId,
-          modName(collection), filtered, instPath, true);
-      } else {
-        return this.installDependenciesImpl(api, profile, profile.gameId, dependentId,
-          modName(collection), filtered, instPath, true);
-      }
-
-    });
+        if (recommended) {
+          return this.withDependenciesContext('install-recommendations', () =>
+            this.installRecommendationsImpl(
+              api, profile, profile.gameId, dependentId,
+              modName(collection), filtered, instPath, true));
+        } else {
+          return this.withDependenciesContext('install-collections', () =>
+            this.installDependenciesImpl(
+              api, profile, profile.gameId, dependentId,
+              modName(collection), filtered, instPath, true));
+        }
+      });
 
     api.onAsync('cancel-dependency-install', (modId: string) => {
       this.mDependencyInstalls[modId]?.();
@@ -790,25 +794,19 @@ class InstallManager {
 
     this.repairRules(api, mod, gameId);
 
-    const rules = (mod.rules ?? []).slice();
-
     const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing dependencies');
+
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
-    return api.lookupModMeta({
-      fileMD5: mod.attributes['fileMD5'],
-      fileSize: mod.attributes['fileSize'],
-      gameId: mod.attributes['downloadGame'] ?? gameId,
-    })
-      .then(results => {
-        rules.push(...(results[0]?.value?.rules ?? []));
-      })
-      .then(() => this.installDependenciesImpl(api, profile, gameId, mod.id, modName(mod), rules,
-                                               installPath, allowAutoDeploy))
-      .finally(() => {
-        log('info', 'done installing dependencies');
-        api.store.dispatch(stopActivity('installing_dependencies', mod.id));
-      });
+    return this.withDependenciesContext('install-dependencies', () =>
+      this.augmentRules(api, gameId, mod)
+        .then(rules => this.installDependenciesImpl(
+          api, profile, gameId, mod.id, modName(mod), rules,
+          installPath, allowAutoDeploy))
+        .finally(() => {
+          log('info', 'done installing dependencies');
+          api.store.dispatch(stopActivity('installing_dependencies', mod.id));
+        }));
   }
 
   public installRecommendations(api: IExtensionApi,
@@ -827,12 +825,45 @@ class InstallManager {
 
     const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing recommendations');
+
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
-    return this.installRecommendationsImpl(api, profile, gameId, mod.id, modName(mod),
-                                           mod.rules, installPath, false)
+    return this.withDependenciesContext('install-recommendations', () =>
+      this.augmentRules(api, gameId, mod)
+        .then(rules => this.installRecommendationsImpl(
+          api, profile, gameId, mod.id, modName(mod),
+          rules, installPath, false))
+        .finally(() => {
+          log('info', 'done installing recommendations');
+          api.store.dispatch(stopActivity('installing_dependencies', mod.id));
+        })
+    );
+  }
+
+  private augmentRules(api: IExtensionApi, gameId: string, mod: IMod): Promise<IRule[]> {
+    const rules = (mod.rules ?? []).slice();
+
+    return api.lookupModMeta({
+      fileMD5: mod.attributes['fileMD5'],
+      fileSize: mod.attributes['fileSize'],
+      gameId: mod.attributes['downloadGame'] ?? gameId,
+    })
+      .then(results => {
+        rules.push(...(results[0]?.value?.rules ?? []));
+        return rules;
+      })
+  }
+
+  private withDependenciesContext<T>(contextName: string, func: () => Promise<T>): Promise<T> {
+    const context = getBatchContext(contextName, '', true);
+    context.set('depth', context.get('depth', 0) + 1);
+
+    return func()
       .finally(() => {
-        log('info', 'done installing recommendations');
-        api.store.dispatch(stopActivity('installing_dependencies', mod.id));
+        const oldDepth = context.get<number>('depth', 0);
+        context.set('depth', oldDepth - 1);
+        if (oldDepth === 1) {
+          context.set('remember', null);
+        }
       });
   }
 
@@ -2040,6 +2071,11 @@ class InstallManager {
   private dropUnfulfilled(api: IExtensionApi, dep: IDependency,
                           gameId: string, sourceModId: string,
                           recommended: boolean) {
+    log('info', 'ignoring unfulfillable rule', { gameId, sourceModId, dep });
+    if (recommended) {
+      // not ignoring recommended dependencies because what would be the point?
+      return;
+    }
     const refName = renderModReference(dep.reference, undefined);
     api.store.dispatch(addModRule(gameId, sourceModId, {
       type: recommended ? 'recommends' : 'requires',
@@ -2116,16 +2152,20 @@ class InstallManager {
           const mods = api.store.getState().persistent.mods[gameId];
           return { ...dep, mod: mods[modId] };
         })
+        .catch(err => {
+          if (dep.extra?.onlyIfFulfillable) {
+            this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
+            return Promise.resolve(undefined);
+          } else {
+            return Promise.reject(err);
+          }
+        })
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
           if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
             return Promise.resolve(undefined);
           }
           const refName = renderModReference(dep.reference, undefined);
-          if (dep.extra?.onlyIfFulfillable && !recommended) {
-            this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
-            return Promise.resolve(undefined);
-          }
           api.showErrorNotification('Failed to install dependency',
             '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
             + 'be available. You may want to install a current version of the specified mod '
@@ -2143,7 +2183,7 @@ class InstallManager {
           const refName = renderModReference(dep.reference, undefined);
           api.showErrorNotification('Failed to install dependency',
             'The direct download URL for this file is not valid or didn\'t lead to a file. '
-            + 'This may be a setup error in the collection or the file has been moved.', {
+            + 'This may be a setup error in the dependency or the file has been moved.', {
               allowReport: false,
               id: `failed-install-dependency-${refName}`,
               message: refName,
@@ -2160,11 +2200,6 @@ class InstallManager {
           return Promise.resolve(undefined);
         })
         .catch(err => {
-          if (dep.extra?.onlyIfFulfillable && !recommended) {
-            this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
-            return Promise.resolve();
-          }
-
           const refName = renderModReference(dep.reference, undefined);
           const notiId = `failed-install-dependency-${refName}`;
           if (err instanceof UserCanceled) {
@@ -2435,14 +2470,16 @@ class InstallManager {
               expected: dep.lookupResults[0].value.fileMD5,
               got: downloads[downloadId].fileMD5,
             });
-            queryWrongMD5 = api.showDialog('question', 'Unrecognized file {{name}}', {
-              text: 'The signature for the file you selected to download for "{{name}}" does '
-                  + 'not match the expected value. This is commonly caused by either '
-                  + 'an incorrect selection or the required file having been updated or '
-                  + 'modified since the dependency was set.\n\n'
-                  + 'Would you like to keep the file you have downloaded or retry?',
+            queryWrongMD5 = api.showDialog('question', 'Unrecognized file {{reference}}', {
+              text: 'The file "{{fileName}}" that was just downloaded for dependency "{{reference}}" '
+                  + 'is not the exact file expected. This might not be an issue if the mod has been '
+                  + 'updated or repackaged by the author.\n'
+                  + 'If you selected this file yourself and you think you may have chosen the wrong one, '
+                  + 'please click "Retry". '
+                  + 'Otherwise, please continue and keep an eye open for error messages regarding this mod.',
               parameters: {
-                name: renderModReference(dep.reference, dep.mod),
+                fileName: downloads[downloadId].localPath,
+                reference: renderModReference(dep.reference, dep.mod),
               },
             }, [
               { label: 'Retry' },
@@ -2585,79 +2622,14 @@ class InstallManager {
         .then(updated => this.updateRules(api, gameId, modId, [].concat(existing, updated), false));
     }
 
-    const state: IState = api.store.getState();
-    const downloads = state.persistent.downloads.files;
-
-    const requiredInstalls = success.filter(dep => dep.mod === undefined);
-    const requiredDownloads = requiredInstalls.filter(dep =>
-      (dep.download === undefined) || [undefined, 'paused'].includes(downloads[dep.download]?.state));
-    const requireEnable = success.filter(dep =>
-      (dep.mod !== undefined)
-      && (dep.download !== undefined)
-      && !([undefined, 'paused'].includes(downloads[dep.download]?.state)));
-
-    let bbcode = '';
-
-    let list: string = '';
-    if (requiredDownloads.length > 0) {
-      list += '[h4]Require Download & Install[/h4]<br/>[list]'
-        + requiredDownloads.map(mod => '[*]' + renderModReference(mod.reference)).join('\n')
-        + '[/list]<br/>';
-    }
-    const requireInstallOnly = requiredInstalls
-          .filter(mod => !requiredDownloads.includes(mod));
-    if (requireInstallOnly.length > 0) {
-      list += '[h4]Require Install[/h4]<br/>[list]'
-        + requireInstallOnly
-          .map(mod => '[*]' + renderModReference(mod.reference)).join('\n')
-        + '[/list]<br/>';
-    }
-    if (requireEnable.length > 0) {
-      list += '[h4]Will be enabled[/h4]<br/>[list]'
-        + requireEnable.map(mod => '[*]' + modName(mod.mod)).join('\n')
-        + '[/list]';
-    }
-
-    if (success.length > 0) {
-      bbcode += '{{modName}} has {{count}} unresolved dependencies. '
-        + '{{instCount}} mods have to be installed, '
-        + '{{dlCount}} of them have to be downloaded first.<br/><br/>';
-    }
-
-    if (error.length > 0) {
-      bbcode += '[color=red]'
-        + '{{modName}} has unsolved dependencies that could not be found automatically. '
-        + 'Please install them manually:<br/>'
-        + '{{errors}}'
-        + '[/color]';
-    }
-
     if (success.length === 0) {
       return Promise.resolve();
     }
 
-    if (list.length > 0) {
-      bbcode += '<br/>' + list;
-    }
+    const context = getBatchContext('install-dependencies', '', true);
 
-    const actions = success.length > 0
-      ? [
-        { label: 'Don\'t install' },
-        { label: 'Install' },
-      ]
-      : [{ label: 'Close' }];
-
-    return api.store.dispatch(
-      showDialog('question', 'Install Dependencies', {
-        bbcode,
-        parameters: {
-          modName: name,
-          count: success.length,
-          instCount: requiredInstalls.length,
-          dlCount: requiredDownloads.length,
-          errors: error.map(err => err.error).join('<br/>'),
-        },
-      }, actions)).then(result => {
+    return this.showMemoDialog(api, context, name, success, error)
+      .then(result => {
         if (result.action === 'Install') {
           return this.doInstallDependencies(api, gameId, modId, success, false, silent)
             .then(updated => this.updateRules(api, gameId, modId,
@@ -2666,7 +2638,106 @@ class InstallManager {
           return Promise.resolve();
         }
       });
+  }
 
+  private showMemoDialog(api: IExtensionApi,
+                         context: IBatchContext,
+                         name: string,
+                         success: IDependency[],
+                         error: IDependencyError[]): Promise<IDialogResult> {
+    const remember = context.get<boolean>('remember', null);
+
+    if (truthy(remember)) {
+      return Promise.resolve<IDialogResult>({
+        action: remember ? 'Install' : 'Don\'t Install',
+        input: {},
+      });
+    } else {
+      const downloads = api.getState().persistent.downloads.files;
+
+      const t = api.translate;
+
+      const requiredInstalls = success.filter(dep => dep.mod === undefined);
+      const requiredDownloads = requiredInstalls.filter(dep =>
+        (dep.download === undefined) || [undefined, 'paused'].includes(downloads[dep.download]?.state));
+      const requireEnable = success.filter(dep =>
+        (dep.mod !== undefined)
+        && (dep.download !== undefined)
+        && !([undefined, 'paused'].includes(downloads[dep.download]?.state)));
+
+      let bbcode = '';
+
+      let list: string = '';
+      if (requiredDownloads.length > 0) {
+        list += `[h4]${t('Require Download & Install')}[/h4]<br/>[list]`
+          + requiredDownloads.map(mod => '[*]' + renderModReference(mod.reference)).join('\n')
+          + '[/list]<br/>';
+      }
+      const requireInstallOnly = requiredInstalls
+        .filter(mod => !requiredDownloads.includes(mod));
+      if (requireInstallOnly.length > 0) {
+        list += `[h4]${t('Require Install')}[/h4]<br/>[list]`
+          + requireInstallOnly
+            .map(mod => '[*]' + renderModReference(mod.reference)).join('\n')
+          + '[/list]<br/>';
+      }
+      if (requireEnable.length > 0) {
+        list += `[h4]${t('Will be enabled')}[/h4]<br/>[list]`
+          + requireEnable.map(mod => '[*]' + modName(mod.mod)).join('\n')
+          + '[/list]';
+      }
+
+      if (success.length > 0) {
+        bbcode += t('{{modName}} requires the following dependencies:', {
+          replace: { modName: name },
+        });
+      }
+
+      if (error.length > 0) {
+        bbcode += '[color=red]'
+          + t('{{modName}} has unsolved dependencies that could not be found automatically. ',
+              { replace: { modName: name } })
+          + t('Please install them manually') + ':<br/>'
+          + '{{errors}}'
+          + '[/color]';
+      }
+
+      if (list.length > 0) {
+        bbcode += '<br/>' + list;
+      }
+
+      const actions = success.length > 0
+        ? [
+          { label: 'Don\'t install' },
+          { label: 'Install' },
+        ]
+        : [{ label: 'Close' }];
+
+
+      return api.store.dispatch(
+        showDialog('question', t('Install Dependencies'), {
+          bbcode,
+          parameters: {
+            modName: name,
+            count: success.length,
+            instCount: requiredInstalls.length,
+            dlCount: requiredDownloads.length,
+            errors: error.map(err => err.error).join('<br/>'),
+          },
+          checkboxes: [
+            { id: 'remember', text: 'Do this for all dependencies', value: false },
+          ],
+          options: {
+            translated: true,
+          },
+        }, actions))
+        .then(result => {
+          if (result.input['remember']) {
+            context.set('remember', result.action === 'Install');
+          }
+          return result;
+        });
+    }
   }
 
   private installDependenciesImpl(api: IExtensionApi,
@@ -2729,6 +2800,96 @@ class InstallManager {
           api.events.emit('did-install-dependencies', gameId, modId, false);
         });
     }, false);
+  }
+
+  private installRecommendationsQueryMain(
+    api: IExtensionApi, modName: string,
+    success: IDependency[], error: IDependencyError[],
+    remember: boolean | null)
+    : Promise<IDialogResult> {
+    if (remember === true) {
+      return Promise.resolve({ action: 'Install All', input: {} });
+    } else if (remember === false) {
+      return Promise.resolve({ action: 'Skip', input: {} });
+    }
+    let bbcode: string = '';
+    if (success.length > 0) {
+      bbcode += '{{modName}} recommends the installation of additional mods. '
+        + 'Please use the checkboxes below to select which to install.<br/><br/>[list]';
+      for (const item of success) {
+        bbcode += `[*] ${renderModReference(item.reference, undefined)}`;
+      }
+
+      bbcode += '[/list]';
+    }
+
+    if (error.length > 0) {
+      bbcode += '[color=red]'
+        + '{{modName}} has unsolved dependencies that could not be found automatically. '
+        + 'Please install them manually.'
+        + '[/color][list]';
+      for (const item of error) {
+        bbcode += `[*] ${item.error}`;
+      }
+      bbcode += '[/list]';
+    }
+
+    return api.store.dispatch(
+      showDialog('question', 'Install Recommendations', {
+        bbcode,
+        checkboxes: [
+          { id: 'remember', text: 'Do this for all recommendations', value: false },
+        ],
+        parameters: {
+          modName,
+        },
+      }, [
+        { label: 'Skip' },
+        { label: 'Manually Select' },
+        { label: 'Install All' },
+      ]));
+  }
+
+  private installRecommendationsQuerySelect(
+    api: IExtensionApi, modName: string, success: IDependency[])
+    : Promise<IDialogResult> {
+    let bbcode: string = '';
+    if (success.length > 0) {
+      bbcode += '{{modName}} recommends the installation of additional mods. '
+        + 'Please use the checkboxes below to select which to install.<br/><br/>';
+    }
+
+    const checkboxes: ICheckbox[] = success.map((dep, idx) => {
+      let depName: string;
+      if (dep.lookupResults.length > 0) {
+        depName = dep.lookupResults[0].value.fileName;
+      }
+      if (depName === undefined) {
+        depName = renderModReference(dep.reference, undefined);
+      }
+
+      let desc = depName;
+      if (dep.download === undefined) {
+        desc += ' (' + api.translate('Not downloaded yet') + ')';
+      }
+      return {
+        id: idx.toString(),
+        text: desc,
+        value: true,
+      };
+    });
+
+    return api.store.dispatch(
+      showDialog('question', 'Install Recommendations', {
+        bbcode,
+        checkboxes,
+        parameters: {
+          modName,
+        },
+      }, [
+        { label: 'Don\'t install' },
+        { label: 'Continue' },
+      ]));
   }
 
   private installRecommendationsImpl(api: IExtensionApi,
@@ -2795,94 +2956,47 @@ class InstallManager {
           const state: IState = api.store.getState();
           const downloads = state.persistent.downloads.files;
 
-          const requiredDownloads =
-            success.reduce((prev: number, current: IDependency) => {
-              // the download could have been removed in the time
-              // between resolving dependencies and now
-              if ((current.download !== undefined)
-                && (downloads[current.download] === undefined)) {
-                current.download = undefined;
-              }
-              const isDownloaded = (current.download !== undefined)
-                && (downloads[current.download].state !== 'paused');
-              return prev + (isDownloaded ? 0 : 1);
-            }, 0);
-
-          let bbcode = '';
-
-          if (success.length > 0) {
-            bbcode += '{{modName}} recommends the installation of additional mods. '
-              + 'Please use the checkboxes below to select which to install.<br/><br/>';
-          }
-
-          if (error.length > 0) {
-            bbcode += '[color=red]'
-              + '{{modName}} has unsolved dependencies that could not be found automatically. '
-              + 'Please install them manually.'
-              + '[/color]';
-          }
-
-          const checkboxes: ICheckbox[] = success.map((dep, idx) => {
-            let depName: string;
-            if (dep.lookupResults.length > 0) {
-              depName = dep.lookupResults[0].value.fileName;
-            }
-            if (depName === undefined) {
-              depName = renderModReference(dep.reference, undefined);
-            }
-
-            let desc = depName;
-            if (dep.download === undefined) {
-              desc += ' (' + api.translate('Not downloaded yet') + ')';
-            }
-            return {
-              id: idx.toString(),
-              text: desc,
-              value: true,
-            };
-          });
-
-          const actions = success.length > 0
-            ? [
-              { label: 'Don\'t install' },
-              { label: 'Install' },
-            ]
-            : [{ label: 'Close' }];
-
-          let queryProm: Promise<IDialogResult> = Promise.resolve(null);
+          const context = getBatchContext('install-recommendations', '', true);
+          const remember = context.get<boolean>('remember', null);
+          let queryProm: Promise<IDependency[]>;
 
           if (!silent || (error.length > 0)) {
-            queryProm = api.store.dispatch(
-              showDialog('question', 'Install Recommendations', {
-                bbcode,
-                checkboxes,
-                parameters: {
-                  modName: name,
-                  count: dependencies.length,
-                  dlCount: requiredDownloads,
-                },
-              }, actions));
+            queryProm = this.installRecommendationsQueryMain(api, name, success, error, remember)
+            .then(result => {
+              if (result.action === 'Skip') {
+                if (result.input?.remember) {
+                  context.set('remember', false);
+                }
+                return [];
+              } else if (result.action === 'Install All') {
+                if (result.input?.remember) {
+                  context.set('remember', true);
+                }
+                return success;
+              } else {
+                return this.installRecommendationsQuerySelect(api, name, success)
+                  .then(selectResult => {
+                    if (selectResult.action === 'Continue') {
+                      return Object.keys(selectResult.input)
+                        .filter(key => selectResult.input[key])
+                        .map(key => success[parseInt(key, 10)]);
+                    } else {
+                      return [];
+                    }
+                  })
+              }
+            });
           }
 
           return queryProm.then(result => {
-            if ((result === null) || (result.action === 'Install')) {
-              const selected = (result !== null)
-                ? new Set(Object.keys(result.input).filter(key => result.input[key]))
-                : undefined;
-
-              return this.doInstallDependencies(
-                api,
-                gameId,
-                modId,
-                (result !== null)
-                  ? success.filter((dep, idx) => selected.has(idx.toString()))
-                  : success,
-                true, silent)
-                .then(updated => this.updateRules(api, gameId, modId,
-                  [].concat(existing, updated), true));
-            } else {
-              return Promise.resolve();
-            }
+            return this.doInstallDependencies(
+              api,
+              gameId,
+              modId,
+              result,
+              true, silent)
+              .then(updated => this.updateRules(api, gameId, modId,
+                [].concat(existing, updated), true));
           });
         })
         .catch((err) => {
