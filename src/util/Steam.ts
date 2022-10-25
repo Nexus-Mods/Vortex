@@ -189,6 +189,24 @@ class Steam implements IGameStore {
     });
   }
 
+  public identifyGame(gamePath: string,
+                      fallback: (gamePath: string) => PromiseLike<boolean>)
+                      : Promise<boolean> {
+    const custom = gamePath.toLowerCase().split(path.sep).includes('steamapps');
+
+    return Promise.resolve(fallback(gamePath))
+      .then((fbResult: boolean) => {
+        if (fbResult !== custom) {
+          log('warn', '(steam) game identification inconclusive', {
+            gamePath,
+            custom,
+            fallback,
+          });
+        }
+        return custom || fbResult;
+      });
+  }
+
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
     if (typeof(object) !== 'object') {
       return false;
