@@ -190,7 +190,7 @@ function checkForExternalChanges(api: IExtensionApi,
   return Promise.each(Object.keys(modPaths),
     typeId => {
       log('debug', 'checking external changes',
-        { modType: typeId, count: lastDeployment[typeId].length });
+        { modType: typeId, count: lastDeployment[typeId]?.length ?? 0 });
       return activator.externalChanges(profile.gameId, stagingPath, modPaths[typeId],
         lastDeployment[typeId])
         .then(fileChanges => {

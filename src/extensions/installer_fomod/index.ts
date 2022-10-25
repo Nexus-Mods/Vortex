@@ -118,7 +118,7 @@ function transformError(err: any): Error {
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '
                           + 'some will be inaccessible, just ignore those.');
-  } else if (err.Message.includes('There is not enough space on the disk')) {
+  } else if ((err.Message ?? '').includes('There is not enough space on the disk')) {
     result = new SetupError(err.Message);
   } else if ((err.stack !== null)
              && ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
