@@ -376,9 +376,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          installPath: string,
                          dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
-    const nonLinks: IFileChange[] = [];
+    const changes: IFileChange[] = [];
 
-    return Promise.map(activation, fileEntry => {
+    return Promise.map(activation ?? [], fileEntry => {
       const fileDataPath = (truthy(fileEntry.target)
         ? [dataPath, fileEntry.target, fileEntry.relPath]
         : [dataPath, fileEntry.relPath]
@@ -432,19 +432,19 @@ abstract class LinkingActivator implements IDeploymentMethod {
         })
         .then((isLink?: boolean) => {
           if (sourceDeleted && !destDeleted && this.canRestore()) {
-            nonLinks.push({
+            changes.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'srcdeleted',
             });
           } else if (destDeleted && !sourceDeleted) {
-            nonLinks.push({
+            changes.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'deleted',
             });
           } else if (!sourceDeleted && !destDeleted && !isLink) {
-            nonLinks.push({
+            changes.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               sourceTime,
@@ -462,7 +462,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return Promise.resolve(undefined);
         });
-      }, { concurrency: 200 }).then(() => Promise.resolve(nonLinks));
+      }, { concurrency: 200 }).then(() => Promise.resolve(this.deduplicate(changes)));
   }
 
   /**
@@ -537,6 +537,29 @@ abstract class LinkingActivator implements IDeploymentMethod {
       })
       : Promise.resolve())
       .then(() => didCreate);
+  }
+
+  private deduplicate(input: IFileChange[]): IFileChange[] {
+    // since the change detection is an asynchronous process, it's possible (though extremely rare)
+    // that the same file may show up with different change types. This can cause an error
+    // since the same action can not be applied
+
+    const changeMap: { [filePath: string]: IFileChange } = {};
+
+    // if one of the files is deleted that's the more important change, otherwise we
+    // take the later one, assuming there is a chronological order to the changes
+    const moreImportant = (lhs: IFileChange, rhs: IFileChange) => {
+      return !['deleted', 'srcdeleted'].includes(rhs.changeType);
+    }
+
+    for (const change of input) {
+      if ((changeMap[change.filePath] === undefined)
+          || (moreImportant(change, changeMap[change.filePath]))) {
+        changeMap[change.filePath] = change;
+      }
+    }
+  
+    return Object.values(changeMap);
   }
 
   private removeDeployedFile(installationPath: string,
