@@ -147,8 +147,9 @@ const dummyJob: IDownloadJob = {
  * @class DownloadWorker
  */
 class DownloadWorker {
-  public static dummy(onFinish: () => void): DownloadWorker {
-    const res = new DownloadWorker(dummyJob,  () => null, onFinish, () => null, '', () => null);
+  public static dummy(onAbort: () => void): DownloadWorker {
+    const res = new DownloadWorker(dummyJob,  () => null, () => null, () => null, '', () => null);
+    res.mOnAbort = onAbort;
     res.mEnded = true;
     return res;
   }
@@ -174,6 +175,8 @@ class DownloadWorker {
   private mRedirectsFollowed: number = 0;
   private mThrottle: () => stream.Transform;
   private mURLResolve: Promise<void>;
+  private mOnAbort: () => void;
+
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -420,8 +423,9 @@ class DownloadWorker {
       this.mURLResolve.cancel();
       this.mURLResolve = undefined;
     }
+    this.mOnAbort?.();
     if (this.mEnded) {
-     return false;
+      return false;
     }
     if (this.mRequest !== undefined) {
       this.mRequest.abort();
