@@ -2599,13 +2599,18 @@ class InstallManager {
       existing: IDependency[];
       error: IDependencyError[];
     }
+
+    const modState = profile !== undefined
+      ? api.getState().persistent.profiles[profile.id].modState
+      : {};
+
     const { success, existing, error } = dependencies.reduce(
       (prev: IDependencySplit, dep: Dependency) => {
         if (dep['error'] !== undefined) {
           prev.error.push(dep as IDependencyError);
         } else {
           const { mod } = dep as IDependency;
-          if ((mod === undefined) || (!getSafe(profile?.modState, [mod.id, 'enabled'], false))) {
+          if ((mod === undefined) || !(modState[mod.id].enabled ?? false)) {
             prev.success.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
@@ -2660,10 +2665,7 @@ class InstallManager {
       const requiredInstalls = success.filter(dep => dep.mod === undefined);
       const requiredDownloads = requiredInstalls.filter(dep =>
         (dep.download === undefined) || [undefined, 'paused'].includes(downloads[dep.download]?.state));
-      const requireEnable = success.filter(dep =>
-        (dep.mod !== undefined)
-        && (dep.download !== undefined)
-        && !([undefined, 'paused'].includes(downloads[dep.download]?.state)));
+      const requireEnableOnly = success.filter(dep => dep.mod !== undefined);
 
       let bbcode = '';
 
@@ -2681,9 +2683,9 @@ class InstallManager {
             .map(mod => '[*]' + renderModReference(mod.reference)).join('\n')
           + '[/list]<br/>';
       }
-      if (requireEnable.length > 0) {
+      if (requireEnableOnly.length > 0) {
         list += `[h4]${t('Will be enabled')}[/h4]<br/>[list]`
-          + requireEnable.map(mod => '[*]' + modName(mod.mod)).join('\n')
+          + requireEnableOnly.map(mod => '[*]' + modName(mod.mod)).join('\n')
           + '[/list]';
       }
 
