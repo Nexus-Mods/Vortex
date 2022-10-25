@@ -633,6 +633,14 @@
     "corner-handle": {
       "path": "{nucleo}/design-development/48px_texture",
       "rmFill": true
+    },
+    "autosort-enabled": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_filter-check",
+      "rmFill": true
+    },
+    "autosort-disabled": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_filter-remove",
+      "rmFill": true
     }
   }
 }
