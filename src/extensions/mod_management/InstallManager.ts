@@ -2209,6 +2209,13 @@ class InstallManager {
               abort.abort();
               return Promise.reject(err);
             }
+          } else if (err.code === 'Z_BUF_ERROR') {
+            api.showErrorNotification(
+              'Download failed',
+              'The download ended prematurely or was corrupted. You\'ll have to restart it.', {
+                allowReport: false,
+              }
+            );
           } else if ([403, 404, 410].includes(err['statusCode'])) {
             api.showErrorNotification(
               'Failed to install dependency',
