@@ -63,7 +63,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
-const profileFiles: { [gameId: string]: string[] } = {};
+const profileFiles: { [gameId: string]: Array<string | (() => PromiseLike<string[]>)> } = {};
 
 const profileFeatures: IProfileFeature[] = [];
 
@@ -98,36 +98,45 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
     return Promise.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
-      .then(() => profilePath(profile))
-      .then((currentProfilePath: string) => {
-        // if this is the first sync, we assume the files on disk belong
-        // to the profile that was last active in Vortex. This could only be
-        // false if the profile was somehow changed before without a
-        // syncFromProfile happening. Of course if the profile was never
-        // loaded then it has no copies of the files but that if fine.
-        const gameId = profile.gameId;
-        if (profileFiles[gameId] === undefined) {
-          return Promise.resolve();
-        }
-        if (direction === 'import') {
-          return syncToProfile(currentProfilePath, profileFiles[gameId],
-            (error, detail, allowReport) =>
-              showError(store.dispatch, error, detail, { allowReport }));
-        } else {
-          return syncFromProfile(currentProfilePath, profileFiles[gameId],
-            (error, detail, allowReport) =>
-              showError(store.dispatch, error, detail, { allowReport }));
-        }
-      })
-      .catch((err: Error) => {
-        // why are we catching here at all? shouldn't a failure here cancel the
-        // entire operation?
-        if (err instanceof UserCanceled) {
-          return Promise.reject(err);
-        }
-        showError(store.dispatch, 'Failed to set profile', err);
-      })
-      ;
+    .then(() => profilePath(profile))
+    .then((currentProfilePath: string) => {
+      // if this is the first sync, we assume the files on disk belong
+      // to the profile that was last active in Vortex. This could only be
+      // false if the profile was somehow changed before without a
+      // syncFromProfile happening. Of course if the profile was never
+      // loaded then it has no copies of the files but that if fine.
+      const gameId = profile.gameId;
+      if (profileFiles[gameId] === undefined) {
+        return Promise.resolve();
+      }
+      return Promise.all(profileFiles[gameId].map(iter => {
+        return typeof(iter) === 'string'
+          ? Promise.resolve([iter])
+          : iter();
+      }))
+        .then(fileLists => [].concat(...fileLists))
+        .then(filePaths => {
+          if (direction === 'import') {
+            return syncToProfile(
+              currentProfilePath, filePaths,
+              (error, detail, allowReport) =>
+                showError(store.dispatch, error, detail, { allowReport }));
+          } else {
+            return syncFromProfile(
+              currentProfilePath, filePaths,
+              (error, detail, allowReport) =>
+                showError(store.dispatch, error, detail, { allowReport }));
+          }
+        });
+    })
+    .catch((err: Error) => {
+      // why are we catching here at all? shouldn't a failure here cancel the
+      // entire operation?
+      if (err instanceof UserCanceled) {
+        return Promise.reject(err);
+      }
+      showError(store.dispatch, 'Failed to set profile', err);
+    });
 }
 
 /**
@@ -745,12 +754,13 @@ function init(context: IExtensionContext): boolean {
       activeGameId(context.api.getState()) !== instanceIds[0],
   );
 
-  context.registerProfileFile = (gameId: string, filePath: string) => {
-    if (profileFiles[gameId] === undefined) {
-      profileFiles[gameId] = [];
-    }
-    profileFiles[gameId].push(filePath);
-  };
+  context.registerProfileFile =
+    (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => {
+      if (profileFiles[gameId] === undefined) {
+        profileFiles[gameId] = [];
+      }
+      profileFiles[gameId].push(filePath);
+    };
 
   context.registerAction('game-managed-buttons', 150, 'delete', {},
     context.api.translate('Stop Managing'),

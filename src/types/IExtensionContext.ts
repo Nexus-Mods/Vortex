@@ -1258,10 +1258,10 @@ export interface IExtensionContext {
    * profile, so when users switch to a different profile, this file will be copied to the
    * profile they're switching away from, then the corresponding file from the profile they're
    * switching to is copied to filePath.
-   * Right now this only supports static file paths, no patterns (glob or regular expressions) and
-   * no way to dynamically find the file to synchronize
+   * filePath can either be a static string or a function returning a promise that resolves
+   * to the actual file path. The latter allows for the path to be determined dynamically
    */
-  registerProfileFile?: (gameId: string, filePath: string) => void;
+  registerProfileFile?: (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => void;
 
   /**
    * register a profile feature that can be toggled/configured on the profiles screen.
