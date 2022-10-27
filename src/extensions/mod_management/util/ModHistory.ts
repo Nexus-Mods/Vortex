@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
+import { TFunction } from '../../../util/i18n';
 import { profileById } from '../../../util/selectors';
 import { midClip } from '../../../util/util';
 import { IHistoryEvent, IHistoryStack, Revertability } from '../../history_management/types';
@@ -27,8 +28,10 @@ const HIDDEN_ATTRIBUTES = [
   'noContent', 'installTime', 'content', 'endorsed', 'newestFileId', 'lastUpdateTime',
 ];
 
-function shorten(input: any): any {
-  if (typeof(input) === 'string') {
+function shorten(t: TFunction, input: any): any {
+  if (typeof(input) === 'object') {
+    return midClip(JSON.stringify(input), 20);
+  } else if (typeof(input) === 'string') {
     return midClip(input, 20);
   } else {
     return input;
@@ -121,13 +124,13 @@ class ModHistory implements IHistoryStack {
           api.translate('Mod "{{ name }}" attribute "{{ attribute }}" set: {{ to }}', {
             replace: {
               ...evt.data,
-              to: shorten(evt.data.to),
+              to: shorten(api.translate, evt.data.to),
             },
           }),
         revert: {
           describe: evt => api.translate('Revert to {{ from }}', { replace: {
             ...evt.data,
-            from: shorten(evt.data.from),
+            from: shorten(api.translate, evt.data.from),
            } }),
           possible: evt => {
             const state = api.getState();
