@@ -319,7 +319,14 @@ class DownloadWorker {
           { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
         this.mResponse = res;
-        this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
+        let recodedURI: string;
+        try {
+          recodedURI = encodeURI(decodeURI(jobUrl));
+        } catch (err) {
+          this.handleError(err);
+          return;
+        }
+        this.handleResponse(res, recodedURI);
         let str: stream.Readable = res;
 
         str = str.pipe(this.mThrottle());

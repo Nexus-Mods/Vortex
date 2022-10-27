@@ -360,7 +360,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof UserCanceled) {
       // nop
-    } else if (err instanceof DataInvalid) {
+    } else if ((err instanceof DataInvalid)
+               || (err instanceof URIError)) {
        this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof DownloadIsHTML) {
       if (resume) {
