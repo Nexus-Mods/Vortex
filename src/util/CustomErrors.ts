@@ -65,7 +65,7 @@ export class DataInvalid extends Error {
 
 export class ArgumentInvalid extends Error {
   constructor(argument: string) {
-    super(`Invalid argument: ${argument}`);
+    super(`Invalid argument: "${argument}"`);
     this.name = this.constructor.name;
   }
 }
