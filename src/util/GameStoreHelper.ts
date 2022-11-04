@@ -23,6 +23,7 @@ export interface IStoreQuery {
     id?: string;
     name?: string;
     prefer?: number;
+    modifyPath?: (detectedPath: string) => string;
   }>;
 }
 
@@ -136,6 +137,7 @@ class GameStoreHelper {
           }
         }
         if (result !== undefined) {
+          if (storeQuery.modifyPath) result.gamePath = storeQuery.modifyPath(result.gamePath);
           result.priority = storeQuery.prefer
             ?? this.mStoresDict[result.gameStoreId]?.priority
             ?? 100;
