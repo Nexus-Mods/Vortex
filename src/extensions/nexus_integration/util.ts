@@ -621,6 +621,13 @@ export function processErrorMessage(err: NexusError): IRequestError {
       URL: err.request,
       noReport: true,
     };
+  } else if (errorMessage.includes('unable to get local issuer certificate')) {
+    return {
+      message: 'Secure communication with server failed',
+      Servermessage: errorMessage,
+      URL: err.request,
+      noReport: true,
+    };
   } else {
     return {
       message: 'Unexpected error reported by the server',
