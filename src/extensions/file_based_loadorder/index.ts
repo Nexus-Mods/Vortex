@@ -83,7 +83,7 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     ? oldState[profile.id] : [];
 
   if (JSON.stringify(oldState[profile.id]) !== JSON.stringify(newState[profile.id])) {
-    const loadOrder: LoadOrder = newState[profile.id];
+    const loadOrder: LoadOrder = newState[profile.id] ?? [];
     try {
       // This is the only place where we want applyNewLoadOrder to be called
       //  as we've detected a change in the load order.
