@@ -4,6 +4,7 @@ import * as actions from '../actions/settings';
 
 import * as _ from 'lodash';
 import { log } from '../../../util/log';
+import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 
 /**
  * reducer for changes to the window state
@@ -63,15 +64,20 @@ export const settingsReducer: IReducerSpec = {
       // easier to fix here
       // delete payload.result.executable;
 
+      const old: IDiscoveredTool = _.omit(getSafe(state, toolPath, {}), ['timestamp']) as any;
       if (!payload.manual) {
-        const old = _.omit(getSafe(state, toolPath, undefined), ['timestamp']);
-
         if (_.isEqual(old, payload.result)) {
           return state;
         }
       }
 
-      return setSafe(state, toolPath, { ...payload.result, timestamp: Date.now() });
+      return setSafe(
+        state, toolPath,
+        {
+          ...payload.result,
+          hidden: payload.hidden || old.hidden,
+          timestamp: Date.now(),
+        });
     },
     [actions.setToolVisible as any]: (state, payload) =>
       // custom added tools can be deleted so we do that instead of hiding them
