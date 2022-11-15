@@ -3,12 +3,20 @@
   // bottom: $gutter-width;
   // left: $gutter-width;
   background-color: $brand-bg;
-  opacity: 0.75;
   border: $border-width solid $border-color;
   padding: 4px;
   position: relative;
   &.usage-instructions-show {
     padding-right: 32px;
+  }
+
+  &.usage-instructions-transparent {
+    opacity: 0.75;
+  }
+
+  .close-button {
+    top: 0;
+    height: 100%;
   }
 }
 

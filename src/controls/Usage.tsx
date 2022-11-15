@@ -12,6 +12,7 @@ export interface IUsageProps {
   infoId: string;
   persistent?: boolean;
   className?: string;
+  opaque?: boolean;
 }
 
 interface IConnectedProps {
@@ -27,9 +28,12 @@ type IProps = IUsageProps & IConnectedProps & IActionProps & WithTranslation;
 
 class Usage extends PureComponentEx<IProps, { }> {
   public render(): JSX.Element {
-    const { t, persistent, show } = this.props;
+    const { t, persistent, show, opaque } = this.props;
 
     const classes = ['usage-instructions'];
+    if (!opaque) {
+      classes.push('usage-instructions-transparent');
+    }
     classes.push(show ? 'usage-instructions-show' : 'usage-instructions-hide');
     if (this.props.className !== undefined) {
       classes.push(...this.props.className.split(' '));
