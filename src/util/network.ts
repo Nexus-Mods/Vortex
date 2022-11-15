@@ -131,6 +131,9 @@ export function upload(targetUrl: string, dataStream: Readable, dataSize: number
         return reject(reqErr);
       });
     });
+    req.on('error', err => {
+      return reject(err);
+    });
     dataStream.pipe(req, {
       end: true,
     });
