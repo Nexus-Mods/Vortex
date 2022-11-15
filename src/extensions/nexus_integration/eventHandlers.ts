@@ -593,9 +593,7 @@ export function onDownloadUpdate(api: IExtensionApi,
 
         return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
           .then(dlId => ({ error: null, dlId }))
-          .catch(err => {
-            return { error: err };
-          });
+          .catch(err => ({ error: err }));
       })
       .catch(err => {
         if (err instanceof UserCanceled) {

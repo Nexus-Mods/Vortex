@@ -5,7 +5,6 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import { IPreset, IPresetsState, IPresetStep, PresetStepType } from '../types/IPreset';
 
 import * as validation from '../validationCode/validation';
-import { getApplication } from './application';
 import { makeRemoteCallSync } from './electronRemote';
 
 import * as fs from './fs';
