@@ -116,7 +116,6 @@ export class DownloadObserver {
   private wasIntercepted(tag: string): boolean {
     // maintenance
     const now = Date.now();
-
     this.mInterceptedDownloads = this.mInterceptedDownloads
       .filter(iter => (now - iter.time) < DownloadObserver.INTERCEPT_TIMEOUT);
 
@@ -238,7 +237,7 @@ export class DownloadObserver {
     if (gameId === undefined) {
       if (callback !== undefined) {
         callback(new ProcessCanceled(
-            'You need to select a game to manage before downloading this file'));
+          'You need to select a game to manage before downloading this file'));
       }
       return;
     }

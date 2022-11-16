@@ -244,7 +244,7 @@ export function startDownload(api: IExtensionApi,
                               : Promise<string> {
   let url: NXMUrl;
 
-  log('debug', 'start download', fileName);
+  log('debug', 'start download', { fileName, referenceTag });
   try {
     url = new NXMUrl(nxmurl);
   } catch (err) {

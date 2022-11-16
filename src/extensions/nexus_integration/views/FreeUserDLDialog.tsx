@@ -21,7 +21,7 @@ interface IFreeUserDLDialogProps {
   nexus: Nexus;
   onDownload: (url: string) => void;
   onSkip: (url: string) => void;
-  onCancel: (url: string) => void;
+  onCancel: (url: string) => boolean;
   onUpdated: () => void;
 }
 

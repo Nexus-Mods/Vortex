@@ -177,7 +177,6 @@ class DownloadWorker {
   private mURLResolve: Promise<void>;
   private mOnAbort: () => void;
 
-
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
               finishCB: FinishCallback,

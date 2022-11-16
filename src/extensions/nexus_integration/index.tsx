@@ -1299,11 +1299,17 @@ function onSkip(inputUrl: string) {
   }
 }
 
-function onCancel(inputUrl: string) {
+function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
   const copy = freeDLQueue.slice(0);
-  copy.forEach(item => {
-    item.rej(new UserCanceled(false));
-  });
+  if (copy.length !== 0) {
+    copy.forEach(item => {
+      item.rej(new UserCanceled(false));
+    });
+    return true;
+  } else {
+    api.store.dispatch(removeFreeUserDLItem(inputUrl));
+    return false;
+  }
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -1397,6 +1403,8 @@ function init(context: IExtensionContextExt): boolean {
   }));
 
   const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
+
+  const onCancel = (inputUrl: string) => onCancelImpl(context.api, inputUrl);
 
   context.registerDialog('free-user-download', FreeUserDLDialog, () => ({
     t: context.api.translate,

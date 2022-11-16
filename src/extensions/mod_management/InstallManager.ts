@@ -2334,6 +2334,11 @@ class InstallManager {
                 const idx = queuedDownloads.indexOf(dep.reference);
                 queuedDownloads.splice(idx, 1);
                 return dlId;
+              })
+              .catch(err => {
+                const idx = queuedDownloads.indexOf(dep.reference);
+                queuedDownloads.splice(idx, 1);
+                return Promise.reject(err);
               });
           }));
     };
@@ -2617,7 +2622,7 @@ class InstallManager {
           prev.error.push(dep as IDependencyError);
         } else {
           const { mod } = dep as IDependency;
-          if ((mod === undefined) || !(modState[mod.id].enabled ?? false)) {
+          if ((mod === undefined) || !(modState[mod.id]?.enabled ?? false)) {
             prev.success.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
