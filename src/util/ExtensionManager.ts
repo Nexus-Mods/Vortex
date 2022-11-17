@@ -2220,6 +2220,10 @@ class ExtensionManager {
           const ext = this.loadDynamicExtension(
             path.join(extension.path, name), alreadyLoaded, extension.bundled);
           if (ext !== undefined) {
+            if (this.mExtensionState?.[ext.name]?.enabled === false) {
+              log('debug', 'extension disabled', { name: ext.name });
+              return prev;
+            }
             loadedExtensions.add(ext.name);
             const loadTime = Date.now() - before;
             log('debug', 'loaded extension', { name, loadTime, location: extension.path });
