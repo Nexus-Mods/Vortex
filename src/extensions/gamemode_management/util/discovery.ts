@@ -248,9 +248,15 @@ export function quickDiscovery(knownGames: IGame[],
 
         if (game.queryArgs !== undefined) {
           prom = queryByArgs(discoveredGames, game)
-            .then(result => handleDiscoveredGame(
-              game, result.gamePath, result.gameStoreId,
-              discoveredGames, onDiscoveredGame, onDiscoveredTool));
+            .then(result => {
+              if (result !== undefined) {
+                return handleDiscoveredGame(
+                  game, result.gamePath, result.gameStoreId,
+                  discoveredGames, onDiscoveredGame, onDiscoveredTool);
+              } else {
+                return Promise.resolve(undefined);
+              }
+            });
         } else if (game.queryPath !== undefined) {
           prom = queryByCB(game)
             .then(result => handleDiscoveredGame(
