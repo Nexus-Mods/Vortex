@@ -12,7 +12,7 @@ const downloadPathPattern = (state: IState) => state.settings.downloads.path;
 
 type DLPathCB = (inPath: string, inGameId: string) => string;
 
-export const downloadPath: OutputSelector<any, string, DLPathCB> = createSelector(
+export const downloadPath: (state: IState) => string = createSelector(
     downloadPathPattern, activeGameId, (inPath: string, inGameId: string) =>
       getDownloadPath(inPath, inGameId));
 

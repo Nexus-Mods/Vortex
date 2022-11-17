@@ -3,10 +3,7 @@ import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import { PropsCallback } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
-import * as fs from '../util/fs';
-import { writeFileAtomic } from '../util/fsAtomic';
 import lazyRequire from '../util/lazyRequire';
-import { log } from '../util/log';
 import makeReactive from '../util/makeReactive';
 import startupSettingsT from '../util/startupSettings';
 

@@ -163,9 +163,8 @@
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "electron": "^21.0.0",
-    "electron-builder": "^22.13.1",
+    "electron-builder": "^23.3.3",
     "electron-devtools-installer": "^3.2.0",
-    "electron-rebuild": "^1.8.8",
     "enzyme": "^3.10.0",
     "enzyme-adapter-react-16": "^1.15.1",
     "eslint": "^8.17.0",
@@ -299,6 +298,8 @@
     "xxhash-addon": "^1.3.0"
   },
   "resolutions": {
-    "node-gyp": "^9.0.0"
+    "node-gyp": "^9.0.0",
+    "@types/react": "^16.14.34",
+    "**/dir-compare/minimatch": "3.0.5"
   }
 }

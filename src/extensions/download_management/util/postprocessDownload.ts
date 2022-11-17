@@ -9,7 +9,7 @@ import { fileMD5 } from 'vortexmt';
 function fileMD5Async(filePath: string,
                       progressFunc: (progress: number, total: number) => void)
                       : Promise<string> {
-  return Promise.resolve(toPromise(cb => fileMD5(filePath, cb, progressFunc)));
+  return Promise.resolve(toPromise<string>(cb => fileMD5(filePath, cb, progressFunc)));
 }
 
 export function finalizeDownload(api: IExtensionApi, id: string,

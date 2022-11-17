@@ -38,6 +38,12 @@ interface ISearchMatch {
   treeIndex: number;
 }
 
+interface INodeExtraArgs {
+  categoryId: string;
+  parentId: string;
+  order: number;
+}
+
 interface IActionProps {
   onShowError: (message: string, details: string | Error, options: IErrorOptions) => void;
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
@@ -129,7 +135,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const { expandedTreeData, searchString, searchFocusIndex,
             searchFoundCount } = this.state;
 
-    const Tree = tree.SortableTreeWithoutDndContext;
+    const Tree = tree.SortableTreeWithoutDndContext<INodeExtraArgs>;
     return (
       <div className='categories-dialog'>
         <IconBar
@@ -479,7 +485,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData) => {
+  private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData<{ categoryId: string }>) => {
     const {t} = this.props;
     const actions: IActionDefinition[] = [
       {
@@ -528,7 +534,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     this.updateExpandedTreeData(this.props.categories);
   }
 
-  private canDrop = (args: { node: SortableTreeT.TreeItem,
+  private canDrop = (args: { node: SortableTreeT.TreeItem<INodeExtraArgs>,
                              nextParent: SortableTreeT.TreeItem,
                              prevParent: SortableTreeT.TreeItem,
                              nextPath: Array<number | string>,
@@ -538,7 +544,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private moveNode =
-    (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem,
+    (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem<INodeExtraArgs>,
              treeIndex: number, path: string[] | number[] | React.ReactText[] }): void => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
     if (args.path[args.path.length - 2] !== args.node.parentId) {
