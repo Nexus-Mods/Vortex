@@ -187,10 +187,17 @@ class GameModeManager {
           // We check the game's version before calling the setup function to avoid
           //  locking game files if the gameversion hash extension is used.
           .then(() => game.getInstalledVersion(gameDiscovery))
-          .then(() => game.setup(gameDiscovery))
+          .then(() => game.setup(gameDiscovery)
+            .catch(err => {
+              // don't allow reporting if the game extension setup function fails
+              if (game.contributed) {
+                err['allowReport'] = false;
+              }
+              return Promise.reject(err);
+            }))
           .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
             ? Promise.reject(new ProcessCanceled(
-              `Game folder \"${gameDiscovery.path}\" doesn\'t exist (any more).`))
+              `Game folder "${gameDiscovery.path}" doesn't exist (any more).`))
             : Promise.reject(err));
       } catch (err) {
         return Promise.reject(err);
