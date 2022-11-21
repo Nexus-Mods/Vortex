@@ -111,7 +111,7 @@ class StarterInfo implements IStarterInfo {
           .catch(GameEntryNotFound, err => {
             const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
             log('error', errorMsg);
-            onShowError('Failed to start game through launcher', err, true);
+            onShowError('Failed to start game through launcher', err, !game.contributed);
             return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
           })
           .catch(err => {
