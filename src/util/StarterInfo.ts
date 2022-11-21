@@ -80,7 +80,13 @@ class StarterInfo implements IStarterInfo {
       (game.requiresLauncher !== undefined) && info.isGame
       ? game.requiresLauncher(path.dirname(info.exePath), info.store)
         .catch(err => {
-          onShowError('Failed to determine if launcher is required', err, true);
+          if (err instanceof UserCanceled) {
+            // warning because it'd be kind of unusual for the user to have to confirm anything
+            // in requiresLauncher
+            log('warn', 'failed to determine if launcher is required because user canceled something');
+          } else {
+            onShowError('Failed to determine if launcher is required', err, true);
+          }
           return Promise.resolve(undefined);
         })
       : Promise.resolve(undefined);
