@@ -335,7 +335,6 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               type: 'warning',
               message: 'Timeout retrieving categories from server, please try again later.',
             });
-            return;
           } else if (err.syscall === 'getaddrinfo') {
             api.sendNotification({
               type: 'warning',
@@ -344,20 +343,17 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
                      + 'please try again later.',
               replace: { host: err.host || err.hostname },
             });
-            return;
           } else if (['ENOTFOUND', 'ENOENT'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
               message: 'Failed to resolve address of server. This is probably a temporary problem '
                       + 'with your own internet connection.',
             });
-            return;
           } else if (['ENETUNREACH'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
               message: 'Server can\'t be reached, please check your internet connection.',
             });
-            return;
           } else if (err.message.includes('OPENSSL_internal')) {
             api.sendNotification({
               type: 'warning',
@@ -368,17 +364,16 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               type: 'warning',
               message: 'The server refused the connection, please try again later.',
             });
-            return;
+          } else {
+            const detail = processErrorMessage(err);
+            let allowReport = detail.Servermessage === undefined;
+            if (detail.noReport) {
+              allowReport = false;
+              delete detail.noReport;
+            }
+            showError(api.store.dispatch, 'Failed to retrieve categories', detail,
+              { allowReport });
           }
-
-          const detail = processErrorMessage(err);
-          let allowReport = detail.Servermessage === undefined;
-          if (detail.noReport) {
-            allowReport = false;
-            delete detail.noReport;
-          }
-          showError(api.store.dispatch, 'Failed to retrieve categories', detail,
-                    { allowReport });
         });
     }
   });

@@ -450,7 +450,7 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
         waitingTime: api.translate('12 hours'),
       },
     });
-  } else if ((err instanceof TimeoutError) || (err.message.includes('ETIMEDOUT'))) {
+  } else if ((err instanceof TimeoutError) || err.message.includes('ETIMEDOUT')) {
     const message = 'A timeout occurred trying to rate a collection, please try again later.';
     api.sendNotification({
       type: 'error',
