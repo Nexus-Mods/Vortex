@@ -973,7 +973,7 @@ function init(context: IExtensionContext): boolean {
   
     presetManager.on('setgame', (step: IPresetStep): Promise<void> => {
       return manageGame(context.api, (step as IPresetStepSetGame).game)
-        .then(() => context.api.ext.awaitProfileSwitch?.(context.api))
+        .then(() => context.api.ext.awaitProfileSwitch?.())
         .then(() => null);
     });
   });

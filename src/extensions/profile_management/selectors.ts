@@ -11,7 +11,7 @@ import { IState } from '../../types/IState';
 const profilesBase = (state: IState) => state.persistent.profiles;
 const lastActiveProfiles = (state: IState) => state.settings.profiles.lastActiveProfile;
 
-export const activeGameId = (state): string => {
+export const activeGameId = (state: IState): string => {
   const profile = activeProfile(state);
   return profile !== undefined ? profile.gameId : undefined;
 };
