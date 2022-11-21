@@ -147,7 +147,11 @@ class Packery extends React.Component<IProps, {}> {
     }
 
     (this.mPackery as any)._resetLayout();
-    (this.mPackery.layoutItems as any)(this.fixedOrder(), true);
+    // errors indicates that reset layout may trigger a callback that unmounts this control,
+    // unsetting mPackery
+    if (this.mPackery !== undefined) {
+      (this.mPackery.layoutItems as any)(this.fixedOrder(), true);
+    }
   }
 
   private saveLayout = (items) => {
@@ -181,7 +185,8 @@ class Packery extends React.Component<IProps, {}> {
         this.mPackery.reloadItems();
         this.forceUpdate();
         this.scheduleLayout();
-        if (this.props.items.length !== (this.mPackery.getItemElements().length)) {
+        if ((this.mPackery !== undefined)
+            && (this.props.items.length !== this.mPackery.getItemElements().length)) {
           // almost certainly a bug, refresh again
           this.scheduleRefresh();
         }
