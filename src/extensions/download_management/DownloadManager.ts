@@ -547,7 +547,7 @@ class DownloadWorker {
       if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
-        if (sizeMatch.length > 1) {
+        if ((sizeMatch?.length ?? 0) > 1) {
           fileSize = parseInt(sizeMatch[3], 10);
         }
       } else {
