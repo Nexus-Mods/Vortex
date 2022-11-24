@@ -19,11 +19,9 @@ import { toBlue } from './util';
 type SearchType = 'name' | 'id';
 
 export interface IStoreQuery {
-  [storeId: string]: Array<{
-    id?: string;
-    name?: string;
-    prefer?: number;
-  }>;
+  id?: string;
+  name?: string;
+  prefer?: number;
 }
 
 class GameStoreHelper {

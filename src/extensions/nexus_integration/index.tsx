@@ -857,9 +857,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension
     nexusOpenModMage: eh.onOpenModPage(api),
     nexusRequestNexusLogin: callback => requestLogin(api, callback),
     nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
-    nexusRetrieveCategoryList: (isUpdate: boolean) => {
-      return retrieveCategories(api, isUpdate);
-    },
+    nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
   };

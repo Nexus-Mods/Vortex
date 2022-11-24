@@ -2,7 +2,9 @@ import { EndorsedStatus, ICollection, ICollectionManifest, IDownloadURL, IFeedba
 
 export interface INexusAPIExtension {
   nexusCheckModsVersion?: () => void;
-  nexusDownload?: () => void;
+  nexusDownload?:
+    (gameId: string, modId: number, fileId: number, fileName?: string, allowInstall?: boolean)
+      => PromiseLike<string>;
   nexusGetCollection?: (slug: string) => PromiseLike<ICollection>;
   nexusGetCollections?: (gameId: string) => PromiseLike<ICollection[]>;
   nexusGetMyCollections?:

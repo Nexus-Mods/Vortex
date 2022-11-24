@@ -28,7 +28,6 @@ export const settingsReducer: IReducerSpec = {
         res.store = undefined;
       }
 
-      log('debug', 'add discovered game', { path: res.path, store: res.store });
       // avoid triggerring unnecessary events
       if (_.isEqual(getSafe(res, gamePath, undefined), getSafe(state, gamePath, undefined))) {
         return state;
