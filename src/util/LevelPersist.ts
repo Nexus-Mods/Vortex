@@ -72,102 +72,120 @@ class LevelPersist implements IPersistor {
     this.mDB = db;
   }
 
-  public close(): Promise<void> {
+  public close = this.restackingFunc((): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
       this.mDB.close((err) =>
         !!err ? reject(err) : resolve());
     });
-  }
+  });
 
   public setResetCallback(cb: () => Promise<void>): void {
     return undefined;
   }
 
-  public getItem(key: string[]): Promise<string> {
+  public getItem = this.restackingFunc((key: string[]): Promise<string> => {
     return new Promise((resolve, reject) => {
-      this.mDB.get(key.join(SEPARATOR), (error, value) => {
-        if (error) {
-          return reject(error);
-        }
-        return resolve(value);
-      });
+      try {
+        this.mDB.get(key.join(SEPARATOR), (error, value) => {
+          if (error) {
+            return reject(error);
+          }
+          return resolve(value);
+        });
+      } catch (err) {
+        return reject(err);
+      }
     });
-  }
+  });
 
   public getAllKeys(options?: any): Promise<string[][]> {
     return new Promise((resolve, reject) => {
       const keys: string[][] = [];
       let resolved = false;
       this.mDB.createKeyStream(options)
-          .on('data', data => {
-            keys.push(data.split(SEPARATOR));
-          })
-          .on('error', error => {
-            if (!resolved) {
-              reject(error);
-              resolved = true;
-            }
-          })
-          .on('close', () => {
-            if (!resolved) {
-              resolve(keys);
-              resolved = true;
-            }
-          });
+        .on('data', data => {
+          keys.push(data.split(SEPARATOR));
+        })
+        .on('error', error => {
+          if (!resolved) {
+            reject(error);
+            resolved = true;
+          }
+        })
+        .on('close', () => {
+          if (!resolved) {
+            resolve(keys);
+            resolved = true;
+          }
+        });
     });
   }
 
   public getAllKVs(prefix?: string): Promise<Array<{ key: string[], value: string }>> {
     return new Promise((resolve, reject) => {
-        const kvs: Array<{ key: string[], value: string }> = [];
+      const kvs: Array<{ key: string[], value: string }> = [];
 
-        const options = (prefix === undefined)
-          ? undefined
-          : {
-            gt: `${prefix}${SEPARATOR}`,
-            lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
-          };
+      const options = (prefix === undefined)
+        ? undefined
+        : {
+          gt: `${prefix}${SEPARATOR}`,
+          lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
+        };
 
-        this.mDB.createReadStream(options)
-          .on('data', data => {
-            kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
-          })
-          .on('error', error => {
-            reject(error);
-          })
-          .on('close', () => {
-            resolve(kvs);
-          });
-      });
-  }
-
-  public setItem(statePath: string[], newState: string): Promise<void> {
-    const stackErr = new Error();
-    return new Promise<void>((resolve, reject) => {
-      this.mDB.put(statePath.join(SEPARATOR), newState, error => {
-        if (error) {
-          error.stack = stackErr.stack;
-          log('error', 'Failed to write to leveldb', {
-            message: error.message,
-            stack: error.message + '\n' + stackErr.stack,
-            insp: require('util').inspect(error),
-          });
-          return reject(error);
-        }
-        return resolve();
-      });
+      this.mDB.createReadStream(options)
+        .on('data', data => {
+          kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
+        })
+        .on('error', error => {
+          reject(error);
+        })
+        .on('close', () => {
+          resolve(kvs);
+        });
     });
   }
 
-  public removeItem(statePath: string[]): Promise<void> {
+  public setItem = this.restackingFunc((statePath: string[], newState: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
-      this.mDB.del(statePath.join(SEPARATOR), error => {
-        if (error) {
-          return reject(error);
-        }
-        return resolve();
-      });
+      try {
+        this.mDB.put(statePath.join(SEPARATOR), newState, error => {
+          if (error) {
+            return reject(error);
+          }
+          return resolve();
+        });
+      } catch (err) {
+        // some errors are thrown directly, instead of through the callback. Great...
+        return reject(err);
+      }
     });
+  });
+
+  public removeItem = this.restackingFunc((statePath: string[]): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this.mDB.del(statePath.join(SEPARATOR), error => {
+          if (error) {
+            return reject(error);
+          }
+          return resolve();
+        });
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  });
+
+  private restackingFunc<T extends (...args: unknown[]) => any>(cb: T)
+      : (...args: Parameters<T>) => ReturnType<T> {
+    return (...args: Parameters<T>): ReturnType<T> => {
+      const stackErr = new Error();
+      return cb(...args)
+        .catch(err => {
+          err.stack = stackErr.stack;
+          return Promise.reject(err);
+        });
+    };
   }
 }
 
