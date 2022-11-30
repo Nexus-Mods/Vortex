@@ -27,7 +27,7 @@ import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
-         resolveGraphError, startDownload, updateKey } from './util';
+         resolveGraphError, startDownload, updateKey, updateToken } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
@@ -38,6 +38,8 @@ import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
 import { format as urlFormat } from 'url';
+import { ITokenReply } from './util/oauth';
+import { apiKey } from './selectors';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -731,6 +733,15 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
     api.store.dispatch(setUserInfo(undefined));
     if (newValue !== undefined) {
       updateKey(api, nexus, newValue);
+    }
+  };
+}
+
+export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
+  return (oldValue: ITokenReply, newValue: ITokenReply) => {
+    api.store.dispatch(setUserInfo(undefined));
+    if (newValue !== undefined) {
+      updateToken(api, nexus, newValue);
     }
   };
 }

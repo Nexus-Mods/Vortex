@@ -8,12 +8,12 @@ import getVortexPath from '../../../util/getVortexPath';
 import opn from '../../../util/opn';
 import { truthy } from '../../../util/util';
 
-import { setUserAPIKey } from '../actions/account';
+import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 
-import NexusT from '@nexusmods/nexus-api';
+import NexusT, { IOAuthCredentials } from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
@@ -27,12 +27,14 @@ export interface IBaseProps extends WithTranslation {
 
 interface IConnectedProps {
   APIKey: string;
+  OAuthCredentials: IOAuthCredentials;
   userInfo: IValidateKeyData;
   networkConnected: boolean;
 }
 
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
+  onClearOAuthCredentials: () => void;
   onShowDialog: () => void;
 }
 
@@ -59,8 +61,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private logOut = () => {
-    const { onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
+    onClearOAuthCredentials();
   }
 
   private renderLoginName() {
@@ -125,8 +128,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private isLoggedIn() {
-    const { APIKey, userInfo } = this.props;
-    return (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
+    const { APIKey, OAuthCredentials, userInfo } = this.props;
+    return ((APIKey !== undefined) || (OAuthCredentials !== undefined))
+        && (userInfo !== undefined) && (userInfo !== null);
   }
 
   private hideLoginLayer = () => {
@@ -140,7 +144,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    APIKey: (state.confidential.account as any).nexus.APIKey,
+    APIKey: state.confidential.account?.['nexus']?.APIKey,
+    OAuthCredentials: state.confidential.account?.['nexus']?.OAuthCredentials,
     userInfo: (state.persistent as any).nexus.userInfo,
     networkConnected: state.session.base.networkConnected,
   };
@@ -149,6 +154,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+    onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
     onShowDialog: () => dispatch(setDialogVisible('login-dialog')),
   };
 }

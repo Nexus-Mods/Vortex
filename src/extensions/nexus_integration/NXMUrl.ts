@@ -13,6 +13,8 @@ class NXMUrl {
   private mRevisionId: number;
   private mCollectionSlug: string;
   private mRevisionNumber: number;
+  private mOAuthCode: string;
+  private mOAuthState: string;
   private mKey: string;
   private mExpires: number;
   private mUserId: number;
@@ -59,6 +61,9 @@ class NXMUrl {
           this.mRevisionNumber = parseInt(collMatches[2], 10);
         }
       }
+    } else if ((parsed.hostname === 'oauth') && (parsed.pathname === '/callback')) {
+      this.mOAuthCode = parsed.searchParams.get('code');
+      this.mOAuthState = parsed.searchParams.get('state');
     } else {
       throw new DataInvalid(`invalid nxm url "${input}"`);
     }
@@ -77,10 +82,14 @@ class NXMUrl {
     }
   }
 
-  public get type(): 'mod' | 'collection' {
-    return ((this.mCollectionId === undefined) && (this.mCollectionSlug === undefined))
-      ? 'mod'
-      : 'collection';
+  public get type(): 'mod' | 'collection' | 'oauth' {
+    if (this.mOAuthCode !== undefined) {
+      return 'oauth'
+    } else if ((this.mCollectionId !== undefined) || (this.mCollectionSlug !== undefined)) {
+      return 'collection';
+    } else {
+      return 'mod';
+    }
   }
 
   public get gameId(): string {
@@ -109,6 +118,14 @@ class NXMUrl {
 
   public get revisionNumber(): number {
     return this.mRevisionNumber;
+  }
+
+  public get oauthCode(): string {
+    return this.mOAuthCode;
+  }
+
+  public get oauthState(): string {
+    return this.mOAuthState;
   }
 
   /**

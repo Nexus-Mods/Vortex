@@ -1,6 +1,6 @@
 import { setDownloadModInfo, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
-import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
@@ -10,29 +10,26 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import LazyComponent from '../../util/LazyComponent';
-import lazyRequire from '../../util/lazyRequire';
 import { log, LogLevel } from '../../util/log';
-import { prettifyNodeErrorMessage, showError } from '../../util/message';
+import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import presetManager from '../../util/PresetManager';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { batchDispatch, decodeHTML, nexusModsURL, Section, toPromise, truthy } from '../../util/util';
+import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IMod, IModRepoId } from '../mod_management/types/IMod';
-import metaLookupMatch from '../mod_management/util/metaLookupMatch';
 
-import { DownloadState, IDownload } from '../download_management/types/IDownload';
+import { IDownload } from '../download_management/types/IDownload';
 import { IResolvedURL } from '../download_management/types/ProtocolHandlers';
 import { SITE_ID } from '../gamemode_management/constants';
 import { isDownloadIdValid, isIdValid } from '../mod_management/util/modUpdateState';
 
-import { setUserAPIKey } from './actions/account';
 import { setNewestVersion, setUserInfo } from './actions/persistent';
-import { addFreeUserDLItem, removeFreeUserDLItem, setLoginError, setLoginId } from './actions/session';
+import { addFreeUserDLItem, removeFreeUserDLItem } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
@@ -42,10 +39,8 @@ import { INexusAPIExtension } from './types/INexusAPIExtension';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
-import { getPageURL } from './util/sso';
 import Tracking from './util/tracking';
 import { makeFileUID } from './util/UIDs';
-import DashboardBanner from './views/DashboardBanner';
 import FreeUserDLDialog from './views/FreeUserDLDialog';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
@@ -63,14 +58,17 @@ import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, IRemoteInfo,
-         nexusGames, nexusGamesProm, onCancelLoginImpl,
-         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey } from './util';
+         nexusGames, nexusGamesProm, oauthCallback, onCancelLoginImpl,
+         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey, updateToken } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
-import NexusT, { IDateTime, IDownloadURL, IFileInfo, IModFile, IModFileQuery,
-  IModInfo, IRevision, IRevisionQuery, IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
+import NexusT, {
+  IDownloadURL, IFileInfo, IModFile,
+  IModFileQuery, IModInfo, IRevision, IRevisionQuery,
+  IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
+
 import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
@@ -153,14 +151,18 @@ class Disableable {
       // tslint:disable-next-line:only-arrow-functions
       return function(...args) {
         const now = Date.now();
-        if (now > that.mLastValidation + REVALIDATION_FREQUENCY) {
+        const state = that.mApi.getState();
+        // we don't do this if logged in via OAuth because we primarily care about the
+        // premium status and that is also included in the JWT token which gets refreshed
+        // automatically
+        const key = state.confidential.account?.['nexus']?.['APIKey'];
+        if ((key !== undefined) && (now > that.mLastValidation + REVALIDATION_FREQUENCY)) {
           that.mLastValidation = now;
           // the purpose of this is to renew our user info, in case the user
           // has bought premium since the last validation but technically
           // it's possible we never logged in successfully in the first place
           // because the internet was offline at startup.
           // In that case we can use this opportunity to try to log in now
-          const key = sel.apiKey(that.mApi.getState());
           const prom: Promise<IValidateKeyResponse> = (key === undefined)
             ? Promise.resolve(undefined as IValidateKeyResponse)
             : Promise.resolve(truthy(obj.getValidationResult())
@@ -559,7 +561,10 @@ function makeNXMLinkCallback(api: IExtensionApi) {
       nxmUrl = new NXMUrl(url);
       const isExtAvailable = api.getState().session.extensions.available
         .find(iter => iter.modId === nxmUrl.modId) !== undefined;
-      if (nxmUrl.gameId === SITE_ID && isExtAvailable) {
+
+      if (nxmUrl.type === 'oauth') {
+        return oauthCallback(api, nxmUrl.oauthCode, nxmUrl.oauthState);
+      } else if ((nxmUrl.gameId === SITE_ID) && isExtAvailable) {
         if (install) {
           return api.emitAndAwait('install-extension',
             { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
@@ -892,10 +897,11 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   };
 
   { // limit lifetime of state
-    const state = api.store.getState();
+    const state = api.getState();
 
     const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
-    const apiKey = sel.apiKey(state);
+    const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
+    const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
     log('info', 'init api key', { isUndefined: apiKey !== undefined });
     const gameMode = activeGameId(state);
 
@@ -909,7 +915,11 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     nexus.setLogger((level: LogLevel, message: string, meta: any) =>
       log(level, message, meta));
 
-    updateKey(api, nexus, apiKey);
+    if (oauthCred !== undefined) {
+      updateToken(api, nexus, oauthCred);
+    } else {
+      updateKey(api, nexus, apiKey);
+    }
 
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
 
@@ -956,6 +966,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     eh.onChangeNXMAssociation(registerFunc, api));
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
     eh.onAPIKeyChanged(api, nexus));
+  api.onStateChange(['confidential', 'account', 'nexus', 'OAuthCredentials'],
+    eh.onOAuthTokenChanged(api, nexus));
+
   api.onStateChange(['persistent', 'mods'], eh.onChangeMods(api, nexus));
   api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus));
 
@@ -1166,6 +1179,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     let revisionInfo: Partial<IRevision>;
 
     const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
+
+    if (!['mod', 'collection'].includes(url.type)) {
+      return Promise.reject(new ProcessCanceled('Not a download url'));
+    }
 
     return Promise.resolve()
       .then(() => (url.type === 'mod')
