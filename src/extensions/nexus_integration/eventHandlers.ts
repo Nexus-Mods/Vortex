@@ -322,11 +322,15 @@ export function onNexusDownload(api: IExtensionApi,
     log('debug', 'on nexus download', fileName);
     return ensureLoggedIn(api)
       .then(() => downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall))
+      .catch(UserCanceled, () => {
+        return Promise.resolve(undefined);
+      })
       .catch(ProcessCanceled, err => {
         api.sendNotification({
           type: 'error',
           message: err.message,
         });
+        return Promise.resolve(undefined);
       })
       .catch(AlreadyDownloaded, err => {
         const { files } = api.getState().persistent.downloads;
@@ -505,7 +509,13 @@ export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
                                 : (...args: any[]) => Promise<IFileInfo[]> {
   return (gameId: string, modId: number): Promise<IFileInfo[]> => {
     return Promise.resolve(nexus.getModFiles(modId, gameId))
-      .then(result => result.files);
+      .then(result => result.files)
+      .catch(err => {
+        api.showErrorNotification('Failed to get list of mod files', err, {
+          allowReport: false,
+        });
+        return Promise.resolve([]);
+      });
   };
 }
 
