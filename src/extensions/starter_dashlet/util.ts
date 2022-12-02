@@ -16,6 +16,7 @@ import { truthy } from '../../util/util';
 
 import lazyRequire from '../../util/lazyRequire';
 import * as remoteT from '@electron/remote';
+import { makeRemoteCallSync } from '../../util/electronRemote';
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 export const propOf = <T>(name: keyof T) => name;
@@ -60,11 +61,25 @@ export function splitCommandLine(input: string): string[] {
   return res;
 }
 
+const setJumpList = makeRemoteCallSync('set-jump-list', (electron, window, categories: Electron.JumpListCategory[]) => {
+  try {
+    electron.app.setJumpList(categories);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 export function updateJumpList(starters: IStarterInfo[]) {
   if (process.platform !== 'win32') {
     return;
   }
-  const userTasks: Electron.Task[] = starters
+
+  return;
+  // TODO the code below should work, except it doesn't filter out
+  //   hidden tools, but due to a bug in electron the list doesn't
+  //   get shown anyway.
+
+  const userTasks: Electron.JumpListItem[] = starters
     .filter(starter =>
       (truthy(starter.exePath))
       && (Object.keys(starter.environment || {}).length === 0))
@@ -80,7 +95,14 @@ export function updateJumpList(starters: IStarterInfo[]) {
       };
       return task;
     });
-  remote.app.setUserTasks(userTasks);
+
+  setJumpList([
+    {
+      name: 'Tools',
+      type: 'custom',
+      items: userTasks,
+    }
+  ]);
 }
 
 export function toEditStarter(input: IStarterInfo): IEditStarterInfo {
