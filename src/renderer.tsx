@@ -72,7 +72,7 @@ import ExtensionManager from './util/ExtensionManager';
 import { ExtensionContext } from './util/ExtensionProvider';
 import { setTFunction } from './util/fs';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
+import getI18n, { changeLanguage, fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -580,7 +580,8 @@ function init() {
         return;
       }
       currentLanguage = newLanguage;
-      I18next.default.changeLanguage(newLanguage, (err, t) => {
+
+      changeLanguage(newLanguage, (err: Error) => {
         if (err !== undefined) {
           if (Array.isArray(err)) {
             // don't show ENOENT errors because it shouldn't really matter
@@ -652,7 +653,7 @@ function renderer(extensions: ExtensionManager) {
               log('error', 'Failed to load translation', { filePath, error: err.message });
             }
           });
-        })
+      })
         .then(() => {
           extensions.setTranslation(i18n);
         });
@@ -665,7 +666,7 @@ function renderer(extensions: ExtensionManager) {
     })
     .then(() => {
       log('info', 'activating language', { lang: store.getState().settings.interface.language });
-      return i18n.changeLanguage(store.getState().settings.interface.language);
+      return changeLanguage(store.getState().settings.interface.language);
     })
     .then(() => extensions.renderStyle()
       .catch(err => {

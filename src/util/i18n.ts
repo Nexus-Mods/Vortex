@@ -4,7 +4,7 @@ import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import I18next, { i18n, TOptions } from 'i18next';
 import FSBackend from 'i18next-node-fs-backend';
 import * as path from 'path';
@@ -136,7 +136,7 @@ class HighlightPP {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: () => IExtension[]): Promise<IInitResult> {
+function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
   // reset to english if the language isn't valid
   try {
     (new Date()).toLocaleString(language);
@@ -154,7 +154,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
     .use(initReactI18next)
     ;
 
-  return Promise.resolve(i18nObj.init(
+  return Bluebird.resolve(i18nObj.init(
     {
       lng: language,
       fallbackLng: 'en',
@@ -199,7 +199,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
       },
     }))
     .tap(tFunc => { actualT = tFunc; })
-    .then(tFunc => Promise.resolve({
+    .then(tFunc => Bluebird.resolve({
       i18n: i18nObj,
       tFunc,
     }))
@@ -212,6 +212,11 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
 
 export function getCurrentLanguage() {
   return currentLanguage;
+}
+
+export function changeLanguage(lng: string, cb?: (err: Error) => void): Promise<TFunction> {
+  currentLanguage = lng;
+  return I18next.changeLanguage(lng, cb);
 }
 
 export function globalT(key: string | string[], options: TOptions) {
