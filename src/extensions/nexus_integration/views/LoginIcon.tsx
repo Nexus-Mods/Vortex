@@ -13,21 +13,21 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 
-import NexusT, { IOAuthCredentials } from '@nexusmods/nexus-api';
+import NexusT from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { pathToFileURL } from 'url';
+import { isLoggedIn } from '../selectors';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
 }
 
 interface IConnectedProps {
-  APIKey: string;
-  OAuthCredentials: IOAuthCredentials;
+  isLoggedIn: boolean;
   userInfo: IValidateKeyData;
   networkConnected: boolean;
 }
@@ -128,9 +128,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private isLoggedIn() {
-    const { APIKey, OAuthCredentials, userInfo } = this.props;
-    return ((APIKey !== undefined) || (OAuthCredentials !== undefined))
-        && (userInfo !== undefined) && (userInfo !== null);
+    const { isLoggedIn, userInfo } = this.props;
+    return isLoggedIn && (userInfo !== undefined) && (userInfo !== null);
   }
 
   private hideLoginLayer = () => {
@@ -144,8 +143,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    APIKey: state.confidential.account?.['nexus']?.APIKey,
-    OAuthCredentials: state.confidential.account?.['nexus']?.OAuthCredentials,
+    isLoggedIn: isLoggedIn(state),
     userInfo: (state.persistent as any).nexus.userInfo,
     networkConnected: state.session.base.networkConnected,
   };

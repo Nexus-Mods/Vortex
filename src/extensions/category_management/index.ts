@@ -23,6 +23,7 @@ import CategoryDialog from './views/CategoryDialog';
 
 import i18next from 'i18next';
 import * as Redux from 'redux';
+import { isLoggedIn } from '../nexus_integration/selectors';
 
 // export for api
 export { resolveCategoryName, resolveCategoryPath };
@@ -161,9 +162,7 @@ function init(context: IExtensionContext): boolean {
       context.api.events.on('gamemode-activated', (gameMode: string) => {
         const categories: ICategoriesTree[] = getSafe(store.getState(),
           ['persistent', 'categories', gameMode], undefined);
-        const APIKEY = getSafe(store.getState(),
-          ['confidential', 'account', 'nexus', 'APIKey'], undefined);
-        if (categories === undefined && APIKEY !== undefined) {
+        if (categories === undefined && isLoggedIn(store.getState())) {
           context.api.events.emit('retrieve-category-list', false, {});
         } else if (categories !== undefined && categories.length === 0) {
           context.api.store.dispatch(updateCategories(gameMode, {}));

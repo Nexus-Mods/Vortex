@@ -39,7 +39,7 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
-import { apiKey } from './selectors';
+import { isLoggedIn } from './selectors';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -673,9 +673,7 @@ export function onSubmitCollection(nexus: Nexus) {
 
 export function onEndorseMod(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string, modId: string, endorsedStatus: EndorsedStatus) => {
-    const APIKEY = getSafe(api.store.getState(),
-                           ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
+    if (!isLoggedIn(api.getState())) {
       api.showErrorNotification('An error occurred endorsing a mod',
                                 'You are not logged in to Nexus Mods!',
                                 { allowReport: false });
@@ -759,10 +757,7 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
 export function onCheckModsVersion(api: IExtensionApi,
                                    nexus: Nexus): (...args: any[]) => Promise<string[]> {
   return (gameId, mods, forceFull) => {
-    const APIKEY = getSafe(api.store.getState(),
-                           ['confidential', 'account', 'nexus', 'APIKey'],
-                           '');
-    if (APIKEY === '') {
+    if (!isLoggedIn(api.getState())) {
       api.showErrorNotification('An error occurred checking for mod updates',
                                 'You are not logged in to Nexus Mods!',
                                 { allowReport: false });

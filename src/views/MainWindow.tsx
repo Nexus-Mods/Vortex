@@ -81,7 +81,6 @@ export interface IConnectedProps {
   customTitlebar: boolean;
   userInfo: any;
   notifications: INotification[];
-  APIKey: string;
   uiBlockers: { [id: string]: IUIBlocker };
   profiles: { [key: string]: IProfile };
 }
@@ -621,7 +620,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
     userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
-    APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
     uiBlockers: state.session.base.uiBlockers,
   };

@@ -41,6 +41,7 @@ import { setLoginError, setLoginId } from './actions/session';
 import { NEXUS_DOMAIN, OAUTH_CLIENT_ID, OAUTH_REDIREC_URL, OAUTH_URL } from './constants';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
+import { isLoggedIn } from './selectors';
 import { IJWTAccessToken } from './types/IJWTAccessToken';
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
@@ -245,10 +246,7 @@ export function oauthCallback(api: IExtensionApi, code: string, state: string) {
 }
 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
-  const state = api.getState();
-
-  if ((state.confidential.account?.['nexus']?.['APIKey'] === undefined)
-      && (state.confidential.account?.['nexus']?.['OAuthCredentials'] === undefined)) {
+  if (!isLoggedIn(api.getState())) {
     return new Promise((resolve, reject) => {
       api.events.on('did-login', (err: Error) => {
         if (err !== null) {
@@ -761,15 +759,6 @@ export function endorseThing(
 
   if (mod === undefined) {
     log('warn', 'tried to endorse unknown mod', { gameId, modId });
-    return;
-  }
-
-  const APIKEY = getSafe(store.getState(),
-    ['confidential', 'account', 'nexus', 'APIKey'], '');
-  if (APIKEY === '') {
-    showError(store.dispatch,
-      'An error occurred endorsing a mod',
-      'You are not logged in to Nexus Mods!', { allowReport: false });
     return;
   }
 

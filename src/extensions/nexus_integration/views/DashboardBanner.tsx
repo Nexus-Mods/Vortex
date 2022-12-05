@@ -7,7 +7,7 @@ import { UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';
 import opn from '../../../util/opn';
 import { truthy } from '../../../util/util';
-import { setUserAPIKey } from '../actions/account';
+import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
@@ -26,7 +26,8 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetAPIKey: (APIKey: string) => void;
+  onSetAPIKey: (APIKey?: string) => void;
+  onClearOAuthCredentials: () => void;
   onSetDialogVisible: (id: string) => void;
 }
 
@@ -127,8 +128,9 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
   }
 
   private logout = () => {
-    const { onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
+    onClearOAuthCredentials();
   }
 }
 
@@ -141,7 +143,8 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+    onSetAPIKey: (APIKey?: string) => dispatch(setUserAPIKey(APIKey)),
+    onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
     onSetDialogVisible: (id: string) => dispatch(setDialogVisible(id)),
   };
 }

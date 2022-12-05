@@ -300,9 +300,9 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
       return;
     }
 
-    const APIKEY = getSafe(api.store.getState(),
-      ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (!truthy(APIKEY)) {
+    // the server error message we get if we're not logged gives no indication that that's the problem
+    // so we have to check before
+    if (!sel.isLoggedIn(api.getState())) {
       showError(api.store.dispatch,
         'An error occurred retrieving categories',
         'You are not logged in to Nexus Mods!', { allowReport: false });
