@@ -407,6 +407,7 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
                                       onDiscoveredTool: DiscoveredToolCB, normalize: Normalize)
                                : Bluebird<void> {
   log('info', 'discovering relative tools', gamePath);
+  const start = Date.now();
   const discoveredTools: { [id: string]: IToolStored } =
     getSafe(discoveredGames[game.id], ['tools'], {});
   const relativeTools = (game.supportedTools || [])
@@ -433,7 +434,10 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
 
   const onFileCB =
     filePath => onFile(filePath, files, normalize, discoveredGames, nop, onDiscoveredTool);
-  return walk(gamePath, matchList, onFileCB, undefined, normalize).then(() =>  null);
+  return walk(gamePath, matchList, onFileCB, undefined, normalize)
+    .then(() => {
+      log('debug', 'done discovering relative tools', { elapsed: Date.now() - start });
+    });
 }
 
 function autoGenIcon(application: ITool, exePath: string, gameId: string): Bluebird<void> {

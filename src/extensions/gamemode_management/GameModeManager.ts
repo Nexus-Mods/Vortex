@@ -187,7 +187,7 @@ class GameModeManager {
           // We check the game's version before calling the setup function to avoid
           //  locking game files if the gameversion hash extension is used.
           .then(() => game.getInstalledVersion(gameDiscovery))
-          .then(() => game.setup(gameDiscovery)
+          .then(() => Promise.resolve(game.setup(gameDiscovery))
             .catch(err => {
               // don't allow reporting if the game extension setup function fails
               if (game.contributed) {

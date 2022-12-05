@@ -677,7 +677,7 @@ class Application {
           const matches = keys
             .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
           return Promise.all(matches.map(match => persist.removeItem(match)
-            .then(() => process.stdout.write(`removed ${delPath}\n`))
+            .then(() => process.stdout.write(`removed ${match.join('.')}\n`))
             .catch(err => { process.stderr.write(err.message + '\n'); })));
         }))
           .then(() => null);
