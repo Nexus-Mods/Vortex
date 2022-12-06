@@ -2972,7 +2972,7 @@ class InstallManager {
 
           const context = getBatchContext('install-recommendations', '', true);
           const remember = context.get<boolean>('remember', null);
-          let queryProm: Promise<IDependency[]>;
+          let queryProm: Promise<IDependency[]> = Promise.resolve(success);
 
           if (!silent || (error.length > 0)) {
             queryProm = this.installRecommendationsQueryMain(api, name, success, error, remember)
