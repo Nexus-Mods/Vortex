@@ -147,7 +147,13 @@ function queryByArgs(discoveredGames: { [id: string]: IDiscoveryResult },
 }
 
 function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
-  const gamePath = game.queryPath();
+  let gamePath: string | Bluebird<string | IGameStoreEntry>;
+  
+  try {
+    gamePath = game.queryPath();
+  } catch (err) {
+    return Bluebird.reject(err);
+  }
   const prom = (typeof (gamePath) === 'string')
     ? Bluebird.resolve(gamePath)
     : gamePath;
