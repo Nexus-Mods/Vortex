@@ -10,7 +10,7 @@ function removeFileNames(input: string): string {
 // remove everything in quotes to get file names and such out of the error message
 function removeQuoted(input: string): string {
   return input
-    .replace(/'.*?'($|\s|\.|\,|\;)/g, '').replace(/"[^"]*"/g, '');
+    .replace(/'.*?'($|\s|\.|\,|\;)/g, '').replace(/"[^"]*"/g, '').replace(/'[^']*'/g, '');
 }
 
 // sanitize certain well known error messages that don't get properly stripped by removing quotes
