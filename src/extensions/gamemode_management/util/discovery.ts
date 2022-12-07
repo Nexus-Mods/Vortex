@@ -152,6 +152,10 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   try {
     gamePath = game.queryPath();
   } catch (err) {
+    log('warn', 'failed to query game location', {
+      game: game.id,
+      error: err.message,
+    });
     return Bluebird.reject(err);
   }
   const prom = (typeof (gamePath) === 'string')
@@ -250,6 +254,7 @@ export function quickDiscovery(knownGames: IGame[],
           return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame)
             .then(() => Bluebird.resolve(undefined));
         }
+        log('debug', 'discovering game', game.id);
         let prom: Bluebird<string>;
 
         if (game.queryArgs !== undefined) {
