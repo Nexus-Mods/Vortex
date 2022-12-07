@@ -101,7 +101,7 @@ function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResu
                                   game: IGame,
                                   onDiscoveredGame: DiscoveredCB)
                                   : Bluebird<void> {
-  if ((discoveredGames[game.id] !== undefined)
+  if ((discoveredGames[game.id]?.path !== undefined)
     && (discoveredGames[game.id]?.store === undefined)) {
     return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
       .then(store => {
