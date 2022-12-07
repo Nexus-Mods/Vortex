@@ -547,8 +547,11 @@ export function prettifyNodeErrorMessage(err: any,
              + 'with malicious software.',
       allowReport: false,
     };
-  } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'SELF_SIGNED_CERT_IN_CHAIN',
-              'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'].includes(err.code)) {
+  } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+              'SELF_SIGNED_CERT_IN_CHAIN',
+              'ERR_SSL_WRONG_VERSION_NUMBER',
+              'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'].includes(err.code)
+             || (err.function === 'OPENSSL_internal')) {
     return {
       message: 'Encountered an invalid SSL certificate. If this happens on a network connection '
               + 'to a server that has a proper certificate (like the Nexus Mods API) it may '

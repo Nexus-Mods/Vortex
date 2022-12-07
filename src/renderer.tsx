@@ -354,6 +354,10 @@ function errorHandler(evt: any) {
   if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
     log('error', 'invalid leaf signature', error.message);
     return;
+  } else if ((error.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
+             || (error.function === 'OPENSSL_internal')) {
+    log('warn', 'internal ssl error', error.message);
+    return;
   }
 
   if ((error.stack !== undefined)
