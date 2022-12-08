@@ -160,7 +160,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   }
   const prom = (typeof (gamePath) === 'string')
     ? Bluebird.resolve(gamePath)
-    : gamePath;
+    : (gamePath ?? Bluebird.resolve(undefined));
 
   let store: string;
 
