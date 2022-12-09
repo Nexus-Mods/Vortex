@@ -2363,6 +2363,7 @@ class InstallManager {
           : this.withInstructions(api,
                               modName(sourceMod),
                               renderModReference(dep.reference),
+                              dep.reference.tag ?? downloadId,
                               dep.extra?.['instructions'], () =>
           this.installModAsync(dep.reference, api, downloadId,
             { choices: dep.installerChoices }, dep.fileList,
@@ -3027,6 +3028,7 @@ class InstallManager {
   private withInstructions<T>(api: IExtensionApi,
                               sourceName: string,
                               title: string,
+                              id: string,
                               instructions: string,
                               cb: () => Promise<T>)
                               : Promise<T> {
@@ -3034,21 +3036,11 @@ class InstallManager {
       return cb();
     }
 
-    return api.showDialog('info', 'Installation notes for {{title}}', {
-      text: 'The curator of "{{sourceName}}" has provided additional instructions '
-          + 'for installing "{{title}}". You can view these instructions now or '
-          + 'check them later from the instructions column in the collections view.',
-      parameters: {
-        title,
-        sourceName,
-      },
-    }, [
-      { label: 'Later' },
-      { label: 'Show', action: () => {
-        api.ext.showOverlay?.('install-instructions', title, instructions);
-      } },
-    ])
-    .then(() => cb());
+    api.ext.showOverlay?.(`install-instructions-${id}`, title, instructions, undefined, {
+      id,
+    });
+
+    return cb();
   }
 
   private installModAsync(requirement: IReference,

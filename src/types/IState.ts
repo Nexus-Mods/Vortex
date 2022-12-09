@@ -319,6 +319,7 @@ export interface IOverlayOptions {
   showIcon?: boolean;
   className?: string;
   disableCollapse?: boolean;
+  id?: string;
   props?: any;
 }
 

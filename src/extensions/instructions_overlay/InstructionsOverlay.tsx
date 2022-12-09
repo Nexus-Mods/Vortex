@@ -116,13 +116,11 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     trackMouse(evt as any);
   }, [trackMouse]);
 
-  const onClose = React.useCallback((evt: React.MouseEvent<Button>) => {
-    console.log('close', evt.isDefaultPrevented, evt.isPropagationStopped);
+  const onClose = React.useCallback(() => {
     props.onClose(overlayId);
   }, [props.onClose, overlayId]);
 
-  const toggleOpen = React.useCallback((evt: React.MouseEvent<Button>) => {
-    console.log('toggle', evt.isDefaultPrevented, evt.isPropagationStopped);
+  const toggleOpen = React.useCallback(() => {
     setOpen(old => !old);
   }, []);
 
