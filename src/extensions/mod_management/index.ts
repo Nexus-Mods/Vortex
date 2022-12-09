@@ -677,6 +677,10 @@ function genUpdateModDeployment() {
           });
         })
         .catch(err => {
+          if (err instanceof UserCanceled) {
+            // not sure how we'd get here, UserCanceled is caught further up!
+            return Promise.resolve();
+          }
           if ((err.code === undefined) && (err.errno !== undefined)) {
             // unresolved windows error code
             return api.showErrorNotification('Failed to deploy mods', {
