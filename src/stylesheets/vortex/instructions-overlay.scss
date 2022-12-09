@@ -65,6 +65,10 @@
     }
   }
 
+  .instructions-overlay-buttons .btn {
+    padding: 0.3em;
+  }
+
   .instructions-overlay-content {
     font-size: $font-size-base * 1.5;
     line-height: $line-height-large;

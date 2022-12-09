@@ -641,6 +641,14 @@
     "autosort-disabled": {
       "path": "{nucleo}/user interface/{nucleo_simple}_filter-remove",
       "rmFill": true
+    },
+    "expand-overlay": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_ctrl-down",
+      "rmFill": true
+    },
+    "collapse-overlay": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_e-delete",
+      "rmFill": true
     }
   }
 }
