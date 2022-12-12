@@ -19,7 +19,7 @@ import { TFunction } from './i18n';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { decodeSystemError } from './nativeErrors';
-import { truthy } from './util';
+import { restackErr, truthy } from './util';
 
 import PromiseBB from 'bluebird';
 import { decode } from 'iconv-lite';
@@ -368,21 +368,6 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
   } else {
     return PromiseBB.resolve(false);
   }
-}
-
-function restackErr(error: Error, stackErr: Error): Error {
-  const newErr = new Error(error.message);
-  Object.keys(error).forEach(key => {
-    newErr[key] = error[key];
-  });
-
-  // resolve the stack at the last possible moment because stack is actually a getter
-  // that will apply expensive source mapping when called
-  Object.defineProperty(newErr, 'stack', {
-    get: () => error.message + '\n' + error.stack + '\nPrior Context:\n' + stackErr.stack.split('\n').slice(1).join('\n'),
-    set: () => null,
-  });
-  return newErr;
 }
 
 interface IErrorHandlerOptions {
