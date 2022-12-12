@@ -8769,8 +8769,8 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.7.6"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/488d7f8c5884ec0fe0494989a3b4fe2d6e06e8cb"
+  version "0.7.7"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/99dfab99922ff6ab329fe9bf71e7ef63130cf57f"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"
