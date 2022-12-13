@@ -533,16 +533,17 @@ function genUpdateModDeployment() {
       const err = allTypesSupported(selectedActivator, state, gameId, types);
       if (selectedActivator !== undefined) {
         if (err.errors.length > 0) {
-          api.showErrorNotification('Deployment not possible',
+          api.showErrorNotification(
+            'Deployment not possible',
             t('Deployment method "{{method}}" not available because: {{reason}}', {
               replace: {
                 method: selectedActivator.name,
                 reason: err.errors[0].description(t),
               },
             }), {
-            id: 'deployment-not-possible',
-            allowReport: false,
-          });
+              id: 'deployment-not-possible',
+              allowReport: false,
+            });
         } else if (err.warnings.length > 0) {
           api.sendNotification({
             type: 'warning',
