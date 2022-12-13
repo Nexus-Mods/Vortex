@@ -856,6 +856,7 @@ class InstallManager {
   private withDependenciesContext<T>(contextName: string, func: () => Promise<T>): Promise<T> {
     const context = getBatchContext(contextName, '', true);
     context.set('depth', context.get('depth', 0) + 1);
+    context.set('remember-instructions', null);
 
     return func()
       .finally(() => {
@@ -2364,7 +2365,8 @@ class InstallManager {
                               modName(sourceMod),
                               renderModReference(dep.reference),
                               dep.reference.tag ?? downloadId,
-                              dep.extra?.['instructions'], () =>
+                              dep.extra?.['instructions'],
+                              recommended, () =>
           this.installModAsync(dep.reference, api, downloadId,
             { choices: dep.installerChoices }, dep.fileList,
             gameId, silent))
@@ -2972,6 +2974,8 @@ class InstallManager {
           const downloads = state.persistent.downloads.files;
 
           const context = getBatchContext('install-recommendations', '', true);
+          context.set<number>('num-instructions',
+            success.filter(succ => succ.extra?.['instructions'] !== undefined).length);
           const remember = context.get<boolean>('remember', null);
           let queryProm: Promise<IDependency[]> = Promise.resolve(success);
 
@@ -3030,17 +3034,62 @@ class InstallManager {
                               title: string,
                               id: string,
                               instructions: string,
+                              recommendations: boolean,
                               cb: () => Promise<T>)
                               : Promise<T> {
     if (!truthy(instructions)) {
       return cb();
     }
 
-    api.ext.showOverlay?.(`install-instructions-${id}`, title, instructions, undefined, {
-      id,
-    });
+    if (recommendations) {
+      return Promise.resolve((async () => {
+          const context = getBatchContext('install-recommendations', '');
+          let action = context.get<string>('remember-instructions');
+          const remaining = context.get<number>('num-instructions') - 1;
 
-    return cb();
+          if ((action === null) || (action === undefined)) {
+            let checkboxes: ICheckbox[];
+            if (remaining > 0) {
+              checkboxes = [
+                {
+                  id: 'remember',
+                  value: false,
+                  text: 'Do this for all remaining instructions ({{remaining}} more)'
+                },
+              ];
+            }
+            const result = await api.showDialog('info', title, {
+              text: instructions,
+              checkboxes,
+              parameters: {
+                remaining,
+              },
+            }, [
+              { label: 'Skip' },
+              { label: 'Install' },
+            ]);
+
+            if (result.input['remember']) {
+              context.set('remember-instructions', result.action);
+            }
+            action = result.action;
+          }
+
+          context.set<number>('num-instructions', remaining);
+
+          if (action === 'Install') {
+            return cb();
+          } else {
+            return Promise.reject(new UserCanceled(true));
+          }
+        })());
+    } else {
+      api.ext.showOverlay?.(`install-instructions-${id}`, title, instructions, undefined, {
+        id,
+      });
+
+      return cb();
+    }
   }
 
   private installModAsync(requirement: IReference,
