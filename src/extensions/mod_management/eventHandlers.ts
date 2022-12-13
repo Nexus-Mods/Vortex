@@ -427,8 +427,8 @@ export function onPathsChanged(api: IExtensionApi,
   const { store } = api;
   const state = store.getState();
   const profile = activeProfile(state);
-  const gameMode = profile.gameId;
-  if (previous[gameMode] !== current[gameMode]) {
+  const gameMode = profile?.gameId;
+  if ((gameMode !== undefined) && (previous[gameMode] !== current[gameMode])) {
     const knownMods = state.persistent.mods[gameMode];
     refreshMods(api, gameMode, installPath(state), knownMods || {}, (mod: IMod) =>
       store.dispatch(addMod(gameMode, mod))
