@@ -88,6 +88,36 @@
       "hashValue": "5a695851376f24b32355c9dc3a7d78a6",
       "userFacingVersion": "1.32",
       "variant": "gog(patched)"
+    },
+    "cd529b38887db597f1e02bacd8b51a63": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "cd529b38887db597f1e02bacd8b51a63",
+      "userFacingVersion": "1.32"
+    },
+    "56167fa56a842993a44e00f4d6371961": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "56167fa56a842993a44e00f4d6371961",
+      "userFacingVersion": "4.0.0"
+    },
+    "f3e365f16da4a690ed965e83f7e50a19": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "f3e365f16da4a690ed965e83f7e50a19",
+      "userFacingVersion": "4.0.0",
+      "variant": "gog"
+    },
+    "37816acf135ffec141865148f68b7faa": {
+      "files": [
+        "bin\\x64\\witcher3.exe"
+      ],
+      "hashValue": "37816acf135ffec141865148f68b7faa",
+      "userFacingVersion": "4.0.0",
+      "variant": "steam"
     }
   },
   "7daystodie": {
