@@ -388,7 +388,7 @@ class InstallManager {
           return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
-        if (installGameId !== currentProfile.gameId) {
+        if (installGameId !== currentProfile?.gameId) {
           const state = api.getState();
           const installProfileId = lastActiveProfileForGame(state, installGameId);
           installProfile = profileById(state, installProfileId);
