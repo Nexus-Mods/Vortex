@@ -2465,7 +2465,7 @@ class InstallManager {
             dep.reference = this.updateModRule(api, gameId, sourceModId, dep, {
               ...dep.reference,
               tag: downloads[downloadId].modInfo.referenceTag,
-            }, recommended).reference;
+            }, recommended)?.reference;
 
             // now at this point there may in fact already be a mod for the updated reference tag
             if ((dep.mod === undefined) && (dep.reference !== undefined)) {
