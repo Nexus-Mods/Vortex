@@ -443,6 +443,7 @@ class InstallManager {
         let replacementChoice: ReplaceChoice = undefined;
         const checkNameLoop = () => {
           if (replacementChoice === 'replace') {
+            log('debug', '(nameloop) replacement choice "replace"', { testModId: testModId ?? '<undefined>' });
             return Promise.resolve(testModId);
           }
           const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
@@ -451,6 +452,7 @@ class InstallManager {
             ? modNameMatches
             : Array.from(new Set([].concat(modNameMatches, variantMatches)));
           if (existingIds.length === 0) {
+            log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
             return Promise.resolve(testModId);
           } else {
             return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
@@ -1090,15 +1092,20 @@ class InstallManager {
         return Promise.resolve<string>(null);
       }
 
-      return type.test(installInstructions)
-      .then(matches => {
-        if (matches) {
-          found = true;
-          return Promise.resolve(type.typeId);
-        } else {
-          return Promise.resolve(null);
-        }
-      });
+      try {
+        return type.test(installInstructions)
+          .then(matches => {
+            if (matches) {
+              found = true;
+              return Promise.resolve(type.typeId);
+            } else {
+              return Promise.resolve(null);
+            }
+          });
+      } catch (err) {
+        log('error', 'invalid mod type', { typeId: type.typeId, error: err.message });
+        return Promise.resolve(null);
+      }
     }).then(matches => matches.find(match => match !== null) || '');
   }
 
