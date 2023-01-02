@@ -10,8 +10,8 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IDownload, IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
-         UserCanceled } from '../../../util/CustomErrors';
+import { CleanupFailedException, InsufficientDiskSpace, NotFound,
+         ProcessCanceled, UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import getNormalizeFunc from '../../../util/getNormalizeFunc';
@@ -510,7 +510,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               + 'raised the error. Please test your environment and try again once you\'ve confirmed it\'s fixed.',
             { replace: { culprit: err.path } }), false);
           } else {
-            onShowError('Failed to move directories', err, true);
+            onShowError('Failed to move directories', err, !(err instanceof ProcessCanceled));
           }
         }
       })

@@ -18,9 +18,9 @@ import { TFunction } from '../../util/i18n';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeProfile, downloadPathForGame, installPathForGame, knownGames } from '../../util/selectors';
+import { activeProfile, downloadPathForGame, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { batchDispatch, isPathValid, makeQueue, setdefault, toBlue, toPromise, truthy } from '../../util/util';
+import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
@@ -364,6 +364,7 @@ class InstallManager {
 
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const currentProfile = activeProfile(api.store.getState());
+    let installProfile = currentProfile;
     let modId = baseName;
     let installGameId: string;
     let installContext: InstallContext;
@@ -386,6 +387,11 @@ class InstallManager {
         if (installGameId === undefined) {
           return Bluebird.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
+        }
+        if (installGameId !== currentProfile?.gameId) {
+          const state = api.getState();
+          const installProfileId = lastActiveProfileForGame(state, installGameId);
+          installProfile = profileById(state, installProfileId);
         }
         return api.emitAndAwait('will-install-mod', gameId, archiveId, modId, fullInfo);
       })
@@ -437,7 +443,8 @@ class InstallManager {
         let replacementChoice: ReplaceChoice = undefined;
         const checkNameLoop = () => {
           if (replacementChoice === 'replace') {
-            return Bluebird.resolve(testModId);
+            log('debug', '(nameloop) replacement choice "replace"', { testModId: testModId ?? '<undefined>' });
+            return Promise.resolve(testModId);
           }
           const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
           const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
@@ -445,7 +452,8 @@ class InstallManager {
             ? modNameMatches
             : Array.from(new Set([].concat(modNameMatches, variantMatches)));
           if (existingIds.length === 0) {
-            return Bluebird.resolve(testModId);
+            log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
+            return Promise.resolve(testModId);
           } else {
             return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
               .then((choice: IReplaceChoice) => {
@@ -517,14 +525,14 @@ class InstallManager {
           fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
         }
 
-        if ((existingMod !== undefined) && (currentProfile !== undefined)) {
-          const wasEnabled = getSafe(currentProfile.modState, [existingMod.id, 'enabled'], false);
+        if ((existingMod !== undefined) && (installProfile !== undefined)) {
+          const wasEnabled = getSafe(installProfile.modState, [existingMod.id, 'enabled'], false);
           return this.userVersionChoice(existingMod, api.store)
             .then((action: string) => {
               if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  setModsEnabled(api, currentProfile.id, [existingMod.id], false, {
+                  setModsEnabled(api, installProfile.id, [existingMod.id], false, {
                     allowAutoDeploy,
                     installed: true,
                   });
@@ -605,9 +613,9 @@ class InstallManager {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
-        if (currentProfile !== undefined) {
+        if (installProfile !== undefined) {
           if (enable) {
-            setModsEnabled(api, currentProfile.id, [modId], true, {
+            setModsEnabled(api, installProfile.id, [modId], true, {
               allowAutoDeploy,
               installed: true,
             });
@@ -1085,15 +1093,20 @@ class InstallManager {
         return Bluebird.resolve<string>(null);
       }
 
-      return type.test(installInstructions)
-      .then(matches => {
-        if (matches) {
-          found = true;
-          return Bluebird.resolve(type.typeId);
-        } else {
-          return Bluebird.resolve(null);
-        }
-      });
+      try {
+        return type.test(installInstructions)
+          .then(matches => {
+            if (matches) {
+              found = true;
+              return Promise.resolve(type.typeId);
+            } else {
+              return Promise.resolve(null);
+            }
+          });
+      } catch (err) {
+        log('error', 'invalid mod type', { typeId: type.typeId, error: err.message });
+        return Promise.resolve(null);
+      }
     }).then(matches => matches.find(match => match !== null) || '');
   }
 
@@ -2462,7 +2475,7 @@ class InstallManager {
             dep.reference = this.updateModRule(api, gameId, sourceModId, dep, {
               ...dep.reference,
               tag: downloads[downloadId].modInfo.referenceTag,
-            }, recommended).reference;
+            }, recommended)?.reference;
 
             // now at this point there may in fact already be a mod for the updated reference tag
             if ((dep.mod === undefined) && (dep.reference !== undefined)) {

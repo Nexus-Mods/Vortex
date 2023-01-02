@@ -619,7 +619,21 @@ export async function suggestStagingPath(api: IExtensionApi, gameId: string): Pr
   const state = api.getState();
   const modPaths = modPathsForGame(state, gameId);
 
-  const statModPath = await fs.statAsync(modPaths['']);
+  let statModPath: fs.Stats;
+
+  const idModPath = async (testPath: string) => {
+    try {
+      statModPath = await fs.statAsync(testPath);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        await idModPath(path.dirname(testPath));
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  await idModPath(modPaths['']);
   const statUserData = await fs.statAsync(getVortexPath('userData'));
 
   let suggestion: string;
