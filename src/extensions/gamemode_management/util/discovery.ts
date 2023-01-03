@@ -106,6 +106,11 @@ function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResu
     return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
       .then(store => {
         if (store !== undefined) {
+          log('debug', 'updating previously discovered game', {
+            gameId: game.id,
+            store,
+          });
+
           onDiscoveredGame(game.id, {
             ...discoveredGames[game.id],
             store,
@@ -113,6 +118,12 @@ function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResu
         }
       });
   } else {
+    log('debug', 'leaving alone previously discovered game', {
+      gameId: game.id,
+      path: discoveredGames[game.id]?.path,
+      store: discoveredGames[game.id]?.store,
+    });
+
     return Bluebird.resolve();
   }
 }
