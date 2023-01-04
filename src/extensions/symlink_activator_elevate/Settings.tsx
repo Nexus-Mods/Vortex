@@ -55,7 +55,7 @@ class Settings extends ComponentEx<IProps, {}> {
             onToggle={this.togglePriv}
             disabled={supported !== null}
           >
-            {t('Allow Symlinks without elevation (experimental!)')}
+            {t('Allow Symlinks without elevation')}
           </Toggle>
           {(this.mInitialSymlinkPrivilege !== localState.symlinkRight) ? (
             <Alert>
