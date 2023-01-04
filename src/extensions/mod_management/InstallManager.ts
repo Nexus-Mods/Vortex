@@ -388,8 +388,12 @@ class InstallManager {
           return Bluebird.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
+        const state = api.getState();
+        const games = knownGames(state);
+        if (games.find(iter => iter.id === installGameId) === undefined) {
+          return Promise.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
+        }
         if (installGameId !== currentProfile?.gameId) {
-          const state = api.getState();
           const installProfileId = lastActiveProfileForGame(state, installGameId);
           installProfile = profileById(state, installProfileId);
         }
@@ -2790,7 +2794,12 @@ class InstallManager {
       }
 
       const notificationId = `${installPath}_activity`;
-      api.events.emit('will-install-dependencies', gameId, modId, false);
+
+      let canceled = false;
+      api.events.emit('will-install-dependencies', gameId, modId, false, () => { canceled = true; });
+      if (canceled) {
+        return Promise.resolve();
+      }
 
       let lastProgress = -1;
 
@@ -2942,7 +2951,12 @@ class InstallManager {
       }
 
       const notificationId = `${installPath}_activity`;
-      api.events.emit('will-install-dependencies', profile?.id, modId, true);
+
+      let canceled = false;
+      api.events.emit('will-install-dependencies', gameId, modId, true, () => { canceled = true; });
+      if (canceled) {
+        return Promise.resolve();
+      }
 
       api.sendNotification({
         id: notificationId,

@@ -164,6 +164,29 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch('--disable-gpu');
   }
 
+  // --run has to be evaluated *before* we request the single instance lock!
+  if (mainArgs.run !== undefined) {
+    // Vortex here acts only as a trampoline (probably elevated) to start
+    // some other process
+    const cp: typeof child_processT = require('child_process');
+    cp.spawn(process.execPath, [ mainArgs.run ], {
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+      },
+      stdio: 'inherit',
+      detached: true,
+    })
+    .on('error', err => {
+      // TODO: In practice we have practically no information about what we're running
+      //       at this point
+      dialog.showErrorBox('Failed to run script', err.message);
+    });
+    // quit this process, the new one is detached
+    app.quit();
+    return;
+  }
+
   if (!app.requestSingleInstanceLock()) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--in-process-gpu');
@@ -214,28 +237,6 @@ async function main(): Promise<void> {
     fixedT('dummy');
   } catch (err) {
     fixedT = input => input;
-  }
-
-  if (mainArgs.run !== undefined) {
-    // Vortex here acts only as a trampoline (probably elevated) to start
-    // some other process
-    const cp: typeof child_processT = require('child_process');
-    cp.spawn(process.execPath, [ mainArgs.run ], {
-      env: {
-        ...process.env,
-        ELECTRON_RUN_AS_NODE: '1',
-      },
-      stdio: 'inherit',
-      detached: true,
-    })
-    .on('error', err => {
-      // TODO: In practice we have practically no information about what we're running
-      //       at this point
-      dialog.showErrorBox('Failed to run script', err.message);
-    });
-    // quit this process, the new one is detached
-    app.quit();
-    return;
   }
 
   /* allow application controlled scaling
