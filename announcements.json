@@ -100,6 +100,12 @@
   "severity": "information",
   "link": "https://github.com/SubnauticaModding/QModManager/releases/download/v4.2.1/ManualInstall.QModManager_BZ.EXP.zip",
   "gamemode": "subnauticabelowzero"
+  }, {
+  "date": "2023-01-06T00:00:00",
+  "description": "On 9 January 2023 our website nexusmods.com will go into scheduled maintenance. The website itself as well as mod downloads and updates - manual and via Vortex - will be unavailable during this time. We apologise for the inconvenience. Please refer to our news post for more info.",
+  "severity": "warning",
+  "link": "https://www.nexusmods.com/site/news/14788",
+  "gamemode": "*"
   }
 ]
 
