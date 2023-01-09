@@ -391,7 +391,7 @@ class InstallManager {
         const state = api.getState();
         const games = knownGames(state);
         if (games.find(iter => iter.id === installGameId) === undefined) {
-          return Promise.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
+          return Bluebird.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
         }
         if (installGameId !== currentProfile?.gameId) {
           const installProfileId = lastActiveProfileForGame(state, installGameId);
@@ -1102,14 +1102,14 @@ class InstallManager {
           .then(matches => {
             if (matches) {
               found = true;
-              return Promise.resolve(type.typeId);
+              return Bluebird.resolve(type.typeId);
             } else {
-              return Promise.resolve(null);
+              return Bluebird.resolve(null);
             }
           });
       } catch (err) {
         log('error', 'invalid mod type', { typeId: type.typeId, error: err.message });
-        return Promise.resolve(null);
+        return Bluebird.resolve(null);
       }
     }).then(matches => matches.find(match => match !== null) || '');
   }
@@ -2798,7 +2798,7 @@ class InstallManager {
       let canceled = false;
       api.events.emit('will-install-dependencies', gameId, modId, false, () => { canceled = true; });
       if (canceled) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       let lastProgress = -1;
@@ -2955,7 +2955,7 @@ class InstallManager {
       let canceled = false;
       api.events.emit('will-install-dependencies', gameId, modId, true, () => { canceled = true; });
       if (canceled) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
 
       api.sendNotification({
