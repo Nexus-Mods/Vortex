@@ -3,6 +3,7 @@ import Promise from 'bluebird';
 // sensible fallbacks for if fs calls fail
 import * as fsOrig from 'fs-extra';
 import * as path from 'path';
+import { restackErr } from './util';
 
 export type Normalize = (input: string) => string;
 
@@ -96,6 +97,9 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
   if (parameters === undefined) {
     parameters = {};
   }
+
+  const stackErr = new Error();
+
   return isCaseSensitive(testPath)
     .then(caseSensitive => {
       let funcOut = caseSensitive
@@ -117,10 +121,10 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
       if (err.code === 'ENOENT') {
         const parent = path.dirname(testPath);
         return (parent === testPath)
-          ? Promise.reject(err)
+          ? Promise.reject(restackErr(err, stackErr))
           : getNormalizeFunc(parent);
       } else {
-        return Promise.reject(err);
+        return Promise.reject(restackErr(err, stackErr));
       }
     });
 }

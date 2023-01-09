@@ -116,6 +116,9 @@ function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResu
             store,
           });
         }
+      })
+      .catch(err => {
+        log('error', 'failed to identify store for game', err.message);
       });
   } else {
     log('debug', 'leaving alone previously discovered game', {

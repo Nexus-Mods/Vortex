@@ -342,6 +342,12 @@ class GameModeManager {
               }
             });
           }
+        })
+        .catch(err => {
+          // error is probably that normalization failed. Considering how rarely this
+          // mechanism will be used, showing a notification feels like overkill
+          log('error', 'failed to check if game should be overridden', { gameId, error: err.message });
+          return Promise.resolve();
         });
     });
   }
