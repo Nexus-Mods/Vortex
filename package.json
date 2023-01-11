@@ -31,6 +31,7 @@
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
+    "postinstall": "node postinstall.js",
     "test": "jest --no-cache",
     "lint": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet",
     "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
