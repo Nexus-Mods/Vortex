@@ -16,7 +16,6 @@ const modules = [
   ['native-errors', path.join('build', 'Release', 'native-errors.node')],
   ['crash-dump', path.join('build', 'Release', 'windump.node')],
   ['vortexmt', path.join('build', 'Release', 'vortexmt.node')],
-  ['harmony-patcher', path.join('dist', 'VortexHarmonyExec.exe')],
   ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe')],
 ];
 
