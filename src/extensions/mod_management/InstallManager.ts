@@ -2631,8 +2631,8 @@ class InstallManager {
       error: IDependencyError[];
     }
 
-    const modState = profile !== undefined
-      ? api.getState().persistent.profiles[profile.id].modState
+    const modState = (profile !== undefined)
+      ? (api.getState().persistent.profiles[profile.id].modState ?? {})
       : {};
 
     const { success, existing, error } = dependencies.reduce(
