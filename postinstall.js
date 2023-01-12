@@ -3,25 +3,35 @@
 // it will delete native modules and may not rebuild them, meaning that after a
 // "yarn add" or "yarn upgrade", node_modules is in an invalid state
 
+const https = require('https');
 const path = require('path');
 const fs = require('fs/promises');
 const { spawn } = require('child_process');
+const prebuildRC = require('prebuild-install/rc');
+const prebuildUtil = require('prebuild-install/util');
 
 const packageManager = 'yarn';
 
-const modules = [
-  ['winapi-bindings', path.join('build', 'Release', 'winapi.node')],
-  ['xxhash-addon', path.join('build', 'Release', 'addon.node')],
-  ['libxmljs', path.join('build', 'Release', 'xmljs.node')],
-  ['native-errors', path.join('build', 'Release', 'native-errors.node')],
-  ['crash-dump', path.join('build', 'Release', 'windump.node')],
-  ['vortexmt', path.join('build', 'Release', 'vortexmt.node')],
-  ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe')],
+// verify these modules are installed
+const verifyModules = [
+  ['winapi-bindings', path.join('build', 'Release', 'winapi.node'), true],
+  ['xxhash-addon', path.join('build', 'Release', 'addon.node'), false],
+  ['libxmljs', path.join('build', 'Release', 'xmljs.node'), false],
+  ['native-errors', path.join('build', 'Release', 'native-errors.node'), true],
+  ['crash-dump', path.join('build', 'Release', 'windump.node'), true],
+  ['vortexmt', path.join('build', 'Release', 'vortexmt.node'), true],
+  ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
+  ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
+  ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), true],
 ];
 
-async function main() {
+if (process.platform === 'win32') {
+  verifyModules.push(['harmony-patcher', path.join('dist', 'VortexInjectorIPC.exe'), true]);
+}
+
+async function verifyModulesInstalled() {
   console.log('checking native modules');
-  for (const module of modules) {
+  for (const module of verifyModules) {
     const modPath = path.join(__dirname, 'node_modules', module[0], module[1]);
     try {
       await fs.stat(modPath);
@@ -40,6 +50,56 @@ async function main() {
       }
     }
   }
+}
+
+async function testURL(targetURL) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(targetURL, {}, res => {
+      if ([200, 302].includes(res.statusCode)) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+      req.end();
+      req.destroy();
+      res.destroy();
+    })
+    .on('error', err => {
+      console.log('connection failed', err);
+      resolve(false);
+    });
+  });
+}
+
+async function verifyPrebuild() {
+  console.log('checking modules are prebuilt');
+  for (const module of verifyModules) {
+    if (!module[2]) {
+      // not expected to be prebuilt
+      continue;
+    }
+    const pkg = require(path.join(__dirname, 'node_modules', module[0], 'package.json'));
+    if ((pkg.name === undefined) || (pkg.repository === undefined)) {
+      console.log('misconfigured module', module[0]);
+      continue;
+    }
+    if (pkg.config === undefined) {
+      pkg.config = {};
+    }
+    pkg.config.arch = pkg.config.arch ?? 'x64';
+    pkg.config.runtime = pkg.config.runtime ?? 'napi';
+    const opts = { ...prebuildRC(pkg), abi: '4', pkg };
+    const dlURL = prebuildUtil.getDownloadUrl(opts);
+    const exists = await testURL(dlURL);
+    if (!exists) {
+      console.log('module not prebuilt', module[0]);
+    }
+  }
+}
+
+async function main() {
+  verifyPrebuild();
+  verifyModulesInstalled();
 }
 
 main();
