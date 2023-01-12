@@ -200,6 +200,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private filterSearch = (test: IAvailableExtension)  => {
     const { searchTerm } = this.state;
+    if (test.hide) {
+      return false;
+    }
+
     if (!searchTerm) {
       return true;
     }

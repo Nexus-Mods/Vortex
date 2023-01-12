@@ -56,6 +56,7 @@ export interface IAvailableExtension extends IExtensionDownloadInfo {
   timestamp: number;
   tags: string[];
   dependencies?: { [key: string]: any };
+  hide?: boolean;
 }
 
 export interface IExtensionManifest {

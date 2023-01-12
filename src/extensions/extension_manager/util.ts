@@ -41,7 +41,7 @@ function githubRawUrl(repo: string, branch: string, repoPath: string) {
   return `https://raw.githubusercontent.com/${repo}/${branch}/${repoPath}`;
 }
 
-const EXTENSION_FORMAT = '1_4';
+const EXTENSION_FORMAT = '1_8';
 const EXTENSION_FILENAME = `extensions_${EXTENSION_FORMAT}.json`;
 const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSION_FILENAME);
 
