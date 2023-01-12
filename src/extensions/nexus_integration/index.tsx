@@ -854,7 +854,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension
     nexusSubmitCollection: eh.onSubmitCollection(nexus),
     nexusModUpdate: eh.onModUpdate(api, nexus),
     nexusOpenCollectionPage: eh.onOpenCollectionPage(api),
-    nexusOpenModMage: eh.onOpenModPage(api),
+    nexusOpenModPage: eh.onOpenModPage(api),
     nexusRequestNexusLogin: callback => requestLogin(api, callback),
     nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
     nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),

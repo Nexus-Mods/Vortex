@@ -2218,7 +2218,9 @@ class InstallManager {
           return Bluebird.resolve(undefined);
         })
         .catch(err => {
-          const refName = renderModReference(dep.reference, undefined);
+          const refName = (dep.reference !== undefined)
+            ? renderModReference(dep.reference, undefined)
+            : 'undefined';
           const notiId = `failed-install-dependency-${refName}`;
           if (err instanceof UserCanceled) {
             if (err.skipped) {
@@ -2632,8 +2634,8 @@ class InstallManager {
       error: IDependencyError[];
     }
 
-    const modState = profile !== undefined
-      ? api.getState().persistent.profiles[profile.id].modState
+    const modState = (profile !== undefined)
+      ? (api.getState().persistent.profiles[profile.id].modState ?? {})
       : {};
 
     const { success, existing, error } = dependencies.reduce(
