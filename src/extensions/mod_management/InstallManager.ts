@@ -2217,7 +2217,9 @@ class InstallManager {
           return Promise.resolve(undefined);
         })
         .catch(err => {
-          const refName = renderModReference(dep.reference, undefined);
+          const refName = (dep.reference !== undefined)
+            ? renderModReference(dep.reference, undefined)
+            : 'undefined';
           const notiId = `failed-install-dependency-${refName}`;
           if (err instanceof UserCanceled) {
             if (err.skipped) {
