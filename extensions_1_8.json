@@ -55,24 +55,7 @@
     },
     {
       "modId": 37,
-      "fileId": 916,
-      "author": "Tannin",
-      "uploader": "Tannin42",
-      "description": {
-        "short": "Fully Virtual Deployment for Vortex using the usvfs library.",
-        "long": "[size=4][b]Introduction\n<br />[/b][/size]\n<br />This is an extension for Vortex that adds a new deployment method to Vortex.\n<br />[b][size=4][color=#ff0000]This is highly experimental and currently not officially supported. Please do NOT report bugs for this through the Vortex feedback system, report them here.[/color]\n<br />[/size][/b]\n<br />[size=4]Features[/size]\n<br />\n<br />[list]\n<br />[*][size=2]Deploying with this gets no real files placed in the game directory[/size]\n<br />[*][size=2]Deployment is quite a bit faster than using links[/size]\n<br />[*][size=2]It works with any filesystem[/size]\n<br />[*][size=2]The staging folder doesn't have to be on the same drive as the game[/size]\n<br />[/list]\n<br />[size=4]Limitations (can't be fixed)[/size]\n<br />\n<br />[list]\n<br />[*][color=#ff0000][size=3]Requires Vortex 0.17.0 or newer![/size][/color]\n<br />[*][size=2]Games &amp; Tools always have to be started from inside Vortex, otherwise the mods aren't working[/size]\n<br />[*][size=2]Supports only games that get started directly (some games, e.g. Sims 4, Dark Souls, Kotor always get started through Origin/Steam)[/size]\n<br />[*][size=2]Errors caused by an incompatibility with the game can be quite hard to decipher[/size]\n<br />[/list]\n<br />[size=4][b]Known Bugs\n<br />[/b][/size]\n<br />[list]\n<br />[*]Many games aren't currently compatible (need testing to produce a list)\n<br />[*]External Changes will currently not be detected\n<br />[*]Vortex will show plugins as not-deployed - they can still be sorted and everything should work functionally\n<br />[/list]\n<br />[size=4][b]How to install\n<br />[/b][/size]\n<br />Open the extensions tab in vortex (requires advanced mode) and drag the 7z file onto the drop zone at the bottom.\n<br />\n<br />[size=4][b]Usage[/b]\n<br />[/size]\n<br />In Settings-&gt;Mods switch the deployment method to \"USVFS Deployment\""
-      },
-      "downloads": 1767,
-      "endorsements": 199,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/37/37-1548351418-434824795.jpeg",
-      "name": "Fully Virtual Deployment",
-      "timestamp": 1612536785,
-      "tags": [],
-      "version": "0.1.5",
-      "type": null,
-      "dependencies": {
-        "vortex": "~1.4.0"
-      }
+      "fileId": 916
     },
     {
       "modId": 9,
@@ -621,7 +604,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-7daystodie",
       "version": "1.0.10",
-      "id": "game-7daystodie"
+      "id": "game-7daystodie",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-ahatintime/gameart.jpg",
@@ -636,7 +620,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-ahatintime",
       "version": "1.0.0",
-      "id": "game-ahatintime"
+      "id": "game-ahatintime",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-breakingwheel/gameart.jpg",
@@ -651,7 +636,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-breakingwheel",
       "version": "1.0.0",
-      "id": "game-breakingwheel"
+      "id": "game-breakingwheel",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-bloodstainedritualofthenight/gameart.jpg",
@@ -666,7 +652,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-bloodstainedritualofthenight",
       "version": "1.0.3",
-      "id": "game-bloodstainedritualofthenight"
+      "id": "game-bloodstainedritualofthenight",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-codevein/gameart.jpg",
@@ -681,7 +668,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-codevein",
       "version": "1.0.0",
-      "id": "game-codevein"
+      "id": "game-codevein",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-bladeandsorcery/gameart.jpg",
@@ -696,7 +684,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-bladeandsorcery",
       "version": "0.2.15",
-      "id": "game-bladeandsorcery"
+      "id": "game-bladeandsorcery",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-daggerfallunity/gameart.jpg",
@@ -711,7 +700,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-daggerfallunity",
       "version": "1.0.1",
-      "id": "game-daggerfallunity"
+      "id": "game-daggerfallunity",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darkestdungeon/gameart.jpg",
@@ -726,7 +716,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-darkestdungeon",
       "version": "1.0.2",
-      "id": "game-darkestdungeon"
+      "id": "game-darkestdungeon",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-divinityoriginalsin2/gameart.jpg",
@@ -741,7 +732,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-divinityoriginalsin2",
       "version": "1.0.0",
-      "id": "game-divinityoriginalsin2"
+      "id": "game-divinityoriginalsin2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darksouls/gameart.jpg",
@@ -756,7 +748,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-darksouls",
       "version": "1.0.0",
-      "id": "game-darksouls"
+      "id": "game-darksouls",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dawnofman/gameart.jpg",
@@ -771,7 +764,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-dawnofman",
       "version": "1.0.0",
-      "id": "game-dawnofman"
+      "id": "game-dawnofman",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragonage/gameart.jpg",
@@ -786,7 +780,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-dragonage",
       "version": "1.0.1",
-      "id": "game-dragonage"
+      "id": "game-dragonage",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragonage2/gameart.jpg",
@@ -801,7 +796,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-dragonage2",
       "version": "1.0.1",
-      "id": "game-dragonage2"
+      "id": "game-dragonage2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dmc5/gameart.jpg",
@@ -816,7 +812,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-dmc5",
       "version": "0.1.6",
-      "id": "game-dmc5"
+      "id": "game-dmc5",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragons-dogma/gameart.jpg",
@@ -831,7 +828,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-dragons-dogma",
       "version": "1.0.3",
-      "id": "game-dragons-dogma"
+      "id": "game-dragons-dogma",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-elex/gameart.jpg",
@@ -846,7 +844,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-elex",
       "version": "0.0.1",
-      "id": "game-elex"
+      "id": "game-elex",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-enderal/gameart.jpg",
@@ -861,7 +860,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-enderal",
       "version": "1.0.0",
-      "id": "game-enderal"
+      "id": "game-enderal",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darksouls2/gameart.jpg",
@@ -876,7 +876,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-darksouls2",
       "version": "1.0.0",
-      "id": "game-darksouls2"
+      "id": "game-darksouls2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-factorio/gameart.jpg",
@@ -891,7 +892,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-factorio",
       "version": "1.0.0",
-      "id": "game-factorio"
+      "id": "game-factorio",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout3/gameart.jpg",
@@ -906,7 +908,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-fallout3",
       "version": "1.0.3",
-      "id": "game-fallout3"
+      "id": "game-fallout3",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout4/gameart.jpg",
@@ -921,7 +924,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-fallout4",
       "version": "1.0.3",
-      "id": "game-fallout4"
+      "id": "game-fallout4",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout4vr/gameart.jpg",
@@ -936,7 +940,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-fallout4vr",
       "version": "1.0.1",
-      "id": "game-fallout4vr"
+      "id": "game-fallout4vr",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-falloutnv/gameart.jpg",
@@ -951,7 +956,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-falloutnv",
       "version": "1.0.2",
-      "id": "game-falloutnv"
+      "id": "game-falloutnv",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-galciv3/gameart.jpg",
@@ -966,7 +972,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-galciv3",
       "version": "0.1.0",
-      "id": "game-galciv3"
+      "id": "game-galciv3",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-greedfall/gameart.jpg",
@@ -981,7 +988,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-greedfall",
       "version": "1.0.2",
-      "id": "game-greedfall"
+      "id": "game-greedfall",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-gardenpaws/gameart.jpg",
@@ -996,7 +1004,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-gardenpaws",
       "version": "0.1.0",
-      "id": "game-gardenpaws"
+      "id": "game-gardenpaws",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kenshi/gameart.jpg",
@@ -1011,7 +1020,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-kenshi",
       "version": "1.0.1",
-      "id": "game-kenshi"
+      "id": "game-kenshi",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-grimdawn/gameart.jpg",
@@ -1026,7 +1036,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-grimdawn",
       "version": "1.0.1",
-      "id": "game-grimdawn"
+      "id": "game-grimdawn",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-grimrock/gameart.jpg",
@@ -1041,7 +1052,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-grimrock",
       "version": "1.0.0",
-      "id": "game-grimrock"
+      "id": "game-grimrock",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kerbalspaceprogram/gameart.jpg",
@@ -1056,7 +1068,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-kerbalspaceprogram",
       "version": "1.0.1",
-      "id": "game-kerbalspaceprogram"
+      "id": "game-kerbalspaceprogram",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kingdomcome-deliverance/gameart.jpg",
@@ -1071,7 +1084,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-kingdomcome-deliverance",
       "version": "1.1.1",
-      "id": "game-kingdomcome-deliverance"
+      "id": "game-kingdomcome-deliverance",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-mount-and-blade/gameart.jpg",
@@ -1086,7 +1100,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-mount-and-blade",
       "version": "1.0.1",
-      "id": "game-mount-and-blade"
+      "id": "game-mount-and-blade",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-morrowind/gameart.jpg",
@@ -1101,7 +1116,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-morrowind",
       "version": "1.0.7",
-      "id": "game-morrowind"
+      "id": "game-morrowind",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-monster-hunter-world/gameart.jpg",
@@ -1116,7 +1132,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-monster-hunter-world",
       "version": "1.0.3",
-      "id": "game-monster-hunter-world"
+      "id": "game-monster-hunter-world",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-neverwinter-nights/gameart.jpg",
@@ -1131,7 +1148,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-neverwinter-nights",
       "version": "1.0.2",
-      "id": "game-neverwinter-nights"
+      "id": "game-neverwinter-nights",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-neverwinter-nights2/gameart.jpg",
@@ -1146,7 +1164,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-neverwinter-nights2",
       "version": "1.0.1",
-      "id": "game-neverwinter-nights2"
+      "id": "game-neverwinter-nights2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-oni/gameart.jpg",
@@ -1161,7 +1180,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-oni",
       "version": "1.0.0",
-      "id": "game-oni"
+      "id": "game-oni",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-nomanssky/gameart.jpg",
@@ -1176,7 +1196,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-nomanssky",
       "version": "1.0.0",
-      "id": "game-nomanssky"
+      "id": "game-nomanssky",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-pathfinderkingmaker/gameart.jpg",
@@ -1191,7 +1212,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-pathfinderkingmaker",
       "version": "0.2.0",
-      "id": "game-pathfinderkingmaker"
+      "id": "game-pathfinderkingmaker",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-oblivion/gameart.jpg",
@@ -1206,7 +1228,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-oblivion",
       "version": "1.0.3",
-      "id": "game-oblivion"
+      "id": "game-oblivion",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-prisonarchitect/gameart.jpg",
@@ -1221,7 +1244,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-prisonarchitect",
       "version": "1.0.0",
-      "id": "game-prisonarchitect"
+      "id": "game-prisonarchitect",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-shadowrunreturns/gameart.jpg",
@@ -1236,7 +1260,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-shadowrunreturns",
       "version": "1.0.0",
-      "id": "game-shadowrunreturns"
+      "id": "game-shadowrunreturns",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-re2remake/gameart.jpg",
@@ -1251,7 +1276,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-re2remake",
       "version": "0.2.6",
-      "id": "game-re2remake"
+      "id": "game-re2remake",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sekiro/gameart.jpg",
@@ -1266,7 +1292,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-sekiro",
       "version": "1.0.0",
-      "id": "game-sekiro"
+      "id": "game-sekiro",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-rimworld/gameart.jpg",
@@ -1281,7 +1308,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-rimworld",
       "version": "0.1.2",
-      "id": "game-rimworld"
+      "id": "game-rimworld",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sims3/gameart.jpg",
@@ -1296,7 +1324,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-sims3",
       "version": "1.0.0",
-      "id": "game-sims3"
+      "id": "game-sims3",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sims4/gameart.jpg",
@@ -1311,7 +1340,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-sims4",
       "version": "2.0.1",
-      "id": "game-sims4"
+      "id": "game-sims4",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrim/gameart.jpg",
@@ -1326,7 +1356,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-skyrim",
       "version": "1.0.0",
-      "id": "game-skyrim"
+      "id": "game-skyrim",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrimse/gameart.jpg",
@@ -1341,7 +1372,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-skyrimse",
       "version": "1.0.3",
-      "id": "game-skyrimse"
+      "id": "game-skyrimse",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-spyroreignitedtrilogy/gameart.jpg",
@@ -1356,7 +1388,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-spyroreignitedtrilogy",
       "version": "1.0.1",
-      "id": "game-spyroreignitedtrilogy"
+      "id": "game-spyroreignitedtrilogy",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrimvr/gameart.jpg",
@@ -1371,7 +1404,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-skyrimvr",
       "version": "1.0.1",
-      "id": "game-skyrimvr"
+      "id": "game-skyrimvr",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-stardewvalley/gameart.jpg",
@@ -1386,7 +1420,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-stardewvalley",
       "version": "0.2.11",
-      "id": "game-stardewvalley"
+      "id": "game-stardewvalley",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-starsector/gameart.jpg",
@@ -1416,7 +1451,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-starbound",
       "version": "1.0.1",
-      "id": "game-starbound"
+      "id": "game-starbound",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-stateofdecay/gameart.jpg",
@@ -1431,7 +1467,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-stateofdecay",
       "version": "1.0.0",
-      "id": "game-stateofdecay"
+      "id": "game-stateofdecay",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-survivingmars/gameart.jpg",
@@ -1446,7 +1483,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-survivingmars",
       "version": "1.0.0",
-      "id": "game-survivingmars"
+      "id": "game-survivingmars",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sw-kotor/gameart.jpg",
@@ -1461,7 +1499,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-sw-kotor",
       "version": "1.0.2",
-      "id": "game-sw-kotor"
+      "id": "game-sw-kotor",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-teamfortress2/gameart.jpg",
@@ -1476,7 +1515,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-teamfortress2",
       "version": "1.1.1",
-      "id": "game-teamfortress2"
+      "id": "game-teamfortress2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-torchlight2/gameart.jpg",
@@ -1491,7 +1531,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-torchlight2",
       "version": "1.0.1",
-      "id": "game-torchlight2"
+      "id": "game-torchlight2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-teso/gameart.jpg",
@@ -1506,7 +1547,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-teso",
       "version": "1.0.1",
-      "id": "game-teso"
+      "id": "game-teso",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-vtmbloodlines/gameart.jpg",
@@ -1521,7 +1563,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-vtmbloodlines",
       "version": "1.0.1",
-      "id": "game-vtmbloodlines"
+      "id": "game-vtmbloodlines",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-untitledgoose/gameart.jpg",
@@ -1536,7 +1579,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-untitledgoose",
       "version": "1.0.0",
-      "id": "game-untitledgoose"
+      "id": "game-untitledgoose",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-warthunder/gameart.jpg",
@@ -1551,7 +1595,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-warthunder",
       "version": "1.0.0",
-      "id": "game-warthunder"
+      "id": "game-warthunder",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-totalwarthreekingdoms/gameart.jpg",
@@ -1566,7 +1611,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-totalwarthreekingdoms",
       "version": "0.0.1",
-      "id": "game-totalwarthreekingdoms"
+      "id": "game-totalwarthreekingdoms",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher/gameart.jpg",
@@ -1581,7 +1627,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-witcher",
       "version": "0.1.0",
-      "id": "game-witcher"
+      "id": "game-witcher",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-x4foundations/gameart.jpg",
@@ -1596,7 +1643,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-x4foundations",
       "version": "1.0.3",
-      "id": "game-x4foundations"
+      "id": "game-x4foundations",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-worldoftanks/gameart.jpg",
@@ -1611,7 +1659,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-worldoftanks",
       "version": "1.0.2",
-      "id": "game-worldoftanks"
+      "id": "game-worldoftanks",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher3/gameart.jpg",
@@ -1626,7 +1675,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-witcher3",
       "version": "1.5.3",
-      "id": "game-witcher3"
+      "id": "game-witcher3",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher2/gameart.jpg",
@@ -1641,7 +1691,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-witcher2",
       "version": "1.0.0",
-      "id": "game-witcher2"
+      "id": "game-witcher2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-xcom2/gameart.jpg",
@@ -1656,7 +1707,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-xcom2",
       "version": "1.1.4",
-      "id": "game-xcom2"
+      "id": "game-xcom2",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-xrebirth/gameart.jpg",
@@ -1671,7 +1723,8 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-xrebirth",
       "version": "1.0.1",
-      "id": "game-xrebirth"
+      "id": "game-xrebirth",
+      "hide": true
     },
     {
       "id": "titlebar-launcher",
@@ -1679,15 +1732,16 @@
       "name": "Titlebar Launcher",
       "author": "Black Tree Gaming Ltd.",
       "description": {
-        "short": "Add buttons to launch tools to the main toolbar",
-        "long": "Add buttons to launch tools to the main toolbar"
+        "short": "adds a launcher bar on the titlebar",
+        "long": "adds a launcher bar on the titlebar"
       },
       "dependencies": {
         "vortex": ">=1.2.0"
       },
-      "version": "1.0.4",
+      "version": "1.0.6",
       "github": "Nexus-Mods/extension-titlebar-launcher",
-      "githubRelease": "https://github.com/Nexus-Mods/extension-titlebar-launcher/releases/download/v1.0.4/titlebar-launcher-1-0-4.7z"
+      "githubRelease": "https://github.com/Nexus-Mods/extension-titlebar-launcher/releases/download/v1.0.4/titlebar-launcher-1-0-4.7z",
+      "hide": true
     },
     {
       "modId": 84,
@@ -1725,7 +1779,8 @@
         "short": "Support for Battletech",
         "long": "Support for Battletech"
       },
-      "version": "1.0.3"
+      "version": "1.0.3",
+      "hide": true
     },
     {
       "modId": 88,
@@ -1777,7 +1832,8 @@
         "long": "Support for Wolcen: Lords Of Mayhem"
       },
       "version": "1.0.0",
-      "author": "Black Tree Gaming Ltd."
+      "author": "Black Tree Gaming Ltd.",
+      "hide": true
     },
     {
       "modId": 92,
@@ -2016,7 +2072,8 @@
         "short": "Support for Halo: The Master Chief Collection",
         "long": "Support for Halo: The Master Chief Collection"
       },
-      "version": "1.0.1"
+      "version": "1.0.1",
+      "hide": true
     },
     {
       "modId": 113,
@@ -2035,7 +2092,8 @@
         "short": "A Vortex extension for Mount and Blade II: Bannerlord mod management.",
         "long": "A Vortex extension for Mount and Blade II: Bannerlord mod management."
       },
-      "version": "0.4.13"
+      "version": "0.4.13",
+      "hide": true
     },
     {
       "modId": 114,
@@ -2336,24 +2394,7 @@
     },
     {
       "modId": 145,
-      "fileId": 960,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "Share your modding setups and build shareable mod lists directly from Vortex. <br /><br />This simple extension lets you create \"showcases\" to share mod lists using your whole mod list, or just individual mods to share with your fellow modders.",
-        "long": "[quote]Find the full documentation at [url=https://showcase.vortex.support/]showcase.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that lets you create \"showcases\" to share mod lists. You can create a showcase from your entire behemoth of a mod list, or just select individual mods to share with your fellow modders.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://showcase.vortex.support/]the docs[/url], especially [url=https://showcase.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go.\n<br />\n<br />You can then create showcases based on either all of your enabled mods (from the top bar), or only a selection directly from your Mods list (select your mods and choose the button from the bottom action bar).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods"
-      },
-      "downloads": 4977,
-      "endorsements": 596,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/145/145-1594048990-1029659374.png",
-      "name": "Vortex Showcase",
-      "timestamp": 1615269499,
-      "tags": [],
-      "version": "0.2.1",
-      "type": null,
-      "dependencies": {
-        "vortex": "~ 1.4.0"
-      }
+      "fileId": 960
     },
     {
       "modId": 146,
@@ -2387,7 +2428,8 @@
         "short": "Support for Conan Exiles",
         "long": "Support for Conan Exiles"
       },
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "hide": true
     },
     {
       "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/release/game-nehrim/gameart.jpg",
@@ -2402,7 +2444,8 @@
         "short": "Support for Nehrim: At Fate's Edge (an Oblivion Total Conversion)",
         "long": "Support for Nehrim: At Fate's Edge (an Oblivion Total Conversion)"
       },
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "hide": true
     },
     {
       "modId": 148,
@@ -2630,7 +2673,8 @@
         "short": "Vortex support for Microsoft Flight Simulator",
         "long": "Vortex support for Microsoft Flight Simulator"
       },
-      "version": "1.0.3"
+      "version": "1.0.3",
+      "hide": true
     },
     {
       "modId": 167,
@@ -2971,7 +3015,8 @@
         "short": "Support for Baldur's Gate 3 (Early Access)",
         "long": "Support for Baldur's Gate 3 (Early Access)"
       },
-      "version": "1.2.0"
+      "version": "1.2.0",
+      "hide": true
     },
     {
       "modId": 201,
@@ -3030,26 +3075,8 @@
       "gameName": "Jurassic World Evolution"
     },
     {
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/203/203-1612535772-771215109.jpeg",
-      "name": "Subnautica Below Zero Support",
-      "author": "MrPurple6411 and Chloe S and AlexejheroYTB",
-      "description": {
-        "short": "Vortex support for Subnautica: Below Zero",
-        "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Subnautica: Below Zero to Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.4.0 (currently not publicly available)! To install, go to Extensions-&gt;Find More. Find this extension and click install."
-      },
-      "gameName": "Subnautica: Below Zero",
-      "type": "game",
-      "version": "1.2.4",
       "modId": 203,
-      "fileId": 1584,
-      "uploader": "tobeyStraitjacket",
-      "downloads": 49696,
-      "endorsements": 2325,
-      "timestamp": 1656582236,
-      "tags": [],
-      "dependencies": {
-        "vortex": "~1.4.0"
-      }
+      "fileId": 1584
     },
     {
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/202/202-1612535659-1496134740.jpeg",
@@ -3468,68 +3495,15 @@
     },
     {
       "modId": 245,
-      "fileId": 1064,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "An extremely simple extension making it faster to copy the link to a mod page.",
-        "long": "This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that adds a new entry to the context menu for mods to directly copy the mod page link to your clipboard. For Nexus-hosted mods, this will be the Nexus Mods page for the mod, but other sources are supported as well.\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or using the Vortex install buttons on the site. Restart Vortex and you should be good to go. The menu option should automatically appear for any mod with a home page link in the metadata.\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods."
-      },
-      "downloads": 883,
-      "endorsements": 152,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/245/245-1622214743-971950258.png",
-      "name": "Copy Mod Page Link",
-      "timestamp": 1622219216,
-      "tags": [],
-      "version": "0.0.1",
-      "type": null,
-      "dependencies": {
-        "vortex": "~ 1.4.0"
-      }
+      "fileId": 1064
     },
     {
       "modId": 250,
-      "fileId": 1073,
-      "author": "Nagev",
-      "uploader": "Nagev",
-      "description": {
-        "short": "Adds Vortex game support for Streets of Rogue",
-        "long": "This extension adds Streets of Rogue as a game supported in Vortex for mod management. The extension is configured to automatically download and install the BepInEx 5.4.10.0 package once the game is managed which is required for most if not all mods currently on the site. Please make sure to enable the BepInEx package in the mods page to ensure it deploys alongside your mods.\n<br />\n<br />Vortex Install (Easy)\n<br />\n<br />[list]\n<br />[*]In Vortex, locate Streets of Rogue in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Vortex Install (Advanced)\n<br />Please note that you will not receive any automatic extension updates if you install this extension by drag and dropping the archive.\n<br />\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Manual Install (Not recommended!)\n<br />\n<br />Please note that you will not receive any automatic extension updates if you install this extension manually.\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Streets of Rogue"
-      },
-      "downloads": 782,
-      "endorsements": 53,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/250/250-1623075981-1354679711.png",
-      "name": "Streets of Rogue Game Support",
-      "timestamp": 1623076197,
-      "tags": [],
-      "version": "1.0.0",
-      "type": "game",
-      "gameName": "Streets of Rogue",
-      "dependencies": {
-        "vortex": "1.4"
-      }
+      "fileId": 1073
     },
     {
       "modId": 251,
-      "fileId": 1074,
-      "author": "Nagev",
-      "uploader": "Nagev",
-      "description": {
-        "short": "Adds Vortex support for Endzone - A World Apart",
-        "long": "This extension adds Endzone - A World Apart as a game supported in Vortex for mod management. The extension is configured to automatically download and install the BepInEx 5.4.10.0 package once the game is managed which is required for most if not all mods currently on the site. Please make sure to enable the BepInEx package in the mods page to ensure it deploys alongside your mods.\n<br />\n<br />Vortex Install (Easy)\n<br />\n<br />[list]\n<br />[*]In Vortex, locate Endzone - A World Apart in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Vortex Install (Advanced)\n<br />Please note that you will not receive any automatic extension updates if you install this extension by drag and dropping the archive.\n<br />\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Manual Install (Not recommended!)\n<br />\n<br />Please note that you will not receive any automatic extension updates if you install this extension manually.\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Endzone - A World Apart"
-      },
-      "downloads": 1071,
-      "endorsements": 75,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/251/251-1623076728-378016991.jpeg",
-      "name": "Endzone - A World Apart Game Support",
-      "timestamp": 1623076891,
-      "tags": [],
-      "version": "1.0.0",
-      "type": "game",
-      "gameName": "Endzone - A World Apart",
-      "dependencies": {
-        "vortex": "1.4"
-      }
+      "fileId": 1074
     },
     {
       "modId": 252,
@@ -3571,25 +3545,7 @@
     },
     {
       "modId": 253,
-      "fileId": 1078,
-      "author": "Nagev",
-      "uploader": "Nagev",
-      "description": {
-        "short": "Adds Vortex game support for Going Medieval",
-        "long": "This extension adds Going Medieval as a game supported in Vortex for mod management. The extension is configured to automatically download and install the BepInEx 5.4.10.0 package once the game is managed which is required for most if not all mods currently on the site. Please make sure to enable the BepInEx package in the mods page to ensure it deploys alongside your mods.\n<br />\n<br />Vortex Install (Easy)\n<br />\n<br />[list]\n<br />[*]In Vortex, locate Going Medieval in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Vortex Install (Advanced)\n<br />Please note that you will not receive any automatic extension updates if you install this extension by drag and dropping the archive.\n<br />\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />Manual Install (Not recommended!)\n<br />\n<br />Please note that you will not receive any automatic extension updates if you install this extension manually.\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Going Medieval"
-      },
-      "downloads": 6010,
-      "endorsements": 251,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/253/253-1623416418-622907513.jpeg",
-      "name": "Going Medieval Game Support",
-      "timestamp": 1623417029,
-      "tags": [],
-      "version": "1.0.0",
-      "type": "game",
-      "gameName": "Going Medieval",
-      "dependencies": {
-        "vortex": "1.4"
-      }
+      "fileId": 1078
     },
     {
       "modId": 256,
@@ -3974,7 +3930,8 @@
         "short": "Support for RE3 (2020)",
         "long": "Support for RE3 (2020)"
       },
-      "version": "0.1.5"
+      "version": "0.1.5",
+      "hide": true
     },
     {
       "modId": 299,
@@ -4872,7 +4829,8 @@
         "short": "Support for Pathfinder: Wrath of the Righteous",
         "long": "Support for Pathfinder: Wrath of the Righteous"
       },
-      "version": "1.0.1"
+      "version": "1.0.1",
+      "hide": true
     },
     {
       "modId": 405,
@@ -5802,6 +5760,631 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "High On Life"
+    },
+    {
+      "image": "",
+      "name": "gamebryo-plugin-management",
+      "github": "Nexus-Mods/extension-plugin-management",
+      "id": "gamebryo-plugin-management",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.2.6",
+      "description": {
+        "short": "Management for gamebryo plugins",
+        "long": "Management for gamebryo plugins"
+      }
+    },
+    {
+      "image": "",
+      "name": "feedback",
+      "github": "Nexus-Mods/extension-feedback",
+      "id": "feedback",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Feedback page",
+        "long": "Feedback page"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-archive-invalidation",
+      "github": "Nexus-Mods/extension-archive-invalidation",
+      "id": "gamebryo-archive-invalidation",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.2",
+      "description": {
+        "short": "Management for gamebryo archive invalidation",
+        "long": "Management for gamebryo archive invalidation"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-ba2-support",
+      "github": "Nexus-Mods/extension-ba2-support",
+      "id": "gamebryo-ba2-support",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Support for new gamebryo data archives",
+        "long": "Support for new gamebryo data archives"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-bsa-support",
+      "github": "Nexus-Mods/extension-bsa-support",
+      "id": "gamebryo-bsa-support",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.3",
+      "description": {
+        "short": "Support for (old) gamebryo data archives",
+        "long": "Support for (old) gamebryo data archives"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-plugin-indexlock",
+      "github": "Nexus-Mods/extension-plugin-indexlock",
+      "id": "gamebryo-plugin-indexlock",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Allows gamebryo plugin to be locked to a specific index",
+        "long": "Allows gamebryo plugin to be locked to a specific index"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-savegame-management",
+      "github": "Nexus-Mods/extension-gamebryo-savegames",
+      "id": "gamebryo-savegame-management",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.1",
+      "description": {
+        "short": "Management for gamebryo savegames",
+        "long": "Management for gamebryo savegames"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamebryo-test-settings",
+      "github": "Nexus-Mods/extension-gamebryo-testsettings",
+      "id": "gamebryo-test-settings",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.4",
+      "description": {
+        "short": "Management for gamebryo tests settings",
+        "long": "Management for gamebryo tests settings"
+      }
+    },
+    {
+      "image": "",
+      "name": "gameinfo-steam",
+      "github": "Nexus-Mods/extension-gameinfo-steam",
+      "id": "gameinfo-steam",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Retrieve information about supported games from steam",
+        "long": "Retrieve information about supported games from steam"
+      }
+    },
+    {
+      "image": "",
+      "name": "local-gamesettings",
+      "github": "Nexus-Mods/extension-local-gamesettings",
+      "id": "local-gamesettings",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.1",
+      "description": {
+        "short": "Management for local game settings",
+        "long": "Management for local game settings"
+      }
+    },
+    {
+      "image": "",
+      "name": "meta-editor",
+      "github": "Nexus-Mods/extension-metaeditor",
+      "id": "meta-editor",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Editor for Mod Meta Data",
+        "long": "Editor for Mod Meta Data"
+      }
+    },
+    {
+      "image": "",
+      "name": "mo-import",
+      "github": "Nexus-Mods/extension-mo-import",
+      "id": "mo-import",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.2",
+      "description": {
+        "short": "Import Mods from Mod Organizer",
+        "long": "Import Mods from Mod Organizer"
+      }
+    },
+    {
+      "image": "",
+      "name": "mod-dependency-manager",
+      "github": "Nexus-Mods/extension-mod-dependencies",
+      "id": "mod-dependency-manager",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.4",
+      "description": {
+        "short": "Control mod dependencies through drag&drop",
+        "long": "Control mod dependencies through drag&drop"
+      }
+    },
+    {
+      "image": "",
+      "name": "mod-highlight",
+      "github": "Nexus-Mods/extension-mod-highlights",
+      "id": "mod-highlight",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Custom highlighting (and notes) for mods",
+        "long": "Custom highlighting (and notes) for mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-dinput",
+      "github": "Nexus-Mods/extension-modtype-dinput",
+      "id": "modtype-dinput",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Support for dinput mods",
+        "long": "Support for dinput mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-dazip",
+      "github": "Nexus-Mods/extension-modtype-dazip",
+      "id": "modtype-dazip",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "1.0.0",
+      "description": {
+        "short": "Support for dazip (Dragon Age) mods",
+        "long": "Support for dazip (Dragon Age) mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-enb",
+      "github": "Nexus-Mods/extension-modtype-enb",
+      "id": "modtype-enb",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.2",
+      "description": {
+        "short": "Support for enb mods",
+        "long": "Support for enb mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-gedosato",
+      "github": "Nexus-Mods/extension-modtype-gedosato",
+      "id": "modtype-gedosato",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Support for GeDoSaTo mods",
+        "long": "Support for GeDoSaTo mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "mtframework-arc-support",
+      "github": "Nexus-Mods/extension-arc-support",
+      "id": "mtframework-arc-support",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Support for arc archives used in MT Framework (Capcom) games",
+        "long": "Support for arc archives used in MT Framework (Capcom) games"
+      }
+    },
+    {
+      "image": "",
+      "name": "nmm-import-tool",
+      "github": "Nexus-Mods/extension-nmm-import",
+      "id": "nmm-import-tool",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Import tool for the Nexus Mod Manager",
+        "long": "Import tool for the Nexus Mod Manager"
+      }
+    },
+    {
+      "image": "",
+      "name": "open-directory",
+      "github": "Nexus-Mods/extension-open-directory",
+      "id": "open-directory",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Adds several buttons to open relevant directories in the file manager",
+        "long": "Adds several buttons to open relevant directories in the file manager"
+      }
+    },
+    {
+      "image": "",
+      "name": "theme-switcher",
+      "github": "Nexus-Mods/extension-theme-switcher",
+      "id": "theme-switcher",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Settings section to switch and customize UI themes",
+        "long": "Settings section to switch and customize UI themes"
+      }
+    },
+    {
+      "image": "",
+      "name": "common-interpreters",
+      "github": "Nexus-Mods/extension-common-interpreters",
+      "id": "common-interpreters",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "1.0.0",
+      "description": {
+        "short": "Adds support for running java, python, ... executables",
+        "long": "Adds support for running java, python, ... executables"
+      }
+    },
+    {
+      "image": "",
+      "name": "issue-tracker",
+      "github": "Nexus-Mods/extension-issue-tracker",
+      "id": "issue-tracker",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.4",
+      "description": {
+        "short": "Track issues you reported on the dashboard",
+        "long": "Track issues you reported on the dashboard"
+      }
+    },
+    {
+      "image": "",
+      "name": "changelog-dashlet",
+      "github": "Nexus-Mods/extension-changelog-dashlet",
+      "id": "changelog-dashlet",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.2",
+      "description": {
+        "short": "Shows the changelog of the current vortex version on the dashlet",
+        "long": "Shows the changelog of the current vortex version on the dashlet"
+      }
+    },
+    {
+      "image": "",
+      "name": "fnis-integration",
+      "github": "Nexus-Mods/fnis-integration",
+      "id": "fnis-integration",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Keeps animation data updated and local to the profile",
+        "long": "Keeps animation data updated and local to the profile"
+      }
+    },
+    {
+      "image": "",
+      "name": "game-pillarsofeternity2",
+      "github": "Nexus-Mods/game-pillarsofeternity2",
+      "id": "game-pillarsofeternity2",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.2.1",
+      "description": {
+        "short": "Vortex support for Pillars Of Eternity 2: Deadfire",
+        "long": "Vortex support for Pillars Of Eternity 2: Deadfire"
+      }
+    },
+    {
+      "image": "",
+      "name": "test-gameversion",
+      "github": "Nexus-Mods/test-gameversion",
+      "id": "test-gameversion",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.1",
+      "description": {
+        "short": "Report an error if a mod isn't compatible with the current game version",
+        "long": "Report an error if a mod isn't compatible with the current game version"
+      }
+    },
+    {
+      "image": "",
+      "name": "documentation",
+      "github": "Nexus-Mods/extension-documentation",
+      "id": "documentation",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "1.0.0",
+      "description": {
+        "short": "In-Application documentation and tutorial videos",
+        "long": "In-Application documentation and tutorial videos"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-umm",
+      "github": "nexus-mods/extension-modtype-umm",
+      "id": "modtype-umm",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "1.0.4",
+      "description": {
+        "short": "Unity Mod Manager modtype to support unity games which rely on UMM to install mods",
+        "long": "Unity Mod Manager modtype to support unity games which rely on UMM to install mods"
+      }
+    },
+    {
+      "image": "",
+      "name": "mod-content",
+      "github": "Nexus-Mods/extension-mod-content",
+      "id": "mod-content",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.2.2",
+      "description": {
+        "short": "Add mod column indicating the content it contains",
+        "long": "Add mod column indicating the content it contains"
+      }
+    },
+    {
+      "image": "",
+      "name": "quickbms-support",
+      "github": "nexus-mods/extension-quickbms-support",
+      "id": "quickbms-support",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.2.5",
+      "description": {
+        "short": "QuickBMS extractor support",
+        "long": "QuickBMS extractor support"
+      }
+    },
+    {
+      "image": "",
+      "name": "morrowind-plugin-management",
+      "github": "Nexus-Mods/extension-morrowind-plugin-management",
+      "id": "morrowind-plugin-management",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Management for morrowind plugins",
+        "long": "Management for morrowind plugins"
+      }
+    },
+    {
+      "image": "",
+      "name": "script-extender-error-check",
+      "github": "Nexus-Mods/extension-script-extender-error-check",
+      "id": "script-extender-error-check",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.1",
+      "description": {
+        "short": "Warn if the script extender log contains error message",
+        "long": "Warn if the script extender log contains error message"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamestore-gog",
+      "github": "nexus-mods/extension-gamestore-gog",
+      "id": "gamestore-gog",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.5",
+      "description": {
+        "short": "Provides discovery and launch support for GoG games",
+        "long": "Provides discovery and launch support for GoG games"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamestore-origin",
+      "github": "nexus-mods/extension-gamestore-origin",
+      "id": "gamestore-origin",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Discovery and game launch support for the Origin/EA game store",
+        "long": "Discovery and game launch support for the Origin/EA game store"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamestore-uplay",
+      "github": "nexus-mods/extension-gamestore-uplay",
+      "id": "gamestore-uplay",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.4",
+      "description": {
+        "short": "Provides discovery and launch support for UPlay games",
+        "long": "Provides discovery and launch support for UPlay games"
+      }
+    },
+    {
+      "image": "",
+      "name": "gamestore-xbox",
+      "github": "nexus-mods/extension-gamestore-xbox",
+      "id": "gamestore-xbox",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.3",
+      "description": {
+        "short": "Provides discovery and launch support for Microsoft Store (XBox pass) games",
+        "long": "Provides discovery and launch support for Microsoft Store (XBox pass) games"
+      }
+    },
+    {
+      "image": "",
+      "name": "new-file-monitor",
+      "github": "Nexus-Mods/extension-new-file-monitor",
+      "id": "new-file-monitor",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "generate events when new files are added to a mod directory",
+        "long": "generate events when new files are added to a mod directory"
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-harmony-patcher",
+      "github": "nexus-mods/extension-modtype-harmony-patcher",
+      "id": "modtype-harmony-patcher",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Functionality to automatically add/remove patch on deploy/purge",
+        "long": "Functionality to automatically add/remove patch on deploy/purge"
+      }
+    },
+    {
+      "image": "",
+      "name": "extensions-dashlet",
+      "github": "Nexus-Mods/extension-extension-dashlet",
+      "id": "extensions-dashlet",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Dashlet to advertise newly released dashlets and remind user to endorse",
+        "long": "Dashlet to advertise newly released dashlets and remind user to endorse"
+      }
+    },
+    {
+      "image": "",
+      "name": "test-setup",
+      "github": "Nexus-Mods/extension-test-setup",
+      "id": "test-setup",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.0",
+      "description": {
+        "short": "Test for common problems with the Vortex setup itself",
+        "long": "Test for common problems with the Vortex setup itself"
+      }
+    },
+    {
+      "image": "",
+      "name": "mod-report",
+      "github": "Nexus-Mods/extension-mod-report",
+      "id": "mod-report",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.6",
+      "description": {
+        "short": "Create a report on the final effects of a mod on disk",
+        "long": "Create a report on the final effects of a mod on disk"
+      },
+      "githubRelease": "https://github.com/Nexus-Mods/extension-mod-report/releases/download/0.0.6/mod-report.zip"
+    },
+    {
+      "image": "",
+      "name": "script-extender-installer",
+      "github": "Pickysaurus/script-extender-installer",
+      "id": "script-extender-installer",
+      "hide": true,
+      "author": "Pickysaurus",
+      "version": "1.1.13",
+      "description": {
+        "short": "Install script extenders for Gamebyro games with Vortex",
+        "long": "Install script extenders for Gamebyro games with Vortex"
+      }
+    },
+    {
+      "image": "",
+      "name": "bethesda-archive-check",
+      "github": "Nexus-Mods/bethesda-archive-check",
+      "id": "bethesda-archive-check",
+      "hide": true,
+      "author": "Pickysaurus",
+      "version": "1.0.3",
+      "description": {
+        "short": "Check BSA/BA2 archives are valid for the current game after updating your load order.",
+        "long": "Check BSA/BA2 archives are valid for the current game after updating your load order."
+      }
+    },
+    {
+      "image": "",
+      "name": "modtype-bepinex",
+      "github": "Nexus-Mods/extension-modtype-bepinex",
+      "id": "modtype-bepinex",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.1.9",
+      "description": {
+        "short": "Adds several BepInEx specific modTypes and the ability to automatically download and install the library.",
+        "long": "Adds several BepInEx specific modTypes and the ability to automatically download and install the library."
+      }
+    },
+    {
+      "image": "",
+      "name": "collections",
+      "github": "Nexus-Mods/extension-collections",
+      "id": "collections",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "0.0.1",
+      "description": {
+        "short": "Allows creation of installation of mod packs (meta mods that install a bunch of other mods)",
+        "long": "Allows creation of installation of mod packs (meta mods that install a bunch of other mods)"
+      }
+    },
+    {
+      "image": "",
+      "name": "gameversion-hash",
+      "github": "nexus-mods/extension-gameversion-hash",
+      "id": "gameversion-hash",
+      "hide": true,
+      "author": "Black Tree Gaming Ltd.",
+      "version": "1.0.1",
+      "description": {
+        "short": "An alternative to conventional game version resolution aiming to identify game version based on file hashes. This is useful when the game is in Early Access or the user facing version is not easily resolved.",
+        "long": "An alternative to conventional game version resolution aiming to identify game version based on file hashes. This is useful when the game is in Early Access or the user facing version is not easily resolved."
+      }
     },
     {
       "modId": 511,
