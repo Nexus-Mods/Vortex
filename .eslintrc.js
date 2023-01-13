@@ -133,6 +133,7 @@ module.exports = {
         "FunctionDeclaration": { "parameters": "first" },
         "FunctionExpression": { "parameters": "first" },
         "CallExpression": { "arguments": "first" },
+        "SwitchCase": 1,
         "ImportDeclaration": "first",
         "flatTernaryExpressions": true,
         "offsetTernaryExpressions": false,
