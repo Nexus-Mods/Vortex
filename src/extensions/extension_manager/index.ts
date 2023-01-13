@@ -28,18 +28,27 @@ const localState: ILocalState = makeReactive({
   preselectModId: undefined,
 });
 
+function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
+  if (installed.modId !== undefined) {
+    return installed.modId === remote.modId;
+  }
+  
+  return installed.name === remote.name;
+}
+
 function checkForUpdates(api: IExtensionApi) {
   const state: IState = api.store.getState();
   const { available, installed }  = state.session.extensions;
 
   const updateable: Array<{ update: IAvailableExtension, current: IExtension}> =
     Object.values(installed).reduce((prev, ext) => {
-      const update = available.find(iter => (iter.modId !== undefined)
-        ? iter.modId === ext.modId
-        : iter.name === ext.name);
+      const update = available.find(iter => isExtSame(ext, iter));
 
       if ((update === undefined)
           || (update.version === undefined)) {
+        // as of Vortex 1.8 we expect to find all extension, including the bundled ones, in the
+        // list of available extensions
+        log('warn', 'extension not available', { ext: JSON.stringify(ext) });
         return prev;
       }
 
