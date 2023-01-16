@@ -38,7 +38,8 @@ export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
 
     const filt = filter || { comparison: 'eq', value: '' };
 
-    const currentComparison = this.comparisons[filt.comparison];
+    const currentComparison = this.comparisons[filt.comparison]
+                            ?? this.comparisons.eq;
 
     return (
       <InputGroup style={{ width: '100%' }}>
