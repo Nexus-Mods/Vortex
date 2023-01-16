@@ -2,6 +2,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Spinner from '../../../controls/Spinner';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { UserCanceled } from '../../../util/CustomErrors';
 import { didIgnoreError, isOutdated } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
@@ -320,7 +321,9 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('report-log-error', logPath);
       })
       .catch((err) => {
-        onShowError('Failed to write log session file', err);
+        if (!(err instanceof UserCanceled)) {
+          onShowError('Failed to write log session file', err);
+        }
       })
       .then(() => null);
   }
