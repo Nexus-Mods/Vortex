@@ -1,4 +1,3 @@
-import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 

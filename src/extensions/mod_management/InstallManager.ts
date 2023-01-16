@@ -448,7 +448,7 @@ class InstallManager {
         const checkNameLoop = () => {
           if (replacementChoice === 'replace') {
             log('debug', '(nameloop) replacement choice "replace"', { testModId: testModId ?? '<undefined>' });
-            return Bluebird.resolve(testModId);
+            return Promise.resolve(testModId);
           }
           const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
           const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
@@ -457,7 +457,7 @@ class InstallManager {
             : Array.from(new Set([].concat(modNameMatches, variantMatches)));
           if (existingIds.length === 0) {
             log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
-            return Bluebird.resolve(testModId);
+            return Promise.resolve(testModId);
           } else {
             return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
               .then((choice: IReplaceChoice) => {
@@ -483,7 +483,7 @@ class InstallManager {
           const err = new Error('failed to generate mod id');
           err['originalModId'] = modId;
           err['archivePath'] = archivePath;
-          return Bluebird.reject(err);
+          return Promise.reject(err);
         }
         modId = newModId;
         log('debug', 'mod id for newly installed mod', { archivePath, modId });
