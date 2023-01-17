@@ -57,7 +57,7 @@ export async function parser(api: types.IExtensionApi,
     return Promise.reject(new CollectionParseError(collection, 'Invalid profile id'));
   }
 
-  api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder as any));
+  api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
   return Promise.resolve(undefined);
 }
 

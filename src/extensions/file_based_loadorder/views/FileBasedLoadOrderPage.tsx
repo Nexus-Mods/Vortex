@@ -276,7 +276,7 @@ function mapDispatchToProps(dispatch: any): IActionProps {
     onSetDeploymentNecessary: (gameId, necessary) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
     onSetOrder: (profileId, loadOrder) => {
-      dispatch(setFBLoadOrder(profileId, (loadOrder as any)));
+      dispatch(setFBLoadOrder(profileId, loadOrder));
     },
   };
 }
