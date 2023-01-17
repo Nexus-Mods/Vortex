@@ -2,7 +2,9 @@ import { setDialogVisible } from '../../actions';
 import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from '../../actions/app';
 import Dropzone, { DropType } from '../../controls/Dropzone';
 import FlexLayout from '../../controls/FlexLayout';
+import IconBar from '../../controls/IconBar';
 import Table, { ITableRowAction } from '../../controls/Table';
+import ToolbarIcon from '../../controls/ToolbarIcon';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { relaunch } from '../../util/commandLine';
@@ -53,6 +55,7 @@ type IProps = IExtensionManagerProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   oldExtensionConfig: { [extId: string]: IExtensionState };
+  showBundled: boolean;
 }
 
 class ExtensionManager extends ComponentEx<IProps, IComponentState> {
@@ -64,6 +67,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       oldExtensionConfig: props.extensionConfig,
+      showBundled: false,
     });
 
     this.actions = [
@@ -120,9 +124,9 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const {t, extensions, localState, extensionConfig} = this.props;
-    const {oldExtensionConfig} = this.state;
+    const {oldExtensionConfig, showBundled} = this.state;
 
-    const extensionsWithState = this.mergeExt(extensions, extensionConfig);
+    const extensionsWithState = this.mergeExt(extensions, extensionConfig, showBundled);
 
     // normalize extension config so they differ only if the effective configuration actually
     // differs, leaving out the endorsement state
@@ -135,6 +139,23 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage>
+        <MainPage.Header>
+          <IconBar
+            id='extensions-layout-list'
+            group='extensions-layout-icons'
+            staticElements={[]}
+            className='menubar'
+            t={t}
+          >
+            <ToolbarIcon
+              id='show-bundled-extensions'
+              text={showBundled ? t('Hide Bundled') : t('Show Bundled')}
+              onClick={this.toggleBundled}
+              icon={showBundled ? 'hide' : 'show'}
+              tooltip={showBundled ? t('Hide Bundled Extensions') : t('Show Bundled Extensions')}
+            />
+          </IconBar>
+        </MainPage.Header>
         <MainPage.Body>
           <Panel>
             <Panel.Body>
@@ -190,6 +211,10 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private onBrowse = () => {
     this.props.onBrowseExtension();
   }
+  
+  private toggleBundled = () => {
+    this.nextState.showBundled = !this.state.showBundled;
+  }
 
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
@@ -241,10 +266,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private mergeExt(extensions: { [id: string]: IExtension },
-                   extensionConfig: { [id: string]: IExtensionState })
+                   extensionConfig: { [id: string]: IExtensionState },
+                   includeBundled: boolean)
                    : { [id: string]: IExtensionWithState } {
     const { loadFailures } = this.props;
     return Object.keys(extensions).reduce((prev, id) => {
+      if (!includeBundled && extensions[id].bundled) {
+        return prev;
+      }
+
       if (!getSafe(extensionConfig, [id, 'remove'], false)) {
         const enabled = loadFailures[id] === undefined ?
           getSafe(extensionConfig, [id, 'enabled'], true)
