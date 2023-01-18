@@ -30,23 +30,34 @@ import * as path from 'path';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
 import { enableBatching } from 'redux-batched-actions';
+import { IState } from '../types/IState';
 
 export const STATE_BACKUP_PATH = 'state_backups';
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
  */
-function safeCombineReducers(reducer: ReducersMapObject) {
+function safeCombineReducers(reducer: ReducersMapObject, onError: (error: Error) => void) {
   const redKeys = Object.keys(reducer);
-  const combined = combineReducers(reducer);
-  return (state, action) => {
+  const combined = combineReducers<Partial<IState>>(reducer);
+  return (state: IState, action): IState => {
     const red = state !== undefined
       ? pick(state, redKeys)
       : undefined;
-    return {
-      ...state,
-      ...combined(red, action),
-    };
+    try {
+      return {
+        ...state,
+        ...combined(red, action),
+      };
+    } catch (err) {
+      if (action['meta']?.['extension'] !== undefined) {
+        err['extension'] = action['meta']?.['extension'];
+      }
+      setImmediate(() => {
+        onError?.(err);
+      });
+      return state;
+    }
   };
 }
 
@@ -201,7 +212,8 @@ function hydrateRed(
 
 function deriveReducer(statePath: string,
                        ele: any,
-                       querySanitize: (errors: string[]) => Decision): Reducer<any> {
+                       querySanitize: (errors: string[]) => Decision,
+                       onError: (error: Error) => void): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
@@ -222,9 +234,9 @@ function deriveReducer(statePath: string,
 
     attributes.forEach(attribute => {
       combinedReducers[attribute] =
-        deriveReducer(statePath + '.' + attribute, ele[attribute], querySanitize);
+        deriveReducer(statePath + '.' + attribute, ele[attribute], querySanitize, onError);
     });
-    return safeCombineReducers(combinedReducers);
+    return safeCombineReducers(combinedReducers, onError);
   }
 }
 
@@ -257,7 +269,8 @@ function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
  * @returns
  */
 function reducers(extensionReducers: IExtensionReducer[],
-                  querySanitize: (errors: string[]) => Decision) {
+                  querySanitize: (errors: string[]) => Decision,
+                  onError: (err: Error) => void) {
   const tree = {
     user: userReducer,
     app: appReducer,
@@ -278,7 +291,7 @@ function reducers(extensionReducers: IExtensionReducer[],
   extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return enableBatching(deriveReducer('', tree, querySanitize));
+  return enableBatching(deriveReducer('', tree, querySanitize, onError));
 }
 
 export default reducers;

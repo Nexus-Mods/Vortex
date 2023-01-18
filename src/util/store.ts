@@ -62,7 +62,7 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
     )) as Redux.StoreEnhancer<any>;
 
   const store = createStore<IState, Redux.Action, any, any>(
-    reducer([], querySanitize),
+    reducer([], querySanitize, error => log('error', 'Failed to update application state', error.message)),
     enhancer);
   basePersistor = new ReduxPersistor(store);
   // replayActionMain(store);

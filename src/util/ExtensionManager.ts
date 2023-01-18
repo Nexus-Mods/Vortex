@@ -4,7 +4,7 @@ import { addNotification, closeDialog, DialogActions, DialogType, dismissNotific
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
 
-import { IExtension } from '../extensions/extension_manager/types';
+import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -65,6 +65,14 @@ import stringFormat from 'string-template';
 import * as winapiT from 'vortex-run';
 import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
+
+export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
+  if (installed.modId !== undefined) {
+    return installed.modId === remote.modId;
+  }
+  
+  return installed.name === remote.name;
+}
 
 const winapi = lazyRequire<typeof winapiT>(() => require('vortex-run'));
 
@@ -896,20 +904,31 @@ class ExtensionManager {
       store.dispatch(addNotification(noti));
       return noti.id;
     };
+
     // tslint:disable-next-line:only-arrow-functions
     this.mApi.showErrorNotification = function(message: string,
                                                details: string | Error | any,
                                                options?: IErrorOptions) {
-      if ((this.extension !== undefined)
-          && (this.extension.info !== undefined)
-          && (this.extension.info.author !== COMPANY_ID)) {
+      let extension: IRegisteredExtension = this.extension;
+
+      if ((extension === undefined) && (details?.['extension'] !== undefined)) {
+        extension = (this.getLoadedExtensions() as IRegisteredExtension[])
+          .find(iter => (iter.name === details['extension']));
+      }
+      
+      if ((extension !== undefined)
+          && (extension.info !== undefined)
+          && (extension.info.author !== COMPANY_ID + 'x')) {
         if (options === undefined) {
           options = {};
         }
         if (options.allowReport !== false) {
-          options['allowReport'] = false;
-          options.extensionName = this.extension.info.name;
+          options.extensionName = extension.info.name;
+
+          const remoteExtensions = (this.getState() as IState).session.extensions.available;
+          options.extensionRemote = remoteExtensions.find(ext => isExtSame(extension.info, ext));
         }
+        options.extension = extension;
       }
       showError(store.dispatch, message, details, options);
     };

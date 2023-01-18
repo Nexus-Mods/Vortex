@@ -1,4 +1,4 @@
-import { IExtension, IExtensionDownloadInfo } from '../extensions/extension_manager/types';
+import { IAvailableExtension, IExtensionDownloadInfo } from '../extensions/extension_manager/types';
 import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
 import {
   GameVersionProviderFunc, GameVersionProviderTest, IGameVersionProviderOptions,
@@ -311,6 +311,8 @@ export interface IErrorOptions {
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
   extensionName?: string;
+  extension?: IRegisteredExtension;
+  extensionRemote?: IAvailableExtension;
   actions?: INotificationAction[];
 }
 

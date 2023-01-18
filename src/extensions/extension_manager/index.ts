@@ -3,6 +3,7 @@ import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
+import { isExtSame } from '../../util/ExtensionManager';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -27,14 +28,6 @@ const localState: ILocalState = makeReactive({
   reloadNecessary: false,
   preselectModId: undefined,
 });
-
-function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
-  if (installed.modId !== undefined) {
-    return installed.modId === remote.modId;
-  }
-  
-  return installed.name === remote.name;
-}
 
 function checkForUpdates(api: IExtensionApi) {
   const state: IState = api.store.getState();

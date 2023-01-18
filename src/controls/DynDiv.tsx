@@ -31,7 +31,7 @@ class DynDiv extends React.Component<IProps, {}> {
     const { group, objects, orientation } = this.props;
 
     const visible = objects.filter((obj, idx) =>
-      (obj.options.condition === undefined) || obj.options.condition({}));
+      (obj.options?.condition === undefined) || obj.options.condition({}));
 
     const classes = ['dyndiv'];
     if (orientation === 'vertical') {
