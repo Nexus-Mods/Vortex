@@ -480,7 +480,10 @@ class InstallManager {
       .then(newModId => {
         if (newModId === undefined) {
           // this shouldn't be possible, how would checkNameLoop return undefined?
-          return Bluebird.reject(new Error('failed to generate mod id'));
+          const err = new Error('failed to generate mod id');
+          err['originalModId'] = modId;
+          err['archivePath'] = archivePath;
+          return Bluebird.reject(err);
         }
         modId = newModId;
         log('debug', 'mod id for newly installed mod', { archivePath, modId });
@@ -2634,8 +2637,9 @@ class InstallManager {
       error: IDependencyError[];
     }
 
+    // get updated mod state
     const modState = (profile !== undefined)
-      ? (api.getState().persistent.profiles[profile.id].modState ?? {})
+      ? (api.getState().persistent.profiles[profile.id]?.modState ?? {})
       : {};
 
     const { success, existing, error } = dependencies.reduce(

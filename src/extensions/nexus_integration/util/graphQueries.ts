@@ -94,6 +94,10 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
     postsCount: true,
   },
   commentLink: true,
+  overallRating: true,
+  overallRatingCount: true,
+  recentRating: true,
+  recentRatingCount: true,
 };
 
 export const FULL_REVISION_INFO: IRevisionQuery = {
