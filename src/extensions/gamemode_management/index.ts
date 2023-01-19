@@ -43,11 +43,12 @@ import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import getDriveList from './util/getDriveList';
 import { getGame, getGameStore } from './util/getGame';
-import { getModTypeExtensions, registerModType } from './util/modTypeExtensions';
+import { getModType, getModTypeExtensions, registerModType } from './util/modTypeExtensions';
 import ProcessMonitor from './util/ProcessMonitor';
 import queryGameInfo from './util/queryGameInfo';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
+import ModTypeWidget from './views/ModTypeWidget';
 import PathSelectionDialog from './views/PathSelection';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
@@ -60,6 +61,7 @@ import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
+import React from 'react';
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -436,19 +438,27 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
         };
       });
   };
+  
+  const modTypeCalc = (mods: IModWithState | IModWithState[]) => {
+    const mod: IModWithState = Array.isArray(mods) ? mods[0] : mods;
+
+    const modType = getModType(mod.type);
+    if (modType === undefined) {
+      return mod.type;
+    }
+    return modType.options.name || mod.type;
+  };
 
   return {
     id: 'modType',
     name: 'Mod Type',
     description: 'Type of the mod (decides where it gets deployed to)',
     placement: 'both',
-    calc: mod => {
-      const modType = getModTypeExtensions().find(iter => iter.typeId === mod.type);
-      if (modType === undefined) {
-        return mod.type;
-      }
-      return modType.options.name || mod.type;
-    },
+    calc: modTypeCalc,
+    customRenderer: (mods, detailCell) =>
+        detailCell
+          ? React.createElement(ModTypeWidget, { mods })
+          : React.createElement('span', {}, [modTypeCalc(mods)]),
     cssClass: mod => (mod.type !== '')
         ? `mod-modtype-${mod.type}`
         : undefined,
