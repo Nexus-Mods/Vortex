@@ -13,7 +13,7 @@ function init(context: IExtensionContext): boolean {
     const profile: IProfile = activeProfile(state);
 
     if (profile === undefined) {
-      log('warn', 'starting a tool with no active tool? How?', { parameters });
+      log('warn', 'starting a tool with no active profile? How?', { parameters });
       // not really the job of this extension to report this to the use
     }
 
