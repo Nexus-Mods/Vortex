@@ -130,6 +130,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       return Promise.reject(new Error('No deployment in progress'));
     }
 
+    const context = this.mContext;
+
     let added: string[];
     let removed: string[];
     let sourceChanged: string[];
@@ -141,7 +143,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
-         this.diffActivation(this.mContext.previousDeployment, this.mContext.newDeployment));
+         this.diffActivation(context.previousDeployment, context.newDeployment));
     log('debug', 'deployment', {
       added: added.length,
       removed: removed.length,
@@ -164,13 +166,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const directoryCleaning = game.directoryCleaning || 'tag';
     const dirTags = directoryCleaning === 'tag';
 
-    const initialDeployment = {...this.mContext.previousDeployment};
+    const initialDeployment = {...context.previousDeployment};
 
     return Promise.map(removed, key =>
         this.removeDeployedFile(installationPath, dataPath, key, true)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
-              link: this.mContext.newDeployment[key].relPath,
+              link: context.newDeployment[key].relPath,
               error: err.message,
             });
             ++errorCount;
@@ -179,7 +181,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
-              link: this.mContext.newDeployment[key].relPath,
+              link: context.newDeployment[key].relPath,
               error: err.message,
             });
             ++errorCount;
@@ -189,7 +191,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
-              link: this.mContext.newDeployment[key].relPath,
+              link: context.newDeployment[key].relPath,
               error: err.message,
             });
             ++errorCount;
@@ -201,8 +203,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   key => this.deployFile(key, installationPath, dataPath, false, dirTags)
                     .catch(err => {
                       log('warn', 'failed to link', {
-                        link: this.mContext.newDeployment[key].relPath,
-                        source: this.mContext.newDeployment[key].source,
+                        link: context.newDeployment[key].relPath,
+                        source: context.newDeployment[key].source,
                         error: err.message,
                       });
                       if (err.code !== 'ENOENT') {
@@ -219,8 +221,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                       this.deployFile(key, installationPath, dataPath, true, dirTags)
                           .catch(err => {
                             log('warn', 'failed to link', {
-                              link: this.mContext.newDeployment[key].relPath,
-                              source: this.mContext.newDeployment[key].source,
+                              link: context.newDeployment[key].relPath,
+                              source: context.newDeployment[key].source,
                               error: err.message,
                             });
                             if (err.code !== 'ENOENT') {
@@ -255,7 +257,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
               });
           }
 
-          const context = this.mContext;
           this.mContext = undefined;
           context.onComplete();
           return Object.keys(context.previousDeployment)
@@ -267,7 +268,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
             //  deployment context but it _can_ happen, and it is masking
             //  the actual problem.
             //  https://github.com/Nexus-Mods/Vortex/issues/7069
-            const context = this.mContext;
             this.mContext = undefined;
             context.onComplete();
           }
