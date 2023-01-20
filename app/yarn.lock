@@ -1738,8 +1738,8 @@ har-validator@~5.1.3:
     har-schema "^2.0.0"
 
 harmony-patcher@Nexus-Mods/harmony-patcher:
-  version "0.3.6"
-  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/df0431dc091ebac2d25d0ab1ea86208198e39c96"
+  version "0.3.7"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/32a60fc9b06305ca8cfa3e9acd7b08cae8b300b2"
   dependencies:
     async "^2.6.4"
     copyfiles "^1.0.0"
