@@ -150,8 +150,8 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
       || (err instanceof ThirdPartyError)) {
     return false;
   }
-
-  return noReportErrors.indexOf(err.code) === -1;
+  
+  return !noReportErrors.includes(err.code);
 }
 
 function dataToFile(id, input: any) {
@@ -532,7 +532,8 @@ export function prettifyNodeErrorMessage(err: any,
              + 'disk being almost full.',
       allowReport: false,
     };
-  } else if (['ERR_SSL_WRONG_VERSION_NUMBER', 'ERR_SSL_BAD_DECRYPT'].includes(err.code)) {
+  } else if (['ERR_SSL_WRONG_VERSION_NUMBER', 'ERR_SSL_BAD_DECRYPT'].includes(err.code)
+             || (err.message.startsWith('Hostname/IP does not match certificate\'s altnames'))) {
     return {
       message: 'A network SSL error occurred. If this problem persists, please update and review '
              + 'any network-related security software in your system (Anti Virus, Firewall, '
