@@ -176,14 +176,14 @@ class StarterInfo implements IStarterInfo {
       }, false);
     })
     .catch(err => {
-      if (err.errno === 'ENOENT') {
+      if (err.code === 'ENOENT') {
         onShowError('Failed to run tool', {
           Executable: info.exePath,
           message: 'Executable doesn\'t exist, please check the configuration for the '
                  + 'tool you tried to start.',
           stack: err.stack,
         }, false);
-      } else if (err.errno === 'EBUSY') {
+      } else if (err.code === 'EBUSY') {
         // Application is still running in the background. Let the user know and suppress
         //  the report button.
         onShowError('Failed to run tool', {
@@ -193,7 +193,7 @@ class StarterInfo implements IStarterInfo {
                  + 'and/or external applications which may be locking the executable and retry.',
           stack: err.stack,
         }, false);
-      } else if (err.errno === 'UNKNOWN') {
+      } else if (err.code === 'UNKNOWN') {
         // info sucks but node.js doesn't give us too much information about what went wrong
         // and we can't have users misconfigure their tools and then report the error they
         // get as feedback
