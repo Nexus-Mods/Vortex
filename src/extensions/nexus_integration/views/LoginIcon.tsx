@@ -8,7 +8,7 @@ import getVortexPath from '../../../util/getVortexPath';
 import opn from '../../../util/opn';
 import { truthy } from '../../../util/util';
 
-import { setUserAPIKey } from '../actions/account';
+import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
@@ -20,19 +20,21 @@ import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { pathToFileURL } from 'url';
+import { isLoggedIn } from '../selectors';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
 }
 
 interface IConnectedProps {
-  APIKey: string;
+  isLoggedIn: boolean;
   userInfo: IValidateKeyData;
   networkConnected: boolean;
 }
 
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
+  onClearOAuthCredentials: () => void;
   onShowDialog: () => void;
 }
 
@@ -59,8 +61,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private logOut = () => {
-    const { onSetAPIKey } = this.props;
+    const { onClearOAuthCredentials, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
+    onClearOAuthCredentials();
   }
 
   private renderLoginName() {
@@ -125,8 +128,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private isLoggedIn() {
-    const { APIKey, userInfo } = this.props;
-    return (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
+    const { isLoggedIn, userInfo } = this.props;
+    return isLoggedIn && (userInfo !== undefined) && (userInfo !== null);
   }
 
   private hideLoginLayer = () => {
@@ -140,7 +143,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    APIKey: (state.confidential.account as any).nexus.APIKey,
+    isLoggedIn: isLoggedIn(state),
     userInfo: (state.persistent as any).nexus.userInfo,
     networkConnected: state.session.base.networkConnected,
   };
@@ -149,6 +152,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+    onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
     onShowDialog: () => dispatch(setDialogVisible('login-dialog')),
   };
 }

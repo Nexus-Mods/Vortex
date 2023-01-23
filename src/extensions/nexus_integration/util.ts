@@ -1,19 +1,23 @@
 import * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-  IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
+  IOAuthCredentials,
+  IRevision, IRevisionQuery, IUpdateEntry, IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
+import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
+import { generate as shortId } from 'shortid';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { addNotification, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setUserAPIKey } from '../../actions';
-import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
+import { addNotification, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setOAuthCredentials, setUserAPIKey } from '../../actions';
+import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
+import { IMod, IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
@@ -34,13 +38,16 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import { setLoginError, setLoginId } from './actions/session';
-import { NEXUS_DOMAIN } from './constants';
+import { NEXUS_DOMAIN, OAUTH_CLIENT_ID, OAUTH_REDIREC_URL, OAUTH_URL } from './constants';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
+import { isLoggedIn } from './selectors';
+import { IJWTAccessToken } from './types/IJWTAccessToken';
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
+import OAuth, { ITokenReply } from './util/oauth';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -94,11 +101,8 @@ function genId() {
   }
 }
 
-export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
-  const stackErr = new Error();
-
-  let connection: WebSocket;
-
+/*
+function legacyConnect(api: IExtensionApi, callback: (err: Error) => void) {
   const loginMessage: INexusLoginMessage = {
     id: genId(),
     appid: 'Vortex',
@@ -110,114 +114,139 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
   let error: Error;
   let attempts = 5;
 
-  const connect = () => {
-    connection = new WebSocket(`wss://sso.${NEXUS_DOMAIN}`)
-      .on('open', () => {
-        cancelLogin = () => {
+
+  const connection = new WebSocket(`wss://sso.${NEXUS_DOMAIN}`)
+    .on('open', () => {
+      cancelLogin = () => {
+        connection.close();
+      };
+      connection.send(JSON.stringify(loginMessage), err => {
+        api.store.dispatch(setLoginId(loginMessage.id));
+        if (err) {
+          api.showErrorNotification('Failed to start login', err);
           connection.close();
-        };
-        connection.send(JSON.stringify(loginMessage), err => {
-          api.store.dispatch(setLoginId(loginMessage.id));
-          if (err) {
-            api.showErrorNotification('Failed to start login', err);
-            connection.close();
-          }
-        });
-        // open the authorization page - but not on reconnects!
-        if (loginMessage.token === undefined) {
-          opn(getPageURL(loginMessage.id)).catch(err => undefined);
         }
-        const keepAlive = setInterval(() => {
-          if (!connectionAlive) {
-            connection.terminate();
-            clearInterval(keepAlive);
-          } else if (connection.readyState === WebSocket.OPEN) {
-            connection.ping();
-          } else {
-            clearInterval(keepAlive);
-          }
-        }, 30000);
-      })
-      .on('close', (code: number, reason: string) => {
-        if (!keyReceived) {
-          if (code === 1005) {
-            api.store.dispatch(setLoginId(undefined));
-            cancelLogin = undefined;
-            bringToFront();
-            callback(new UserCanceled());
-          } else if (attempts-- > 0) {
-            // automatic reconnect
-            connect();
-          } else {
-            cancelLogin = undefined;
-            bringToFront();
-            api.store.dispatch(setLoginId('__failed'));
-            api.store.dispatch(setLoginError((error !== undefined)
-              ? prettifyNodeErrorMessage(error).message
-              : 'Log-in connection closed prematurely'));
-
-            let err = error;
-            if (err === undefined) {
-              err = new ProcessCanceled(
-                `Log-in connection closed prematurely (Code ${code})`);
-              err.stack = stackErr.stack;
-            }
-            callback(err);
-          }
+      });
+      // open the authorization page - but not on reconnects!
+      if (loginMessage.token === undefined) {
+        opn(getPageURL(loginMessage.id)).catch(err => undefined);
+      }
+      const keepAlive = setInterval(() => {
+        if (!connectionAlive) {
+          connection.terminate();
+          clearInterval(keepAlive);
+        } else if (connection.readyState === WebSocket.OPEN) {
+          connection.ping();
+        } else {
+          clearInterval(keepAlive);
         }
-      })
-      .on('pong', () => {
-        connectionAlive = true;
-        attempts = 5;
-      })
-      .on('message', data => {
-        try {
-          const response = JSON.parse(data.toString());
+      }, 30000);
+    })
+    .on('close', (code: number, reason: string) => {
+      if (!keyReceived) {
+        if (code === 1005) {
+          api.store.dispatch(setLoginId(undefined));
+          cancelLogin = undefined;
+          bringToFront();
+          callback(new UserCanceled());
+        } else if (attempts-- > 0) {
+          // automatic reconnect
+          legacyConnect(api, callback);
+        } else {
+          cancelLogin = undefined;
+          bringToFront();
+          api.store.dispatch(setLoginId('__failed'));
+          api.store.dispatch(setLoginError((error !== undefined)
+            ? prettifyNodeErrorMessage(error).message
+            : 'Log-in connection closed prematurely'));
 
-          if (response.success) {
-              if (response.data.connection_token !== undefined) {
-                loginMessage.token = response.data.connection_token;
-              } else if (response.data.api_key !== undefined) {
-                connection.close();
-                api.store.dispatch(setLoginId(undefined));
-                api.store.dispatch(setUserAPIKey(response.data.api_key));
-                bringToFront();
-                keyReceived = true;
-                callback(null);
-              }
-          } else {
-            const err = new Error(response.error);
-            err.stack = stackErr.stack;
-            callback(err);
+          let err = error;
+          if (err === undefined) {
+            err = new ProcessCanceled(
+              `Log-in connection closed prematurely (Code ${code})`);
           }
-        } catch (err) {
-          if (err.message.startsWith('Unexpected token')) {
-            err.message = 'Failed to parse: ' + data.toString();
-          }
-          err.stack = stackErr.stack;
           callback(err);
         }
-      })
-      .on('error', err => {
-        // Cloudflare will serve 503 service unavailable errors when/if
-        //  it is unable to reach the SSO server.
-        error = err.message.startsWith('Unexpected server response')
-          ? new ServiceTemporarilyUnavailable('Login')
-          : err;
+      }
+    })
+    .on('pong', () => {
+      connectionAlive = true;
+      attempts = 5;
+    })
+    .on('message', data => {
+      try {
+        const response = JSON.parse(data.toString());
 
-        connection.close();
-      });
-  };
+        if (response.success) {
+          if (response.data.connection_token !== undefined) {
+            loginMessage.token = response.data.connection_token;
+          } else if (response.data.api_key !== undefined) {
+            connection.close();
+            api.store.dispatch(setLoginId(undefined));
+            api.store.dispatch(setUserAPIKey(response.data.api_key));
+            bringToFront();
+            keyReceived = true;
+            callback(null);
+          }
+        } else {
+          const err = new Error(response.error);
+          callback(err);
+        }
+      } catch (err) {
+        if (err.message.startsWith('Unexpected token')) {
+          err.message = 'Failed to parse: ' + data.toString();
+        }
+        callback(err);
+      }
+    })
+    .on('error', err => {
+      // Cloudflare will serve 503 service unavailable errors when/if
+      //  it is unable to reach the SSO server.
+      error = err.message.startsWith('Unexpected server response')
+        ? new ServiceTemporarilyUnavailable('Login')
+        : err;
 
-  try {
-    connect();
-  } catch (err) {
-    callback(err);
-  }
+      connection.close();
+    });
+}
+*/
+
+const oauth = new OAuth({
+  baseUrl: OAUTH_URL,
+  clientId: OAUTH_CLIENT_ID,
+  redirectUrl: OAUTH_REDIREC_URL,
+}, (openUrl: string) => opn(openUrl).catch(() => null));
+
+export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
+  const stackErr = new Error();
+
+  return oauth.sendRequest((err: Error, token: ITokenReply) => {
+    if (err !== null) {
+      return callback(err);
+    }
+
+    const tokenDecoded: IJWTAccessToken = jwt.decode(token.access_token);
+
+    api.store.dispatch(setOAuthCredentials(
+      token.access_token, token.refresh_token, tokenDecoded.fingerprint));
+    api.store.dispatch(setLoginId(undefined));
+    api.store.dispatch(setUserInfo(userInfoFromJWTToken(tokenDecoded)));
+
+    callback(null);
+  })
+    .catch(err => {
+      err.stack = stackErr.stack;
+      callback(err);
+    });
+}
+
+export function oauthCallback(api: IExtensionApi, code: string, state: string) {
+  // the result of this is reported to the callback from requestLogin;
+  return oauth.receiveCode(code, state);
 }
 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
-  if (sel.apiKey(api.store.getState()) === undefined) {
+  if (!isLoggedIn(api.getState())) {
     return new Promise((resolve, reject) => {
       api.events.on('did-login', (err: Error) => {
         if (err !== null) {
@@ -256,8 +285,13 @@ export function startDownload(api: IExtensionApi,
     return Promise.reject(new DownloadIsHTML(nxmurl));
   }
 
+  if (!['mod', 'collection'].includes(url.type)) {
+    return Promise.reject(new ProcessCanceled('Not a download url'));
+  }
+
   return (url.type === 'mod')
-    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName, allowInstall, handleErrors, referenceTag)
+    ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName,
+                       allowInstall, handleErrors, referenceTag)
     : startDownloadCollection(api, nexus, nxmurl, url, handleErrors, referenceTag);
 }
 
@@ -728,15 +762,6 @@ export function endorseThing(
     return;
   }
 
-  const APIKEY = getSafe(store.getState(),
-    ['confidential', 'account', 'nexus', 'APIKey'], '');
-  if (APIKEY === '') {
-    showError(store.dispatch,
-      'An error occurred endorsing a mod',
-      'You are not logged in to Nexus Mods!', { allowReport: false });
-    return;
-  }
-
   if (mod.attributes?.modId !== undefined) {
     endorseModImpl(api, nexus, gameMode, mod, endorsedStatus);
   } else if (mod.attributes?.collectionId !== undefined) {
@@ -1166,39 +1191,82 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
+function userInfoFromJWTToken(input: IJWTAccessToken) {
+  return {
+    email: '',
+    isPremium: input.user.membership_roles.includes('premium'),
+    isSupporter: input.user.membership_roles.includes('supporter'),
+    name: input.user.username,
+    profileUrl: '',
+    userId: input.user.id,
+  };
+}
+
+function updateUserInfo(api: IExtensionApi,
+                        nexus: Nexus,
+                        userInfo: IValidateKeyResponse)
+                        : Promise<boolean> {
+  if (userInfo !== null) {
+    api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+    api.events.emit('did-login', null);
+  }
+  return github.fetchConfig('api')
+    .then(configObj => {
+      const currentVer = getApplication().version;
+      if ((currentVer !== '0.0.1')
+        && (semver.lt(currentVer, configObj.minversion))) {
+        nexus['disable']();
+        api.sendNotification({
+          type: 'warning',
+          title: 'Vortex outdated',
+          message: 'Your version of Vortex is quite outdated. Network features disabled.',
+          actions: [
+            {
+              title: 'Check for update', action: () => {
+                ipcRenderer.send('check-for-updates', 'stable');
+              },
+            },
+          ],
+        });
+      }
+    })
+    .catch(err => {
+      log('warn', 'Failed to fetch api config', { message: err.message });
+    })
+    .then(() => true);
+
+}
+
+function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials) {
+  api.store.dispatch(setOAuthCredentials(
+    credentials.token, credentials.refreshToken, credentials.fingerprint));
+}
+
+export function updateToken(api: IExtensionApi,
+                            nexus: Nexus,
+                            token: any)
+                            : Promise<boolean> {
+  return Promise.resolve(nexus.setOAuthCredentials({
+    fingerprint: token.fingerprint,
+    refreshToken: token.refreshToken,
+    token: token.token,
+  }, {
+    id: OAUTH_CLIENT_ID,
+  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials)))
+    .then(userInfo => updateUserInfo(api, nexus, userInfo))
+    // .then(() => true)
+    .catch(err => {
+      api.showErrorNotification('Authentication failed, please log in again', err);
+      api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
+      return false;
+    })
+}
+
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key))
-    .then(userInfo => {
-      if (userInfo !== null) {
-        api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-        api.events.emit('did-login', null);
-      }
-      return github.fetchConfig('api')
-        .then(configObj => {
-          const currentVer = getApplication().version;
-          if ((currentVer !== '0.0.1')
-            && (semver.lt(currentVer, configObj.minversion))) {
-            (nexus as any).disable();
-            api.sendNotification({
-              type: 'warning',
-              title: 'Vortex outdated',
-              message: 'Your version of Vortex is quite outdated. Network features disabled.',
-              actions: [
-                {
-                  title: 'Check for update', action: () => {
-                    ipcRenderer.send('check-for-updates', 'stable');
-                  },
-                },
-              ],
-            });
-          }
-        })
-        .catch(err => {
-          log('warn', 'Failed to fetch api config', { message: err.message });
-        })
-        .then(() => true);
-    })
+    .then(userInfo => updateUserInfo(api, nexus, userInfo))
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve(true))
     .catch(TimeoutError, err => {

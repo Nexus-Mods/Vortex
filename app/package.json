@@ -16,7 +16,7 @@
   "dependencies": {
     "@electron/remote": "^2.0.1",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#oauth",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
@@ -50,6 +50,7 @@
     "interweave": "^12.9.0",
     "is-admin": "^3.0.0",
     "json-socket": "foi/node-json-socket",
+    "jsonwebtoken": "^8.5.1",
     "leveldown": "^5.6.0",
     "levelup": "^4.4.0",
     "libxmljs": "TanninOne/libxmljs#sambacha",
