@@ -47,9 +47,25 @@ const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSI
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
-    .filter(fileName =>
-      fs.statAsync(path.join(searchPath, fileName))
-        .then(stat => stat.isDirectory()));
+    .filter(fileName => {
+      if (path.extname(fileName) === '.installing') {
+        // ignore directories during installation
+        return Promise.resolve(false);
+      }
+      return fs.statAsync(path.join(searchPath, fileName))
+        .then(stat => stat.isDirectory())
+        .catch(err => {
+          if (err.code !== 'ENOENT') {
+            log('error', 'failed to stat file/directory', {
+              searchPath, fileName, error: err.message,
+            });
+          }
+          // the stat may fail if the directory has been removed/renamed between reading the dir
+          // and the stat. Specifically this can happen while installing an extension for the
+          // temporary ".installing" directory
+          return Promise.resolve(false);
+        });
+    });
 }
 
 function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {

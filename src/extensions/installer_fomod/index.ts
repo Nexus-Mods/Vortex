@@ -7,7 +7,7 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -50,6 +50,8 @@ import { downloadPathForGame } from '../download_management/selectors';
 // The rest of the error message is localized
 const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*');
 
+const INSTALLER_TRIES = 2;
+
 // TODO: Running the fomod installer as a low integrity process is implemented and basically functional
 //   (and should be mostly secure) except the host process can't connect to a named pipe the installer
 //   process opened and the installer process can't create a pipe for writing.
@@ -59,6 +61,19 @@ enum SecurityLevel {
   Regular,
   LowIntegrity,
   Sandbox,
+}
+
+export class InstallerFailedException extends Error {
+  private mCode: number;
+  constructor(code: number) {
+    super(`Installer process terminated (Code "${code.toString(16)}")`);
+    this.name = this.constructor.name;
+    this.mCode = code;
+  }
+
+  public get code() {
+    return this.mCode;
+  }
 }
 
 function transformError(err: any): Error {
@@ -146,11 +161,16 @@ function transformError(err: any): Error {
   }
 
   if (result === undefined) {
-    result = new Error(err.message ?? err.Message ?? err.name ?? 'unknown error: ' + util.inspect(err));
-    if (err['code'] !== undefined) {
-      result['code'] = err['code'];
+    if (err instanceof Error) {
+      result = err;
+    } else {
+      result = new Error(err.message ?? err.Message ?? err.name ?? 'unknown error: ' + util.inspect(err));
+      if (err['code'] !== undefined) {
+        result['code'] = err['code'];
+      }
     }
   }
+
   [
     { in: 'StackTrace', out: 'stack' },
     { in: 'stack', out: 'stack' },
@@ -275,7 +295,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   api.showDialog('info', '.NET is being installed', {
     text: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden '
         + 'behind another window.\n'
-        + 'Please note: In rare cases .NET will still not work until you restarted windows',
+        + 'Please note: In rare cases .NET will still not work until you restarted windows.',
   }, [
     { label: 'Ok' },
   ]);
@@ -740,7 +760,7 @@ class ConnectionIPC {
     } catch (err) {
       log('warn', 'failed to close connection to fomod installer process', err.message);
     }
-    this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
+    this.interrupt(new InstallerFailedException(code));
   }
 
   private logAction(message: string) {
@@ -1026,15 +1046,10 @@ function init(context: IExtensionContext): boolean {
       coreDelegates.detach();
     }
   };
-
+  
   const wrapper = <T>(func: 'test' | 'install', cb: (...args: any[]) => Promise<T>) => {
-    return (...args: any[]) => {
-      const state = context.api.getState();
-      // TODO: if it was working we'd want to use the low integrity mode as the alternative
-      const securityLevel = osSupportsAppContainer && state.settings.mods.installerSandbox
-        ? SecurityLevel.Sandbox : SecurityLevel.Regular;
-
-      return toBlue(cb)(securityLevel, ...args)
+    const invoke = (securityLevel: SecurityLevel, tries: number, ...args: any[]) =>
+      toBlue(cb)(securityLevel, ...args)
         .catch(err => {
           // afaik 0x80008085 would only happen if our installer wasn't used or if running in
           // dev environment
@@ -1044,7 +1059,39 @@ function init(context: IExtensionContext): boolean {
             // invalid runtime configuration? Very likely caused by permission errors due to the process
             // being low integrity, otherwise it would mean Vortex has been modified and then the user
             // already received an error message about that.
-            return toBlue(cb)(SecurityLevel.Regular, ...args);
+            return invoke(SecurityLevel.Regular, INSTALLER_TRIES, ...args);
+          } else if (err instanceof InstallerFailedException) {
+            console.log('installer failed', err.code);
+            if ([0, 1].includes(err.code) && (tries > 0)) {
+              return invoke(securityLevel, tries - 1, ...args);
+            } else if ([0xC0000005, 0xC0000096, 0xC000041D, 0xCFFFFFFFFF].includes(err.code)) {
+              context.api.sendNotification({
+                type: 'error',
+                message: 'Installer process crashed. This likely means your .NET 6 installation is damaged. '
+                       + 'Vortex can try to repair .NET automatically here, this will require a download '
+                       + 'of the .NET installer (~55MB).',
+                actions: [
+                  {
+                    title: 'Repair .NET', action: (dismiss) => {
+                      installDotNet(context.api, true)
+                        .catch(err => {
+                          if (err instanceof UserCanceled) {
+                            return;
+                          }
+                          context.api.showErrorNotification('Failed to repair .NET installation, try installing it manually', err, {
+                            allowReport: false,
+                          });
+                        });
+                      dismiss();
+                    }
+                  },
+                ],
+              });
+              return Promise.reject(new ProcessCanceled('Installer failed'));
+            } else {
+              err['allowReport'] = false;
+              return Promise.reject(err);
+            }
           } else if (err['name'] === 'System.UnauthorizedAccessException') {
             const archivePath = (func === 'test' ? args[2] : args[6]) ?? '';
 
@@ -1089,7 +1136,7 @@ function init(context: IExtensionContext): boolean {
           }
         })
         .catch(err => {
-            // 80008083 indicates a version conflict
+          // 80008083 indicates a version conflict
           if ((err['code'] === 0x80008083)
             || ((err['code'] === 0xE0434352) && err.message.includes('Could not load file or assembly'))
             || ((err['code'] === 0x80008096) && err.message.includes('It was not possible to find any compatible framework version'))
@@ -1167,6 +1214,14 @@ function init(context: IExtensionContext): boolean {
           }
           return Promise.reject(err);
         });
+
+    return (...args: any[]) => {
+      const state = context.api.getState();
+      // TODO: if it was working we'd want to use the low integrity mode as the alternative
+      const securityLevel = osSupportsAppContainer && state.settings.mods.installerSandbox
+        ? SecurityLevel.Sandbox : SecurityLevel.Regular;
+
+      return invoke(securityLevel, INSTALLER_TRIES, ...args);
     };
   }
 
