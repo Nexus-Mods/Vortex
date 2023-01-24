@@ -727,7 +727,11 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
     err = new Error('Unknown error');
   }
   if (typeof(err) === 'string') {
-    return { text: err, wrap: true };
+    return {
+      text: err,
+      parameters: options.replace,
+      wrap: true,
+    };
   } else if (err instanceof StalledError) {
     return {
       message: 'Download stalled',

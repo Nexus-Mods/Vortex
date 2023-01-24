@@ -2247,9 +2247,20 @@ class InstallManager {
               allowReport: false,
             });
             return Promise.resolve();
-          }
-
-          if (err.name === 'HTTPError') {
+          } else if (err.code === 'ERR_INVALID_PROTOCOL') {
+            const msg = err.message.replace(/ Expected .*/, '');
+            api.showErrorNotification(
+              'Failed to install dependency',
+              'The URL protocol used in the dependency is not supported, '
+              + 'you may be missing an extension required to handle it:\n{{errorMessage}}', {
+              message: refName,
+              id: notiId,
+              allowReport: false,
+              replace: {
+                errorMessage: msg,
+              },
+            });
+          } else if (err.name === 'HTTPError') {
             err['attachLogOnReport'] = true;
             api.showErrorNotification('Failed to install dependency', err, {
               id: notiId,
