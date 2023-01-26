@@ -25,10 +25,6 @@ const verifyModules = [
   ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), true],
 ];
 
-if (process.platform === 'win32') {
-  verifyModules.push(['harmony-patcher', path.join('dist', 'VortexInjectorIPC.exe'), true]);
-}
-
 async function verifyModulesInstalled() {
   console.log('checking native modules');
   for (const module of verifyModules) {
