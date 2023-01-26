@@ -694,8 +694,13 @@ function genUpdateModDeployment() {
           if (attachLogErrCodes.includes(err.code)) {
             err['attachLogOnReport'] = true;
           }
+          const isFSErr = ['EMFILE'].includes(err.code);
+          if (isFSErr) {
+            err.message = 'A filesystem error prevented deploying some files. '
+                        + 'please try deploying again.\n' + err.message;
+          }
           return api.showErrorNotification('Failed to deploy mods', err, {
-            allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
+            allowReport: (err.code !== 'EPERM') && !isFSErr && (err.allowReport !== false),
           });
         })
         .finally(() => {

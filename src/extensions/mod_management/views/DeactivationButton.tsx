@@ -89,7 +89,12 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
             ErrorCode: err.errno,
           }, true);
         } else {
-          onShowError('Failed to purge mods', err, !['ENOTFOUND', 'ENOENT'].includes(err.code));
+          const isFSErr = ['ENOTFOUND', 'ENOENT', 'EMFILE'].includes(err.code);
+          if (isFSErr) {
+            err.message = 'A filesystem error prevented purging some files. '
+                        + 'please try purging again.\n' + err.message;
+          }
+          onShowError('Failed to purge mods', err, !isFSErr);
         }
       });
   }
