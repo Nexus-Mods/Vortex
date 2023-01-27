@@ -88,9 +88,14 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   }
 
   private async genLoadOrder() {
-    const gameEntry = findGameEntry(this.props.gameId);
-    this.nextState.loadOrder = await genCollectionLoadOrder(this.context.api,
-      gameEntry, this.props.mods, this.props.profile.id, this.props.collection);
+    try {
+      const gameEntry = findGameEntry(this.props.gameId);
+      this.nextState.loadOrder = await genCollectionLoadOrder(this.context.api,
+        gameEntry, this.props.mods, this.props.profile.id, this.props.collection);
+    } catch (err) {
+      this.context.api.showErrorNotification('Failed to read load order', err, {
+        allowReport: false });
+    }
   }
 
   private renderLoadOrderEditInfo = () => {
