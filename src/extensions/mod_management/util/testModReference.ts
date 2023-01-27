@@ -27,7 +27,7 @@ export interface IModLookupInfo {
 
 // test if the reference is by id only, meaning it is only useful in the current setup
 export function idOnlyRef(ref: IModReference) {
-  return (ref.id !== undefined)
+  return (ref?.id !== undefined)
     && (Object.keys(_.omit(ref, ['archiveId', 'versionMatch', 'idHint'])).length === 1);
 }
 
