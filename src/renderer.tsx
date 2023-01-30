@@ -514,14 +514,6 @@ function init() {
   const globalNotifications = new GlobalNotifications(extensions.getApi());
 
   function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
-    store.dispatch(
-      addNotification({
-        type: 'info',
-        title: 'Download started',
-        message: fileName,
-        displayMS: 4000,
-      }));
-
     startupPromise.then(() => {
       if (typeof url !== 'string') {
         return;
