@@ -16,7 +16,6 @@ import {} from './firststeps_dashlet';
 import {} from './gamemode_management';
 import {} from './gameversion_management';
 import {} from './hardlink_activator';
-// import {} from './harmony_injector';
 import {} from './history_management';
 import {} from './ini_prep';
 import {} from './installer_fomod';
