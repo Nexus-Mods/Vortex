@@ -29,7 +29,6 @@ const revisionInfo: IRevisionQuery = {
     file: {
       mod: {
         author: true,
-        description: true,
         category: true,
         modCategory: {
           id: true,
