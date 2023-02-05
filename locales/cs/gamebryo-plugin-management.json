@@ -1,0 +1,15 @@
+{
+  "Autosort Enabled": "Automatické Třídění Zapnuto",
+  "Sort Now": "Třídit Nyní",
+  "Drag to another plugin to set userlist rule": "Přetažením do jiného pluginu nastavíte pravidlo seznamu uživatelů",
+  "Designed for a different game": "Navrženo pro jinou hru",
+  "- Plugin has missing masters": "- Pluginu chybí vzor",
+  "Requires cleaning (LOOT)": "Vyžaduje čištění (LOOT)",
+  "Loads after:": "Načíst po:",
+  "Incompatible:": "Nekompatibilní:",
+  "Verified clean (LOOT)": "Ověřeno čisté (LOOT)",
+  "LOOT Messages": "LOOT Zprávy",
+  "Requires:": "Vyžaduje:",
+  "Loaded by the engine, can't be configured": "Načteno strojem, nelze konfigurovat",
+  "The mod \"{{ modName }}\" contains multiple plugins": "Mod \"{{ modName }}\" obsahuje více pluginů"
+}

@@ -1,0 +1,5 @@
+{
+  "{{ count }} conflicting file_0": "{{ count }} konfliktních souborů",
+  "{{ count }} conflicting file_1": "{{ count }} konfliktních souborů",
+  "{{ count }} conflicting file_2": "{{ count }} konfliktních souborů"
+}

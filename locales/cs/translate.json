@@ -1,0 +1,5 @@
+{
+  "Translate": "Přeložit",
+  "Create": "Vytvořit",
+  "When you create a language here it will be created in {{ langPath }}. As long as the language is active, missing translations will be added to the translation files automatically as you come across them inside Vortex. When you edit those files, changes will become visible immediately.": "Když vytvoříte jazyk, bude vytvořen v {{ langPath }}. Dokud je jazyk aktivní, chybějící překlady budou automaticky přidány do souborů s překladem, jakmile s nimi narazíte ve Vortexu. Pokud tyto soubory upravíte, změny budou okamžitě viditelné."
+}
