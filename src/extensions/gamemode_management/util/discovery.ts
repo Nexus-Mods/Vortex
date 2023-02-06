@@ -162,7 +162,7 @@ function queryByArgs(discoveredGames: { [id: string]: IDiscoveryResult },
 
 function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   let gamePath: string | Bluebird<string | IGameStoreEntry>;
-  
+
   try {
     gamePath = game.queryPath();
   } catch (err) {
@@ -204,7 +204,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
         .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
         .catch(err => {
           if (err.code === 'ENOENT') {
-            log('info', 'rejecting game discovery, directory doesn\'t exist',
+            log('warn', 'rejecting game discovery, directory doesn\'t exist',
                 resolvedPath);
             return Bluebird.resolve(undefined);
           }
@@ -284,9 +284,14 @@ export function quickDiscovery(knownGames: IGame[],
             });
         } else if (game.queryPath !== undefined) {
           prom = queryByCB(game)
-            .then(result => handleDiscoveredGame(
-              game, result.gamePath, result.gameStoreId,
-              discoveredGames, onDiscoveredGame, onDiscoveredTool));
+            .then(result => {
+              if (result === undefined) {
+                return Bluebird.resolve(undefined);                
+              }
+              return handleDiscoveredGame(
+                game, result.gamePath, result.gameStoreId,
+                discoveredGames, onDiscoveredGame, onDiscoveredTool);
+            });
         } else {
           prom = Bluebird.resolve(undefined);
         }
