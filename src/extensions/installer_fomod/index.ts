@@ -1207,6 +1207,7 @@ function init(context: IExtensionContext): boolean {
                     context.api.store.dispatch(setInstallerSandbox(false));
                     resolve(toBlue(cb)(SecurityLevel.Regular, ...args));
                   } else {
+                    err['allowReport'] = false;
                     reject(err);
                   }
                 });
