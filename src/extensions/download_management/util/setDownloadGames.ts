@@ -27,7 +27,7 @@ async function setDownloadGames(
   const state = api.getState();
   const download = state.persistent.downloads.files[dlId];
 
-  if ((download === undefined)
+  if ((download?.localPath === undefined)
       || (gameIds.length === 0)
       || (gameIds[0] === undefined)) {
     return Promise.resolve();
