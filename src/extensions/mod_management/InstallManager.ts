@@ -2038,7 +2038,7 @@ class InstallManager {
             return Bluebird.reject(err);
           }
           // with +prefer versions, if the exact version isn't available, an update is acceptable
-          if (requirement.versionMatch.endsWith('+prefer')) {
+          if (requirement.versionMatch?.endsWith?.('+prefer')) {
             return this.downloadMatching(api, lookupResult, requirement.versionMatch,
               referenceTag, wasCanceled, campaign, fileName);
           } else {

@@ -5,11 +5,12 @@ import * as actions from '../actions/settings';
 import * as _ from 'lodash';
 import { log } from '../../../util/log';
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
+import { ISettingsGameMode } from '../../../types/IState';
 
 /**
  * reducer for changes to the window state
  */
-export const settingsReducer: IReducerSpec = {
+export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
   reducers: {
     [actions.addDiscoveredGame as any]: (state, payload) => {
       // don't replace previously discovered games as the settings
@@ -25,10 +26,10 @@ export const settingsReducer: IReducerSpec = {
       }
       if ((payload.path !== undefined) && (payload.store === undefined)) {
         // new path set but no store? fall back to default
-        res.store = undefined;
+        setSafe(res, [...gamePath, 'store'], undefined);
       }
 
-      // avoid triggerring unnecessary events
+      // avoid triggering unnecessary events
       if (_.isEqual(getSafe(res, gamePath, undefined), getSafe(state, gamePath, undefined))) {
         return state;
       } else {

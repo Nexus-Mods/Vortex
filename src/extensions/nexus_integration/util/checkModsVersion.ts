@@ -228,7 +228,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
 
   const isFileDeleted = (candidateId: number) => {
     const fileInfo = files.files.find(info => info.file_id === candidateId);
-    return (fileInfo === undefined) || (fileInfo.category_id === 6);
+    return (fileInfo === undefined) || [6, 7].includes(fileInfo.category_id);
   };
 
   while ((fileUpdates.length > 0)
