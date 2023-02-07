@@ -248,14 +248,6 @@
     },
     {
       "type": "build-copy",
-      "name": "modtype-harmony-patcher",
-      "path": "extensions/modtype-harmony-patcher",
-      "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-harmony-patcher"
-    },
-    {
-      "type": "build-copy",
       "name": "open-directory",
       "path": "extensions/open-directory",
       "removeModules": ["vortex-api"],
