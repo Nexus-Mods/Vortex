@@ -118,7 +118,7 @@ class Steam implements IGameStore {
     let parameters: string[] = [];
     if (this.isCustomExecObject(appInfo)) {
       appId = appInfo.appId;
-      parameters = appInfo.parameters;
+      parameters = appInfo.parameters ?? [];
     } else {
       appId = appInfo.toString();
     }
@@ -211,7 +211,7 @@ class Steam implements IGameStore {
     if (typeof(object) !== 'object') {
       return false;
     }
-    return ('appId' in object) && ('parameters' in object);
+    return ('appId' in object);
   }
 
   private resolveSteamPaths(): Promise<string[]> {
