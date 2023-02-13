@@ -97,12 +97,11 @@ function serializeResult(res) {
 if (process['type'] === 'renderer') {
   module.exports = new Proxy({ proxy: undefined }, new XMLProxy());
 } else {
-  // tslint:disable-next-line:no-var-requires
-  const libxmljs: typeof libxmljsT = require('libxmljs');
-
   // function invocation to a libxmljs object
   ipcMain.on('__libxmljs_invoke', (event, func: string, obj: string, args) => {
     try {
+      // tslint:disable-next-line:no-var-requires
+      const libxmljs = require('libxmljs');
       if ((obj !== undefined) && (knownObjects[obj][func] === undefined)) {
         const type = knownObjects[obj].type?.() ?? 'custom';
         event.returnValue = {
@@ -126,6 +125,8 @@ if (process['type'] === 'renderer') {
 
   // data access to a libxmljs object
   ipcMain.on('__libxmljs_get', (event, prop: string, obj: string) => {
+    // tslint:disable-next-line:no-var-requires
+    const libxmljs = require('libxmljs');
     const res = (obj === undefined)
       ? libxmljs[prop]
       : knownObjects[obj][prop];
@@ -135,7 +136,4 @@ if (process['type'] === 'renderer') {
   ipcMain.on('__libxmljs_del', (event, objId) => {
     delete knownObjects[objId];
   });
-
-  // tslint:disable-next-line:no-var-requires
-  module.exports = require('libxmljs');
 }
