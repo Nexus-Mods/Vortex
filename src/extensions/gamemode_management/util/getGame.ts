@@ -39,7 +39,7 @@ const gameExHandler = {
       return getModTypeExtensions().filter(ex => ex.isSupported(target.id));
     } else if (key === 'getInstalledVersion') {
       return (discovery: IDiscoveryResult) =>
-      gvm.gameVersionManager.getGameVersion(target, discovery);
+        gvm.gameVersionManager.getGameVersion(target, discovery);
     } else {
       return target[key];
     }
