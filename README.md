@@ -4,10 +4,13 @@
 
 To build from source you have two choices.
 ### 1) Automatic (mostly):
-- Download _bootstrap.ps1_ and run as a powershell script
-  - In the dialog that shows up, select a build directory (should be a clean/new one)
+- start a powershell
+- Run `Invoke-WebRequest "https://raw.githubusercontent.com/Nexus-Mods/Vortex/master/bootstrap.ps1" -OutFile bootstrap.ps1` to fetch the bootstrap script
+- By default this script will build Vortex in "c:\build\vortex", if you want it somewhere else, edit the script to change the build directory before running it!
+- you may have to allow scripts to be run (`Set-ExecutionPolicy Unrestricted`)
+- run the script (`.\bootstrap.ps1`)
   - This script will try to download and install all dependencies, then check out and build vortex
-  - The dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+  - Most dependencies are installed using scoop (https://scoop.sh)
 
 ### 2) Manual:
 - Before you can build vortex you need to download and install a couple of dependencies. If any of the download links is no longer valid, try google or a search engine of your choice.
@@ -80,6 +83,14 @@ Another possible error may be that your yarn cache is invalid such that even if 
 The yarn cache is at _%LOCALAPPDATA%\\Yarn\\Cache\\v6_ and it's safe to delete it, that will only cause some additional internet traffic.
 
 The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
+
+### Running the dev build
+
+After building a dev build you can run it using `yarn start`
+
+You can repeat the steps to install dependencies (`yarn install`) and the full build (`yarn build`) as necessary.
+
+To save yourself time, you can rebuild just the bundled extensions (`yarn run subprojects`). If you're making changes to the core application you can run build in watch mode (`yarn run buildwatch`) which will be the same as yarn build but then will continue to watch for changes (only on the core application, not extensions!) and rebuild on demand.
 
 ------
 # Further Information
