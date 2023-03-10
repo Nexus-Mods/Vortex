@@ -176,7 +176,7 @@
 	branch = master
 [submodule "extensions/script-extender-installer"]
 	path = extensions/script-extender-installer
-	url = https://github.com/Pickysaurus/script-extender-installer.git
+	url = https://github.com/Nexus-Mods/script-extender-installer.git
 	branch = master
 [submodule "extensions/gamebryo-archive-check"]
 	path = extensions/gamebryo-archive-check

@@ -6,7 +6,6 @@ import { log } from './log';
 
 import Bluebird from 'bluebird';
 import I18next, { i18n, TOptions } from 'i18next';
-import FSBackend from 'i18next-node-fs-backend';
 import * as path from 'path';
 import { initReactI18next } from 'react-i18next';
 
@@ -35,7 +34,7 @@ class MultiBackend {
   private static type = 'backend';
   private mOptions: any;
   private mServices: any;
-  private mCurrentBackend: FSBackend;
+  private mCurrentBackend: any;
   private mLastReadLanguage: string;
   private mBackendType: BackendType;
 
@@ -49,18 +48,21 @@ class MultiBackend {
   }
 
   public read(language: string, namespace: string, callback) {
-    const {backendType, extPath} = this.backendType(language);
-    if ((backendType !== this.mBackendType)
+    (async () => {
+      const { backendType, extPath } = this.backendType(language);
+      if ((backendType !== this.mBackendType)
         || ((backendType === 'extension')
-            && (language !== this.mLastReadLanguage))) {
-      this.mCurrentBackend = this.initBackend(backendType, extPath);
-    }
+          && (language !== this.mLastReadLanguage))) {
+        this.mCurrentBackend = await this.initBackend(backendType, extPath);
+      }
 
-    this.mLastReadLanguage = language;
-    this.mCurrentBackend.read(language, namespace, callback);
+      this.mLastReadLanguage = language;
+      this.mCurrentBackend.read(language, namespace, callback);
+    })();
   }
 
-  private initBackend(type: BackendType, extPath: string) {
+  private async initBackend(type: BackendType, extPath: string) {
+    const FSBackend = await (await import('i18next-fs-backend')).default;
     const res = new FSBackend();
 
     let basePath: string;
@@ -74,7 +76,7 @@ class MultiBackend {
 
     res.init(this.mServices, {
       loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
-      jsonIndent: 2,
+      ident: 2,
     });
 
     this.mBackendType = type;

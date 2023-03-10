@@ -32,20 +32,27 @@ To build from source you have two choices.
   - If you have trouble refer to [How to add Python to PATH variable in Windows](https://www.educative.io/answers/how-to-add-python-to-path-variable-in-windows)
   - You can disable samples and documentation if you want
 
+##### CMake
+- Required for some of the native builds, All versions that are even remotely recent should work
+- Download installer (x64) from [cmake.org](https://cmake.org/download/#latest) and run installer
+- Enable the option to add to `PATH` (for the current user or all users)
+
 ##### Visual c++ build tools 2022 or Visual Studio 2022 (Community Edition)
 - Download installer from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/en/downloads/) 
   - You may have to google around for this as Microsoft tends to change their sitemap all the bloody time
-- In the installer, make sure you enable the build tools themselves, the latest windows SDK (version doesn't actually matter) and ATL headers. Everything else is optional.
+- Under "Workloads", enable "Desktop Development with C++"
+- Under "Individual Components", enable ".NET 6.0 Runtime (LTS)", ".NET SDK", "C++ ATL for latest vXYZ build tools" and "Windows 1x SDK" (any version should be fine)
 
 ##### Set up yarn to use C++ build tools
 - Run `yarn config set msvs_version 2022 --global`
   - This sets up yarn to use the c++ build tools we just installed, you probably only need to do this if you've also installed other versions of Visual Studio. Can't hurt though
 
 #### Cloning and building the Vortex source code
+- Start a new command line prompt at this point to ensure you're using the updated PATH environment.
 - Create and `cd` to an appropriate directory (i.e. _c:\projects_)
 - `git clone https://github.com/Nexus-Mods/Vortex.git` from the created directory
   - this should create a new directory _vortex_ in the current working directory (i.e. _c:\projects\vortex_)
-- Go into the vortex directory `cd vortex`
+- cd into the vortex directory `cd vortex`
 - Switch to an appropriate branch, if necessary
   - `git checkout some_branch`
 - For development
@@ -60,8 +67,17 @@ To build from source you have two choices.
 
 ### If something goes wrong:
 
-The build tools are unfortunately not particularly robust, so the build may break for various reasons (i.e. network problems, dependencies that changed remotely, ...) and leave the checkout in an inconsistent state.
-In that case you will have to see if the error is something that needs to be fixed, then restart from the last step that failed.
+There are two phases to the process, installing dependencies and building.
+However, dependent modules may also be compiled during the install phase, this is particularly true for native modules (modules written in C++ for example rather than javascript) if no pre-build binaries are available online. Thus you might get compilation errors during the "yarn install" step.
+
+If the install step fails with an error mentioning c++ or node-gyp or cmake, this will usually mean that one of the tools (python, cmake, visual studio build tools) were not installed (correctly) or can't be found, please repeat the corresponding step above and double check you followed the instructions. Then repeat the "yarn install" step.
+Unfortunately, with these tools being installed system-wide, it's also possible that your existing installs of other versions of these tools (visual studio build tools in particular) may interfere. We can only really promise this build works on a clean windows.
+
+There is one component, fomod-installer, written in c# and at the time of writing its build will randomly fail for no reason. In this case you don't have to do anything special, just repeat the install step.
+
+If the error message shows an error from webpack or a javascript error, this may mean that some package was updated and broke compatibility. It may also mean typescript is outdated.
+Another possible error may be that your yarn cache is invalid such that even if you reinstall a package you still get a broken variant.
+The yarn cache is at _%LOCALAPPDATA%\\Yarn\\Cache\\v6_ and it's safe to delete it, that will only cause some additional internet traffic.
 
 The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
 

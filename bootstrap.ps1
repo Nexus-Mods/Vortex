@@ -3,13 +3,15 @@
 #
 
 # check compatibility with node-gyp
-$python_ver = "3.10.4"
+$python_ver = "3.11.2"
 # current lts
-$node_ver = "16.14.2"
+$node_ver = "18.15.0"
 # newest version available
-$git_ver = "2.36.0"
+$git_ver = "2.39.2"
 # need at least the 2019 version
 $msvs_ver = "2022"
+# pretty sure any reasonably modern version is fine
+$cmake_ver = "3.25.3"
 
 trap [Exception] {
   write-host "We have an error!"
@@ -41,8 +43,16 @@ Set-Location $path
 
 Read-Host 'Will now download and install all dependencies. There is no feedback during downloads.
 All installers will start as soon as the download is finished but they may refuse to continue while others are running.
-In the visual studio installer, please make sure you enable the newest windows SDK and ATL headers.
-In the python installer, please enable the option adding python to the PATH environment variable.' | Out-Null
+
+### Python
+Please enable the option adding python to the PATH environment variable.
+
+### Visual Studio
+Under "Workloads", enable "Desktop Development with C++"
+Under "Individual Components", enable ".NET 6.0 Runtime (LTS)", ".NET SDK", "C++ ATL for latest vXYZ build tools" and "Windows 1x SDK" (any version should be fine)
+
+Please note that these options may get renamed in future installers
+' | Out-Null
 
 [Net.ServicePointManager]::SecurityProtocol += [Net.SecurityProtocolType]::Tls12
 
@@ -53,6 +63,8 @@ New-Item -ItemType Directory -Force -Path downloads
 $python_exe = "python-$python_ver-amd64.exe"
 
 $node_exe = "node-v$node_ver-x64.msi"
+
+$cmake_exe = "cmake-$cmake_ver-windows-x86_64.msi"
 
 $git_exe = "Git-$git_ver-64-bit.exe"
 
@@ -89,6 +101,12 @@ Write-Output "Downloading git"
 if(![System.IO.File]::Exists($path + "/downloads/$git_exe")) {
   $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.1/$git_exe", $path + "/downloads/$git_exe")
   & "downloads/$git_exe"
+}
+
+Write-Output "Downloading cmake"
+if(![System.IO.File]::Exists($path + "/downloads/$git_exe")) {
+  $wc.DownloadFile("https://github.com/Kitware/CMake/releases/download/v$cmake_ver/$cmake_exe", $path + "/downloads/$cmake_exe")
+  & "downloads/$cmake_exe"
 }
 
 Read-Host 'Press Enter once all installers have completed (warning! The directory "vortex" will be replaced if necessary!)...' | Out-Null
