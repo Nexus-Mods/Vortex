@@ -1,6 +1,6 @@
 # Vortex
 
-#### Building from source code
+## Building from source code
 
 To build from source you have two choices.
 ### 1) Automatic (mostly):
@@ -28,8 +28,9 @@ To build from source you have two choices.
 - Download installer (64-bit) from [git-scm.com](https://git-scm.com/downloads) and run installer
 - Verify that Git has installed successfully byb running `git --version` in your _cmd_ or _terminal_
 
-##### Python
-- Required for one of the build tools (_node-gyp_). At the time of writing versions _3.7-3.10_ are known to work
+##### Python 3.10
+- Required for one of the build tools (_node-gyp_).
+- At the time of writing versions _3.7-3.10_ are known to work, _3.11_ is known to *not* work as it has a breaking change that breaks node-gyp as of 9.3.1
 - Download installer (64-bit) from [python.org](https://www.python.org/downloads/) and run installer
 - Make sure to have it added to `PATH`, otherwise defaults are fine.
   - If you have trouble refer to [How to add Python to PATH variable in Windows](https://www.educative.io/answers/how-to-add-python-to-path-variable-in-windows)
@@ -68,7 +69,7 @@ To build from source you have two choices.
   - `yarn dist` to build (this will take a while)
   - Find the installer and an already unpacked version in dist
 
-### If something goes wrong:
+### If something goes wrong
 
 There are two phases to the process, installing dependencies and building.
 However, dependent modules may also be compiled during the install phase, this is particularly true for native modules (modules written in C++ for example rather than javascript) if no pre-build binaries are available online. Thus you might get compilation errors during the "yarn install" step.
@@ -91,6 +92,37 @@ After building a dev build you can run it using `yarn start`
 You can repeat the steps to install dependencies (`yarn install`) and the full build (`yarn build`) as necessary.
 
 To save yourself time, you can rebuild just the bundled extensions (`yarn run subprojects`). If you're making changes to the core application you can run build in watch mode (`yarn run buildwatch`) which will be the same as yarn build but then will continue to watch for changes (only on the core application, not extensions!) and rebuild on demand.
+
+## Development decisions
+
+The following section aims to clarify and explain a few development decisions.
+
+### development vs release builds
+
+The toolchain for development builds and release builds is quite different.
+
+In dev builds the typescript compiler (tsc) is used directly to transliterate each ts file to js individually, electron runs those files directly, dependencies are loaded from node_modules.
+
+In release builds we use webpack and ts-loader to bake all ts files and dependencies into two javascript files (one for the main/browser process, one for the renderer).
+electron-builder is used to bundle code&assets, generate an nsis installer, build it into (two variants) of exe installers and sign them (and all the executables and dlls we ship).
+There are mulitple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
+
+As a result, dev builds are easier to work with and building is much quicker but also substantially slower.
+
+Further, we use a two-package structure, meaning the /package.json file is used for all development and the build environment for releases (e.g. this file always controls the electron version being used/bundled) whereas /app/package.json decides settings (name, version, dependencies) for the release builds only.
+We use a custom script (checkPackages.js) to ensure that the dependencies for release are a subset of the build env dependencies and that they use the same version to avoid problems that didn't occur during testing because of differing dependencies.
+
+Bundled extensions on the other hand are built the same between dev and release: they are always built with webpack and each have their own build setup - with the exception of simple game extensions which are already single js files, those simply get copied over.
+
+### yarn 1 vs yarn 3 vs npm vs pnpm
+
+This codebase still use yarn 1 (classic). Any attempt to use yarn 2 or 3 ended up with nonsensical errors (missing dependencies that are clearly listed, successive installs leading to missing packages) with no reasonable way to investigate why.
+npm and pnpm are quite slow in comparison. We don't really use any yarn-specific features (workspaces?) so switching shouldn't be too difficult but for now yarn "classic" works.
+
+### esm vs commonjs
+
+At the time of writing, electron doesn't support ES modules so everything is transpiled to commonjs. This has the consequence that some updated libraries supporting only esm can't be used (e.g. new versions of d3).
+It also means that asynchronous imports (`const foo = await import('bar')`) are actually synchronous at runtime. Doesn't really matter though since everything is baked into a single file on release builds anyway and code splitting isn't really needed.
 
 ------
 # Further Information

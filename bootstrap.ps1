@@ -3,7 +3,8 @@ $build_directory = "c:\build"
 
 Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression
 
-scoop install python nodejs-lts cmake git yarn
+scoop bucket add versions
+scoop install python310 nodejs-lts cmake git yarn
 
 Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vs_BuildTools.exe' -OutFile "$env:TEMP\vs_BuildTools.exe"
 
