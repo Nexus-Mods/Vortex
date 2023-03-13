@@ -107,7 +107,7 @@ In release builds we use webpack and ts-loader to bake all ts files and dependen
 electron-builder is used to bundle code&assets, generate an nsis installer, build it into (two variants) of exe installers and sign them (and all the executables and dlls we ship).
 There are mulitple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
 
-As a result, dev builds are easier to work with and building is much quicker but also substantially slower.
+As a result, dev builds are easier to work with and building is much quicker but runtime is substantially.
 
 Further, we use a two-package structure, meaning the /package.json file is used for all development and the build environment for releases (e.g. this file always controls the electron version being used/bundled) whereas /app/package.json decides settings (name, version, dependencies) for the release builds only.
 We use a custom script (checkPackages.js) to ensure that the dependencies for release are a subset of the build env dependencies and that they use the same version to avoid problems that didn't occur during testing because of differing dependencies.
