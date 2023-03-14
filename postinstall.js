@@ -22,7 +22,6 @@ const verifyModules = [
   ['vortexmt', path.join('build', 'Release', 'vortexmt.node'), true],
   ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
   ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
-  ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), true],
 ];
 
 async function verifyModulesInstalled() {

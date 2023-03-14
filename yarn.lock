@@ -6070,9 +6070,9 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-fomod-installer@Nexus-Mods/fomod-installer#net6:
-  version "0.7.19"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/464661229a8f3ea26312849b46a81e506a724c0c"
+fomod-installer@Nexus-Mods/fomod-installer:
+  version "0.7.20"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/1e041adddcb9de6007bc7f70dfe3ccd291d5988b"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -8592,8 +8592,8 @@ napi-macros@~2.0.0:
   integrity sha512-A0xLykHtARfueITVDernsAWdtIMbOJgKgcluwENp3AlsKN/PloyO10HtmoqnFAQAcxPkgZN7wdfPfEd0zNGxbg==
 
 native-errors@Nexus-Mods/node-native-errors:
-  version "2.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/895dfb3603f2ee0510235f19cc5cafa943c1a91e"
+  version "2.0.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^4.0.0"
@@ -9861,7 +9861,7 @@ read-pkg@^4.0.1:
     parse-json "^4.0.0"
     pify "^3.0.0"
 
-readable-stream@^2.0.6:
+readable-stream@^2.0.6, readable-stream@~2.3.6:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.8.tgz#91125e8042bba1b9887f49345f6277027ce8be9b"
   integrity sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==
@@ -9874,7 +9874,7 @@ readable-stream@^2.0.6:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
-readable-stream@^2.3.7, readable-stream@~2.3.6:
+readable-stream@^2.3.7:
   version "2.3.7"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.7.tgz#1eca1cf711aef814c04f62252a36a62f6cb23b57"
   integrity sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==
@@ -12057,8 +12057,8 @@ wildcard@^2.0.0:
   integrity sha512-JcKqAHLPxcdb9KM49dufGXn2x3ssnfjbcaQdLlfZsL9rH9wgDQjUtDxbo8NE0F6SFvydeu1VhZe7hZuHsB2/pw==
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.6.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3127a5e90260555f22f4563e0bef49ce278d637d"
+  version "2.6.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3935f9603e5e8d2f18336ce0398043fd4a231d6c"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^3.1.0"
