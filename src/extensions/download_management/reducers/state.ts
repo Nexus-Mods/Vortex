@@ -25,7 +25,7 @@ export const stateReducer: IReducerSpec = {
           details: 'An attempt was made to change application state in a way that '
                    + 'would destroy user data. The action was: \'initDownload\' '
                    + 'with id \'' + payload.id + '\'.'
-                   + 'This is a bug in the calling code, please report id.',
+                   + 'This is a bug in the calling code, please report it.',
         }, {});
         return state;
       }
