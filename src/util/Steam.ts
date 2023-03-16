@@ -17,7 +17,7 @@ import getVortexPath from './getVortexPath';
 
 const STORE_ID = 'steam';
 const STORE_NAME = 'Steam';
-const STEAM_EXEC = 'Steam.exe';
+const STEAM_EXEC = process.platform === 'win32' ? 'Steam.exe' : 'steam.sh';
 const STORE_PRIORITY = 40;
 
 export interface ISteamEntry extends IGameStoreEntry {

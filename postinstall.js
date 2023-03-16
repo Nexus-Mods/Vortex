@@ -14,16 +14,21 @@ const packageManager = 'yarn';
 
 // verify these modules are installed
 const verifyModules = [
-  ['winapi-bindings', path.join('build', 'Release', 'winapi.node'), true],
   ['xxhash-addon', path.join('build', 'Release', 'addon.node'), false],
   ['libxmljs', path.join('build', 'Release', 'xmljs.node'), false],
-  ['native-errors', path.join('build', 'Release', 'native-errors.node'), true],
-  ['crash-dump', path.join('build', 'Release', 'windump.node'), true],
   ['vortexmt', path.join('build', 'Release', 'vortexmt.node'), true],
   ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
   ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
   ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), false],
 ];
+
+if (process.platform === 'win32') {
+  verifyModules.push(
+    ['winapi-bindings', path.join('build', 'Release', 'winapi.node'), true],
+    ['native-errors', path.join('build', 'Release', 'native-errors.node'), true],
+    ['crash-dump', path.join('build', 'Release', 'windump.node'), true],
+  );
+}
 
 async function verifyModulesInstalled() {
   console.log('checking native modules');
