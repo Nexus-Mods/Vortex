@@ -7,7 +7,7 @@ To build from source you have two choices.
 - start a powershell
 - Run `Invoke-WebRequest "https://raw.githubusercontent.com/Nexus-Mods/Vortex/master/bootstrap.ps1" -OutFile bootstrap.ps1` to fetch the bootstrap script
 - By default this script will build Vortex in "c:\build\vortex", if you want it somewhere else, edit the script to change the build directory before running it!
-- you may have to allow scripts to be run (`Set-ExecutionPolicy Unrestricted`)
+- you will more than likely need to allow scripts to be run. This can be set using `Set-ExecutionPolicy Unrestricted` but a powershell with admin access is required. 
 - run the script (`.\bootstrap.ps1`)
   - This script will try to download and install all dependencies, then check out and build vortex
   - Most dependencies are installed using scoop (https://scoop.sh)
