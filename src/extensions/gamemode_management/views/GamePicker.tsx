@@ -16,7 +16,6 @@ import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
-import { NEXUS_DOMAIN } from '../../nexus_integration/constants';
 import { nexusGameId } from '../../nexus_integration/util/convertGameId';
 import { IProfile } from '../../profile_management/types/IProfile';
 

@@ -1,4 +1,4 @@
-import { NEXUS_DOMAIN, NEXUS_PROTOCOL } from '../extensions/nexus_integration/constants';
+import { NEXUS_DOMAIN, NEXUS_FLAMEWORK_SUBDOMAIN, NEXUS_NEXT_SUBDOMAIN, NEXUS_PROTOCOL, NEXUS_USERS_SUBDOMAIN } from '../extensions/nexus_integration/constants';
 
 import { TimeoutError } from './CustomErrors';
 import { Normalize } from './getNormalizeFunc';
@@ -816,9 +816,9 @@ export interface INexusURLOptions {
 
 function sectionHost(section?: Section) {
   switch (section) {
-    case Section.Collections: return `next.${NEXUS_DOMAIN}`;
-    case Section.Users: return `users.${NEXUS_DOMAIN}`;
-    default: return `www.${NEXUS_DOMAIN}`;
+    case Section.Collections: return `${NEXUS_NEXT_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+    case Section.Users: return `${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+    default: return `${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
   }
 }
 

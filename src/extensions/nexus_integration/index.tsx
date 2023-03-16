@@ -383,7 +383,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 function openNexusPage(state: IState, gameIds: string[]) {
   const game = gameById(state, gameIds[0]);
-  opn(`https://www.${NEXUS_DOMAIN}/${nexusGameId(game)}`).catch(err => undefined);
+  opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch(err => undefined);
 }
 
 function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
@@ -747,7 +747,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
               author: modFileInfo.mod.author,
               category: (modFileInfo.mod.modCategory.id.toString()).split(',')[0],
               description: modFileInfo.description,
-              homepage: `https://www.${NEXUS_DOMAIN}/${repoInfo.gameId}/mods/${modId}`,
+              homepage: `${NEXUS_BASE_URL}/${repoInfo.gameId}/mods/${modId}`,
             },
           },
         };

@@ -1698,8 +1698,8 @@
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#oauth":
-  version "1.4.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/a65c97111847d745cdceff77e62a29c6f70b1088"
+  version "1.4.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/7ad6b79442856533cc48e6ee15e38fed1dc2cced"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -6153,8 +6153,8 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.7.20"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/1e041adddcb9de6007bc7f70dfe3ccd291d5988b"
+  version "0.7.21"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bfd8d4dee8e6e75c450d1b8bb5f66f243ab5d1ca"
   dependencies:
     async "^3.2.2"
     copyfiles "*"

@@ -67,8 +67,8 @@
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#oauth":
-  version "1.4.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/a65c97111847d745cdceff77e62a29c6f70b1088"
+  version "1.4.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/7ad6b79442856533cc48e6ee15e38fed1dc2cced"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -1466,8 +1466,8 @@ flux-standard-action@^2.0.0:
     lodash.isstring "^4.0.1"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.7.20"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/1e041adddcb9de6007bc7f70dfe3ccd291d5988b"
+  version "0.7.21"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bfd8d4dee8e6e75c450d1b8bb5f66f243ab5d1ca"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -3276,7 +3276,7 @@ react@^16.12.0, react@^16.3.0:
     object-assign "^4.1.1"
     prop-types "^15.6.2"
 
-readable-stream@^2.0.6:
+readable-stream@^2.0.6, readable-stream@~2.3.6:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.8.tgz#91125e8042bba1b9887f49345f6277027ce8be9b"
   integrity sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==
@@ -3289,7 +3289,7 @@ readable-stream@^2.0.6:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
-readable-stream@^2.3.7, readable-stream@~2.3.6:
+readable-stream@^2.3.7:
   version "2.3.7"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.7.tgz#1eca1cf711aef814c04f62252a36a62f6cb23b57"
   integrity sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==

@@ -7,7 +7,7 @@ import Nexus, {
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
