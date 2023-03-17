@@ -231,6 +231,7 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
       token.access_token, token.refresh_token, tokenDecoded.fingerprint));
     api.store.dispatch(setLoginId(undefined));
     api.store.dispatch(setUserInfo(userInfoFromJWTToken(tokenDecoded)));
+    bringToFront();
 
     callback(null);
   })
