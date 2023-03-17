@@ -286,7 +286,7 @@ function main(args) {
           }
         })
         ;
-  }, { concurrency: 4 }))
+  }, { concurrency: 1 }))
   .then(() => failed ? 1 : 0);
 }
 
