@@ -18,17 +18,15 @@ jobs:
     strategy:
       matrix:
         dotnet-version: [6.0.x]
-        node-version: [16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - name: Display dotnet version
-      run: dotnet --version
-    - name: Yarn install
-      run: yarn install
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+      - name: Display dotnet version
+        run: dotnet --version
