@@ -863,6 +863,13 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
     .then(endorsements => {
       const endorseMap: { [gameId: string]: { [modId: string]: EndorsedStatus } } =
         endorsements.reduce((prev, endorsement: IEndorsement) => {
+          // can't trust anyone these days...
+          if ((endorsement.domain_name === undefined)
+              || (endorsement.status === undefined)
+              || (endorsement.mod_id === undefined)) {
+            return prev;
+          }
+
           const gameId = convertGameIdReverse(knownGames(store.getState()),
                                               endorsement.domain_name);
           const modId = endorsement.mod_id;
