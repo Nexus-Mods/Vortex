@@ -29,4 +29,6 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile
       - name: Display dotnet version
-        run: dotnet --version
+        run: dotnet --version      
+      - name: Build
+        run: yarn build
