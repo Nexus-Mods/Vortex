@@ -5,9 +5,7 @@ name: Main
 
 on:
   push:
-    branches: [ $default-branch ]
   pull_request:
-    branches: [ $default-branch ]
   workflow_dispatch:
 
 jobs:
