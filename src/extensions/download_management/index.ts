@@ -48,11 +48,11 @@ import observe, { DownloadObserver } from './DownloadObserver';
 import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
-import { genHash, IHashResult } from 'modmeta-db';
 import Zip = require('node-7z');
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import { fileMD5 } from 'vortexmt';
 import winapi from 'winapi-bindings';
 import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
@@ -680,12 +680,30 @@ function checkForUnfinalized(api: IExtensionApi,
       actions: [
         {
           title: 'Repair', action: dismiss => {
+            dismiss();
+
+            const notiId = shortid();
+            let completed = 0;
+
+            const progress = (title: string) => {
+              api.sendNotification({
+                id: notiId,
+                type: 'activity',
+                title: 'Finalizing downloads',
+                message: title,
+                progress: completed * 100 / unfinalized.length,
+              });
+            };
+
+            progress('...');
+
             Promise.map(unfinalized, id => {
               const gameId = Array.isArray(downloads[id].game)
                 ? downloads[id].game[0]
                 : gameMode;
               const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
+              progress(downloads[id].localPath);
               if (downloads[id].state === 'finalizing') {
                 return finalizeDownload(api, id, filePath)
                   .catch(err => {
@@ -693,11 +711,12 @@ function checkForUnfinalized(api: IExtensionApi,
                       fileName: downloads[id].localPath,
                       error: err.message,
                     });
-                  });
+                  })
+                  .finally(() => ++completed);
               } else {
-                return genHash(filePath)
-                  .then((md5Hash: IHashResult) => {
-                    api.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
+                return toPromise<string>(cb => fileMD5(filePath, cb, () => {}))
+                  .then(md5sum => {
+                    api.store.dispatch(setDownloadHash(id, md5sum));
                   })
                   .catch(err => {
                     if (err.code === 'ENOENT') {
@@ -707,10 +726,13 @@ function checkForUnfinalized(api: IExtensionApi,
                       log('error', 'failed to calculate hash for download', {
                         file: downloads[id].localPath, error: err.message });
                     }
-                  });
+                  })
+                  .finally(() => ++completed);
               }
-            })
-              .then(() => dismiss());
+            }, { concurrency: 4 })
+              .then(() => {
+                api.dismissNotification(notiId);
+              });
           },
         },
       ],
