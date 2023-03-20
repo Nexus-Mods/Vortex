@@ -452,15 +452,19 @@ class InstallManager {
           }
           const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
           const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
-          const existingIds = (replacementChoice === 'variant')
+          const existingIds = ((replacementChoice === 'variant')
             ? modNameMatches
-            : Array.from(new Set([].concat(modNameMatches, variantMatches)));
+            : Array.from(new Set([].concat(modNameMatches, variantMatches))))
+            .filter(_ => _ !== undefined);
           if (existingIds.length === 0) {
             log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
             return Promise.resolve(testModId);
           } else {
             return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
               .then((choice: IReplaceChoice) => {
+                if (choice.id === undefined) {
+                  log('error', '(nameloop) no valid id selection', { testModId, modNameMatches, variantMatches });
+                }
                 testModId = choice.id;
                 replacementChoice = choice.replaceChoice;
                 if (choice.enable) {
