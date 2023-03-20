@@ -436,11 +436,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
               actions: false,
               choices: () => possibleActions[type],
               onChangeValue: (file: IFileEntry, value: any) => {
+                const typeActions = possibleActions[type];
+                const idx = typeActions.findIndex(act => act.key === file.action);
+                if (idx < 0) {
+                  return;
+                }
                 if (value === undefined) {
-                  const typeActions = possibleActions[type];
-                  const idx = typeActions.findIndex(act => act.key === file.action);
                   this.props.onChangeAction([file.filePath],
-                                typeActions[(idx + 1) % typeActions.length].key as FileAction);
+                    typeActions[(idx + 1) % typeActions.length].key as FileAction);
                 } else {
                   this.props.onChangeAction([file.filePath], value);
                 }

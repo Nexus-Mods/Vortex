@@ -72,9 +72,17 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
 
   const msgpack: typeof msgpackT = require('@msgpack/msgpack');
 
-  let parsed = (typeof data === 'string')
-    ? JSON.parse(deBOM(data))
-    : msgpack.decode(data);
+  let parsed: IDeploymentManifest;
+  try {
+    parsed = (typeof data === 'string')
+      ? JSON.parse(deBOM(data))
+      : msgpack.decode(data);
+  } catch (err) {
+    const newErr = new Error(`Failed to parse manifest: "${err.message}"`);
+    // invalid input data, not a bug
+    newErr['allowReport'] = false;
+    throw newErr;
+  }
 
   let lastVersion = 0;
   while (lastVersion < CURRENT_VERSION) {

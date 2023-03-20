@@ -22,7 +22,7 @@ import getVortexPath from './getVortexPath';
 import Promise from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
-import { GameEntryNotFound } from '../types/IGameStore';
+import { GameEntryNotFound, GameStoreNotFound } from '../types/IGameStore';
 
 function getCurrentWindow() {
   if (process.type === 'renderer') {
@@ -118,6 +118,12 @@ class StarterInfo implements IStarterInfo {
             const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
             log('error', errorMsg);
             onShowError('Failed to start game through launcher', err, !game.contributed);
+            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+          })
+          .catch(GameStoreNotFound, err => {
+            onShowError(
+              'Failed to start game through launcher',
+              `Game store "${err.storeName}" not supported, is the extension disabled?`, false);
             return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
           })
           .catch(err => {

@@ -8,6 +8,8 @@ export default function<T>(delayed: () => T, exportId?: string): T {
       }
       if (exportId !== undefined) {
         return target.mod[exportId][name];
+      } else if (name === '__esModule') {
+        return target.mod;
       } else {
         return target.mod[name];
       }

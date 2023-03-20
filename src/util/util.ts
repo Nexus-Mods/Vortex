@@ -885,6 +885,9 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
     key: KeyT, attr: AttrT, extraArg?: any): ValT {
 
     const layer = this.mDeduce(key, extraArg);
+    if (layer === undefined) {
+      return this.mBaseData[key]?.[attr] as ValT;
+    }
     return (this.mLayers[layer]?.[key]?.[attr] as any)
         ?? this.mBaseData[key]?.[attr];
   }

@@ -133,29 +133,33 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
   return Promise.map(providersToQuery, prov => {
     const expires = now + prov.expireMS;
-    return prov.query({ ...game, ...gameDiscovery }).then(details => {
-      const receivedKeys = Object.keys(details);
-      const values = receivedKeys
-                         // TODO: this filters out "optional" info keys that
-                         // weren't expected
-                         .filter(key => filterResult(key, prov))
-                         .map(key => ({
-                                key,
-                                title: details[key].title,
-                                value: details[key].value,
-                                type: details[key].type,
-                              }));
-      prov.keys.forEach(key => {
-        if (receivedKeys.indexOf(key) === -1) {
-          values.push({ key, title: 'Unknown', value: null, type: undefined });
+    return prov.query({ ...game, ...gameDiscovery })
+      .then(details => {
+        const receivedKeys = Object.keys(details);
+        const values = receivedKeys
+          // TODO: this filters out "optional" info keys that
+          // weren't expected
+          .filter(key => filterResult(key, prov))
+          .map(key => ({
+            key,
+            title: details[key].title,
+            value: details[key].value,
+            type: details[key].type,
+          }));
+        prov.keys.forEach(key => {
+          if (receivedKeys.indexOf(key) === -1) {
+            values.push({ key, title: 'Unknown', value: null, type: undefined });
+          }
+        });
+        if (values.length > 0) {
+          store.dispatch(setGameInfo(gameId, prov.id, prov.priority, expires, values));
         }
+      })
+      .catch(err => { 
+        log('error', 'failed to retrieve game info', { provider: prov.id, error: err.message });
       });
-      if (values.length > 0) {
-        store.dispatch(setGameInfo(gameId, prov.id, prov.priority, expires, values));
-      }
-    });
   })
-  .then(() => undefined);
+    .then(() => undefined);
 }
 
 function verifyGamePath(game: IGame, gamePath: string): Promise<void> {

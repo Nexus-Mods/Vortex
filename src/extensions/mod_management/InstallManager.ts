@@ -2513,7 +2513,7 @@ class InstallManager {
 
           let queryWrongMD5 = Bluebird.resolve();
           if ((dep.mod === undefined)
-              && (dep.reference.versionMatch !== undefined)
+              && (dep.reference?.versionMatch !== undefined)
               && !isFuzzyVersion(dep.reference.versionMatch)
               && (dep.lookupResults.length > 0)
               && (dep.lookupResults.find(res => res.value.fileMD5 !== undefined) !== undefined)
