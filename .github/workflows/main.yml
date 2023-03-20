@@ -41,7 +41,9 @@ jobs:
       - name: Display dotnet version
         run: dotnet --version      
       - name: Build
-        run: yarn build
+        run: yarn build 
+      - name: Test
+        run: yarn test
       - name: Notify slack success
         if: success()
         env:
