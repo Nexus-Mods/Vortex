@@ -44,7 +44,7 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
  * get our internal game id for a nexus page id
  */
 export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
-  if (input === undefined) {
+  if (input?.toLowerCase === undefined) {
     return undefined;
   }
 
