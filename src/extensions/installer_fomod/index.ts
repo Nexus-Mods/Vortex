@@ -876,7 +876,6 @@ class ConnectionIPC {
     }
     this.mSocket?.in?.end();
 
-    log('warn', 'interrupted, recent actions', JSON.stringify(this.mActionLog, undefined, 2));
     if (this.mOnInterrupted !== undefined) {
       this.mOnInterrupted(err);
       this.mOnInterrupted = undefined;
