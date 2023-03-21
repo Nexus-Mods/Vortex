@@ -911,7 +911,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private updateModsWithState(newProps: IProps): Promise<void> {
     const { gameMode } = newProps;
     let changed = false;
-    const newModsWithState = {};
+    const newModsWithState: { [modId: string]: IModWithState } = {};
 
     const installedIds = new Set<string>();
     const oldProps = this.mLastUpdateProps;
@@ -962,6 +962,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             id: mod.archiveId,
             state: 'downloaded',
             archiveId: mod.archiveId,
+            type: '',
+            installationPath: undefined,
+            enabled: false,
+            enabledTime: 0,
             attributes: {
               ...mod.info,
               installTime: download.fileTime,

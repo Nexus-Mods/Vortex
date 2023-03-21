@@ -50,7 +50,7 @@ function ModTypeWidget(props: IModTypeWidget) {
 
   const onChangeValue = React.useCallback((newValue: Option<string>) => {
     for (const mod of mods) {
-      dispatch(setModType(gameMode, mod.id, newValue.key || ''));
+      dispatch(setModType(gameMode, mod.id, newValue?.key || ''));
     }
   }, [gameMode]);
   
@@ -58,8 +58,8 @@ function ModTypeWidget(props: IModTypeWidget) {
     util.opn(modTypePath).catch(() => null);
   }, [modTypePath]);
 
-  if (mods.length === 0) {
-    return null;
+  if (mods[0].state !== 'installed') {
+    return <div>{t('Only available for installed mods')}</div>;
   }
   
   if (mods.find(iter => iter.type !== modTypeId) !== undefined) {
