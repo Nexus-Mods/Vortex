@@ -101,7 +101,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   public render(): JSX.Element {
-    const {disabled, group} = this.props;
+    const {t, disabled, group} = this.props;
     const {selectedPlugins} = this.state;
 
     const validationMessage = this.mValidate(selectedPlugins);
@@ -110,7 +110,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     return (
       <FormGroup disabled={disabled} validationState={validationState}>
         <ControlLabel>
-          {group.name}
+          {group?.name ?? `<${t('Missing group name')}>`}
           {' '}
           {validationMessage ? `(${validationMessage})` : null}
         </ControlLabel>
