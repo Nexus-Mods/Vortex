@@ -1264,7 +1264,9 @@ export function updateToken(api: IExtensionApi,
     .then(userInfo => updateUserInfo(api, nexus, userInfo))
     // .then(() => true)
     .catch(err => {
-      api.showErrorNotification('Authentication failed, please log in again', err);
+      api.showErrorNotification('Authentication failed, please log in again', err, {
+        allowReport: false,
+      });
       api.store.dispatch(setUserInfo(undefined));
       api.events.emit('did-login', err);
       return false;
