@@ -78,7 +78,7 @@ class StarterInfo implements IStarterInfo {
     const game: IGame = getGame(info.gameId);
     const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
       (game.requiresLauncher !== undefined) && info.isGame
-      ? game.requiresLauncher(path.dirname(info.exePath), info.store)
+      ? Promise.resolve(game.requiresLauncher(path.dirname(info.exePath), info.store))
         .catch(err => {
           if (err instanceof UserCanceled) {
             // warning because it'd be kind of unusual for the user to have to confirm anything
