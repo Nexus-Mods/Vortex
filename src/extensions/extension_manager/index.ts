@@ -17,7 +17,7 @@ import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions }
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
-import { setDialogVisible } from '../../actions';
+import { setDialogVisible, setExtensionEnabled } from '../../actions';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -156,6 +156,26 @@ function installDependency(api: IExtensionApi,
                            updateInstalled: (initial: boolean) => Promise<void>): Promise<boolean> {
   const state: IState = api.store.getState();
   const availableExtensions = state.session.extensions.available;
+  const installedExtensions = state.session.extensions.installed;
+
+  if (installedExtensions[depId] !== undefined) {
+    // installed, probably failed to load or disabled
+    if (!state.app.extensions[depId].enabled) {
+      api.store.dispatch(setExtensionEnabled(depId, true));
+      return Promise.resolve(true);
+    } else {
+      api.showErrorNotification(
+        'Failed to install extension',
+        'The extension "{{ name }}" is already installed but failed to load, '
+        + 'please review the load error on the "Extensions" tab.', {
+          message: depId,
+          allowReport: false,
+          replace: { name: depId },
+        });
+
+      return Promise.resolve(false);
+    }
+  }
 
   const ext = availableExtensions.find(iter =>
     (!iter.type && ((iter.name === depId) || (iter.id === depId))));
@@ -164,6 +184,17 @@ function installDependency(api: IExtensionApi,
       .then(success => {
         if (success) {
           updateInstalled(false);
+        } else {
+          api.showErrorNotification(
+            'Failed to install extension',
+            'The extension "{{ name }}" wasn\'t found in the repository. '
+            + 'This might mean that the extension isn\'t available at all or '
+            + 'has been excluded for compatibility reasons. '
+            + 'Please check the installation instructions for this extension.', {
+              message: depId,
+              allowReport: false,
+              replace: { name: depId },
+            });
         }
         return success;
       });
@@ -198,17 +229,7 @@ function checkMissingDependencies(api: IExtensionApi,
             Promise.map(Object.keys(missingDependencies), depId =>
               installDependency(api, depId, updateInstalled)
                 .then(results => {
-                  if (!results) {
-                    api.showErrorNotification('Failed to install extension',
-                      'The extension "{{ name }}" wasn\'t found in the repository. '
-                      + 'This might mean that the extension isn\'t available on Nexus at all or '
-                      + 'has been excluded for compatibility reasons. '
-                      + 'Please check the installation instructions for this extension.', {
-                      message: depId,
-                      allowReport: false,
-                      replace: { name: depId },
-                    });
-                  } else {
+                  if (results) {
                     api.sendNotification({
                       type: 'success',
                       message: 'Missing dependencies were installed - please restart Vortex',

@@ -63,6 +63,9 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
     const state: IState = api.store.getState();
 
     return Promise.map(handler.dependencies, depId => {
+      if (state.session.extensions.installed[depId] !== undefined) {
+        return;
+      }
       const ext = state.session.extensions.available.find(iter =>
         (!iter.type && ((iter.name === depId) || (iter.id === depId))));
 
@@ -72,7 +75,7 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
         return Promise.resolve();
       }
     })
-    .then(() => null);
+      .then(() => null);
   } catch (err) {
     // TODO: can't check for dependencies if the extension is already loaded
     //   and registers actions
