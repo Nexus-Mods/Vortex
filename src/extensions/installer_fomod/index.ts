@@ -127,7 +127,7 @@ function transformError(err: any): Error {
     result = new SetupError('The installer tried to access a file with a path longer than 260 '
                         + 'characters. This usually means that your mod staging path is too long.');
   } else if ((err.name === 'System.IO.IOException')
-             && (err.stack.indexOf('System.IO.Path.InternalGetTempFileName'))) {
+             && (err.stack.includes('System.IO.Path.InternalGetTempFileName'))) {
     const tempDir = getVortexPath('temp');
     result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
                           + 'You need to clean up that directory. Files in that directory '
