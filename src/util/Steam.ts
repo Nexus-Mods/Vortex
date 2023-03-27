@@ -4,6 +4,7 @@ import * as fs from './fs';
 import { log } from './log';
 import { getSafeCI } from './storeHelper';
 
+import * as  fsOG from 'fs/promises';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
 import * as winapi from 'winapi-bindings';
@@ -266,7 +267,7 @@ class Steam implements IGameStore {
       .then((steamPaths: string[]) => Promise.mapSeries(steamPaths, steamPath => {
         log('debug', 'reading steam install folder', { steamPath });
         const steamAppsPath = path.join(steamPath, 'steamapps');
-        return fs.readdirAsync(steamAppsPath)
+        return Promise.resolve(fsOG.readdir(steamAppsPath))
           .then(names => {
             const filtered = names.filter(name =>
               name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
@@ -324,7 +325,7 @@ class Steam implements IGameStore {
             return undefined;
           })
           .catch(err => {
-            log('warn', 'Failed to read steam library', err.message);
+            log('warn', 'Failed to read steam library', { path: steamPath, error: err.message });
           });
       })
         .then((games: ISteamEntry[][]) =>
