@@ -2853,7 +2853,9 @@ class InstallManager {
         .catch((err) => {
           api.dismissNotification(notificationId);
           api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          api.showErrorNotification('Failed to check dependencies', err);
+          if (!(err instanceof UserCanceled)) {
+            api.showErrorNotification('Failed to check dependencies', err);
+          }
         })
         .finally(() => {
           log('debug', 'done installing dependencies', { gameId, modId });
@@ -3068,7 +3070,9 @@ class InstallManager {
         })
         .catch((err) => {
           api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          api.showErrorNotification('Failed to check dependencies', err);
+          if (!(err instanceof UserCanceled)) {
+            api.showErrorNotification('Failed to check dependencies', err);
+          }
         })
         .finally(() => {
           api.dismissNotification(notificationId);
