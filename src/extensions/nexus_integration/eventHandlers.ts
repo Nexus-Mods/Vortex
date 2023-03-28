@@ -357,7 +357,7 @@ export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
       CURRENT_REVISION_INFO, nexusGameId(game), count, offset))
       .then(res => (res ?? []).map(coll => coll.currentRevision))
       .catch(err => {
-        if (err.code !== 'UNAUTHORIZED') {
+        if (!['NOT_FOUND', 'UNAUTHORIZED'].includes(err.code)) {
           api.showErrorNotification('Failed to get list of collections', err);
         }
         return Promise.resolve([]);
