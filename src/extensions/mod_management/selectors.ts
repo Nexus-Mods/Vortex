@@ -29,7 +29,7 @@ export const installPathForGame = createCachedSelector(
     (inPath: string, gameId: string) => getInstallPath(inPath, gameId),
   )((state, gameId) => {
     if (gameId === undefined) {
-      throw new Error('gameId can\'t be undefined');
+      return undefined;
     }
     return gameId;
   });
