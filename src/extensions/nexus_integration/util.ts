@@ -372,12 +372,16 @@ export interface IRemoteInfo {
 
 export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
                         : Promise<IRemoteInfo> {
-  return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
-    .catch(err => {
+  return Promise.resolve((async () => {
+    try {
+      const modInfo = await nexus.getModInfo(modId, domain);
+      const fileInfo = await nexus.getFileInfo(modId, fileId, domain);
+      return { modInfo, fileInfo };
+    } catch (err) {
       err['attachLogOnReport'] = true;
-      return Promise.reject(err);
-    })
-    .then(([ modInfo, fileInfo ]) => ({ modInfo, fileInfo }));
+      throw err;
+    }
+  })());
 }
 
 export function getCollectionInfo(nexus: Nexus,
