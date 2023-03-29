@@ -8,6 +8,7 @@ import getInstallPath from './util/getInstallPath';
 
 import createCachedSelector from 're-reselect';
 import { createSelector } from 'reselect';
+import { RelaxedReselectCache } from '../../util/RelaxedReselectCache';
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>
@@ -26,12 +27,15 @@ export const installPath = createSelector(installPathPattern, activeGameId,
 export const installPathForGame = createCachedSelector(
     gameInstallPathPattern,
     (state: IState, gameId: string) => gameId,
-    (inPath: string, gameId: string) => getInstallPath(inPath, gameId),
+    (inPath: string, gameId: string) =>
+      gameId !== undefined ? getInstallPath(inPath, gameId) : undefined,
   )((state, gameId) => {
     if (gameId === undefined) {
       return undefined;
     }
     return gameId;
+  }, {
+    cacheObject: new RelaxedReselectCache(),
   });
 
 export const currentActivator = createSelector(activators, activeGameId,
