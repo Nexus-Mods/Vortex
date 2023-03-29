@@ -277,7 +277,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         }));
       })
       .catch((err) => {
-        onShowError('Failed to read Vortex logs', err.message);
+        onShowError('Failed to read Vortex logs', err);
       });
   }
 
