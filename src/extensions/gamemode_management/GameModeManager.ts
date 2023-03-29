@@ -176,7 +176,15 @@ class GameModeManager {
 
     log('debug', 'setup game mode', gameMode);
     if (gameDiscovery?.path === undefined) {
-      return Promise.reject(new Error('game not discovered'));
+      // if the user starts Vortex with --game xyz and that game was previously detected
+      // but has been uninstalled since then, Vortex initiates the profile/game switch
+      // assuming it knows where the game is. By the time we get here, discovery may
+      // have completed and reset the game discovery.
+      // It would be nicer if all game switching could be deferred until after discovery
+      // has run but that would be a major change that would require a proper round of
+      // testing which is not going to happen now so we have to accept this as a valid
+      // situation.
+      return Promise.reject(new ProcessCanceled('game not discovered'));
     } else if (game?.setup === undefined) {
       return game.getInstalledVersion(gameDiscovery)
         .then(() => Promise.resolve());

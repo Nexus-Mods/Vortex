@@ -146,10 +146,9 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  * @param {string} gameId
  */
 function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> {
-  log('info', 'activating game', { gameId });
   const state: IState = store.getState();
-  if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
-      === undefined) {
+  const gamePath = getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined);
+  if (gamePath === undefined) {
     store.dispatch(addNotification({
       type: 'warning',
       title: '{{gameId}} not enabled',
@@ -162,6 +161,8 @@ function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> 
     store.dispatch(setNextProfile(undefined));
     return Promise.resolve();
   }
+
+  log('info', 'activating game', { gameId, gamePath });
 
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
                             undefined);
