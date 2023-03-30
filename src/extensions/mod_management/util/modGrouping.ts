@@ -7,7 +7,7 @@ import { coerce, compare, valid } from 'semver';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
   const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) => {
-    const modId = getSafe(value, ['attributes', 'modId'], undefined);
+    const modId = value?.attributes?.modId ?? value?.attributes?.collectionSlug;
     if (prev[modId] === undefined) {
       prev[modId] = [];
     }
@@ -27,6 +27,13 @@ function logicalName(attributes: any) {
 
 function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
   if ((lhs.attributes === undefined) || (rhs.attributes === undefined)) {
+    return false;
+  }
+
+  if ((lhs.attributes?.collectionSlug !== undefined)
+      || (rhs.attributes?.collectionSlug !== undefined)) {
+    // atm never group collections, we don't support having multiple revisions of a collection
+    // installed at the same time anyway
     return false;
   }
 
