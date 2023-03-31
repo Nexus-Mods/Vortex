@@ -38,6 +38,7 @@ function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
   }
 
   if (truthy(lhs.attributes.newestFileId)
+      && truthy(lhs.attributes.modId !== undefined)
       && (lhs.attributes.newestFileId === rhs.attributes.newestFileId)) {
     return true;
   }
