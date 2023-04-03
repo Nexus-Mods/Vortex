@@ -108,7 +108,8 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
         return;
       }
-      if (!rhs?.hasOwnProperty?.(key) && lhs?.hasOwnProperty?.(key)) {
+      if (!Object.prototype.hasOwnProperty.call(rhs, key)
+          && Object.prototype.hasOwnProperty.call(lhs, key)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs?.[key] ?? {}, rhs?.[key] ?? {});
@@ -121,7 +122,8 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       }
     });
     Object.keys(rhs || {}).forEach(key => {
-      if (!lhs?.hasOwnProperty?.(key) && rhs?.hasOwnProperty?.(key)) {
+      if (!Object.prototype.hasOwnProperty.call(lhs, key)
+          && Object.prototype.hasOwnProperty.call(rhs, key)) {
         res['+' + key] = rhs[key];
       }
     });
