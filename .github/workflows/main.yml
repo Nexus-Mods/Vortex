@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '16.x'
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: yarn --frozen-lockfile --network-timeout 600000 install
       - name: Display dotnet version
         run: dotnet --version      
       - name: Build
