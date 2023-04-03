@@ -47,7 +47,7 @@ const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSI
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
-    .filter(fileName => {
+    .filter((fileName: string) => {
       if (path.extname(fileName) === '.installing') {
         // ignore directories during installation
         return Promise.resolve(false);
@@ -65,7 +65,8 @@ function getAllDirectories(searchPath: string): Promise<string[]> {
           // temporary ".installing" directory
           return Promise.resolve(false);
         });
-    });
+    })
+    .catch({ code: 'ENOENT' }, () => []);
 }
 
 function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {
