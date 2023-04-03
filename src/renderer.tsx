@@ -313,6 +313,12 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error.stack.includes('packery')) {
+    // seems to be caused by an event triggered inside packery after cleanup so I don't see
+    // a way to catch this cleanly
+    return;
+  }
+
   if (error.stack.includes('react-sortable-tree')) {
     // bug in external library. I know where the bug is but fixing that causes a new problem and
     // i just don't want to pull that thread.
