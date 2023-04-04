@@ -28,11 +28,12 @@ export async function getExtGameVersion(game: IGame, discovery: IDiscoveryResult
 }
 
 export async function testExecProvider(game: IGame, discovery: IDiscoveryResult): Promise<boolean> {
-  if (discovery?.path === undefined) {
-    // How?
+  const exeName = discovery.executable || game.executable();
+  if ((discovery?.path === undefined) || (exeName === undefined)) {
+    // can be caused by a broken extension
     return Promise.resolve(false);
   }
-  const exePath = path.join(discovery.path, discovery.executable || game.executable());
+  const exePath = path.join(discovery.path, exeName);
   try {
     await statAsync(exePath);
     const version: string = exeVersion.default(exePath);

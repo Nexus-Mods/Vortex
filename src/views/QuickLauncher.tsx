@@ -271,7 +271,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         }
       }
     } catch (err) {
-      log('error', 'invalid game', { err });
+      log('error', 'failed to create quick launcher entry', { error: err.message, stack: err.stack });
       return undefined;
     }
   }

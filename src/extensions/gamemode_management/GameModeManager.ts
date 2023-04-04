@@ -88,7 +88,9 @@ class GameModeManager {
   public attachToStore(store: Redux.Store<IState>) {
     this.mStore = store;
 
-    const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
+    const gamesStored: IGameStored[] = this.mKnownGames
+      .map(this.storeGame)
+      .filter(this.isValidGame);
     store.dispatch(setKnownGames(gamesStored));
     // we used to activate the game mode right here but there is another
     // call to do this in the "once" CB of gamemode_management so it's
@@ -375,6 +377,12 @@ class GameModeManager {
 
   private reloadStoreGames() {
     return GameStoreHelper.reloadGames();
+  }
+
+  private isValidGame(game: IGameStored): boolean {
+    return (game.executable !== undefined)
+        && (game.requiredFiles !== undefined)
+        && (game.name !== undefined);
   }
 
   private storeGame = (game: IGame): IGameStored => {

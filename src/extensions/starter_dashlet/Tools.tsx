@@ -328,7 +328,7 @@ function generateGameStarter(props: IConnectedProps): StarterInfo {
     const starter = new StarterInfo(game, discoveredGame);
     return starter;
   } catch (err) {
-    log('error', 'invalid game', { err });
+    log('error', 'failed to create dashlet game entry', { error: err.message, stack: err.stack });
   }
   return null;
 }
