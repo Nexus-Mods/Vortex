@@ -64,7 +64,10 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
       return null;
     }
 
-    const lines = (message || '').split('\n');
+    const lines = (message || '')
+      // improve chance the message can be line-broken on hover
+      .replace(/\W/g, _ => `${_}\u200b`)
+      .split('\n');
 
     const styleName = this.typeToStyle(type);
 
