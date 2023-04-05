@@ -918,7 +918,7 @@ class ExtensionManager {
       
       if ((extension !== undefined)
           && (extension.info !== undefined)
-          && (extension.info.author !== COMPANY_ID + 'x')) {
+          && (extension.info.author !== COMPANY_ID)) {
         if (options === undefined) {
           options = {};
         }
