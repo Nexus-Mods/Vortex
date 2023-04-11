@@ -464,6 +464,10 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       message,
       displayMS: calcDuration(message.length),
     });
+  } else if (err['code'] === 'NOT_FOUND') {
+    api.showErrorNotification('Collection not found, it might have been removed.', err, {
+      allowReport: false,
+    });
   } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
       || (err instanceof ProcessCanceled)) {
     api.showErrorNotification('Rating collection failed, please try again later', err, {
