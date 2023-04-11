@@ -596,7 +596,7 @@ class ConnectionIPC {
             wasConnected = true;
           }
           return Promise.resolve();
-        }, 100);
+        }, 1000);
 
         const onStdout = (dat: string) => {
           msg += dat;
