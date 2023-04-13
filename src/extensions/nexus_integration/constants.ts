@@ -14,8 +14,10 @@ export const FALLBACK_AVATAR = 'assets/images/noavatar.png';
 export const REVALIDATION_FREQUENCY = 5 * 60 * 1000;
 
 export const OAUTH_URL = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth`;
-export const OAUTH_REDIREC_URL = 'nxm://oauth/callback';
-export const OAUTH_CLIENT_ID = 'vortex';
+// export const OAUTH_REDIRECT_URL = 'nxm://oauth/callback';
+export const OAUTH_REDIRECT_URL = 'http://127.0.0.1:PORT';
+
+export const OAUTH_CLIENT_ID = 'vortex_loopback';
 export const NEXUS_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n" +
 "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDhKHxCWOeUy38S3UOBOB11SNd/\n" +
 "wyL9TVvzxePkEsZb4fEVGp0U5MEcDcJgXUo/fZOYTUFMX7ipvCC7sbsyKpJ0xZ/M\n" +

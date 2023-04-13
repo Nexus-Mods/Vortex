@@ -38,7 +38,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import { setLoginError, setLoginId, setOauthPending } from './actions/session';
-import { NEXUS_DOMAIN, OAUTH_CLIENT_ID, OAUTH_REDIREC_URL, OAUTH_URL } from './constants';
+import { NEXUS_DOMAIN, OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL } from './constants';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { isLoggedIn } from './selectors';
@@ -214,7 +214,7 @@ function legacyConnect(api: IExtensionApi, callback: (err: Error) => void) {
 const oauth = new OAuth({
   baseUrl: OAUTH_URL,
   clientId: OAUTH_CLIENT_ID,
-  redirectUrl: OAUTH_REDIREC_URL,
+  redirectUrl: OAUTH_REDIRECT_URL,
 });
 
 export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {

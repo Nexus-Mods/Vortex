@@ -1,6 +1,13 @@
+import { net } from 'electron';
+import * as http from 'node:http';
 import * as https from 'node:https';
+import { AddressInfo } from 'node:net';
 import * as querystring from 'node:querystring';
 import * as url from 'node:url';
+import { log } from '../../../util/log';
+import { OAUTH_REDIRECT_URL } from '../constants';
+import { inspect } from 'node:util';
+import VORTEX_ICON from './vortexicon';
 
 type TokenType = 'Bearer';
 
@@ -21,6 +28,27 @@ interface IOAuthServerSettings {
   redirectUrl: string;
 }
 
+/* eslint-disable max-len */
+const SUCCESS_PAGE = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Authentication Status</title>
+    <meta http-equiv="refresh" content="0; url=http://www.nexusmods.com/" />
+  </head>
+  <body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center">
+    <div>
+      <img src="data:image/png;base64,${VORTEX_ICON}">
+      <div>
+        <div>Success!</div>
+      </div>
+      <div>You've signed into Vortex, this window can be closed.</div>
+    </div>
+  </body>
+</html>
+`;
+/* eslint-enable max-len */
+
 /**
  * deals with token exchange for OAuth2
  **/
@@ -28,9 +56,13 @@ class OAuth {
   private mVerifier: string;
   private mServerSettings: IOAuthServerSettings;
   private mStates: { [state: string]: (err: Error, token: ITokenReply) => void } = {};
+  private mServer: http.Server;
+  private mLastServerPort: number;
+  private mLocalhost: boolean;
 
   constructor(settings: IOAuthServerSettings) {
     this.mServerSettings = settings;
+    this.mLocalhost = url.parse(OAUTH_REDIRECT_URL).protocol === 'http:';
   }
 
   public async sendRequest(onToken: (err: Error, token: ITokenReply) => void, onOpenPage: (url: string) => void): Promise<void> {
@@ -45,6 +77,9 @@ class OAuth {
     this.mVerifier = Buffer.from(uuid().replace(/-/g, '')).toString('base64');
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto.createHash('sha256').update(this.mVerifier).digest('base64');
+
+    this.mLastServerPort = this.mLocalhost ? this.ensureServer() : -1;
+
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.3
     const url = this.authorizeUrl(challenge, state);
 
@@ -59,6 +94,65 @@ class OAuth {
     } catch (err) {
       this.mStates[state]?.(err, undefined);
     }
+    delete this.mStates[state];
+
+    this.checkServerStillRequired();
+  }
+
+  private ensureServer(): number {
+    if (this.mServer === undefined) {
+      log('info', 'starting localhost server to receive oauth response');
+      this.startServer();
+    }
+    const addr: AddressInfo = this.mServer.address() as AddressInfo;
+    log('info', 'using localhost server for oauth response', { port: addr.port });
+    return addr.port;
+  }
+
+  private checkServerStillRequired() {
+    if (this.mLocalhost && (Object.keys(this.mStates).length === 0)) {
+      log('info', 'no more oauth responses outstanding, stopping server');
+      this.stopServer();
+    }
+  }
+
+  private stopServer() {
+    this.mServer.close();
+    this.mServer = undefined;
+  }
+
+  private startServer() {
+    this.mServer = http.createServer()
+      .listen()
+      .on('request', (req, resp) => {
+        log('info', 'request', req.url);
+
+        let { code, state } = url.parse(req.url, true).query;
+        if (Array.isArray(code)) {
+          code = code[0];
+        }
+        if (Array.isArray(state)) {
+          state = state[0];
+        }
+        if ((code !== undefined) && (state !== undefined)) {
+          log('debug', 'received code via http', { code, state });
+          (async () => {
+            await this.receiveCode(code as string, state as string);
+          })();
+        }
+
+        let msg: string = '';
+        req.setEncoding('utf-8');
+        req
+          .on('data', chunk => { msg += chunk; })
+          .on('close', () => {
+            log('info', 'received', msg);
+          });
+
+        resp.write(SUCCESS_PAGE);
+        
+        resp.end();
+      });
   }
 
   private async postRequest(tokenUrl: string, request: any): Promise<string> {
@@ -120,7 +214,7 @@ class OAuth {
       scope: 'public',
       code_challenge_method: 'S256',
       client_id: this.mServerSettings.clientId,
-      redirect_uri: this.mServerSettings.redirectUrl,
+      redirect_uri: this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
       state,
       code_challenge: OAuth.sanitizeBase64(challenge),
     };
@@ -131,7 +225,7 @@ class OAuth {
     const request = {
       grant_type: 'authorization_code',
       client_id: this.mServerSettings.clientId,
-      redirect_uri: this.mServerSettings.redirectUrl,
+      redirect_uri: this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
       code,
       code_verifier: this.mVerifier,
     };
