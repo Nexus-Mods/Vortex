@@ -228,6 +228,7 @@ const middleware = [
 ];
 
 function sanityCheckCB(err: StateError) {
+  err['attachLogOnReport'] = true;
   showError(store.dispatch,
     'An invalid state change was prevented, this was probably caused by a bug', err);
 }

@@ -993,6 +993,7 @@ class Application {
   }
 
   private sanityCheckCB = (err: StateError) => {
+    err['attachLogOnReport'] = true;
     showError(this.mStore.dispatch,
       'An invalid state change was prevented, this was probably caused by a bug', err);
   }
