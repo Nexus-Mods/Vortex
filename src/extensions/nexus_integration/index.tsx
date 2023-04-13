@@ -29,7 +29,7 @@ import { SITE_ID } from '../gamemode_management/constants';
 import { isDownloadIdValid, isIdValid } from '../mod_management/util/modUpdateState';
 
 import { setNewestVersion, setUserInfo } from './actions/persistent';
-import { addFreeUserDLItem, removeFreeUserDLItem } from './actions/session';
+import { addFreeUserDLItem, removeFreeUserDLItem, setOauthPending } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';

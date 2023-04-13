@@ -5,6 +5,8 @@ import * as reduxAct from 'redux-act';
 
 export const setLoginId = safeCreateAction('SET_LOGIN_ID', id => id);
 
+export const setOauthPending = safeCreateAction('SET_OAUTH_PENDING', url => url);
+
 export const setLoginError = safeCreateAction('SET_LOGIN_ERROR', error => error);
 
 /**

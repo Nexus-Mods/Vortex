@@ -27,6 +27,8 @@ export const sessionReducer: IReducerSpec = {
       addUniqueSafe(state, ['freeUserDLQueue'], payload),
     [actions.removeFreeUserDLItem as any]: (state, payload) =>
       removeValue(state, ['freeUserDLQueue'], payload),
+    [actions.setOauthPending as any]: (state, payload) =>
+      setSafe(state, [ 'oauthPending' ], payload),
   },
   defaults: {
     loginId: undefined,

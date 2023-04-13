@@ -1,4 +1,5 @@
 #login-dialog {
+
   .nexus-header {
     width: auto;
     height: 4em;
@@ -12,6 +13,28 @@
     align-items: center;
   }
 
+  .login-please-click {
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: bold;    
+    margin: 25px 0;
+  }    
+  
+  .login-please-click h4 {
+    font-weight: 600;
+    margin: 0 0 0 10px;
+    display: inline;
+    vertical-align: middle;
+  }
+
+  .login-please-click .icon {
+    height: 2em;
+    width: 2em;
+    fill: $brand-primary;    
+    display: inline;
+    vertical-align: middle;
+  }
+  
   .modal-content {
     background: url('assets/images/log-in-bg.png');
     background-repeat: no-repeat;
@@ -19,7 +42,7 @@
   }
 
   .modal-body {
-    text-align: center;
+    text-align: left;
   }
 
   .login-instructions {

@@ -1,3 +1,4 @@
+import { IsValidNewOptionHandler } from 'react-select';
 import { showDialog } from '../../../actions/notifications';
 import ContextMenu from '../../../controls/ContextMenu';
 import FormFeedback from '../../../controls/FormFeedback';
@@ -11,8 +12,9 @@ import { log } from '../../../util/log';
 import opn from '../../../util/opn';
 
 import { setUserAPIKey } from '../actions/account';
-import { setLoginId } from '../actions/session';
+import { setLoginId, setOauthPending } from '../actions/session';
 import { NEXUS_BASE_URL } from '../constants';
+import { OAUTH_URL } from '../constants';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 import { getPageURL } from '../util/sso';
 
@@ -26,6 +28,7 @@ import { findDOMNode } from 'react-dom';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { dispatch } from 'd3-dispatch';
 
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
@@ -39,12 +42,14 @@ interface IConnectedProps {
   userInfo: IValidateKeyData;
   loginId: string;
   loginError: string;
+  oauthPending: string;
 }
 
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
   onShowLoginError: (message: string) => void;
   onResetLoginId: () => void;
+  onResetOauthPending: () => void;
 }
 
 interface ILoginInProgressProps {
@@ -106,7 +111,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       troubleshoot: false,
       apiKeyInput: '',
       requested: false,
-      context: undefined,
+      context: undefined
     });
   }
 
@@ -127,13 +132,13 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
 
   public render(): JSX.Element {
     const { troubleshoot } = this.state;
-    const { t, loginId, visible } = this.props;
+    const { t, loginId, visible, oauthPending } = this.props;
 
     return (
       <Modal
         backdrop='static'
         id='login-dialog'
-        show={visible || (loginId !== undefined)}
+        show={(oauthPending !== undefined)}
         onHide={this.hide}
       >
         <Modal.Body ref={this.mModalRef}>
@@ -155,24 +160,22 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderRegular(): JSX.Element {
-    const { t, loginId } = this.props;
+    const { t, loginId, oauthPending } = this.props;
     const { requested } = this.state;
+    
     return (
       <div className='login-content'>
         <Icon
-          className='nexus-header'
-          name='nexus-header'
-          svgStyle='#login-dialog path { fill: black }'
-        />
-        <div className='login-instructions'>
-          {t('Please log in or register on the Nexus Mods website to log in on vortex!')}
-        </div>
-        {loginId !== undefined ? [(
+              className='nexus-header'
+              name='nexus-header'
+              svgStyle='#login-dialog path { fill: black }' />
+        {
+        loginId !== undefined ? [(
           <LoginInProgress
             key='login-in-progress'
             t={t}
             loginId={loginId}
-            onCopyToClipboard={this.copyToClipboard}
+            onCopyToClipboard={this.copyOauthUrlToClipboard}
           />
         ), (
           <Button
@@ -195,13 +198,48 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           </a>
         ),
         ] : (
-          <Button
-            onClick={this.login}
-            tooltip={t('Opens the Nexus Mods page in your default browser')}
-            disabled={requested || (loginId !== undefined)}
-          >
-            {(requested || (loginId !== undefined)) ? <Spinner /> : t('Log In On Website')}
-          </Button>
+        <div>
+
+        <h1>{t('Log in or register on the Nexus Mods website')}</h1>
+
+        <p>{t('Look out for a browser window opening and log in/register if required.')}</p>
+
+        <div className='login-please-click'>
+          <Spinner />
+          <h4>{t('Please click "authorise" on the website')}</h4>
+        </div>
+
+        <h2>{t('Website didn\'t open?')}</h2>
+
+        <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
+
+        <form>
+          <FormGroup>
+            
+            <InputGroup>
+              <FormControl
+                type='text'
+                value={oauthPending}
+                readOnly />
+              <InputGroup.Addon>
+                <IconButton
+                  className='btn-embed'
+                  icon='clipboard'
+                  tooltip={t('Copy to clipboard')}
+                  onClick={this.copyOauthUrlToClipboard} />
+              </InputGroup.Addon>
+            </InputGroup>
+          </FormGroup>
+        </form>
+
+        <p>{t('Still not working?')} <a 
+          key='troubleshoot-button'
+          onClick={this.troubleshoot}>{t('Log in with token')}
+          </a>
+        </p>
+
+        </div>
+
         )}
       </div>
     );
@@ -209,44 +247,44 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
 
   private renderTroubleshoot() {
     const { apiKeyInput, context } = this.state;
-    const { t, loginError } = this.props;
+    const { t, loginError, oauthPending } = this.props;
 
     const keyValid = this.mKeyValidation.test(apiKeyInput);
 
     return (
       <div className='login-content'>
         <Icon
-          className='nexus-header'
-          name='nexus-header'
-          svgStyle='#login-dialog path { fill: black }'
-        />
-        <h3>
-          {t('If you\'re having trouble logging in in the normal way, there is another option.')}
-        </h3>
-        {loginError === undefined ? null : (
-          <Alert bsStyle='warning'>
-            {loginError}
-          </Alert>
-        )}
+              className='nexus-header'
+              name='nexus-header'
+              svgStyle='#login-dialog path { fill: black }' />        
+
+        <h1>{t('Log in with token')}</h1>
+
         <ol style={{ textAlign: 'left' }}>
-          <li>
-            {t('Open the Nexus Mods page and log in if you\'re not already.')}
-          </li>
-          <li>
-            {t('Open this url:')}
-            {' '}<a onClick={this.openApiAccess}>{API_ACCESS_URL}</a>{' '}
-          </li>
-          <li>
-            {t('If there is a button "REQUEST AN API KEY" button alongside '
-              + '"Vortex", click it.')}
-          </li>
-          <li>
-            {t('You should now see a text field alongside Vortex with a long series of seemingly '
-             + 'random characters (your API Key) with three buttons below it. '
-             + 'Of these buttons, click the right-most one (Copy API Key).')}
-          </li>
-          <li>
-            <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
+        <li>
+        <p>{t('Copy the following address into your browser and log in/register if required (skip this step if you already have the token). We support Chrome, Safari, Firefox and Edge.')}</p>
+        
+          <FormGroup>
+            
+            <InputGroup>
+              <FormControl
+                type='text'
+                value={oauthPending}
+                readOnly />
+              <InputGroup.Addon>
+                <IconButton
+                  className='btn-embed'
+                  icon='clipboard'
+                  tooltip={t('Copy to clipboard')}
+                  onClick={this.copyOauthUrlToClipboard} />
+              </InputGroup.Addon>
+            </InputGroup>
+          </FormGroup>
+        
+        </li>
+        <li>
+        <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
+        <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
               <FormControl
                 componentClass='textarea'
                 style={{display: 'inline', verticalAlign: 'top', height: '6em', resize: 'none'}}
@@ -268,19 +306,18 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
               <FormFeedback />
               {keyValid ? null : <ControlLabel>{t('Invalid key')}</ControlLabel>}
             </FormGroup>
-          </li>
-          <li>
-            {t('Then press')}
-            {' '}
+
+        </li>
+        </ol>
+
+        
             <Button
-              onClick={this.applyKey}
-              tooltip={t('Save API Key')}
+              tooltip={t('Save')}
               // disabled={!keyValid}
             >
               {t('Save')}
             </Button>
-          </li>
-        </ol>
+          
       </div>
     );
   }
@@ -334,24 +371,36 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private close = () => {
-    const { loginId } = this.props;
-    // only request confirmation if the login has actually been started!
-    if (loginId === undefined) {
-      this.hide();
-      return;
-    }
-    this.renderConfirmDialog().catch(err => {
-      log('error', 'failed to show dialog', err.message);
-    });
+
+    const { onResetOauthPending } = this.props;
+    
+    console.log('close button pressed');
+
+    // wipe the redux state
+    onResetOauthPending();
+
+    this.hide();
+    
+    /*
+    // if we are mid login, then request confirmation before we close
+    if (oauthPending !== undefined) {
+      
+      // request confirmation before we close
+      this.renderConfirmDialog().catch(err => {
+        log('error', 'failed to show dialog', err.message);
+      });
+    }*/
+      
   }
 
   private troubleshoot = () => {
     this.nextState.troubleshoot = true;
   }
 
-  private copyToClipboard = () => {
+  private copyOauthUrlToClipboard = () => {
+    const { oauthPending } = this.props;
     try {
-      clipboard.writeText(getPageURL(this.props.loginId));
+      clipboard.writeText(oauthPending);
     } catch (err) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
       this.context.api.showErrorNotification('Failed to access clipboard',
@@ -378,6 +427,7 @@ function mapStateToProps(state: any): IConnectedProps {
     userInfo: state.persistent.nexus.userInfo,
     loginId: state.session.nexus.loginId || undefined,
     loginError: state.session.nexus.loginError || undefined,
+    oauthPending: state.session.nexus.oauthPending || undefined,
   };
 }
 
@@ -388,6 +438,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     (message: string) => dispatch(showDialog('error', 'Error', { message },
                                              [ { label: 'Close' } ])),
     onResetLoginId: () => dispatch(setLoginId(undefined)),
+    onResetOauthPending: () => dispatch(setOauthPending(undefined)),
   };
 }
 

@@ -27,15 +27,13 @@ interface IOAuthServerSettings {
 class OAuth {
   private mVerifier: string;
   private mServerSettings: IOAuthServerSettings;
-  private mOnOpenPage: (url: string) => void;
   private mStates: { [state: string]: (err: Error, token: ITokenReply) => void } = {};
 
-  constructor(settings: IOAuthServerSettings, onOpenPage: (url: string) => void) {
+  constructor(settings: IOAuthServerSettings) {
     this.mServerSettings = settings;
-    this.mOnOpenPage = onOpenPage;
   }
 
-  public async sendRequest(onToken: (err: Error, token: ITokenReply) => void): Promise<void> {
+  public async sendRequest(onToken: (err: Error, token: ITokenReply) => void, onOpenPage: (url: string) => void): Promise<void> {
     // importing uuid can take significant amounts of time so always delay it as far as possible
     const uuid = (await import('uuid/v1')).default;
     const crypto = (await import('crypto')).default;
@@ -48,7 +46,10 @@ class OAuth {
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto.createHash('sha256').update(this.mVerifier).digest('base64');
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.3
-    this.mOnOpenPage(this.authorizeUrl(challenge, state));
+    const url = this.authorizeUrl(challenge, state);
+
+    // call callback with generated url
+    onOpenPage(url);
   }
 
   public async receiveCode(code: string, state: string): Promise<void> {

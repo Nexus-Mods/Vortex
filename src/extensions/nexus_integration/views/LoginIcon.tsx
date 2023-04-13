@@ -11,7 +11,7 @@ import { truthy } from '../../../util/util';
 import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from '../constants';
 
 import NexusT from '@nexusmods/nexus-api';
 import * as path from 'path';
@@ -21,6 +21,8 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { pathToFileURL } from 'url';
 import { isLoggedIn } from '../selectors';
+
+import { setOauthPending } from '../actions/session';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -122,9 +124,17 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     if (!this.isLoggedIn()) {
       this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
       this.setDialogVisible(true);
+      this.launchNexusOauth();
     } else {
       opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(err => undefined);
     }
+  }
+
+  private launchNexusOauth = () => {
+    
+    this.context.api.events.emit('request-nexus-login', (err: Error) => { 
+            
+    });
   }
 
   private isLoggedIn() {
