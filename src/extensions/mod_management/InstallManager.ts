@@ -3190,7 +3190,7 @@ class InstallManager {
       .then(() => this.fixDestination(source, destination))
       .then(fixedDest => move
         ? fs.renameAsync(source, fixedDest)
-          .catch(err => (err.code === 'EXDEV')
+          .catch(err => (['EXDEV', 'EEXIST'].includes(err.code))
             ? fs.copyAsync(source, fixedDest, { noSelfCopy: true })
             : Bluebird.reject(err))
         : fs.copyAsync(source, fixedDest, { noSelfCopy: true }));
