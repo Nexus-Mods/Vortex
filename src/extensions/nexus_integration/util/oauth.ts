@@ -8,6 +8,7 @@ import { log } from '../../../util/log';
 import { OAUTH_REDIRECT_URL } from '../constants';
 import { inspect } from 'node:util';
 import VORTEX_ICON from './vortexicon';
+import NEXUSMODS_LOGO from './nexusmodslogo';
 
 type TokenType = 'Bearer';
 
@@ -31,20 +32,29 @@ interface IOAuthServerSettings {
 /* eslint-disable max-len */
 const SUCCESS_PAGE = `
 <!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <title>Authentication Status</title>
-    <meta http-equiv="refresh" content="0; url=http://www.nexusmods.com/" />
-  </head>
-  <body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center">
-    <div>
-      <img src="data:image/png;base64,${VORTEX_ICON}">
-      <div>
-        <div>Success!</div>
-      </div>
-      <div>You've signed into Vortex, this window can be closed.</div>
-    </div>
-  </body>
+
+<head>
+<title>Authentication Status</title>
+
+  <meta http-equiv="refresh" content="5; url=http://www.nexusmods.com/" />
+
+</head>
+
+<body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center; background-color: black;  font-family: sans-serif; color: white;">
+
+<div style="text-align: center; ">
+
+<img width="200px" src="data:image/png;base64,${NEXUSMODS_LOGO}" />
+
+<h1>Vortex sign in successful!</h1>
+
+<p style="font-size: 1.2em;">Taking you to the <a href="http://www.nexusmods.com/" style="color: #D98F40;">Nexus Mods homepage</a></p>
+
+</div>
+</body>
+
 </html>
 `;
 /* eslint-enable max-len */
