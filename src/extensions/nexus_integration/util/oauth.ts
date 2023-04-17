@@ -65,7 +65,11 @@ class OAuth {
     this.mLocalhost = url.parse(OAUTH_REDIRECT_URL).protocol === 'http:';
   }
 
-  public async sendRequest(onToken: (err: Error, token: ITokenReply) => void, onOpenPage: (url: string) => void): Promise<void> {
+  public async sendRequest(
+    onToken: (err: Error, token: ITokenReply) => void,
+    onOpenPage: (url: string) => void)
+    : Promise<void> {
+
     // importing uuid can take significant amounts of time so always delay it as far as possible
     const uuid = (await import('uuid/v1')).default;
     const crypto = (await import('crypto')).default;
@@ -78,7 +82,12 @@ class OAuth {
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto.createHash('sha256').update(this.mVerifier).digest('base64');
 
-    this.mLastServerPort = this.mLocalhost ? this.ensureServer() : -1;
+    try {
+      this.mLastServerPort = this.mLocalhost ? await this.ensureServer() : -1;
+    } catch (err) {
+      log('error', 'failed to start server', err);
+      throw err;
+    }
 
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.3
     const url = this.authorizeUrl(challenge, state);
@@ -99,10 +108,10 @@ class OAuth {
     this.checkServerStillRequired();
   }
 
-  private ensureServer(): number {
+  private async ensureServer(): Promise<number> {
     if (this.mServer === undefined) {
       log('info', 'starting localhost server to receive oauth response');
-      this.startServer();
+      await this.startServer();
     }
     const addr: AddressInfo = this.mServer.address() as AddressInfo;
     log('info', 'using localhost server for oauth response', { port: addr.port });
@@ -121,38 +130,50 @@ class OAuth {
     this.mServer = undefined;
   }
 
-  private startServer() {
-    this.mServer = http.createServer()
-      .listen(undefined, '127.0.0.1')
-      .on('request', (req, resp) => {
-        log('info', 'request', req.url);
-
-        let { code, state } = url.parse(req.url, true).query;
-        if (Array.isArray(code)) {
-          code = code[0];
-        }
-        if (Array.isArray(state)) {
-          state = state[0];
-        }
-        if ((code !== undefined) && (state !== undefined)) {
-          log('debug', 'received code via http', { code, state });
-          (async () => {
-            await this.receiveCode(code as string, state as string);
-          })();
-        }
-
-        let msg: string = '';
-        req.setEncoding('utf-8');
-        req
-          .on('data', chunk => { msg += chunk; })
-          .on('close', () => {
-            log('info', 'received', msg);
+  private async startServer(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this.mServer = http.createServer()
+          .listen(undefined, '127.0.0.1')
+          .on('error', reject)
+          .on('listening', resolve)
+          .on('request', (req, resp) => {
+            this.onHTTPRequest(req, resp);
           });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
 
-        resp.write(SUCCESS_PAGE);
-        
-        resp.end();
+  private onHTTPRequest(
+    req: http.IncomingMessage,
+    resp: http.ServerResponse<http.IncomingMessage> & { req: http.IncomingMessage; }) {
+
+    let { code, state } = url.parse(req.url, true).query;
+    if (Array.isArray(code)) {
+      code = code[0];
+    }
+    if (Array.isArray(state)) {
+      state = state[0];
+    }
+    if ((code !== undefined) && (state !== undefined)) {
+      (async () => {
+        await this.receiveCode(code as string, state as string);
+      })();
+    }
+
+    let msg: string = '';
+    req.setEncoding('utf-8');
+    req
+      .on('data', chunk => { msg += chunk; })
+      .on('close', () => {
+        log('info', 'received', msg);
       });
+
+    resp.write(SUCCESS_PAGE);
+
+    resp.end();
   }
 
   private async postRequest(tokenUrl: string, request: any): Promise<string> {
