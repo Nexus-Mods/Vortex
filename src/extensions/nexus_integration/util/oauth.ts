@@ -123,7 +123,7 @@ class OAuth {
 
   private startServer() {
     this.mServer = http.createServer()
-      .listen()
+      .listen(undefined, '127.0.0.1')
       .on('request', (req, resp) => {
         log('info', 'request', req.url);
 
