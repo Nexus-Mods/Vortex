@@ -134,8 +134,10 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private launchNexusOauth = () => {
     this.context.api.events.emit('request-nexus-login', (err: Error) => { 
-      this.props.onShowError('Login Failed', err);
-      this.hideLoginLayer();
+      if (err !== null) {
+        this.props.onShowError('Login Failed', err);
+        this.hideLoginLayer();
+      }
     });
   }
 

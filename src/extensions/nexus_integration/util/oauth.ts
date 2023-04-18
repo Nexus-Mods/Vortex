@@ -135,8 +135,6 @@ class OAuth {
       this.mStates[state]?.(err, undefined);
     }
     delete this.mStates[state];
-
-    this.checkServerStillRequired();
   }
 
   private async ensureServer(): Promise<number> {
@@ -157,7 +155,7 @@ class OAuth {
   }
 
   private stopServer() {
-    this.mServer.close();
+    this.mServer?.close();
     this.mServer = undefined;
   }
 
@@ -205,12 +203,16 @@ class OAuth {
         await this.receiveCode(code, state as string);
       })();
       resp.write(makeResultPage(true));
+
+      this.checkServerStillRequired();
     } else if (error !== undefined) {
       const err = new Error((error_description as string) ?? 'Description missing');
       err['code'] = error;
       this.mStates[state]?.(err, undefined);
-      resp.write(makeResultPage(false));
-      
+      resp.write(makeResultPage(false)); 
+      delete this.mStates[state];
+
+      this.checkServerStillRequired();
     }
 
     resp.end();
