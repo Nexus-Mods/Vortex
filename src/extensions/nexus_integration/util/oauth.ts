@@ -31,33 +31,52 @@ interface IOAuthServerSettings {
 
 /* eslint-disable max-len */
 function makeResultPage(success: boolean) {
-  return `
-<!DOCTYPE html>
 
-<html lang="en">
+  var html = [];
 
-<head>
-<title>Authentication Status</title>
+  html.push(
+    `<!DOCTYPE html>
 
-  <meta http-equiv="refresh" content="5; url=http://www.nexusmods.com/" />
+    <html lang="en">
+    
+    <head>
+    <title>Authentication Status</title>
+    
+      <meta http-equiv="refresh" content="6; url=http://www.nexusmods.com/" />
+    
+    </head>
+    
+    <body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center; background-color: black; font-family: sans-serif; color: white;">
+    
+    <div style="text-align: center; ">
+    
+    <img width="200px" src="data:image/png;base64,${NEXUSMODS_LOGO}" />`
+  );
 
-</head>
+  if (success) {
 
-<body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center; background-color: black; font-family: sans-serif; color: white;">
+  html.push(`
+    <h1>Vortex sign in successful!</h1>
+  `);
 
-<div style="text-align: center; ">
+  } else {
 
-<img width="200px" src="data:image/png;base64,${NEXUSMODS_LOGO}" />
+  html.push(`
+    <h1>Vortex was unable to sign in</h1>
+    <p style="font-size: 1.2em;">Please check Vortex for more information</a></p>
+  `);
+  }
 
-<h1>Vortex sign in ${success ? 'successful' : 'failed'}!</h1>
+  html.push(`
 
-<p style="font-size: 1.2em;">Taking you to the <a href="http://www.nexusmods.com/" style="color: #D98F40;">Nexus Mods homepage</a></p>
+  <p style="font-size: 1.2em;">Taking you to the <a href="http://www.nexusmods.com/" style="color: #D98F40;">Nexus Mods homepage</a></p>
+    </div>
+    </body>
+    
+    </html>
+  `);
 
-</div>
-</body>
-
-</html>
-`;
+  return html.join("");
 }
 /* eslint-enable max-len */
 
