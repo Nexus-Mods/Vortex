@@ -232,6 +232,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           </FormGroup>
         </form>
 
+        <p className='login-copy-to-clipboard'>{t('\u2713 Copied to clipboard')}</p>
+
         <p>{t('Still not working?')} <a 
           key='troubleshoot-button'
           onClick={this.troubleshoot}>{t('Log in with token')}

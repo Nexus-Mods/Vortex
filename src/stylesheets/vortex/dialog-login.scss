@@ -13,6 +13,15 @@
     align-items: center;
   }
 
+  .login-copy-to-clipboard {
+    margin-top: -10px;
+    margin-bottom: -10px;
+    color: $brand-success;
+    text-align: right;
+    padding: 0;    
+    visibility: hidden;
+  } 
+
   .login-please-click {
     text-transform: uppercase;
     text-align: center;
