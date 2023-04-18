@@ -226,6 +226,11 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
 
     // received reply from site for this state
 
+    bringToFront();
+    api.store.dispatch(setLoginId(undefined));
+    // set state to undefined so that we can close the modal?
+    api.store.dispatch(setOauthPending(undefined));
+
     if (err !== null) {
       return callback(err);
     }
@@ -234,12 +239,7 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
 
     api.store.dispatch(setOAuthCredentials(
       token.access_token, token.refresh_token, tokenDecoded.fingerprint));
-    api.store.dispatch(setLoginId(undefined));
     api.store.dispatch(setUserInfo(userInfoFromJWTToken(tokenDecoded)));
-    bringToFront();
-    
-    // set state to undefined so that we can close the modal?
-    api.store.dispatch(setOauthPending(undefined));
 
     callback(null);
 

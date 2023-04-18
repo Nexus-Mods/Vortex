@@ -30,7 +30,8 @@ interface IOAuthServerSettings {
 }
 
 /* eslint-disable max-len */
-const SUCCESS_PAGE = `
+function makeResultPage(success: boolean) {
+  return `
 <!DOCTYPE html>
 
 <html lang="en">
@@ -42,13 +43,13 @@ const SUCCESS_PAGE = `
 
 </head>
 
-<body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center; background-color: black;  font-family: sans-serif; color: white;">
+<body style="display: flex; flex-direction: column; height: 50vh; justify-content: center; align-items: center; background-color: black; font-family: sans-serif; color: white;">
 
 <div style="text-align: center; ">
 
 <img width="200px" src="data:image/png;base64,${NEXUSMODS_LOGO}" />
 
-<h1>Vortex sign in successful!</h1>
+<h1>Vortex sign in ${success ? 'successful' : 'failed'}!</h1>
 
 <p style="font-size: 1.2em;">Taking you to the <a href="http://www.nexusmods.com/" style="color: #D98F40;">Nexus Mods homepage</a></p>
 
@@ -57,6 +58,7 @@ const SUCCESS_PAGE = `
 
 </html>
 `;
+}
 /* eslint-enable max-len */
 
 /**
@@ -160,28 +162,37 @@ class OAuth {
     req: http.IncomingMessage,
     resp: http.ServerResponse<http.IncomingMessage> & { req: http.IncomingMessage; }) {
 
-    let { code, state } = url.parse(req.url, true).query;
-    if (Array.isArray(code)) {
-      code = code[0];
-    }
-    if (Array.isArray(state)) {
-      state = state[0];
-    }
-    if ((code !== undefined) && (state !== undefined)) {
-      (async () => {
-        await this.receiveCode(code as string, state as string);
-      })();
-    }
+    const queryItems = url.parse(req.url, true).query;
+    const getQueryParam = (key: string): string => {
+      const tmp = queryItems[key];
+      return Array.isArray(tmp) ? tmp[0] : tmp;
+    };
+    const code = getQueryParam('code');
+    const state = getQueryParam('state');
+    const error = getQueryParam('error');
+    const error_description = getQueryParam('error_description');
 
-    let msg: string = '';
     req.setEncoding('utf-8');
+    let msg: string = '';
     req
       .on('data', chunk => { msg += chunk; })
       .on('close', () => {
         log('info', 'received', msg);
       });
 
-    resp.write(SUCCESS_PAGE);
+
+    if ((code !== undefined) && (state !== undefined)) {
+      (async () => {
+        await this.receiveCode(code, state as string);
+      })();
+      resp.write(makeResultPage(true));
+    } else if (error !== undefined) {
+      const err = new Error((error_description as string) ?? 'Description missing');
+      err['code'] = error;
+      this.mStates[state]?.(err, undefined);
+      resp.write(makeResultPage(false));
+      
+    }
 
     resp.end();
   }

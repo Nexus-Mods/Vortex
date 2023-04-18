@@ -23,6 +23,7 @@ import { pathToFileURL } from 'url';
 import { isLoggedIn } from '../selectors';
 
 import { setOauthPending } from '../actions/session';
+import { showError } from '../../../util/message';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -38,6 +39,7 @@ interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
   onClearOAuthCredentials: () => void;
   onShowDialog: () => void;
+  onShowError: (title: string, err: Error) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -131,9 +133,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private launchNexusOauth = () => {
-    
     this.context.api.events.emit('request-nexus-login', (err: Error) => { 
-            
+      this.props.onShowError('Login Failed', err);
+      this.hideLoginLayer();
     });
   }
 
@@ -164,6 +166,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
     onShowDialog: () => dispatch(setDialogVisible('login-dialog')),
+    onShowError: (title: string, err: Error) =>
+      showError(dispatch, title, err, { allowReport: false }),
   };
 }
 
