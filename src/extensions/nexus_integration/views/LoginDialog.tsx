@@ -5,6 +5,7 @@ import FormFeedback from '../../../controls/FormFeedback';
 import Icon from '../../../controls/Icon';
 import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
+import CopyClipboardInput from '../../../controls/CopyClipboardInput';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
@@ -218,23 +219,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
 
         <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
 
-          <FormGroup>            
-            <InputGroup>
-              <FormControl
-                type='text'
-                value={oauthPending}
-                readOnly />
-              <InputGroup.Addon>
-                <IconButton
-                  className='btn-embed'
-                  icon='clipboard'
-                  tooltip={t('Copy to clipboard')}
-                  onClick={() => this.copyToClipboard(oauthPending)} />
-              </InputGroup.Addon>
-            </InputGroup>
-        <p className='login-copy-to-clipboard' style={{visibility: showElement?'visible':'hidden'}}>{t('\u2713 Copied to clipboard')}</p>
-          </FormGroup>
-
+        <CopyClipboardInput inputValue={oauthPending} />
 
         <p>{t('Still not working?')} <a 
           key='troubleshoot-button'
@@ -267,23 +252,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         <ol style={{ textAlign: 'left' }}>
         <li>
         <p>{t('Copy the following address into your browser and log in/register if required (skip this step if you already have the token). We support Chrome, Safari, Firefox and Edge.')}</p>
-        
-          <FormGroup>            
-            <InputGroup>
-              <FormControl
-                type='text'
-                value={oauthPending}
-                readOnly />
-              <InputGroup.Addon>
-                <IconButton
-                  className='btn-embed'
-                  icon='clipboard'
-                  tooltip={t('Copy to clipboard')}
-                  onClick={() => this.copyToClipboard(oauthPending)} />
-              </InputGroup.Addon>
-            </InputGroup>
-            <p className='login-copy-to-clipboard' style={{visibility: showElement?'visible':'hidden'}}>{t('\u2713 Copied to clipboard')}</p>
-          </FormGroup>
+
+        <CopyClipboardInput inputValue={oauthPending} />
                   
         </li>
         <li>
