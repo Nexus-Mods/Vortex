@@ -29,8 +29,11 @@ import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { dispatch } from 'd3-dispatch';
+import { useEffect } from 'react';
 
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
+
+
 
 export interface IBaseProps extends WithTranslation {
   visible: boolean;
@@ -98,6 +101,7 @@ interface ILoginDialogState {
   apiKeyInput: string;
   requested: boolean;
   context: { x: number, y: number };
+  showElement: boolean;
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
@@ -105,13 +109,14 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   private mModalRef = React.createRef<ModalBody>();
 
   constructor(props: IProps) {
-    super(props);
+    super(props);   
 
     this.initState({
       troubleshoot: false,
       apiKeyInput: '',
       requested: false,
-      context: undefined
+      context: undefined,
+      showElement: false
     });
   }
 
@@ -161,7 +166,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
 
   private renderRegular(): JSX.Element {
     const { t, loginId, oauthPending } = this.props;
-    const { requested } = this.state;
+    const { requested, showElement } = this.state;
     
     return (
       <div className='login-content'>
@@ -175,7 +180,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
             key='login-in-progress'
             t={t}
             loginId={loginId}
-            onCopyToClipboard={this.copyOauthUrlToClipboard}
+            onCopyToClipboard={() => this.copyToClipboard(oauthPending)}
           />
         ), (
           <Button
@@ -213,9 +218,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
 
         <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
 
-        <form>
-          <FormGroup>
-            
+          <FormGroup>            
             <InputGroup>
               <FormControl
                 type='text'
@@ -226,13 +229,12 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
                   className='btn-embed'
                   icon='clipboard'
                   tooltip={t('Copy to clipboard')}
-                  onClick={this.copyOauthUrlToClipboard} />
+                  onClick={() => this.copyToClipboard(oauthPending)} />
               </InputGroup.Addon>
             </InputGroup>
+        <p className='login-copy-to-clipboard' style={{visibility: showElement?'visible':'hidden'}}>{t('\u2713 Copied to clipboard')}</p>
           </FormGroup>
-        </form>
 
-        <p className='login-copy-to-clipboard'>{t('\u2713 Copied to clipboard')}</p>
 
         <p>{t('Still not working?')} <a 
           key='troubleshoot-button'
@@ -248,7 +250,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderTroubleshoot() {
-    const { apiKeyInput, context } = this.state;
+    const { apiKeyInput, context, showElement } = this.state;
     const { t, loginError, oauthPending } = this.props;
 
     const keyValid = this.mKeyValidation.test(apiKeyInput);
@@ -266,8 +268,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         <li>
         <p>{t('Copy the following address into your browser and log in/register if required (skip this step if you already have the token). We support Chrome, Safari, Firefox and Edge.')}</p>
         
-          <FormGroup>
-            
+          <FormGroup>            
             <InputGroup>
               <FormControl
                 type='text'
@@ -278,11 +279,12 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
                   className='btn-embed'
                   icon='clipboard'
                   tooltip={t('Copy to clipboard')}
-                  onClick={this.copyOauthUrlToClipboard} />
+                  onClick={() => this.copyToClipboard(oauthPending)} />
               </InputGroup.Addon>
             </InputGroup>
+            <p className='login-copy-to-clipboard' style={{visibility: showElement?'visible':'hidden'}}>{t('\u2713 Copied to clipboard')}</p>
           </FormGroup>
-        
+                  
         </li>
         <li>
         <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
@@ -399,10 +401,15 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     this.nextState.troubleshoot = true;
   }
 
-  private copyOauthUrlToClipboard = () => {
-    const { oauthPending } = this.props;
+  private copyToClipboard(text: string) {
+    
     try {
-      clipboard.writeText(oauthPending);
+      clipboard.writeText(text);
+
+      // show the clipboard message, turn it off again 3 seconds later
+      this.nextState.showElement = true; 
+      setTimeout(() => this.nextState.showElement = false, 3000)
+
     } catch (err) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
       this.context.api.showErrorNotification('Failed to access clipboard',
