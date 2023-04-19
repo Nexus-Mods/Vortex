@@ -718,7 +718,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       filter: new OptionsFilter([
         { value: true, label: this.props.t('Enabled') },
         { value: false, label: this.props.t('Disabled') },
-        { value: undefined, label: this.props.t('Uninstalled') },
+        { value: null, label: this.props.t('Uninstalled') },
       ], true),
     };
 
@@ -964,7 +964,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             archiveId: mod.archiveId,
             type: '',
             installationPath: undefined,
-            enabled: false,
+            enabled: null,
             enabledTime: 0,
             attributes: {
               ...mod.info,
