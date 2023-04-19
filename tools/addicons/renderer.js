@@ -43,6 +43,7 @@ const locations = [
   '{nucleo}/weather/{nucleo_simple}_',
   'Nucleo_Outline/interactive icons/32px_',
   '{fa}/',
+  '{material_design}/',
 ];
 
 let config;

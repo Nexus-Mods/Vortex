@@ -1,17 +1,30 @@
 #login-dialog {
 
   .nexus-header {
-    width: auto;
+    width: 157px;
     height: 4em;
+  }
+
+  .input-group {
+    border: 1px solid #AAAAAA;
+    padding: 2px;
+  }
+
+  .form-control {
+    border: none;
+    background-color: inherit;
+  }
+
+  .input-group-addon {
+    border: none;
+    background-color: inherit;
   }
 
   .login-content {
     min-height: 250px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
   }
+
+
 
   .login-copy-to-clipboard {
     margin-top: 3px;
@@ -43,8 +56,13 @@
     vertical-align: middle;
   }
   
-  .modal-content {
-    background: url('assets/images/log-in-bg.png');
+  .modal-dialog {   
+    width: 718px; 
+    background-repeat: no-repeat;
+    background-color: #373737;
+  }
+
+  .modal-content {    
     background-repeat: no-repeat;
     background-color: #373737;
   }

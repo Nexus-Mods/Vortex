@@ -206,7 +206,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         ] : (
         <div>
 
-        <h1>{t('Log in or register on the Nexus Mods website')}</h1>
+        <h2>{t('Log in or register on the Nexus Mods website')}</h2>
 
         <p>{t('Look out for a browser window opening and log in/register if required.')}</p>
 
@@ -215,7 +215,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           <h4>{t('Please click "authorise" on the website')}</h4>
         </div>
 
-        <h2>{t('Website didn\'t open?')}</h2>
+        <h3>{t('Website didn\'t open?')}</h3>
 
         <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
 
@@ -247,7 +247,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
               name='nexus-header'
               svgStyle='#login-dialog path { fill: black }' />        
 
-        <h1>{t('Log in with token')}</h1>
+        <h2>{t('Log in with token')}</h2>
 
         <ol style={{ textAlign: 'left' }}>
         <li>

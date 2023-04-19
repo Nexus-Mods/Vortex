@@ -32,7 +32,6 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
       api.showErrorNotification('Failed to access clipboard', err, { allowReport: false });
     }
-
   }
 
   return (
@@ -45,7 +44,7 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
         <InputGroup.Addon>
           <IconButton
             className='btn-embed'
-            icon='clipboard'
+            icon='clipboard-copy'
             tooltip={'Copy to clipboard'}
             onClick={handleButtonClick} />
         </InputGroup.Addon>

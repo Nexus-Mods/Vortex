@@ -3,9 +3,14 @@
     "nucleo": "Nucleo_Glyph",
     "nucleo_simple": "24px",
     "nucleo_detail": "64px",
-    "fa": "Font-Awesome-SVG-PNG-master/black/svg"
+    "fa": "Font-Awesome-SVG-PNG-master/black/svg",
+    "material_design": "material-design"
   },
   "icons": {
+    "clipboard-copy": {
+      "path": "{material_design}/copy_24px",
+      "scaleStroke": false
+    },
     "window-minimize": {
       "path": "{fa}/window-minimize",
       "scaleStroke": false
