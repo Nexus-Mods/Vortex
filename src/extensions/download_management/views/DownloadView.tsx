@@ -449,6 +449,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         + 'a network drive, the connection may be unstable. '
         + 'Please try resuming once you checked.',
         undefined, false);
+    } else if (err.code === 'Z_DATA_ERROR') {
+      // this indicates the server didn't send gzipped data even though we requested that.
+      // This was only observerd when resuming downloads from beatmods.com. It may be their
+      // server or the server is reporting capabilities incorrectly or it does and we don't
+      // support the config correctly
+      this.props.onShowError(
+        title,
+        'Failed to resume download. This may be caused by a misconfiguration on the server '
+        + 'or Vortex doesn\'t support resume on this server configuration. '
+        + 'Apologies for the inconvenience.',
+        undefined, false);
     } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
       this.props.onShowError(title,
         'Network communication error (SSL payload corrupted). '
