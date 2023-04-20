@@ -221,9 +221,6 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
   const stackErr = new Error();
 
   return oauth.sendRequest((err: Error, token: ITokenReply) => {
-
-    console.log('received reply from site for this state', token);
-
     // received reply from site for this state
 
     bringToFront();

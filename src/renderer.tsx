@@ -349,6 +349,7 @@ function errorHandler(evt: any) {
       });
       extensions?.getApi()?.showErrorNotification?.('Unhandled exception in extension', error, {
         message: extName,
+        allowReport: false,
       });
       return;
     }
