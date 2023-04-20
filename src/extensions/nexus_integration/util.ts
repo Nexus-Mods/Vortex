@@ -81,9 +81,25 @@ export function onCancelLoginImpl(api: IExtensionApi) {
 }
 
 export function bringToFront() {
-  remote.getCurrentWindow().setAlwaysOnTop(true);
-  remote.getCurrentWindow().show();
-  remote.getCurrentWindow().setAlwaysOnTop(false);
+  // if window is snapped in windows (aero snap), bringing the window to front
+  // will unsnap it and it will be moved/resized to where it was before snapping.
+  // This is quite irritating so this will store the (snapped) window position
+  // and return to it after bringing the window to front.
+  // This will cause a short "flicker" if the window was snapped and it will
+  // still unsnap the window as far as windows is concerned.
+
+  const window = remote.getCurrentWindow();
+  const [x, y] = window.getPosition();
+  const [w, h] = window.getSize();
+
+  window.setAlwaysOnTop(true);
+  window.show();
+  window.setAlwaysOnTop(false);
+
+  setTimeout(() => {
+    window.setPosition(x, y);
+    window.setSize(w, h);
+  }, 100);
 }
 
 function genId() {
