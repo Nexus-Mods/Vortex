@@ -56,13 +56,13 @@ function makeResultPage(success: boolean) {
   if (success) {
 
   html.push(`
-    <h1>Vortex sign in successful!</h1>
+    <h1>Vortex log in successful!</h1>
   `);
 
   } else {
 
   html.push(`
-    <h1>Vortex was unable to sign in</h1>
+    <h1>Vortex was unable to log in</h1>
     <p style="font-size: 1.2em;">Please check Vortex for more information</a></p>
   `);
   }
