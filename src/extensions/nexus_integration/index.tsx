@@ -464,7 +464,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       } else if (truthy(revisionNumber) || truthy(revisionId)) {
         fetchPromise = getCollectionInfo(nexus, collectionSlug, revisionNumber, revisionId)
           .catch(err => {
-            const errorLevel = ['COLLECTION_UNDER_MODERATION'].includes(err.code) ? 'warn' : 'error';
+            const errorLevel = ['COLLECTION_UNDER_MODERATION', 'NOT_FOUND'].includes(err.code) ? 'warn' : 'error';
             log(errorLevel, 'failed to fetch nexus info about collection', {
               gameId, collectionSlug, revisionNumber, error: err.message });
             return undefined;
