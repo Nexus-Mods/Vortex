@@ -258,11 +258,15 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         </li>
         <li>
         <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
-        <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
+     
+
+
+            <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
               <FormControl
                 componentClass='textarea'
-                style={{display: 'inline', verticalAlign: 'top', height: '6em', resize: 'none'}}
-                placeholder={t('Paste that api key into this input field')}
+                className='token-paste-textarea'
+                style={{}}
+                placeholder={t('Paste token here')}
                 value={apiKeyInput}
                 onChange={this.updateAPIKey}
                 onContextMenu={this.onShowContext}
@@ -277,8 +281,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
                   { title: t('Paste'), action: this.handlePaste, show: true },
                 ]}
               />
-              <FormFeedback />
-              {keyValid ? null : <ControlLabel>{t('Invalid key')}</ControlLabel>}
+              <FormFeedback />             
             </FormGroup>
 
         </li>
@@ -287,10 +290,17 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         
             <Button
               tooltip={t('Save')}
+              onClick={this.applyKey}
               // disabled={!keyValid}
             >
               {t('Save')}
             </Button>
+
+            <div className='login-invalid-key-group' style={{visibility: keyValid?'hidden':'visible'}}>
+            <p className='login-invalid-key-danger'>{t('Your token was not recognised.')}</p>
+              <p className='login-invalid-key-details'>{t('Please try again. Copy the token using the button on the website.')}</p>
+              </div>
+
           
       </div>
     );

@@ -24,7 +24,13 @@
     min-height: 250px;
   }
 
-
+  .token-paste-textarea {
+    background-color: #2A2C2B;
+    padding: 6px;
+    height: 4.2em;
+    resize: none;
+    border: 1px solid #AAAAAA;
+  }
 
   .login-copy-to-clipboard {
     margin-top: 3px;
@@ -33,6 +39,24 @@
     text-align: right;
     padding: 0;    
   } 
+
+  .login-invalid-key-group {
+    margin-top: 3px;
+    margin-bottom: 0;
+    
+    text-align: left;
+    padding: 0;    
+  } 
+
+  .login-invalid-key-danger {
+    margin: 0;
+    color: $brand-danger;
+  }
+
+  .login-invalid-key-details {
+    margin: 0;
+    color: white;
+  }
 
   .login-please-click {
     text-transform: uppercase;
