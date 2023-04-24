@@ -127,7 +127,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     if (this.mContext === undefined) {
-      return Promise.reject(new Error('No deployment in progress'));
+      const err = new Error('No deployment in progress');
+      err['attachLogOnReport'] = true;
+      return Promise.reject(err);
     }
 
     const context = this.mContext;
