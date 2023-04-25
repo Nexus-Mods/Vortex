@@ -29,8 +29,6 @@ import { findDOMNode } from 'react-dom';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { dispatch } from 'd3-dispatch';
-import { useEffect } from 'react';
 
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
@@ -38,6 +36,7 @@ const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
 export interface IBaseProps extends WithTranslation {
   visible: boolean;
+  onReceiveCode: (code: string, state?: string) => Promise<void>;
   onHide: () => void;
   onCancelLogin: () => void;
 }
@@ -106,7 +105,8 @@ interface ILoginDialogState {
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
-  private mKeyValidation = /^[a-zA-Z0-9\-]*$/;
+  // private mKeyValidation = /^[a-zA-Z0-9\-]*$/;
+  private mKeyValidation = /^[a-zA-Z0-9\-=]*$/;
   private mModalRef = React.createRef<ModalBody>();
 
   constructor(props: IProps) {
@@ -117,7 +117,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       apiKeyInput: '',
       requested: false,
       context: undefined,
-      showElement: false
+      showElement: false,
     });
   }
 
@@ -235,8 +235,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderTroubleshoot() {
-    const { apiKeyInput, context, showElement } = this.state;
-    const { t, loginError, oauthPending } = this.props;
+    const { apiKeyInput, context } = this.state;
+    const { t, oauthPending } = this.props;
 
     const keyValid = this.mKeyValidation.test(apiKeyInput);
 
@@ -287,7 +287,6 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         </li>
         </ol>
 
-        
             <Button
               tooltip={t('Save')}
               onClick={this.applyKey}
@@ -300,11 +299,17 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
             <p className='login-invalid-key-danger'>{t('Your token was not recognised.')}</p>
               <p className='login-invalid-key-details'>{t('Please try again. Copy the token using the button on the website.')}</p>
               </div>
-
-          
       </div>
     );
   }
+
+  private decodeB64(input: string): string {
+    return Buffer.from(input, 'base64').toString();
+  }
+
+  private applyKey = async () => {
+    await this.props.onReceiveCode(this.decodeB64(this.state.apiKeyInput));
+  };
 
   private onShowContext = (event: React.MouseEvent<any>) => {
     const modalDom = findDOMNode(this.mModalRef.current) as Element;
@@ -343,38 +348,16 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private updateAPIKey = (evt: any) => {
-    this.nextState.apiKeyInput = evt.target.value;
-  }
-
-  private applyKey = () => {
-    const { apiKeyInput } = this.state;
-    const { onHide, onResetLoginId, onSetAPIKey } = this.props;
-    onSetAPIKey(apiKeyInput);
-    onResetLoginId();
-    onHide();
-  }
+    this.nextState.apiKeyInput = evt.target.value.trim();
+  };
 
   private close = () => {
-
     const { onResetOauthPending } = this.props;
     
-    console.log('close button pressed');
-
     // wipe the redux state
     onResetOauthPending();
 
     this.hide();
-    
-    /*
-    // if we are mid login, then request confirmation before we close
-    if (oauthPending !== undefined) {
-      
-      // request confirmation before we close
-      this.renderConfirmDialog().catch(err => {
-        log('error', 'failed to show dialog', err.message);
-      });
-    }*/
-      
   }
 
   private troubleshoot = () => {

@@ -271,7 +271,7 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
   });
 }
 
-export function oauthCallback(api: IExtensionApi, code: string, state: string) {
+export function oauthCallback(api: IExtensionApi, code: string, state?: string) {
   // the result of this is reported to the callback from requestLogin;
   return oauth.receiveCode(code, state);
 }

@@ -127,14 +127,20 @@ class OAuth {
     onOpenPage(url);
   }
 
-  public async receiveCode(code: string, state: string): Promise<void> {
-    try {
-      const tokenReply = await this.sentAuthorizeToken(code)
-      this.mStates[state]?.(null, tokenReply);
-    } catch (err) {
-      this.mStates[state]?.(err, undefined);
+  public async receiveCode(code: string, state?: string): Promise<void> {
+    if (state === undefined) {
+      for (const key of Object.keys(this.mStates)) {
+        await this.receiveCode(code, key);
+      }
+    } else {
+      try {
+        const tokenReply = await this.sentAuthorizeToken(code)
+        this.mStates[state]?.(null, tokenReply);
+      } catch (err) {
+        this.mStates[state]?.(err, undefined);
+      }
+      delete this.mStates[state];
     }
-    delete this.mStates[state];
   }
 
   private async ensureServer(): Promise<number> {
@@ -155,7 +161,7 @@ class OAuth {
   }
 
   private stopServer() {
-    this.mServer?.close();
+    this.mServer?.close?.();
     this.mServer = undefined;
   }
 

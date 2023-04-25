@@ -81,14 +81,14 @@
   }
   
   .modal-dialog {   
-    width: 718px; 
+    width: 60em; 
     background-repeat: no-repeat;
-    background-color: #373737;
+    background-color: $brand-bg;
   }
 
   .modal-content {    
     background-repeat: no-repeat;
-    background-color: #373737;
+    background-color: $brand-bg;
   }
 
   .modal-body {

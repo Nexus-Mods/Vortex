@@ -1416,6 +1416,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerDialog('login-dialog', LoginDialog, () => ({
     onCancelLogin,
+    onReceiveCode: (code: string, state: string) => oauthCallback(context.api, code, state),
   }));
 
   const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
