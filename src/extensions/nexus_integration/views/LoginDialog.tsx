@@ -308,7 +308,16 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private applyKey = async () => {
-    await this.props.onReceiveCode(this.decodeB64(this.state.apiKeyInput));
+    try {
+      const decoded = JSON.parse(this.decodeB64(this.state.apiKeyInput));
+      await this.props.onReceiveCode(decoded.authorization_code, decoded.state);
+    } catch (err) {
+      this.context.api.showDialog('error', 'Invalid token', {
+        text: 'The token you pasted was invalid.', message: err.message
+      }, [
+        { label: 'Close' }
+      ]);
+    }
   };
 
   private onShowContext = (event: React.MouseEvent<any>) => {
@@ -321,8 +330,13 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     this.nextState.context = undefined;
   }
 
+  private storeKey(key: string) {
+    this.nextState.apiKeyInput = key.replace(/\s/g, '');
+
+  }
+
   private handlePaste = () => {
-    this.nextState.apiKeyInput = clipboard.readText();
+    this.storeKey(clipboard.readText());
     this.nextState.context = undefined;
   }
 
@@ -348,7 +362,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private updateAPIKey = (evt: any) => {
-    this.nextState.apiKeyInput = evt.target.value.trim();
+    this.storeKey(evt.target.value);
   };
 
   private close = () => {
