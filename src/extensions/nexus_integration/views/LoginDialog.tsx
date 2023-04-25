@@ -311,6 +311,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     try {
       const decoded = JSON.parse(this.decodeB64(this.state.apiKeyInput));
       await this.props.onReceiveCode(decoded.authorization_code, decoded.state);
+      this.props.onHide();
     } catch (err) {
       this.context.api.showErrorNotification('Invalid token', err, { allowReport: false });
     }
