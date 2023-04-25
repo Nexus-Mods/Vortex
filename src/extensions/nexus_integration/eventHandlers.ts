@@ -358,7 +358,9 @@ export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
       .then(res => (res ?? []).map(coll => coll.currentRevision))
       .catch(err => {
         if (!['NOT_FOUND', 'UNAUTHORIZED'].includes(err.code)) {
-          api.showErrorNotification('Failed to get list of collections', err);
+          api.showErrorNotification('Failed to get list of collections', err, {
+            allowReport: !['MODEL_NOT_FOUND'].includes(err.code)
+          });
         }
         return Promise.resolve([]);
       });
