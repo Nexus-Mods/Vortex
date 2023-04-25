@@ -9,6 +9,7 @@ import { OAUTH_REDIRECT_URL } from '../constants';
 import { inspect } from 'node:util';
 import VORTEX_ICON from './vortexicon';
 import NEXUSMODS_LOGO from './nexusmodslogo';
+import { ArgumentInvalid } from '../../../util/CustomErrors';
 
 type TokenType = 'Bearer';
 
@@ -133,6 +134,9 @@ class OAuth {
         await this.receiveCode(code, key);
       }
     } else {
+      if (this.mStates[state] === undefined) {
+        throw new ArgumentInvalid('unexpected authorize token');
+      }
       try {
         const tokenReply = await this.sentAuthorizeToken(code)
         this.mStates[state]?.(null, tokenReply);
@@ -206,7 +210,11 @@ class OAuth {
 
     if ((code !== undefined) && (state !== undefined)) {
       (async () => {
-        await this.receiveCode(code, state as string);
+        try {
+          await this.receiveCode(code, state as string);
+        } catch (err) {
+          // ignore unexpected codes
+        }
       })();
       resp.write(makeResultPage(true));
 

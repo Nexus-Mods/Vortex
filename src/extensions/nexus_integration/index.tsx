@@ -569,7 +569,11 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         .find(iter => iter.modId === nxmUrl.modId) !== undefined;
 
       if (nxmUrl.type === 'oauth') {
-        return oauthCallback(api, nxmUrl.oauthCode, nxmUrl.oauthState);
+        try {
+          return oauthCallback(api, nxmUrl.oauthCode, nxmUrl.oauthState);
+        } catch (err) {
+          // ignore unexpected code
+        }
       } else if ((nxmUrl.gameId === SITE_ID) && isExtAvailable) {
         if (install) {
           return api.emitAndAwait('install-extension',
