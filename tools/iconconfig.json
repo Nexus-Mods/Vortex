@@ -47,6 +47,10 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_small-down",
       "rmFill": true
     },
+    "spinner_new": {
+      "path": "custom/spinner_new",
+      "rmFill": true
+    },
     "spinner": {
       "path": "custom/753",
       "rmFill": true
