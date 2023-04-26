@@ -83,12 +83,11 @@
   .modal-dialog {   
     width: 60em; 
     background-repeat: no-repeat;
-    background-color: $brand-bg;
+    background-color: #373737;
   }
 
-  .modal-content {    
-    background-repeat: no-repeat;
-    background-color: $brand-bg;
+  .modal-content {
+    background-color: inherit;
   }
 
   .modal-body {

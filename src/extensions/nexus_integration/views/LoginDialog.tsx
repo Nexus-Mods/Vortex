@@ -102,6 +102,7 @@ interface ILoginDialogState {
   requested: boolean;
   context: { x: number, y: number };
   showElement: boolean;
+  invalidToken: boolean;
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
@@ -118,6 +119,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       requested: false,
       context: undefined,
       showElement: false,
+      invalidToken: false,
     });
   }
 
@@ -235,7 +237,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderTroubleshoot() {
-    const { apiKeyInput, context } = this.state;
+    const { apiKeyInput, context, invalidToken } = this.state;
     const { t, oauthPending } = this.props;
 
     const keyValid = this.mKeyValidation.test(apiKeyInput);
@@ -295,7 +297,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
               {t('Save')}
             </Button>
 
-            <div className='login-invalid-key-group' style={{visibility: keyValid?'hidden':'visible'}}>
+            <div className='login-invalid-key-group' style={{visibility: invalidToken?'visible':'hidden'}}>
             <p className='login-invalid-key-danger'>{t('Your token was not recognised.')}</p>
               <p className='login-invalid-key-details'>{t('Please try again. Copy the token using the button on the website.')}</p>
               </div>
@@ -311,8 +313,10 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     try {
       const decoded = JSON.parse(this.decodeB64(this.state.apiKeyInput));
       await this.props.onReceiveCode(decoded.authorization_code, decoded.state);
+      this.nextState.invalidToken = false;
       this.props.onHide();
     } catch (err) {
+      this.nextState.invalidToken = true;
       this.context.api.showErrorNotification('Invalid token', err, { allowReport: false });
     }
   };
@@ -363,8 +367,10 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   };
 
   private close = () => {
-    const { onResetOauthPending } = this.props;
-    
+    const { onResetOauthPending } = this.props;    
+
+    this.nextState.invalidToken = false;
+
     // wipe the redux state
     onResetOauthPending();
 
