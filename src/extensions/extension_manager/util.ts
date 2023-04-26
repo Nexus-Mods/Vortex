@@ -245,7 +245,8 @@ export function downloadAndInstallExtension(api: IExtensionApi,
   } else if (truthy(ext.githubRelease)) {
     dlPromise = downloadGithubRelease(api, ext);
   } else {
-    dlPromise = Promise.reject(new ProcessCanceled('Failed to download'));
+    // don't report an error if the extension list contains invalid data
+    return Promise.resolve(false);
   }
 
   const sourceName: string = truthy(ext.modId)

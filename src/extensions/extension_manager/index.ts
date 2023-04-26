@@ -103,6 +103,7 @@ function checkForUpdates(api: IExtensionApi) {
 
   return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
     .then((success: boolean[]) => {
+      api.dismissNotification('extension-updates');
       localState.reloadNecessary = true;
       if (success.find(iter => iter === true)) {
         if (forceRestart) {
