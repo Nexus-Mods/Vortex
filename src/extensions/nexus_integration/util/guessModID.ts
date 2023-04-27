@@ -1,4 +1,5 @@
 import { IExtensionApi, ILookupResult, IModInfo } from '../../../types/IExtensionContext';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import { batchDispatch, truthy } from '../../../util/util';
 import { setDownloadModInfo } from '../../download_management/actions/state';
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -130,23 +131,29 @@ export function fillNexusIdByMD5(api: IExtensionApi,
         return idxProm
           .then(idx => {
             const info: IModInfo = lookupResults[idx].value;
-            if (!truthy(info.sourceURI)) {
-              return;
+            try {
+              if (truthy(info.sourceURI)) {
+                throw new ProcessCanceled('no source uri');
+              }
+              const nxmUrl = new NXMUrl(info.sourceURI);
+              if (mod.state === 'installed') {
+                batchDispatch(api.store, [
+                  setModAttribute(gameId, mod.id, 'modId', nxmUrl.modId),
+                  setModAttribute(gameId, mod.id, 'fileId', nxmUrl.fileId),
+                  setModAttribute(gameId, mod.id, 'downloadGame', info.gameId),
+                ]);
+              }
+              if (hasArchive) {
+                batchDispatch(api.store, [
+                  setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.modId),
+                  setDownloadModInfo(mod.archiveId, 'nexus.ids.fileId', nxmUrl.fileId),
+                ]);
+              }
+            } catch (err) {
+              // don't use nxm info if parsing failed
             }
-            const nxmUrl = new NXMUrl(info.sourceURI);
-            if (mod.state === 'installed') {
-              batchDispatch(api.store, [
-                setModAttribute(gameId, mod.id, 'modId', nxmUrl.modId),
-                setModAttribute(gameId, mod.id, 'fileId', nxmUrl.fileId),
-                setModAttribute(gameId, mod.id, 'downloadGame', info.gameId),
-              ]);
-            }
-            if (hasArchive) {
-              batchDispatch(api.store, [
-                setDownloadModInfo(mod.archiveId, 'nexus.ids.modId', nxmUrl.modId),
-                setDownloadModInfo(mod.archiveId, 'nexus.ids.fileId', nxmUrl.fileId),
-              ]);
 
+            if (hasArchive) {
               const downloads = api.getState().persistent.downloads.files;
 
               if (info.gameId !== downloads[mod.archiveId].game[0]) {
