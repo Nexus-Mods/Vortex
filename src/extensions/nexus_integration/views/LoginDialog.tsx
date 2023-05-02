@@ -6,6 +6,7 @@ import Icon from '../../../controls/Icon';
 import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
 import CopyClipboardInput from '../../../controls/CopyClipboardInput';
+import PlaceholderTextArea from '../../../controls/PlaceholderTextArea';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
@@ -261,30 +262,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         <li>
         <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
      
-
-
-            <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
-              <FormControl
-                componentClass='textarea'
-                className='token-paste-textarea'
-                style={{}}
-                placeholder={t('Paste token here')}
-                value={apiKeyInput}
-                onChange={this.updateAPIKey}
-                onContextMenu={this.onShowContext}
-                draggable={false}
-              />
-              <ContextMenu
-                instanceId='login-context'
-                visible={context !== undefined}
-                position={context}
-                onHide={this.onHideContext}
-                actions={[
-                  { title: t('Paste'), action: this.handlePaste, show: true },
-                ]}
-              />
-              <FormFeedback />             
-            </FormGroup>
+        <PlaceholderTextArea t={t} mModalRef={this.mModalRef} className='token-paste-textarea' onChange={this.updateAPIKey}/>
 
         </li>
         </ol>
