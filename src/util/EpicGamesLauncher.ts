@@ -198,7 +198,11 @@ class EpicGamesLauncher implements IGameStore {
           return Promise.resolve(undefined);
         }));
       })
-      .then((games) => games.filter(game => game !== undefined));
+      .then((games) => games.filter(game => game !== undefined))
+      .catch(err => {
+        log('error', 'Failed to parse Epic Games manifests', err);
+        return Promise.resolve([]);
+      });
   }
 }
 
