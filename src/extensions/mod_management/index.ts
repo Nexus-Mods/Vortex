@@ -1247,13 +1247,13 @@ function once(api: IExtensionApi) {
 
   api.events.on(
       'remove-mod',
-      (gameMode: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
-          onRemoveMod(api, getAllActivators(), gameMode, modId, cb, options));
+      (gameId: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
+          onRemoveMod(api, getAllActivators(), gameId, modId, cb, options));
 
   api.events.on('remove-mods',
-       (gameMode: string, modIds: string[], cb?: (error: Error) => void,
+       (gameId: string, modIds: string[], cb?: (error: Error) => void,
         options?: IRemoveModOptions) => {
-      onRemoveMods(api, getAllActivators(), gameMode, modIds, cb, options);
+      onRemoveMods(api, getAllActivators(), gameId, modIds, cb, options);
     });
 
   api.events.on('create-mod',

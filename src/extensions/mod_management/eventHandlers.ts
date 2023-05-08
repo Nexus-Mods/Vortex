@@ -613,20 +613,24 @@ function undeployMods(api: IExtensionApi,
 
 export function onRemoveMods(api: IExtensionApi,
                              activators: IDeploymentMethod[],
-                             gameMode: string,
+                             gameId: string,
                              modIds: string[],
                              callback?: (error: Error) => void,
                              options?: IRemoveModOptions) {
   const store = api.store;
   const state: IState = store.getState();
 
+  if (gameId === undefined) {
+    return callback(new ProcessCanceled('No game id assigned to remove mods from'));
+  }
+
   modIds = modIds.filter(modId => truthy(modId));
 
-  log('debug', 'removing mods', { game: gameMode, mods: modIds });
+  log('debug', 'removing mods', { game: gameId, mods: modIds });
 
   // reject trying to remove mods that are actively being installed/downloaded
   const notInstalled = modIds.find(modId => {
-    const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
+    const modState = getSafe(state, ['persistent', 'mods', gameId, modId, 'state'], undefined);
     return (modState !== undefined)
         && !['downloaded', 'installed'].includes(modState);
   });
@@ -638,7 +642,7 @@ export function onRemoveMods(api: IExtensionApi,
     return;
   }
 
-  const profileId = state.settings.profiles.lastActiveProfile[gameMode];
+  const profileId = state.settings.profiles.lastActiveProfile[gameId];
 
   // is it even a plausible scenario that there is no profile active?
   if (profileId !== undefined) {
@@ -653,9 +657,9 @@ export function onRemoveMods(api: IExtensionApi,
   }
 
   // undeploy mods, otherwise we'd leave orphaned links in the game directory
-  const installationPath = installPathForGame(state, gameMode);
+  const installationPath = installPathForGame(state, gameId);
 
-  const mods = state.persistent.mods[gameMode];
+  const mods = state.persistent.mods[gameId];
   const removeMods: IMod[] = modIds
     .map(modId => mods[modId])
     .filter(mod => mod !== undefined);
@@ -666,18 +670,18 @@ export function onRemoveMods(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modIds[0]}`));
 
-  api.emitAndAwait('will-remove-mods', gameMode, removeMods.map(mod => mod.id))
-    .then(() => undeployMods(api, activators, gameMode, removeMods))
+  api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id))
+    .then(() => undeployMods(api, activators, gameId, removeMods))
     .then(() => Promise.mapSeries(removeMods,
         (mod: IMod, idx: number, length: number) => {
       options?.progressCB?.(idx, length, modName(mod));
       const forwardOptions = { ...(options || {}), modData: { ...mod } };
-      return api.emitAndAwait('will-remove-mod', gameMode, mod.id, forwardOptions)
+      return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
       .then(() => {
         if (truthy(mod) && truthy(mod.installationPath)) {
           const fullModPath = path.join(installationPath, mod.installationPath);
           log('debug', 'removing files for mod',
-              { game: gameMode, mod: mod.id });
+              { game: gameId, mod: mod.id });
           return fs.removeAsync(fullModPath)
             .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
             .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
@@ -686,8 +690,8 @@ export function onRemoveMods(api: IExtensionApi,
         }
       })
       .then(() => {
-        store.dispatch(removeMod(gameMode, mod.id));
-        return api.emitAndAwait('did-remove-mod', gameMode, mod.id, forwardOptions);
+        store.dispatch(removeMod(gameId, mod.id));
+        return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
       });
     }))
     .then(() => {
@@ -723,15 +727,15 @@ export function onRemoveMods(api: IExtensionApi,
       }
     })
     .finally(() => {
-      log('debug', 'done removing mods', { game: gameMode, mods: modIds });
+      log('debug', 'done removing mods', { game: gameId, mods: modIds });
       store.dispatch(stopActivity('mods', `removing_${modIds[0]}`));
-      return api.emitAndAwait('did-remove-mods', gameMode, removeMods);
+      return api.emitAndAwait('did-remove-mods', gameId, removeMods);
     });
 }
 
 export function onRemoveMod(api: IExtensionApi,
                             activators: IDeploymentMethod[],
-                            gameMode: string,
+                            gameId: string,
                             modId: string,
                             callback?: (error: Error) => void,
                             options?: IRemoveModOptions) {
@@ -739,7 +743,7 @@ export function onRemoveMod(api: IExtensionApi,
     callback?.(null);
     return;
   }
-  return onRemoveMods(api, activators, gameMode, [modId], callback, options);
+  return onRemoveMods(api, activators, gameId, [modId], callback, options);
 }
 
 export function onAddMod(api: IExtensionApi, gameId: string,
