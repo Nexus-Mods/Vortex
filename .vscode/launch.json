@@ -1,5 +1,20 @@
 {
-  "version": "0.0.1",
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Debug Electron",
+      "configurations": [
+        "Debug Main Process",
+        "Debug Renderer Process"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "",
+ ,       "order": 1
+      },
+      "stopAll": true
+    }
+  ],
   "configurations": [
     {
       "name": "Launch",
@@ -23,7 +38,8 @@
         "HIGHLIGHT_I18N": "false",
         "BLUEBIRD_DEBUG": "0",
         "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
-        "DEBUG_REACT_RENDERS": "false"
+        "DEBUG_REACT_RENDERS": "false",
+        "START_DEVTOOLS": "true",
       },
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
@@ -72,6 +88,47 @@
       "runtimeArgs": [
         "--nolazy"
       ]
-    }
+    },
+    {
+      "name": "Debug Main Process",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/main.js",
+      "cwd": "${workspaceRoot}",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+        "--no-sandbox",
+        "--remote-debugging-port=9229",
+        "."
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "SIMULATE_FS_ERRORS": "false",
+        "HIGHLIGHT_I18N": "false",
+        "BLUEBIRD_DEBUG": "0",
+        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
+        "DEBUG_REACT_RENDERS": "false",
+        "START_DEVTOOLS": "false",
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": []
+    },
+    {
+      "name": "Debug Renderer Process",
+      "port": 9229,
+      "request": "attach",
+      "type": "chrome",
+      "timeout": 60000,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceRoot}/node_modules/**",
+        "${workspaceRoot}/dist-electron/**"
+      ]
+    },
   ]
 }

@@ -237,7 +237,8 @@ async function main(): Promise<void> {
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
 
-  if (process.env.NODE_ENV === 'development') {
+  if ((process.env.NODE_ENV === 'development')
+      && (!app.commandLine.hasSwitch('remote-debugging-port'))) {
     app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 
