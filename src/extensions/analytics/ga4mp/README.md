@@ -1,0 +1,3 @@
+We are using `ga4mp.esm.js` from https://ga4mp.dev/ directly and not installed via yarn/npm as Electron isn't playing nice with the ESM module and it won't import. It doesn't ship with a commonjs build even though it claims it does and ikt's pacage.json is broken as of 0.0.4.
+
+This is primarily for testing at this point alongside our older UA analytics so we can work out if to invest time in forking and iterating on this project or to move to a different analytics solution.

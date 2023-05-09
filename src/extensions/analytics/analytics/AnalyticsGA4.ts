@@ -1,9 +1,8 @@
 //import gtag from 'gtag-ga';
 import ua from 'universal-analytics';
 
-import { GA4_API_SECRET_BETA, GA4_BETA_MEASUREMENT_ID, GA4_NEXT_MEASUREMENT_ID, GA4_STABLE_MEASUREMENT_ID } from '../constants';
-import ga4mp from '../dist/ga4mp.esm';
-import { getApplication } from 'vortex-api/lib/util/application';
+import { GA4_BETA_MEASUREMENT_ID, GA4_NEXT_MEASUREMENT_ID, GA4_STABLE_MEASUREMENT_ID } from '../constants';
+import  ga4mp  from  '../ga4mp/ga4mp.esm';
 
 class AnalyticsGA4 {
   public user: string;
