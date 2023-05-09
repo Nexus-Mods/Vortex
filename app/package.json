@@ -1,7 +1,8 @@
 {
   "name": "vortex",
-  "version": "1.8.3",
-  "productName": "Vortex",
+  "version": "1.8.2",
+  "productName": "Vortex"
+  ,
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
