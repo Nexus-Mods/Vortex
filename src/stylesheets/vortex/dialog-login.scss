@@ -10,7 +10,7 @@
   }
 
   .input-group {
-    border: 1px solid #AAAAAA;
+    border: 1px solid $text-color;
     padding: 2px;
   }
 
@@ -29,11 +29,11 @@
   }
 
   .token-paste-textarea {
-    background-color: #2A2C2B;
+    background-color: $brand-bg;
     padding: 6px;
     height: 4.2em;
     resize: none;
-    border: 1px solid #AAAAAA;
+    border: 1px solid $text-color;
   }
 
   .login-copy-to-clipboard {
@@ -54,12 +54,12 @@
 
   .login-invalid-key-danger {
     margin: 0;
-    color: #FF585B;
+    color: $brand-danger;
   }
 
   .login-invalid-key-details {
     margin: 0;
-    color: white;
+    color: $text-color;
   }
 
   .login-please-click {
@@ -87,7 +87,7 @@
   .modal-dialog {   
     width: 60em; 
     background-repeat: no-repeat;
-    background-color: #373737;
+    background-color: $brand-menu;
   }
 
   .modal-content {
