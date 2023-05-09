@@ -6,6 +6,7 @@ import { activeGameId, discoveryByGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
 import Analytics, { DIMENSIONS } from './analytics/Analytics';
+import AnalyticsGA4 from './analytics/AnalyticsGA4';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
 import { HELP_ARTICLE } from './constants';
@@ -58,16 +59,19 @@ function init(context: IExtensionContext): boolean {
     // eg: Custom Modals or custom tabs in the extensions
     context.api.events.on('analytics-track-navigation', pageId => {
       Analytics.trackNavigation(pageId);
+      AnalyticsGA4.trackPageView(pageId);
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-event', (category, action, label?, value?) => {
       Analytics.trackEvent(category, action, label, value);
+      AnalyticsGA4.trackEvent(action.toLocaleLowerCase(), category, label, value);
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-click-event', (category, label?, value?) => {
       Analytics.trackClickEvent(category, label, value);
+      AnalyticsGA4.trackClickEvent(category, label, value);
     });
 
     // Used to ensure a new dimension is set when changing game by restarting the UA tracking
@@ -116,6 +120,18 @@ function init(context: IExtensionContext): boolean {
             ? 'Supporter'
             : 'Member';
 
+
+
+        AnalyticsGA4.start(instanceId, updateChannel, {
+          ["VortexVersion"]: getApplication().version,
+          ["Membership"]: membership,
+          ["Game"]: gameId,
+          ["GameVersion"]: gameVersion,
+          ["Theme"]: theme,
+          ["Sandbox"]: state.settings.mods['installerSandbox'] ?? true,
+        });
+
+        
         Analytics.start(instanceId, updateChannel, {
           [DIMENSIONS.VortexVersion]: getApplication().version,
           [DIMENSIONS.Membership]: membership,
