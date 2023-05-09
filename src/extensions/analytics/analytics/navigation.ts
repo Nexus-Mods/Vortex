@@ -1,6 +1,7 @@
 import { truthy } from '../../../util/util';
 import Analytics from './Analytics';
 import { EventListeners, StateListeners } from '../types';
+import AnalyticsGA4 from './AnalyticsGA4';
 
 export const NAVIGATION_STATE_LISTENERS: StateListeners = [
   {
@@ -9,6 +10,7 @@ export const NAVIGATION_STATE_LISTENERS: StateListeners = [
     path: ['session', 'base', 'mainPage'],
     callback: (previous, current) => {
       Analytics.trackNavigation(current);
+      AnalyticsGA4.trackPageView(current);
     },
   },
   {
@@ -17,6 +19,7 @@ export const NAVIGATION_STATE_LISTENERS: StateListeners = [
     callback: (previous, current) => {
       if (truthy(current)) {
         Analytics.trackNavigation(`secondaryPage/${current}`);
+        AnalyticsGA4.trackPageView(`secondaryPage/${current}`);
       } // if current is null it means the secondary page got closed
     },
   },
@@ -25,6 +28,7 @@ export const NAVIGATION_STATE_LISTENERS: StateListeners = [
     path: ['session', 'base', 'settingsPage'],
     callback: (previous, current) => {
       Analytics.trackNavigation(`settings/${current}`);
+      AnalyticsGA4.trackPageView(`settings/${current}`);
     },
   },
   {
@@ -33,6 +37,7 @@ export const NAVIGATION_STATE_LISTENERS: StateListeners = [
     callback: (previous, current) => {
       if (truthy(current)) {
         Analytics.trackNavigation(`dialog/${current}`);
+        AnalyticsGA4.trackPageView(`dialog/${current}`);
       }
     },
   },
@@ -44,6 +49,7 @@ export const NAVIGATION_EVENT_LISTENERS: EventListeners = [
     event: 'show-modal',
     callback: modalId => {
       Analytics.trackNavigation(`modal/${modalId}`);
+      AnalyticsGA4.trackPageView(`modal/${modalId}`);
     },
   },
 ];
