@@ -107,7 +107,8 @@ function transformError(err: any): Error {
                                   + 'archive is damaged, extraction failed or the directory '
                                   + 'was externally modified between extraction and now. '
                                   + `"${err.Message}"`);
-  } else if (err.name === 'System.IO.FileLoadException') {
+  } else if ((err.name === 'System.IO.FileLoadException')
+             || (err.message ?? '').includes('FileLoadException: Could not load file or assembly')) {
     if (err?.FileName) {
       if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
@@ -117,10 +118,10 @@ function transformError(err: any): Error {
           + 'Please install Vortex or unblock all .dll and .exe files manually.');
       }
     } else {
-      result = new SetupError('Windows prevented Vortex from loading the files necessary '
-        + 'to complete installation operations. '
-        + 'This is usually caused if you don\'t install Vortex but only extracted it because '
-        + 'Windows will then block all executable files. '
+      result = new SetupError('Windows prevented Vortex from loading files necessary '
+        + 'to complete the installation. '
+        + 'This is often caused if you extracted Vortex manually instead of running the installer or '
+        + 'because your windows setup or third party software modified access permissions for these files. '
         + 'Please install Vortex or unblock all .dll and .exe files manually.');
     }
   } else if (err.name === 'System.IO.PathTooLongException') {
