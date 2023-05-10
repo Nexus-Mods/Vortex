@@ -31,7 +31,7 @@ import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
-import { isOutdated } from './errorHandling';
+import { disableErrorReport, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n, TString } from './i18n';
 import lazyRequire from './lazyRequire';
@@ -65,6 +65,7 @@ import stringFormat from 'string-template';
 import * as winapiT from 'vortex-run';
 import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
+import { VCREDIST_URL } from '../constants';
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -130,6 +131,11 @@ const showOpenDialog = makeRemoteCall('show-open-dialog',
     }
 
     return electron.dialog.showOpenDialog(window, options);
+  });
+
+const appExit = makeRemoteCallSync('exit-application',
+  (electron, contents, exitCode?: number) => {
+    electron.app.exit(exitCode);
   });
 
 const showErrorBox = makeRemoteCall('show-error-box',
@@ -968,6 +974,45 @@ class ExtensionManager {
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     } else {
       this.migrateExtensions();
+    }
+    this.reportExtLoadErrors();
+  }
+
+  private reportExtLoadErrors() {
+    const nodeLoadErr = Object.values(this.mLoadFailures).flat(1)
+      .find(_ => {
+        const msg = _.args?.message ?? '';
+        return msg.includes('The specified module could not be found.') && msg.includes('.node');
+      });
+    if (nodeLoadErr !== undefined) {
+      this.mApi.store?.dispatch?.(showDialog('error', 'Extension failed to load', {
+        bbcode: 'An unexpected error occurred while Vortex was loading extension:<br/><br/>{{message}}<br/><br/>'
+
+          + 'This is often caused by a bad installation of the app, '
+          + 'a security app interfering with Vortex '
+          + 'or a problem with the Microsoft Visual C++ Redistributable installed on your PC. '
+          + 'To solve this issue please try the following:<br/><br/>'
+
+          + '- Wait a moment and try starting Vortex again<br/>'
+          + '- Reinstall Vortex from the Nexus Mods website<br/>'
+          + '- Install the latest Microsoft Visual C++ Redistributable ([url]{{url}}[/url])<br/>'
+          + '- Disable anti-virus or other security apps that might interfere and install Vortex again<br/><br/>'
+
+          + 'If the issue persists, please create a thread in our support forum for further assistance.',
+        parameters: {
+          message: nodeLoadErr.args.message,
+          url: VCREDIST_URL,
+        },
+      }, [
+        {
+          label: 'Ignore',
+          action: () => disableErrorReport(),
+        },
+        {
+          label: 'Close Vortex',
+          action: () => appExit(),
+        },
+      ], 'ext-load-native-failed'));
     }
   }
 
