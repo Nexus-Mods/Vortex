@@ -1,4 +1,4 @@
-import Analytics from './Analytics';
+import AnalyticsUA from './AnalyticsUA';
 import { EventListeners, StateListeners } from '../types';
 
 export const EVENTS_STATE_LISTENERS: StateListeners = [
@@ -8,7 +8,7 @@ export const EVENTS_STATE_LISTENERS: StateListeners = [
       const previousCount = Object.keys(previous || {}).length;
       const currentCount = Object.keys(current || {}).length;
       if (previousCount < currentCount) {
-        Analytics.trackClickEvent('Extensions', 'Install');
+        AnalyticsUA.trackClickEvent('Extensions', 'Install');
       }
       // else if (previousCount > currentCount) {
       // This "else if" Can't be used to check if an extension is uninstalled because
@@ -20,31 +20,31 @@ export const EVENTS_STATE_LISTENERS: StateListeners = [
   {
     path: ['settings', 'interface', 'profilesVisible'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Settings', `Profile management ${current ? 'ON' : 'OFF'}`);
+      AnalyticsUA.trackClickEvent('Settings', `Profile management ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
     path: ['settings', 'automation', 'deploy'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Settings', `Deploy Mods ${current ? 'ON' : 'OFF'}`);
+      AnalyticsUA.trackClickEvent('Settings', `Deploy Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
     path: ['settings', 'automation', 'install'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Settings', `Install Mods ${current ? 'ON' : 'OFF'}`);
+      AnalyticsUA.trackClickEvent('Settings', `Install Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
     path: ['settings', 'automation', 'enable'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Settings', `Enable Mods ${current ? 'ON' : 'OFF'}`);
+      AnalyticsUA.trackClickEvent('Settings', `Enable Mods ${current ? 'ON' : 'OFF'}`);
     },
   },
   {
     path: ['settings', 'automation', 'start'],
     callback: (_, current) => {
-      Analytics.trackClickEvent('Settings', `Run on startup ${current ? 'ON' : 'OFF'}`);
+      AnalyticsUA.trackClickEvent('Settings', `Run on startup ${current ? 'ON' : 'OFF'}`);
     },
   },
 ];
@@ -53,7 +53,7 @@ export const EVENTS_EVENT_LISTENERS: EventListeners = [
   {
     event: 'activate-game',
     callback: () => {
-      Analytics.trackClickEvent('Header', 'Change game');
+      AnalyticsUA.trackClickEvent('Header', 'Change game');
     },
   },
 ];

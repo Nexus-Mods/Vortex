@@ -1,6 +1,6 @@
 import ua from 'universal-analytics';
 
-class Analytics {
+class AnalyticsUA {
   public user: ua.Visitor;
   public key: { key: string, path: string };
   public uuidV4: string;
@@ -103,6 +103,6 @@ export enum DIMENSIONS {
   Sandbox,
 }
 
-const analytics = new Analytics();
+const analytics = new AnalyticsUA();
 
 export default analytics;

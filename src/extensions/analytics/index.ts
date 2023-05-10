@@ -5,7 +5,7 @@ import { log } from '../../util/log';
 import { activeGameId, discoveryByGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
-import Analytics, { DIMENSIONS } from './analytics/Analytics';
+import AnalyticsUA, { DIMENSIONS } from './analytics/AnalyticsUA';
 import AnalyticsGA4 from './analytics/AnalyticsGA4';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
@@ -34,10 +34,10 @@ function init(context: IExtensionContext): boolean {
       }
       if (newEnabled) {
         initializeAnalytics();
-        Analytics.trackClickEvent('Tracking', 'Allow - Settings');
+        AnalyticsUA.trackClickEvent('Tracking', 'Allow - Settings');
       } else {
-        Analytics.trackClickEvent('Tracking', 'Deny - Settings');
-        Analytics.stop();
+        AnalyticsUA.trackClickEvent('Tracking', 'Deny - Settings');
+        AnalyticsUA.stop();
       }
     });
 
@@ -51,32 +51,32 @@ function init(context: IExtensionContext): boolean {
         showConsentDialog();
       } else if (!current) {
         // If I'm logging out disable tracking
-        Analytics.stop();
+        AnalyticsUA.stop();
       }
     });
 
     // Extra listener in case I need to set a custom navigation,
     // eg: Custom Modals or custom tabs in the extensions
     context.api.events.on('analytics-track-navigation', pageId => {
-      Analytics.trackNavigation(pageId);
+      AnalyticsUA.trackNavigation(pageId);
       AnalyticsGA4.trackPageView(pageId);
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-event', (category, action, label?, value?) => {
-      Analytics.trackEvent(category, action, label, value);
+      AnalyticsUA.trackEvent(category, action, label, value);
       AnalyticsGA4.trackEvent(action.toLocaleLowerCase(), category, label, value);
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-click-event', (category, label?, value?) => {
-      Analytics.trackClickEvent(category, label, value);
+      AnalyticsUA.trackClickEvent(category, label, value);
       AnalyticsGA4.trackClickEvent(category, label, value);
     });
 
     // Used to ensure a new dimension is set when changing game by restarting the UA tracking
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'], () => {
-      if (Analytics.isUserSet()) {
+      if (AnalyticsUA.isUserSet()) {
         initializeAnalytics();
       }
     });
@@ -119,9 +119,7 @@ function init(context: IExtensionContext): boolean {
           : info.isSupporter
             ? 'Supporter'
             : 'Member';
-
-
-
+            
         AnalyticsGA4.start(instanceId, updateChannel, {
           ["VortexVersion"]: getApplication().version,
           ["Membership"]: membership,
@@ -130,9 +128,8 @@ function init(context: IExtensionContext): boolean {
           ["Theme"]: theme,
           ["Sandbox"]: state.settings.mods['installerSandbox'] ?? true,
         });
-
         
-        Analytics.start(instanceId, updateChannel, {
+        AnalyticsUA.start(instanceId, updateChannel, {
           [DIMENSIONS.VortexVersion]: getApplication().version,
           [DIMENSIONS.Membership]: membership,
           [DIMENSIONS.Game]: gameId,
@@ -141,7 +138,8 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
 
-        Analytics.trackEvent('Vortex', 'Version', getApplication().version);
+        AnalyticsUA.trackEvent('Vortex', 'Version', getApplication().version);
+
       } catch (err) {
         // there is no error handling anywhere invoking initializeAnalytics,
         // the results aren't even adviced, so any unhandled exception here would
@@ -176,7 +174,7 @@ function init(context: IExtensionContext): boolean {
                   dismiss();
                   if (result.action === 'Allow') {
                     initializeAnalytics();
-                    Analytics.trackClickEvent('Tracking', 'Allow');
+                    AnalyticsUA.trackClickEvent('Tracking', 'Allow');
                     ignoreNextAnalyticsStateChange = true;
                     context.api.store.dispatch(setAnalytics(true));
                   } else if (result.action === 'Deny') {
