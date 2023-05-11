@@ -33,7 +33,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
       return (
         <ToolbarIcon
           id='check-mods-version'
-          icon='spinner'
+          icon='spinner_new'
           text={t('Checking for mod updates')}
           disabled={true}
           spin
