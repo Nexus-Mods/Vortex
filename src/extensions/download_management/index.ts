@@ -1062,9 +1062,15 @@ function init(context: IExtensionContextExt): boolean {
           maxWorkersDebouncer.schedule(undefined, newValue);
         });
 
+      const state = context.api.getState();
+
+      const maxParallelDownloads = (state.persistent['nexus']?.userInfo?.isPremium === true)
+        ? state.settings.downloads.maxParallelDownloads
+        : 1;
+
       manager = new DownloadManagerImpl(
           selectors.downloadPath(store.getState()),
-          store.getState().settings.downloads.maxParallelDownloads,
+          maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {
             if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
               // this first call is only applied in the renderer for performance reasons
@@ -1096,7 +1102,6 @@ function init(context: IExtensionContextExt): boolean {
       });
       observer = observeImpl(context.api, manager);
 
-      const state = context.api.getState();
       const downloads = state.persistent.downloads?.files ?? {};
       const gameMode = selectors.activeGameId(state);
 

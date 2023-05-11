@@ -692,10 +692,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   const modsInstallPath = selectors.installPath(state);
+  const isPremium = getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false);
   return {
-    parallelDownloads: state.settings.downloads.maxParallelDownloads,
+    parallelDownloads: isPremium ? state.settings.downloads.maxParallelDownloads : 1,
     // TODO: this breaks encapsulation
-    isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
+    isPremium,
     downloadPath: state.settings.downloads.path,
     downloads: state.persistent.downloads.files,
     modsInstallPath,
