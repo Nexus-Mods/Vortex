@@ -454,10 +454,16 @@ function gatherDependencies(
       .map((rule: IModRule) =>
         Promise.resolve(limit.do(() =>
           gatherDependenciesGraph(rule, api, gameMode, recommendations)))
-        .then((node: IDependencyNode) => {
-          onProgress();
-          return node;
-        })),
+          .then((node: IDependencyNode) => {
+            onProgress();
+            return node;
+          })
+          .catch(err => {
+            // gatherDependenciesGraph handles exceptions itself so we shouldn't get here
+            // but better to make sure
+            api.showErrorNotification('Failed to gather dependencies', err);
+            return null;
+          })),
   )
     // tag duplicates
     .then((nodes: IDependencyNode[]) =>

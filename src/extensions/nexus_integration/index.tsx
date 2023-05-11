@@ -706,23 +706,29 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
       .then(() => {
         return nexusConn.modFilesByUid(query,
           processingQueries.map(iter => makeFileUID(iter.repoInfo)) as any[])
-        .then((files: IModFile[]) => {
-        processingQueries.forEach(item => {
-          const uid = makeFileUID(item.repoInfo);
-          const res = files.find(iter => iter['uid'] === uid);
-          if (res !== undefined) {
-            item.resolve(res);
-          } else {
-            // the number of uids we can request in one call may be limited, just retry.
-            // We're supposed to get an error if the request actually failed.
-            pendingQueries.push(item);
-          }
-        });
-        if (pendingQueries.length > 0) {
-          uidLookupDebouncer.schedule();
-        }
+          .then((files: IModFile[]) => {
+            processingQueries.forEach(item => {
+              const uid = makeFileUID(item.repoInfo);
+              const res = files.find(iter => iter['uid'] === uid);
+              if (res !== undefined) {
+                item.resolve(res);
+              } else {
+                // the number of uids we can request in one call may be limited, just retry.
+                // We're supposed to get an error if the request actually failed.
+                pendingQueries.push(item);
+              }
+            });
+          }).catch(err => {
+            processingQueries.forEach(item => {
+              item.reject(err);
+            });
+          })
+          .finally(() =>{
+            if (pendingQueries.length > 0) {
+              uidLookupDebouncer.schedule();
+            }
+          });
       });
-    });
   }, 100, true);
 
   const queue = (repoInfo: IModRepoId): Promise<Partial<IModFile>> => {
