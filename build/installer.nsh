@@ -21,7 +21,7 @@ ignore:
   SetRegView 64
 
   ${If} ${AtLeastWin10}
-    MessageBox MB_OK "Windows 10 detected"
+#    MessageBox MB_OK "Windows 10 detected"
     Quit
   ${EndIf}
 
