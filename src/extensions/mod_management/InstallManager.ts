@@ -3111,7 +3111,7 @@ class InstallManager {
               ];
             }
             const result = await api.showDialog('info', title, {
-              text: instructions,
+              md: instructions,
               checkboxes,
               parameters: {
                 remaining,

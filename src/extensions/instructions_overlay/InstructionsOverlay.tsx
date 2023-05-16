@@ -174,7 +174,9 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             ? typeof (overlay.content) === 'string' ?
               (
                 <ReactMarkdown
-                  className='instructions-overlay-content'
+                  className='instructions-overlay-content' 
+                  allowedElements={['p', 'br', 'a', 'em', 'strong']} 
+                  unwrapDisallowed={true}
                 >
                   {overlay.content}
                 </ReactMarkdown>
