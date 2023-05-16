@@ -20,10 +20,10 @@ ignore:
 !macro customInstall
   SetRegView 64
 
-  ${If} ${AtLeastWin10}
+#  ${If} ${AtLeastWin10}
 #    MessageBox MB_OK "Windows 10 detected"
-    Quit
-  ${EndIf}
+#    Quit
+#  ${EndIf}
 
   ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
   ${If} $1 != "1"
