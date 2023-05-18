@@ -27,19 +27,51 @@ function init(context: IExtensionContext): boolean {
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ['settings', 'analytics', 'enabled'];
-    context.api.onStateChange(analyticsSettings, (oldEnabled: boolean, newEnabled: boolean) => {
+    context.api.onStateChange(analyticsSettings, (oldState, newState) => {
+
+
       if (ignoreNextAnalyticsStateChange) {
         ignoreNextAnalyticsStateChange = false;
         return;
       }
-      if (newEnabled) {
+      if (newState) {
         initializeAnalytics();
         AnalyticsUA.trackClickEvent('Tracking', 'Allow - Settings');
+        AnalyticsGA4.stop();
       } else {
         AnalyticsUA.trackClickEvent('Tracking', 'Deny - Settings');
         AnalyticsUA.stop();
       }
     });
+
+
+
+
+
+    // new settings events
+
+    // register settings tracking event when analytics is changed
+    context.api.onStateChange(['settings', 'analytics', 'enabled'], (oldState, newState) => {
+      AnalyticsGA4.trackSettingsEvent('Analytics', newState);
+    });
+
+    // register settings tracking event when language is changed
+    context.api.onStateChange(['settings', 'interface', 'language'], (oldState, newState) => {
+      AnalyticsGA4.setUserProperty('Language', newState);
+      AnalyticsGA4.trackSettingsEvent('Language', newState);
+    });
+
+    // register settings tracking event when theme is changed
+    context.api.onStateChange(['settings', 'interface', 'currentTheme'], (oldState, newState) => {
+      AnalyticsGA4.setUserProperty('Theme', newState);
+      AnalyticsGA4.trackSettingsEvent('Theme', newState);
+    });
+
+    
+
+
+
+
 
     // Check for user login
     context.api.onStateChange(['persistent', 'nexus', 'userInfo'], (previous, current) => {
@@ -52,6 +84,7 @@ function init(context: IExtensionContext): boolean {
       } else if (!current) {
         // If I'm logging out disable tracking
         AnalyticsUA.stop();
+        AnalyticsGA4.stop();
       }
     });
 
@@ -75,6 +108,7 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Used to ensure a new dimension is set when changing game by restarting the UA tracking
+    // Don't need this for GA4
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'], () => {
       if (AnalyticsUA.isUserSet()) {
         initializeAnalytics();
@@ -106,13 +140,24 @@ function init(context: IExtensionContext): boolean {
           return;
         }
         const state = context.api.getState();
+
+
+
         const gameId = activeGameId(state);
         let gameVersion = '';
         if (gameId) {
           gameVersion = await getGame(gameId)
             .getInstalledVersion(discoveryByGame(state, gameId));
         }
+
         const theme = state.settings.interface['currentTheme'];
+        const language = state.settings.interface['language'];
+
+        const gameCount =  Object.keys(state.persistent.mods).length;
+
+        // reduces array of mods per game into a large array of all mods
+        const modCount = Object.values(state.persistent.mods).reduce(
+          (accumulator, current) => accumulator.concat(Object.keys(current)), []).length;
 
         const membership = info.isPremium
           ? 'Premium'
@@ -124,9 +169,11 @@ function init(context: IExtensionContext): boolean {
           ["VortexVersion"]: getApplication().version,
           ["Membership"]: membership,
           ["Game"]: gameId,
-          ["GameVersion"]: gameVersion,
           ["Theme"]: theme,
           ["Sandbox"]: state.settings.mods['installerSandbox'] ?? true,
+          ["ModCount"]: modCount,
+          ["GameCount"]: gameCount,
+          ["Language"]: language,
         });
         
         AnalyticsUA.start(instanceId, updateChannel, {
@@ -175,6 +222,7 @@ function init(context: IExtensionContext): boolean {
                   if (result.action === 'Allow') {
                     initializeAnalytics();
                     AnalyticsUA.trackClickEvent('Tracking', 'Allow');
+                    AnalyticsGA4.trackClickEvent('Tracking', 'Allow');
                     ignoreNextAnalyticsStateChange = true;
                     context.api.store.dispatch(setAnalytics(true));
                   } else if (result.action === 'Deny') {

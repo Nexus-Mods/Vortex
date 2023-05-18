@@ -104,9 +104,25 @@ class AnalyticsGA4 {
    * @param label 
    * @param value 
    */
-  public trackClickEvent(category:string, label?:string, value?: number) {
+  public trackClickEvent(category:string, label?:string, value?: string | number | boolean) {
     this.trackEvent('click', category, label, value);
   }
+
+    /**
+   * 
+   * @param key 
+   * @param value 
+   */
+    public trackSettingsEvent(key:string, value: string | number | boolean) {
+
+    // send empty page_view as we don't need it for these events and if we dont, it'll always send a default 'Vortex'
+      this.ga4track.trackEvent('settings', {
+        key: key,
+        value: value,  
+        page_title: '',
+        page_location: '' 
+      });
+    }
 
   /**
    * 
@@ -116,17 +132,16 @@ class AnalyticsGA4 {
    * @param value 
    * @returns 
    */
-  public trackEvent(action: string, category: string, label?: string, value?: number) {
+  public trackEvent(action: string, category?: string, label?: string, value?: string | number | boolean) {
 
     if (!this.isUserSet()) return;
 
     // if we are activating a game, take the game and update user properties?
     if(action === "activate") {
       this.ga4track.setUserProperty("Game", label);
-      this.ga4track.setUserProperty("GameVersion", "unknown");
     }
 
-    // send empty page_view as we don't need it for these events and the library defaults
+    // send empty page_view as we don't need it for these events and if we dont, it'll always send a default 'Vortex'
     this.ga4track.trackEvent(action, {
       category: category,
       label: label,
@@ -134,6 +149,11 @@ class AnalyticsGA4 {
       page_title: "",
       page_location: ""     
     });
+  }
+
+  public setUserProperty(key:string, value: string | number | boolean) {
+    // this is updated remotely the next time an event is sent
+    this.ga4track.setUserProperty(key, value);
   }
 
 }
