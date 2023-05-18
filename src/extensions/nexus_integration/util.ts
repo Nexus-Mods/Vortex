@@ -290,8 +290,6 @@ export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
           resolve();
         }
       });
-
-
       //api.store.dispatch(setDialogVisible('login-dialog'));
     });
   } else {
