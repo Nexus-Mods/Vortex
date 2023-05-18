@@ -279,14 +279,20 @@ export function oauthCallback(api: IExtensionApi, code: string, state?: string) 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   if (!isLoggedIn(api.getState())) {
     return new Promise((resolve, reject) => {
+      
+      api.events.emit('request-nexus-login');
+
       api.events.on('did-login', (err: Error) => {
+
         if (err !== null) {
           reject(err);
         } else {
           resolve();
         }
       });
-      api.store.dispatch(setDialogVisible('login-dialog'));
+
+
+      //api.store.dispatch(setDialogVisible('login-dialog'));
     });
   } else {
     return Promise.resolve();
