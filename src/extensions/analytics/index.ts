@@ -12,6 +12,7 @@ import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analyt
 import { HELP_ARTICLE } from './constants';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
+import { IMod } from '@nexusmods/nexus-api/lib/types';
 
 let ignoreNextAnalyticsStateChange = false;
 
@@ -153,11 +154,16 @@ function init(context: IExtensionContext): boolean {
         const theme = state.settings.interface['currentTheme'];
         const language = state.settings.interface['language'];
 
-        const gameCount =  Object.keys(state.persistent.mods).length;
+        const allGameAndMods = state.persistent.mods;
 
-        // reduces array of mods per game into a large array of all mods
-        const modCount = Object.values(state.persistent.mods).reduce(
-          (accumulator, current) => accumulator.concat(Object.keys(current)), []).length;
+        const gameCount = Object.keys(allGameAndMods).length;
+
+        // reduces array of mods per game into a large array of all mod ids
+        const allModsAndCollections = Object.values(allGameAndMods).reduce(
+          (accumulator, current) => accumulator.concat(Object.values(current)), []); 
+
+        const collectionCount = allModsAndCollections.filter((mod) => { return mod.type === 'collection'}).length;
+        const modCount = allModsAndCollections.filter((mod) => { return mod.type !== 'collection'}).length;
 
         const membership = info.isPremium
           ? 'Premium'
@@ -172,6 +178,7 @@ function init(context: IExtensionContext): boolean {
           ["Theme"]: theme,
           ["Sandbox"]: state.settings.mods['installerSandbox'] ?? true,
           ["ModCount"]: modCount,
+          ["CollectionCount"]: collectionCount,
           ["GameCount"]: gameCount,
           ["Language"]: language,
         });
