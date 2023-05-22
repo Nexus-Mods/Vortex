@@ -147,7 +147,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       <Modal
         backdrop='static'
         id='login-dialog'
-        show={(oauthPending !== undefined)}
+        show={visible || (oauthPending !== undefined)}
         onHide={this.hide}
       >
         <Modal.Body ref={this.mModalRef}>
@@ -169,7 +169,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderRegular(): JSX.Element {
-    const { t, loginId, oauthPending } = this.props;
+    const { t, loginId, oauthPending, visible } = this.props;
     const { requested, showElement } = this.state;
     
     return (
@@ -179,7 +179,14 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
               name='nexus-header'
               svgStyle='#login-dialog path { fill: black }' />
         {
-        loginId !== undefined ? [(
+        (visible && (oauthPending === undefined)) ?
+          <div>
+            <h2>{t('Log in or register on the Nexus Mods website')}</h2>
+            <p>{t('To access this content, please login to the Nexus Mods website.')}</p>
+            <p>{t('Click the button below to start the login/registration process.')}</p>
+            <Button tooltip={t('Start login')} onClick={this.login}>{t('Login')}</Button>
+          </div>
+        : loginId !== undefined ? [(
           <LoginInProgress
             key='login-in-progress'
             t={t}

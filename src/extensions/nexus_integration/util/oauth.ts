@@ -202,10 +202,7 @@ class OAuth {
     req.setEncoding('utf-8');
     let msg: string = '';
     req
-      .on('data', chunk => { msg += chunk; })
-      .on('close', () => {
-        log('info', 'received', msg);
-      });
+      .on('data', chunk => { msg += chunk; });
 
 
     if ((code !== undefined) && (state !== undefined)) {
