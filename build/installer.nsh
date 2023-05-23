@@ -20,12 +20,18 @@ ignore:
 !macro customInstall
   SetRegView 64
 
-#  ${If} ${AtLeastWin10}
-#    MessageBox MB_OK "Windows 10 detected"
-#    Quit
-#  ${EndIf}
-
   ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+
+  ${DisableX64FSRedirection}
+  IfFileExists "$SYSDIR\vcruntime140.dll" 0 Missing
+  IfFileExists "$SYSDIR\vcruntime140_1.dll" Present Missing
+
+  Missing:
+  StrCpy $1 "0"
+
+  Present:
+  ${EnableX64FSRedirection}
+
   ${If} $1 != "1"
     File /oname=$PLUGINSDIR\vc_redist.x64.exe "${BUILD_RESOURCES_DIR}\vc_redist.x64.exe"
     ExecWait '"$PLUGINSDIR\vc_redist.x64.exe" /passive /norestart'
