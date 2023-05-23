@@ -46,11 +46,15 @@ export interface IRenderOptions {
   version?: boolean;
 }
 
-export function renderModReference(ref: IModReference, mod?: IMod, options?: IRenderOptions) {
+export function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions) {
   const version = (options === undefined) || options.version !== false;
 
   if (mod !== undefined) {
     return modName(mod, { version });
+  }
+
+  if (ref === undefined) {
+    return '<Invalid reference>';
   }
 
   if (ref.description !== undefined) {

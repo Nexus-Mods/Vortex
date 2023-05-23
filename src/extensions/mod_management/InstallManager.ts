@@ -2401,7 +2401,7 @@ class InstallManager {
           : this.withInstructions(api,
                               modName(sourceMod),
                               renderModReference(dep.reference),
-                              dep.reference.tag ?? downloadId,
+                              dep.reference?.tag ?? downloadId,
                               dep.extra?.['instructions'],
                               recommended, () =>
           this.installModAsync(dep.reference, api, downloadId,
