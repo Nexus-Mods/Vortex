@@ -804,15 +804,23 @@ export enum Section {
 }
 
 export enum Campaign {
-  ViewCollection = 'view+collection',
-  ViewCollectionAsCurator = 'curator+view+collection',
-  Collections = 'Collections',
-  DownloadsAd = 'Downloads-Ad',
-  DashboardAd = 'Dashboard-Ad',
+  ViewCollection = 'view_collection',
+  ViewCollectionAsCurator = 'curator_view_collection',
+  Collections = 'collections',
+  DownloadsAd = 'downloads-ad',
+  DashboardAd = 'dashboard-ad',
+}
+
+export enum Source {
+  HeaderAd = 'header_ad',
+  DownloadsAd = 'downloads_ad',
+  DashboardAd = 'dashboard_ad',
+  CollectionsAd = 'collections_ad'
 }
 
 export interface INexusURLOptions {
   section?: Section;
+  source?: Source;
   campaign?: Campaign | string;
   parameters?: string[];
 }
@@ -827,18 +835,18 @@ function sectionHost(section?: Section) {
 
 export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
 
+  // if no parameters set, then just empty array to start
   const parameters = options?.parameters ?? []; 
   
   // if we have a campaign, then we want to track some data  
   if (options?.campaign !== undefined) {
 
-    // always need this
-    parameters.push('utm_source=vortex');
+    // always need this and will always be 'vortex'
+    parameters.push('utm_medium=vortex');
 
-    // we can use the lowercase of section as the medium as it's the same
-    if (options?.section !== undefined) {
-      parameters.push(`utm_medium=${Section[options.section].toLocaleLowerCase()}`);
-    }
+    // source is location within vortex if we want to differenciate, if not, then just 'vortex' 
+    const source = options?.source ?? 'vortex'; 
+    parameters.push(`utm_source=${source}`);
     
     // we add the campaign
     parameters.push(`utm_campaign=${options.campaign.toString()}`);
