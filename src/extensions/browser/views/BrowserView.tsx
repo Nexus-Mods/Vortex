@@ -275,7 +275,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         {segments.map((seg, idx) =>
           <Item
             data-idx={idx}
-            key={seg}
+            key={`${idx}-${seg}`}
             onClick={this.navCrumb}
             active={idx === segments.length - 1}
           >
