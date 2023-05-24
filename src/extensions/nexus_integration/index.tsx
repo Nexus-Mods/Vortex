@@ -1027,7 +1027,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
         <div className='right-center'>
           <Button
             bsStyle='ad'
-            data-campaign='Header-Ad'
+            data-campaign={Source.HeaderAd}
             onClick={trackAndGoToPremium}
           >
             {t('Go Premium')}
@@ -1039,11 +1039,11 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 }
 
 function goBuyPremium(evt: React.MouseEvent<any>) {
-  //const campaign = evt.currentTarget.getAttribute('data-campaign');
+  const source = evt.currentTarget.getAttribute('data-campaign');
   opn(nexusModsURL(PREMIUM_PATH, { 
     section: Section.Users, 
     campaign: Campaign.BuyPremium,
-    source: Source.HeaderAd
+    source
    })).catch(err => undefined);
 }
 
@@ -1461,7 +1461,7 @@ function init(context: IExtensionContextExt): boolean {
           + 'Go Premium for uncapped download speeds')}
         <Button
           bsStyle='ad'
-          data-campaign='Downloads-Ad'
+          data-campaign={Source.DownloadsBannerAd}
           onClick={trackAndGoToPremium}
         >
           {t('Go Premium')}

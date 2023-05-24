@@ -811,7 +811,8 @@ export enum Campaign {
 
 export enum Source {
   HeaderAd = 'header_ad',
-  DownloadsAd = 'downloads_ad',
+  DownloadsBannerAd = 'downloads_banner_ad',
+  DownloadsNagAd = 'downloads_nag_ad',
   DashboardAd = 'dashboard_ad',
   CollectionsAd = 'collections_ad',
   SettingsAd = 'settings_ad'

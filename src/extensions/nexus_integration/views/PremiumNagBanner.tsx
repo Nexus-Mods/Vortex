@@ -26,7 +26,7 @@ function PremiumNagBanner(props: IPremiumNagBanner) {
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
-      source: Source.DownloadsAd
+      source: Source.DownloadsNagAd
     })).catch(() => null);
   }, [campaign]);
 
