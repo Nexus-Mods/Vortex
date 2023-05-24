@@ -806,16 +806,15 @@ export enum Section {
 export enum Campaign {
   ViewCollection = 'view_collection',
   ViewCollectionAsCurator = 'curator_view_collection',
-  Collections = 'collections',
-  DownloadsAd = 'downloads-ad',
-  DashboardAd = 'dashboard-ad',
+  BuyPremium = 'buy_premium'
 }
 
 export enum Source {
   HeaderAd = 'header_ad',
   DownloadsAd = 'downloads_ad',
   DashboardAd = 'dashboard_ad',
-  CollectionsAd = 'collections_ad'
+  CollectionsAd = 'collections_ad',
+  SettingsAd = 'settings_ad'
 }
 
 export interface INexusURLOptions {

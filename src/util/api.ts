@@ -60,7 +60,7 @@ import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameVali
          makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
          sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
          makeOverlayableDictionary } from './util';
-import { Campaign, Section, Overlayable } from './util';
+import { Campaign, Section, Source, Overlayable } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -158,6 +158,7 @@ export {
   SetupError,
   SevenZip,
   sortMods,
+  Source,
   StarterInfo,
   steam,
   ISteamEntry,

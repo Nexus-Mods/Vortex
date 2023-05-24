@@ -7,7 +7,7 @@ import { PREMIUM_PATH } from '../constants';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
-import { Campaign, nexusModsURL, Section } from '../../../util/util';
+import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
 
 class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {
@@ -29,7 +29,9 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
     this.context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Dashlet');
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
-      campaign: Campaign.DashboardAd }))
+      campaign: Campaign.BuyPremium,
+      source: Source.DashboardAd
+     }))
       .catch(err => undefined);
   }
 }

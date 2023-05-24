@@ -6,7 +6,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import { IComponentContext } from '../../../types/IComponentContext';
 import opn from '../../../util/opn';
-import { Campaign, nexusModsURL, Section } from '../../../util/util';
+import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
 import { MainContext } from '../../../views/MainWindow';
 import { PREMIUM_PATH } from '../constants';
 
@@ -25,7 +25,8 @@ function PremiumNagBanner(props: IPremiumNagBanner) {
     context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
-      campaign,
+      campaign: Campaign.BuyPremium,
+      source: Source.DownloadsAd
     })).catch(() => null);
   }, [campaign]);
 

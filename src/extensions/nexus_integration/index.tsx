@@ -16,7 +16,7 @@ import opn from '../../util/opn';
 import presetManager from '../../util/PresetManager';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy } from '../../util/util';
+import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy, Source, Campaign } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -1039,8 +1039,12 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 }
 
 function goBuyPremium(evt: React.MouseEvent<any>) {
-  const campaign = evt.currentTarget.getAttribute('data-campaign');
-  opn(nexusModsURL(PREMIUM_PATH, { section: Section.Users, campaign })).catch(err => undefined);
+  //const campaign = evt.currentTarget.getAttribute('data-campaign');
+  opn(nexusModsURL(PREMIUM_PATH, { 
+    section: Section.Users, 
+    campaign: Campaign.BuyPremium,
+    source: Source.HeaderAd
+   })).catch(err => undefined);
 }
 
 function idValid(thingId: string,
