@@ -804,7 +804,8 @@ export enum Section {
 }
 
 export enum Campaign {
-  ViewCollection = 'ViewCollection',
+  ViewCollection = 'view+collection',
+  ViewCollectionAsCurator = 'curator+view+collection',
   Collections = 'Collections',
   DownloadsAd = 'Downloads-Ad',
   DashboardAd = 'Dashboard-Ad',
@@ -825,11 +826,24 @@ function sectionHost(section?: Section) {
 }
 
 export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
-  const parameters = options?.parameters ?? [];
+
+  const parameters = options?.parameters ?? []; 
+  
+  // if we have a campaign, then we want to track some data  
   if (options?.campaign !== undefined) {
-    parameters.push(`pk_campaign=${options.campaign.toString()}`);
-    parameters.push('pk_source=vortex');
+
+    // always need this
+    parameters.push('utm_source=vortex');
+
+    // we can use the lowercase of section as the medium as it's the same
+    if (options?.section !== undefined) {
+      parameters.push(`utm_medium=${Section[options.section].toLocaleLowerCase()}`);
+    }
+    
+    // we add the campaign
+    parameters.push(`utm_campaign=${options.campaign.toString()}`);
   }
+
   const urlParameters: url.UrlObject = {
     protocol: NEXUS_PROTOCOL,
     host: sectionHost(options?.section),
