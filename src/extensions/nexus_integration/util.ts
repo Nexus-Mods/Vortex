@@ -20,7 +20,7 @@ import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IMod, IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
 import { DataInvalid, HTTPError, ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../util/CustomErrors';
-import { contextify, setApiKey } from '../../util/errorHandling';
+import { contextify, setApiKey, setOauthToken } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import github, { RateLimitExceeded } from '../../util/github';
@@ -1291,6 +1291,7 @@ export function updateToken(api: IExtensionApi,
                             nexus: Nexus,
                             token: any)
                             : Promise<boolean> {
+  setOauthToken(token);
   return Promise.resolve(nexus.setOAuthCredentials({
     fingerprint: token.fingerprint,
     refreshToken: token.refreshToken,
@@ -1299,7 +1300,6 @@ export function updateToken(api: IExtensionApi,
     id: OAUTH_CLIENT_ID,
   }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials)))
     .then(userInfo => updateUserInfo(api, nexus, userInfo))
-    // .then(() => true)
     .catch(err => {
       api.showErrorNotification('Authentication failed, please log in again', err, {
         allowReport: false,

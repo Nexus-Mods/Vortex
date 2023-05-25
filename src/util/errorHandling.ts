@@ -1,4 +1,4 @@
-import { NEXUS_BASE_URL } from '../extensions/nexus_integration/constants';
+import { NEXUS_BASE_URL, OAUTH_CLIENT_ID } from '../extensions/nexus_integration/constants';
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
@@ -14,7 +14,7 @@ import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
 import * as RemoteT from '@electron/remote';
-import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
+import NexusT, { IFeedbackResponse, IOAuthCredentials } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import {
   BrowserWindow,
@@ -118,7 +118,7 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
   const reportPath = path.join(userData, 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
     type, error, labels: labels || [], context,
-    reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
+    token: getSafe(state, ['confidential', 'account', 'nexus', 'OAuthCredentials'], undefined),
     reportProcess: process.type, sourceProcess,
     userData,
   }));
@@ -126,17 +126,29 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     context: IErrorContext, apiKey: string, reporterProcess: string,
-                     sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+                     context: IErrorContext, oauthToken: any,
+                     reporterProcess: string, sourceProcess: string, attachment: string)
+                     : Promise<IFeedbackResponse> {
   const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  return Promise.resolve(Nexus.create(apiKey, 'Vortex', getApplication().version, undefined))
+
+  const oauthCredentials: IOAuthCredentials = (oauthToken !== undefined) ? {
+    fingerprint: oauthToken.fingerprint,
+    refreshToken: oauthToken.refreshToken,
+    token: oauthToken.token,
+  } : undefined;
+
+  const config = {
+    id: OAUTH_CLIENT_ID,
+  };
+  const anonymous = (oauthCredentials === undefined);
+  return Promise.resolve(Nexus.createWithOAuth(oauthCredentials, config, 'Vortex', getApplication().version, undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
       createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess),
       attachment,
-      apiKey === undefined,
+      anonymous,
       hash,
       referenceId))
     .tap(() =>
@@ -148,11 +160,16 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
 }
 
 let fallbackAPIKey: string;
+let fallbackOauthToken: any;
 let outdated: boolean = false;
 let errorIgnored: boolean = false;
 
 export function setApiKey(key: string) {
   fallbackAPIKey = key;
+}
+
+export function setOauthToken(token: any) {
+  fallbackOauthToken = token;
 }
 
 export function setOutdated(api: IExtensionApi) {
@@ -217,15 +234,15 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
       });
     })
     .then(attachment => {
-      const { type, error, labels, reporterId, reportProcess, sourceProcess, context } = reportInfo;
-      return sendReport(type, error, context, labels, reporterId,
+      const { type, error, labels, token, reportProcess, sourceProcess, context } = reportInfo;
+      return sendReport(type, error, context, labels, token,
         reportProcess, sourceProcess, attachment);
     });
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
-                           reporterId: string, reporterProcess: string,
+                           reporterToken: any, reporterProcess: string,
                            sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const hash = genHash(error);
@@ -234,12 +251,12 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       ? error.message + `\n(${error.title})`
       : error.message;
     dialog.showErrorBox(fullMessage, JSON.stringify({
-      type, error, labels, context, reporterId, reporterProcess, sourceProcess,
+      type, error, labels, context, reporterProcess, sourceProcess,
       attachment,
     }, undefined, 2));
     return Promise.resolve(undefined);
   } else {
-    return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
+    return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
                        reporterProcess, sourceProcess, attachment);
   }
 }
