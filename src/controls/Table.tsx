@@ -979,6 +979,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeaderUpdateDebouncer.schedule();
   }
 
+  private mLastHeaderHeight: number = 0;
+
   private updateColumnWidth() {
     if (!truthy(this.mProxyHeaderRef) || !truthy(this.mVisibleHeaderRef)) {
       return;
@@ -991,7 +993,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
 
     const height = this.mVisibleHeaderRef.clientHeight;
-    this.mScrollRef.style['marginTop'] = `${height}px`;
+    if (height !== this.mLastHeaderHeight) {
+      this.mScrollRef.style['marginTop'] = `${height}px`;
+      this.mLastHeaderHeight = height;
+    }
   }
 
   private setPinnedRef = ref => {
