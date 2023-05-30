@@ -43,11 +43,6 @@ function Workarounds(props: IWorkaroundsProps): React.ReactElement<any, any> {
         >
           {t('Enable Sandbox')}
         </Toggle>
-        <Alert bsStyle='warning'>
-          {t('Requires Windows 8 or above. If this option is disabled it '
-            + 'will allow C# mod installers unprotected access to your system '
-            + 'during mod installation.')}
-        </Alert>
       </FormGroup>
     </form>
   );
