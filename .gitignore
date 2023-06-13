@@ -34,7 +34,7 @@ yarn-error.log
 [Rr]eleases/
 api/lib/
 # we need to include the installer image 
-# build/
+build/
 bld/
 [Oo]bj/
 lib/cpp/loot/loot/
