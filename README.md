@@ -1,5 +1,28 @@
 # Vortex
 
+![Last Commit](https://img.shields.io/github/last-commit/Nexus-Mods/Vortex)
+![Build](https://img.shields.io/github/actions/workflow/status/Nexus-Mods/Vortex/main.yml)
+![Release](https://img.shields.io/github/v/release/Nexus-Mods/Vortex?logo=github)
+![Pre-release](https://img.shields.io/github/v/release/Nexus-Mods/Vortex?include_prereleases&label=pre-release&logo=github)
+![Contributors](https://img.shields.io/github/contributors/Nexus-Mods/Vortex)
+![Forks](https://img.shields.io/github/forks/Nexus-Mods/Vortex?style=flat&logo=github)
+![Stars](https://img.shields.io/github/stars/Nexus-Mods/Vortex?style=flat&logo=github)
+![Watchers](https://img.shields.io/github/watchers/Nexus-Mods/Vortex?style=flat&logo=github)
+![License GPL-3.0](https://img.shields.io/github/license/Nexus-Mods/Vortex)
+
+![Nexus Mods](https://img.shields.io/website?url=https%3A%2F%2Fwww.nexusmods.com&label=nexusmods.com)
+![Discord](https://img.shields.io/discord/215154001799413770?label=discord)
+
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Electron.js](https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=Electron&logoColor=white)
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Redux](https://img.shields.io/badge/redux-%23593d88.svg?style=for-the-badge&logo=redux&logoColor=white)
+![SASS](https://img.shields.io/badge/SASS-hotpink.svg?style=for-the-badge&logo=SASS&logoColor=white)
+![Webpack](https://img.shields.io/badge/webpack-%238DD6F9.svg?style=for-the-badge&logo=webpack&logoColor=black)
+![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 ## Building from source code
 
 To build from source you have two choices.
