@@ -8,6 +8,7 @@ import { IconButton } from './TooltipControls';
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
 
 const haveKnowledgeBase = (() => {
   let value: boolean;
@@ -79,7 +80,10 @@ class More extends ComponentEx<IProps, IComponentState> {
     let pCounter = 0;
     const popover = (
       <Popover id={`popover-${id}`} className='more-popover' title={name}>
-        {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
+        
+        <ReactMarkdown>
+          {children}
+        </ReactMarkdown>
         {wikiFooter}
       </Popover>
     );

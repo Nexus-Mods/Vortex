@@ -66,6 +66,8 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.mMounted = true;
 
+    //this.mVersion = '1.8.5'; // force this to test
+
     if (this.mVersion === '0.0.1') {
       this.nextState.tag = 'Development';
     } else {
