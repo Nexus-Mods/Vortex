@@ -17,13 +17,21 @@
 }
 
 .more-popover .popover-content {
-  white-space: pre-wrap;
+  white-space: normal;
   // minimal pixel height of the screen is 768 and in the worst case a
   // vertically placed popover has a reference point almost in the middle
   // of the screen so the max height shouldn't be bigger than
   // (768 / 2) - <height of the arrow> - <height of the header>
   max-height: 300px;
   overflow-y: auto;
+
+  ul {
+    padding: 0 0 0 1.8em;
+
+    li {
+      margin: 0 0 0.4em 0;
+    }
+  }
 }
 
 .more-popover .popover-content p {
