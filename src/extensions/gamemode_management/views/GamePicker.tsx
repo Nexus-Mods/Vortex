@@ -334,9 +334,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                           <Select
                             className='select-compact'
                             options={[
+                              { value: 'popular', label: t('Most Popular') },
                               { value: 'alphabetical', label: t('Name A-Z') },
                               { value: 'recent', label: t('Most Recent') },
-                              { value: 'popular', label: t('Most Popular') },
                             ]}
                             value={sortUnmanaged}
                             onChange={this.setSortUnmanaged}
