@@ -24,6 +24,7 @@ import { isLoggedIn } from '../selectors';
 
 import { setOauthPending } from '../actions/session';
 import { showError } from '../../../util/message';
+import { updateToken } from '../util';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -123,6 +124,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private showLoginLayer = () => {
     const { userInfo } = this.props;
+    
+    this.context.api.events.emit('force-token-refresh');
+
     if (!this.isLoggedIn()) {
       this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
       this.setDialogVisible(true);

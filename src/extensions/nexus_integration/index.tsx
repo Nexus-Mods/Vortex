@@ -918,7 +918,10 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
     const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
     const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+
     log('info', 'init api key', { isUndefined: apiKey !== undefined });
+    log('info', 'init oauth cred', { isUndefined: oauthCred !== undefined });
+
     const gameMode = activeGameId(state);
 
     nexus = new Proxy(
@@ -960,6 +963,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
+  api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));

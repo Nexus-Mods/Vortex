@@ -97,6 +97,31 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
       updateDebouncer.schedule(undefined, newValue);
 }
 
+
+export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
+
+  return () => {
+
+    log('info', 'onForceTokenRefresh');
+  
+    // limit lifetime of state
+    const state = api.getState();
+  
+    //const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
+    const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
+    const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+
+    log('info', 'api key', { isUndefined: apiKey !== undefined });
+    log('info', 'oauth cred', { isUndefined: oauthCred !== undefined }); 
+    
+    if (oauthCred !== undefined) {
+      log('info', 'nexus.forceJwtRefresh()');
+      nexus.forceJwtRefresh(); 
+    } 
+  }
+}
+
+
 /**
  * callback for when mods are changed
  *

@@ -1251,6 +1251,9 @@ function updateUserInfo(api: IExtensionApi,
                         nexus: Nexus,
                         userInfo: IValidateKeyResponse)
                         : Promise<boolean> {
+
+  log('info', 'updateUserInfo', { userInfo: userInfo })
+
   if (userInfo !== null) {
     api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
     api.events.emit('did-login', null);
@@ -1283,6 +1286,9 @@ function updateUserInfo(api: IExtensionApi,
 }
 
 function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials) {
+  
+  log('info', 'onJWTTokenRefresh', { credentials: credentials});
+
   api.store.dispatch(setOAuthCredentials(
     credentials.token, credentials.refreshToken, credentials.fingerprint));
 }
@@ -1292,6 +1298,7 @@ export function updateToken(api: IExtensionApi,
                             token: any)
                             : Promise<boolean> {
   setOauthToken(token);
+  
   return Promise.resolve(nexus.setOAuthCredentials({
     fingerprint: token.fingerprint,
     refreshToken: token.refreshToken,
