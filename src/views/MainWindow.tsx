@@ -352,13 +352,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
-          <NotificationButton id='notification-button' hide={switchingProfile} />
+
           <IconBar
             className='application-icons'
             group='application-icons'
             staticElements={this.applicationButtons}
             t={t}
-          />
+          />          
+          <NotificationButton id='notification-button' hide={switchingProfile} />
           <IconBar
             id='global-icons'
             className='global-icons'

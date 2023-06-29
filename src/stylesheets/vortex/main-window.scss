@@ -90,7 +90,7 @@
 
 .application-icons,
 .global-icons {
-  margin-left: $half-gutter;
+  //margin-left: $half-gutter;
   margin-top: auto;
   margin-bottom: auto;
 }
@@ -315,6 +315,7 @@
   height: 100%;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
 
   .logout-button {
     text-align: right;
@@ -326,6 +327,35 @@
   .icon-disconnected {
     width: 24px;
     height: 24px;
+  }
+
+  .membership-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    width: fit-content;
+    text-transform: uppercase;
+    font-size: smaller;
+    margin-right: 8px;   
+
+    background-color: white;
+    color: black;
+    border: none;
+    font-weight: 700;
+
+    &.premium {
+      background-color: $brand-primary;
+      color: black;
+      border: none;
+      font-weight: 800; 
+    }
+
+    &.supporter {
+      background-color: black;
+      color: white;   
+      border: 1px solid white;  
+      font-weight: 700; 
+    }
   }
 }
 

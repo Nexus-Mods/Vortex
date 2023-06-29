@@ -30,6 +30,8 @@ export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
 }
 
+
+
 interface IConnectedProps {
   isLoggedIn: boolean;
   userInfo: IValidateKeyData;
@@ -59,6 +61,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     }
     return (
       <span id='login-control'>
+        {this.renderMembershipStatus()}
         {this.renderLoginName()}
         {this.renderAvatar()}
       </span >
@@ -69,6 +72,35 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { onClearOAuthCredentials, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
+  }
+
+  private getMembershipText(userInfo: IValidateKeyData):string {
+
+    if(userInfo?.isPremium === true) {
+      return 'Premium';
+    }
+    else if(userInfo?.isSupporter === true && userInfo?.isPremium === false) {
+      return 'Supporter';
+    }
+    
+    return 'Free';
+  }
+
+  private renderMembershipStatus() {
+    const { t, userInfo } = this.props;
+
+    const membership = this.getMembershipText(userInfo);
+    const classes = `membership-status ${membership.toLocaleLowerCase()}`
+
+    if (this.isLoggedIn()) {
+      return (
+          <div id='membership-status' className={classes}>
+             {membership}
+          </div>
+      );
+    } else {
+      return null;
+    }
   }
 
   private renderLoginName() {
