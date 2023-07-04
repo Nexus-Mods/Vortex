@@ -101,7 +101,7 @@
       },
       "runtimeArgs": [
         "--no-sandbox",
-        "--remote-debugging-port=9229",
+        "--remote-debugging-port=9230",
         "."
       ],
       "env": {
@@ -120,7 +120,7 @@
     },
     {
       "name": "Debug Renderer Process",
-      "port": 9229,
+      "port": 9230,
       "request": "attach",
       "type": "chrome",
       "timeout": 60000,
