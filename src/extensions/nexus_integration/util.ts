@@ -2,7 +2,7 @@ import * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IOAuthCredentials,
-  IRevision, IRevisionQuery, IUpdateEntry, IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
+  IRevision, IRevisionQuery, IUpdateEntry, IValidateKeyResponse, NexusError, ProtocolError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
@@ -48,8 +48,10 @@ import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/c
 import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
 import OAuth, { ITokenReply } from './util/oauth';
+import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
+import * as NexusAPI from './util/api';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -236,7 +238,7 @@ const oauth = new OAuth({
 export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   const stackErr = new Error();
 
-  return oauth.sendRequest((err: Error, token: ITokenReply) => {
+  return oauth.sendRequest(async (err: Error, token: ITokenReply) => {
     // received reply from site for this state
 
     bringToFront();
@@ -249,11 +251,15 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
       return callback(err);
     }
 
+
     const tokenDecoded: IJWTAccessToken = jwt.decode(token.access_token);
 
-    api.store.dispatch(setOAuthCredentials(
-      token.access_token, token.refresh_token, tokenDecoded.fingerprint));
-    api.store.dispatch(setUserInfo(userInfoFromJWTToken(tokenDecoded)));
+    api.store.dispatch(setOAuthCredentials(token.access_token, token.refresh_token, tokenDecoded.fingerprint));
+    
+    const apiUserInfo = await getUserInfo(token.access_token);
+ 
+    api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+    log('info', 'apiUserInfo', apiUserInfo);
 
     callback(null);
 
@@ -395,6 +401,18 @@ function startDownloadCollection(api: IExtensionApi,
       }
       return null;
     });
+}
+
+export function getUserInfo(token:string) : Promise<NexusAPI.IUserInfo> {
+  return Promise.resolve((async () => {
+    try {
+      const userInfo = await NexusAPI.getUserInfo(token);
+      return userInfo;
+    } catch (err) {
+      err['attachLogOnReport'] = true;
+      throw err;
+    }
+  })());
 }
 
 export interface IRemoteInfo {
@@ -1236,6 +1254,36 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
+
+function getAccountStatus(apiUserInfo:NexusAPI.IUserInfo):IAccountStatus {
+
+  if(apiUserInfo.group_id === 5) return IAccountStatus.Banned;
+  else if(apiUserInfo.group_id === 41) return IAccountStatus.Closed;
+  else if(apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Premium;
+  else if(apiUserInfo.membership_roles.includes('supporter') && !apiUserInfo.membership_roles.includes('premium') ) return IAccountStatus.Supporter;
+  else return IAccountStatus.Free;
+} 
+
+export function transformUserInfoFromApi(input: NexusAPI.IUserInfo) {
+
+  const stateUserInfo:IValidateKeyDataV2 = {
+    email: input.email,
+    isPremium: input.membership_roles.includes('premium'),
+    isSupporter: input.membership_roles.includes('supporter'),
+    name: input.name,
+    profileUrl: input.avatar,
+    userId: Number.parseInt(input.sub),
+    isLifetime:  input.membership_roles.includes('lifetimepremium'),
+    isBanned: input.group_id === 5,
+    isClosed: input.group_id === 41 ,
+    status: getAccountStatus(input)
+  };
+  
+  log('info', 'stateUserInfo', stateUserInfo);
+
+  return stateUserInfo;
+}
+
 function userInfoFromJWTToken(input: IJWTAccessToken) {
   return {
     email: '',
@@ -1247,17 +1295,47 @@ function userInfoFromJWTToken(input: IJWTAccessToken) {
   };
 }
 
+export function getOAuthTokenFromState(api: IExtensionApi) {
+  
+  const state = api.getState();
+  const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
+  const oauthCred:IOAuthCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+
+  log('info', 'getOAuthTokenFromState()', { apiKey: apiKey, oauthCred: oauthCred });
+  //log('info', 'api key', apiKey !== undefined);
+  //log('info', 'oauth cred', oauthCred !== undefined);
+
+  return oauthCred !== undefined ? oauthCred.token : undefined;
+}
+
 function updateUserInfo(api: IExtensionApi,
                         nexus: Nexus,
-                        userInfo: IValidateKeyResponse)
+                        /*userInfo: IValidateKeyResponse*/)
                         : Promise<boolean> {
 
-  log('info', 'updateUserInfo', { userInfo: userInfo })
+  log('info', 'updateUserInfo()')
+  
+  /**
+   * This is where we are primarily updating the user info in the state.
+   * I've added a check for the oauth token in the state, and if it exists, updates
+   * from the nexus api instead of the information that was supplied in
+   * oauth token itself as this could be out of date 
+   */
+  const token = getOAuthTokenFromState(api);
 
-  if (userInfo !== null) {
-    api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-    api.events.emit('did-login', null);
+  // we have an oauth token in state
+  if(token !== undefined) {
+    
+    // get userinfo from api
+    return getUserInfo(token)
+    .then(apiUserInfo => {
+      // update state with new info from endpoint
+      api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+      log('info', 'apiUserInfo', apiUserInfo);
+    })
+    .then(() => true);
   }
+  
   return github.fetchConfig('api')
     .then(configObj => {
       const currentVer = getApplication().version;
@@ -1282,7 +1360,6 @@ function updateUserInfo(api: IExtensionApi,
       log('warn', 'Failed to fetch api config', { message: err.message });
     })
     .then(() => true);
-
 }
 
 function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials) {
@@ -1306,7 +1383,7 @@ export function updateToken(api: IExtensionApi,
   }, {
     id: OAUTH_CLIENT_ID,
   }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials)))
-    .then(userInfo => updateUserInfo(api, nexus, userInfo))
+    .then(userInfo => updateUserInfo(api, nexus))
     .catch(err => {
       api.showErrorNotification('Authentication failed, please log in again', err, {
         allowReport: false,
@@ -1319,8 +1396,8 @@ export function updateToken(api: IExtensionApi,
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);
-  return Promise.resolve(nexus.setKey(key))
-    .then(userInfo => updateUserInfo(api, nexus, userInfo))
+  return Promise.resolve(nexus.setKey(key))  
+    .then(userInfo => updateUserInfo(api, nexus))
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve(true))
     .catch(TimeoutError, err => {

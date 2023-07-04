@@ -8,7 +8,7 @@ class AnalyticsGA4 {
   public user: string;
   public key: { key: string, path: string };
   public uuidV4: string;
-  isDebugMode: boolean = false;
+  isDebugMode: boolean = true;
   ga4track;
 
   constructor() {

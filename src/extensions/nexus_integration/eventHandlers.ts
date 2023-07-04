@@ -25,14 +25,15 @@ import { nexusGameId, toNXMId } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
-import { NEXUS_BASE_URL, NEXUS_NEXT_URL } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
-         resolveGraphError, startDownload, updateKey, updateToken } from './util';
+import { NEXUS_BASE_URL, NEXUS_NEXT_URL, USERINFO_ENDPOINT } from './constants';
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, getOAuthTokenFromState, processErrorMessage,
+         resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
-import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
+import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
-                IIssue, IModInfo, IRating, IRevision, NexusError,
+                IIssue, IModInfo, IRating, IRevision, IUserInfo, NexusError,
+                ProtocolError,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
@@ -40,6 +41,7 @@ import * as semver from 'semver';
 import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
+import { getUserInfo } from './util/api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -95,7 +97,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
 
   return (oldValue: IModTable, newValue: IModTable) =>
       updateDebouncer.schedule(undefined, newValue);
-}
+} 
 
 
 export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
@@ -120,6 +122,7 @@ export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
     } 
   }
 }
+
 
 
 /**
@@ -749,6 +752,27 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
           .filter(mod => !mod.contains_adult_content && mod.available)
           .map(mod => extractLatestModInfo(state, gameId, mod)),
       }));
+  };
+}
+
+
+export function onRefreshUserInfo(api: IExtensionApi) {
+  return (): Promise<void> => {
+
+    const token = getOAuthTokenFromState(api);
+    
+    //log('info', 'onRefreshUserInfo()', token);
+
+    // we have an oauth token in state
+    if(token !== undefined) {
+      
+      // get userinfo from api
+      return Promise.resolve(getUserInfo(token))
+      .then(apiUserInfo => {        
+        api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+        log('info', 'onRefreshUserInfo()', apiUserInfo);
+      })
+    }
   };
 }
 

@@ -12,3 +12,18 @@ export interface IValidateKeyData {
   profileUrl: string;
   userId: number;
 }
+
+export enum IAccountStatus {
+  Premium,
+  Supporter,
+  Free,
+  Banned,
+  Closed
+} 
+
+export interface IValidateKeyDataV2 extends IValidateKeyData {
+  isLifetime?: boolean,
+  isBanned?: boolean,
+  isClosed?: boolean,
+  status?: IAccountStatus
+}

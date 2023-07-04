@@ -9,7 +9,7 @@ import opn from '../../../util/opn';
 import { truthy } from '../../../util/util';
 
 import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
-import { IValidateKeyData } from '../types/IValidateKeyData';
+import { IValidateKeyData, IValidateKeyDataV2 } from '../types/IValidateKeyData';
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from '../constants';
 
@@ -74,7 +74,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     onClearOAuthCredentials();
   }
 
-  private getMembershipText(userInfo: IValidateKeyData):string {
+  private getMembershipText(userInfo: IValidateKeyDataV2):string {
 
     if(userInfo?.isPremium === true) {
       return '★ Premium';
@@ -82,7 +82,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     else if(userInfo?.isSupporter === true && userInfo?.isPremium === false) {
       return 'Supporter';
     }
-    
+    else if(userInfo?.isLifetime === true) {
+      return 'Premium';
+    }
     return 'Free';
   }
 
@@ -154,10 +156,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     );
   }
 
-  private showLoginLayer = () => {
+  private showLoginLayer = async () => {
     const { userInfo } = this.props;
     
-    this.context.api.events.emit('force-token-refresh');
+    //this.context.api.events.emit('force-token-refresh');
+    this.context.api.events.emit('refresh-user-info');
 
     if (!this.isLoggedIn()) {
       this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');

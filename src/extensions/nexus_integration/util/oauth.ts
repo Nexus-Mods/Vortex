@@ -10,6 +10,7 @@ import { inspect } from 'node:util';
 import VORTEX_ICON from './vortexicon';
 import NEXUSMODS_LOGO from './nexusmodslogo';
 import { ArgumentInvalid } from '../../../util/CustomErrors';
+import { IJWTAccessToken } from '../types/IJWTAccessToken';
 
 type TokenType = 'Bearer';
 
@@ -285,7 +286,7 @@ class OAuth {
   private authorizeUrl(challenge: string, state: string): string {
     const request = {
       response_type: 'code',
-      scope: 'public',
+      scope: 'openid profile email',
       code_challenge_method: 'S256',
       client_id: this.mServerSettings.clientId,
       redirect_uri: this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),

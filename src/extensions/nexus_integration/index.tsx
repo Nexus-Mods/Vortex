@@ -80,6 +80,7 @@ import {} from 'uuid';
 import { IComponentContext } from '../../types/IComponentContext';
 import { MainContext } from '../../views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
+import { selectors } from 'vortex-api';
 
 let nexus: NexusT;
 
@@ -106,7 +107,7 @@ const requestFuncs = new Set([
   'publishRevision', 'attachCollectionsToCategory', 'getCollectionGraph',
   'getCollectionListGraph', 'getCollectionRevisionGraph', 'getRevisionUploadUrl',
   'endorseCollection', 'rateRevision', 'getCollectionVideo', 'getOwnIssues',
-  'sendFeedback',
+  'sendFeedback'
 ]);
 
 class Disableable {
@@ -172,7 +173,6 @@ class Disableable {
           return prom
             .then((userInfo) => {
               if (truthy(userInfo)) {
-                that.mApi.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
                 that.mApi.events.emit('did-login', null);
               }
               return obj[prop](...args);
@@ -890,6 +890,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
     }
 
+    // main entry point for nxm protocol links to be handled 
     if (api.registerProtocol('nxm', def !== false, makeNXMLinkCallback(api))) {
       api.sendNotification({
         type: 'info',
@@ -963,6 +964,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
+  api.events.on('refresh-user-info', eh.onRefreshUserInfo(api));
   api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
@@ -1274,6 +1276,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(err);
     }
 
+    console.warn('userInfo checking for downloads?');
+
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
     if ((url.userId !== undefined) && (url.userId !== userInfo?.userId)) {
       const userName: string =
@@ -1289,8 +1293,20 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         && (url.type === 'mod')
         && (url.gameId !== SITE_ID)
         && (url.key === undefined)) {
+
+          console.log('free user stuff', {
+            input: input, 
+            url: JSON.stringify(url),
+            name: name, 
+            friendlyName: friendlyName
+          });
       return freeUserDownload(input, url, name, friendlyName);
     } else {
+      
+      console.log('premium user stuff', {
+        input: input, 
+        url: JSON.stringify(url)
+      });
       return premiumUserDownload(input, url);
     }
   };
@@ -1332,6 +1348,38 @@ function onSkip(inputUrl: string) {
     queueItem.rej(new UserCanceled(true));
   }
 }
+
+function onRetryImpl(resolveFunc: ResolveFunc, inputUrl: string) {
+  const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
+  if (queueItem === undefined) {
+    log('error', 'failed to find queue item', { inputUrl, queue: JSON.stringify(freeDLQueue) });
+    return;
+  }   
+  
+  const { url } = queueItem;  
+
+  resolveFunc(queueItem.input)
+        .then(queueItem.res)
+        .catch(queueItem.rej);
+
+        /*
+  const awaitedLink = {
+    gameId: url.gameId,
+    modId: url.modId,
+    fileId: url.fileId,
+    resolve: (resUrl: string) =>
+      resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
+        .then(queueItem.res)
+        .catch(queueItem.rej),
+  };
+  */
+
+  //awaitedLinks.push(awaitedLink);
+
+  console.log('queueItem', JSON.stringify(queueItem));
+  //console.log('awaitedLink', JSON.stringify(awaitedLink));
+}
+
 
 function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
   const copy = freeDLQueue.slice(0);
@@ -1422,6 +1470,11 @@ function init(context: IExtensionContextExt): boolean {
 
   const resolveFunc = makeNXMProtocol(context.api,
     (gameId: string, modId: number, fileId: number) => new Promise(resolve => {
+      console.log('makeNXMProtocol', {
+        gameId:gameId,
+        modId:modId,
+        fileId:fileId
+       });
       awaitedLinks.push({ gameId, modId, fileId, resolve });
     }));
 
@@ -1441,6 +1494,8 @@ function init(context: IExtensionContextExt): boolean {
 
   const onCancel = (inputUrl: string) => onCancelImpl(context.api, inputUrl);
 
+  const onRetry = (inputUrl: string) => onRetryImpl(resolveFunc, inputUrl);
+
   context.registerDialog('free-user-download', FreeUserDLDialog, () => ({
     t: context.api.translate,
     nexus,
@@ -1448,6 +1503,7 @@ function init(context: IExtensionContextExt): boolean {
     onDownload,
     onSkip,
     onCancel,
+    onRetry
   }));
 
   context.registerBanner('downloads', () => {

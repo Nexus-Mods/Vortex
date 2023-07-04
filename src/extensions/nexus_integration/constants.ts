@@ -14,6 +14,7 @@ export const FALLBACK_AVATAR = 'assets/images/noavatar.png';
 export const REVALIDATION_FREQUENCY = 5 * 60 * 1000;
 
 export const OAUTH_URL = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth`;
+export const USERINFO_ENDPOINT = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth/userinfo`;
 // export const OAUTH_REDIRECT_URL = 'nxm://oauth/callback';
 export const OAUTH_REDIRECT_URL = 'http://127.0.0.1:PORT';
 
