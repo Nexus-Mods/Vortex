@@ -154,6 +154,12 @@ function init(context: IExtensionContext): boolean {
         const theme = state.settings.interface['currentTheme'];
         const language = state.settings.interface['language'];
 
+        const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
+        const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+        log('info', 'initializeAnalytics()', { apiKey: apiKey !== undefined, oauthCred: oauthCred !== undefined });
+
+        const authType = oauthCred !== undefined ? 'oauth' : (apiKey !== undefined ? 'apikey' : 'none');
+
         const allGameAndMods = state.persistent.mods;
 
         const gameCount = Object.keys(allGameAndMods).length;
@@ -181,6 +187,7 @@ function init(context: IExtensionContext): boolean {
           ["CollectionCount"]: collectionCount,
           ["GameCount"]: gameCount,
           ["Language"]: language,
+          ["AuthType"]: authType,
         });
         
         AnalyticsUA.start(instanceId, updateChannel, {
