@@ -154,11 +154,15 @@ function init(context: IExtensionContext): boolean {
         const theme = state.settings.interface['currentTheme'];
         const language = state.settings.interface['language'];
 
+        /**
+        * don't need now that we are forcing users to relogin if older than a certain version
+        * 
         const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
         const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
         log('info', 'initializeAnalytics()', { apiKey: apiKey !== undefined, oauthCred: oauthCred !== undefined });
 
         const authType = oauthCred !== undefined ? 'oauth' : (apiKey !== undefined ? 'apikey' : 'none');
+        */
 
         const allGameAndMods = state.persistent.mods;
 
@@ -187,7 +191,7 @@ function init(context: IExtensionContext): boolean {
           ["CollectionCount"]: collectionCount,
           ["GameCount"]: gameCount,
           ["Language"]: language,
-          ["AuthType"]: authType,
+          //["AuthType"]: authType,
         });
         
         AnalyticsUA.start(instanceId, updateChannel, {
