@@ -1,4 +1,4 @@
-import Nexus, { IModFile, IModFileQuery } from '@nexusmods/nexus-api';
+import Nexus, { IModFile, IModFileQuery, IOAuthCredentials } from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
@@ -15,6 +15,7 @@ import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
 import NXMUrl from '../NXMUrl';
 import { makeFileUID } from '../util/UIDs';
 import PremiumNagBanner from './PremiumNagBanner';
+import { IValidateKeyDataV2 } from '../types/IValidateKeyData';
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -23,6 +24,7 @@ interface IFreeUserDLDialogProps {
   onSkip: (url: string) => void;
   onCancel: (url: string) => boolean;
   onUpdated: () => void;
+  onRetry: (url: string) => void;
 }
 
 const FILE_QUERY: IModFileQuery = {
@@ -80,15 +82,29 @@ function nop() {
 }
 
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
-  const { t, nexus, onCancel, onDownload, onSkip, onUpdated } = props;
+
+  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry } = props;
+
+  //return oauthCred !== undefined ? oauthCred.token : undefined;
 
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
+
+  const userInfo = useSelector<IState, IValidateKeyDataV2>(state =>
+    state.persistent['nexus'].userInfo);
 
   // const [fileInfo, setFileInfo] = React.useState<Partial<IModFile>>(null);
   const [fileInfo, setFileInfo] = React.useState<any>(null);
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
+
+  React.useEffect(() => {
+    //log('info', '[FreeUserDLDialog] userInfo has changed', {userInfo:userInfo, urls: urls});
+    // if userInfo is updated, and isPremium is true, then retry
+    if(userInfo !== undefined) 
+      if(userInfo?.isPremium && urls.length > 0)
+        onRetry(urls[0]);
+  }, [userInfo]);
 
   React.useEffect(() => {
     const fetchFileInfo = async () => {
@@ -118,6 +134,10 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       fetchFileInfo();
     }
   }, [urls]);
+
+  const retry = React.useCallback(() => {
+    onRetry(urls[0]);
+  }, [onRetry, urls]);
 
   const cancel = React.useCallback(() => {
     onCancel(urls[0]);
@@ -187,6 +207,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
         </Panel>
       </Modal.Body>
       <Modal.Footer>
+
         <Button onClick={cancel}>{t('Cancel')}</Button>
         <Button onClick={skip}>{t('Skip')}</Button>
       </Modal.Footer>

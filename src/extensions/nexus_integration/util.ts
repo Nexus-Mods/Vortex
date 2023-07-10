@@ -15,7 +15,7 @@ import * as semver from 'semver';
 import { generate as shortId } from 'shortid';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { addNotification, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setOAuthCredentials, setUserAPIKey } from '../../actions';
+import { addNotification, clearOAuthCredentials, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setOAuthCredentials, setUserAPIKey } from '../../actions';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IMod, IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
@@ -1334,6 +1334,8 @@ function updateUserInfo(api: IExtensionApi,
       log('info', 'apiUserInfo', apiUserInfo);
     })
     .then(() => true);
+  } else {
+      log('warn', 'updateUserInfo() no oauth token');
   }
   
   return github.fetchConfig('api')
@@ -1393,6 +1395,8 @@ export function updateToken(api: IExtensionApi,
       return false;
     })
 }
+
+
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);

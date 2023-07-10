@@ -34,7 +34,7 @@ export interface IBaseProps extends WithTranslation {
 
 interface IConnectedProps {
   isLoggedIn: boolean;
-  userInfo: IValidateKeyData;
+  userInfo: IValidateKeyDataV2;
   networkConnected: boolean;
 }
 

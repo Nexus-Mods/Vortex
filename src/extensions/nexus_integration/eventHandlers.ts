@@ -764,14 +764,15 @@ export function onRefreshUserInfo(api: IExtensionApi) {
     //log('info', 'onRefreshUserInfo()', token);
 
     // we have an oauth token in state
-    if(token !== undefined) {
-      
+    if(token !== undefined) {      
       // get userinfo from api
       return Promise.resolve(getUserInfo(token))
       .then(apiUserInfo => {        
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         log('info', 'onRefreshUserInfo()', apiUserInfo);
       })
+    } else {
+      log('warn', 'onRefreshUserInfo() no oauth token');
     }
   };
 }

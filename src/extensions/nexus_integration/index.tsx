@@ -1,4 +1,4 @@
-import { setDownloadModInfo, setModAttribute } from '../../actions';
+import { setDownloadModInfo, setForcedLogout, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModLookupResult } from '../../types/IModLookupResult';
@@ -46,6 +46,7 @@ import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
+import * as semver from 'semver';
 
 import {
   genCollectionIdAttribute,
@@ -81,6 +82,7 @@ import { IComponentContext } from '../../types/IComponentContext';
 import { MainContext } from '../../views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
 import { selectors } from 'vortex-api';
+import { app } from 'electron';
 
 let nexus: NexusT;
 
@@ -885,6 +887,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension
 }
 
 function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
+
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
@@ -919,9 +922,14 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
     const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
     const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+    const loggedIn = (apiKey !== undefined) || (oauthCred !== undefined);
 
-    log('info', 'init api key', { isUndefined: apiKey !== undefined });
-    log('info', 'init oauth cred', { isUndefined: oauthCred !== undefined });
+
+    log('info', 'nexus_integration auth status', {
+      apiKey: apiKey !== undefined,
+      oauthCred: oauthCred !== undefined,
+      loggedIn: loggedIn
+    });
 
     const gameMode = activeGameId(state);
 
@@ -935,10 +943,54 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     nexus.setLogger((level: LogLevel, message: string, meta: any) =>
       log(level, message, meta));
 
-    if (oauthCred !== undefined) {
-      updateToken(api, nexus, oauthCred);
+
+    /**
+     * this has probably been set from an application level migration, and so we should show the dialog
+     * about what happened and why
+     */
+
+    const forcedLogout = state.confidential.account?.['nexus']?.['ForcedLogout'] ?? false;
+
+    log('info', 'nexus_integration forcedLogout', {
+      forcedLogout: forcedLogout
+    });
+
+    if (forcedLogout) {
+
+      // show dialog to explain whats going on
+      api.showDialog(
+        'info',
+        'You have been logged out', {
+        text: 'Due to an update with how Vortex communicates with Nexus Mods you will need to log back into your account.\n\n' +
+          'This change will allow Vortex to better keep your account details in sync without requiring you to log out and back in again or restart the app.',
+      }, [
+        {
+          label: 'Dismiss',
+          action: () => {
+            log('info', 'dismiss dialog');
+          }
+        },
+        {
+          label: 'Login',
+          action: () => {
+            log('info', 'log in about now?!');
+            ensureLoggedIn(api);
+          },
+          default: true
+        },
+      ],
+      );
+
+      // set flag so we don't do this everytime
+      api.store.dispatch(setForcedLogout(false));
+
     } else {
-      updateKey(api, nexus, apiKey);
+
+      if (oauthCred !== undefined) {
+        updateToken(api, nexus, oauthCred);
+      } else {
+        updateKey(api, nexus, apiKey);
+      }
     }
 
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
@@ -951,6 +1003,18 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
           allowReport: false,
         });
       });
+
+    const debouncer = new Debouncer(() => {
+      console.log('debouncer');
+      api.events.emit('refresh-user-info');
+      return Promise.resolve();
+    }, 10000, true, true);
+
+    // register when window is focussed to do a userinfo check?  
+    getApplication().window.on('focus', (event, win) => {
+      console.log('browser-window-focus');
+      debouncer.schedule();
+    })
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
@@ -965,7 +1029,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
   api.events.on('refresh-user-info', eh.onRefreshUserInfo(api));
-  api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
+  //api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -1276,7 +1340,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(err);
     }
 
-    console.warn('userInfo checking for downloads?');
+    log('warn', 'userInfo checking for downloads?');
 
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
     if ((url.userId !== undefined) && (url.userId !== userInfo?.userId)) {
@@ -1294,7 +1358,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         && (url.gameId !== SITE_ID)
         && (url.key === undefined)) {
 
-          console.log('free user stuff', {
+          log('info', 'free user stuff', {
             input: input, 
             url: JSON.stringify(url),
             name: name, 
@@ -1303,7 +1367,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return freeUserDownload(input, url, name, friendlyName);
     } else {
       
-      console.log('premium user stuff', {
+      log('info', 'premium user stuff', {
         input: input, 
         url: JSON.stringify(url)
       });
@@ -1395,11 +1459,11 @@ function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
 }
 
 function init(context: IExtensionContextExt): boolean {
+
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
   context.registerReducer(['persistent', 'nexus'], persistentReducer);
   context.registerReducer(['session', 'nexus'], sessionReducer);
-
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {

@@ -15,9 +15,11 @@ export const accountReducer: IReducerSpec = {
     [actions.clearOAuthCredentials as any]: (state, payload) => setSafe(state, ['OAuthCredentials'], undefined),
     [actions.setOAuthCredentials as any]: (state, payload) =>
       update(state, { OAuthCredentials: { $set: { ...payload, } } }),
+    [actions.setForcedLogout as any]: (state, value) => setSafe(state, ['ForcedLogout'], value)
   },
   defaults: {
     APIKey: undefined,
     OAuthCredentials: undefined,
+    ForcedLogout: false
   },
 };

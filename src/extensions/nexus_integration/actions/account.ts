@@ -12,3 +12,8 @@ export const clearOAuthCredentials = safeCreateAction('CLEAR_OAUTH_CREDENTIALS',
 export const setOAuthCredentials = safeCreateAction('SET_OAUTH_CREDENTIALS', (token: string, refreshToken: string, fingerprint: string) => ({
   token, refreshToken, fingerprint,
 }));
+
+/*
+ * set to true if a logout was forced, normally via a migration
+ */
+export const setForcedLogout = safeCreateAction('SET_FORCED_LOGOUT', (value:boolean) => value);

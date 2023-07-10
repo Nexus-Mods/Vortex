@@ -24,6 +24,7 @@ export * from '../extensions/mod_management/actions/mods';
 
 export * from '../extensions/nexus_integration/actions/account';
 export * from '../extensions/nexus_integration/actions/settings';
+export * from '../extensions/nexus_integration/actions/persistent';
 
 export * from '../extensions/gamemode_management/actions/settings';
 

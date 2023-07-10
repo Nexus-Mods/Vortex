@@ -9,6 +9,7 @@ function id(input) {
  */
 export const setUserInfo = safeCreateAction('SET_USER_INFO', id);
 
+
 /**
  * remember current version available on nexus
  */

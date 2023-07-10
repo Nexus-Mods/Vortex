@@ -27,8 +27,11 @@
     "perMachine": true,
     "runAfterFinish": true,
     "menuCategory": true,
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
     "uninstallDisplayName": "${productName}",
-    "include": "build/installer_ci.nsh"
+    "include": "build/installer_ci.nsh",
+    "artifactName": "vortex-setup-${version}.${ext}"
   },
   "linux": {
     "target": [
