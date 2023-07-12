@@ -2246,11 +2246,13 @@ class InstallManager {
           } else if ([403, 404, 410].includes(err['statusCode'])) {
             api.showErrorNotification(
               'Failed to install dependency',
-              'The mod seems to have been deleted and can no longer be downloaded.', {
-              message: refName,
-              id: notiId,
-              allowReport: false,
-            });
+              `${err['message']}\n\nThis error is usually caused by an invalid request, maybe you followed a link that has expired or you lack permission to access it.`,
+              {
+                allowReport: false,
+                id: notiId,
+                message: refName,
+              });
+
             return Bluebird.resolve();
           } else if (err.code === 'ERR_INVALID_PROTOCOL') {
             const msg = err.message.replace(/ Expected .*/, '');
