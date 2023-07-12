@@ -5,6 +5,9 @@ import { URL } from 'url';
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
 const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+|latest)/i;
 
+
+export enum NXMType { Mod, Collection, OAuth, Premium }
+
 class NXMUrl {
   private mGameId: string;
   private mModId: number;
@@ -20,6 +23,8 @@ class NXMUrl {
   private mUserId: number;
   private mView: boolean;
   private mExtraParams: { [key: string]: string } = {};
+  private mPremium: boolean;
+  
 
   constructor(input: string) {
     let parsed: URL;
@@ -64,7 +69,10 @@ class NXMUrl {
     } else if ((parsed.hostname === 'oauth') && (parsed.pathname === '/callback')) {
       this.mOAuthCode = parsed.searchParams.get('code');
       this.mOAuthState = parsed.searchParams.get('state');
-    } else {
+    } else if (parsed.hostname === 'premium') {
+      this.mPremium = true; 
+    }
+    else {
       throw new DataInvalid(`invalid nxm url "${input}"`);
     }
     this.mKey = parsed.searchParams.get('key') || undefined;
@@ -82,10 +90,13 @@ class NXMUrl {
     }
   }
 
-  public get type(): 'mod' | 'collection' | 'oauth' {
+  public get type(): 'mod' | 'collection' | 'oauth' | 'premium' {
     if (this.mOAuthCode !== undefined) {
       return 'oauth'
-    } else if ((this.mCollectionId !== undefined) || (this.mCollectionSlug !== undefined)) {
+    } else if (this.mPremium) {
+      return 'premium'
+    } 
+    else if ((this.mCollectionId !== undefined) || (this.mCollectionSlug !== undefined)) {
       return 'collection';
     } else {
       return 'mod';

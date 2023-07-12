@@ -58,9 +58,9 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, IRemoteInfo,
+import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, getOAuthTokenFromState, getUserInfo, IRemoteInfo,
          nexusGames, nexusGamesProm, oauthCallback, onCancelLoginImpl,
-         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey, updateToken } from './util';
+         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -85,6 +85,7 @@ import { selectors } from 'vortex-api';
 import { app } from 'electron';
 
 let nexus: NexusT;
+let userInfoDebouncer: Debouncer;
 
 export class APIDisabled extends Error {
   constructor(instruction: string) {
@@ -111,6 +112,8 @@ const requestFuncs = new Set([
   'endorseCollection', 'rateRevision', 'getCollectionVideo', 'getOwnIssues',
   'sendFeedback'
 ]);
+
+
 
 class Disableable {
   private mDisabled = false;
@@ -576,6 +579,14 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         } catch (err) {
           // ignore unexpected code
         }
+      } else if (nxmUrl.type === 'premium') {        
+        try {
+          log('info', 'makeNXMLinkCallback() premium');          
+          api.events.emit('refresh-user-info');
+          return false;
+        } catch (err) {
+          // ignore unexpected code
+        }
       } else if ((nxmUrl.gameId === SITE_ID) && isExtAvailable) {
         if (install) {
           return api.emitAndAwait('install-extension',
@@ -933,6 +944,12 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     const gameMode = activeGameId(state);
 
+    userInfoDebouncer = new Debouncer(() => {
+      console.log('debouncer ');
+      api.events.emit('refresh-user-info');
+      return Promise.resolve();
+    }, 10000, true, true);
+
     nexus = new Proxy(
       new Proxy(
         new Nexus('Vortex', getApplication().version, nexusGameId(getGame(gameMode)), 30000),
@@ -1004,16 +1021,12 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
         });
       });
 
-    const debouncer = new Debouncer(() => {
-      console.log('debouncer');
-      api.events.emit('refresh-user-info');
-      return Promise.resolve();
-    }, 10000, true, true);
+
 
     // register when window is focussed to do a userinfo check?  
     getApplication().window.on('focus', (event, win) => {
-      console.log('browser-window-focus');
-      debouncer.schedule();
+      console.log('browser-window-focus');         
+      userInfoDebouncer.schedule();
     })
   }
 
