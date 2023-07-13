@@ -52,3 +52,4 @@ BuildState*.json
 tools/stackmap/*.vsix
 changelog_*.txt
 eslint.log
+log.txt
