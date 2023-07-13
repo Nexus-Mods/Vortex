@@ -1332,8 +1332,15 @@ function updateUserInfo(api: IExtensionApi,
       // update state with new info from endpoint
       api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
       log('info', 'apiUserInfo', apiUserInfo);
+      return true;
     })
-    .then(() => true);
+    .catch((err) => {
+      log('error', `onRefreshUserInfo() ${err.message}`, err);
+      showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+        allowReport: false,
+      });
+      return false;
+    });
   } else {
       log('warn', 'updateUserInfo() no oauth token');
   }
