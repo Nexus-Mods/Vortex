@@ -771,6 +771,12 @@ export function onRefreshUserInfo(api: IExtensionApi) {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         log('info', 'onRefreshUserInfo()', apiUserInfo);
       })
+      .catch((err) => {
+        log('error', `onRefreshUserInfo() ${err.message}`, err);
+        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+          allowReport: false,
+        });
+      });  
     } else {
       log('warn', 'onRefreshUserInfo() no oauth token');
     }
