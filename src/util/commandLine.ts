@@ -103,7 +103,48 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   return res;
 }
 
+/**
+ * I think we are going to need this to transform what epic sends us which we can't help into
+ * something that our commander.js library is going to parse successfully without going crazy
+ * and replacing the parsing library.
+ * 
+ * I think we are hitting walls atm with having only a single hyphen but with a word and a =
+ */
+function transformEpicArguments(argv: string[]):string[] {
+
+  var epicParameterSwaps = {
+    "-AUTH_LOGIN": "--epic-auth-login",
+    "-AUTH_PASSWORD": "--epic-auth-password",
+    "-AUTH_TYPE": "--epic-auth-type",
+    "-epicapp": "--epic-app",
+    "-epicenv": "--epic-env",
+    "-EpicPortal": "--epic-portal",
+    "-epicusername": "--epic-username",
+    "-epicuserid": "--epic-userid",
+    "-epiclocale": "--epic-locale",
+    "-epicsandboxid": "--epic-sandboxid",
+  };
+
+  var resultArr = argv.map((element) => {
+
+
+    for (const key in epicParameterSwaps) {
+
+      if (element.indexOf(key) !== -1) {
+        return element.replace(key, epicParameterSwaps[key]);
+      } 
+    }
+    return element;
+  });
+
+  return resultArr;
+}
+
 function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
+
+  // lets look and replace epic stuff?!  
+  argv = transformEpicArguments(argv);
+
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);
   }
@@ -151,8 +192,18 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                        + '(defaults to 4096)')
     .option('--inspector', 'Start Vortex with the chrome inspector opened')
     .option('--profile <profile id>', 'Start Vortex with a specific profile active')
+    .option('--epic-auth-login <login>')
+    .option('--epic-auth-password <password>')
+    .option('--epic-auth-type <type>')
+    .option('--epic-app <app>')
+    .option('--epic-env <env>')
+    .option('--epic-portal')
+    .option('--epic-username <username>')
+    .option('--epic-userid <userid>')
+    .option('--epic-locale <locale>')
+    .option('--epic-sandboxid <sandboxid>')
     // allow unknown options since they may be interpreted by electron/node
-    .allowUnknownOption()
+    .allowUnknownOption(true)
     .parse(argv || []).opts() as IParameters;
 
   return {
@@ -160,6 +211,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     ...commandLine,
   };
 }
+
 
 // arguments that should be dropped when restarting the application
 const SKIP_ARGS = {
