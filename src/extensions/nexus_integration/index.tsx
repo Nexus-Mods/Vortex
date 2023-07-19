@@ -1,4 +1,4 @@
-import { setDownloadModInfo, setForcedLogout, setModAttribute } from '../../actions';
+import { clearOAuthCredentials, setDownloadModInfo, setForcedLogout, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModLookupResult } from '../../types/IModLookupResult';
@@ -889,7 +889,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension
     nexusModUpdate: eh.onModUpdate(api, nexus),
     nexusOpenCollectionPage: eh.onOpenCollectionPage(api),
     nexusOpenModPage: eh.onOpenModPage(api),
-    nexusRequestNexusLogin: callback => requestLogin(api, callback),
+    nexusRequestNexusLogin: callback => requestLogin(nexus, api, callback),
     nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
     nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
@@ -1004,9 +1004,10 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     } else {
 
       if (oauthCred !== undefined) {
+        log('info', 'OAuth credentials found in state. Updating nexus token');
         updateToken(api, nexus, oauthCred);
       } else {
-        updateKey(api, nexus, apiKey);
+        //updateKey(api, nexus, apiKey);
       }
     }
 
@@ -1026,7 +1027,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     // register when window is focussed to do a userinfo check?  
     getApplication().window.on('focus', (event, win) => {
       console.log('browser-window-focus');         
-      userInfoDebouncer.schedule();
+      //userInfoDebouncer.schedule();
     })
   }
 
@@ -1041,7 +1042,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
-  api.events.on('refresh-user-info', eh.onRefreshUserInfo(api));
+  api.events.on('refresh-user-info', eh.onRefreshUserInfo(nexus, api));
   //api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
@@ -1049,7 +1050,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
   api.events.on('open-collection-page', eh.onOpenCollectionPage(api));
   api.events.on('open-mod-page', eh.onOpenModPage(api));
-  api.events.on('request-nexus-login', callback => requestLogin(api, callback));
+  api.events.on('request-nexus-login', callback => requestLogin(nexus, api, callback));
   api.events.on('request-own-issues', eh.onRequestOwnIssues(nexus));
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
@@ -1529,6 +1530,17 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   const tracking = new Tracking(context.api);
+
+  /*
+  context.registerAction('global-icons', 100, 'feedback', {}, 'Clear OAuth State', () => {
+    log('info', 'Clear OAuth State');
+    context.api.store.dispatch(clearOAuthCredentials(null));
+  });*/
+
+  context.registerAction('global-icons', 100, 'nexus', {}, 'Refresh User Info', () => {
+    log('info', 'Refresh User Info');
+    context.api.events.emit('refresh-user-info');
+  });
 
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Fix missing IDs',
                          instanceIds => { fixIds(context.api, instanceIds); },

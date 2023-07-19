@@ -160,7 +160,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { userInfo } = this.props;
     
     //this.context.api.events.emit('force-token-refresh');
-    this.context.api.events.emit('refresh-user-info');
+    //this.context.api.events.emit('refresh-user-info');
 
     if (!this.isLoggedIn()) {
       this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
@@ -182,6 +182,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private isLoggedIn() {
     const { isLoggedIn, userInfo } = this.props;
+    //return isLoggedIn;
     return isLoggedIn && (userInfo !== undefined) && (userInfo !== null);
   }
 

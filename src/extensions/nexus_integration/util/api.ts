@@ -11,6 +11,7 @@ export interface IUserInfo {
   premium_expiry: number;
 }
 
+/*
 export async function getUserInfo(token: string): Promise<IUserInfo> {
 
   const headers: Headers = new Headers()
@@ -38,4 +39,4 @@ export async function getUserInfo(token: string): Promise<IUserInfo> {
 
   const userInfo:IUserInfo = await response.json();
   return userInfo;
-}
+}*/
