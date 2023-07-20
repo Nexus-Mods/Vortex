@@ -82,13 +82,14 @@ if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
              (event: Electron.Event, notiId: string, action: number) => {
     const func = notificationActions[notiId]?.[action];
-    let res = false;
+    //let res = false;
     if (func !== undefined) {
       func(() => {
-        res = true;
+        //res = true;
       });
     }
-    event.returnValue = res;
+
+    event.preventDefault();
   });
 
   ipcMain.on('fire-dialog-action',
@@ -98,7 +99,7 @@ if (ipcMain !== undefined) {
       func(action, input);
       delete DialogCallbacks.instance()[dialogId];
     }
-    event.returnValue = true;
+    //event.returnValue = true;
   });
 }
 

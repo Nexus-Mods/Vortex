@@ -10,7 +10,7 @@ import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 
 import Promise from 'bluebird';
-import { BrowserWindow, dialog } from 'electron';
+import { BrowserWindow, MessageBoxOptions, dialog } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -79,7 +79,7 @@ function transferPath(from: string, to: string): Promise<void> {
 function dialogProm(window: BrowserWindow, type: string, title: string,
                     message: string, options: string[]): Promise<string> {
   return Promise.resolve(dialog.showMessageBox(window, {
-      type,
+      type: type as ('none' | 'info' | 'error' | 'question' | 'warning'),
       buttons: options,
       title,
       message,
