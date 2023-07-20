@@ -235,7 +235,7 @@ const oauth = new OAuth({
   redirectUrl: OAUTH_REDIRECT_URL,
 });
 
-export function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
+export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: Error) => void) {
   const stackErr = new Error();
 
   return oauth.sendRequest(async (err: Error, token: ITokenReply) => {
@@ -256,10 +256,10 @@ export function requestLogin(api: IExtensionApi, callback: (err: Error) => void)
 
     api.store.dispatch(setOAuthCredentials(token.access_token, token.refresh_token, tokenDecoded.fingerprint));
     
-    const apiUserInfo = await getUserInfo(token.access_token);
+    //const apiUserInfo = await getUserInfo(nexus);
  
-    api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-    log('info', 'apiUserInfo', apiUserInfo);
+    //api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+    //log('info', 'apiUserInfo', apiUserInfo);
 
     callback(null);
 
@@ -403,10 +403,23 @@ function startDownloadCollection(api: IExtensionApi,
     });
 }
 
+/*
 export function getUserInfo(token:string) : Promise<NexusAPI.IUserInfo> {
   return Promise.resolve((async () => {
     try {
       const userInfo = await NexusAPI.getUserInfo(token);
+      return userInfo;
+    } catch (err) {
+      err['attachLogOnReport'] = true;
+      throw err;
+    }
+  })());
+}*/
+
+export function getUserInfo(nexus: Nexus) : Promise<NexusAPI.IUserInfo> {
+  return Promise.resolve((async () => {
+    try {
+      const userInfo = await nexus.getUserInfo();
       return userInfo;
     } catch (err) {
       err['attachLogOnReport'] = true;
@@ -1301,7 +1314,7 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
   const oauthCred:IOAuthCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
 
-  log('info', 'getOAuthTokenFromState()', { apiKey: apiKey, oauthCred: oauthCred });
+  //log('info', 'getOAuthTokenFromState()');
   //log('info', 'api key', apiKey !== undefined);
   //log('info', 'oauth cred', oauthCred !== undefined);
 
@@ -1313,6 +1326,8 @@ function updateUserInfo(api: IExtensionApi,
                         /*userInfo: IValidateKeyResponse*/)
                         : Promise<boolean> {
 
+
+
   log('info', 'updateUserInfo()')
   
   /**
@@ -1321,28 +1336,27 @@ function updateUserInfo(api: IExtensionApi,
    * from the nexus api instead of the information that was supplied in
    * oauth token itself as this could be out of date 
    */
-  const token = getOAuthTokenFromState(api);
+  //const token = getOAuthTokenFromState(api);
 
-  // we have an oauth token in state
-  if(token !== undefined) {
+  if(isLoggedIn(api.getState())) {
     
     // get userinfo from api
-    return getUserInfo(token)
-    .then(apiUserInfo => {
-      // update state with new info from endpoint
-      api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-      log('info', 'apiUserInfo', apiUserInfo);
-      return true;
-    })
-    .catch((err) => {
-      log('error', `onRefreshUserInfo() ${err.message}`, err);
-      showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
-        allowReport: false,
+    return getUserInfo(nexus)
+      .then(apiUserInfo => {
+        // update state with new info from endpoint
+        api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+        log('info', 'apiUserInfo', apiUserInfo);
+        return true;
+      })
+      .catch((err) => {
+        log('error', `onRefreshUserInfo() ${err.message}`, err);
+        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+          allowReport: false,
+        });
+        return false;
       });
-      return false;
-    });
   } else {
-      log('warn', 'updateUserInfo() no oauth token');
+      log('warn', 'updateUserInfo() not logged in');
   }
   
   return github.fetchConfig('api')
@@ -1383,6 +1397,9 @@ export function updateToken(api: IExtensionApi,
                             nexus: Nexus,
                             token: any)
                             : Promise<boolean> {
+                        
+  log('info', 'updateToken()', token);                            
+
   setOauthToken(token);
   
   return Promise.resolve(nexus.setOAuthCredentials({
@@ -1392,7 +1409,8 @@ export function updateToken(api: IExtensionApi,
   }, {
     id: OAUTH_CLIENT_ID,
   }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials)))
-    .then(userInfo => updateUserInfo(api, nexus))
+    .then(userInfo => updateUserInfo(api, nexus)) 
+    .then(() => true)
     .catch(err => {
       api.showErrorNotification('Authentication failed, please log in again', err, {
         allowReport: false,
@@ -1407,8 +1425,9 @@ export function updateToken(api: IExtensionApi,
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);
-  return Promise.resolve(nexus.setKey(key))  
-    .then(userInfo => updateUserInfo(api, nexus))
+  return Promise.resolve(nexus.setKey(key)) 
+    .then(() => true) 
+    //.then(userInfo => updateUserInfo(api, nexus))
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve(true))
     .catch(TimeoutError, err => {

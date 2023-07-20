@@ -41,7 +41,7 @@ import * as semver from 'semver';
 import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
-import { getUserInfo } from './util/api';
+//import { getUserInfo } from './util/api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -99,7 +99,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
       updateDebouncer.schedule(undefined, newValue);
 } 
 
-
+/*
 export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
 
   return () => {
@@ -121,7 +121,7 @@ export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
       nexus.forceJwtRefresh(); 
     } 
   }
-}
+}*/
 
 
 
@@ -756,17 +756,17 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 
-export function onRefreshUserInfo(api: IExtensionApi) {
+export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
   return (): Promise<void> => {
 
-    const token = getOAuthTokenFromState(api);
+    //const token = getOAuthTokenFromState(api);
     
     //log('info', 'onRefreshUserInfo()', token);
 
     // we have an oauth token in state
-    if(token !== undefined) {      
+    //if(token !== undefined) {      
       // get userinfo from api
-      return Promise.resolve(getUserInfo(token))
+      return Promise.resolve(nexus.getUserInfo())
       .then(apiUserInfo => {        
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         log('info', 'onRefreshUserInfo()', apiUserInfo);
@@ -777,9 +777,9 @@ export function onRefreshUserInfo(api: IExtensionApi) {
           allowReport: false,
         });
       });  
-    } else {
-      log('warn', 'onRefreshUserInfo() no oauth token');
-    }
+    //} else {
+    //  log('warn', 'onRefreshUserInfo() no oauth token');
+    //}
   };
 }
 
