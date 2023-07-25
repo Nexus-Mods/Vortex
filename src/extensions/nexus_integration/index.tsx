@@ -944,12 +944,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     const gameMode = activeGameId(state);
 
-    userInfoDebouncer = new Debouncer(() => {
-      console.log('debouncer ');
-      api.events.emit('refresh-user-info');
-      return Promise.resolve();
-    }, 10000, true, true);
-
     nexus = new Proxy(
       new Proxy(
         new Nexus('Vortex', getApplication().version, nexusGameId(getGame(gameMode)), 30000),
@@ -1537,9 +1531,16 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(clearOAuthCredentials(null));
   });*/
 
+  
+  userInfoDebouncer = new Debouncer(() => {
+    console.log('debouncer');
+    context.api.events.emit('refresh-user-info');
+    return Promise.resolve();
+  }, 10000, true, true);
+
   context.registerAction('global-icons', 100, 'nexus', {}, 'Refresh User Info', () => {
     log('info', 'Refresh User Info');
-    context.api.events.emit('refresh-user-info');
+    userInfoDebouncer.schedule();
   });
 
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Fix missing IDs',
