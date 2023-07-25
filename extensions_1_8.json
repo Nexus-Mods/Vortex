@@ -7089,7 +7089,10 @@
     },
     {
       "modId": 611,
-      "fileId": 2226
+      "fileId": 2226,      
+      "name": "Kingom Two Crowns Support",
+      "type": "game",
+      "gameName": "Kingom Two Crowns"
     }
   ]
 }
