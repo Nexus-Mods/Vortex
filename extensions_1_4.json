@@ -6362,6 +6362,10 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Assassin's Creed Origins"
+    },    
+    {
+      "modId": 611,
+      "fileId": 2226
     }
   ]
 }
