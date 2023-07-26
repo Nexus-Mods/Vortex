@@ -732,12 +732,12 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
 export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
   return (): Promise<void> => {
 
-    //const token = getOAuthTokenFromState(api);
+    const token = getOAuthTokenFromState(api);
     
     //log('info', 'onRefreshUserInfo()', token);
 
     // we have an oauth token in state
-    //if(token !== undefined) {      
+    if(token !== undefined) {      
       // get userinfo from api
       return Promise.resolve(nexus.getUserInfo())
       .then(apiUserInfo => {        
@@ -750,9 +750,9 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
           allowReport: false,
         });
       });  
-    //} else {
-    //  log('warn', 'onRefreshUserInfo() no oauth token');
-    //}
+    } else {
+      log('warn', 'onRefreshUserInfo() no oauth token');
+    }
   };
 }
 
