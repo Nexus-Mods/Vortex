@@ -25,6 +25,7 @@ interface IFreeUserDLDialogProps {
   onCancel: (url: string) => boolean;
   onUpdated: () => void;
   onRetry: (url: string) => void;
+  onCheckStatus: () => void;
 }
 
 const FILE_QUERY: IModFileQuery = {
@@ -83,9 +84,11 @@ function nop() {
 
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
-  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry } = props;
+  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
 
   //return oauthCred !== undefined ? oauthCred.token : undefined;
+
+
 
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
@@ -134,6 +137,10 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       fetchFileInfo();
     }
   }, [urls]);
+
+  const checkStatus = React.useCallback(() => {
+    onCheckStatus();
+  }, [])
 
   const retry = React.useCallback(() => {
     onRetry(urls[0]);
@@ -203,7 +210,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
               ) : null}
             </FlexLayout.Flex>
           </FlexLayout>
-          <PremiumNagBanner t={t} onDownload={download} campaign={campaign} />
+          <PremiumNagBanner t={t} onCheckStatus={checkStatus} onDownload={download} campaign={campaign} />
         </Panel>
       </Modal.Body>
       <Modal.Footer>

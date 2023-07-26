@@ -51,7 +51,6 @@ import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
-import * as NexusAPI from './util/api';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -64,6 +63,16 @@ interface INexusLoginMessage {
   appid: string;
   protocol: number;
   token?: string;
+}
+
+interface IUserInfo {
+  sub: string;
+  name: string;
+  email: string;
+  avatar: string;
+  group_id: number;
+  membership_roles: string[];
+  premium_expiry: number;
 }
 
 let cancelLogin: () => void;
@@ -251,15 +260,9 @@ export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: E
       return callback(err);
     }
 
-
     const tokenDecoded: IJWTAccessToken = jwt.decode(token.access_token);
 
     api.store.dispatch(setOAuthCredentials(token.access_token, token.refresh_token, tokenDecoded.fingerprint));
-    
-    //const apiUserInfo = await getUserInfo(nexus);
- 
-    //api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-    //log('info', 'apiUserInfo', apiUserInfo);
 
     callback(null);
 
@@ -403,20 +406,7 @@ function startDownloadCollection(api: IExtensionApi,
     });
 }
 
-/*
-export function getUserInfo(token:string) : Promise<NexusAPI.IUserInfo> {
-  return Promise.resolve((async () => {
-    try {
-      const userInfo = await NexusAPI.getUserInfo(token);
-      return userInfo;
-    } catch (err) {
-      err['attachLogOnReport'] = true;
-      throw err;
-    }
-  })());
-}*/
-
-export function getUserInfo(nexus: Nexus) : Promise<NexusAPI.IUserInfo> {
+export function getUserInfo(nexus: Nexus) : Promise<IUserInfo> {
   return Promise.resolve((async () => {
     try {
       const userInfo = await nexus.getUserInfo();
@@ -1268,7 +1258,7 @@ function errorFromNexusError(err: NexusError): string {
 }
 
 
-function getAccountStatus(apiUserInfo:NexusAPI.IUserInfo):IAccountStatus {
+function getAccountStatus(apiUserInfo:IUserInfo):IAccountStatus {
 
   if(apiUserInfo.group_id === 5) return IAccountStatus.Banned;
   else if(apiUserInfo.group_id === 41) return IAccountStatus.Closed;
@@ -1277,7 +1267,7 @@ function getAccountStatus(apiUserInfo:NexusAPI.IUserInfo):IAccountStatus {
   else return IAccountStatus.Free;
 } 
 
-export function transformUserInfoFromApi(input: NexusAPI.IUserInfo) {
+export function transformUserInfoFromApi(input: IUserInfo) {
 
   const stateUserInfo:IValidateKeyDataV2 = {
     email: input.email,

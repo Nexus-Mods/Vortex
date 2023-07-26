@@ -58,7 +58,7 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, getOAuthTokenFromState, getUserInfo, IRemoteInfo,
+import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, getOAuthTokenFromState, IRemoteInfo,
          nexusGames, nexusGamesProm, oauthCallback, onCancelLoginImpl,
          processErrorMessage, requestLogin, retrieveNexusGames, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 import { checkModVersion } from './util/checkModsVersion';
@@ -582,7 +582,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
       } else if (nxmUrl.type === 'premium') {        
         try {
           log('info', 'makeNXMLinkCallback() premium');          
-          api.events.emit('refresh-user-info');
+          userInfoDebouncer.schedule();
           return false;
         } catch (err) {
           // ignore unexpected code
@@ -1016,8 +1016,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
         });
       });
 
-
-
     // register when window is focussed to do a userinfo check?  
     getApplication().window.on('focus', (event, win) => {
       console.log('browser-window-focus');         
@@ -1037,7 +1035,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
   api.events.on('refresh-user-info', eh.onRefreshUserInfo(nexus, api));
-  //api.events.on('force-token-refresh', eh.onForceTokenRefresh(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -1350,6 +1347,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
 
     log('warn', 'userInfo checking for downloads?');
 
+
+
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
     if ((url.userId !== undefined) && (url.userId !== userInfo?.userId)) {
       const userName: string =
@@ -1421,7 +1420,7 @@ function onSkip(inputUrl: string) {
   }
 }
 
-function onRetryImpl(resolveFunc: ResolveFunc, inputUrl: string) {
+function onRetryImpl(resolveFunc: ResolveFunc, api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
   if (queueItem === undefined) {
     log('error', 'failed to find queue item', { inputUrl, queue: JSON.stringify(freeDLQueue) });
@@ -1430,9 +1429,12 @@ function onRetryImpl(resolveFunc: ResolveFunc, inputUrl: string) {
   
   const { url } = queueItem;  
 
+
   resolveFunc(queueItem.input)
         .then(queueItem.res)
         .catch(queueItem.rej);
+
+    
 
         /*
   const awaitedLink = {
@@ -1452,6 +1454,10 @@ function onRetryImpl(resolveFunc: ResolveFunc, inputUrl: string) {
   //console.log('awaitedLink', JSON.stringify(awaitedLink));
 }
 
+function onCheckStatusImpl() {
+
+  userInfoDebouncer.schedule();
+}
 
 function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
   const copy = freeDLQueue.slice(0);
@@ -1536,11 +1542,11 @@ function init(context: IExtensionContextExt): boolean {
     console.log('debouncer');
     context.api.events.emit('refresh-user-info');
     return Promise.resolve();
-  }, 10000, true, true);
+  }, 1000, true, true);
 
   context.registerAction('global-icons', 100, 'nexus', {}, 'Refresh User Info', () => {
     log('info', 'Refresh User Info');
-    userInfoDebouncer.schedule();
+    userInfoDebouncer.schedule();    
   });
 
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Fix missing IDs',
@@ -1583,8 +1589,10 @@ function init(context: IExtensionContextExt): boolean {
   const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
 
   const onCancel = (inputUrl: string) => onCancelImpl(context.api, inputUrl);
+  
+  const onCheckStatus = () => onCheckStatusImpl();
 
-  const onRetry = (inputUrl: string) => onRetryImpl(resolveFunc, inputUrl);
+  const onRetry = (inputUrl: string) => onRetryImpl(resolveFunc, context.api, inputUrl);
 
   context.registerDialog('free-user-download', FreeUserDLDialog, () => ({
     t: context.api.translate,
@@ -1593,7 +1601,8 @@ function init(context: IExtensionContextExt): boolean {
     onDownload,
     onSkip,
     onCancel,
-    onRetry
+    onRetry,
+    onCheckStatus
   }));
 
   context.registerBanner('downloads', () => {
