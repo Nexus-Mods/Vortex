@@ -61,7 +61,7 @@ jobs:
           $signtool = "C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\signtool.exe"
           $timestamp = "http://timestamp.digicert.com"
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          $signtool sign /f $certPath /p "${{ secrets.PFX_KEY }}" /td sha256 /fd sha256 /tr $timestamp "app\node_modules\winapi-bindings\build\Release\winapi.node"
+          & $signtool sign /f $certPath /p "${{ secrets.PFX_KEY }}" /td sha256 /fd sha256 /tr $timestamp "app\node_modules\winapi-bindings\build\Release\winapi.node"
        
       - name: Package
         run: yarn package
