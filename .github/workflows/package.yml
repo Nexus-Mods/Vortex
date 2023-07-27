@@ -28,8 +28,36 @@ jobs:
       - name: Print debug info
         run: dotnet --info
 
-      - name: Build
-        run: yarn ci
+     ## - name: Build
+     ##   run: yarn ci
+     
+      - name: Build API
+        run: yarn --non-interactive build_api
+      
+      - name: Build Install
+        run: yarn --non-interactive _install_app
+      
+      - name: Build Subprojects
+        run: yarn --non-interactive subprojects_app
+      
+      - name: Build Assets
+        run: yarn --non-interactive _assets_app
+        
+      - name: Webpack
+        run: yarn build_dist
+        
+      - name: Package
+        run: yarn package
+        
+      - name: Extract Sourcemaps
+        run: yarn extract_sourcemaps
 
       - name: Test
         run: yarn test
+        
+        # Upload Artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: production
+          path: ./dist
