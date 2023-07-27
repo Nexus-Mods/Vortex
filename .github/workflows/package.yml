@@ -11,6 +11,7 @@ jobs:
     runs-on: windows-latest
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
+      CERT_PATH: Release
       
     strategy:
       matrix:
@@ -34,11 +35,13 @@ jobs:
         run: dotnet --info
         
       - name: Decode PFX
-        shell: pwsh
+        shell: pwsh        
+        id: decode-pfx
         run: |
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          [IO.File]::WriteAllBytes("$certPath", $certBytes)  
+          [IO.File]::WriteAllBytes("$certPath", $certBytes)
+          echo "cert-path=$certPath" >> $GITHUB_OUTPUT
      
       - name: Build API
         run: yarn --non-interactive build_api
@@ -62,16 +65,19 @@ jobs:
           $timestamp = "http://timestamp.digicert.com"
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           & $signtool sign /f $certPath /p "${{ secrets.PFX_KEY }}" /td sha256 /fd sha256 /tr $timestamp "app\node_modules\winapi-bindings\build\Release\winapi.node"
-       
+          
       - name: Package
         run: yarn package
-        
+        env:
+          CSC_LINK: ${{ steps.decode-pfx.output.cert-path }}
+          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
+
       - name: Extract Sourcemaps
         run: yarn extract_sourcemaps
 
       - name: Test
         run: yarn test
-        
+
       - name: Remove PFX
         shell: pwsh
         run: |
