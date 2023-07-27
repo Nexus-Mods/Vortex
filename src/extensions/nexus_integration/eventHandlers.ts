@@ -41,7 +41,6 @@ import * as semver from 'semver';
 import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
-//import { getUserInfo } from './util/api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -98,32 +97,6 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   return (oldValue: IModTable, newValue: IModTable) =>
       updateDebouncer.schedule(undefined, newValue);
 } 
-
-/*
-export function onForceTokenRefresh(api: IExtensionApi, nexus: Nexus) {
-
-  return () => {
-
-    log('info', 'onForceTokenRefresh');
-  
-    // limit lifetime of state
-    const state = api.getState();
-  
-    //const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
-    const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
-    const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
-
-    log('info', 'api key', { isUndefined: apiKey !== undefined });
-    log('info', 'oauth cred', { isUndefined: oauthCred !== undefined }); 
-    
-    if (oauthCred !== undefined) {
-      log('info', 'nexus.forceJwtRefresh()');
-      nexus.forceJwtRefresh(); 
-    } 
-  }
-}*/
-
-
 
 /**
  * callback for when mods are changed
