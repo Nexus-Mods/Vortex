@@ -65,15 +65,10 @@ jobs:
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           & $signtool sign /f $certPath /p "${{ secrets.PFX_KEY }}" /td sha256 /fd sha256 /tr $timestamp "app\node_modules\winapi-bindings\build\Release\winapi.node"
           
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: production
-          path: ./dist
-          
       - name: Package
         run: yarn package
         env:
+          DEBUG: electron-builder
           CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
           CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
 
@@ -89,3 +84,8 @@ jobs:
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           Remove-Item -Path $certPath
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: production
+          path: ./dist
