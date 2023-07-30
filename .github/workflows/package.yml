@@ -69,7 +69,8 @@ jobs:
       - name: Package
         run: yarn package
         env:
-          CSC_LINK: ${{ steps.decode-pfx.output.cert-path }}
+          # CSC_LINK: ${{ steps.decode-pfx.output.cert-path }}
+          CSC_LINK: ${{ secrets.PFX_BASE64 }}
           CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
 
       - name: Extract Sourcemaps
