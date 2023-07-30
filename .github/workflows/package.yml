@@ -41,7 +41,7 @@ jobs:
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           [IO.File]::WriteAllBytes("$certPath", $certBytes)
-          echo "cert-path=$certPath" >> $GITHUB_OUTPUT
+          Write-Output "cert-path=$($certPath)" >> $Env:GITHUB_OUTPUT
      
       - name: Build API
         run: yarn --non-interactive build_api
