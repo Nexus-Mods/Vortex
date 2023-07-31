@@ -6,7 +6,17 @@ on:
         version:
           description: "The version to release (eg: 'v1.0.0')"
           required: true
-          type: string  
+          type: string
+        build-unpacked:
+          description: "Create unpacked artifact?"
+          required: true
+          type: boolean
+          default: true
+        build-installer:
+          description: "Create installer artifact?"
+          required: true
+          type: boolean
+          default: true
         draft:
           description: "Create a draft release?"
           required: false
@@ -17,6 +27,7 @@ on:
           required: false
           type: boolean
           default: true
+        
 env:    
   SigningCertificate: cert.pfx
 
@@ -44,7 +55,7 @@ jobs:
           echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT
           echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
           echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
-          echo "artifactNameInstaller=vortex-setup-$rawVersion" >> $env:GITHUB_OUTPUT
+          echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
       - name: Get current time
         uses: josStorer/get-current-time@v2
         id: current-time
@@ -58,12 +69,6 @@ jobs:
           YEAR: "${{ steps.current-time.outputs.year }}"
           DAY: "${{ steps.current-time.outputs.day }}"
         run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
-
-      - name: Test with environment variables
-        run: echo $TAG_NAME - $RELEASE_NAME
-        env:
-          TAG_NAME: nightly-tag-${{ steps.date.outputs.date }}
-          RELEASE_NAME: nightly-release-${{ steps.date.outputs.date }}
 
       - uses: actions/checkout@v3
         with:
@@ -92,7 +97,8 @@ jobs:
         id: decode-pfx
         run: |
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:
+          
           [IO.File]::WriteAllBytes("$certPath", $certBytes)
      
       - name: Build API
@@ -139,6 +145,7 @@ jobs:
 
       - name: Upload Unpacked
         uses: actions/upload-artifact@v3
+        if: inputs.build-unpacked == true
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
           path: ./dist/win-unpacked
@@ -146,9 +153,10 @@ jobs:
 
       - name: Upload Installer
         uses: actions/upload-artifact@v3
+        if: inputs.build-isntaller == true
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
           path: |
-            ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
+            ./dist/vortex-setup-?.?.?.exe
             ./dist/latest.yml
           if-no-files-found: error
