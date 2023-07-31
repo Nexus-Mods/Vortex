@@ -42,6 +42,7 @@ exports.default = async function(context) {
       const buf = hash
         .update(fileData)
         .digest();
+      console.log(`${relPath}:${buf.toString('hex')}`);
       return `${relPath}:${buf.toString('hex')}`;
     }));
 
