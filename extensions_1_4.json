@@ -6394,6 +6394,44 @@
       "timestamp": 1690272439,
       "tags": [],
       "version": "1.0.1"
+    },
+    {
+      "modId": 612,
+      "fileId": 2230,
+      "author": "Raziel23x",
+      "uploader": "raziel23x",
+      "description": {
+        "short": "Just a little extension I threw together(with the help of the guide) to support a few Techtonica mods.",
+        "long": "[b][center][size=6][u][url=https://www.paypal.com/donate/?hosted_button_id=MR9R8HESTA5Q8][/url]Techtonica-Vortex-Support[/u][/size][/center][/b]\n<br />[i][size=3]Just a little extension I threw together(with the help of the guide) to support a few Tech htonica mods[/size][/i].\n<br />\n<br />[b][size=5]Install Location [/size]\n<br />\n<br />[/b][code]%appdata%/Vortex/plugins&#92;Game-Techtonica\n<br />[/code]\n<br />[b][size=5]Uninstall[/size]\n<br />[/b]\n<br />[size=3]Delete the folder[/size]\n<br />\n<br />[code] %appdata%/Vortex/plugins&#92;Game-Techtonica[/code]\n<br />[b][size=5][center][/center][/size][/b][center][b][size=5]Source Code:\n<br />[/size][/b]\n<br />\n<br />[url=https://github.com/raziel23x/Techtonica-Vortex-Support]https://github.com/raziel23x/Techtonica-Vortex-Support\n<br />\n<br />[/url][size=5][b]Bug Reports:[/b][/size]\n<br />\n<br />[url=https://github.com/raziel23x/Techtonica-Vortex-Support/issues]https://github.com/raziel23x/Techtonica-Vortex-Support/issues[/url][/center]\n<br />\n<br />[center]Donations not required but are welcome\n<br />\n<br />[url=https://www.paypal.com/donate/?hosted_button_id=MR9R8HESTA5Q8][img]https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif[/img][/url][/center]"
+      },
+      "downloads": 9,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/612/612-1690562547-2065755889.jpeg",
+      "name": "Techtonica Vortex Support",
+      "timestamp": 1690569881,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "INSERT GAME NAME"
+    },
+    {
+      "modId": 614,
+      "fileId": 2234,
+      "author": "gabqe",
+      "uploader": "abqe",
+      "description": {
+        "short": "Just a extension to add Crusader Kings 3.",
+        "long": "Just a extension to add Crusader Kings 3."
+      },
+      "downloads": 7,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/614/614-1690605827-655699064.png",
+      "name": "Crusader Kings III - Extension",
+      "timestamp": 1690790658,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "INSERT GAME NAME"
     }
   ]
 }
