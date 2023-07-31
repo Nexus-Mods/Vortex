@@ -54,11 +54,11 @@ jobs:
       - name: Build Install
         run: yarn --non-interactive _install_app
       
-     # - name: Build Subprojects
-     #   run: yarn --non-interactive subprojects_app
+      - name: Build Subprojects
+        run: yarn --non-interactive subprojects_app
       
-     # - name: Build Assets
-     #   run: yarn --non-interactive _assets_app
+      - name: Build Assets
+        run: yarn --non-interactive _assets_app
         
       - name: Webpack
         run: yarn build_dist
