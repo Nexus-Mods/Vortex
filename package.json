@@ -22,7 +22,7 @@
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
-    "package": "electron-builder --config electron-builder-config.json",
+    "package": "electron-builder --config electron-builder-config.json --publish never",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",
