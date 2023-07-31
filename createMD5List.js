@@ -46,7 +46,13 @@ exports.default = async function(context) {
       return `${relPath}:${buf.toString('hex')}`;
     }));
 
-  await fs.writeFile(path.join(assetsPath, 'md5sums.csv'), hashes.join('\n'));
+  try {
+    await fs.writeFile(path.join(assetsPath, 'md5sums.csv'), hashes.join('\n'));
+  } catch (err) {
+    console.error('Failed to write', base, err.message);
+  }
+  
+  console.log(`Successfully wrote ${path.join(assetsPath, 'md5sums.csv')}`);
 
   return [path.join(assetsPath, 'md5sums.csv')];
 }
