@@ -30,6 +30,9 @@ async function walk(base, rel) {
 }
 
 exports.default = async function(context) {
+
+  console.log('createMD5List.js');
+
   const assetsPath = path.join(context.appOutDir, 'resources', 'app.asar.unpacked', 'assets');
 
   const hashes = await Promise.all((await walk(context.appOutDir, ''))
