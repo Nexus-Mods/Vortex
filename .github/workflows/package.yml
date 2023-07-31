@@ -2,11 +2,25 @@ name: Package
 
 on:
   workflow_dispatch:
-  
+    inputs:
+        version:
+          description: "The version to release (eg: 'v1.0.0')"
+          required: true
+          type: string  
+        draft:
+          description: "Create a draft release?"
+          required: false
+          type: boolean
+          default: true
+        prerelease:
+          description: "Create a prerelease?"
+          required: false
+          type: boolean
+          default: true
 env:    
   SigningCertificate: cert.pfx
 
-jobs:
+jobs:      
   build:
     runs-on: windows-latest
     env:
@@ -18,6 +32,19 @@ jobs:
         dotnet-version: [ 6.0.x ]
 
     steps:
+      - name: Set Outputs
+        id: setOutputs
+        shell: pwsh
+        env:
+          InputVersion: ${{ inputs.version }}
+        run: |
+          $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
+          $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
+          $validation = [System.Version]::Parse($rawVersion)
+          echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT
+          echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
+          echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
+          echo "artifactNameInstaller=vortex-setup-$rawVersion" >> $env:GITHUB_OUTPUT
       - name: Get current time
         uses: josStorer/get-current-time@v2
         id: current-time
@@ -110,8 +137,18 @@ jobs:
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           Remove-Item -Path $certPath
 
-      - name: Upload Artifact
+      - name: Upload Unpacked
         uses: actions/upload-artifact@v3
         with:
-          name: Distributables ${{ steps.current-time.outputs.formattedTime }}
-          path: ./dist
+          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
+          path: ./dist/win-unpacked
+          if-no-files-found: error
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
+          path: |
+            ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
+            ./dist/latest.yml
+          if-no-files-found: error
