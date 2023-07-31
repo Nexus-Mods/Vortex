@@ -30,6 +30,11 @@ jobs:
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
+        
+      - name: Download VC_redist
+        shell: pwsh
+        run: |
+          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
 
       - name: Print debug info
         run: dotnet --info
