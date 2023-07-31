@@ -97,7 +97,7 @@ jobs:
         id: decode-pfx
         run: |
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           
           [IO.File]::WriteAllBytes("$certPath", $certBytes)
      
