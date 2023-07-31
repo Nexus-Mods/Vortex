@@ -157,6 +157,6 @@ jobs:
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
           path: |
-            ./dist/vortex-setup-?.?.?.exe
+            ./dist/vortex-setup-*.*.*.exe
             ./dist/latest.yml
           if-no-files-found: error
