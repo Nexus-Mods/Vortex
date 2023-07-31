@@ -21,7 +21,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: "recursive"
-
+          
+      - name: Download VC_redist
+        shell: pwsh
+        run: |
+          $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
+          
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
@@ -30,11 +36,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
-        
-      - name: Download VC_redist
-        shell: pwsh
-        run: |
-          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
 
       - name: Print debug info
         run: dotnet --info
