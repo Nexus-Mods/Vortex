@@ -23,7 +23,7 @@ async function walk(base, rel) {
       files = [].concat(files, rec);
     }));
   } catch (err) {
-    console.error('Failed to walk', base, err.message);
+    console.error('Failed to walk', base, err);
   }
 
   return files;
@@ -49,7 +49,7 @@ exports.default = async function(context) {
   try {
     await fs.writeFile(path.join(assetsPath, 'md5sums.csv'), hashes.join('\n'));
   } catch (err) {
-    console.error('Failed to write', base, err.message);
+    console.error(`Failed to write: ${err.message}`);
   }
   
   console.log(`Successfully wrote ${path.join(assetsPath, 'md5sums.csv')}`);
