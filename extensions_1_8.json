@@ -1,5 +1,5 @@
 {
-  "last_updated": 1691394874307,
+  "last_updated": 1691419708000,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7156,6 +7156,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Crusader Kings III"
+    },
+    {
+      "modId": 618,
+      "fileId": 2249,
+      "author": "Thyself",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Simply a Vortex Extension Support for Zero Sievert",
+        "long": "[size=3][b]Simply a Vortex Extension Support for Zero Sievert[/b][/size]"
+      },
+      "downloads": 8,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5609.jpg",
+      "name": "Zero Sievert Vortex Extension",
+      "timestamp": 1691413619,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "zerosievert"
     }
   ]
 }
