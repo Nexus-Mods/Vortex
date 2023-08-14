@@ -780,7 +780,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
   } else if (err?.code === 'invalid_grant') {
     return {
       message: err?.description ?? 'Invalid token',
-      text: 'Your OAuth token has expired or got revoked, please login again.',
+      text: `Your OAuth token has either expired or has been revoked, please log in again to generate a new token.`,
       wrap: false,
       allowReport: false,
     };

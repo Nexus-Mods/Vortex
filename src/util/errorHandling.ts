@@ -337,13 +337,10 @@ function showTerminateError(error: IError, state: any, source: string,
     // Ignore
     action = dialog.showMessageBoxSync(getVisibleWindow(), {
       type: 'error',
-      buttons: ['Quit', 'I won\'t whine'],
+      buttons: ['Quit', 'I understand'],
       title: 'Are you sure?',
-      message: 'This error was unhandled and so there is ' +
-        'no way to know what subsequent errors this ' +
-        'may cause. You may lose data!\n' +
-        'We ask that you refrain from reporting issues ' +
-        'that happen from here on out in this session.',
+      message:  'The error was unhandled which may lead to unforseen consequences including data loss. ' + 
+                'Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ',
       noLink: true,
     });
     if (action === 1) {
