@@ -114,6 +114,8 @@ $thumbnail-width: 256px;
   .thumbnail-img {
     max-width: 256px;
     max-height: 144px;
+    width: 100%;
+    object-fit: cover;
   }
 }
 
