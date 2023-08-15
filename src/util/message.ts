@@ -770,8 +770,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
   } else if (err instanceof StalledError) {
     return {
       message: 'Download stalled',
-      text: 'Download made no progress even after reconnecting. Please check your internet '
-          + 'connection and try a different download server if you can.',
+      text: `Please check your internet connection or, if you are a premium member, try a different preferred download location within your account´s Site Preferences`,
       wrap: false,
       allowReport: false,
     };
