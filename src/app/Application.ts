@@ -507,19 +507,13 @@ class Application {
         return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
             title: 'Admin rights detected',
             message:
-              'Vortex is not intended to be run as administrator!\n'
-              + 'If you\'re doing this because you have permission problems, please '
-              + 'stop, you\'re just making it worse.\n'
-              + 'File permissions can be changed, so that the tools can be run with a '
-              + 'regular account. '
-              + 'Vortex will try its best to help you with that.\n'
-              + 'If you choose to continue I won\'t bother you again but please '
-              + 'don\'t report any permission problems to us because they are '
-              + 'of your own making.'
+              `Vortex has detected that it is being run with administrator rights. It is strongly 
+              advised to not run any application with admin rights as adverse effects may include 
+              permission issues or even security risks. Continue at your own risk`
               + (!uacEnabled
-                  ? '\n\nPlease note: User Account Control(UAC) notifications are disabled '
-                    + 'on your device; we strongly recommend you re-enable these to avoid '
-                    + 'file permissions issues.'
+                  ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
+                  operating system.  We strongly recommend you re-enable these to avoid file permissions 
+                  issues and potential security risks.`
                   : ''),
             buttons: [
               'Quit',
@@ -557,15 +551,12 @@ class Application {
       if (dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
-        message: `The version of Vortex you\'re running (${currentVersion}) `
-               + `is older than the one you previously ran (${lastVersion}). `
-               + 'While Vortex versions are backward compatible they are not forward compatible, '
-               + 'it\'s possible this version of Vortex may not run and may even '
-               + 'do irrevsible damage to your application state.\n'
-               + 'Only continue if you\'re happy to reinstall and cleanup everything manually.',
+        message: `You're using a version of Vortex that is older than the version you ran previously. 
+        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this 
+        older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
         buttons: [
           'Quit',
-          'Yes, I\'m mad',
+          'Continue at your own risk',
         ],
         noLink: true,
       }) === 0) {
