@@ -406,19 +406,6 @@ function startDownloadCollection(api: IExtensionApi,
     });
 }
 
-export function getUserInfo(nexus: Nexus) : Promise<IUserInfo> {
-  return Promise.resolve((async () => {
-    try {
-      const userInfo = await nexus.getUserInfo();
-      return userInfo;
-    } catch (err) {
-      err['attachLogOnReport'] = true;
-      throw err;
-    }
-  })());
-}
-
-
 export interface IRemoteInfo {
   modInfo?: IModInfo;
   fileInfo?: IFileInfo;
@@ -1283,7 +1270,7 @@ export function transformUserInfoFromApi(input: IUserInfo) {
     status: getAccountStatus(input)
   };
   
-  log('info', 'stateUserInfo', stateUserInfo);
+  log('info', 'transformUserInfoFromApi()', stateUserInfo);
 
   return stateUserInfo;
 }
@@ -1312,7 +1299,7 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
-function updateUserInfo(api: IExtensionApi,
+function getUserInfo(api: IExtensionApi,
                         nexus: Nexus,
                         /*userInfo: IValidateKeyResponse*/)
                         : Promise<boolean> {
@@ -1332,24 +1319,27 @@ function updateUserInfo(api: IExtensionApi,
   if(isLoggedIn(api.getState())) {
     
     // get userinfo from api
-    return getUserInfo(nexus)
+    return Promise.resolve(nexus.getUserInfo())
       .then(apiUserInfo => {
         // update state with new info from endpoint
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log('info', 'apiUserInfo', apiUserInfo);
+        log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
         return true;
       })
       .catch((err) => {
-        log('error', `onRefreshUserInfo() ${err.message}`, err);
-        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+        log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        /*showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
           allowReport: false,
-        });
+        });*/
         return false;
       });
+
+      
   } else {
       log('warn', 'updateUserInfo() not logged in');
   }
   
+  /*
   return github.fetchConfig('api')
     .then(configObj => {
       const currentVer = getApplication().version;
@@ -1373,34 +1363,42 @@ function updateUserInfo(api: IExtensionApi,
     .catch(err => {
       log('warn', 'Failed to fetch api config', { message: err.message });
     })
-    .then(() => true);
+    .then(() => true);*/
 }
 
-function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials) {
+function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
   
   log('info', 'onJWTTokenRefresh', { credentials: credentials});
 
+  // sets state oauth credentials
   api.store.dispatch(setOAuthCredentials(
     credentials.token, credentials.refreshToken, credentials.fingerprint));
+
+  // if we've had a token refresh, then we need to update userinfo
+  // EDIT: we don't want this as it doesnt' make sense if the refresh is completed by a userInfo check.
+  // we will leave thie as an 'oauth credentials only' function. updating the state with updated token
+  // and then that will perform updateToken below and make sure both node-neuxs and state are in sync.
+
+  //Promise.resolve(getUserInfo(api, nexus)); 
 }
 
-export function updateToken(api: IExtensionApi,
-                            nexus: Nexus,
-                            token: any)
-                            : Promise<boolean> {
+export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any): Promise<boolean> {
+  setOauthToken(credentials); // used for reporting, unimportant right now
                         
-  log('info', 'updateToken()', token);                            
+  log('info', 'updateToken()', credentials); 
 
-  setOauthToken(token);
-  
+  // update the nexus-node object with our credentials.
+  // could be from nexus_integration once() or from when the credentials are updated in state
+
   return Promise.resolve(nexus.setOAuthCredentials({
-    fingerprint: token.fingerprint,
-    refreshToken: token.refreshToken,
-    token: token.token,
-  }, {
-    id: OAUTH_CLIENT_ID,
-  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials)))
-    .then(userInfo => updateUserInfo(api, nexus)) 
+      fingerprint: credentials.fingerprint,
+      refreshToken: credentials.refreshToken,
+      token: credentials.token,
+    }, {
+      id: OAUTH_CLIENT_ID,
+    }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
+  ))
+    .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
     .catch(err => {
       api.showErrorNotification('Authentication failed, please log in again', err, {

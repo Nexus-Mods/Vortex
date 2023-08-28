@@ -26,7 +26,7 @@ import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from 
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL, USERINFO_ENDPOINT } from './constants';
-import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, getOAuthTokenFromState, processErrorMessage,
+import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
          resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
 import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
@@ -732,9 +732,11 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
 export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
   return (): Promise<void> => {
 
+    // only called from the global menu item 
+
     //const token = getOAuthTokenFromState(api);
     
-    //log('info', 'onRefreshUserInfo()', token);
+    log('info', 'onRefreshUserInfo() started');
 
     // we have an oauth token in state
     //if(token !== undefined) {      
@@ -742,13 +744,13 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
       return Promise.resolve(nexus.getUserInfo())
       .then(apiUserInfo => {        
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log('info', 'onRefreshUserInfo()', apiUserInfo);
+        log('info', 'onRefreshUserInfo() nexus.getUserInfo response', apiUserInfo);
       })
       .catch((err) => {
-        log('error', `onRefreshUserInfo() ${err.message}`, err);
-        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+        log('error', `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        /*showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
           allowReport: false,
-        });
+        });*/
       });  
     //} else {
     //  log('warn', 'onRefreshUserInfo() no oauth token');
@@ -780,9 +782,14 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
   };
 }
 
+// fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: ITokenReply, newValue: ITokenReply) => {
+    log('info', 'onOAuthTokenChanged event handler. confidential.account.nexus.OAuthCredentials has changed', newValue)
+
+    // remove user info
     api.store.dispatch(setUserInfo(undefined));
+    
     if (newValue !== undefined) {
       updateToken(api, nexus, newValue);
     }

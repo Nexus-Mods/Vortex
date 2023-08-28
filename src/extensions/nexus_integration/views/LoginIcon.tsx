@@ -24,7 +24,6 @@ import { isLoggedIn } from '../selectors';
 
 import { setOauthPending } from '../actions/session';
 import { showError } from '../../../util/message';
-import { updateToken } from '../util';
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
