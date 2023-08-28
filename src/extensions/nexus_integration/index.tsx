@@ -58,9 +58,9 @@ import { NEXUS_API_SUBDOMAIN, NEXUS_BASE_URL, NEXUS_DOMAIN,
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, getOAuthTokenFromState, IRemoteInfo,
+import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo, IRemoteInfo,
          nexusGames, nexusGamesProm, oauthCallback, onCancelLoginImpl,
-         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
+         processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey, updateToken } from './util';
 import { checkModVersion } from './util/checkModsVersion';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -932,11 +932,11 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
     const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
-    const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+    const oauthCred = state.confidential.account?.['nexus']?.['OAuthCredentials']; // get credentials from state - this only happens once when extension is loading
     const loggedIn = (apiKey !== undefined) || (oauthCred !== undefined);
 
 
-    log('info', 'nexus_integration auth status', {
+    log('info', 'nexus_integration auth state status', {
       apiKey: apiKey !== undefined,
       oauthCred: oauthCred !== undefined,
       loggedIn: loggedIn
@@ -997,8 +997,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     } else {
 
+      // check to see if we have oauth credentials in state, if so, then we need to update nexus-node
       if (oauthCred !== undefined) {
-        log('info', 'OAuth credentials found in state. Updating nexus token');
+        log('info', 'OAuth credentials found in state. updating nexus-node credentials');
         updateToken(api, nexus, oauthCred);
       } else {
         //updateKey(api, nexus, apiKey);
@@ -1539,15 +1540,29 @@ function init(context: IExtensionContextExt): boolean {
 
   
   userInfoDebouncer = new Debouncer(() => {
-    console.log('debouncer');
+    
+    //console.log('userinfodevbouncer debouncer');
+
+    if(!sel.isLoggedIn(context.api.getState())) {
+      log('warn', 'Not logged in');
+      return Promise.resolve();
+    }
+
     context.api.events.emit('refresh-user-info');
     return Promise.resolve();
   }, 1000, true, true);
 
   context.registerAction('global-icons', 100, 'nexus', {}, 'Refresh User Info', () => {
-    log('info', 'Refresh User Info');
+    log('info', 'Refresh User Info global menu item clicked');
     userInfoDebouncer.schedule();    
   });
+
+  /*
+  // DNU: was used for testing... no longer public
+  context.registerAction('global-icons', 100, 'nexus', {}, 'Force Token Refresh', () => {
+    log('info', 'Force Token Refresh');
+    nexus.handleJwtRefresh();  
+  });*/
 
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Fix missing IDs',
                          instanceIds => { fixIds(context.api, instanceIds); },
