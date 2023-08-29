@@ -13,6 +13,19 @@
         "order": 1
       },
       "stopAll": true
+    },
+    {
+      "name": "Debug Electron (Staging)",
+      "configurations": [
+        "Debug Main Process (Staging)",
+        "Debug Renderer Process"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 1
+      },
+      "stopAll": true
     }
   ],
   "configurations": [
@@ -111,9 +124,38 @@
         "BLUEBIRD_DEBUG": "0",
         "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
         "DEBUG_REACT_RENDERS": "false",
-        "START_DEVTOOLS": "false",
+        "START_DEVTOOLS": "true",
       },
       "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": []
+    },
+    {
+      "name": "Debug Main Process (Staging)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/out/main.js",
+      "cwd": "${workspaceRoot}",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+        "--no-sandbox",
+        "--remote-debugging-port=9230",
+        "."
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "SIMULATE_FS_ERRORS": "false",
+        "HIGHLIGHT_I18N": "false",
+        "BLUEBIRD_DEBUG": "0",
+        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
+        "DEBUG_REACT_RENDERS": "false",
+        "START_DEVTOOLS": "true",
+      },
+      "envFile": "${workspaceFolder}/staging.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": []
