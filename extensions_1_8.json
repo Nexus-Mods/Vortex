@@ -1,5 +1,5 @@
 {
-  "last_updated": 1695109678205,
+  "last_updated": 1695113856300,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7195,6 +7195,25 @@
       "version": "0.3.0",
       "type": "game",
       "gameName": "Starfield"
+    },
+    {
+      "modId": 642,
+      "fileId": 2312,
+      "author": "RX9000",
+      "uploader": "RX9000",
+      "description": {
+        "short": "Traducao oficial do Vortex seguindo todas as normas de localização requeridas pela equipe de desenvolvimento.",
+        "long": "Adicionado suporte a plugins\n<br />Atualizado suporte a novos jogos e extensões\n<br />Tradução revisada pela equipe de localização da Green Leaf Localizações"
+      },
+      "downloads": 71,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/642/642-1694487088-468121150.png",
+      "name": "Vortex Portugues do Brasil PTBR",
+      "timestamp": 1694487611,
+      "tags": [],
+      "version": "23.9.1.1",
+      "type": "translation",
+      "language": "pt-BR"
     }
   ]
 }
