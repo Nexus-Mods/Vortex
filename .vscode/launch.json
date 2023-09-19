@@ -155,7 +155,7 @@
         "DEBUG_REACT_RENDERS": "false",
         "START_DEVTOOLS": "true",
       },
-      "envFile": "${workspaceFolder}/staging.env",
+      "envFile": "${workspaceFolder}/.staging.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": []

@@ -748,9 +748,9 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
       })
       .catch((err) => {
         log('error', `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`, err);
-        /*showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
           allowReport: false,
-        });*/
+        });
       });  
     //} else {
     //  log('warn', 'onRefreshUserInfo() no oauth token');

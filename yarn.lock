@@ -1698,8 +1698,8 @@
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#oauth":
-  version "1.4.22"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/5bd73b280cbe2c8b5ca6e3f4d3d2573643d49278"
+  version "1.4.23"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/338e4e13708b03d6bcf7f781987c180dfab1ed73"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
