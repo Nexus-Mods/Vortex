@@ -785,7 +785,7 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 // fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: ITokenReply, newValue: ITokenReply) => {
-    log('info', 'onOAuthTokenChanged event handler. confidential.account.nexus.OAuthCredentials has changed', newValue)
+    log('info', 'onOAuthTokenChanged event handler.')
 
     // remove user info
     api.store.dispatch(setUserInfo(undefined));

@@ -1270,7 +1270,7 @@ export function transformUserInfoFromApi(input: IUserInfo) {
     status: getAccountStatus(input)
   };
   
-  log('info', 'transformUserInfoFromApi()', stateUserInfo);
+  //log('info', 'transformUserInfoFromApi()', stateUserInfo);
 
   return stateUserInfo;
 }
@@ -1323,14 +1323,14 @@ function getUserInfo(api: IExtensionApi,
       .then(apiUserInfo => {
         // update state with new info from endpoint
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
+        //log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
         return true;
       })
       .catch((err) => {
-        log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
-        /*showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
+        //log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
           allowReport: false,
-        });*/
+        });
         return false;
       });
 
@@ -1368,7 +1368,7 @@ function getUserInfo(api: IExtensionApi,
 
 function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
   
-  log('info', 'onJWTTokenRefresh', { credentials: credentials});
+  log('info', 'onJWTTokenRefresh');
 
   // sets state oauth credentials
   api.store.dispatch(setOAuthCredentials(
@@ -1385,7 +1385,7 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
 export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any): Promise<boolean> {
   setOauthToken(credentials); // used for reporting, unimportant right now
                         
-  log('info', 'updateToken()', credentials); 
+  log('info', 'updateToken()'); 
 
   // update the nexus-node object with our credentials.
   // could be from nexus_integration once() or from when the credentials are updated in state

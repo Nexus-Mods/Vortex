@@ -1019,7 +1019,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     // register when window is focussed to do a userinfo check?  
     getApplication().window.on('focus', (event, win) => {
-      console.log('browser-window-focus');         
+      //console.log('browser-window-focus');         
       //userInfoDebouncer.schedule();
     })
   }
