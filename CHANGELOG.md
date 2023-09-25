@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - YYYY-MM-DD
+## [1.9.5] - 2023-09-25
+
+### Changed
+
+- Bump Electron from 25.3.1 to 25.8.1
+
+### Fixed
+
+- More consistent refreshing of OAuth tokens
+
+## [1.9.4] - 2023-08-30
 
 ### Added
 
@@ -62,10 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced some older spinner icons
 - Rewording of Edit Collections help text
 - Reworded some error messages when installing dependencies and collections
-
-### Removed
-
-- Removed ability
 
 ### Fixed
 
