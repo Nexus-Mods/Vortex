@@ -1,5 +1,5 @@
 {
-  "last_updated": 1695628108108,
+  "last_updated": 1695628847852,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7217,6 +7217,25 @@
       "dependencies": {
         "vortex": ">=1.8.0"
       }
+    },
+    {
+      "modId": 657,
+      "fileId": 2352,
+      "author": "starfield95",
+      "uploader": "starfield95",
+      "description": {
+        "short": "Korean Translation for Vortex",
+        "long": "[b][size=3]볼텍스에서 자동으로 설치하기[/size][/b]\n<br />  1. 볼텍스에서 로그인합니다.\n<br />  2. 좌측에 보이는 Settings 탭으로 들어갑니다.\n<br />  3. Interface 항목에서 언어를 한국어 (extension by starfield95)로 설정합니다.\n<br />  4. 볼텍스를 재시작 하면됩니다.\n<br />\n<br />[b][size=3]수동으로 설치하기[/size][/b]\n<br />  1. 파일 항목에서 수동으로 다운로드 합니다.\n<br />  2. 압축을 풀어, ko폴더를 C:&#92;Program Files&#92;Black Tree Gaming Ltd&#92;Vortex&#92;resources&#92;locales 에 넣습니다.\n<br />  3. 볼텍스에서 Settings 탭으로 들어갑니다.\n<br />  4. Interface 항목에서 언어를 한국어로 설정합니다.\n<br />  5. 볼텍스를 재시작 하면됩니다.\n<br />\n<br />[b][size=3]Installing Automatically from Vortex[/size][/b]\n<br />  1. Sign in to Vortex.\n<br />  2. Enter the Settings tab you see on the left.\n<br />  3. In the Interface item, set the language to 한국어 (extension by starfield95).\n<br />  4. Restart the vortex.\n<br />\n<br />[b][size=3]Installing manually[/size][/b]\n<br />  1. Download manually from the File item.\n<br />  2. Unzip the en folder and place it in C:&#92;Program Files&#92;Black Tree Gaming Ltd&#92;Vortex&#92;resources&#92;locales.\n<br />  3. In the vortex, enter the Settings tab.\n<br />  4. In the Interface section, set the language to 한국어.\n<br />  5. Restart the vortex.\n<br />  \n<br />\n<br />[b]눈에 보이는 대부분의 텍스트는 번역이 완료되었지만, 아직 번역이 진행 중이며, 빠르게 업데이트 할 예정입니다.\n<br />Most of the visible text has been translated, but we're still working on it and will update it as soon as we can.[/b]\n<br />\n<br />\n<br />[color=#00ff00][size=4][b]만약 패치가 잘 적용되지 않는다면, 언어를 영어로 설정하고 아래 폴더를 삭제하고 다시 시도하시면 됩니다.\n<br />If the patch doesn't work, you can set the language to English, delete the folder below, and try again.[/b][/size][/color]\n<br />\n<br />  C:&#92;Users&#92;username&#92;AppData&#92;Roaming&#92;Vortex&#92;locales&#92;ko\n<br />  C:&#92;ProgramData&#92;Vortex&#92;locales&#92;ko"
+      },
+      "downloads": 48,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/657/657-1695544290-672020125.png",
+      "name": "Korean Translation for Vortex",
+      "timestamp": 1695545189,
+      "tags": [],
+      "version": "1.9.3",
+      "type": "translation",
+      "language": "ko"
     }
   ]
 }
