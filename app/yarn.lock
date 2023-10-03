@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "22.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/018d9229edf5ae962ede43a2ef30a68bc739d42c"
+  version "23.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/09c2bc201f8d00860ffa28b2decd7db26d62d115"
 
 "@babel/runtime-corejs2@^7.0.0":
   version "7.20.1"
@@ -2588,8 +2588,8 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.7.7"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/99dfab99922ff6ab329fe9bf71e7ef63130cf57f"
+  version "0.7.8"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/7082ab513592dca7176a606eab976c0914556468"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"
