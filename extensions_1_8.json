@@ -1,5 +1,5 @@
 {
-  "last_updated": 1696837649213,
+  "last_updated": 1696852634844,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7206,6 +7206,25 @@
       "version": "1.9.3",
       "type": "translation",
       "language": "ko"
+    },
+    {
+      "modId": 654,
+      "fileId": 2339,
+      "author": "tymkolt",
+      "uploader": "tymkolt",
+      "description": {
+        "short": "Український переклад, що охоплює всю версію 1.9.3 та 1.9.4.<br />Більша частина перекладу виконана машинно, але це в процесі виправлення.",
+        "long": "[url=https://war.ukraine.ua/]Stand with Ukraine![/url]\n<br />[ENG] Would you like to translate Vortex into your own language?\n<br />Join the unofficial Vortex translation project [url=https://crowdin.com/project/vortex-unofficial]on Crowdin[/url] and don't forget to join the [url=https://discord.gg/RDGAWmAZMF]Discord server[/url] to discuss issues!\n<br />[UKR] Бажаєте бути перекладачем Vortex на українську чи інші мови?\n<br />Приєднуйтеся до неофіційного проєкту перекладу Vortex [url=https://crowdin.com/project/vortex-unofficial]на Crowdin[/url]﻿ і не забудьте приєднатися на [url=https://discord.gg/RDGAWmAZMF]Discord-сервер[/url]﻿ для обговорення питань!\n<br />\n<br />\n<br />Український переклад, що охоплює всю версію 1.9.3 та 1.9.4.\n<br />Більша частина перекладу виконана машинно, але це в процесі виправлення."
+      },
+      "downloads": 35,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/654/654-1695225364-36825010.png",
+      "name": "Vortex Ukrainian Translation 1.9.3.-1.9.4",
+      "timestamp": 1695227417,
+      "tags": [],
+      "version": "1.9.4.0923",
+      "type": "translation",
+      "language": "uk"
     }
   ]
 }
