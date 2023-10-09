@@ -1,5 +1,5 @@
 {
-  "last_updated": 1696852634844,
+  "last_updated": 1696861855107,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7225,6 +7225,24 @@
       "version": "1.9.4.0923",
       "type": "translation",
       "language": "uk"
+    },
+    {
+      "modId": 660,
+      "fileId": 2387,
+      "author": "Dat",
+      "uploader": "Dat1",
+      "description": {
+        "short": "After more than 30 hours of learning to edit Theme.<br />Finally, I created my own night version of Vortex. Inspired by JetBrains Rider IDE's Rider Night Theme.",
+        "long": "[left][b][u][color=#ffff00]Install:\n<br />[/color][/u][/b][/left][color=#ff7700][b][font=Georgia][size=5]- Enter Start Menu type the command: %APPDATA%.[/size][/font][/b]\n<br />[/color]\n<br />[list=1]\n<br />[*][font=Verdana] [/font][font=Arial]When the folder is opened, the path will be as follows[/font][font=Verdana]: [/font][i][font=Times New Roman][color=#c27ba0]C:&#92;Users&#92;***&#92;AppData&#92;Roaming[/color][/font][/i][font=Verdana].[/font]\n<br />[*][size=3][font=Times New Roman] [/font][font=Courier New]Find the [/font][u][font=Georgia][color=#f1c232]Vortex folder[/color][/font][/u][font=Courier New] and copy the ThemeDarkRider folder inside [/font][font=Lucida Sans Unicode][color=#f4f4f4]the[/color] [u][color=#dd7e6b]themes folder[/color][/u][/font][font=Times New Roman].[/font][/size]\n<br />[*][font=Times New Roman][size=3] Restart Vortex.[/size][/font]\n<br />[/list][font=Times New Roman][size=3]------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n<br />Updated list:\n<br />- Version 1.4.1: Added download using MOD MANAGER DOWNLOAD.\n<br />[/size][/font][b][center]﻿[/center]\n<br />[/b]"
+      },
+      "downloads": 35,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/660/660-1696479605-1593596418.png",
+      "name": "Rider Night - Vortex Theme",
+      "timestamp": 1696861028,
+      "tags": [],
+      "version": "1.4.1",
+      "type": "theme"
     }
   ]
 }
