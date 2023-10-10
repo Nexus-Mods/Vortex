@@ -1,5 +1,5 @@
 {
-  "last_updated": 1696924075549,
+  "last_updated": 1696924898590,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7243,6 +7243,25 @@
       "tags": [],
       "version": "1.4.1",
       "type": "theme"
+    },
+    {
+      "modId": 668,
+      "fileId": 2380,
+      "author": "RandomHero13",
+      "uploader": "RandomHero13",
+      "description": {
+        "short": "Just adds support for Jagged Alliance 3 to Vortex",
+        "long": "This extension makes it easier to keep your JA3 mods up-to-date by adding JA3 support to Vortex.\n<br />\n<br />You still have to activate the mods in the ingame ModManager.\n<br />\n<br />Until it is approved and added to the extension section in the vortex client you have to manually extract it to \"%AppData%&#92;Roaming&#92;Vortex&#92;plugins&#92;Vortex Extension Update - Jagged Alliance 3\""
+      },
+      "downloads": 28,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5559.jpg",
+      "name": "Jagged Alliance 3 - Vortex Support",
+      "timestamp": 1696429169,
+      "tags": [],
+      "version": "0.1.13",
+      "type": "game",
+      "gameName": "Jagged Alliance 3"
     }
   ]
 }
