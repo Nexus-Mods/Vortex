@@ -1,5 +1,5 @@
 {
-  "last_updated": 1696924898590,
+  "last_updated": 1696925568898,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7262,6 +7262,25 @@
       "version": "0.1.13",
       "type": "game",
       "gameName": "Jagged Alliance 3"
+    },
+    {
+      "modId": 663,
+      "fileId": 2372,
+      "author": "p1xel8ted",
+      "uploader": "p1xel8ted",
+      "description": {
+        "short": "Adds Vortex support for Potion Permit (BepInEx).",
+        "long": "[size=3]Adds Vortex support for Potion Permit (BepInEx).[/size]"
+      },
+      "downloads": 4,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4817.jpg",
+      "name": "Potion Permit Vortex Extension",
+      "timestamp": 1696236175,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Potion Permit"
     }
   ]
 }
