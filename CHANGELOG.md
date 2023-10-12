@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.6] - 2023-10-12
+
+### Changed
+
+- Bump electron to 25.8.4
+- Bump postcss to 8.4.31
+- Update 7zip to 23.01
+- Updated masterlist revision for LOOT to 0.22.1
+
 ## [1.9.5] - 2023-09-25
 
 ### Changed
