@@ -18,12 +18,12 @@ on:
           type: boolean
           default: true
         draft:
-          description: "Create a draft release?"
+          description: "Create a draft release? (not used)"
           required: false
           type: boolean
           default: true
         prerelease:
-          description: "Create a prerelease?"
+          description: "Create a prerelease? (not used)"
           required: false
           type: boolean
           default: true
@@ -100,7 +100,10 @@ jobs:
           $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
           
           [IO.File]::WriteAllBytes("$certPath", $certBytes)
-     
+
+      - name: Update Licenses
+        run: yarn update_aboutpage
+
       - name: Build API
         run: yarn --non-interactive build_api
       

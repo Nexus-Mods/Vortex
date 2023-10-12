@@ -19,7 +19,7 @@
     "subprojects_app": "node BuildSubprojects.js app",
     "subprojects_ci": "node BuildSubprojects.js app --noparallel",
     "build_api": "cd api && yarn run build",
-    "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
+    "build_rest": "yarn run update_aboutpage && yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
@@ -38,7 +38,8 @@
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
-    "generate_validation": "generate-validation ."
+    "generate_validation": "generate-validation .",
+    "update_aboutpage": "node ./updateLicenses.js"
   },
   "jest": {
     "testEnvironment": "jsdom",
