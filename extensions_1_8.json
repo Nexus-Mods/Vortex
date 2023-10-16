@@ -5733,7 +5733,7 @@
       "id": "gamebryo-plugin-management",
       "hide": true,
       "author": "Black Tree Gaming Ltd.",
-      "version": "0.2.7",
+      "version": "0.2.6",
       "description": {
         "short": "Management for gamebryo plugins",
         "long": "Management for gamebryo plugins"
