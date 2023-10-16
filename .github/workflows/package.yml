@@ -101,8 +101,8 @@ jobs:
           
           [IO.File]::WriteAllBytes("$certPath", $certBytes)
 
-      - name: Update Licenses
-        run: yarn update_aboutpage
+      #- name: Update Licenses
+      #  run: yarn update_aboutpage
 
       - name: Build API
         run: yarn --non-interactive build_api
