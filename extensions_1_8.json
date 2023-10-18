@@ -1,5 +1,5 @@
 {
-  "last_updated": 1697615229165,
+  "last_updated": 1697616574033,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -217,7 +217,7 @@
         "long": "[i][size=3][color=#b6b6b6]这是一个中文翻译文件。本人由于也是第一次做翻译，英语水平也是实在渣渣，翻译内容可能存在[/color][b][u]极多的错误[/u][/b][color=#b6b6b6]（很多专业名词没办法理解，只能机翻外加自己理解，让句子读起来尽可能通畅），希望各位大佬多多指正。[/color]\n<br />\n<br />为了翻译的持续发展，所有人可以随意使用本项目中的文件/内容，无需我的授权（我在上面已经声明了）。但需要遵守 [url=https://creativecommons.org/licenses/by-nc-sa/4.0/]CC BY-NC-SA 4.0[/url]﻿ 协议。简单解释此协议：1.任何人可自由使用，修改，分发本项目，但务必署名。2.新的项目本身也得依照本协议进行分发。3.不得以任何方式进行盈利（非商业性）。\n<br />\n<br />[color=#ff00ff]但是我更希望大家能以合作方式共同完善此项目。我已经创建了[url=https://github.com/liuyanxi975/Chinese-Translation-for-Vortex]Github项目[/url]，您可进入了解详情。[/color]\n<br />[/size][/i]\n<br />[size=4][color=#ff0000]没有N网账号下载不了汉化？请前往[/color][url=http://www.9damaogame.net/forum.php?mod=viewthread&amp;tid=143115&amp;fromuid=737507]9DM论坛[/url][color=#ff0000]下载！[/color]\n<br />\n<br />[color=#6d9eeb]如果使用无效，请先检查自己的安装步骤！一般来说，新版本的Vortex不会导致旧版本的翻译失效，只是部分翻译缺失，不影响使用。[/color][/size][size=4]\n<br />[/size]\n<br />\n<br />[color=#00ff00][size=5]安装教程：[/size][/color]\n<br />\n<br />[color=#ff7700][size=5]一、自动安装[/size]\n<br />[/color]\n<br />[size=3][url=https://www.nexusmods.com/site/mods/29?tab=files]下载文件[/url]，将自动安装脚本于zh文件夹解压至同一目录，运行脚本即可（支持从旧翻译升级）。更改语言参见下方手动安装第4步。安装完成后可删除解压出的zh文件夹与脚本。如果安装失败您需要手动安装。\n<br />\n<br />\n<br />[/size][color=#ff7700][size=5]二、手动安装[/size][/color]\n<br />\n<br />[size=3]1.首先进入目录：[b][color=#00ffff]%appdata%&#92;vortex[/color][/b]（资源管理器直接输入就行，如果没有进入 [/size][size=3][b]C:&#92;Users&#92;你的用户名&#92;AppData&#92;Roaming&#92;vortex）[/b] \n<br />\n<br />[b][color=#ff0000]特殊情况注意：如果您正在使用共享模式安装或运行vortex，您可尝试将翻译文件安装至软件根目录下，但仍需按照下一步创建文件夹后再解压翻译文件。普通用户请无视这段话[/color][/b]\n<br />\n<br />[/size][size=3]2.创建一个名为 [color=#00ffff][b]locales[/b][/color] 的文件夹（如果有就不用创建了）\n<br />\n<br />[/size][size=3]3.[url=https://www.nexusmods.com/site/mods/29?tab=files]下载翻译文件[/url]，把解压出来的，名为 [b][color=#00ffff]zh[/color][/b] 的文件夹丢到 [b][color=#00ffff]locales[/color][/b] 文件夹里！\n<br />[/size]\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/29/29-1603523675-249255951.jpeg[/img]\n<br />[size=3]4.打开Vortex，进入：SETTINGS-INTERFACE-LANGUAGE选择中文\n<br />[/size]\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/29/29-1603523688-61763560.jpeg[/img]"
       },
       "downloads": 117317,
-      "endorsements": 10096,
+      "endorsements": 10097,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/29/29-1603542333-827001759.jpeg",
       "name": "Chinese Translation for Vortex",
       "timestamp": 1672751062,
@@ -276,7 +276,7 @@
         "long": "[b][color=#f1c232][size=5][u]Japanese Translation for Vortex (Vortex日本語化ファイル)[/u][/size][/color][/b]\n<br />\n<br />バージョン: 1.3.5 (1.3.6～1.3.8でも利用可能)\n<br />最終更新日: 2020/09/11\n<br />制作: BowmoreLover\n<br />\n<br />[size=3][color=#f1c232][u][b]お知らせ[/b][/u][/color][/size]\n<br />\n<br />[color=#ffff00][b]2020/06/22:[/b][/color]\n<br />Vortex 1.2.15以降で日本語拡張機能をインストールしようとすると、\"Invalid Extension\"という赤い通知メッセージが出てインストールできない問題が発生していましたが、6/22にリリースされた Vortex 1.2.17にて対策されました。。\n<br />暫定対策版 \"Japanese Translation for Vortex 1.2.15-r2\" を導入済みで、Vortex 1.2.17以降にアップデートした場合、次の手順で暫定対策版をアンインストールしてください。\n<br />(1) 拡張機能ページで \"Japanese Translation for Vortex 1.2.15-r2\" の Remove ボタンを押し、Vortexを再起動する\n<br />(2) Settingsページを開き、Languageを \"日本語(にほんご/にっぽんご)(日本)\" に変更する。\n<br />(3) 以上で正式版に切り替わり、以降は自動更新されます。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]このファイルについて[/b][/u][/color][/size]\n<br />\n<br />Vortexの日本語化ファイルです。\n<br />Nexus Modsのページにアップロードされた日本語化ファイルは、Nexus Modsのスタッフによって精査された後、Vortexの拡張機能として公開される流れとなっていますので、基本的にVortexの画面からインストールしてください。すでに日本語化拡張機能を導入済みの場合、自動的に更新されますので、特に作業は必要ありません。\n<br />なお、本ページの更新から拡張機能としての公開までに数日かかる場合があります。\n<br />\n<br />ご注意:\n<br />[list]\n<br />[*]現在のバージョンではVortex本体側のローカライズが不完全なため、UI/メッセージの一部が英語のままとなります。\n<br />[*]有志によって作成/公開されているVortexの拡張機能は、今のところ日本語化の対象外となります。\n<br />[*]ローカライズ対象文字列は専用のツールを開発して出来る限り抽出したつもりですが、まだ漏れがあるかもしれません。\n<br />[*]翻訳内容については随時変更/改善していく予定です(提案/指摘歓迎)。\n<br />[/list]\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]前提プログラム[/u][/color][/b][/size]\n<br />\n<br />[url=https://www.nexusmods.com/site/mods/1]Vortex[/url] Version 1.3.5以降\n<br />\n<br />※事前リリース版は[url=https://github.com/Nexus-Mods/Vortex/releases]Nexus ModsのGitHub[/url]からダウンロードできます。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]インストール方法[/b][/u][/color][/size]\n<br />\n<br />(1) 新規インストールの場合\n<br />\n<br />VortexのSettingsページを開き、InterfaceタブのLanguageから「日本語 (にほんご／にっぽんご)」を選択した後、Vortexを再起動します。\n<br />これで日本語化拡張機能がインストールされ、以降は自動アップデートされます。\n<br />\n<br />\n<br />(2) 日本語化拡張機能をアップデートする場合\n<br />\n<br />Vortexの起動時に更新された拡張機能が自動的にアップデートされます。\n<br />\n<br />\n<br />(3) 古いバッチ形式の日本語化をインストールしている場合\n<br />\n<br />拡張機能をサポートする前の古い日本語化ファイルを、ファイルコピーまたはバッチコマンドを実行してインストールしている場合、古い日本語化ファイルを削除しないと、日本語化拡張機能をインストールしても正しく適用されません。\n<br />VortexのSettingsページから言語をEnglishに戻した後、次のフォルダーを削除してからVortexを再起動してください。\n<br />・C:&#92;Users&#92;ユーザー名&#92;AppData&#92;Roaming&#92;Vortex&#92;locales&#92;ja\n<br />・C:&#92;ProgramData&#92;Vortex&#92;locales&#92;ja\n<br />※ドライブ名とパスはOS環境/ユーザアカウント名によって異なります。\n<br />その後、(1)の方法で新規インストールを行ってください。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]問題解決のヒント[/b][/u][/color][/size]\n<br />\n<br />[list]\n<br />[*]Vortexで\"missing .node module\"エラーが出る場合、Visual C++のランタイムパッケージのインストールが必要です。こちらのページからvc_redist.x64.exeをインストールしてください（バージョンは明記されていませんが、最新のものでいいはず）→ [url=https://support.microsoft.com/ja-jp/help/2977003/the-latest-supported-visual-c-downloads]最新のサポートされる Visual C++ のダウンロード（マイクロソフト）[/url]\n<br />[*]NMMからのインポート時に「すべてのMODを無効にしてください」エラーとなってインポートできない場合、ゲームフォルダーに残っているプラグインを手動で削除してください。\n<br />[/list]\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]訳文の改善について[/b][/u][/color][/size]\n<br />\n<br />0.18.2にて、ルール定義画面や依存関係/警告アイコンのツールチップに表示される文章を改善し、前後関係をわかりやすくしました(ご指摘いただいたmrredpizza氏に感謝)。\n<br />誤訳の指摘や改善提案があれば、私の[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]ブログ記事のコメント[/url]、Nexusのプライベートメッセージ(漢字使用不可、ローマ字で書くこと)、Discordアカウント「[color=#6fa8dc][b]BowmoreLover#6259[/b][/color]」のいずれかまでお願いします。\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]Vortexの日本語ドキュメントについて[/u][/color][/b][/size]\n<br />\n<br />以下のページでVortexのドキュメント/Wikiの和訳を公開中です。\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/15/182000]Vortex紹介ページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/17/183000]Nexus Mods: Vortexヘルプセンターの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]Nexus Wiki: Vortexページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]変更履歴[/u][/color][/b][/size]\n<br />[spoiler]\n<br />2018/11/02 (0.16.10) : 初回リリース\n<br />2018/11/02 (0.16.11) : 最新の事前リリース版に対応\n<br />2018/11/06 (0.16.12) : 最新版に対応\n<br />2018/12/07 (0.16.15) : 最新版に対応\n<br />2019/02/12 (0.17.3)  : 最新版に対応\n<br />2019/03/01 (0.17.5)  : 最新版に対応\n<br />2019/03/07 (0.17.7)  : 最新版に対応\n<br />2019/03/21 (0.17.8)  : 最新版に対応、一部用語の訳文変更\n<br />2019/04/11 (0.17.11) : 最新版に対応\n<br />2019/05/28 (0.18.5)  : 最新版に対応\n<br />2019/05/30 (0.18.6)  : 最新版に対応\n<br />2019/06/13 (0.18.8)  : 最新版に対応\n<br />2019/06/27 (0.18.11) : 最新版に対応 (0.18.12でも利用可能)\n<br />2019/06/30 (0.18.12) : 訳文の改善(ルール定義/ツールチップで依存関係をわかりやすく)。ご指摘いただいたmrredpizza氏に感謝します。\n<br />2019/07/16 (0.18.14) : 最新版に対応\n<br />2019/07/17 (0.18.16) : 最新版に対応\n<br />2019/07/24 (0.19.1)  : 最新版に対応\n<br />2019/07/31 (1.0.0)   : 最新版に対応\n<br />2019/10/16 (1.0.5)   : 最新版に対応、次のゲーム拡張の和訳を追加: 7daystodie, codevein, residentevil22019, spyroreignitedtrilogy\n<br />2019/11/28 (1.1.3)   : 最新版に対応、拡張機能化のためにインストーラーファイルの構成を変更、一部訳文の改善/訂正、Vortex拡張機能対応\n<br />2019/11/29 (1.1.4)   : 最新版に対応 (訳文2行追加) (1.1.5でも利用可能)\n<br />2020/01/23 (1.1.10)  : 最新版に対応、一部文字化けの訂正 (1.1.12～1.1.15でも利用可能)\n<br />2020/04/24 (1.2.9)   : 最新版に対応、バッチインストーラーの廃止\n<br />2020/06/09 (1.2.15)  : 最新版に対応 (1.2.16～1.2.20でも利用可能)\n<br />2020/06/12 (1.2.15-r2) : 日本語化拡張機能がインストールできない問題の暫定対策版\n<br />2020/09/10 (1.3.4)   : 最新版に対応 \n<br />2020/09/11 (1.3.5)   : 最新版に対応 (1.3.6～1.3.8でも利用可能)\n<br />[/spoiler]\n<br />\n<br />[size=3][b][color=#f1c232][u]Credits[/u][/color][/b][/size]\n<br />\n<br />Vortex by Nexus Mods\n<br />The license of this file conforms to the license of Vortex (GPL-3 License).\n<br />\n<br />使用ツール:\n<br />[url=https://www.nexusmods.com/skyrimspecialedition/mods/134]xTranslater[/url] by McGuffin\n<br />[url=https://www.nexusmods.com/site/mods/33]Unofficial Vortex Translation Tool[/url] by BowmoreLover\n<br />\n<br />以上"
       },
       "downloads": 213123,
-      "endorsements": 8424,
+      "endorsements": 8426,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/32/32-1541090883-928894847.jpeg",
       "name": "Japanese Translation for Vortex",
       "tags": [],
@@ -2001,7 +2001,7 @@
         "long": "An extension for Vortex, enabling support for Fallout 76 mod management through Vortex.\n<br />\n<br />Many thanks to the contributors Pickysaurus and MassimoMx for improving this extension\n<br />Their work is greatly appreciated, check their profiles under Credits!\n<br />\n<br />[size=3][b]Vortex Install (Easy)[/b][/size]\n<br />[list]\n<br />[*]In Vortex, locate Fallout 76 in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />[size=3][b]Vortex Install (Advanced)[/b][/size]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />[size=3][b]Manual Install[/b][/size]\n<br />Extract the archive (zip, rar, 7z) to %appdata%&#92;Vortex&#92;plugins&#92;game-fallout76.\n<br />\n<br />[size=3][b]Special Thanks[/b][/size]\n<br />This special thanks goes out to Pickysaurus, who has been immensely supportive and helpful. They also added the INI write support for 2.0\n<br />\n<br />[size=3][b]Source Code[/b][/size]\n<br />All source code can be found here: [url=https://github.com/Dakraid/Vortex_Fallout76]https://github.com/Dakraid/Vortex_Fallout76[/url]\n<br />\n<br />[size=3][b]Credits\n<br />[/b][/size]Netrve - Original adaption to FO76\n<br />Pickysaurus ([url=https://github.com/Pickysaurus]Github [/url]| [url=https://www.nexusmods.com/skyrim/users/31179975]Nexusmods[/url]) - Initial INI Support\n<br />MassimoMx ([url=https://github.com/mxswat]Github [/url]| [url=https://www.nexusmods.com/fallout4/users/17996194]Nexusmods[/url]) - Improved INI Support\n<br />Used imagery belongs in parts to Bethesda Softworks LLC and Blacktree Gaming LTD respectively.\n<br />Description has been copied from Nagev's Mount and Blade II Bannerlord extension.\n<br />The extension itself is based on the official Fallout 4 extension adapted for Fallout 76.\n<br />As such this plugin falls under the GPL-v3 license."
       },
       "downloads": 74226,
-      "endorsements": 6324,
+      "endorsements": 6325,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/110/110-1587343642-175184037.jpeg",
       "name": "Fallout 76 Support (Wastelanders)",
       "timestamp": 1669047671,
@@ -2994,13 +2994,13 @@
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-baldursgate3",
       "id": "game-baldursgate3",
-      "author": "Black Tree Gaming Ltd.",
+      "author": "Nexus Mods",
       "gameName": "Baldur's Gate 3",
       "description": {
         "short": "Support for Baldur's Gate 3",
         "long": "Support for Baldur's Gate 3"
       },
-      "version": "1.2.2",
+      "version": "1.3.7",
       "hide": true
     },
     {
@@ -4119,7 +4119,7 @@
         "long": "[size=4]Horizon Zero Dawn support for Vortex[/size]\n<br />\n<br />This extension adds support for Horizon Zero Dawn mods to the Vortex mod manager.\n<br />\n<br />[quote]This extension is still in preview, please report any issues you find![/quote]\n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple Vortex extension that adds support for Horizon Zero Dawn mods so that you can install game mods using the Vortex mod manager.\n<br />\n<br />Using Vortex you can install, manage, track and uninstall mods for Horizon Zero Dawn just like you install mods for any of your other Vortex-supported games.\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You should be able to immediately install the extension by finding Horizon Zero Dawn in your Vortex Games list and clicking Manage. \n<br />Otherwise, install it directly from the Extensions pane, by clicking Find More and searching for \"Horizon Zero Dawn\".\n<br />\n<br />[i]Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension.[/i]\n<br />\n<br />---\n<br />\n<br />Disclaimer: This project is not associated with Nexus Mods, nor with Sony Interactive Entertainment or Guerrilla Games."
       },
       "downloads": 40366,
-      "endorsements": 2832,
+      "endorsements": 2833,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/335/335-1687343050-264584069.jpeg",
       "name": "Horizon Zero Dawn Support",
       "timestamp": 1687343123,
@@ -4435,7 +4435,7 @@
         "long": "Adds support for Elden ring to the vortex.\n<br />\n<br />[b]Installation[/b]\n<br />In Vortex go to \"Extensions\", click the \"Find more\" button, find this extension, and install it. \n<br />\n<br />[b]Manual Installation[/b]\n<br />Download manually from the site then paste %appdata%&#92;Vortex&#92;plugins to the file explorer address bar and press enter then extract the file into a new folder inside that folder. \n<br />If on the vortex tab of vortex setting multi-user mode is set to \"Shared\" you have to extract the archive into windowsdrive&#92;ProgramData&#92;vortex&#92;plugins instead of %appdata%&#92;Vortex&#92;plugins."
       },
       "downloads": 228633,
-      "endorsements": 9565,
+      "endorsements": 9566,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/370/370-1647694507-1869342320.jpeg",
       "name": "Elden Ring Support for Vortex",
       "timestamp": 1648967946,
@@ -4548,7 +4548,7 @@
         "long": "Please ensure you check if each mod you install requires a new game or not."
       },
       "downloads": 7989,
-      "endorsements": 409,
+      "endorsements": 410,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/376/376-1649147596-1486741490.png",
       "name": "Hollow Knight Vortex Support",
       "timestamp": 1670922658,
@@ -5600,7 +5600,7 @@
         "long": "[quote]This extension is a great tool for gamers who want to customize their gaming experience. It allows them to manage mods for Tales of Arise game. One mod that can be managed with this tool is the [url=https://www.nexusmods.com/talesofarise/mods/292]Minimap to Compass HUD[/url]﻿ mod, which hides the content of the minimap for a better immersive experience. This mod is helpful for gamers who want to explore the game world more freely and without the minimap displaying information that can take away from the game's atmosphere. With this Vortex extension support, gamers can easily manage their mods and make sure they are properly installed. It's a great way to customize your gaming experience and make the game more enjoyable.[/quote]\n<br />\n<br />[size=5]Supported mode types:[/size][list]\n<br />[*]PAK - E.g. [url=https://www.nexusmods.com/talesofarise/mods/188]Rinwell - Traveller from Another World - Mona Costume Replacement[/url]﻿﻿ \n<br />[*]USM - E.g.  [url=https://www.nexusmods.com/talesofarise/mods/43]Default Intro Opening Replacer[/url]﻿\n<br />[*]Engine Injector - E.g. [url=https://www.nexusmods.com/talesofarise/mods/292]Minimap to Compass HUD[/url]﻿﻿ &amp; [url=https://www.nexusmods.com/talesofarise/mods/248]Multiplayer Mod[/url]﻿\n<br />[/list]\n<br />[size=5]Installation\n<br />[/size][list=1]\n<br />[*]Download\n<br />\n<br />[*]Open your Vortex client and click on the 'Drop Files' icon under the 'Extensions' tab\n<br />[*]Select this extension\n<br />[*]Restart Vortex\n<br />[*]Go to the 'Games' tab and you'll be able to find the 'Tales of Arise' game.\n<br />[/list][size=5]Develop[/size][size=4]\n<br />[/size][size=3]Open source at [/size][url=https://github.com/rdok/tales-of-arise_vortex-extension][size=3]https://github.com/rdok/tales-of-arise_vortex-extension[/size][size=5]\n<br />[/size][/url]﻿[size=5]\n<br />[/size]"
       },
       "downloads": 4346,
-      "endorsements": 200,
+      "endorsements": 201,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/500/500-1686217537-544479623.jpeg",
       "name": "Tales of Arise Vortex Support",
       "timestamp": 1681672223,
@@ -7157,7 +7157,7 @@
         "long": "This extension adds Starfield as a game supported in Vortex. Both Steam and Xbox Game Pass versions can be detected, however, the game version information from GamePass is not possible to acquire at this time. \n<br />\n<br />\n<br />[size=4]Vortex Install (Easy)\n<br />[/size]\n<br />[list]\n<br />[*]In Vortex, locate Starfield in the Games tab.\n<br />[*]Click on the game tile to manage it and install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Vortex Install (Advanced)[/size]\n<br />\n<br />[list]\n<br />[*]In Vortex, navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Manual Install\n<br />[/size]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Starfield."
       },
       "downloads": 552758,
-      "endorsements": 24224,
+      "endorsements": 24225,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/634/634-1693310625-1048751349.jpeg",
       "name": "Starfield",
       "timestamp": 1695411670,
