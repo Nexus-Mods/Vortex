@@ -484,6 +484,27 @@ class Application {
   }
 
   private identifyInstallType(): Promise<void> {
+
+    /**
+     * we are checking to see if an uninstaller exists as if it does, it means it was installed via our installer.
+     * if it doesn't, then something else installed it. Maybe GOG, or EPIC, or something.
+     * 
+     * TODO: we want to further check managed types to distiguish between anything that isn't us.
+     * Quick research says we need to file pattern match the install directory to see what files gog or epic adds etc.
+     * This should determine where it's from
+     * 
+     * GOG 
+     * 
+     * Maybe the existance of: (the number being the gog product id)
+     * 'goggame-galaxyFileList.ini'
+     * 'goggame-2053394557.info'
+     * 'goggame-2053394557.hashdb'
+     * 
+     * EPIC
+     * 
+     * 
+     */
+
     return fs.statAsync(path.join(getVortexPath('application'), 'Uninstall Vortex.exe'))
       .then(() => {
         this.mStore.dispatch(setInstallType('regular'));
@@ -543,10 +564,12 @@ class Application {
   private migrateIfNecessary(currentVersion: string): Promise<void> {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
+
     if (this.mFirstStart || (currentVersion === '0.0.1')) {
       // don't check version change in development builds or on first start
       return Promise.resolve();
-    }
+    } 
+
     if (isMajorDowngrade(lastVersion, currentVersion)) {
       if (dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'warning',
