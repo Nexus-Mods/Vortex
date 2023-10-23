@@ -1,5 +1,5 @@
 {
-  "last_updated": 1697960822528,
+  "last_updated": 1698036285659,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7281,6 +7281,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Potion Permit"
+    },
+    {
+      "modId": 645,
+      "fileId": 2409,
+      "author": "tmun1versal",
+      "uploader": "tmun1versal",
+      "description": {
+        "short": "Adds support for Remnant II to Vortex Mod Manager",
+        "long": "[size=3]Adds support to Vortex for managing and installing Remnant II mods of multiple kinds.\n<br />\n<br />Remnant II mods require an additional mod to run, which can be found [url=https://www.nexusmods.com/remnant2/mods/2]here[/url].\n<br />[/size]\n<br />\n<br />[size=5]Reporting Issues, Feature Requests etc[/size].\n<br />\n<br />If possible, [url=https://github.com/TMUniversal/remnant2-vortex-support/issues/new]make reports and requests on GitHub[/url]."
+      },
+      "downloads": 46,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5575.jpg",
+      "name": "Remnant II Vortex Support",
+      "timestamp": 1697888309,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Remnant II"
     }
   ]
 }
