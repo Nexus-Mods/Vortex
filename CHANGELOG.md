@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.9.7] - 2023-10-26
 
+### Added
+
 - (Starfield) Added as a game stub
+
+### Changed
+
+- Bump babel/traverse to 7.23.2
 - (Baldur's Gate 3) Bumped to 1.3.7
-- Fix for CLI args crashing Vortex on startup 
+
+### Fixed
+
+- Fix for CLI args crashing Vortex on startup
 
 ## [1.9.6] - 2023-10-12
 
