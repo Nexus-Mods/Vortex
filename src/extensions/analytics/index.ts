@@ -146,9 +146,11 @@ function init(context: IExtensionContext): boolean {
 
         const gameId = activeGameId(state);
         let gameVersion = '';
+        let extensionVersion = '';
         if (gameId) {
-          gameVersion = await getGame(gameId)
-            .getInstalledVersion(discoveryByGame(state, gameId));
+          const game = getGame(gameId);          
+          extensionVersion = game.version;
+          gameVersion = await game.getInstalledVersion(discoveryByGame(state, gameId));
         }
 
         const theme = state.settings.interface['currentTheme'];
@@ -185,6 +187,8 @@ function init(context: IExtensionContext): boolean {
           ["VortexVersion"]: getApplication().version,
           ["Membership"]: membership,
           ["Game"]: gameId,
+          ["GameVersion"]: gameVersion,
+          ["GameExtensionVersion"]: extensionVersion,
           ["Theme"]: theme,
           ["Sandbox"]: state.settings.mods['installerSandbox'] ?? true,
           ["ModCount"]: modCount,

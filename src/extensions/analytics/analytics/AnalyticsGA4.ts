@@ -3,12 +3,13 @@ import ua from 'universal-analytics';
 
 import { GA4_BETA_MEASUREMENT_ID, GA4_NEXT_MEASUREMENT_ID, GA4_STABLE_MEASUREMENT_ID } from '../constants';
 import  ga4mp  from  '../ga4mp/ga4mp.esm';
+import { activeGameId } from '../../../util/selectors';
 
 class AnalyticsGA4 {
   public user: string;
   public key: { key: string, path: string };
   public uuidV4: string;
-  isDebugMode: boolean = false;
+  isDebugMode: boolean = true;
   ga4track;
 
   constructor() {
@@ -132,13 +133,15 @@ class AnalyticsGA4 {
    * @param value 
    * @returns 
    */
-  public trackEvent(action: string, category?: string, label?: string, value?: string | number | boolean) {
+  public trackEvent(action: string, category?: string, label?: any, value?: any) {
 
     if (!this.isUserSet()) return;
 
     // if we are activating a game, take the game and update user properties?
     if(action === "activate") {
-      this.ga4track.setUserProperty("Game", label);
+      this.ga4track.setUserProperty("Game", value.gameId);
+      this.ga4track.setUserProperty("GameVersion", value.gameVersion);
+      this.ga4track.setUserProperty("GameExtensionVersion", value.extensionId);
     }
 
     // send empty page_view as we don't need it for these events and if we dont, it'll always send a default 'Vortex'
@@ -151,7 +154,7 @@ class AnalyticsGA4 {
     });
   }
 
-  public setUserProperty(key:string, value: string | number | boolean) {
+  public setUserProperty(key:string, value: any) {
     // this is updated remotely the next time an event is sent
     this.ga4track.setUserProperty(key, value);
   }
