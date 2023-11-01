@@ -1,5 +1,5 @@
 {
-  "last_updated": 1698828387383,
+  "last_updated": 1698832034055,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7300,6 +7300,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Remnant II"
+    },
+    {
+      "modId": 679,
+      "fileId": 2432,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Simple extension that is set up to install .pak files (Unreal Engine) to the correct folder for the game.",
+        "long": "Simple extension that is set up to install .pak files (Unreal Engine) to the correct folder for the game. There are only a couple mods on the Nexus right now, but I like launching my games from Vortex and I'm sharing this here for anyone else who wants that as well."
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5392.jpg",
+      "name": "Warhammer 40K Boltgun Vortex Extension",
+      "timestamp": 1698831492,
+      "tags": [],
+      "version": "0.1.0",
+      "type": "game",
+      "gameName": "Warhammer 40,000: Boltgun"
     }
   ]
 }
