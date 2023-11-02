@@ -1,5 +1,5 @@
 {
-  "last_updated": 1698924908558,
+  "last_updated": 1698929281945,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7338,6 +7338,25 @@
       "version": "1.2",
       "type": "game",
       "gameName": "Pizza Tower"
+    },
+    {
+      "modId": 684,
+      "fileId": 2435,
+      "author": "infarctuss",
+      "uploader": "infarctuss",
+      "description": {
+        "short": "Adds WarHammer 40,000: Darktide as a supported game in Vortex.",
+        "long": "This extension adds WarHammer 40,000: Darktide as a game supported in Vortex. Only steam version is detected (xbox coming soon).\n<br />\n<br />[size=4]Vortex Install (Easy) (soon)\n<br />[/size]\n<br />[list]\n<br />[*]In Vortex, locate WarHammer 40,000 Darktide in the Games tab.\n<br />[*]Click on the game tile to manage it and install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />[size=4]Vortex Install (Advanced)[/size]\n<br />\n<br />[list]\n<br />[*]In Vortex, navigate to the Extensions tab.\n<br />[*]Drop the Zip archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list][size=4]\n<br />Manual Install\n<br />[/size]\n<br />Extract the Zip archive to %appdata%&#92;Vortex&#92;plugins&#92;warhammer40kdarktide\n<br />\n<br />[b][size=4]Important\n<br />\n<br />[/size][/b][size=3]When you uninstall a mod on vortex, purge and redeploy mods to remove the folder especially if you use ﻿[url=https://www.nexusmods.com/warhammer40kdarktide/mods/139]Mod Load Order File Maker[/url]﻿.\n<br />And if you don't use it you need to go and specify each folder in the mod_load_order.txt like [url=https://www.nexusmods.com/warhammer40kdarktide/mods/19]Darktide Mod Loader[/url] asks of you.[/size]"
+      },
+      "downloads": 38,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4943.jpg",
+      "name": "WarHammer 40k Darktide Vortex Extension",
+      "timestamp": 1698927021,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "Warhammer 40,000: Darktide"
     }
   ]
 }
