@@ -1,5 +1,5 @@
 {
-  "last_updated": 1698914803829,
+  "last_updated": 1698921342315,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7319,6 +7319,25 @@
       "version": "0.1.0",
       "type": "game",
       "gameName": "Warhammer 40,000: Boltgun"
+    },
+    {
+      "modId": 682,
+      "fileId": 2425,
+      "author": "Thyself",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Basic vortex extension support for Pizza Tower",
+        "long": "[b][size=3]Basic vortex extension support for Pizza Tower[/size][/b]"
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5474.jpg",
+      "name": "Pizza Tower Vortex Support",
+      "timestamp": 1698664800,
+      "tags": [],
+      "version": "1.1",
+      "type": "game",
+      "gameName": "Pizza Tower"
     }
   ]
 }
