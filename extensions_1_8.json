@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699353406222,
+  "last_updated": 1699429116746,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7373,6 +7373,25 @@
         "long": "This is a stub of the Starfield extension. It will be downloaded the first time it's managed."
       },
       "version": "0.1.0"
+    },
+    {
+      "modId": 688,
+      "fileId": 2440,
+      "author": "p1xel8ted",
+      "uploader": "p1xel8ted",
+      "description": {
+        "short": "Adds Vortex support for My Time at Sandrock BepInEx mods.",
+        "long": "[size=4][b]What[/b][/size]\n<br />\n<br />[size=3]Adds Vortex support for My Time at Sandrock BepInEx mods.[/size]"
+      },
+      "downloads": 46,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4524.jpg",
+      "name": "My Time at Sandrock Vortex Extension",
+      "timestamp": 1699084137,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "My Time at Sandrock"
     }
   ]
 }
