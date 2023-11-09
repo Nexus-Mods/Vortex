@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699437508744,
+  "last_updated": 1699515276934,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7392,6 +7392,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "My Time at Sandrock"
+    },
+    {
+      "modId": 691,
+      "fileId": 2460,
+      "author": "ZGal88",
+      "uploader": "zgal88",
+      "description": {
+        "short": "This extension was made to be the HumanitZ' Modding Communities official Vortex support for HumanitZ by Yodubzz Studio",
+        "long": "This Vortex extension simply adds support for HumanitZ to be managed within Vortex, at the most basic level.\n<br />- You may now add, remove, enable, disable, and re-order mods for HumanitZ via Vortex.\n<br />- Support, feedback, and bug reports should be done through the modding Discord: [url=https://discord.gg/kumuEPHQjq]Click Here For Modding Discord[/url]"
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5743.jpg",
+      "name": "HumanitZ Vortex Extension",
+      "timestamp": 1699503279,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "HumanitZ"
     }
   ]
 }
