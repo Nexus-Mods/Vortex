@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699778764480,
+  "last_updated": 1699864741321,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7411,6 +7411,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "HumanitZ"
+    },
+    {
+      "modId": 692,
+      "fileId": 2462,
+      "author": "Senjay",
+      "uploader": "yajneS",
+      "description": {
+        "short": "An extension support for votex",
+        "long": "[size=3]Mods from steam workshop are also supported, provided you install them with the correct file tree for example \n<br />/First Aid Overhaul/ [b][color=#00ff00]   ﻿   ﻿   ﻿   ﻿This is right\n<br />[/color][/b]/[size=3]3028261329[/size]/First Aid Overhaul/[color=#00ff00]   ﻿[/color][color=#ff0000][b]This is Wrong[/b][/color][color=#00ff00]\n<br />[/color][/size]\n<br />Zip them and install them on Vortex"
+      },
+      "downloads": 13,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_583.jpg",
+      "name": "Project Zomboid Vortex Extension",
+      "timestamp": 1699610865,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Project Zomboid"
     }
   ]
 }
