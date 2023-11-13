@@ -738,9 +738,17 @@ function init(context: IExtensionContext): boolean {
   }, 'Activate', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
 
-    context.api.events.emit(
-      'analytics-track-event', 'Games', 'Activate' , gameId,
-    );
+    let gameVersion = '';
+    let extensionVersion = '';
+    if (gameId) {
+      const game = getGame(gameId);
+      extensionVersion = game.version;
+      game.getInstalledVersion(discoveryByGame(context.api.getState(), gameId)).then((value) => {
+        gameVersion = value;
+      });
+    }
+
+    context.api.events.emit( 'analytics-track-event', 'Games', 'Activate' , gameId, {gameId: gameId, gameVersion: gameVersion, extensionVersion: extensionVersion});
 
     checkOverridden(context.api, gameId)
       .then(() => {
