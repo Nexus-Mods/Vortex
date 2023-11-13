@@ -12,6 +12,7 @@ import { resolveCategoryName,
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
+import getDriveList from '../extensions/gamemode_management/util/getDriveList';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { findDownloadByRef, findModByRef, lookupFromDownload } from '../extensions/mod_management/util/dependencies';
@@ -101,6 +102,7 @@ export {
   getApplication,
   getCurrentActivator,
   getCurrentLanguage,
+  getDriveList,
   getGame,
   getGames,
   getManifest,
