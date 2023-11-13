@@ -146,11 +146,15 @@ class GameStoreHelper {
   });
 
   public findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
-    return this.findGameEntry('name', name, storeId);
+    return this.validInput(name)
+      ? this.findGameEntry('name', name, storeId)
+      : Bluebird.reject(new GameEntryNotFound('Invalid name input', this.mStores.map(store => store.id).join(', ')));
   }
 
   public findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry> {
-    return this.findGameEntry('id', appId, storeId);
+    return this.validInput(appId)
+      ? this.findGameEntry('id', appId, storeId)
+      : Bluebird.reject(new GameEntryNotFound('Invalid appId input', this.mStores.map(store => store.id).join(', ')));
   }
 
   public launchGameStore(api: IExtensionApi, gameStoreId: string,
@@ -287,6 +291,10 @@ class GameStoreHelper {
     const exeId = makeExeId(storeExecPath);
     return runningProcesses.find(runningProc =>
       (exeId === runningProc.exeFile.toLowerCase())) !== undefined;
+  }
+
+  private validInput(input: string | string[]): boolean {
+    return (!input || (Array.isArray(input) && input.length === 0)) ? false : true;
   }
 
   private getStores(): IGameStore[] {
