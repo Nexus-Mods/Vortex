@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699865187977,
+  "last_updated": 1699868762890,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7430,6 +7430,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Project Zomboid"
+    },
+    {
+      "modId": 686,
+      "fileId": 2456,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Simple game extension which allows you to install Doom 3 mods with Vortex.",
+        "long": "Simple game extension which allows you to install Doom 3 mods with Vortex. This is for the Steam version of the game, specifically.\n<br />\n<br />By default, installs mods to the game's \"Doom3/base\" folder (this is where .pak files should go). If your mod needs to go in a different section, simply set the mod type as \"Engine Injector\" and manually set up the folder structure you need from the root game folder."
+      },
+      "downloads": 6,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_368.jpg",
+      "name": "Doom 3 Vortex Extension",
+      "timestamp": 1699450018,
+      "tags": [],
+      "version": "0.1.1",
+      "type": "game",
+      "gameName": "Doom 3"
     }
   ]
 }
