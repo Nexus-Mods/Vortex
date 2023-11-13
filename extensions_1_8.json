@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699868762890,
+  "last_updated": 1699868928834,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7449,6 +7449,25 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Doom 3"
+    },
+    {
+      "modId": 677,
+      "fileId": 2461,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Vortex Extension for Steam Version of Doom (2016).",
+        "long": "Vortex Extension for Steam Version of Doom (2016). Nothing fancy, just provides an easy way to install zips."
+      },
+      "downloads": 10,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_1372.jpg",
+      "name": "Doom (2016) Vortex Extension",
+      "timestamp": 1699558196,
+      "tags": [],
+      "version": "0.1.3",
+      "type": "game",
+      "gameName": "DOOM"
     }
   ]
 }
