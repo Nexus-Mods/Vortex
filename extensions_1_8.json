@@ -1,5 +1,5 @@
 {
-  "last_updated": 1699868928834,
+  "last_updated": 1699871372602,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7468,6 +7468,25 @@
       "version": "0.1.3",
       "type": "game",
       "gameName": "DOOM"
+    },
+    {
+      "modId": 698,
+      "fileId": 2468,
+      "author": "Morgan Gardner",
+      "uploader": "MorGuux",
+      "description": {
+        "short": "Adds support for Vortex management to EA Sports WRC.",
+        "long": "Adds support for Vortex management to EA Sports WRC."
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5866.jpg",
+      "name": "EA Sports WRC Vortex Extension",
+      "timestamp": 1699818750,
+      "tags": [],
+      "version": "0.0.1",
+      "type": "game",
+      "gameName": "EA Sports WRC"
     }
   ]
 }
