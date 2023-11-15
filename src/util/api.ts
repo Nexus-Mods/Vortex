@@ -62,6 +62,7 @@ import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameVali
          sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
          makeOverlayableDictionary } from './util';
 import { Campaign, Section, Source, Overlayable } from './util';
+import deepMerge from './deepMerge';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -88,6 +89,7 @@ export {
   DataInvalid,
   Debouncer,
   deBOM,
+  deepMerge,
   delay,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
