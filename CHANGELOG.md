@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.9] - 2023-11-20
 
 - Fixed crash when managing Game Pass games
+- Added deep merge to Vortex API 
 
 ## [1.9.8] - 2023-11-13
 
