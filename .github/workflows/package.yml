@@ -130,7 +130,7 @@ jobs:
         if: inputs.release == true
         with:
           files: |
-            ./dist/${{ steps.setOutputs.outputs.artifactNameInstaller }}
+            ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
             ./dist/latest.yml
           prerelease: true
           draft: true
