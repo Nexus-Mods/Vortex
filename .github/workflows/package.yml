@@ -21,7 +21,7 @@ on:
           description: "Deploy to Epic?"
           required: false
           type: boolean
-          default: false
+          default: true
         release:
           description: "Create a draft release?"
           required: false
@@ -141,7 +141,7 @@ jobs:
         if: inputs.deploy-epic == true
         shell: pwsh
         run: |
-          echo "steps.setOutputs.outputs.epicBuildString"
+          echo "${{ steps.setOutputs.outputs.epicBuildString }}"
 
       - name: Upload Unpacked
         uses: actions/upload-artifact@v3
