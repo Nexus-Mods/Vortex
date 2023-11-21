@@ -17,26 +17,26 @@ on:
           required: true
           type: boolean
           default: true
-        draft:
-          description: "Create a draft release? (not used)"
+        deploy-epic:
+          description: "Deploy to Epic?"
+          required: false
+          type: boolean
+          default: false
+        release-draft:
+          description: "Create a draft release?"
           required: false
           type: boolean
           default: true
-        prerelease:
-          description: "Create a prerelease? (not used)"
-          required: false
-          type: boolean
-          default: true
-        
-env:    
-  SigningCertificate: cert.pfx
 
 jobs:      
   build:
     runs-on: windows-latest
     env:
+      ES_USERNAME: ${{ secrets.ES_USERNAME }}
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
-      CERT_PATH: Release
       
     strategy:
       matrix:
@@ -52,10 +52,12 @@ jobs:
           $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
           $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
           $validation = [System.Version]::Parse($rawVersion)
+          $runNumber = ${GITHUB_RUN_NUMBER}
           echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT
           echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
           echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
           echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
+          echo "epicBuildString=$rawVersion+$runNumber" >> $env:GITHUB_OUTPUT
       - name: Get current time
         uses: josStorer/get-current-time@v2
         id: current-time
@@ -79,6 +81,11 @@ jobs:
         run: |
           $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
           Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
+
+      - name: Download CodeSignTool
+        id: codesign
+        shell: pwsh
+        run: .\download-codesigntool.ps1
           
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -91,18 +98,6 @@ jobs:
 
       - name: Print debug info
         run: dotnet --info
-        
-      - name: Decode PFX
-        shell: pwsh        
-        id: decode-pfx
-        run: |
-          $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          
-          [IO.File]::WriteAllBytes("$certPath", $certBytes)
-
-      #- name: Update Licenses
-      #  run: yarn update_aboutpage
 
       - name: Build API
         run: yarn --non-interactive build_api
@@ -118,21 +113,11 @@ jobs:
         
       - name: Webpack
         run: yarn build_dist
-        
-      - name: Sign
-        shell: pwsh      
-        run: |        
-          $signtool = "C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\signtool.exe"
-          $timestamp = "http://timestamp.digicert.com"
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          & $signtool sign /f $certPath /p "${{ secrets.PFX_KEY }}" /td sha256 /fd sha256 /tr $timestamp "app\node_modules\winapi-bindings\build\Release\winapi.node"
           
       - name: Package
         run: yarn package
         env:
           DEBUG: electron-builder
-          CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
-          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
 
       - name: Extract Sourcemaps
         run: yarn extract_sourcemaps
@@ -140,11 +125,45 @@ jobs:
       - name: Test
         run: yarn test
 
-      - name: Remove PFX
+      - name: Create Release
+        if: inputs.release-draft == true
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
+          release_name: ${{ steps.setOutputs.outputs.releaseVersion }}
+          draft: true
+          prerelease: true
+      
+      - name: Upload Release Asset
+        if: inputs.release-draft == true
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./dist/${{ steps.setOutputs.outputs.artifactNameInstaller }}
+          asset_name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
+
+      - name: Upload Release Asset
+        if: inputs.release-draft == true
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./dist/latest.yml
+          asset_name: latest.yml
+
+      - name: Deploy to Epic
+        if: inputs.deploy-epic == true
         shell: pwsh
         run: |
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          Remove-Item -Path $certPath
+          echo "steps.setOutputs.outputs.epicBuildString"
 
       - name: Upload Unpacked
         uses: actions/upload-artifact@v3
