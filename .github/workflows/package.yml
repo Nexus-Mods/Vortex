@@ -48,16 +48,16 @@ jobs:
         shell: pwsh
         env:
           InputVersion: ${{ inputs.version }}
+          GITHUB_RUN_NUMBER: ${GITHUB_RUN_NUMBER}        
         run: |
           $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
           $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
           $validation = [System.Version]::Parse($rawVersion)
-          $runNumber = ${GITHUB_RUN_NUMBER}
           echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT
           echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
           echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
           echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
-          echo "epicBuildString=$rawVersion+$runNumber" >> $env:GITHUB_OUTPUT
+          echo "epicBuildString=$rawVersion+${GITHUB_RUN_NUMBER}" >> $env:GITHUB_OUTPUT
       - name: Get current time
         uses: josStorer/get-current-time@v2
         id: current-time
