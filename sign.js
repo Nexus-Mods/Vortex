@@ -3,7 +3,11 @@ const fs = require('fs');
 const childProcess = require('child_process');
 require('dotenv').config();
 
-const TEMP_DIR = path.join(__dirname, 'release', 'temp');
+const TEMP_DIR = path.join(__dirname, 'temp');
+
+// these were being incorrectly flagged by esigner as malware 
+// make sure these are lowercase
+const ignoreFileList = ['arctool.exe', '7z.exe']
 
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -16,6 +20,11 @@ async function sign(configuration) {
   const ES_PASSWORD = process.env.ES_PASSWORD;
   const ES_CREDENTIAL_ID = process.env.ES_CREDENTIAL_ID;
   const ES_TOTP_SECRET = process.env.ES_TOTP_SECRET;
+
+  if (ignoreFileList.includes(path.basename(configuration.path.toLowerCase()))) {
+    console.log(`Ignoring ${configuration.path} as the file is in the ignore list`);
+    return;
+  }
 
   if (ES_USERNAME && ES_PASSWORD && ES_TOTP_SECRET && ES_CREDENTIAL_ID) {
 
