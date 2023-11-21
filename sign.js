@@ -7,7 +7,7 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 
 // these were being incorrectly flagged by esigner as malware 
 // make sure these are lowercase
-const ignoreFileList = ['arctool.exe', '7z.exe']
+const ignoreFileList = ['arctool.exe']
 
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
