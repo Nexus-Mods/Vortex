@@ -58,6 +58,7 @@ jobs:
           echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
           echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
           echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
+          echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER"
       - name: Get current time
         uses: josStorer/get-current-time@v2
         id: current-time
