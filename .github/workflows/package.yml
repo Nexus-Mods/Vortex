@@ -48,7 +48,7 @@ jobs:
         shell: pwsh
         env:
           InputVersion: ${{ inputs.version }}
-          GITHUB_RUN_NUMBER: ${{ GITHUB_RUN_NUMBER }}        
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}        
         run: |
           $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
           $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
