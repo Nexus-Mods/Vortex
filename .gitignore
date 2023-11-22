@@ -13,6 +13,7 @@ app/bundledPlugins
 attachments
 sourcemaps
 *.env
+CodeSignTool*
 
 # User-specific files
 *.suo
