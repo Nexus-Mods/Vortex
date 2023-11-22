@@ -1,5 +1,5 @@
 {
-  "last_updated": 1700642799450,
+  "last_updated": 1700649473566,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7487,6 +7487,25 @@
       "version": "0.0.1",
       "type": "game",
       "gameName": "EA Sports WRC"
+    },
+    {
+      "modId": 711,
+      "fileId": 2494,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "This is an extension to allow you to install mods for the Steam version of Prey (2017).",
+        "long": "This is an extension to allow you to install mods for the Steam version of Prey (2017). \n<br />\n<br />The default installation location is the \"GameSDK/Precache\" folder. If your mod needs to be installed in another location, select \"Engine Injector\" as the Mod Type and set up the proper folder structure for the mod manually. Looking at mods on the Nexus, there are a variety of different install locations represented, so please pay close attention to the installation instructions for each mod."
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_1962.jpg",
+      "name": "Prey (2017) Vortex Extension",
+      "timestamp": 1700531547,
+      "tags": [],
+      "version": "0.1.0",
+      "type": "game",
+      "gameName": "Prey (2017)"
     }
   ]
 }
