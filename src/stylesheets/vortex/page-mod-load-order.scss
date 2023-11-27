@@ -8,6 +8,11 @@
     overflow: auto;
   }
 
+  .layout-container {
+    gap: 8px;
+  }
+
+
   .file-based-load-order-container {
     gap: 8px;
   }
@@ -25,6 +30,7 @@
   }
 
   .load-order-entry {
+
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -114,6 +120,7 @@
         //position: initial;
         border: 1px $gray-light solid;
         padding: 2px;
+        margin-right: 8px;
       }
 
       .external-caution-logo {
@@ -124,6 +131,10 @@
       .external-text-area {
         margin-right: 5px;
       }
+    }
+
+    >.layout-container {
+      align-items: center;
     }
   }
 
@@ -151,9 +162,11 @@
     }
   }
 
+
+
   #loadorderinfo {
 
-    padding: 0;
+    padding: 0 12px;
     border: 0;
 
     display: block;
