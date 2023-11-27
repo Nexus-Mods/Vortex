@@ -81,7 +81,7 @@
       // This shouldn't be necessary. But hey ho lets go.
       &.disabled {
         display: none;
-      }    
+      }   
 
       label {
         padding: 0;
@@ -107,6 +107,11 @@
     }
 
     &.external {
+
+      .drag-handle-icon {
+        display: none;
+      }
+
       .load-order-unmanaged-banner {
 
         text-align: center;
