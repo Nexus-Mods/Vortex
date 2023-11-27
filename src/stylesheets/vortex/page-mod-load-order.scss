@@ -109,7 +109,7 @@
     &.external {
 
       .drag-handle-icon {
-        display: none;
+        visibility: hidden;
       }
 
       .load-order-unmanaged-banner {
