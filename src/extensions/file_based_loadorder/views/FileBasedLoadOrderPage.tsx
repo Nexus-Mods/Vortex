@@ -24,6 +24,7 @@ interface IBaseState {
   loading: boolean;
   updating: boolean;
   validationError: LoadOrderValidationError;
+  currentRefreshId: string;
 }
 
 export interface IBaseProps {
@@ -42,6 +43,10 @@ interface IConnectedProps {
 
   // Does the user need to deploy ?
   needToDeploy: boolean;
+
+  // The refresh id for the current profile
+  //  (used to force a refresh of the list)
+  refreshId: string;
 }
 
 interface IActionProps {
@@ -61,6 +66,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       loading: true,
       updating: false,
       validationError: undefined,
+      currentRefreshId: '',
     });
 
     this.mStaticButtons = [
@@ -102,6 +108,14 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         },
       },
     ];
+  }
+
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
+    // Zuckerberg isn't going to like this...
+    if (this.state.currentRefreshId !== newProps.refreshId) {
+      this.onRefreshList();
+      this.nextState.currentRefreshId = newProps.refreshId;
+    }
   }
 
   public componentDidMount() {
@@ -268,6 +282,7 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
     loadOrder,
     profile,
     needToDeploy: selectors.needToDeploy(state),
+    refreshId: util.getSafe(state, ['session', 'fblo', 'refresh', profile?.id], ''),
   };
 }
 
