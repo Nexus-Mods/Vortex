@@ -1,27 +1,64 @@
 #collections-load-order-list,
 #page-file-based-loadorder,
 #page-generic-loadorder {
+
   .layout-flex {
     flex: 1 1 0;
     position: relative;
     overflow: auto;
   }
+
+  .layout-container {
+    gap: 8px;
+  }
+
+
+  .file-based-load-order-container {
+    gap: 8px;
+  }
+
+  .file-based-load-order-list {
+
+    .list-group {
+      display: flex;
+      align-items: stretch;
+      flex-direction: column;
+      gap: 4px;
+      margin: 0;      
+      padding: 0 8px 0 0; // padding between scrollbar and list items
+    }
+  }
+
   .load-order-entry {
+
     display: flex;
     flex-direction: row;
     align-items: center;
     background-color: $brand-bg;
-    margin: 0px;
+    gap: 8px;
 
     height: 100%;
     overflow: auto;
-    border-width: 1px;
-    border-style: solid;
-    border-color: $gray;
+
+    margin: 0;
+    border: 1px gray solid;
+    border-radius: 4px;
+    padding: 0 12px 0 12px;
+
+    .drag-handle-icon {
+      fill: $brand-menu;
+    }
   
     .load-order-index {
-      padding: 2px 2px;
-      margin-right: 15px;
+      //padding: 2px 2px;
+      // margin-right: 15px;
+      min-width: 24px;
+    }
+
+    .load-order-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .load-order-name {
@@ -29,8 +66,7 @@
     }
 
     .locked-entry-logo {
-      margin-right: 15px;
-      margin-left: auto;
+      margin: 0;
     }
 
     .fblo-invalid-entry {
@@ -39,13 +75,23 @@
     }
 
     .entry-checkbox {
-      margin-right: 15px;
-      margin-left: auto;
+      //margin-right: 15px;
+      //margin-left: auto;
 
-      label input[type="checkbox"] {
-        margin-left: initial;
-        position: initial;
-      }
+      // This shouldn't be necessary. But hey ho lets go.
+      &.disabled {
+        display: none;
+      }   
+
+      label {
+        padding: 0;
+
+        input[type="checkbox"] {
+          margin-left: initial;
+          position: initial;
+        }
+
+      } 
     }
 
     &.collection-tab {
@@ -61,15 +107,25 @@
     }
 
     &.external {
+
+      .drag-handle-icon {
+        visibility: hidden;
+      }
+
       .load-order-unmanaged-banner {
-        display: block;
+
         text-align: center;
         bottom: 0;
-        background: white;
-        color: black;
+
+        display: flex;
+        background: transparent;
+        color: gray;
         border-radius: 16px;
-        position: absolute;
-        margin-right: 5px;
+        align-items: center;
+        //position: initial;
+        border: 1px $gray-light solid;
+        padding: 2px;
+        margin-right: 8px;
       }
 
       .external-caution-logo {
@@ -81,19 +137,23 @@
         margin-right: 5px;
       }
     }
+
+    >.layout-container {
+      align-items: center;
+    }
   }
 
   #fb-lo-errorbox {
+
     background-color: $brand-bg;
     width: 100%;
-    height: 80%;
-    border-width: 1px;
-    border-style: solid;
-    border-color: $gray;
     overflow: auto;
+    border: none;
+
     p {
-      padding: 5px 5px 5px 5px;
+      padding: 4px 0 0 8px;
     }
+
     &.valid {
       p {
         color: $brand-success;
@@ -107,14 +167,80 @@
     }
   }
 
+
+
   #loadorderinfo {
+
+    padding: 0 12px;
+    border: 0;
+
     display: block;
-    padding: 15px;
+
     height: 100%;
     overflow: auto;
-    border-width: 1px;
-    border-style: solid;
-    border-color: $gray;
+
+    > .layout-container {
+      gap: 8px;
+      display: flex;
+      flex-direction: column;
+
+      > * {
+        padding: 12px;
+        border: 1px gray solid;
+        border-radius: 4px;
+
+        > .layout-flex-inner {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          // fblo component is adding a dirty p above what the extension can add
+          > p {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0;
+          }
+        }
+
+        p {
+          margin: 0;
+        }
+
+        .alert {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          border-radius: 2px;
+
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+          margin: 0;
+        }
+
+      }
+
+      // top box (information)
+
+      > :first-child {
+        //background-color: #acff2f60;
+        flex: 1 1 0; // default
+        min-height: 200px; // don't think we need this as max-height on next child is 50%
+      }
+
+      // bottom box (validation console)
+
+      > :last-child {
+        //background-color: #892be26b;
+        flex: unset; // shrinks to whatever space is needed, preferably none
+        max-height: 50%; // don't ever take up more than 50% of height
+
+        background-color: $brand-bg;
+      }
+
+
+    }
   }
   
   #mod-info {

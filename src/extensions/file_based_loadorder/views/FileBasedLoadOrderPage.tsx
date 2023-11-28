@@ -184,7 +184,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           <Panel>
             <PanelX.Body>
               <DNDContainer style={{ height: '100%' }}>
-                <FlexLayout type='row'>
+                <FlexLayout type='row' className='file-based-load-order-container'>
                   <FlexLayout.Flex className='file-based-load-order-list'>
                     {draggableList()}
                   </FlexLayout.Flex>
