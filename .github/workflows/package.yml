@@ -48,6 +48,8 @@ jobs:
         dotnet-version: [ 6.0.x ]
 
     steps:
+      - name: Show Inputs
+        run: echo "${{ toJSON(github.event.inputs) }}"
       - name: Set Outputs
         id: setOutputs
         shell: pwsh
