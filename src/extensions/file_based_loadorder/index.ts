@@ -9,6 +9,7 @@ import { generate, Interface, parser } from './collections/loadOrder';
 import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
+import { sessionReducer } from './reducers/session';
 
 import * as types from '../../types/api';
 import * as util from '../../util/api';
@@ -195,6 +196,7 @@ function genDidPurge(api: types.IExtensionApi) {
 
 export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
+  context.registerReducer(['session', 'fblo', 'refresh'], sessionReducer);
 
   context.registerMainPage('sort-none', 'Load Order', FileBasedLoadOrderPage, {
     id: 'file-based-loadorder',
