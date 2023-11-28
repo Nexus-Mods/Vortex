@@ -273,7 +273,9 @@ function setupAutoUpdate(api: IExtensionApi) {
       owner: 'Nexus-Mods',
       repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
       private: false,
-      publisherName: ['Black Tree Gaming Limited'],
+      publisherName: [
+        'Black Tree Gaming Limited',
+        'Black Tree Gaming Ltd'],
     });
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;

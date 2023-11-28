@@ -7,16 +7,16 @@ on:
           description: "The version to release (eg: 'v1.0.0')"
           required: true
           type: string
-        build-unpacked:
-          description: "Create unpacked artifact?"
+        create-artifacts:
+          description: "Create artifacts?"
           required: true
           type: boolean
           default: true
-        build-installer:
-          description: "Create installer artifact?"
-          required: true
-          type: boolean
-          default: true
+        use-new-codesign:
+            description: "Use new codesign cert?"
+            required: false
+            type: boolean
+            default: true
         deploy-epic:
           description: "Deploy to Epic?"
           required: false
@@ -28,6 +28,9 @@ on:
           type: boolean
           default: true
 
+env:    
+  SigningCertificate: cert.pfx
+
 jobs:      
   build:
     runs-on: windows-latest
@@ -37,6 +40,8 @@ jobs:
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
+      CERT_PATH: Release     
+      DEBUG: electron-builder # gives electron more verbose logs       
       
     strategy:
       matrix:
@@ -48,7 +53,7 @@ jobs:
         shell: pwsh
         env:
           InputVersion: ${{ inputs.version }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}        
+          GITHUB_RUN_NUMBER: ${{ github.run_number }} 
         run: |
           $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
           $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
@@ -100,6 +105,14 @@ jobs:
       - name: Print debug info
         run: dotnet --info
 
+      - name: Decode PFX
+        shell: pwsh        
+        id: decode-pfx
+        run: |
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate          
+          [IO.File]::WriteAllBytes("$certPath", $certBytes)
+
       - name: Build API
         run: yarn --non-interactive build_api
       
@@ -115,16 +128,28 @@ jobs:
       - name: Webpack
         run: yarn build_dist
           
-      - name: Package
+      - name: Package (new codesign)
+        if: inputs.use-new-codesign == true
         run: yarn package
+      
+      - name: Package (old codesign)
+        if: inputs.use-new-codesign == false
+        run: yarn package-old
         env:
-          DEBUG: electron-builder
+          CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
+          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
 
       - name: Extract Sourcemaps
         run: yarn extract_sourcemaps
 
       - name: Test
         run: yarn test
+
+      - name: Remove PFX
+        shell: pwsh
+        run: |
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
+          Remove-Item -Path $certPath
       
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -144,17 +169,17 @@ jobs:
         run: |
           echo "${{ steps.setOutputs.outputs.epicBuildString }}"
 
-      - name: Upload Unpacked
+      - name: Create Unpacked Artifact
         uses: actions/upload-artifact@v3
-        if: inputs.build-unpacked == true
+        if: inputs.create-artifacts == true
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
           path: ./dist/win-unpacked
           if-no-files-found: error
 
-      - name: Upload Installer
+      - name: Create Installer Artifact
         uses: actions/upload-artifact@v3
-        if: inputs.build-installer == true
+        if: inputs.create-artifacts == true
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
           path: |
