@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.10] - 2023-11-22
 
 - Updated code signing certificate
+- Updated design and styles for load order pages.
 
 ## [1.9.9] - 2023-11-20
 
