@@ -129,11 +129,11 @@ jobs:
         run: yarn build_dist
           
       - name: Package (new codesign)
-        if: inputs.use-new-codesign == true
+        if: ${{ inputs.use-new-codesign == 'true' }}
         run: yarn package
       
       - name: Package (old codesign)
-        if: inputs.use-new-codesign == false
+        if: ${{ inputs.use-new-codesign == 'false' }}
         run: yarn package-old
         env:
           CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
@@ -153,7 +153,7 @@ jobs:
       
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: inputs.release == true
+        if: ${{ inputs.release == 'true' }}
         with:
           files: |
             ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
@@ -164,14 +164,14 @@ jobs:
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
 
       - name: Deploy to Epic
-        if: inputs.deploy-epic == true
+        if: ${{ inputs.deploy-epic == 'true' }}
         shell: pwsh
         run: |
           echo "${{ steps.setOutputs.outputs.epicBuildString }}"
 
       - name: Create Unpacked Artifact
         uses: actions/upload-artifact@v3
-        if: inputs.create-artifacts == true
+        if: ${{ inputs.create-artifacts == 'true' }}
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
           path: ./dist/win-unpacked
@@ -179,7 +179,7 @@ jobs:
 
       - name: Create Installer Artifact
         uses: actions/upload-artifact@v3
-        if: inputs.create-artifacts == true
+        if: ${{ inputs.create-artifacts == 'true' }}
         with:
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
           path: |
