@@ -1,5 +1,5 @@
 {
-  "last_updated": 1701161163535,
+  "last_updated": 1701178659443,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7506,6 +7506,25 @@
       "version": "0.1.0",
       "type": "game",
       "gameName": "Prey (2017)"
+    },
+    {
+      "modId": 703,
+      "fileId": 2496,
+      "author": "yajneS",
+      "uploader": "yajneS",
+      "description": {
+        "short": "An extension support for Vortex",
+        "long": "[b][size=3]Vortex extension support for Lethal Company\n<br />[/size][/b]"
+      },
+      "downloads": 218,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5848.jpg",
+      "name": "Lethal Company Vortex Extension",
+      "timestamp": 1700744414,
+      "tags": [],
+      "version": "1.0.2",
+      "type": "game",
+      "gameName": "Lethal Company"
     }
   ]
 }
