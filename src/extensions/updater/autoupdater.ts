@@ -78,6 +78,8 @@ function setupAutoUpdate(api: IExtensionApi) {
     api.store.dispatch(setUpdateChannel('beta'));
   }
 
+  log('info', 'setupAutoUpdate complete');
+
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
 
@@ -320,14 +322,17 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   ipcMain.on('set-update-channel', (event, channel: any, manual: boolean) => {
     try {
-      log('info', 'set channel', { channel, manual });
-      if ((channel !== 'none')
-          && ((channelOverride === undefined) || manual)
-          && (process.env.NODE_ENV !== 'development')
-          && (process.env.IGNORE_UPDATES !== 'yes')) {
+      log('info', 'set channel', { channel, manual, channelOverride });
+      
+      if ((channel !== 'none')     
+        && ((channelOverride === undefined) || manual)    
+        //&& (process.env.NODE_ENV !== 'development') 
+        && (process.env.IGNORE_UPDATES !== 'yes')) {
+        
         if (manual) {
           channelOverride = channel;
         }
+
         checkNow(channel);
       }
     } catch (err) {
