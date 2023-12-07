@@ -211,7 +211,7 @@
       "name": "modtype-bepinex",
       "path": "extensions/modtype-bepinex",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "src/**/*.cfg", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-bepinex"
     },
     {
