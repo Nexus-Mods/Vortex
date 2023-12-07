@@ -2,7 +2,7 @@ let fs = require('fs');
 let checker = require('license-checker');
 let path = require('path');
 
-let basePath = path.join(__dirname, 'app');
+let basePath = path.join(__dirname, '.');
 
 checker.init(
   {
@@ -10,6 +10,7 @@ checker.init(
     customPath: './licenseFormat.json',
     production: true,
   },
+
   function (err, json) {
     if (err) {
       return console.error('error', err);
@@ -32,6 +33,8 @@ checker.init(
     });
 
     deleteKeys.forEach(key => delete json[key]);
+
+    console.log(`Writing ${Object.keys(json).length} modules`);
 
     fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2), { encoding: 'utf-8' }, () => null);
   });
