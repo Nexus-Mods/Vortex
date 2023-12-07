@@ -202,6 +202,13 @@ export interface IOpenOptions {
   create?: boolean;
 }
 
+export interface ISaveOptions {
+  title?: string;
+  buttonLabel?: string;
+  defaultPath?: string;
+  filters?: IFileFilter[];
+}
+
 export type StateChangeCallback<T = any> =
   (previous: T, current: T) => void;
 
@@ -473,6 +480,13 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   selectFile: (options: IOpenOptions) => Promise<string>;
+
+  /**
+   * show a system dialog to save a single file
+   * 
+   * @memberOf IExtensionApi
+   */
+  saveFile: (options: ISaveOptions) => Promise<string>;
 
   /**
    * show a system dialog to select an executable file
