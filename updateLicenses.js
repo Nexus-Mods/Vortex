@@ -9,6 +9,7 @@ checker.init(
     start: basePath,
     customPath: './licenseFormat.json',
     production: true,
+    //relativeLicensePath: true,
   },
 
   function (err, json) {
@@ -17,6 +18,7 @@ checker.init(
     }
 
     const deleteKeys = ['vortex-api', 'vortex'];
+
     Object.keys(json).forEach(key => {
       if (key.startsWith('@types')
           || ((json[key].publisher !== undefined) && json[key].publisher.startsWith('Black Tree Gaming'))) {
@@ -29,6 +31,7 @@ checker.init(
       if (json[key].licenseFile) {
         json[key].licenseFile = path.relative(basePath, json[key].licenseFile).split(path.sep);
       }
+      
       delete json[key].path;
     });
 
