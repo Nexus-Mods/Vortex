@@ -19,6 +19,7 @@ import {
   IReducerSpec,
   IRunOptions,
   IRunParameters,
+  ISaveOptions,
   StateChangeCallback,
   ThunkStore,
   ToolParameterCB,
@@ -47,7 +48,7 @@ import { filteredEnvironment, isFunction, setdefault, timeout, truthy, wrapExtCB
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
-import { ipcMain, ipcRenderer, OpenDialogOptions, WebContents } from 'electron';
+import { ipcMain, ipcRenderer, OpenDialogOptions, SaveDialogOptions, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as fuzz from 'fuzzball';
@@ -132,6 +133,18 @@ const showOpenDialog = makeRemoteCall('show-open-dialog',
 
     return electron.dialog.showOpenDialog(window, options);
   });
+
+const showSaveDialog = makeRemoteCall('show-save-dialog',
+(electron, contents, options: Electron.SaveDialogOptions) => {
+  let window: Electron.BrowserWindow = null;
+  try {
+    window = electron.BrowserWindow?.fromWebContents?.(contents);
+  } catch (err) {
+    // nop
+  }
+
+  return electron.dialog.showSaveDialog(window, options);
+});
 
 const appExit = makeRemoteCallSync('exit-application',
   (electron, contents, exitCode?: number) => {
@@ -777,6 +790,7 @@ class ExtensionManager {
     this.mApi = {
       showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
+      saveFile: this.saveFile,
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
@@ -1500,6 +1514,21 @@ class ExtensionManager {
     return Promise.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
+        : undefined);
+  }
+
+  private saveFile(options: ISaveOptions): Promise<string> {
+    const fullOptions: SaveDialogOptions = {
+      //..._.omit(options, ['create']),
+      //properties: ['showOverwriteConfirmation'],
+      ...options
+    };
+    //if (options === true) {
+      //fullOptions.properties.push('showOverwriteConfirmation');
+    //}
+    return Promise.resolve(showSaveDialog(fullOptions))
+      .then(result => (result.filePath !== undefined)
+        ? result.filePath
         : undefined);
   }
 
