@@ -45,6 +45,10 @@
     border-radius: 4px;
     padding: 0 12px 0 12px;
 
+    h1:has(+ p) {
+      margin-bottom: 0;
+    }
+
     .drag-handle-icon {
       fill: $brand-menu;
     }
@@ -106,9 +110,8 @@
       background-color: $brand-primary;
     }
 
-    .drag-handle-icon.undraggable {
+    .drag-handle-icon:has(~.locked-entry-logo) {
       visibility: hidden;
-      //fill: red;
     }
 
     &.external { 

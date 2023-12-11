@@ -128,9 +128,6 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       )
       : null;
 
-    const dragHandleClasses = item.locked
-      ? 'drag-handle-icon undraggable' : 'drag-handle-icon';
-
     return (
       <ListGroupItem
         ref={this.setRef}
@@ -138,7 +135,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
         className={classes.join(' ')}
         onContextMenu={this.props.onContextMenu}
       >
-        <Icon className={dragHandleClasses} name='drag-handle'/>
+        <Icon className='drag-handle-icon' name='drag-handle'/>
         <p className='load-order-index'>{position}</p>
         <div>
           {(!!item?.external) && this.renderExternalBanner()}
