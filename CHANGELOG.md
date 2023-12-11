@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - (API) Added Save File dialog
 - (BepInEx) Improved API support
+- (Xbox Gamestore) Fixed file system error dialog being raised for encrypted drives
 
 ## [1.9.10] - 2023-11-22
 
@@ -26,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added deep merge to Vortex API 
-
 
 ### Fixed
 
