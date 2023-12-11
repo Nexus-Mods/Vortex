@@ -94,18 +94,19 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
         <Icon className='locked-entry-logo' name='locked'/>
       ) : null;
 
+    const dragHandleClasses = this.isLocked(item)
+      ? 'drag-handle-icon undraggable' : 'drag-handle-icon';
+
     return (
       <ListGroupItem
         key={key}
         className={classes.join(' ')}
         ref={this.props.item.setRef}
       >
-        <Icon className='drag-handle-icon' name='drag-handle'/>
+        <Icon className={dragHandleClasses} name='drag-handle'/>
         <p className='load-order-index'>{position}</p>
         {this.renderValidationError()}
-
-          <p className='load-order-name'>{key}</p>
-   
+          <p className='load-order-name'>{key}</p>   
         {this.renderExternalBanner(item)}
         {checkBox()}
         {lock()}

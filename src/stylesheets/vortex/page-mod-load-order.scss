@@ -77,7 +77,7 @@
     .entry-checkbox {
       //margin-right: 15px;
       //margin-left: auto;
-
+      
       // This shouldn't be necessary. But hey ho lets go.
       &.disabled {
         display: none;
@@ -106,12 +106,13 @@
       background-color: $brand-primary;
     }
 
-    &.external {
+    .drag-handle-icon.undraggable {
+      visibility: hidden;
+      //fill: red;
+    }
 
-      .drag-handle-icon {
-        visibility: hidden;
-      }
-
+    &.external { 
+      
       .load-order-unmanaged-banner {
 
         text-align: center;
