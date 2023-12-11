@@ -82,7 +82,7 @@ if (ipcMain !== undefined) {
     sassIndex = `$theme-path: "${pathToFileURL(themePath)}";\n` + sassIndex;
 
     // development builds are always versioned as 0.0.1
-    const isDevel: boolean = getApplication().version === '0.0.1';
+    const isDevel: boolean = (process.env.NODE_ENV === 'development')
 
     const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
     const modulesPath = getVortexPath('modules_unpacked');

@@ -565,7 +565,7 @@ class Application {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
 
-    if (this.mFirstStart || (currentVersion === '0.0.1')) {
+    if (this.mFirstStart || (process.env.NODE_ENV === 'development')) {
       // don't check version change in development builds or on first start
       return Promise.resolve();
     } 
