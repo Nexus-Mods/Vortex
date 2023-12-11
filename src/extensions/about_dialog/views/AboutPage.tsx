@@ -66,11 +66,11 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.mMounted = true;
 
-    //this.mVersion = '1.8.5'; // force this to test
-
-    if (this.mVersion === '0.0.1') {
-      this.nextState.tag = 'Development';
+    // removing version check when in dev mode and moved to NODE_ENV instead
+    if (process.env.NODE_ENV === 'development') {
+      this.nextState.tag = 'Dev';
     } else {
+      // if not development, lets see what is on github to determine if we are stable, beta or preview
       github.releases()
         .then(releases => {
           if (this.mMounted) {
@@ -82,7 +82,9 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                 this.nextState.changelog = thisRelease.body;
                 this.nextState.tag = thisRelease.prerelease ? 'Beta' : undefined;
               } else {
-                this.nextState.tag = 'Unknown';
+                // no release found on github, so it's packaged but not distributed properly yet
+                // this could be on the mystery Next repo for testing
+                this.nextState.tag = 'Preview';
               }
             } catch (err) {
               log('warn', 'Failed to parse release info', err.message);
