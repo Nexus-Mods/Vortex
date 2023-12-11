@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (API) Added Save File dialog
 - (BepInEx) Improved API support
 - (Xbox Gamestore) Fixed file system error dialog being raised for encrypted drives
-- (Baldur's Gate 3) Load Order Export to File now uses System Save Dialog 
+- (Baldur's Gate 3) Load Order Export to File now uses System Save Dialog
+- Drag handles correctly show on all draggable entries on the Load Order page 
 
 ## [1.9.10] - 2023-11-22
 
