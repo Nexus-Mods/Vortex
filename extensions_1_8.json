@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702384865091,
+  "last_updated": 1702385057342,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7598,6 +7598,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Metal Gear Solid 2: Sons of Liberty - Master Collection"
+    },
+    {
+      "modId": 728,
+      "fileId": 2525,
+      "author": "Afevis",
+      "uploader": "Afevis",
+      "description": {
+        "short": "Adds vortex support for Metal Gear Solid 3 - Snake Eater - Master Collection",
+        "long": "Adds vortex support\n<br />\n<br />Setup video:\n<br />\n<br />https://youtu.be/n0xPxGWL9OQ"
+      },
+      "downloads": 25,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5946.jpg",
+      "name": "Metal Gear Solid 3 - Snake Eater - Master Collection Vortex Extension",
+      "timestamp": 1701778303,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Metal Gear Solid 3: Snake Eater - Master Collection"
     }
   ]
 }
