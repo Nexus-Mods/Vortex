@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702385057342,
+  "last_updated": 1702388640163,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7617,6 +7617,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Metal Gear Solid 3: Snake Eater - Master Collection"
+    },
+    {
+      "modId": 706,
+      "fileId": 2539,
+      "author": "yajneS",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Vortex extension support for UNDERTALE",
+        "long": "[b][size=5]Vortex extension support for UNDERTALE[/size][/b]"
+      },
+      "downloads": 4,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_1194.jpg",
+      "name": "UNDERTALE Vortex Extension",
+      "timestamp": 1702203647,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "Undertale"
     }
   ]
 }
