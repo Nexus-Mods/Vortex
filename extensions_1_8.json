@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702384678690,
+  "last_updated": 1702384865091,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7579,6 +7579,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Metal Gear Solid - Master Collection"
+    },
+    {
+      "modId": 727,
+      "fileId": 2524,
+      "author": "Afevis",
+      "uploader": "Afevis",
+      "description": {
+        "short": "Adds vortex support for Metal Gear Solid 2 - Sons of Liberty - Master Collection",
+        "long": "Adds vortex support\n<br />\n<br />Setup video:\n<br />\n<br />https://youtu.be/n0xPxGWL9OQ"
+      },
+      "downloads": 16,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5954.jpg",
+      "name": "Metal Gear Solid 2 - Sons of Liberty - Master Collection Vortex Extension",
+      "timestamp": 1701778289,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Metal Gear Solid 2: Sons of Liberty - Master Collection"
     }
   ]
 }
