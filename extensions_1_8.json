@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702388640163,
+  "last_updated": 1702390897458,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7636,6 +7636,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "Undertale"
+    },
+    {
+      "modId": 707,
+      "fileId": 2548,
+      "author": "yajneS",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Vortex extension support for DELTARUNE",
+        "long": "[size=5][b]Vortex extension support for DELTARUNE[/b][/size]"
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4064.jpg",
+      "name": "DELTARUNE Vortex Extension",
+      "timestamp": 1702389632,
+      "tags": [],
+      "version": "1.0.2",
+      "type": "game",
+      "gameName": "DELTARUNE"
     }
   ]
 }
