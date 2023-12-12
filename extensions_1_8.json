@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702373897811,
+  "last_updated": 1702383273791,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7541,6 +7541,25 @@
         "long": "This is a stub of the Cyberpunk 2077 extension. It will be downloaded the first time it's managed."
       },
       "version": "0.1.0"
+    },
+    {
+      "modId": 725,
+      "fileId": 2522,
+      "author": "Afevis",
+      "uploader": "Afevis",
+      "description": {
+        "short": "Adds vortex support for Metal Gear and Metal Gear 2 - Master Collection",
+        "long": "Adds vortex support\n<br />\n<br />Setup video:\n<br />\n<br />https://youtu.be/n0xPxGWL9OQ"
+      },
+      "downloads": 9,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5955.jpg",
+      "name": "Metal Gear and Metal Gear 2 - Master Collection Vortex Extension",
+      "timestamp": 1701778277,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Metal Gear & Metal Gear 2: Solid Snake - Master Collection"
     }
   ]
 }
