@@ -1,5 +1,5 @@
 {
-  "last_updated": 1702383273791,
+  "last_updated": 1702384678690,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7560,6 +7560,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Metal Gear & Metal Gear 2: Solid Snake - Master Collection"
+    },
+    {
+      "modId": 726,
+      "fileId": 2523,
+      "author": "Afevis",
+      "uploader": "Afevis",
+      "description": {
+        "short": "Adds vortex support for Metal Gear Solid - Master Collection",
+        "long": "Adds vortex support\n<br />\n<br />Setup video:\n<br />\n<br />https://youtu.be/n0xPxGWL9OQ"
+      },
+      "downloads": 12,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5964.jpg",
+      "name": "Metal Gear Solid - Master Collection Vortex Extension",
+      "timestamp": 1701778283,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Metal Gear Solid - Master Collection"
     }
   ]
 }
