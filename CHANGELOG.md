@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.12] - 2023-12-14
 
 - (BepInEx) Fixed unsafe attempt to query the existence of the BepInEx package
+- (Plugin Management) Modified ESL support detection to support game extension defined predicates
+- (X4) fixed installation error if mod info is missing
+- (Skyrim VR) Adding ESL support using [SKSEVR plugin](https://www.nexusmods.com/skyrimspecialedition/mods/106712)
 
 ## [1.9.11] - 2023-12-07
 
