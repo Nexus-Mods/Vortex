@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
@@ -190,8 +192,14 @@ function genDidDeploy(api: types.IExtensionApi) {
 }
 
 function genDidPurge(api: types.IExtensionApi) {
-  return async (profileId: string, deployment: IDeployment) =>
-    genDeploymentEvent(api, profileId);
+  return async (profileId: string, deployment: IDeployment) => {
+    const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
+    const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+    if (gameEntry?.clearStateOnPurge === false) {
+      return Promise.resolve();
+    }
+    return genDeploymentEvent(api, profileId);
+  }
 }
 
 export default function init(context: IExtensionContext) {
