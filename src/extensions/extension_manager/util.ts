@@ -179,11 +179,9 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
       log('debug', 'extension list received');
       return manifest.extensions.filter(ext => ext.name !== undefined);
     })
-    .tap(extensions =>
-      fs.writeFileAsync(cachePath,
-                        JSON.stringify({ extensions }, undefined, 2),
-                        { encoding: 'utf8' }));
-}
+    .tap(extensions => fs.writeFileAsync(cachePath, JSON.stringify({ extensions }, undefined, 2), { encoding: 'utf8' }))
+    .tapCatch(err => log('error', 'failed to download extension list', err));
+  }
 
 function doFetchAvailableExtensions(forceDownload: boolean)
                                     : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
