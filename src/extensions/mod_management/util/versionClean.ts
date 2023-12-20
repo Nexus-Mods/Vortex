@@ -1,7 +1,7 @@
 import * as semver from 'semver';
 
 function versionClean(input: string): string {
-  let res = semver.valid(semver.coerce(input));
+  let res = semver.valid(semver.parse(input));
   if (res !== null) {
     res = semver.clean(res);
   }
