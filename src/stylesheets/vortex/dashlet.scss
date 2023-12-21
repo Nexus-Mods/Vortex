@@ -52,10 +52,13 @@
 .dashlet-news {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+
   ul {
     margin-bottom: 0;
     padding: 0 4px;
   }
+
   .placeholder {
     height: 100%;
   }
@@ -130,14 +133,21 @@
 }
 
 .dashlet-announcement {
+
   display: flex;
   flex-direction: column;
+  gap: 8px;
 
   .list-announcements {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
     overflow-y: auto;
     list-style: none;
+    padding: 0;
+    margin: 0;
 
-    padding: 0 4px;
 
     .announcement-list-item {
       .announcement-description {
@@ -163,9 +173,14 @@
         }
       }
 
-      background: $gray-lighter !important;
-      padding: 0 10px;
-      margin-bottom: 10px !important;
+      -webkit-user-select: all;
+      user-select: all;
+
+      border-radius: 4px;
+      border: 1px solid #1c1e1d;
+      margin-right: 8px;
+      padding: 8px;
+      background-color: $brand-bg;
     }
 
     .announcement-extras {
