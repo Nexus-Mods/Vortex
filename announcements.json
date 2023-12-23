@@ -100,12 +100,6 @@
   "severity": "information",
   "link": "https://github.com/SubnauticaModding/QModManager/releases/download/v4.2.1/ManualInstall.QModManager_BZ.EXP.zip",
   "gamemode": "subnauticabelowzero"
-  }, {
-  "date": "2023-12-20T11:22:33",
-  "description": "This is a new announcement",
-  "severity": "information",
-  "link": "https://www.google.com",
-  "gamemode": "*"
   }
 ]
 
