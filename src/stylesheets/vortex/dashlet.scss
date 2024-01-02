@@ -145,7 +145,8 @@
   flex-direction: column;
   gap: 8px;
 
-  .list-announcements {
+  .list-announcements,
+  .announcements-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -156,9 +157,15 @@
     margin: 0;
 
 
-    .announcement-list-item {
+    .announcement-list-item,
+    .announcement-entry {
+
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
       .announcement-description {
-        padding: 0 8px;
+        padding: 0;
 
         .announcement-icon {
           display: flex;
@@ -169,7 +176,7 @@
             height: 3em;
             width: 3em;
           }
-        }
+        }        
 
         .announcement-icon-critical {
           fill: $brand-danger;
@@ -178,6 +185,16 @@
         .announcement-icon-warning {
           fill: $brand-warning;
         }
+
+        
+
+        p {
+          margin: 0;
+
+          a {
+            cursor: pointer;
+          }
+        }
       }
 
       -webkit-user-select: all;
@@ -185,15 +202,16 @@
 
       border-radius: 4px;
       border: 1px solid #1c1e1d;
-      margin-right: 8px;
+      //margin-right: 8px;
       padding: 8px;
       background-color: $brand-bg;
     }
 
     .announcement-extras {
       justify-content: space-between;
-      padding: 8px !important;
+      //padding: 8px !important;
       font-size: smaller;
+      align-items: flex-end;
     }
   }
 }
