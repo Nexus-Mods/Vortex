@@ -7,7 +7,7 @@ export function matchesGameMode<T>(entry: T,
                                    forceMatch: boolean = false): boolean {
   const entryGameMode = getSafe(entry, ['gamemode'], undefined);
   if ((gameMode === undefined)
-    && ((entryGameMode === undefined) || (entryGameMode === '*'))) {
+    && ((entryGameMode === undefined) || (entryGameMode === '*') || (entryGameMode === ''))) {
     return true;
   }
 
