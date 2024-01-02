@@ -35,7 +35,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     // Filter announcements by gamemode and version.
     const filtered = announcements
-      .filter(announce => matchesGameMode(announce, gameMode)
+      .filter(announce => matchesGameMode(announce, gameMode, true)
                        && matchesVersion(announce, this.mAppVersion))
       .sort((lhs, rhs) => new Date(rhs.date).getTime()
                         - new Date(lhs.date).getTime());
