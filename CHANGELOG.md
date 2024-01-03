@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.9.13] - 2023-12-20
+## [1.9.13] - 2024-01-03
 
 - (API) Enhanced FBLO extension to maintain load order on purge
 - (Baldur's Gate 3) Fix for modfixer notification not able to be supressed 
-- Update remote URLs for announcements, extensions and changelog
-- Updated UI for Changelog and Announcements dashlets.
+- Updated remote URLs for announcements, extensions and changelog
+- Updated styles for dashlet layouts
+- Updated notification colors to increase text legibility 
 
 ## [1.9.12] - 2023-12-14
 
