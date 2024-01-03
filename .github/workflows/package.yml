@@ -16,7 +16,7 @@ on:
             description: "Use new codesign cert?"
             required: false
             type: boolean
-            default: false
+            default: true
         deploy-epic:
           description: "Deploy to Epic?"
           required: false
