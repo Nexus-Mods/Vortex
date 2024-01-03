@@ -59,7 +59,7 @@ ignore:
   # if we are updating (i.e. auto uninstall before an install), don't ask for feedback
   ${ifNot} ${isUpdated}
     MessageBox MB_YESNO "Thank you for using Vortex. Would you like to help us improve Vortex by giving us feedback?" IDNO no  
-      ExecShell open "https://www.nexusmods.com/?vortex-feedback" "" SW_SHOWNORMAL
+      ExecShell open "https://forms.gle/EAxrcY6C1MYq9d1e9" "" SW_SHOWNORMAL
     no:
   ${endIf}
 !macroend
