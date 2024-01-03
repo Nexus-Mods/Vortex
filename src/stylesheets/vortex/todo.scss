@@ -38,11 +38,12 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  margin: 0.2em 0.5em;
+  margin: 0;
   text-align: center;
-  padding: 10px 5px;
+  padding: 8px;
   max-width: 140px;
   min-width: 110px;
+  border-radius: 4px;
 
   > svg {
     width: 2em;
@@ -64,8 +65,8 @@
 
   .btn-dismiss {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 2px;
+    right: 2px;
     margin: 0;
     padding: 2px;
   }

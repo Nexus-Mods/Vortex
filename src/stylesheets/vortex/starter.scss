@@ -157,6 +157,8 @@
 
   width: $tools-icon-size + $tools-border-width * 2;
   height: $tools-icon-size + $tools-border-width * 2;
+  
+  background-color: $brand-bg;
 
   &.primary {
     background-color: rgba(255, 255, 255, 0.1);
