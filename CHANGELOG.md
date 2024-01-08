@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated remote URLs for announcements, extensions and changelog
 - Updated styles for dashlet layouts
 - Updated notification colors to increase text legibility 
+- Updated uninstall feedback URL 
 
 ## [1.9.12] - 2023-12-14
 
