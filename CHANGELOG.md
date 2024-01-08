@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.9.13] - 2024-01-03
 
-- (API) Enhanced FBLO extension to maintain load order on purge
-- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed 
-- Updated remote URLs for announcements, extensions and changelog
-- Updated styles for dashlet layouts
+- (API) Enhanced FBLO extension to maintain load order on purge 
+- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed  
+- Updated remote URLs for announcements, extensions and changelog 
+- Updated layout for dashlets
+- Updated default theme colors
 - Updated notification colors to increase text legibility 
-- Updated uninstall feedback URL 
+- Updated uninstall feedback URL  
 
 ## [1.9.12] - 2023-12-14
 
