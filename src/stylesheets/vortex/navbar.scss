@@ -20,14 +20,15 @@
   a,
   a:hover,
   a:focus {
-    background: url('assets/images/bg.png');
+    background-color: $brand-bg;
+    //background: url('assets/images/bg.png');
     border-right: 4px solid $brand-clickable;
   }
 }
 
 .nav-pills.nav-stacked > li {
   a,
-  a:hover,
+  a:hover,w
   a:focus {
     border-right: 4px solid transparent;
   }

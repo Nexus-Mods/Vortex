@@ -1,5 +1,5 @@
 .dashlet {
-  border: $border-width solid rgba($border-color, 0.5);
+  border: $border-width solid $border-color;
   background-color: $brand-menu;
   padding: $half-gutter;
   height: 100%;
@@ -205,7 +205,7 @@
       border-radius: 4px;
       border: 1px solid #1c1e1d;
       //margin-right: 8px;
-      padding: 8px;
+      padding: 16px;
       background-color: $brand-bg;
     }
 

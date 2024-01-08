@@ -4,7 +4,7 @@
   gap: 8px;
   border-radius: 4px;
   border: 1px solid #1c1e1d;
-  padding: 8px;
+  padding: 16px;
   background-color: $brand-bg;
 
   &:first-child {
@@ -34,8 +34,8 @@
 
 .rss-category {
   position: absolute;
-  top: 16px;    
-  left: 16px;
+  top: 8px;    
+  left: 8px;
   padding: 2px 8px;
   font-family: $font-family-base;
   font-weight: 600;

@@ -182,7 +182,8 @@
 
 // main window area
 #main-window-pane {
-  background: url('assets/images/bg.png');
+  //background: url('assets/images/bg.png');
+  background-color: $brand-bg;
   background-size: cover;
   color: $text-color;
 

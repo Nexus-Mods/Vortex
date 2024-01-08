@@ -200,7 +200,7 @@
 
   display: flex;
   background-color: transparent;
-  border: $tools-border-width solid;
+  border: $tools-border-width solid $border-color;
   width: 98.5%;
 
   span {

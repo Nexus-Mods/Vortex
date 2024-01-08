@@ -41,7 +41,7 @@
     overflow: auto;
 
     margin: 0;
-    border: 1px gray solid;
+    border: 1px solid $border-color;
     border-radius: 4px;
     padding: 0 12px 0 12px;
 
@@ -50,7 +50,7 @@
     }
 
     .drag-handle-icon {
-      fill: $brand-menu;
+      fill: $border-color;
     }
   
     .load-order-index {
@@ -176,7 +176,7 @@
   #loadorderinfo {
 
     padding: 0 12px;
-    border: 0;
+    border: none;
 
     display: block;
 
@@ -190,7 +190,7 @@
 
       > * {
         padding: 12px;
-        border: 1px gray solid;
+        border: 1px $border-color solid;
         border-radius: 4px;
 
         > .layout-flex-inner {
