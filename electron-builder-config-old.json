@@ -24,13 +24,6 @@
     "signingHashAlgorithms": [
       "sha256"
     ],
-    "sign": "./sign.js",
-    "publish": [
-      {
-        "provider": "github",
-        "private": false
-      }
-    ],
     "forceCodeSigning": true,
     "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
     "timeStampServer": "http://timestamp.comodoca.com",

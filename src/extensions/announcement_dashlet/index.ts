@@ -29,14 +29,15 @@ import { IAnnouncement, ISurveyInstance,
 import { matchesGameMode, matchesVersion } from './util';
 
 const ANNOUNCEMENT_LINK =
-  'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
+  'https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/announcements.json';
 
 const SURVEYS_LINK =
-  'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/surveys.json';
+  'https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/surveys.json';
 
 // Can be used for debugging.
 const DEBUG_MODE: boolean = false;
 const SURVEYS_LOCAL_PATH = path.join(__dirname, 'surveys.json');
+
 function readLocalSurveysFile() {
   return fs.readFileAsync(SURVEYS_LOCAL_PATH)
     .then(data => {
@@ -51,6 +52,7 @@ function readLocalSurveysFile() {
 
 function getHTTPData<T>(link: string): Bluebird<T[]> {
   const sanitizedURL = url.parse(link);
+  log('info', 'getHTTPData', sanitizedURL);
   return new Bluebird((resolve, reject) => {
     https.get(sanitizedURL.href, res => {
       res.setEncoding('utf-8');
@@ -76,9 +78,7 @@ async function updateAnnouncements(store: ThunkStore<IState>) {
     let res: IAnnouncement[];
     if (process.env.NODE_ENV === 'development') {
       try {
-        res = JSON.parse(await fs.readFileAsync(
-          path.join(getVortexPath('temp'), 'announcements.json'),
-          { encoding: 'utf8' }));
+        res = JSON.parse(await fs.readFileAsync(          path.join(getVortexPath('temp'), 'announcements.json'),          { encoding: 'utf8' }));
         store.dispatch(addNotification({
           type: 'info',
           message: 'Using announcements from file.',
@@ -90,6 +90,7 @@ async function updateAnnouncements(store: ThunkStore<IState>) {
     if (res === undefined) {
       res = await getHTTPData<IAnnouncement>(ANNOUNCEMENT_LINK);
     }
+    log('info', 'retrieved list of announcements', res);   
     store.dispatch(setAnnouncements(res));
   } catch (err) {
     log('warn', 'failed to retrieve list of announcements', err);

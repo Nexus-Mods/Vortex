@@ -27,26 +27,64 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, installType, updateChannel } = this.props;
 
-    if (installType === 'managed') {
-      return (
-        <ControlLabel>
-          {t('Update')}
-          <Alert>
-            {t('Vortex was installed through a third-party service which will take care of updating it.')}
-          </Alert>
-        </ControlLabel>
-      );
+    const renderDevelopmentAlert = () => {
+      if(process.env.NODE_ENV === 'development')
+         return (
+          <div>
+          <ControlLabel>
+            <Alert>
+              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked but they won\'t be downloaded or installed.')}
+            </Alert>
+          </ControlLabel>
+          </div>
+        );
+      return null;
     }
 
+    const renderPreviewAlert = () => {
+      if(updateChannel === 'next')
+         return (
+          <div>
+          <ControlLabel>
+            <Alert>
+              {t('Vortex is running in preview mode and using the hidden \'next\' update channel.')}
+            </Alert>
+          </ControlLabel>
+          </div>
+        );
+      return null;
+    }
+
+    // managed or development
+    if (installType === 'managed') {
+
+      // managed and not development
+      if(process.env.NODE_ENV !== 'development') {
+        return (
+          <ControlLabel>
+            <Alert>
+              {t('Vortex was installed through a third-party service which will take care of updating it.')}
+            </Alert>
+          </ControlLabel>
+        );
+      }
+      
+      // managed and development
+             
+    }
+
+    // regular
     return (
-      <form>
+    <form>
         <FormGroup controlId='updateChannel'>
+
           <ControlLabel>
             {t('Update')}
             <More id='more-update-channel' name={t('Update Channel')}>
               {getText('update-channel', t)}
             </More>
-          </ControlLabel>
+          </ControlLabel> 
+
           <FormControl
             componentClass='select'
             onChange={this.selectChannel}
@@ -56,6 +94,11 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
             <option value='beta'>{t('Beta')}</option>
             <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
+
+          { renderPreviewAlert() }
+
+          { renderDevelopmentAlert() }
+          
           <ControlLabel>
             {updateChannel === 'none' ? [(
               <Alert key='manual-update-warning' bsStyle='warning'>
@@ -72,7 +115,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   }
 
   private checkNow = () => {
-    ipcRenderer.send('check-for-updates', 'stable');
+    // send what updateChannel you are on, unless it's none, then send stable
+    ipcRenderer.send('check-for-updates', this.props.updateChannel === 'none' ? 'stable' : this.props.updateChannel);
   }
 
   private selectChannel = (evt) => {

@@ -157,6 +157,8 @@
 
   width: $tools-icon-size + $tools-border-width * 2;
   height: $tools-icon-size + $tools-border-width * 2;
+  
+  background-color: $brand-bg;
 
   &.primary {
     background-color: rgba(255, 255, 255, 0.1);
@@ -198,7 +200,7 @@
 
   display: flex;
   background-color: transparent;
-  border: $tools-border-width solid;
+  border: $tools-border-width solid $border-color;
   width: 98.5%;
 
   span {

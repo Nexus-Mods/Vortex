@@ -8123,9 +8123,9 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
-libxmljs@TanninOne/libxmljs#sambacha:
-  version "0.27.1"
-  resolved "https://codeload.github.com/TanninOne/libxmljs/tar.gz/63d73bc86559d385d9e5ecaeb6dc4fc7792d77d7"
+libxmljs@Nexus-Mods/libxmljs#sambacha:
+  version "0.30.1"
+  resolved "https://codeload.github.com/Nexus-Mods/libxmljs/tar.gz/8dfcef285a49bd59a88997b53c54454d5e8f41e0"
   dependencies:
     "@marudor/node-pre-gyp" "^0.16.1"
     bindings "^1.5.0"
@@ -12159,8 +12159,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.7.0-r10"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/d1eabcbb9365ccdb40bbbba6826775c116260493"
+  version "1.8.6"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/cecce46ac500a314bac1b63a9f1d072986b60e66"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.3.0"

@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
@@ -9,6 +11,7 @@ import { generate, Interface, parser } from './collections/loadOrder';
 import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
+import { sessionReducer } from './reducers/session';
 
 import * as types from '../../types/api';
 import * as util from '../../util/api';
@@ -189,12 +192,19 @@ function genDidDeploy(api: types.IExtensionApi) {
 }
 
 function genDidPurge(api: types.IExtensionApi) {
-  return async (profileId: string, deployment: IDeployment) =>
-    genDeploymentEvent(api, profileId);
+  return async (profileId: string, deployment: IDeployment) => {
+    const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
+    const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+    if (gameEntry?.clearStateOnPurge === false) {
+      return Promise.resolve();
+    }
+    return genDeploymentEvent(api, profileId);
+  }
 }
 
 export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
+  context.registerReducer(['session', 'fblo', 'refresh'], sessionReducer);
 
   context.registerMainPage('sort-none', 'Load Order', FileBasedLoadOrderPage, {
     id: 'file-based-loadorder',

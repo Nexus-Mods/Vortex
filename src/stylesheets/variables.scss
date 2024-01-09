@@ -6,27 +6,27 @@
 // single reference to a gray color
 // $dark-theme: true;
 
-$white:                  #ffffff;
-$black:                  #000000;
-$gray-darker:            #DEE2E6;
-$gray-dark:              #DDDDDD;
-$gray:                   #a9a9a9;
-$gray-light:             #4C4C4C;
-$gray-lighter:           #2A2C2B;
+$white:                  #F4F4F5;
+$black:                  #09090B;
+$gray-darker:            #D4D4D8;
+$gray-dark:              #A1A1AA;
+$gray:                   #3F3F46;
+$gray-light:             #27272A;
+$gray-lighter:           #18181B;
 
-$brand-primary:         #D78F46;
-$brand-highlight:       #00c1FF;
-$brand-success:         #86B951;
-$brand-info:            #00C1FF;
-$brand-warning:         #ff7300;
-$brand-danger:          #FF1C38;
+$brand-primary:         #C87B28;
+$brand-highlight:       #1D4ED8;
+$brand-success:         #166534;
+$brand-info:            #1D4ED8;
+$brand-warning:         #FACC15;
+$brand-danger:          #991B1B;
 
 $brand-bg:              $gray-lighter;
 $brand-menu:            $gray-light;
 $brand-clickable:       $brand-primary;
 $brand-secondary:       $brand-primary;
 
-$border-color: rgb(128, 128, 128);
+$border-color: rgba(255, 255, 255, 0.1);
 $border-width: 1px;
 
 $table-header-border-width: $border-width;
@@ -35,7 +35,7 @@ $table-row-gap: 0px;
 $table-header-separator: 1px;
 
 $body-bg:               $brand-menu;
-$text-color:            #eeeeee;
+$text-color:            $white;
 $text-color-disabled:   darken($text-color, 40%);
 
 $link-color:            $brand-clickable;
@@ -53,7 +53,7 @@ $highlight-list: (
   ( 8, #262AFF ),
 );
 
-$component-active-color:    white;
+$component-active-color:    $white;
 $component-active-bg:       $brand-primary;
 
 //== Base fonts
@@ -72,7 +72,7 @@ $headings-color:          inherit;
 
 
 //== Base Spacing
-$gutter-width:              30px;
+$gutter-width:              24px;
 
 $padding-base-vertical:     0.2em;
 $padding-base-horizontal:   0.5em;

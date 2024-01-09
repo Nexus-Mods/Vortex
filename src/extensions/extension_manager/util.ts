@@ -41,9 +41,10 @@ function githubRawUrl(repo: string, branch: string, repoPath: string) {
   return `https://raw.githubusercontent.com/${repo}/${branch}/${repoPath}`;
 }
 
-const EXTENSION_FORMAT = '1_8';
-const EXTENSION_FILENAME = `extensions_${EXTENSION_FORMAT}.json`;
-const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', EXTENSION_FILENAME);
+//const EXTENSION_FORMAT = '1_8';
+const EXTENSION_FILENAME = `extensions-manifest.json`;
+const EXTENSION_PATH = 'out/';
+const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex-Backend', 'main', EXTENSION_PATH + EXTENSION_FILENAME);
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -178,11 +179,9 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
       log('debug', 'extension list received');
       return manifest.extensions.filter(ext => ext.name !== undefined);
     })
-    .tap(extensions =>
-      fs.writeFileAsync(cachePath,
-                        JSON.stringify({ extensions }, undefined, 2),
-                        { encoding: 'utf8' }));
-}
+    .tap(extensions => fs.writeFileAsync(cachePath, JSON.stringify({ extensions }, undefined, 2), { encoding: 'utf8' }))
+    .tapCatch(err => log('error', 'failed to download extension list', err));
+  }
 
 function doFetchAvailableExtensions(forceDownload: boolean)
                                     : Promise<{ time: Date, extensions: IAvailableExtension[] }> {

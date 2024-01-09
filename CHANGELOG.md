@@ -5,7 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.13] - 2024-01-08
 
+- (API) Enhanced FBLO extension to maintain load order on purge 
+- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed  
+- Updated remote URLs for announcements, extensions and changelog 
+- Updated layout for dashlets
+- Updated default theme colors
+- Updated notification colors to increase text legibility 
+- Updated uninstall feedback URL  
+
+## [1.9.12] - 2023-12-14
+
+- (BepInEx) Fixed unsafe attempt to query the existence of the BepInEx package
+- (Plugin Management) Modified ESL support detection to support game extension defined predicates
+- (X4) fixed installation error if mod info is missing
+- (Skyrim VR) Adding ESL support using [SKSEVR plugin](https://www.nexusmods.com/skyrimspecialedition/mods/106712)
+
+## [1.9.11] - 2023-12-07
+
+### Added
+
+- (API) Added Save File dialog
+
+### Changed
+
+- (Baldur's Gate 3) Load Order Export to File now uses System Save Dialog
+- (BepInEx) Improved API support
+- Updated libxmljs dependency
+
+### Fixed
+
+- (Xbox Gamestore) Fixed file system error dialog being raised for encrypted drives
+- Drag handles correctly show on all draggable entries on the Load Order page 
+
+## [1.9.10] - 2023-11-22
+
+### Added
+
+- Support for future code signing certificate
+
+### Changed
+
+- Updated design and styles for load order pages.
+- More detailed log data when updating
+
+## [1.9.9] - 2023-11-20
+
+### Added
+
+- Added deep merge to Vortex API 
+
+### Fixed
+
+- Fixed crash when managing Game Pass games
 
 ## [1.9.8] - 2023-11-13
 

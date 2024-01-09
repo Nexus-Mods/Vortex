@@ -70,16 +70,19 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
   let channelOverride: UpdateChannel;
-  if (process.env['IS_PREVIEW_BUILD'] === 'yes') {
-    log('info', 'forcing update channel for preview builds so that we don\'t automatically '
-        + 'downgrade');
+
+  if (process.env.IS_PREVIEW_BUILD === 'true') {
+    log('info', 'forcing update channel for preview builds so that we don\'t automatically downgrade');
     api.store.dispatch(setUpdateChannel('next'));
   } else if (state().settings.update.channel === 'next') {
     api.store.dispatch(setUpdateChannel('beta'));
   }
 
+  log('info', 'setupAutoUpdate complete');
+
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
+
       if (semver.satisfies(version, '^' + autoUpdater.currentVersion.version)) {
         // don't warn on a "compatible" update
         return resolve();
@@ -91,7 +94,7 @@ function setupAutoUpdate(api: IExtensionApi) {
         id: 'vortex-update-notification',
         type: 'info',
         title: 'Major update available',
-        message: 'After installing this update you shouldn\'t go back to an older version.',
+        message: `(${version}) After installing this update you shouldn't go back to an older version.`,
         noDismiss: true,
         actions: [
           {
@@ -153,7 +156,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
-    log('info', 'found update available', info.version);
+    log('info', 'found update available', info);
     const installedVersion = semver.parse(getApplication().version);
     const version = semver.parse(info.version);
 
@@ -240,7 +243,7 @@ function setupAutoUpdate(api: IExtensionApi) {
         type: 'success',
         message: 'Update available',
         actions: [
-          {
+          /*{
             title: 'Changelog',
             action: () => {
               api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
@@ -249,7 +252,7 @@ function setupAutoUpdate(api: IExtensionApi) {
                   { label: 'Close' },
                 ]));
             },
-          },
+          },*/
           {
             title: 'Restart & Install',
             action: () => {
@@ -265,26 +268,44 @@ function setupAutoUpdate(api: IExtensionApi) {
     if (!state().session.base.networkConnected) {
       log('info', 'Not checking for updates because network is offline');
     }
-    log('info', 'checking for vortex update');
+
+    log('info', 'checking for vortex update:', channel);
     const didOverride = channelOverride !== undefined;
-    autoUpdater.allowPrerelease = channel !== 'stable';
+    autoUpdater.allowPrerelease = channel !== 'stable';    
+
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Nexus-Mods',
       repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
       private: false,
-      publisherName: ['Black Tree Gaming Limited'],
+      publisherName: [
+        'Black Tree Gaming Limited',
+        'Black Tree Gaming Ltd'
+      ],
     });
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
+
+    log('info', 'update config is ', {
+      provider: 'github',
+      owner: 'Nexus-Mods',
+      repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
+      allowPrerelease: channel !== 'stable'
+    });
+    
     autoUpdater.checkForUpdates()
       .then(check => {
         log('info', 'completed update check');
-        if (truthy(check.downloadPromise)) {
-          check.downloadPromise.catch(err => {
-            log('warn', 'Checking for update failed', err);
-          });
-        }
+
+        // do a check here for if a regular type (properly installed, not dev or epic or whatever)
+        // then that's the only time that we want to do the auto download
+        if (api.getState().app.installType === 'regular') {
+          if (truthy(check.downloadPromise)) {
+            check.downloadPromise.catch(err => {
+              log('warn', 'Checking for update failed', err);
+            });
+          }
+        }        
 
         if (!didOverride && (channelOverride !== undefined)) {
           return checkNow(channelOverride);
@@ -301,14 +322,17 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   ipcMain.on('set-update-channel', (event, channel: any, manual: boolean) => {
     try {
-      log('info', 'set channel', { channel, manual });
-      if ((channel !== 'none')
-          && ((channelOverride === undefined) || manual)
-          && (process.env.NODE_ENV !== 'development')
-          && (process.env.IGNORE_UPDATES !== 'yes')) {
+      log('info', 'set channel', { channel, manual, channelOverride });
+      
+      if ((channel !== 'none')     
+        && ((channelOverride === undefined) || manual)    
+        //&& (process.env.NODE_ENV !== 'development') 
+        && (process.env.IGNORE_UPDATES !== 'yes')) {
+        
         if (manual) {
           channelOverride = channel;
         }
+
         checkNow(channel);
       }
     } catch (err) {

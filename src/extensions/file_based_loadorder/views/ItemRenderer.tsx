@@ -100,12 +100,11 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
         className={classes.join(' ')}
         ref={this.props.item.setRef}
       >
+        <Icon className='drag-handle-icon' name='drag-handle'/>
         <p className='load-order-index'>{position}</p>
         {this.renderValidationError()}
-        <div>
-          <p className='load-order-name'>{key}</p>
-          {this.renderExternalBanner(item)}
-        </div>
+          <p className='load-order-name'>{key}</p>   
+        {this.renderExternalBanner(item)}
         {checkBox()}
         {lock()}
       </ListGroupItem>

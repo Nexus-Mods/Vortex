@@ -135,6 +135,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
         className={classes.join(' ')}
         onContextMenu={this.props.onContextMenu}
       >
+        <Icon className='drag-handle-icon' name='drag-handle'/>
         <p className='load-order-index'>{position}</p>
         <div>
           {(!!item?.external) && this.renderExternalBanner()}

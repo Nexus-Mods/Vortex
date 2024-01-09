@@ -231,7 +231,7 @@ $thumbnail-width: 256px;
 #game-panel-group {
   .panel-heading {
     background-color: darken($table-bg, 5%);
-    border-bottom: 1px solid $gray-dark !important;
+    border-bottom: 1px solid $border-color;
     display: flex;
     align-items: center;
 

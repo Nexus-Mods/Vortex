@@ -76,6 +76,13 @@ export interface ILoadOrderGameInfo {
   toggleableEntries?: boolean;
 
   /**
+   * Defaults to true unless specified otherwise.
+   *  The load order will get cleared upon purge by default.
+   * Set this to false if you want to preserve the load order.
+   */
+  clearStateOnPurge?: boolean;
+
+  /**
    * Extension developers are able to provide usage instructions to be displayed
    *  in the load order page alongside the load order panel.
    *  Default instructions will be provided if custom instructions aren't provided.

@@ -12,17 +12,29 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings('Vortex', SettingsUpdate);
 
   context.onceMain(() => {
+    
     try {
-      if (context.api.getState().app.installType === 'regular') {
+      if (context.api.getState().app.installType === 'regular' ||
+        process.env.NODE_ENV === 'development'
+      ) {
         setupAutoUpdater(context.api);
       }
     } catch (err) {
       log('error', 'failed to check for update', err.message);
     }
+
+    log('info', 'updater config', {
+      isPreviewBuild: process.env.IS_PREVIEW_BUILD,
+      installType: context.api.getState().app.installType,
+      updateChannel: context.api.getState().settings.update.channel
+    });
   });
 
   context.once(() => {
-    if (context.api.getState().app.installType !== 'regular') {
+
+
+    if (context.api.getState().app.installType !== 'regular' &&
+    process.env.NODE_ENV !== 'development') {
       return;
     }
 
