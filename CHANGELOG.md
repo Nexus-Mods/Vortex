@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2024-01-11
+
+- (Collections) Improved styles for button states
+- (Collections) Improved version mismatch dialog
+- (Collections) Improved collection health downvote dialog
+- (Collections) 12-hour delay from installing to voting is now based on install being finished
+- (Dependency Manager) Fixed file conflicts not being detected across modtypes
+
 ## [1.9.13] - 2024-01-08
 
 - (API) Enhanced FBLO extension to maintain load order on purge 
