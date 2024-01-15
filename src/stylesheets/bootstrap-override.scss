@@ -245,12 +245,13 @@ textarea {
 }
 
 .modal-header, .modal-footer {
-  margin: 0 $gutter-width;
+  margin: 0;
 }
 
 .modal-content {
   border: $border-width solid $modal-content-border-color;
   width: 100%;
+  border-radius: 8px;
 }
 
 .pager li > a {
