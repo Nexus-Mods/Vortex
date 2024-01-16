@@ -97,16 +97,16 @@ $padding-xs-horizontal:     0.4em;
 $line-height-large:         1.5;
 $line-height-small:         1.5;
 
-$border-radius-base:        0;
-$border-radius-large:       0;
-$border-radius-small:       0;
+$border-radius-base:        4px;
+$border-radius-large:       8px;
+$border-radius-small:       2px;
 
 $caret-width-base:          0.3em;
 $caret-width-large:         0.3em;
 
 //== Animation
-$expand-sidebar-delay: 300ms;
-$transition-time: 500ms;
+$expand-sidebar-delay: 100ms;
+$transition-time: 200ms;
 
 //== Scrollbar
 $scrollbar-width:        8px;

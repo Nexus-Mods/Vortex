@@ -61,7 +61,7 @@ $input-bg:                       $brand-bg;
 $input-bg-disabled:              $brand-menu;
 
 $input-color:                    $text-color;
-$input-border:                   rgba(255,255,255,0.4);
+$input-border:                   rgba(255,255,255,0.2);
 
 $input-border-radius:            $border-radius-base;
 $input-border-radius-large:      $border-radius-large;
@@ -448,7 +448,6 @@ $thumbnail-padding:           4px;
 $thumbnail-bg:                $body-bg;
 $thumbnail-border:            $gray-darker;
 $thumbnail-border-radius:     $border-radius-base;
-
 $thumbnail-caption-color:     $text-color;
 $thumbnail-caption-padding:   9px;
 
@@ -464,7 +463,7 @@ $badge-active-bg:             $text-color;
 
 $badge-font-weight:           bold;
 $badge-line-height:           1;
-$badge-border-radius:         10px;
+$badge-border-radius:         20px;
 
 
 //== Wells (not used)
