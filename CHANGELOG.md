@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed styles on table multi row select
 - Fixed sorting on Add Mods to Collection dialog
 - Updated styles for modals
-- (SkyVR) fixed error when attempting to find EslEnabler
+- (SkyVR) Fixed error when attempting to find EslEnabler
+- (Xbox) Fixed crash when attempting to detect xbox manifests during game installation and/or when xbox game store did not clear the game folders correctly.
 
 ## [1.9.13] - 2024-01-08
 
