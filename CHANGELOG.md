@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Collections) Improved styles for button states
 - (Collections) Improved version mismatch dialog
 - (Collections) Improved collection health downvote dialog
+- (Collections) Allow curator to recommend using new profile on collection install
 - (Collections) 12-hour delay from installing to voting is now based on install being finished
 - (Dependency Manager) Fixed file conflicts not being detected across modtypes
 - Fixed styles on table multi row select
+- Fixed sorting on Add Mods to Collection dialog
 - Updated styles for modals
 - (SkyVR) fixed error when attempting to find EslEnabler
 
