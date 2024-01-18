@@ -325,11 +325,11 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
     proc.stderr.on('data', dat => stderr += dat.toString());
   });
 
-  /*
+  
   if (exitCode === 0) {
     onFoundDotNet();
     return Promise.resolve(undefined);
-  }*/
+  }
 
   const result: ITestResult = {
     description: {
