@@ -4,4 +4,4 @@ export const NET_CORE_DOWNLOAD_SITE: string =
   'https://dotnet.microsoft.com/en-us/download/dotnet/6.0/runtime';
 
 export const NET_CORE_DOWNLOAD: string =
-  'https://download.visualstudio.microsoft.com/download/pr/9d6b6b34-44b5-4cf4-b924-79a00deb9795/2f17c30bdf42b6a8950a8552438cf8c1/windowsdesktop-runtime-6.0.6-win-x64.exe';
+  'https://download.visualstudio.microsoft.com/download/pr/3136e217-e5b7-4899-9b7e-aa52ecb8b108/d74134edaa75e3300f8692660b9fb7b5/windowsdesktop-runtime-6.0.26-win-x64.exe';
