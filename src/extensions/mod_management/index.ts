@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { dismissNotification, ICheckbox, updateNotification } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
 import {
@@ -934,6 +935,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
 }
 
 function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
+  // TODO: Make sure the file overrides are checked on mod enable/disable!
   return (mods: string[], enabled: boolean, gameId: string, options?: IEnableOptions) => {
     const { store } = api;
     const state: IState = store.getState();

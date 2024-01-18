@@ -490,8 +490,10 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
         };
         if (Array.isArray(mods)) {
           mods.forEach(setModId);
+          api.events.emit('recalculate-modtype-conflicts', mods.map(mod => mod.id));
         } else {
           setModId(mods);
+          api.events.emit('recalculate-modtype-conflicts', [mods.id]);
         }
       },
     },
