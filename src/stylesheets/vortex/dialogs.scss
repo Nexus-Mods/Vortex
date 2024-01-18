@@ -94,6 +94,29 @@
     flex: 1 1 90%;
   }
 
+  >.dialog-content-bbcode {
+    
+    table {
+      width: 100%;
+    }
+
+    ul {
+      margin-bottom: 0;
+    }
+
+    .bbcode-spoiler-tag {
+      
+
+      .bbcode-spoiler-content {
+        padding: 8px;
+        border: 1px solid $border-color;
+        border-radius: $border-radius-base;
+        background: $brand-bg;
+        margin-top: 4px;
+    }
+    }
+  }
+
   .dialog-content-input {
     display: flex;
     flex-direction: column;
@@ -111,15 +134,7 @@
     white-space: pre-wrap;
   }
 
-  >.dialog-content-bbcode {
-    table {
-      width: 100%;
-    }
-
-    ul {
-      margin-bottom: 0;
-    }
-  }
+  
 
   >.dialog-content-html {
     white-space: pre-wrap;

@@ -704,13 +704,16 @@ div:hover > .hover-expand {
 $colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
           gray: $gray, gray-dark: $gray-dark, gray-darker: $gray-darker,
             brand-primary: $brand-primary, brand-highlight: $brand-highlight,
-            brand-success: $brand-success, brand-info: $brand-info,
-            brand-warning: $brand-warning, brand-danger: $brand-danger,
+            brand-success: $brand-success, brand-success-lighter: $brand-success-lighter,
+            brand-info: $brand-info, brand-info-lighter: $brand-info-lighter,
+            brand-warning: $brand-warning, brand-warning-lighter: $brand-warning-lighter, 
+            brand-danger: $brand-danger, brand-danger-lighter: $brand-danger-lighter,
             brand-bg: $brand-bg, brand-menu: $brand-menu,
             brand-clickable: $brand-clickable, brand-secondary: $brand-secondary,
             text-color: $text-color, text-color-disabled: $text-color-disabled,
             border-color: $border-color, link-color: $link-color,
             link-hover-color: $link-hover-color,
+
             );
 
 $other: (
