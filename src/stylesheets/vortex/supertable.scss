@@ -38,7 +38,7 @@
 }
 
 .table-filter-column {
-  background-color: $brand-warning !important;
+  background-color: $brand-info !important;
 }
 
 .table-sort-column {
@@ -238,7 +238,7 @@
   height: 3em;
   > div, td {
     height: 3em;
-    background-color: $brand-warning;
+    background-color: $brand-info;
     padding: 8px;
     > .btn {
       margin-left: 8px;

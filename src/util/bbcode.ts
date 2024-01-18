@@ -7,6 +7,7 @@ import LinkTag from './bbcode/LinkTag';
 import MoreTag from './bbcode/MoreTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
+import StyleTag from './bbcode/StyleTag';
 import SvgTag from './bbcode/SvgTag';
 import TooltipTag from './bbcode/TooltipTag';
 import YoutubeTag from './bbcode/YoutubeTag';
@@ -49,11 +50,12 @@ fullParser.registerTag('heading', HeadingTag);
 fullParser.registerTag('svg', SvgTag);
 fullParser.registerTag('more', MoreTag);
 fullParser.registerTag('tooltip', TooltipTag);
+fullParser.registerTag('style', StyleTag);
 
 const stripParser = new bbcode.Parser();
 stripParser.registerTag('br', BrTag);
 ['size', 'email', 'font', 'link', 'url', 'spoiler',
- 'font', 'youtube', 'line', 'heading', 'svg', 'b', 'u']
+ 'font', 'youtube', 'line', 'heading', 'svg', 'b', 'u', 'style']
  .forEach(tag => stripParser.registerTag(tag, IdentityTag));
 
 let convertDiv: HTMLDivElement;
