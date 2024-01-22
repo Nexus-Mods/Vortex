@@ -454,12 +454,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderRadiobutton = (checkbox: ICheckbox) => {
     const { t } = this.props;
-    const content = (checkbox.subText !== undefined)
-      ? <>
+    const content = 
+    <div>{
+      checkbox.subText !== undefined
+      ? (
+      <>
         <div className='choice-maintext'>{t(checkbox.text)}</div>
         <div className='choice-subtext'>{t(checkbox.subText)}</div>
-      </>
-      : <>{t(checkbox.text)}</>;
+      </> )           
+      : 
+      (<div className='choice-text'>{t(checkbox.text)}</div>)
+      }
+    </div>
 
     return (
       <Radio
