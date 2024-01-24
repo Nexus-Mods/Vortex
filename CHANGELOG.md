@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Collections) Improved collection health downvote dialog
 - (Collections) Allow curator to recommend using new profile on collection install
 - (Collections) 12-hour delay from installing to voting is now based on install being finished
+- (Collections) Game Version displayed in health rating
 - (Dependency Manager) Fixed file conflicts not being detected across modtypes
 - Fixed styles on table multi row select
 - Fixed sorting on Add Mods to Collection dialog
@@ -20,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Xbox) Fixed crash when attempting to detect xbox manifests during game installation and/or when xbox game store did not clear the game folders correctly.
 - .NET check fail has updated text to match Microsoft's naming scheme as well as more accurately reflect what is needed and why
 - (Script Extender) Fixed premium download journey
+- (Palworld) Game stub added
+- (Gamebryo) Zlib updated to 1.3.1
 
 ## [1.9.13] - 2024-01-08
 
