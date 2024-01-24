@@ -11,6 +11,7 @@ $thumbnail-width: 256px;
 
   > .game-thumbnail {
     margin: $half-gutter !important;
+
   }
 }
 
@@ -30,6 +31,13 @@ $thumbnail-width: 256px;
   position: relative;
   height: auto;
   border: 0;
+
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);
+  transition: 100ms ease-out;
+
+  &:hover {
+    transform: scale(1.05);
+  }
 
   &panel-primary {
     border-color: $border-color;

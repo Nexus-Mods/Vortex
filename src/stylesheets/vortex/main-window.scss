@@ -118,8 +118,11 @@
 
   .main-nav-group-title {
     font-size: $font-size-small;
-    margin-left: 10px;
-    margin-top: 8px;
+    margin: 8px 0 0 8px;
+    font-family: $headings-font-family;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $gray-dark;
     // text-transform: uppercase;
   }
 
