@@ -69,7 +69,7 @@ $input-border-radius-small:      $border-radius-small;
 
 $input-border-focus:             $brand-primary;
 
-$input-color-placeholder:        $gray;
+$input-color-placeholder:        $gray-dark;
 
 $input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 0.6);
 $input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3);
