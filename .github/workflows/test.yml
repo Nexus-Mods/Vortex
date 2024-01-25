@@ -102,7 +102,7 @@ jobs:
           
           $version = "1.10.0"
           $executableName = "Vortex.exe"
-          $folderName = ".\dist\win-unpacked"
+          $folderName = Join-Path $rootDir "dist\win-unpacked"
           $buildVersionString = "${{ steps.setOutputs.outputs.epicBuildString }}"
           
           Write-Output "$rootDir"
