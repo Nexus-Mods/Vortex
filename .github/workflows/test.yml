@@ -88,21 +88,35 @@ jobs:
         id: buildpatch
         shell: pwsh
         run: .\download-buildpatchtool.ps1
-          
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          cache: "yarn"
-
-      - name: Print debug info
-        run: dotnet --info
 
       - name: Deploy to Epic
         if: ${{ inputs.deploy-epic == true }}
         shell: pwsh
         run: |
           echo "${{ steps.setOutputs.outputs.epicBuildString }}"
+          
+          $rootDir = Resolve-Path "."
+          $extractFolder = Join-Path $rootDir "BuildPatchTool"
+          $binaryPath = Join-Path $extractFolder "Engine/Binaries/Win64/BuildPatchTool.exe"
+          $tempFolderName = "EPIC_TEMP"
+          
+          $version = "1.10.0"
+          $executableName = "Vortex.exe"
+          $folderName = ".\dist\win-unpacked"
+          $buildVersionString = "${{ steps.setOutputs.outputs.epicBuildString }}"
+          
+          Write-Output "$rootDir"
+          Write-Output "$extractFolder"
+          Write-Output "$binaryPath"
+          Write-Output "$folderName"
+          
+          if (Test-Path -Path "$folderName") {
+              Write-Output "$folderName folder exists"
+          } else {
+              Write-Output "$folderName folder not found"
+              Exit 1
+          }
+                    
         # ./dist/win-unpacked
         env:
           EPIC_ORGID: ${{ secrets.EPIC_ORGID }}
