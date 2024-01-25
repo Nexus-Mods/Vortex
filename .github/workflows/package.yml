@@ -182,9 +182,10 @@ jobs:
           $tempFolderName = "EPIC_TEMP"
           $tempFolder = Join-Path $rootDir $tempFolderName
           $buildFolder = Join-Path $rootDir "dist\win-unpacked"
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
           $executableName = "Vortex.exe"
-          $buildVersionString = "${{ steps.setOutputs.outputs.epicBuildString }}"
+          $buildVersionString = "${{ steps.setOutputs.outputs.rawVersion }}+${timestamp}"
           
           Write-Output "rootDir $rootDir"
           Write-Output "extractFolder $extractFolder"
@@ -200,11 +201,11 @@ jobs:
           }
 
           & $binaryPath -mode="UploadBinary" `
-          -OrganizationId="$EPIC_ORGID" `
-          -ProductId="$EPIC_PRODUCTID" `
-          -ArtifactId="$EPIC_ARTIFACTID" `
-          -ClientId="$EPIC_CLIENTID" `
-          -ClientSecret="$EPIC_CLIENTSECRET" `
+          -OrganizationId="$env:EPIC_ORGID" `
+          -ProductId="$env:EPIC_PRODUCTID" `
+          -ArtifactId="$env:EPIC_ARTIFACTID" `
+          -ClientId="$env:EPIC_CLIENTID" `
+          -ClientSecret="$env:EPIC_CLIENTSECRET" `
           -CloudDir="$tempFolder" `
           -BuildRoot="$buildFolder" `
           -BuildVersion="$buildVersionString"  `
