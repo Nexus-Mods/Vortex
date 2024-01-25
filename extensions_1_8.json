@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706178032672,
+  "last_updated": 1706178353698,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7639,6 +7639,25 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Neodori Forever"
+    },
+    {
+      "modId": 770,
+      "fileId": 2676,
+      "author": "Nexus Mods",
+      "uploader": "insomnious",
+      "description": {
+        "short": "Vortex Support for Palworld",
+        "long": "This is an extension for [url=https://www.nexusmods.com/about/vortex/]Vortex[/url] to add support for Palworld. The [url=https://store.steampowered.com/app/1623730/Palworld/]Steam[/url] and [url=https://www.xbox.com/en-GB/games/store/palworld-game-preview/9NKV34XDW014]Xbox[/url] versions of Palworld are both supported, although there are differences between the two.\n<br />\n<br />[size=3][b]Features\n<br />[/b][/size]\n<br />[list]\n<br />[*]Downloads and installs UE4SS if it doesn't exist\n<br />[*]Automatic game detection\n<br />[*]Support for PAK mods\n<br />[*]Support for Lua&#92;UE4SS mods\n<br />[/list]\n<br />[size=3][b]Installation\n<br />[/b][/size]\n<br />This extension requires Vortex 1.9.10 or greater.\n<br />\n<br />To install, click the Vortex button at the top of the Palworld Extension page on Nexus Mods, and then click Install.\n<br />\n<br />You can also manually install it by click the Manual button at the top of the page and dragging it into the drop target labelled Drop File(s) in the Extensions page at the bottom right.\n<br />\n<br />Afterwards, restart Vortex and you can begin installing supported Palworld mods with Vortex.\n<br />\n<br />If you've already got a previous version, the extension should auto update on a Vortex restart.\n<br />\n<br />[b][size=3]Game detection[/size][/b]\n<br />\n<br />The Palworld game extension enables Vortex to automatically locate installs from the Steam and Xbox apps.\n<br />\n<br />It is also possible to manually set the game folder if the auto detection doesn't find the correct installation. A valid Palworld game folder contains:\n<br />\n<br />[list]\n<br />[*]Palworld.exe\n<br />[/list]\n<br />If your game lacks this file then it is likely that your installation has become corrupted somehow.\n<br />\n<br />[b][size=3]Mod Management[/size][/b]\n<br />\n<br />By default, Vortex will deploy files to the game's root folder and extracts the archive while preserving it's folder structure.\n<br />\n<br />[b]PAK mods[/b]\n<br />\n<br />If a PAK mod is detected, it's deployment folder is \"&#92;Pal&#92;Content&#92;Paks&#92;~mods\".\n<br />\n<br />[b]Lua&#92;UE4SS mods[/b]\n<br />\n<br />If a LUA mod is detected, it's deployment folder is \"&#92;Pal&#92;Binaries&#92;Win64&#92;Mods\".\n<br />\n<br />\n<br />LUA mods are only detected by UE4SS if they contain an \"enabled.txt\" file in the mods root folder. For example, if \"&#92;Pal&#92;Binaries&#92;Win64&#92;Mods&#92;&#92;enabled.txt\" doesn't exist, then it won't be loaded by UE4SS. Vortex does create this file if it doesn't exist during mod deployment.\n<br />\n<br />&gt; Lua mods can also be detected by UE4SS if it has an entry in it's \"&#92;Pal&#92;Binaries&#92;Win64&#92;Mods&#92;mods.txt\" file but it's more complicated for Vortex to manage this file and so the existence of `enabled.txt` is the better solution.\n<br />\n<br />[size=3][b]See also[/b][/size]\n<br />\n<br />[list]\n<br />[*][url=https://www.nexusmods.com/palworld]Mods for Palworld (Nexus Mods)[/url]﻿\n<br />[*][url=https://forums.nexusmods.com/index.php?/forum/4306-vortex-support/]Vortex Forum (Nexus Mods)[/url]\n<br />[*][url=https://www.nexusmods.com/about/vortex/]Download Vortex (Nexus Mods)[/url]﻿\n<br />[/list]\n<br />[b][size=3]Thanks[/size][/b]\n<br />\n<br />To all those that work on [url=https://github.com/UE4SS-RE/RE-UE4SS]UE4SS[/url], you are doing an epic job."
+      },
+      "downloads": 410,
+      "endorsements": 3,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6063.jpg",
+      "name": "Palworld Vortex Extension",
+      "timestamp": 1706099876,
+      "tags": [],
+      "version": "0.1.0",
+      "type": "game",
+      "gameName": "Palworld"
     }
   ]
 }
