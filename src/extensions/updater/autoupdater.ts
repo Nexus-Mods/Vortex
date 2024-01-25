@@ -243,7 +243,7 @@ function setupAutoUpdate(api: IExtensionApi) {
         type: 'success',
         message: 'Update available',
         actions: [
-          /*{
+          {
             title: 'Changelog',
             action: () => {
               api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
@@ -252,7 +252,7 @@ function setupAutoUpdate(api: IExtensionApi) {
                   { label: 'Close' },
                 ]));
             },
-          },*/
+          },
           {
             title: 'Restart & Install',
             action: () => {

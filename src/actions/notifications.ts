@@ -80,26 +80,26 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
 
 if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
-             (event: Electron.Event, notiId: string, action: number) => {
+             (event: any, notiId: string, action: number) => {
     const func = notificationActions[notiId]?.[action];
-    //let res = false;
+    let res = false;
     if (func !== undefined) {
       func(() => {
-        //res = true;
+        res = true;
       });
     }
 
-    event.preventDefault();
+    event.returnValue = res;
   });
 
   ipcMain.on('fire-dialog-action',
-             (event: Electron.Event, dialogId: string, action: string, input: any) => {
+             (event: any, dialogId: string, action: string, input: any) => {
     const func = DialogCallbacks.instance()[dialogId];
     if (func !== undefined) {
       func(action, input);
       delete DialogCallbacks.instance()[dialogId];
     }
-    //event.returnValue = true;
+    event.returnValue = true;
   });
 }
 
