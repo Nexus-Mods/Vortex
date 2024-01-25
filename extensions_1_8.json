@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706172375918,
+  "last_updated": 1706178032672,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7620,6 +7620,25 @@
       "version": "1.0.4",
       "type": "game",
       "gameName": "DELTARUNE"
+    },
+    {
+      "modId": 753,
+      "fileId": 2671,
+      "author": "LoulouNoLegend",
+      "uploader": "LoulouNoLegend",
+      "description": {
+        "short": "Vortex support for Neodori Forever",
+        "long": "Adds vortex support for the game Neodori Forever."
+      },
+      "downloads": 4,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5998.jpg",
+      "name": "Neodori Forever Vortex Support",
+      "timestamp": 1705958017,
+      "tags": [],
+      "version": "0.1.1",
+      "type": "game",
+      "gameName": "Neodori Forever"
     }
   ]
 }
