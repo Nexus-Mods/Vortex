@@ -99,23 +99,36 @@ jobs:
           $extractFolder = Join-Path $rootDir "BuildPatchTool"
           $binaryPath = Join-Path $extractFolder "Engine/Binaries/Win64/BuildPatchTool.exe"
           $tempFolderName = "EPIC_TEMP"
-          
-          $version = "1.10.0"
+          $tempFolder = Join-Path $rootDir $tempFolderName
+          $buildFolder = Join-Path $rootDir "dist\win-unpacked"
+
           $executableName = "Vortex.exe"
-          $folderName = Join-Path $rootDir "dist\win-unpacked"
           $buildVersionString = "${{ steps.setOutputs.outputs.epicBuildString }}"
           
-          Write-Output "$rootDir"
-          Write-Output "$extractFolder"
-          Write-Output "$binaryPath"
-          Write-Output "$folderName"
+          Write-Output "rootDir $rootDir"
+          Write-Output "extractFolder $extractFolder"
+          Write-Output "binaryPath $binaryPath"
+          Write-Output "tempFolder $tempFolder"
+          Write-Output "buildFolder $buildFolder"
           
-          if (Test-Path -Path "$folderName") {
-              Write-Output "$folderName folder exists"
+          if (Test-Path -Path $buildFolder) {
+              Write-Output "$buildFolder folder exists"
           } else {
-              Write-Output "$folderName folder not found"
+              Write-Output "$buildFolder folder not found"
               Exit 1
           }
+
+          & $binaryPath -mode="UploadBinary" `
+          -OrganizationId="$EPIC_ORGID" `
+          -ProductId="$EPIC_PRODUCTID" `
+          -ArtifactId="$EPIC_ARTIFACTID" `
+          -ClientId="$EPIC_CLIENTID" `
+          -ClientSecret="$EPIC_CLIENTSECRET" `
+          -CloudDir="$tempFolder" `
+          -BuildRoot="$buildFolder" `
+          -BuildVersion="$buildVersionString"  `
+          -AppLaunch="$executableName" `
+          -AppArgs="" `
                     
         # ./dist/win-unpacked
         env:
