@@ -80,7 +80,7 @@ jobs:
           DAY: "${{ steps.current-time.outputs.day }}"
         run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: "recursive"
           
@@ -101,9 +101,9 @@ jobs:
         run: .\download-buildpatchtool.ps1
           
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
+          node-version: '18.x'
           cache: "yarn"
 
       - name: Install dependencies
