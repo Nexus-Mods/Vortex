@@ -1,4 +1,4 @@
-name: Package
+name: Test
 
 on:
   workflow_dispatch:
@@ -84,25 +84,61 @@ jobs:
         with:
           submodules: "recursive"
 
+      - name: Create Temp Unpacked Folder
+        id: create-temp-folder
+        shell: pwsh
+        run: |
+          $rootDir = Resolve-Path "."
+          $buildFolder = Join-Path $rootDir "dist\win-unpacked"
+          New-Item -Path $buildFolder -Type Directory -Force        
+
       - name: Download BuildPatchTool
         id: buildpatch
         shell: pwsh
         run: .\download-buildpatchtool.ps1
-          
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          cache: "yarn"
-
-      - name: Print debug info
-        run: dotnet --info
 
       - name: Deploy to Epic
         if: ${{ inputs.deploy-epic == true }}
         shell: pwsh
         run: |
           echo "${{ steps.setOutputs.outputs.epicBuildString }}"
+          
+          $rootDir = Resolve-Path "."
+          $extractFolder = Join-Path $rootDir "BuildPatchTool"
+          $binaryPath = Join-Path $extractFolder "Engine/Binaries/Win64/BuildPatchTool.exe"
+          $tempFolderName = "EPIC_TEMP"
+          $tempFolder = Join-Path $rootDir $tempFolderName
+          $buildFolder = Join-Path $rootDir "dist\win-unpacked"
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+
+          $executableName = "Vortex.exe"
+          $buildVersionString = "${{ steps.setOutputs.outputs.rawVersion }}+${timestamp}"
+          
+          Write-Output "rootDir $rootDir"
+          Write-Output "extractFolder $extractFolder"
+          Write-Output "binaryPath $binaryPath"
+          Write-Output "tempFolder $tempFolder"
+          Write-Output "buildFolder $buildFolder"
+          
+          if (Test-Path -Path $buildFolder) {
+              Write-Output "$buildFolder folder exists"
+          } else {
+              Write-Output "$buildFolder folder not found"
+              Exit 1
+          }
+
+          & $binaryPath -mode="UploadBinary" `
+          -OrganizationId="$env:EPIC_ORGID" `
+          -ProductId="$env:EPIC_PRODUCTID" `
+          -ArtifactId="$env:EPIC_ARTIFACTID" `
+          -ClientId="$env:EPIC_CLIENTID" `
+          -ClientSecret="$env:EPIC_CLIENTSECRET" `
+          -CloudDir="$tempFolder" `
+          -BuildRoot="$buildFolder" `
+          -BuildVersion="$buildVersionString"  `
+          -AppLaunch="$executableName" `
+          -AppArgs="" `
+                    
         # ./dist/win-unpacked
         env:
           EPIC_ORGID: ${{ secrets.EPIC_ORGID }}
