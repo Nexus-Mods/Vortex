@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706601141664,
+  "last_updated": 1706602646872,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7696,6 +7696,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "The Universim"
+    },
+    {
+      "modId": 772,
+      "fileId": 2681,
+      "author": "spuds",
+      "uploader": "organicspuds",
+      "description": {
+        "short": "adds pseudoregalia support to vortex - compatible with wardrobe extender mods",
+        "long": "adds pseudoregalia support to vortex - compatible with wardrobe extender mods"
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5626.jpg",
+      "name": "pseudoregalia vortex support",
+      "timestamp": 1706348913,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Pseudoregalia"
     }
   ]
 }
