@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706517976846,
+  "last_updated": 1706598178705,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7658,6 +7658,25 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Palworld"
+    },
+    {
+      "modId": 771,
+      "fileId": 2680,
+      "author": "Ted the Seeker",
+      "uploader": "seekerted",
+      "description": {
+        "short": "Adds Vortex support for Made in Abyss: Binary Star Falling into Darkness. Supports the following mods: basic pak mods, UE4SS Lua mods, and UE4SS Blueprint mods.",
+        "long": "[size=4]Features[/size]\n<br />\n<br />[list]\n<br />[*][b]Supports pak mods, UE4SS Lua mods, and UE4SS Blueprint mods.[/b]\n<br />[*][b]Mod installation convenience.[/b] Simply drag and drop / [i]Install From File...[/i] the zip file, and as long as it is any of the mods supported above and in the right format, it'll get handled automatically.\n<br />[*][b]Leaves the game directory untouched.[/b] You can Enable / Disable mods as you will, etc. and the base game files shouldn't get affected.\n<br />[/list]\n<br />[size=4]Installation[/size]\n<br />\n<br />At the time this was written, Vortex hasn't added this as one of its defaults yet, so you have to manually add it to Vortex.\n<br />\n<br />[list=1]\n<br />[*]Download [url=https://www.nexusmods.com/about/vortex/]Vortex[/url].﻿\n<br />[*]Download this support extension [b]manually[/b].\n<br />[*]In Vortex &gt; Extensions, drag the downloaded zip file of the extension onto the Drop File(s).\n<br />[*]Restart Vortex\n<br />[/list]\n<br />Once installed, you can now activate it:\n<br />\n<br />[list=1]\n<br />[*]Launch Vortex then go to Games\n<br />[*]Search for \"Made in Abyss\" and then Manage.\n<br />[/list]\n<br />[size=4]Creating mods that are compatible with Vortex and the game extension[/size]\n<br />\n<br />The game extension supports three kinds of mods: basic pak mods, UE4SS Lua mods, and UE4SS Blueprint mods. [b]All mods must be inside a .zip file.[/b]\n<br />\n<br />If these are followed, your mods should be handled by the game extension just fine.\n<br />\n<br />Note: Only these types of files will be extracted from the mod zip: .pak, .txt, .dll, .ini, and .lua.\n<br />\n<br />[size=3].pak mods\n<br />[/size]\n<br />Simply put your .pak files inside the .zip file, in the root.\n<br />\n<br />[size=3]UE4SS Lua Mods[/size]\n<br />\n<br />Ensure that the .zip file contains at least the following:\n<br />[code]Mods/modname/Scripts/main.lua\n<br />Mods/modname/enabled.txt\n<br />[/code]\n<br />[size=3]UE4SS Blueprint Mods[/size]\n<br />\n<br />Similar to the .pak mods, except that it must be placed inside a LogicMods folder."
+      },
+      "downloads": 5,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5914.jpg",
+      "name": "Made in Abyss - Binary Star Falling into Darkness Support",
+      "timestamp": 1706293303,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "Made in Abyss: Binary Star Falling into Darkness"
     }
   ]
 }
