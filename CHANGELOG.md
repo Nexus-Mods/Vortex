@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed styles throughout
 - Fixed hanging renderer thread when executing inter-thread actions (#15185)
+- (BG3) Fixed info.json conflicts
 
 ## [1.10.0] - 2024-01-24
 
