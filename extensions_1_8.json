@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706598178705,
+  "last_updated": 1706601141664,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7677,6 +7677,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "Made in Abyss: Binary Star Falling into Darkness"
+    },
+    {
+      "modId": 751,
+      "fileId": 2678,
+      "author": "MrPurple6411",
+      "uploader": "MrPurple6411",
+      "description": {
+        "short": "Adds support for The Universim to Vortex, enabling you to easily automate installation of mods for The Universim without having to worry about where the files are supposed to go, etc.",
+        "long": "This extension adds support for The Universim to [[url=https://www.nexusmods.com/about/vortex/]Vortex Mod Manager[/url]], enabling you to easily automate installation of mods for The Universim without having to worry about where the files are supposed to go, etc.\n<br />\n<br />At this time, the following mod types are supported:\n<br />\n<br />- BepInEx Pack for The Universim\n<br />- BepInEx plugins\n<br />- BepInEx patchers\n<br />\n<br />If you are developing a different kind of mod and would like it to be supported by this extension, please [raise an issue or pull request on the GitHub [url=https://github.com/MrPurple6411/The-Universim-Support/issues]repository [/url]with a link to your mod page so that I can take a look at how you are packaging it. Please make sure to include instructions for how you would expect it to be installed, so that I can have Vortex automate the process. PRs welcome!\n<br />\n<br />## How to install\n<br />\n<br />This extension requires [[url=https://www.nexusmods.com/about/vortex/]Vortex[/url]] ^1.8.0. To install, click the Vortex button at the top of this page to open this extension within Vortex, and then click `Install`. Alternatively, within Vortex, go to the `Extensions` tab, click \"`Find More`\" at the bottom of the tab, search for \"The Universim Support\" and then click `Install`.\n<br />\n<br />You can also manually install it by downloading the main file and dragging it into the \"drop zone\" labelled \"`Drop File(s)`\" in the `Extensions` tab at the bottom right.\n<br />\n<br />Afterwards, restart Vortex and you can begin installing supported The Universim mods with Vortex.\n<br />\n<br />***\n<br />\n<br />[color=#ff0000][size=5]The rest of this page is intended for mod authors only. \n<br />Users can simply follow the instructions above to install, and you're done![/size][/color]\n<br />\n<br />***\n<br />\n<br />## How to make my mod compatible with this extension?\n<br />\n<br />Assuming your mod is of a supported type, simply follow the packaging examples for that mod type below.\n<br />\n<br />Don't forget to set your latest main file as your main Vortex file, and make sure that the \"`Remove the 'Download with Manager' button`\" option is unticked!\n<br />\n<br />If your mod is not of a supported type, you will need to [raise an issue or pull request on the GitHub [url=https://github.com/MrPurple6411/The-Universim-Support/issues]repository[/url] with a link to your mod page so that I can take a look at how you are packaging it. Please make sure to include instructions for how you would expect it to be installed.\n<br />\n<br />### Packaging examples\n<br />\n<br />#### BepInEx plugins\n<br />\n<br />Any of the following structures are valid:\n<br />\n<br />```\n<br />- MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- My BepInEx Plugin\n<br />  - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- plugins\n<br />  - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- plugins\n<br />  - My BepInEx Plugin\n<br />    - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - plugins\n<br />      - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - plugins\n<br />    - My BepInEx Plugin\n<br />      - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />#### BepInEx patchers\n<br />\n<br />Any of the following structures are valid:\n<br />\n<br />```\n<br />- patchers\n<br />  - MyBepInExPatcher.dll\n<br />```\n<br />\n<br />```\n<br />- patchers\n<br />  - My BepInEx Patcher\n<br />    - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - patchers\n<br />      - MyBepInExPatcher.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - patchers\n<br />    - My BepInEx Patcher\n<br />      - MyBepInExPatcher.dll\n<br />```\n<br />\n<br />#### BepInEx plugin/patcher combos\n<br />\n<br />Any of the following structures are valid:\n<br />\n<br />```\n<br />- patchers\n<br />  - MyBepInExPatcher.dll\n<br />- plugins\n<br />  - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- patchers\n<br />  - My Mod Name\n<br />    - MyBepInExPatcher.dll\n<br />- plugins\n<br />  - My Mod Name\n<br />    - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - patchers\n<br />    - MyBepInExPatcher.dll\n<br />  - plugins\n<br />    - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />```\n<br />- BepInEx\n<br />  - patchers\n<br />    - My Mod Name\n<br />      - MyBepInExPatcher.dll\n<br />  - plugins\n<br />    - My Mod Name\n<br />      - MyBepInExPlugin.dll\n<br />```\n<br />\n<br />\n<br />#### My mod is being installed strangely!\n<br />\n<br />If you have followed the packaging examples above and your mod is still being incorrectly installed by this extension, please [raise an issue on the GitHub [url=https://github.com/MrPurple6411/The-Universim-Support/issues]repository [/url]with a link to your mod page or with a sample archive attached so that I can get it fixed."
+      },
+      "downloads": 120,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6016.jpg",
+      "name": "The Universim Support",
+      "timestamp": 1706201644,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "The Universim"
     }
   ]
 }
