@@ -12,7 +12,7 @@ type Callback = (err: Error) => void;
 class Debouncer {
   private mDebounceMS: number;
   private mFunc: (...args: any[]) => Error | PromiseLike<void>;
-  private mTimer: NodeJS.Timer;
+  private mTimer: NodeJS.Timeout;
 
   private mCallbacks: Callback[] = [];
   private mAddCallbacks: Callback[] = [];

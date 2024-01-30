@@ -10,11 +10,8 @@
     "type": "git",
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
-  "vortex": {
-    "electron": "22.0.0"
-  },
   "dependencies": {
-    "@electron/remote": "^2.0.1",
+    "@electron/remote": "^2.0.12",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#oauth",
     "bbcode-to-react": "TanninOne/bbcode-to-react",

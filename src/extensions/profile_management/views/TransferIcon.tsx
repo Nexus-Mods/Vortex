@@ -68,7 +68,7 @@ function componentCenter(component: React.Component<any, any>) {
 // what a hack... :(
 // react-dnd seems to completely block the mousemove event so the monitor seems to be
 // the only way to get at the cursor position. It doesn't fire events on movement though
-let cursorPosUpdater: NodeJS.Timer;
+let cursorPosUpdater: NodeJS.Timeout;
 let lastUpdatePos: { x: number, y: number } = { x: 0, y: 0 };
 function updateCursorPos(monitor: DragSourceMonitor,
                          component: React.Component<any, any>,

@@ -96,7 +96,7 @@ class DeploymentMethod extends LinkingDeployment {
   public priority: number = 20;
 
   private mElevatedClient: any;
-  private mQuitTimer: NodeJS.Timer;
+  private mQuitTimer: NodeJS.Timeout;
   private mCounter: number = 0;
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mIPCServer: net.Server;
