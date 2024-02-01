@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706777180731,
+  "last_updated": 1706796459971,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7731,6 +7731,25 @@
         "long": "This is a stub of the Palworld extension. It will be downloaded the first time it's managed."
       },
       "version": "0.1.0"
+    },
+    {
+      "modId": 775,
+      "fileId": 2685,
+      "author": "30b0",
+      "uploader": "30b0",
+      "description": {
+        "short": "Vortex Support for Grand Theft Auto San Andreas - The Definitive Edition",
+        "long": "[color=#f1c232][size=6][b]GTA SA DE Vortex Support[/b][/size][/color][color=#f1c232]\n<br />[size=1]Vortex Support for Grand Theft Auto San Andreas - The Definitive Edition[/size]\n<br />\n<br />\n<br />[size=4][b]Features[/b][/size][/color]\n<br />[list]\n<br />[*]Support for the Steam and Epic Games Version\n<br />[*]Creates Mod Folder (%gamedir%/Gameface/Content/Paks/~mods)\n<br />[*]Only Installs the Pak-Files in the Game Directory\n<br />[/list][color=#f1c232][size=4][b]Information[/b][/size][/color]\n<br />This Game Support Extention allows for a quick Installation of Pak-Mods for GTA SA DE. Other Files and LUA-Mods are not supported (yet).\n<br />Since Nexusmods uses the same Mod-Page for all three Games, only GTA SA DE will be supported.\n<br />\n<br />[b][color=#f1c232][size=4]Installation[/size][/color][/b]\n<br />[list=1]\n<br />[*]\"Mod Manager Download\" if Vortex is used.\n<br />[/list][list]\n<br />[*]or\n<br />[/list][list=1]\n<br />[*]\"Manual Download\"\n<br />[*]Drag and Drop the downloaded Files in the \"Extensions\"-Tab in Vortex\n<br />[/list][color=#f1c232][size=4][b]Credits[/b][/size][/color]\n<br />[list]\n<br />[*]Nexus Mods for Vortex Mod Manager and Documentation\n<br />[/list]"
+      },
+      "downloads": 10,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4142.jpg",
+      "name": "Grand Theft Auto San Andreas Definitive Edition (GTA SA DE) Vortex Support",
+      "timestamp": 1706381953,
+      "tags": [],
+      "version": "0.0.1",
+      "type": "game",
+      "gameName": "Grand Theft Auto: The Trilogy"
     }
   ]
 }
