@@ -7,11 +7,13 @@
   display: flex;
   align-items: center;
 
+
   svg {
     width: 2em;
     height: 2em;
     margin-right: 1em;
   }
+
   .icon-info,
   .icon-question {
     color: $brand-info;
@@ -25,6 +27,7 @@
 .common-dialog-regular {
   display: flex !important;
   justify-content: center;
+
   .modal-dialog {
     width: 60em;
     display: flex;
@@ -71,64 +74,104 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 
   // the flex sizing may not be optimal
   textarea {
-   width: 100%;
-   resize: none;
-   border: none;
-   flex: 1 1 0%;
+    width: 100%;
+    resize: none;
+    //border: none;
+    //padding: 4px 8px;
+    border-radius: $border-radius-base;
+    flex: 1 1 0%;
+
+    //resize: none;
+    padding: 5px 8px;
+    background-color: $brand-bg;
+    border: 1px solid $border-color;
   }
 
-  > div {
-   flex: 1 1 90%;
+  >div {
+    flex: 1 1 90%;
+  }
+
+  >.dialog-content-bbcode {
+    
+    table {
+      width: 100%;
+    }
+
+    ul {
+      margin-bottom: 0;
+    }
+
+    .bbcode-spoiler-tag {
+      
+
+      .bbcode-spoiler-content {
+        padding: 8px;
+        border: 1px solid $border-color;
+        border-radius: $border-radius-base;
+        background: $brand-bg;
+        margin-top: 4px;
+    }
+    }
   }
 
   .dialog-content-input {
     display: flex;
     flex-direction: column;
-    > div {
+
+    >div {
       flex: 1 1 0;
       display: flex;
       flex-direction: column;
     }
   }
 
-  > .dialog-content-text {
+  >.dialog-content-text {
     flex: initial;
     margin-bottom: $half-gutter;
     white-space: pre-wrap;
   }
 
-  > .dialog-content-bbcode {
-    table {
-      width: 100%;
-    }
-    ul {
-      margin-bottom: 0;
-    }
-  }
+  
 
-  > .dialog-content-html {
+  >.dialog-content-html {
     white-space: pre-wrap;
   }
 
-  > .dialog-content-choices {
+  >.dialog-content-choices {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    //justify-content: flex-end;
 
-    > div {
+    >div {
       overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .radio label,
+      .checkbox label {
+        display: flex;
+        //align-items: center;
+
+        input[type=radio],
+        input[type=checkbox] {
+          margin: 2px 0 0 -20px; // 2px top border accounts for natural margins of text above when compared to the radio input
+        }
+
+      }
     }
 
     .choice-maintext {
       font-weight: bold;
     }
 
-    .choice-subtext {
-      margin-bottom: 1em;
-    }
+    /*.choice-subtext {
+      //margin-bottom: 1em;
+    }*/
   }
 }

@@ -293,10 +293,10 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   const downloadsPath = downloadPathForGame(state, SITE_ID);
   const fullPath = path.join(downloadsPath, download.localPath);
 
-  api.showDialog('info', '.NET is being installed', {
-    text: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden '
-        + 'behind another window.\n'
-        + 'Please note: In rare cases .NET will still not work until you restarted windows.',
+  api.showDialog('info', 'Microsoft .NET Desktop Runtime 6 is being installed', {
+    bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
+    + '[br][/br][br][/br]'
+        + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
   }, [
     { label: 'Ok' },
   ]);
@@ -311,6 +311,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
 }
 
 async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
+  
   if (process.platform !== 'win32') {
     // currently only supported/tested on windows
     onFoundDotNet();
@@ -324,6 +325,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
     proc.stderr.on('data', dat => stderr += dat.toString());
   });
 
+  
   if (exitCode === 0) {
     onFoundDotNet();
     return Promise.resolve(undefined);
@@ -331,12 +333,14 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
 
   const result: ITestResult = {
     description: {
-      short: 'Microsoft .NET installation required',
-      long: 'Vortex requires Microsoft .NET to perform important tasks.'
-        + '[br][/br]Click "Fix" below to install the required version.'
-        + '[br][/br]If you already have Microsoft .NET 6 or later installed, there may be a problem with your installation, '
-        + 'please click below for technical details.'
-        + '[br][/br][spoiler label="Show details"]{{stderr}}[/spoiler][/quote]',
+      short: 'Microsoft .NET Desktop Runtime 6 required',
+      long: 'Vortex requires .NET Desktop Runtime 6 to be installed even though you may already have a newer version. This is due to incompatible changes in the more recent versions.'
+        + '[br][/br][br][/br]'
+        + 'If you already have .NET Desktop Runtime 6 installed then there may be a problem with your installation and a reinstall might be needed.'
+        + '[br][/br][br][/br]'
+        + 'Click "Fix" below to install the required version.'
+        + '[br][/br][br][/br]'
+        + '[spoiler label="Show detailed error"]ERROR WILL SHOW HERE[/spoiler]',
       replace: { stderr: stderr.replace('\n', '[br][/br]') },
     },
     automaticFix: () => Bluebird.resolve(installDotNet(api, false)),

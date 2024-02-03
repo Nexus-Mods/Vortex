@@ -60,6 +60,8 @@ a[role=menuitem] svg {
   border: $border-width solid $nav-tabs-active-link-hover-border-color;
   margin-right: -1px;
   margin-top: 0px;
+  border-top-left-radius: $border-radius-base;
+  border-top-right-radius: $border-radius-base;
 }
 
 .nav-tabs>li.active>a {
@@ -100,6 +102,8 @@ a[role=menuitem] svg {
   border: $border-width solid $nav-tabs-border-color;
   border-top-width: 0px;
   background-color: $brand-menu;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 .tab-pane>div>.panel {
@@ -124,12 +128,12 @@ a[role=menuitem] svg {
   &.radio-inline label,
   &.checkbox-inline label,
   .form-control-feedback {
-    color: $brand-danger;
+    color: $brand-danger-lighter;
   }
 
   .form-control,
   .form-control:focus {
-    border: $border-width solid $brand-danger;
+    border: $border-width solid $brand-danger-lighter;
   }
 
   .input-group-addon {
@@ -174,12 +178,12 @@ a[role=menuitem] svg {
   &.radio-inline label,
   &.checkbox-inline label,
   .form-control-feedback {
-    color: $brand-success;
+    color: $brand-success-lighter;
   }
 
   .form-control,
   .form-control:focus {
-    border: $border-width solid $brand-success;
+    border: $border-width solid $brand-success-lighter;
   }
 
   .input-group-addon {
@@ -245,12 +249,13 @@ textarea {
 }
 
 .modal-header, .modal-footer {
-  margin: 0 $gutter-width;
+  margin: 0;
 }
 
 .modal-content {
   border: $border-width solid $modal-content-border-color;
   width: 100%;
+  border-radius: 8px;
 }
 
 .pager li > a {

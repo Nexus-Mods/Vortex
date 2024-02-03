@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.9.13] - 2023-12-20
+## [1.10.1] - 2024-01-25
 
-- (API) Enhanced FBLO extension to maintain load order on purge
-- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed 
+- Fixed styles throughout
+- Fixed hanging renderer thread when executing inter-thread actions (#15185)
+- (BG3) Fixed info.json conflicts
+
+## [1.10.0] - 2024-01-24
+
+- (Collections) Improved styles for button states
+- (Collections) Improved version mismatch dialog
+- (Collections) Improved collection health downvote dialog
+- (Collections) Allow curator to recommend using new profile on collection install
+- (Collections) 12-hour delay from installing to voting is now based on install being finished
+- (Collections) Game Version displayed in health rating
+- (Dependency Manager) Fixed file conflicts not being detected across modtypes
+- Fixed styles on table multi row select
+- Fixed sorting on Add Mods to Collection dialog
+- Updated styles for modals
+- (SkyVR) Fixed error when attempting to find EslEnabler
+- (Xbox) Fixed crash when attempting to detect xbox manifests during game installation and/or when xbox game store did not clear the game folders correctly.
+- .NET check fail has updated text to match Microsoft's naming scheme as well as more accurately reflect what is needed and why
+- (Script Extender) Fixed premium download journey
+- (Palworld) Game stub added
+- (Gamebryo) Zlib updated to 1.3.1
+
+## [1.9.13] - 2024-01-08
+
+- (API) Enhanced FBLO extension to maintain load order on purge 
+- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed  
+- Updated remote URLs for announcements, extensions and changelog 
+- Updated layout for dashlets
+- Updated default theme colors
+- Updated notification colors to increase text legibility 
+- Updated uninstall feedback URL  
 
 ## [1.9.12] - 2023-12-14
 

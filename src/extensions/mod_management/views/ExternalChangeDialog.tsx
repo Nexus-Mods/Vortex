@@ -232,13 +232,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column' }}>
         {text}
         <p>{actions.map(action => (
+          <>
           <a
             key={action.key}
             onClick={this.setAll[type]}
             href={'#' + action.key}
-            style={{ marginRight: 10 }}
           >{t(action.allText)}
-          </a>
+          </a><span className='link-action-seperator'>&nbsp; | &nbsp;</span>
+          </>
         ))
         }</p>
         <div style={{ overflowY: 'auto', flex: '1 1 0' }}>

@@ -14,6 +14,7 @@ import * as selectors from '../../util/selectors';
 
 import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
+import ReactMarkdown from 'react-markdown';
 
 interface IConnectedProps {
   gameMode: string;
@@ -34,16 +35,14 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     // Filter announcements by gamemode and version.
     const filtered = announcements
-      .filter(announce => matchesGameMode(announce, gameMode)
+      .filter(announce => matchesGameMode(announce, gameMode, true)
                        && matchesVersion(announce, this.mAppVersion))
       .sort((lhs, rhs) => new Date(rhs.date).getTime()
                         - new Date(lhs.date).getTime());
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
-        <div className='list-announcements-container'>
           {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
-        </div>
-      </Dashlet>
+      </Dashlet>      
     );
   }
 
@@ -131,26 +130,25 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return (
       <FlexLayout type='row' className='announcement-description'>
         {this.renderIcon(announcement)}
-        <p>{announcement.description}</p>
+        <ReactMarkdown allowedElements={['p', 'a', 'em', 'strong']} unwrapDisallowed={true} >
+            {announcement.description}
+        </ReactMarkdown>       
       </FlexLayout>
     );
   }
 
   private renderContent(filtered: IAnnouncement[]) {
-    const renderElement = (announcement: IAnnouncement, id: number): JSX.Element => {
-      return (
-        <li key={id} className='announcement-list-item'>
-            <FlexLayout type='column'>
-              {this.generateDescription(announcement)}
-              {this.generateExtraPanel(announcement)}
-            </FlexLayout>
-        </li>);
-    };
-
     return (
-      <ul className='list-announcements'>
-        {filtered.map((announcement, id) => renderElement(announcement, id))}
-      </ul>
+      <div className='announcements-container'>
+        {
+        filtered.map((announcement, id) => (
+          <div className='announcement-entry' key={id}>
+            {this.generateDescription(announcement)}
+            {this.generateExtraPanel(announcement)}
+          </div>
+        ))
+        }
+      </div>
     );
   }
 }

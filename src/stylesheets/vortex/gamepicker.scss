@@ -11,6 +11,7 @@ $thumbnail-width: 256px;
 
   > .game-thumbnail {
     margin: $half-gutter !important;
+
   }
 }
 
@@ -30,6 +31,13 @@ $thumbnail-width: 256px;
   position: relative;
   height: auto;
   border: 0;
+
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);
+  transition: $thumbnail-transition-duration ease-out;
+
+  &:hover {
+    transform: scale($thumbnail-zoom-scale);
+  }
 
   &panel-primary {
     border-color: $border-color;
@@ -231,7 +239,7 @@ $thumbnail-width: 256px;
 #game-panel-group {
   .panel-heading {
     background-color: darken($table-bg, 5%);
-    border-bottom: 1px solid $gray-dark !important;
+    border-bottom: 1px solid $border-color;
     display: flex;
     align-items: center;
 

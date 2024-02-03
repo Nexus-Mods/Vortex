@@ -1,6 +1,7 @@
 .toggle-container {
   display: flex;
-  margin-top: $half-gutter;
+  margin-bottom: $half-gutter;
+  gap: $slim-gutter;
 
   &.toggle-disabled {
     filter: brightness(0.5);
@@ -9,11 +10,11 @@
 
 .toggle {
   position: relative;
-  width: 28px;
+  width: 32px;
   display: flex;
   align-items: center;
   margin-right: 0.33em;
-  height: 12px;
+  height: 16px;
   margin-top: auto;
   margin-bottom: auto;
 }
@@ -37,8 +38,8 @@
 .toggle-handle {
   position: absolute;
 
-  width: 14px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
 
   border-radius: 8px;
   background-color: $text-color;
@@ -51,14 +52,15 @@
     color: $gray-dark;
     width: 0.7em;
     height: 0.7em;
-    margin-left: 2px;
+    //margin-left: 2px;
   }
 }
 
 .toggle-off .toggle-track {
   background-color: $gray-dark;
+
   svg {
-    margin-left: 16px;
+    margin-left: 18px;
   }
 }
 
@@ -74,5 +76,5 @@
 }
 
 .toggle-on .toggle-handle {
-  left: 14px;
+  left: 16px;
 }

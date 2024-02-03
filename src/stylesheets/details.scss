@@ -4,7 +4,7 @@ $font-size-small:         0.9em;
 $font-size-h1:            2.5rem;
 $font-size-h2:            2rem;
 $font-size-h3:            1.75rem;
-$font-size-h4:            1.2rem;
+$font-size-h4:            1.4rem;
 $font-size-h5:            1.1rem;
 $font-size-h6:            1rem;
 
@@ -20,7 +20,7 @@ $table-bg:                      $brand-menu;
 $table-bg-accent:               #e9e9e9;
 $table-bg-hover:                $gray-lighter;
 $table-bg-active:               $table-bg-hover;
-$table-border-color:            $text-color;
+$table-border-color:            $border-color;
 
 //== Buttons
 $btn-font-weight:                normal;
@@ -61,7 +61,7 @@ $input-bg:                       $brand-bg;
 $input-bg-disabled:              $brand-menu;
 
 $input-color:                    $text-color;
-$input-border:                   $gray-darker;
+$input-border:                   rgba(255,255,255,0.2);
 
 $input-border-radius:            $border-radius-base;
 $input-border-radius-large:      $border-radius-large;
@@ -69,9 +69,9 @@ $input-border-radius-small:      $border-radius-small;
 
 $input-border-focus:             $brand-primary;
 
-$input-color-placeholder:        $gray-light;
+$input-color-placeholder:        $gray-dark;
 
-$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 0.2);
+$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 0.6);
 $input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3);
 $input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 0.3);
 
@@ -219,7 +219,7 @@ $nav-disabled-link-hover-color:             $gray-light;
 
 $nav-tabs-border-color:                     $border-color;
 
-$nav-tabs-link-hover-border-color:          $gray-darker;
+$nav-tabs-link-hover-border-color:          rgba(255, 255, 255, 0.5);
 $nav-tabs-active-link-hover-bg:             $body-bg;
 $nav-tabs-active-link-hover-color:          $gray-darker;
 $nav-tabs-active-link-hover-border-color:   $border-color;
@@ -279,7 +279,7 @@ $state-info-text:                $white;
 $state-info-bg:                  $brand-info;
 $state-info-border:              $brand-info;
 
-$state-warning-text:             $white;
+$state-warning-text:             $black;
 $state-warning-bg:               $brand-warning;
 $state-warning-border:           $brand-warning;
 
@@ -339,9 +339,9 @@ $modal-content-bg:                             $brand-menu;
 $modal-content-border-color:                   $border-color;
 $modal-content-fallback-border-color:          $gray-light;
 
-$modal-backdrop-bg:           #000;
-$modal-backdrop-opacity:      .5;
-$modal-header-border-color:   $gray-darker;
+$modal-backdrop-bg:           #000000;
+$modal-backdrop-opacity:      0.8;
+$modal-header-border-color:   $border-color;
 $modal-footer-border-color:   $modal-header-border-color;
 
 $modal-lg:                    900px;
@@ -418,7 +418,7 @@ $panel-inner-border:          $gray-lighter;
 $panel-footer-bg:             $gray-lighter;
 
 $panel-default-text:          $text-color;
-$panel-default-border:        $gray-darker;
+$panel-default-border:        $border-color;
 $panel-default-heading-bg:    $gray-lighter;
 
 $panel-primary-text:          $text-color;
@@ -448,7 +448,6 @@ $thumbnail-padding:           4px;
 $thumbnail-bg:                $body-bg;
 $thumbnail-border:            $gray-darker;
 $thumbnail-border-radius:     $border-radius-base;
-
 $thumbnail-caption-color:     $text-color;
 $thumbnail-caption-padding:   9px;
 
@@ -464,7 +463,7 @@ $badge-active-bg:             $text-color;
 
 $badge-font-weight:           bold;
 $badge-line-height:           1;
-$badge-border-radius:         10px;
+$badge-border-radius:         20px;
 
 
 //== Wells (not used)

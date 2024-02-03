@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { IDeployedFile, IDeploymentMethod,
          IExtensionApi, IFileChange } from '../../../types/IExtensionContext';
 import { ProcessCanceled } from '../../../util/CustomErrors';
@@ -232,8 +233,8 @@ export function dealWithExternalChanges(api: IExtensionApi,
         return prev;
       }, {});
 
-      const count = Object.values(userChanges).reduce((prev: number, list: any[]) =>
-        prev + list.length, 0);
+      const count: number = Object.values(userChanges).reduce((prev: number, list: any[]) =>
+        prev + list.length, 0) as number;
       if (count > 0) {
         log('info', 'found external changes', { automated: automaticActions.length, user: count });
         return api.store.dispatch(showExternalChanges(userChanges))

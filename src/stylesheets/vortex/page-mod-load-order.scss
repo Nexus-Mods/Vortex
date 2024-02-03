@@ -41,7 +41,7 @@
     overflow: auto;
 
     margin: 0;
-    border: 1px gray solid;
+    border: 1px solid $border-color;
     border-radius: 4px;
     padding: 0 12px 0 12px;
 
@@ -50,7 +50,7 @@
     }
 
     .drag-handle-icon {
-      fill: $brand-menu;
+      fill: $border-color;
     }
   
     .load-order-index {
@@ -160,7 +160,7 @@
 
     &.valid {
       p {
-        color: $brand-success;
+        color: $brand-success-lighter;
       }
     }
 
@@ -176,7 +176,7 @@
   #loadorderinfo {
 
     padding: 0 12px;
-    border: 0;
+    border: none;
 
     display: block;
 
@@ -190,7 +190,7 @@
 
       > * {
         padding: 12px;
-        border: 1px gray solid;
+        border: 1px $border-color solid;
         border-radius: 4px;
 
         > .layout-flex-inner {
@@ -216,7 +216,6 @@
           flex-direction: column;
           gap: 8px;
           border-radius: 2px;
-
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -262,15 +261,17 @@
 #collection-edit-loadorder-edit-info-container {
   border: 2px solid $brand-info;
   box-sizing: border-box;
-  border-radius: 10px;
-  padding: 1em;
+  border-radius: 8px;
+  padding: 8px;
   margin-bottom: 15px;
   height: auto;
+  gap: 8px;
+  align-items: center;
 
   .loadorder-edit-info-icon {
     color: $brand-info;
     size: 3em;
-    margin-right: 20px;
+    //margin-right: 20px;
   }
 
   .collection-edit-loadorder-edit-info {
@@ -279,4 +280,6 @@
       color: $link-color;
     }
   }
+
+
 }

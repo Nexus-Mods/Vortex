@@ -1,4 +1,4 @@
-name: Package
+name: Test
 
 on:
   workflow_dispatch:
@@ -80,95 +80,22 @@ jobs:
           DAY: "${{ steps.current-time.outputs.day }}"
         run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: "recursive"
-          
-      - name: Download VC_redist
+
+      - name: Create Temp Unpacked Folder
+        id: create-temp-folder
         shell: pwsh
         run: |
-          $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
-
-      - name: Download CodeSignTool
-        id: codesign
-        shell: pwsh
-        run: .\download-codesigntool.ps1
+          $rootDir = Resolve-Path "."
+          $buildFolder = Join-Path $rootDir "dist\win-unpacked"
+          New-Item -Path $buildFolder -Type Directory -Force        
 
       - name: Download BuildPatchTool
         id: buildpatch
         shell: pwsh
         run: .\download-buildpatchtool.ps1
-          
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-timeout 600000 install
-
-      - name: Print debug info
-        run: dotnet --info
-
-      - name: Decode PFX
-        shell: pwsh        
-        id: decode-pfx
-        run: |
-          $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate          
-          [IO.File]::WriteAllBytes("$certPath", $certBytes)
-
-      - name: Build API
-        run: yarn --non-interactive build_api
-      
-      - name: Build Install
-        run: yarn --non-interactive _install_app
-      
-      - name: Build Subprojects
-        run: yarn --non-interactive subprojects_app
-      
-      - name: Build Assets
-        run: yarn --non-interactive _assets_app
-        
-      - name: Webpack
-        run: yarn build_dist
-          
-      - name: Package (new codesign)
-        if: ${{ inputs.use-new-codesign == true }}
-        run: yarn package
-      
-      - name: Package (old codesign)
-        if: ${{ inputs.use-new-codesign == false }}
-        run: yarn package-old
-        env:
-          CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
-          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
-
-      - name: Extract Sourcemaps
-        run: yarn extract_sourcemaps
-
-      - name: Test
-        run: yarn test
-
-      - name: Remove PFX
-        shell: pwsh
-        run: |
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          Remove-Item -Path $certPath
-      
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: ${{ inputs.release == true }}
-        with:
-          files: |
-            ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
-            ./dist/latest.yml
-          prerelease: true
-          draft: true
-          name: ${{ steps.setOutputs.outputs.rawVersion }}
-          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
 
       - name: Deploy to Epic
         if: ${{ inputs.deploy-epic == true }}
@@ -219,21 +146,3 @@ jobs:
           EPIC_ARTIFACTID: ${{ secrets.EPIC_ARTIFACTID }}
           EPIC_CLIENTID: ${{ secrets.EPIC_CLIENTID }}
           EPIC_CLIENTSECRET: ${{ secrets.EPIC_CLIENTSECRET }}
-
-      - name: Create Unpacked Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
-          path: ./dist/win-unpacked
-          if-no-files-found: error
-
-      - name: Create Installer Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
-          path: |
-            ./dist/vortex-setup-*.*.*.exe
-            ./dist/latest.yml
-          if-no-files-found: error

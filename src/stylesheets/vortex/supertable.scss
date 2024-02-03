@@ -38,7 +38,7 @@
 }
 
 .table-filter-column {
-  background-color: $brand-warning !important;
+  background-color: $brand-info !important;
 }
 
 .table-sort-column {
@@ -238,7 +238,7 @@
   height: 3em;
   > div, td {
     height: 3em;
-    background-color: $brand-warning;
+    background-color: $brand-info;
     padding: 8px;
     > .btn {
       margin-left: 8px;
@@ -260,8 +260,8 @@
 .table-footer {
   display: flex;
   justify-content: space-between;
-  background-color: $text-color;
-  color: $brand-clickable;
+  background-color: $brand-highlight;
+  color: $white;
   position: absolute;
   left: 0;
   right: 0;
@@ -272,7 +272,7 @@
     background-color: transparent;
     color: inherit;
     &:hover {
-      background-color: $gray-dark;
+      background-color: rgba(255,255,255, 0.2);
     }
     // this simply restores the settings from ".table-footer .btn" but with a
     // higher specificity

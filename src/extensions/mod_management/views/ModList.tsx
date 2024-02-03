@@ -1345,7 +1345,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         { id: 'archive', text: t('Delete Archive'), value: false },
       ];
 
-    const insert = ' [color=red]' + t('from all profiles') + '[/color]';
+    const insert = ' [style=dialog-danger-text]' + t('from all profiles') + '[/style]';
 
     onShowDialog('question', 'Confirm removal', {
       bbcode: t('Do you really want to remove this mod{{insert}}?', {
