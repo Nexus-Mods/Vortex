@@ -1,5 +1,5 @@
 {
-  "last_updated": 1706949975263,
+  "last_updated": 1706983705715,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7750,6 +7750,25 @@
       "version": "0.0.1",
       "type": "game",
       "gameName": "Grand Theft Auto: The Trilogy"
+    },
+    {
+      "modId": 760,
+      "fileId": 2716,
+      "author": "SutandoTsukai181 and GarnetSunset",
+      "uploader": "GarnetSunset",
+      "description": {
+        "short": "Adds support for Like a Dragon Infinite Wealth.",
+        "long": "This extension adds RyuModManager support to Vortex for Like a Dragon: Infinite Wealth. [url=https://github.com/GarnetSunset/vortex_mo2_yakuza_plugins]Source code[/url] can be found here.\n<br />\n<br />[url=https://www.nexusmods.com/likeadragoninfinitewealth]Nexus Mods page for Like a Dragon: Infinite Wealth[/url]\n<br />\n<br />[b]THIS IS BASED ON PRESUMED FILE PATHS AND MAY NOT BE CORRECT DAY ONE BUT SHOULD WORK WITH THE DEMO. \n<br />[/b]\n<br />[b][size=3]Requirements[/size]\n<br />\n<br />[/b][url=https://github.com/SRMM-Studio/ShinRyuModManager/releases/latest]ShinRyuModManager [/url](v4.0+) has to be installed to the game directory and ran at least once. The \n<br />extension will show a notification if this has not been done yet.\n<br />\n<br />[b][size=3]Installing\n<br />\n<br />[/size][/b]Select \"Like a Dragon: Infinite Wealth\" from the games list in Vortex and download the extension.\n<br />\n<br />If you can't find the game in Vortex yet, then you can download the \n<br />extension from the files section on this page and extract it to ﻿this \n<br />path:\n<br />\n<br />[size=3][i]C:&#92;Users&#92;[/i]&lt;your-username&gt;[i]&#92;AppData&#92;Roaming&#92;Vortex&#92;plugins&#92;[i]game-[/i][/i][i]likeadragoninfinitewealth[/i][/size]\n<br />[i]\n<br />[/i]Or this path:\n<br />\n<br />[i][size=3]%appdata%&#92;Vortex&#92;plugins&#92;game-[/size][/i][size=3][i]likeadragoninfinitewealth[/i][/size]\n<br />\n<br />[size=3][b]Usage\n<br />\n<br />[/b][/size]You can now use the [b]Mod Manager Download [/b]option when downloading mods. All mods that mention [b]RyuModManager [/b](or [b]RMM[/b]) in their description should be compatible with this extension. If a mod\n<br /> does not have that option, then you can still download it manually and \n<br />drag its file to the mods tab in Vortex.\n<br />\n<br />Vortex will show an error if the mod that was downloaded is not supported/has an invalid \n<br />format. In that case, you can either install it manually or ask the mod \n<br />author to reupload the mod with RMM support.\n<br />\n<br />You can even convert an unsupported mod yourself, by following [url=https://github.com/SutandoTsukai181/RyuModManager/wiki/Creating-A-New-Mod]these instructions[/url]. All it requires is some basic understanding of the game's data \n<br />directory layout (which you can get by reading the instructions). After \n<br />repackaging the mod, you can install it to Vortex manually by dragging \n<br />it to the mods tab in Vortex.\n<br />\n<br />[size=4]RyuModManager has to be run before launching the game whenever you install/enable/disable any mods.[/size]\n<br />\n<br />[b][size=3]Credits[/size][/b]\n<br />\n<br />This extension was mostly based on the tutorial extension from [url=https://modding.wiki/en/vortex/developer/create-a-game-extension]here[/url] and the Subnautica extension, so huge thanks to their authors.\n<br />\n<br />[size=3][b]Support﻿\n<br />\n<br />[/b][/size]Please put any questions you may have in the posts section.\n<br />\n<br />Feel free to join the [url=https://discord.com/invite/yakuzamodding]Yakuza Modding Community[/url] Discord server for more help about using RyuModManager and installing mods."
+      },
+      "downloads": 27,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5883.jpg",
+      "name": "Like a Dragon Infinite Wealth Support",
+      "timestamp": 1706983182,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "Like a Dragon: Infinite Wealth"
     }
   ]
 }
