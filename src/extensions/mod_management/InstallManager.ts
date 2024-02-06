@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadModInfo,
          startActivity, stopActivity } from '../../actions';
@@ -2631,7 +2632,7 @@ class InstallManager {
     dependencies.forEach(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-
+      updatedRef.installerChoices = dep.installerChoices;
       this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Bluebird.resolve();

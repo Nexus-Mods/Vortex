@@ -45,7 +45,7 @@ export function findModByRef(reference: IModReference, mods: { [modId: string]: 
     delete reference.fileMD5;
   }
 
-  if (reference['md5Hint'] !== undefined) {
+  if (reference['md5Hint'] !== undefined && reference.installerChoices === undefined) {
     const result = Object.keys(mods)
       .find(dlId => mods[dlId].attributes?.fileMD5 === reference['md5Hint']);
     if (result !== undefined) {

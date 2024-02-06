@@ -1,4 +1,3 @@
-import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 
 import { IMod, IModReference } from '../types/IMod';
@@ -23,6 +22,7 @@ export interface IModLookupInfo {
   modId?: string;
   source?: string;
   referenceTag?: string;
+  installerChoices?: any;
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -207,6 +207,13 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   if ((ref.gameId !== undefined)
       && (mod.game !== undefined)
       && (mod.game.indexOf(ref.gameId) === -1)) {
+    return false;
+  }
+
+  // Right installer choices?
+  if ((ref.installerChoices !== undefined)
+       && (ref.installerChoices !== mod.installerChoices)
+       && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
     return false;
   }
 
