@@ -45,7 +45,10 @@ export function findModByRef(reference: IModReference, mods: { [modId: string]: 
     delete reference.fileMD5;
   }
 
-  if (reference['md5Hint'] !== undefined && reference.installerChoices === undefined) {
+  if (reference['md5Hint'] !== undefined
+  && reference.installerChoices === undefined
+  && reference.patches === undefined
+  && reference.fileList === undefined) {
     const result = Object.keys(mods)
       .find(dlId => mods[dlId].attributes?.fileMD5 === reference['md5Hint']);
     if (result !== undefined) {
@@ -298,6 +301,7 @@ interface IDependencyNode extends IDependency {
   redundant: boolean;
   fileList?: IFileListItem[];
   installerChoices?: any;
+  patches?: any;
   reresolveDownloadHint?: () => void;
 }
 
@@ -352,6 +356,7 @@ function gatherDependenciesGraph(
         dependencies: nodes.filter(node => node !== null),
         redundant: false,
         extra: rule.extra,
+        patches: rule.extra?.patches ?? {},
         installerChoices: rule.installerChoices,
         fileList: rule.fileList,
         phase: rule.extra?.['phase'] ?? 0,

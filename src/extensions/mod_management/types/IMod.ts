@@ -70,6 +70,8 @@ export interface IModReference extends IReference {
   description?: string;
   instructions?: string;
   installerChoices?: any;
+  fileList?: IFileListItem[];
+  patches?: any;
 }
 
 /**

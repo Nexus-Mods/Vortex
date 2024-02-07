@@ -1,6 +1,8 @@
 import { truthy } from '../../../util/util';
 
-import { IMod, IModReference } from '../types/IMod';
+import { log } from '../../../util/log';
+
+import { IMod, IModReference, IFileListItem } from '../types/IMod';
 
 import * as _ from 'lodash';
 import minimatch from 'minimatch';
@@ -23,6 +25,8 @@ export interface IModLookupInfo {
   source?: string;
   referenceTag?: string;
   installerChoices?: any;
+  patches?: any;
+  fileList?: IFileListItem[];
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -123,6 +127,21 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
     return false;
   }
 
+  // Right installer choices?
+  if ((ref.installerChoices !== undefined) && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
+    return false;
+  }
+
+  // Right hashes?
+  if ((ref.fileList !== undefined) && (!_.isEqual(ref.fileList, mod.fileList))) {
+    return false;
+  }
+
+  // Right patches?
+  if ((ref.patches !== undefined) && (!_.isEqual(ref.patches, mod.patches))) {
+    return false;
+  }
+
   if (ref.tag !== undefined) {
     if (mod.referenceTag === ref.tag) {
       return true;
@@ -210,13 +229,6 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
     return false;
   }
 
-  // Right installer choices?
-  if ((ref.installerChoices !== undefined)
-       && (ref.installerChoices !== mod.installerChoices)
-       && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
-    return false;
-  }
-
   if ((source !== undefined) && (modId !== undefined) && (ref.idHint !== modId)) {
     // if this resolved to a different mod
     onRefResolved?.(source.gameId, source.modId, ref, modId);
@@ -240,6 +252,9 @@ export function testModReference(mod: IMod | IModLookupInfo, reference: IModRefe
     return false;
   }
 
+  if (mod['patches'] !== undefined) {
+    log('info', 'mod has patches', { mod });
+  }
   if ((mod as any).attributes) {
     return testRef((mod as IMod).attributes as IModLookupInfo, mod.id,
                    reference, source, fuzzyVersion);
