@@ -1,5 +1,5 @@
 {
-  "last_updated": 1707748249300,
+  "last_updated": 1707748593623,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7807,6 +7807,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Tiny Tina's Wonderlands"
+    },
+    {
+      "modId": 788,
+      "fileId": 2756,
+      "author": "jozefM923",
+      "uploader": "jozefM923",
+      "description": {
+        "short": "This mod translates the Vortex app into Slovak",
+        "long": "[u]Slovenský preklad pre Vortex 1.9.12.[/u]\n<br />\n<br />preklad pripravil:   jozefM923\n<br />verzia prekladu:   1.0.0\n<br />\n<br />\n<br />[u]Inštalačné pokyny:\n<br />[/u]\n<br />Preklad si rozbaľte do priečinka\n<br />   C:&#92;Users&#92;&lt;username&gt;&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />\n<br />Prajem vám príjemnú zábavu."
+      },
+      "downloads": 5,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/788/788-1707734878-599431922.jpeg",
+      "name": "Vortex - Slovak translation",
+      "timestamp": 1707644373,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "translation",
+      "language": "sk"
     }
   ]
 }
