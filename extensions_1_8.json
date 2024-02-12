@@ -1,5 +1,5 @@
 {
-  "last_updated": 1707727565800,
+  "last_updated": 1707748163944,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7769,6 +7769,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "Like a Dragon: Infinite Wealth"
+    },
+    {
+      "modId": 777,
+      "fileId": 2707,
+      "author": "AuraInk",
+      "uploader": "AuraInk",
+      "description": {
+        "short": "Vortex Support for Minecraft Dungeons",
+        "long": "Vortex Support for Minecraft Dungeons"
+      },
+      "downloads": 4,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_3279.jpg",
+      "name": "Vortex Extension - Minecraft Dungeons",
+      "timestamp": 1706737935,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Minecraft Dungeons"
     }
   ]
 }
