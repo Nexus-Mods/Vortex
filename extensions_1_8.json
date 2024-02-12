@@ -1,5 +1,5 @@
 {
-  "last_updated": 1707748163944,
+  "last_updated": 1707748249300,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7788,6 +7788,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Minecraft Dungeons"
+    },
+    {
+      "modId": 778,
+      "fileId": 2708,
+      "author": "AuraInk",
+      "uploader": "AuraInk",
+      "description": {
+        "short": "Vortex Support for Tiny Tina's Wonderlands",
+        "long": "Vortex Support for Tiny Tina's Wonderlands"
+      },
+      "downloads": 9,
+      "endorsements": 2,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4394.jpg",
+      "name": "Vortex Extension - Tiny Tina's Wonderlands",
+      "timestamp": 1706740952,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Tiny Tina's Wonderlands"
     }
   ]
 }
