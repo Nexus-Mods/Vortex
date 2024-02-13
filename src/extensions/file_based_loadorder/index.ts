@@ -1,5 +1,7 @@
 /* eslint-disable */
 
+import * as _ from 'lodash';
+
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
@@ -150,7 +152,7 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, l
 
   try {
     const deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
-    if (loadOrderRedundancy !== undefined && deserializedLO.length < loadOrderRedundancy.length) {
+    if (loadOrderRedundancy !== undefined && JSON.stringify(deserializedLO) !== JSON.stringify(loadOrderRedundancy)) {
       const batchedActions = [
         setFBLoadOrder(profile.id, loadOrderRedundancy),
         setFBLoadOrderRedundancy(profile.id, []),
