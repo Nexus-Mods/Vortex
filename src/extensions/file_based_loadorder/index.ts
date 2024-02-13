@@ -20,6 +20,8 @@ import * as selectors from '../../util/selectors';
 import { log } from '../../util/log';
 import { setFBLoadOrder } from './actions/loadOrder';
 
+import { setFBLoadOrderRedundancy } from './actions/session';
+
 import { addGameEntry, findGameEntry } from './gameSupport';
 import { assertValidationResult, errorHandler } from './util';
 
@@ -128,7 +130,7 @@ async function genProfilesChange(api: types.IExtensionApi,
   }
 }
 
-async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
+async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, loadOrderRedundancy?: LoadOrder) {
   // Yes - this gets executed on purge too (at least for now).
   const state = api.store.getState();
   const profile = selectors.profileById(state, profileId);
@@ -148,7 +150,15 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
 
   try {
     const deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
-    api.store.dispatch(setFBLoadOrder(profile.id, deserializedLO));
+    if (loadOrderRedundancy !== undefined && deserializedLO.length < loadOrderRedundancy.length) {
+      const batchedActions = [
+        setFBLoadOrder(profile.id, loadOrderRedundancy),
+        setFBLoadOrderRedundancy(profile.id, []),
+      ];
+      util.batchDispatch(api.store, batchedActions);
+    } else {
+      api.store.dispatch(setFBLoadOrder(profile.id, deserializedLO));
+    }
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }
@@ -187,24 +197,36 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 }
 
 function genDidDeploy(api: types.IExtensionApi) {
-  return async (profileId: string, deployment: IDeployment) =>
-    genDeploymentEvent(api, profileId);
+  return async (profileId: string, deployment: IDeployment) => {
+    const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
+    const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+    const redundancy = (gameEntry.clearStateOnPurge === false)
+      ? util.getSafe(api.store.getState(), ['session', 'fblo', 'loadOrder', profileId], [])
+      : undefined;
+    await genDeploymentEvent(api, profileId, redundancy);
+  }
 }
 
-function genDidPurge(api: types.IExtensionApi) {
+function genWillPurge(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) => {
     const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
     const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
     if (gameEntry?.clearStateOnPurge === false) {
-      return Promise.resolve();
+      const state = api.getState();
+      const currentLO = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+      api.store.dispatch(setFBLoadOrderRedundancy(profileId, currentLO));
     }
-    return genDeploymentEvent(api, profileId);
+    return Promise.resolve();
   }
+}
+
+function genDidPurge(api: types.IExtensionApi) {
+  return async (profileId: string, deployment: IDeployment) => genDeploymentEvent(api, profileId);
 }
 
 export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
-  context.registerReducer(['session', 'fblo', 'refresh'], sessionReducer);
+  context.registerReducer(['session', 'fblo'], sessionReducer);
 
   context.registerMainPage('sort-none', 'Load Order', FileBasedLoadOrderPage, {
     id: 'file-based-loadorder',
@@ -264,6 +286,7 @@ export default function init(context: IExtensionContext) {
       (prev, current) => genProfilesChange(context.api, prev, current));
 
     context.api.onAsync('did-deploy', genDidDeploy(context.api));
+    context.api.onAsync('will-purge', genWillPurge(context.api));
     context.api.onAsync('did-purge', genDidPurge(context.api));
   });
 

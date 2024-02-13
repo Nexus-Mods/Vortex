@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
@@ -147,6 +148,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const { t, loadOrder, getGameEntry, profile } = this.props;
     const { validationError } = this.state;
     const gameEntry = getGameEntry(profile?.gameId);
+    const chosenItemRenderer = gameEntry.customItemRenderer ?? ItemRenderer;
     const enabled = (gameEntry !== undefined)
       ? loadOrder.reduce((accum, loEntry) => {
           const rendOps: IItemRendererProps = {
@@ -172,7 +174,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             itemTypeId='file-based-lo-draggable-entry'
             id='mod-loadorder-draggable-list'
             items={enabled}
-            itemRenderer={ItemRenderer}
+            itemRenderer={chosenItemRenderer}
             apply={this.onApply}
             idFunc={this.getItemId}
             isLocked={this.isLocked}

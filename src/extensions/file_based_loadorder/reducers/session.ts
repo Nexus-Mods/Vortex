@@ -10,7 +10,11 @@ export const sessionReducer: IReducerSpec = {
     [actions.setFBForceUpdate as any]: (state, payload) => {
       const { profileId } = payload;
       const uId = generate();
-      return setSafe(state, [profileId], uId);
+      return setSafe(state, ['refresh', profileId], uId);
+    },
+    [actions.setFBLoadOrderRedundancy as any]: (state, payload) => {
+      const { profileId, loadOrder } = payload;
+      return setSafe(state, ['loadOrder', profileId], loadOrder);
     }
   },
   defaults: {},

@@ -10,7 +10,7 @@ export interface IDraggableListItemProps {
   index: number;
   item: any;
   isLocked: boolean;
-  itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
+  itemRenderer: React.ComponentType<{ className?: string, item: any, forwardedRef?: any }>;
   containerId: string;
   take: (item: any, list: any[]) => any;
   onChangeIndex: (oldIndex: number, newIndex: number,
@@ -42,11 +42,12 @@ class DraggableItem extends React.Component<IProps, {}> {
     const refForwardedItem = (typeof item === 'object')
       ? { ...item, setRef: this.setRef }
       : { item, setRef: this.setRef };
+    const ItemRendererComponent = this.props.itemRenderer;
     return (
-      <this.props.itemRenderer
+      <ItemRendererComponent
         className={isDragging ? 'dragging' : undefined}
         item={canReference ? item : refForwardedItem}
-        ref={canReference ? this.setRef : undefined}
+        forwardedRef={canReference ? this.setRef : refForwardedItem.setRef}
       />
     );
   }
