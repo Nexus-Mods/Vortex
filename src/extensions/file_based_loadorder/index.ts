@@ -73,6 +73,11 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     //  Maybe it was changed by an extension ?
     return;
   }
+  if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
+    // Don't do anything if we're in the middle of installing deps
+    log('info', 'skipping load order serialization/deserialization');
+    return;
+  }
 
   const gameEntry = findGameEntry(profile.gameId);
   if (gameEntry === undefined) {
@@ -200,6 +205,12 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 
 function genDidDeploy(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) => {
+    const state = api.getState();
+    if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
+      // Don't do anything if we're in the middle of installing deps
+      log('info', 'skipping load order serialization/deserialization');
+      return Promise.resolve();
+    }
     const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
     const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
     const redundancy = (gameEntry.clearStateOnPurge === false)
