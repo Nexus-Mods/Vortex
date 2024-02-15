@@ -47,7 +47,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
 class Dropzone extends ComponentEx<IProps, IComponentState> {
   private mWrapperMode: boolean = false;
-  private mLeaveDelay: NodeJS.Timer;
+  private mLeaveDelay: NodeJS.Timeout;
   constructor(props) {
     super(props);
 

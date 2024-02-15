@@ -50,7 +50,7 @@ interface ICheckEntry {
 }
 const checks: { [type: string]: ICheckEntry[] } = {};
 
-const triggerDelays: { [type: string]: NodeJS.Timer } = {};
+const triggerDelays: { [type: string]: NodeJS.Timeout } = {};
 
 const fixTriggered: { [id: string]: boolean } = {};
 

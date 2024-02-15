@@ -100,7 +100,7 @@ class MainWindow {
     this.mWindow.loadURL(pathToFileURL(path.join(getVortexPath('base'), 'index.html')).href);
     // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
-    let cancelTimer: NodeJS.Timer;
+    let cancelTimer: NodeJS.Timeout;
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page

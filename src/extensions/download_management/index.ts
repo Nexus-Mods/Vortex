@@ -154,7 +154,7 @@ function genDownloadChangeHandler(api: IExtensionApi,
                                   gameId: string,
                                   nameIdMap: { [name: string]: string },
                                   normalize: Normalize) {
-  const updateTimers: { [fileName: string]: NodeJS.Timer } = {};
+  const updateTimers: { [fileName: string]: NodeJS.Timeout } = {};
 
   const store: Redux.Store<any> = api.store;
 

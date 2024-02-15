@@ -42,8 +42,8 @@ interface IPosition {
  */
 class Packery extends React.Component<IProps, {}> {
   private mPackery: PackeryT.Packery;
-  private mLayoutTimer: NodeJS.Timer;
-  private mRefreshTimer: NodeJS.Timer;
+  private mLayoutTimer: NodeJS.Timeout;
+  private mRefreshTimer: NodeJS.Timeout;
   private mChildren: Set<string>;
   private mMounted: number = 0;
 

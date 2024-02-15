@@ -119,7 +119,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private menuObserver: MutationObserver;
 
   private sidebarRef: HTMLElement = null;
-  private sidebarTimer: NodeJS.Timer;
+  private sidebarTimer: NodeJS.Timeout;
   private mutexQueue = createQueue();
 
   constructor(props: IProps) {

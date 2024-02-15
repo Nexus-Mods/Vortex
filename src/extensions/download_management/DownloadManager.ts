@@ -170,7 +170,7 @@ class DownloadWorker {
   private mWriting: boolean = false;
   private mRestart: boolean = false;
   private mRedirected: boolean = false;
-  private mStallTimer: NodeJS.Timer;
+  private mStallTimer: NodeJS.Timeout;
   private mStallResets: number = MAX_STALL_RESETS;
   private mRedirectsFollowed: number = 0;
   private mThrottle: () => stream.Transform;
