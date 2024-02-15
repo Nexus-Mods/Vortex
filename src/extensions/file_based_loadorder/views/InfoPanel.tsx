@@ -23,15 +23,15 @@ class InfoPanel extends ComponentEx<IProps, {}> {
     const panel = (info === undefined)
       ? bbcode(t(this.mDefaultInfo))
       : typeof(info) === 'string'
-      ? bbcode(t(info))
-      : <Info />;
+        ? bbcode(t(info))
+        : <Info />;
 
     return (
       <div id='loadorderinfo'>
         <FlexLayout type='column'>
           <FlexLayout.Flex>
             <h2>{t('Changing your load order')}</h2>
-            <p>{panel}</p>
+            {panel}
           </FlexLayout.Flex>
           <FlexLayout.Flex>
             {this.renderErrorBox()}
