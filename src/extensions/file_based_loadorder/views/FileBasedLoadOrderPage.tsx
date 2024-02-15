@@ -167,7 +167,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         info={gameEntry?.usageInstructions}
       />;
 
-    const draggableList = () => (this.nextState.loading)
+    const draggableList = () => (this.nextState.loading || this.nextState.updating)
       ? this.renderWait()
       : (enabled.length > 0)
         ? <DraggableList
@@ -223,12 +223,9 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private renderWait() {
     return (
-      <Spinner
-        style={{
-          width: '64px',
-          height: '64px',
-        }}
-      />
+      <div className='fblo-spinner-container'>
+        <Spinner className='file-based-load-order-spinner'/>
+      </div>
     );
   }
 
