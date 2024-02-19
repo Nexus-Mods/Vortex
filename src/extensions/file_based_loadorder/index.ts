@@ -110,6 +110,11 @@ async function genProfilesChange(api: types.IExtensionApi,
                                  oldState: IProfileState,
                                  newState: IProfileState) {
   const state = api.store.getState();
+  if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
+    // Don't do anything if we're in the middle of installing deps
+    log('info', 'skipping load order serialization/deserialization');
+    return;
+  }
   const profile = selectors.activeProfile(state);
   if (profile?.gameId === undefined) {
     // Profiles changed with no active profile.
