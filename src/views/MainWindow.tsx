@@ -79,6 +79,8 @@ export interface IConnectedProps {
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
   customTitlebar: boolean;
+  version: string;  
+  updateChannel: string;
   userInfo: any;
   notifications: INotification[];
   uiBlockers: { [id: string]: IUIBlocker };
@@ -340,7 +342,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderToolbar(switchingProfile: boolean) {
-    const { t, customTitlebar } = this.props;
+    const { t, customTitlebar, updateChannel, version } = this.props;
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
       return (<div className={className}/>);
@@ -352,6 +354,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
+          
+          
+            <div className='toolbar-version'>
+            {updateChannel === 'beta' 
+          ? (
+              <div className='toolbar-version-container toolbar-version-beta'>
+                <Icon name='settings'></Icon>
+                <div className='toolbar-version-text'>{updateChannel} {version}</div>
+              </div>            
+            ):(
+              <div className='toolbar-version-container toolbar-version-stable'>
+                <div className='toolbar-version-text'>{updateChannel} {version}</div>
+              </div>
+            )}
+            </div>
 
           <IconBar
             className='application-icons'
@@ -623,6 +640,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     notifications: state.session.notifications.notifications,
     uiBlockers: state.session.base.uiBlockers,
+    version: state.app.appVersion,
+    updateChannel: state.settings.update.channel,
   };
 }
 
