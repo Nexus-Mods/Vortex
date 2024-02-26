@@ -173,8 +173,15 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.setFileOverride as any]: (state, payload) => {
       const { gameId, modId, files }  = payload;
-
+      if (!Array.isArray(files)) {
+        // this should never happen
+        return state;
+      }
       if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
+      const hasInvalidEntry = files.find(file => (typeof file !== 'string')) !== undefined;
+      if (hasInvalidEntry) {
         return state;
       }
 
