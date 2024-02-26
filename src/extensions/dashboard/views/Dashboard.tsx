@@ -61,7 +61,7 @@ interface IComponentState {
  * base layouter for the dashboard. No own content, just layouting
  */
 class Dashboard extends ComponentEx<IProps, IComponentState> {
-  private mUpdateTimer: NodeJS.Timer;
+  private mUpdateTimer: NodeJS.Timeout;
   private mLayoutDebouncer: Debouncer;
   private mWindowFocused: boolean = true;
 

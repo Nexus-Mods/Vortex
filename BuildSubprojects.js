@@ -184,30 +184,6 @@ function processCustom(project, buildType, feedback, noparallel) {
   return res;
 }
 
-/*
-function processRebuild(project, buildType, feedback) {
-  const moduleDir = buildType === 'out'
-    ? __dirname
-    : path.join(__dirname, buildType);
-
-  return rebuild({
-    buildPath: moduleDir,
-    electronVersion: packageJSON.vortex.electron,
-    arch: process.arch,
-    onlyModules: [project.module],
-    force: true,
-  })
-    .then(() => {
-      if (project.name !== undefined) {
-        feedback.log('electron-rebuild process finished: ' + project.name);
-      }
-    })
-    .catch((err) => {
-        feedback.err('An error occurred during the electron-rebuild process: ' + err);
-    });
-}
-*/
-
 function evalCondition(condition, context) {
   if (condition === undefined) {
     return true;

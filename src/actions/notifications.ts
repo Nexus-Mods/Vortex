@@ -51,7 +51,7 @@ export const addDialog = safeCreateAction(
  */
 export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG', identity);
 
-const timers = local<{ [id: string]: NodeJS.Timer }>('notification-timers', {});
+const timers = local<{ [id: string]: NodeJS.Timeout }>('notification-timers', {});
 
 type NotificationFunc = (dismiss: NotificationDismiss) => void;
 const notificationActions = local<{ [id: string]: NotificationFunc[] }>('notification-actions', {});

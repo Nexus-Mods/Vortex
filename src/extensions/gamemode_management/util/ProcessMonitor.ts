@@ -14,7 +14,7 @@ import * as Redux from 'redux';
 import * as winapi from 'winapi-bindings';
 
 class ProcessMonitor {
-  private mTimer: NodeJS.Timer;
+  private mTimer: NodeJS.Timeout;
   private mStore: Redux.Store<IState>;
   private mWindow: BrowserWindow;
   private mActive: boolean = false;
