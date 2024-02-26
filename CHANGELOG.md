@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.10.3] - 2024-02-21
 
+- Sorting algorithm is now memoized
+- Fixed file overrides not applied/removed from all affected mods
+- Fixed overrides being applied to all mods regardless of modType conflict
+- Fixed overrides not being removed when mod is disabled
+- Protection against writing non-strings to file override state
 - Beta and version information now shown on toolbar
 
 ## [1.10.2] - 2024-02-19
