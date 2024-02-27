@@ -1,5 +1,5 @@
 {
-  "last_updated": 1709034201137,
+  "last_updated": 1709045206574,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7845,6 +7845,25 @@
       "version": "0.2.0",
       "type": "game",
       "gameName": "Cobalt Core"
+    },
+    {
+      "modId": 793,
+      "fileId": 2813,
+      "author": "soevielofficial",
+      "uploader": "Jokoril",
+      "description": {
+        "short": "Vortex extension to manage mods for Tower of Fantasy",
+        "long": "[font=Comic Sans MS][b][size=6][center]Tower of Fantasy Vortex Extension[/center][/size][/b][/font][center][font=Comic Sans MS]\n<br />[b][size=4]About:[/size][/b]\n<br />[b][size=3]Tower of Fantasy Vortex Extension is an extension allows you to manage your downloaded mods for Tower of Fantasy directly through Vortex.[/size][/b]\n<br />\n<br />[b][size=4]Support:[/size][/b]\n<br />[/font][b][font=Comic Sans MS][size=3][s]Chinese Client[/s] WIP\n<br />[s]Korean Client[/s] WIP\n<br />Global Client (Steam &amp; Official Launcher)[/size][/font][/b][font=Comic Sans MS]\n<br />[/font][font=Comic Sans MS][b]\n<br />[size=4]Docs:[/size][/b]\n<br />[b][b][size=3][url=https://www.nexusmods.com/about/vortex/][b]Download Vortex\n<br />[/b][/url][b][url=https://youtu.be/BBqmZEnhw9Y][size=3][b]Installation Guide[/b][/size][/url][/b]\n<br />[/size][/b][url=https://www.nexusmods.com/toweroffantasy][b][size=3]Tower of Fantasy on NexusMods[/size][/b][/url][/b]\n<br />[/font][/center]"
+      },
+      "downloads": 35,
+      "endorsements": 3,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6140.jpg",
+      "name": "Tower of Fantasy Vortex Extension",
+      "timestamp": 1709043165,
+      "tags": [],
+      "version": "1.0.4",
+      "type": "game",
+      "gameName": "Tower of Fantasy"
     }
   ]
 }
