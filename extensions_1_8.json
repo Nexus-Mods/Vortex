@@ -1,5 +1,5 @@
 {
-  "last_updated": 1709023561130,
+  "last_updated": 1709034201137,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7826,6 +7826,25 @@
       "version": "1.0.0",
       "type": "translation",
       "language": "sk"
+    },
+    {
+      "modId": 786,
+      "fileId": 2769,
+      "author": "Shockah",
+      "uploader": "Shockah",
+      "description": {
+        "short": "Vortex support for Cobalt Core",
+        "long": "This is an extension for [url=https://www.nexusmods.com/about/vortex/]Vortex[/url]﻿ to add support for the game [url=https://store.steampowered.com/app/2179850/Cobalt_Core/]Cobalt Core[/url] by [url=https://rocketrat.games/]Rocket Rat Games[/url].\n<br />\n<br />The [url=https://www.nexusmods.com/cobaltcore/mods/1]Nickel[/url]﻿ mod loader has to be installed."
+      },
+      "downloads": 6,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6111.jpg",
+      "name": "Cobalt Core Vortex Extension",
+      "timestamp": 1708246818,
+      "tags": [],
+      "version": "0.2.0",
+      "type": "game",
+      "gameName": "Cobalt Core"
     }
   ]
 }
