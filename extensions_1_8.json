@@ -1,5 +1,5 @@
 {
-  "last_updated": 1709109977610,
+  "last_updated": 1709129478021,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7828,6 +7828,25 @@
       "version": "1.0.4",
       "type": "game",
       "gameName": "Tower of Fantasy"
+    },
+    {
+      "modId": 796,
+      "fileId": 2788,
+      "author": "StarlightSkull",
+      "uploader": "StarlightSkull",
+      "description": {
+        "short": "Basic support for Tomb Raider I-III Remastered",
+        "long": "This is a very basic Vortex extension that adds support for Tomb Raider I-III Remastered.\n<br />\n<br />Most mods currently are not packaged uniformly and due to the way the game files are structured with the three games it is not really practical to compensate for that. This means you will likely have to manually fix the file structure for many mods.\n<br />\n<br />This plugin will simply install any installed mods in the root directory of the game."
+      },
+      "downloads": 13,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6144.jpg",
+      "name": "Tomb Raider I-III Remastered Vortex Support",
+      "timestamp": 1708639813,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Tomb Raider I-III Remastered"
     }
   ]
 }
