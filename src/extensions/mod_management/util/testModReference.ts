@@ -1,7 +1,8 @@
-import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 
-import { IMod, IModReference } from '../types/IMod';
+import { log } from '../../../util/log';
+
+import { IMod, IModReference, IFileListItem } from '../types/IMod';
 
 import * as _ from 'lodash';
 import minimatch from 'minimatch';
@@ -23,6 +24,9 @@ export interface IModLookupInfo {
   modId?: string;
   source?: string;
   referenceTag?: string;
+  installerChoices?: any;
+  patches?: any;
+  fileList?: IFileListItem[];
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -120,6 +124,21 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   if (!hasIdentifyingMarker(mod, modId, ref, fuzzyVersion, true)) {
     // if the reference doesn't have any marker that _could_ match this mod,
     // return !false!, otherwise we might match any random mod that also has no matching marker
+    return false;
+  }
+
+  // Right installer choices?
+  if ((ref.installerChoices !== undefined) && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
+    return false;
+  }
+
+  // Right hashes?
+  if ((ref.fileList !== undefined) && (!_.isEqual(ref.fileList, mod.fileList))) {
+    return false;
+  }
+
+  // Right patches?
+  if ((ref.patches !== undefined) && (!_.isEqual(ref.patches, mod.patches))) {
     return false;
   }
 
@@ -233,6 +252,9 @@ export function testModReference(mod: IMod | IModLookupInfo, reference: IModRefe
     return false;
   }
 
+  if (mod['patches'] !== undefined) {
+    log('info', 'mod has patches', { mod });
+  }
   if ((mod as any).attributes) {
     return testRef((mod as IMod).attributes as IModLookupInfo, mod.id,
                    reference, source, fuzzyVersion);

@@ -69,6 +69,9 @@ export interface IModReference extends IReference {
   // the user chose for the mod.
   description?: string;
   instructions?: string;
+  installerChoices?: any;
+  fileList?: IFileListItem[];
+  patches?: any;
 }
 
 /**

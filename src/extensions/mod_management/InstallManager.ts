@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadModInfo,
          startActivity, stopActivity } from '../../actions';
@@ -2090,6 +2091,14 @@ class InstallManager {
       attributes['version'] = extra.version;
     }
 
+    if (extra.patches !== undefined) {
+      attributes['patches'] = extra.patches;
+    }
+
+    if (extra.fileList !== undefined) {
+      attributes['fileList'] = extra.fileList;
+    }
+
     api.store.dispatch(setModAttributes(gameId, modId, attributes));
   }
 
@@ -2407,7 +2416,7 @@ class InstallManager {
                               dep.extra?.['instructions'],
                               recommended, () =>
           this.installModAsync(dep.reference, api, downloadId,
-            { choices: dep.installerChoices }, dep.fileList,
+            { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
             gameId, silent))
           .catch(err => {
             if (err instanceof UserCanceled) {
@@ -2631,7 +2640,9 @@ class InstallManager {
     dependencies.forEach(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-
+      updatedRef.installerChoices = dep.installerChoices;
+      updatedRef.patches = dep.patches;
+      updatedRef.fileList = dep.fileList;
       this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Bluebird.resolve();
