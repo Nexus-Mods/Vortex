@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - updated environment setup script
 - matching node version with electron's node version
 
+## [1.10.6] - 2024-02-28
+
+- Fixed inability to determine conflicts on startup (race condition)
+
+## [1.10.5] - 2024-02-27
+
+- Fixed erroneously attempting to add fileOverrides to a disabled mod
+- Fixed attempts to iterate through invalid fileOverrides (causing the .includes error)
+
+## [1.10.4] - 2024-02-26
+
+- Fixed crash if fileOverrides are undefined for a mod instance
+
+## [1.10.3] - 2024-02-21
+
+- Sorting algorithm is now memoized
+- Fixed file overrides not applied/removed from all affected mods
+- Fixed overrides being applied to all mods regardless of modType conflict
+- Fixed overrides not being removed when mod is disabled
+- Protection against writing non-strings to file override state
+- Beta and version information now shown on toolbar
+
+## [1.10.2] - 2024-02-19
+
+- Fixed conflict editor rendering when game not discovered
+
+
 ## [1.10.1] - 2024-01-25
 
 - Fixed styles throughout

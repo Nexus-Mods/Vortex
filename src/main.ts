@@ -176,6 +176,8 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch('--disable-gpu');
   }
 
+  app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
+
   // --run has to be evaluated *before* we request the single instance lock!
   if (mainArgs.run !== undefined) {
     // Vortex here acts only as a trampoline (probably elevated) to start
