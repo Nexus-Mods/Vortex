@@ -90,6 +90,12 @@ export interface ILoadOrderGameInfo {
   usageInstructions?: string | React.ComponentType<{}>;
 
   /**
+   * Extension developers are able to provide a custom item renderer for the
+   *  load order page. This will get rendered instead of the default one.
+   */
+  customItemRenderer?: React.ComponentType<{ className?: string, item: IItemRendererProps, forwardedRef?: (ref: any) => void }>;
+
+  /**
    * By default the FBLO extension will attempt to automatically generate the data
    *  required when publishing/exporting a collection; the noCollectionGeneration
    *  property allows game extensions to opt out of this functionality, which is useful

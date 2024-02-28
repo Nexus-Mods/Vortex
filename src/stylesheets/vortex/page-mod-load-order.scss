@@ -27,6 +27,19 @@
       margin: 0;      
       padding: 0 8px 0 0; // padding between scrollbar and list items
     }
+
+    .fblo-spinner-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      .file-based-load-order-spinner {
+        display: flex;
+        height: 64px;
+        width: 64px;
+      }
+    }
   }
 
   .load-order-entry {

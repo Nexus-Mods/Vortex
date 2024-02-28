@@ -14,7 +14,7 @@ export interface IDraggableListProps {
   items: any[];
   isLocked?: (item: any) => boolean;
   idFunc?: (item: any) => string;
-  itemRenderer: React.ComponentClass<{ item: any }>;
+  itemRenderer: React.ComponentType<{ item: any }>;
   apply: (ordered: any[]) => void;
   style?: React.CSSProperties;
   className?: string;
@@ -61,18 +61,18 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
       <div style={style} className={className}>
         <ListGroup>
           {ordered.map((item, idx) => (
-              <this.mDraggableClass
-                containerId={id}
-                key={this.itemId(item)}
-                item={item}
-                index={idx}
-                isLocked={isLocked?.(item) ?? false}
-                itemRenderer={itemRenderer}
-                take={this.take}
-                onChangeIndex={this.changeIndex}
-                apply={this.apply}
-              />
-            ))}
+            <this.mDraggableClass
+              containerId={id}
+              key={this.itemId(item)}
+              item={item}
+              index={idx}
+              isLocked={isLocked?.(item) ?? false}
+              itemRenderer={itemRenderer}
+              take={this.take}
+              onChangeIndex={this.changeIndex}
+              apply={this.apply}
+            />
+          ))}
         </ListGroup>
       </div>);
   }
