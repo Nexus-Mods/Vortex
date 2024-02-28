@@ -28,10 +28,10 @@
   dependencies:
     regenerator-runtime "^0.13.10"
 
-"@electron/remote@^2.0.1":
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/@electron/remote/-/remote-2.0.8.tgz#85ff321f0490222993207106e2f720273bb1a5c3"
-  integrity sha512-P10v3+iFCIvEPeYzTWWGwwHmqWnjoh8RYnbtZAb3RlQefy4guagzIwcWtfftABIfm6JJTNQf4WPSKWZOpLmHXw==
+"@electron/remote@^2.0.12":
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/@electron/remote/-/remote-2.1.2.tgz#52a97c8faa5b769155b649ef262f2f8c851776e6"
+  integrity sha512-EPwNx+nhdrTBxyCqXt/pftoQg/ybtWDW3DUWHafejvnB1ZGGfMpv6e15D8KeempocjXe78T7WreyGGb3mlZxdA==
 
 "@gar/promisify@^1.1.3":
   version "1.1.3"
@@ -1922,9 +1922,9 @@ invariant@^2.2.4:
     loose-envify "^1.0.0"
 
 ip@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/ip/-/ip-2.0.0.tgz#4cf4ab182fee2314c75ede1276f8c80b479936da"
-  integrity sha512-WKa+XuLG1A1R0UWhl2+1XQSi+fZWMsYKffMZTTYsiZaUD8k2yDAj5atimTUD2TZkyCkNEeYE5NhFZmupOGtjYQ==
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/ip/-/ip-2.0.1.tgz#e8f3595d33a3ea66490204234b77636965307105"
+  integrity sha512-lJUL9imLTNi1ZfXT+DU6rBBdbiKGBuay9B6xGSPVjUeQwaH1RIGqef8RZkUtHioLmSNpPR5M4HVKJGm1j8FWVQ==
 
 is-admin@^3.0.0:
   version "3.0.0"
@@ -2226,9 +2226,10 @@ levelup@^4.4.0:
     level-supports "~1.0.0"
     xtend "~4.0.0"
 
-libxmljs@TanninOne/libxmljs#sambacha:
-  version "0.27.1"
-  resolved "https://codeload.github.com/TanninOne/libxmljs/tar.gz/63d73bc86559d385d9e5ecaeb6dc4fc7792d77d7"
+libxmljs@Nexus-Mods/libxmljs#sambacha:
+  version "0.30.1+nmfork"
+  uid "8dfcef285a49bd59a88997b53c54454d5e8f41e0"
+  resolved "https://codeload.github.com/Nexus-Mods/libxmljs/tar.gz/8dfcef285a49bd59a88997b53c54454d5e8f41e0"
   dependencies:
     "@marudor/node-pre-gyp" "^0.16.1"
     bindings "^1.5.0"
