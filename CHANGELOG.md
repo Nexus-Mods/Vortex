@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.0] - 2024-xx-xx
 
-- updated electron and node
-- updated environment setup script
-- matching node version with electron's node version
+- Updated Electron and Node
+- (Stardew) Fixed SMAPI update notification appearing while managing other games
+- (Collections) Added comparison of patches, installer choices, hashes when installing
 
 ## [1.10.6] - 2024-02-28
 
