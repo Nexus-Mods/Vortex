@@ -11,6 +11,7 @@ import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-boots
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import VortexInstallType from '../../types/VortexInstallType';
+import { MainContext } from 'vortex-api';
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -24,8 +25,12 @@ interface IActionProps {
 type IProps = IActionProps & IConnectedProps;
 
 class SettingsUpdate extends ComponentEx<IProps, {}> {
+  
+  static contextType = MainContext
+  
   public render(): JSX.Element {
     const { t, installType, updateChannel } = this.props;
+
 
     const renderDevelopmentAlert = () => {
       if(process.env.NODE_ENV === 'development')
@@ -90,7 +95,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
             onChange={this.selectChannel}
             value={updateChannel}
           >
-            <option value='stable'>{t('Stable')}</option>
+            <option value='latest'>{t('Stable')}</option>
             <option value='beta'>{t('Beta')}</option>
             <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
@@ -122,7 +127,38 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   private selectChannel = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
     if (UPDATE_CHANNELS.includes(target.value as UpdateChannel)) {
-      this.props.onSetUpdateChannel(target.value as UpdateChannel);
+
+      const newChannel = target.value as UpdateChannel
+
+      if(newChannel === 'beta') {
+
+        this.context.api.showDialog('question', 'Development update channel', {          
+          text: 'Development versions of Vortex can be unstable and cause irrepairable harm to your modding environment. Are you sure you want to switch to the this update channel?'
+        }, [ 
+          { label: 'Cancel' },
+          { label: 'Switch Channel', action: () => 
+            this.props.onSetUpdateChannel(newChannel)
+          },
+        ]);
+
+      } else if (newChannel === 'stable') {
+        // stable or latest
+        this.props.onSetUpdateChannel(newChannel);
+
+      } else if (newChannel === 'none'){
+        // none
+
+        this.context.api.showDialog('question', 'Turning off updates', {
+          text: 'This will stop notifying you about new updates to Vortex. Are you sure you want to do this?'
+        }, [ 
+          { label: 'Cancel' },
+          { label: 'Turn off updates', action: () => 
+            this.props.onSetUpdateChannel(newChannel)
+          },
+        ]);
+
+      }
+      
     } else {
       log('error', 'invalid channel', target.value);
     }

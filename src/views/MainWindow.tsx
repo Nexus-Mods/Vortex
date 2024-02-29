@@ -35,6 +35,7 @@ import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
+import * as semver from 'semver';
 
 import update from 'immutability-helper';
 import * as _ from 'lodash';
@@ -343,6 +344,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar, updateChannel, version } = this.props;
+
+    const parsedVersion = semver.parse(version);
+    const prerelease = parsedVersion.prerelease[0] ?? 'stable';
+    const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
+
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
       return (<div className={className}/>);
@@ -353,21 +359,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
-        <div className='main-toolbar-right'>
-          
+        <div className='main-toolbar-right'>          
           
             <div className='toolbar-version'>
-            {updateChannel === 'beta' 
-          ? (
-              <div className='toolbar-version-container toolbar-version-beta'>
-                <Icon name='settings'></Icon>
-                <div className='toolbar-version-text'>{updateChannel} {version}</div>
+            <div className={updateChannelClassName}>
+                { prerelease !== 'stable' ? <Icon name='settings'></Icon> : null }
+                <div className='toolbar-version-text'>{version}</div>
               </div>            
-            ):(
-              <div className='toolbar-version-container toolbar-version-stable'>
-                <div className='toolbar-version-text'>{updateChannel} {version}</div>
-              </div>
-            )}
             </div>
 
           <IconBar

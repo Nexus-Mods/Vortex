@@ -49,15 +49,21 @@
     margin-right: 124px;
     height: 30px;
 
+    .toolbar-version-stable {
+      background-color: transparent;
+      color: $gray;
+    }
+    
     .toolbar-version-beta {
       background-color: $brand-info;
       color: $white;
     }
 
-    .toolbar-version-stable {
-      background-color: transparent;
-      color: $gray;
+    .toolbar-version-alpha {
+      background-color: $brand-danger;
+      color: $white;
     }
+
 
     .toolbar-version-container {
       border-radius: 24px;
