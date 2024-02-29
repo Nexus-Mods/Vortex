@@ -5,8 +5,8 @@
   margin-right: $half-gutter;
 
   .form-control {
-    width: initial;
-    min-width: 20em;
+    width: 200px;
+    min-width: 100px;
     height: inherit;
   }
 
@@ -22,7 +22,11 @@
   }
 
   .form-group {
-    margin-bottom: 2em;
+    //margin-bottom: 2em;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;    
+    margin: 0;
   }
 }
 

@@ -43,11 +43,22 @@
     margin-bottom: 8px;
   }
 
+  .application-icons-group {
+    display: flex;
+    justify-content: flex-end;
+  }
+
   .toolbar-version {
     display: flex;
     justify-content: flex-end;
+    gap: 8px;
     margin-right: 124px;
-    height: 30px;
+    //height: 30px;
+
+    .toolbar-version-dev {
+      background-color: $white;
+      color: $black;
+    }
 
     .toolbar-version-stable {
       background-color: transparent;
@@ -64,23 +75,20 @@
       color: $white;
     }
 
-
     .toolbar-version-container {
       border-radius: 24px;
       border: none;
-      //display: inline-block;
-      padding: 2px 12px;
-      //width: 120px;
+      padding: 4px 10px;
       font-weight: 800;
-      //flex: auto;
       display: flex;
       align-items: center;
-      gap: 8px;
-      text-transform: none;
+      gap: 4px;
+      text-transform: uppercase;
+      font-family: 'Montserrat';
+      font-size: 0.8em;
 
       .toolbar-version-text {
         margin: 2px 0 0 0;
-        font-size: larger;
       }
     }
   }

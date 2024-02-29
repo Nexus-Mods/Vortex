@@ -179,24 +179,76 @@
 #new-update-changelog-dialog {
 
   .modal-dialog {
-    width: 80vw;
+    width: 50vw;
 
     .dialog-container {
 
       .dialog-content-html {
 
-        h2 {
-          font-size: 1.6em;
+        gap: 8px;
+        padding-right: 16px;
+
+        // need different sizes in case github releases markdown come in as h1's and h2's etc
+        // when really they should h4s, h5s for their level of importance and consistency
+
+        .changelog-dialog-release {
+
+          gap: 12px;
+
+          h1 {
+            font-size: 1.3em;
+          }
+  
+          h2 {
+            font-size: 1.2em;
+          }
+  
+          h3 {
+            font-size: 1.1em;
+          }
+
+        // these are going to be set in code as each release heading
+  
+          h4 {
+            font-size: 1.6em;
+            line-height: 1;
+            margin: 10px 0 0 0;
+          }
+  
+          ul {    
+            padding-inline-start: 32px;
+            line-height: 1; 
+            margin: 0;
+
+            li {
+              line-height: 1.5;
+            }
+          }
+
+          p {
+            margin: 0;
+          }
+
+          details, img {
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px;
+            white-space: normal;
+            border-radius: 8px;
+          }
+          
+          summary {
+            display: none;
+          }
+
+          video {
+            width: 100%;
+            display: block;
+          }
+
+
+
         }
 
-        h3 {
-          font-size: 1.3em;
-        }
-
-        ul {    
-          padding-inline-start: 32px;
-          line-height: 1;
-        }
       }
     }
   }

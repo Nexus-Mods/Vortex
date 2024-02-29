@@ -344,8 +344,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar, updateChannel, version } = this.props;
-
-    const parsedVersion = semver.parse(version);
+    let parsedVersion = semver.parse(version);
     const prerelease = parsedVersion?.prerelease[0] ?? 'stable';
     const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
 
@@ -361,29 +360,35 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='flex-fill' />
         <div className='main-toolbar-right'>          
           
-            <div className='toolbar-version'>
+          <div className='toolbar-version'>
+            {process.env.NODE_ENV === 'development' ? <div className='toolbar-version-container toolbar-version-dev'>
+              <Icon name='mods'></Icon>
+              <div className='toolbar-version-text'>DEVELOPMENT</div>
+            </div> : null}
             <div className={updateChannelClassName}>
-                { prerelease !== 'stable' ? <Icon name='settings'></Icon> : null }
-                <div className='toolbar-version-text'>{version}</div>
-              </div>            
-            </div>
+              { prerelease !== 'stable' ? <Icon name='settings'></Icon> : null }
+              <div className='toolbar-version-text'>{version}</div>
+            </div>            
+          </div>
 
-          <IconBar
-            className='application-icons'
-            group='application-icons'
-            staticElements={this.applicationButtons}
-            t={t}
-          />          
-          <NotificationButton id='notification-button' hide={switchingProfile} />
-          <IconBar
-            id='global-icons'
-            className='global-icons'
-            group='global-icons'
-            staticElements={this.globalButtons}
-            orientation='vertical'
-            collapse
-            t={t}
-          />
+          <div className='application-icons-group'>
+            <IconBar
+              className='application-icons'
+              group='application-icons'
+              staticElements={this.applicationButtons}
+              t={t}
+            />          
+            <NotificationButton id='notification-button' hide={switchingProfile} />
+            <IconBar
+              id='global-icons'
+              className='global-icons'
+              group='global-icons'
+              staticElements={this.globalButtons}
+              orientation='vertical'
+              collapse
+              t={t}
+            />
+          </div>
         </div>
       </FlexLayout.Fixed>
     );

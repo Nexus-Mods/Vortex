@@ -66,11 +66,13 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
       // managed and not development
       if(process.env.NODE_ENV !== 'development') {
         return (
+          <div>
           <ControlLabel>
             <Alert>
               {t('Vortex was installed through a third-party service which will take care of updating it.')}
             </Alert>
           </ControlLabel>
+          </div>
         );
       }
       
@@ -82,6 +84,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
     return (
     <form>
         <FormGroup controlId='updateChannel'>
+
+          { renderDevelopmentAlert() }
 
           <ControlLabel>
             {t('Update')}
@@ -101,9 +105,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           </FormControl>
 
           { renderPreviewAlert() }
-
-          { renderDevelopmentAlert() }
           
+          <div>
           <ControlLabel>
             {updateChannel === 'none' ? [(
               <Alert key='manual-update-warning' bsStyle='warning'>
@@ -114,6 +117,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
               {t('Check now')}
             </Button>)] : null}
           </ControlLabel>
+          </div>
         </FormGroup>
       </form>
     );
