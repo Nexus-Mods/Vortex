@@ -1,239 +1,246 @@
-name: Package
-
-on:
-  workflow_dispatch:
-    inputs:
-        version:
-          description: "The version to release (eg: 'v1.0.0')"
-          required: true
-          type: string
-        create-artifacts:
-          description: "Create artifacts?"
-          required: true
-          type: boolean
-          default: true
-        use-new-codesign:
-            description: "Use new codesign cert?"
-            required: false
-            type: boolean
-            default: true
-        deploy-epic:
-          description: "Deploy to Epic?"
-          required: false
-          type: boolean
-          default: false
-        release:
-          description: "Create a draft release?"
-          required: false
-          type: boolean
-          default: true
-
-env:    
-  SigningCertificate: cert.pfx
-
-jobs:      
-  build:
-    runs-on: windows-latest
-    env:
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
-      CERT_PATH: Release     
-      DEBUG: electron-builder # gives electron more verbose logs       
-      
-    strategy:
-      matrix:
-        dotnet-version: [ 6.0.x ]
-
-    steps:
-      - name: Show Inputs
-        run: echo "${{ toJSON(github.event.inputs) }}"
-      - name: Set Outputs
-        id: setOutputs
-        shell: pwsh
-        env:
-          InputVersion: ${{ inputs.version }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }} 
-        run: |
-          $tagVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion : "v" + $env:InputVersion
-          $rawVersion = $env:InputVersion.StartsWith('v') ? $env:InputVersion.Substring(1) : $env:InputVersion
-          $validation = [System.Version]::Parse($rawVersion)
-          echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT
-          echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
-          echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT
-          echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT
-          echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
-          echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER"
-      - name: Get current time
-        uses: josStorer/get-current-time@v2
-        id: current-time
-        with:
-          format: 'YYYY-MM-DD HHmm'
-      - name: Use current time
-        env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          R_TIME: "${{ steps.current-time.outputs.readableTime }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-          YEAR: "${{ steps.current-time.outputs.year }}"
-          DAY: "${{ steps.current-time.outputs.day }}"
-        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-          
-      - name: Download VC_redist
-        shell: pwsh
-        run: |
-          $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe
-
-      - name: Download CodeSignTool
-        id: codesign
-        shell: pwsh
-        run: .\download-codesigntool.ps1
-
-      - name: Download BuildPatchTool
-        id: buildpatch
-        shell: pwsh
-        run: .\download-buildpatchtool.ps1
-          
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-timeout 600000 install
-
-      - name: Print debug info
-        run: dotnet --info
-
-      - name: Decode PFX
-        shell: pwsh        
-        id: decode-pfx
-        run: |
-          $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate          
-          [IO.File]::WriteAllBytes("$certPath", $certBytes)
-
-      - name: Build API
-        run: yarn --non-interactive build_api
-      
-      - name: Build Install
-        run: yarn --non-interactive _install_app
-      
-      - name: Build Subprojects
-        run: yarn --non-interactive subprojects_app
-      
-      - name: Build Assets
-        run: yarn --non-interactive _assets_app
-        
-      - name: Webpack
-        run: yarn build_dist
-          
-      - name: Package (new codesign)
-        if: ${{ inputs.use-new-codesign == true }}
-        run: yarn package
-      
-      - name: Package (old codesign)
-        if: ${{ inputs.use-new-codesign == false }}
-        run: yarn package-old
-        env:
-          CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path
-          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }}
-
-      - name: Extract Sourcemaps
-        run: yarn extract_sourcemaps
-
-      - name: Test
-        run: yarn test
-
-      - name: Remove PFX
-        shell: pwsh
-        run: |
-          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate
-          Remove-Item -Path $certPath
-      
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: ${{ inputs.release == true }}
-        with:
-          files: |
-            ./dist/vortex-setup-${{ steps.setOutputs.outputs.rawVersion }}.exe
-            ./dist/latest.yml
-          prerelease: true
-          draft: true
-          name: ${{ steps.setOutputs.outputs.rawVersion }}
-          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
-
-      - name: Deploy to Epic
-        if: ${{ inputs.deploy-epic == true }}
-        shell: pwsh
-        run: |
-          echo "${{ steps.setOutputs.outputs.epicBuildString }}"
-          
-          $rootDir = Resolve-Path "."
-          $extractFolder = Join-Path $rootDir "BuildPatchTool"
-          $binaryPath = Join-Path $extractFolder "Engine/Binaries/Win64/BuildPatchTool.exe"
-          $tempFolderName = "EPIC_TEMP"
-          $tempFolder = Join-Path $rootDir $tempFolderName
-          $buildFolder = Join-Path $rootDir "dist\win-unpacked"
-          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-
-          $executableName = "Vortex.exe"
-          $buildVersionString = "${{ steps.setOutputs.outputs.rawVersion }}+${timestamp}"
-          
-          Write-Output "rootDir $rootDir"
-          Write-Output "extractFolder $extractFolder"
-          Write-Output "binaryPath $binaryPath"
-          Write-Output "tempFolder $tempFolder"
-          Write-Output "buildFolder $buildFolder"
-          
-          if (Test-Path -Path $buildFolder) {
-              Write-Output "$buildFolder folder exists"
-          } else {
-              Write-Output "$buildFolder folder not found"
-              Exit 1
+name: Package 
+ 
+on: 
+  workflow_dispatch: 
+    inputs: 
+        version: 
+          description: "The version to release (eg: 'v1.0.0')" 
+          required: true 
+          type: string 
+        create-artifacts: 
+          description: "Create artifacts?" 
+          required: true 
+          type: boolean 
+          default: true 
+        use-new-codesign: 
+            description: "Use new codesign cert?" 
+            required: false 
+            type: boolean 
+            default: true 
+        deploy-epic: 
+          description: "Deploy to Epic?" 
+          required: false 
+          type: boolean 
+          default: false 
+        release: 
+          description: "Create a draft release?" 
+          required: false 
+          type: boolean 
+          default: true 
+ 
+env:     
+  SigningCertificate: cert.pfx 
+ 
+jobs:       
+  build: 
+    runs-on: windows-latest 
+    env: 
+      ES_USERNAME: ${{ secrets.ES_USERNAME }} 
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }} 
+      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }} 
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }} 
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands 
+      CERT_PATH: Release      
+      DEBUG: electron-builder # gives electron more verbose logs        
+       
+    strategy: 
+      matrix: 
+        dotnet-version: [ 6.0.x ] 
+ 
+    steps: 
+      - name: Show Inputs 
+        run: echo "${{ toJSON(github.event.inputs) }}" 
+      - name: Set Outputs 
+        id: setOutputs 
+        shell: pwsh 
+        env: 
+          InputVersion: ${{ inputs.version }} 
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}  
+        run: | 
+          $semverRegex = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+          $tagVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion} Else {"v" + $env:InputVersion} 
+          $rawVersion = If ($env:InputVersion.StartsWith('v')) {$env:InputVersion.Substring(1)} Else {$env:InputVersion} 
+          # validation
+          If ($rawVersion -notmatch $semverRegex) { 
+              Write-Error "Invalid version format. Must be semver." 
+              Exit 1 
           }
-
-          & $binaryPath -mode="UploadBinary" `
-          -OrganizationId="$env:EPIC_ORGID" `
-          -ProductId="$env:EPIC_PRODUCTID" `
-          -ArtifactId="$env:EPIC_ARTIFACTID" `
-          -ClientId="$env:EPIC_CLIENTID" `
-          -ClientSecret="$env:EPIC_CLIENTSECRET" `
-          -CloudDir="$tempFolder" `
-          -BuildRoot="$buildFolder" `
-          -BuildVersion="$buildVersionString"  `
-          -AppLaunch="$executableName" `
-          -AppArgs="" `
-                    
-        # ./dist/win-unpacked
-        env:
-          EPIC_ORGID: ${{ secrets.EPIC_ORGID }}
-          EPIC_PRODUCTID: ${{ secrets.EPIC_PRODUCTID }}
-          EPIC_ARTIFACTID: ${{ secrets.EPIC_ARTIFACTID }}
-          EPIC_CLIENTID: ${{ secrets.EPIC_CLIENTID }}
-          EPIC_CLIENTSECRET: ${{ secrets.EPIC_CLIENTSECRET }}
-
-      - name: Create Unpacked Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
-          path: ./dist/win-unpacked
-          if-no-files-found: error
-
-      - name: Create Installer Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ inputs.create-artifacts == true }}
-        with:
-          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
-          path: |
-            ./dist/vortex-setup-*.*.*.exe
-            ./dist/latest.yml
-          if-no-files-found: error
+          echo "tagVersion=$tagVersion" >> $env:GITHUB_OUTPUT 
+          echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT 
+          echo "artifactNameUnpacked=vortex-setup-$rawVersion-unpacked" >> $env:GITHUB_OUTPUT 
+          echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT 
+          echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT 
+          echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" 
+      - name: Get current time 
+        uses: josStorer/get-current-time@v2 
+        id: current-time 
+        with: 
+          format: 'YYYY-MM-DD HHmm' 
+      - name: Use current time 
+        env: 
+          TIME: "${{ steps.current-time.outputs.time }}" 
+          R_TIME: "${{ steps.current-time.outputs.readableTime }}" 
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}" 
+          YEAR: "${{ steps.current-time.outputs.year }}" 
+          DAY: "${{ steps.current-time.outputs.day }}" 
+        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY 
+ 
+      - uses: actions/checkout@v4 
+        with: 
+          submodules: "recursive" 
+           
+      - name: Download VC_redist 
+        shell: pwsh 
+        run: | 
+          $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe" 
+          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe 
+ 
+      - name: Download CodeSignTool 
+        id: codesign 
+        shell: pwsh 
+        run: .\download-codesigntool.ps1 
+ 
+      - name: Download BuildPatchTool 
+        id: buildpatch 
+        shell: pwsh 
+        run: .\download-buildpatchtool.ps1 
+           
+      - name: Use Node.js 
+        uses: actions/setup-node@v4 
+        with: 
+          node-version: '18.x' 
+          cache: "yarn" 
+ 
+      - name: Install dependencies 
+        run: yarn --frozen-lockfile --network-timeout 600000 install 
+ 
+      - name: Print debug info 
+        run: dotnet --info 
+ 
+      - name: Decode PFX 
+        shell: pwsh         
+        id: decode-pfx 
+        run: | 
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}") 
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate           
+          [IO.File]::WriteAllBytes("$certPath", $certBytes) 
+ 
+      - name: Build API 
+        run: yarn --non-interactive build_api 
+       
+      - name: Build Install 
+        run: yarn --non-interactive _install_app 
+       
+      - name: Build Subprojects 
+        run: yarn --non-interactive subprojects_app 
+       
+      - name: Build Assets 
+        run: yarn --non-interactive _assets_app 
+         
+      - name: Webpack 
+        run: yarn build_dist 
+           
+      - name: Package (new codesign) 
+        if: ${{ inputs.use-new-codesign == true }} 
+        run: yarn package 
+       
+      - name: Package (old codesign) 
+        if: ${{ inputs.use-new-codesign == false }} 
+        run: yarn package-old 
+        env: 
+          CSC_LINK: ${{ secrets.PFX_BASE64 }} # works directly with base64 string and not a path 
+          CSC_KEY_PASSWORD: ${{ secrets.PFX_KEY }} 
+ 
+      - name: Extract Sourcemaps 
+        run: yarn extract_sourcemaps 
+ 
+      - name: Test 
+        run: yarn test 
+ 
+      - name: Remove PFX 
+        shell: pwsh 
+        run: | 
+          $certPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath $env:SigningCertificate 
+          Remove-Item -Path $certPath 
+       
+      - name: Release 
+        uses: softprops/action-gh-release@v1 
+        if: ${{ inputs.release == true }} 
+        with: 
+          files: | 
+            ./dist/vortex-setup-*.*.*.exe 
+            ./dist/latest.yml 
+            ./dist/alpha.yml 
+            ./dist/beta.yml 
+          prerelease: true 
+          draft: true 
+          name: ${{ steps.setOutputs.outputs.rawVersion }} 
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }} 
+ 
+      - name: Deploy to Epic 
+        if: ${{ inputs.deploy-epic == true }} 
+        shell: pwsh 
+        run: | 
+          echo "${{ steps.setOutputs.outputs.epicBuildString }}" 
+           
+          $rootDir = Resolve-Path "." 
+          $extractFolder = Join-Path $rootDir "BuildPatchTool" 
+          $binaryPath = Join-Path $extractFolder "Engine/Binaries/Win64/BuildPatchTool.exe" 
+          $tempFolderName = "EPIC_TEMP" 
+          $tempFolder = Join-Path $rootDir $tempFolderName 
+          $buildFolder = Join-Path $rootDir "dist\win-unpacked" 
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss" 
+ 
+          $executableName = "Vortex.exe" 
+          $buildVersionString = "${{ steps.setOutputs.outputs.rawVersion }}+${timestamp}" 
+           
+          Write-Output "rootDir $rootDir" 
+          Write-Output "extractFolder $extractFolder" 
+          Write-Output "binaryPath $binaryPath" 
+          Write-Output "tempFolder $tempFolder" 
+          Write-Output "buildFolder $buildFolder" 
+           
+          if (Test-Path -Path $buildFolder) { 
+              Write-Output "$buildFolder folder exists" 
+          } else { 
+              Write-Output "$buildFolder folder not found" 
+              Exit 1 
+          } 
+ 
+          & $binaryPath -mode="UploadBinary" ` 
+          -OrganizationId="$env:EPIC_ORGID" ` 
+          -ProductId="$env:EPIC_PRODUCTID" ` 
+          -ArtifactId="$env:EPIC_ARTIFACTID" ` 
+          -ClientId="$env:EPIC_CLIENTID" ` 
+          -ClientSecret="$env:EPIC_CLIENTSECRET" ` 
+          -CloudDir="$tempFolder" ` 
+          -BuildRoot="$buildFolder" ` 
+          -BuildVersion="$buildVersionString"  ` 
+          -AppLaunch="$executableName" ` 
+          -AppArgs="" ` 
+                     
+        # ./dist/win-unpacked 
+        env: 
+          EPIC_ORGID: ${{ secrets.EPIC_ORGID }} 
+          EPIC_PRODUCTID: ${{ secrets.EPIC_PRODUCTID }} 
+          EPIC_ARTIFACTID: ${{ secrets.EPIC_ARTIFACTID }} 
+          EPIC_CLIENTID: ${{ secrets.EPIC_CLIENTID }} 
+          EPIC_CLIENTSECRET: ${{ secrets.EPIC_CLIENTSECRET }} 
+ 
+      - name: Create Unpacked Artifact 
+        uses: actions/upload-artifact@v3 
+        if: ${{ inputs.create-artifacts == true }} 
+        with: 
+          name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }} 
+          path: ./dist/win-unpacked 
+          if-no-files-found: error 
+ 
+      - name: Create Installer Artifact 
+        uses: actions/upload-artifact@v3 
+        if: ${{ inputs.create-artifacts == true }} 
+        with: 
+          name: ${{ steps.setOutputs.outputs.artifactNameInstaller }} 
+          path: | 
+            ./dist/vortex-setup-*.*.*.exe 
+            ./dist/latest.yml 
+          if-no-files-found: error 
