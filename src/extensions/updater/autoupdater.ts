@@ -276,7 +276,7 @@ function setupAutoUpdate(api: IExtensionApi) {
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Nexus-Mods',
-      repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
+      repo: channel === 'next' ? 'Vortex-Staging' : 'Vortex',
       private: false,
       publisherName: [
         'Black Tree Gaming Limited',
@@ -290,7 +290,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       provider: 'github',
       owner: 'Nexus-Mods',
       repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
-      allowPrerelease: channel !== 'stable'
+      allowPrerelease: autoUpdater.allowPrerelease
     });
     
     autoUpdater.checkForUpdates()

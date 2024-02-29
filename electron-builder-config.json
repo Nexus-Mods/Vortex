@@ -28,6 +28,8 @@
     "publish": [
       {
         "provider": "github",
+        "owner": "Nexus-Mods",
+        "repo": "Vortex",
         "private": false
       }
     ],
