@@ -346,7 +346,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t, customTitlebar, updateChannel, version } = this.props;
 
     const parsedVersion = semver.parse(version);
-    const prerelease = parsedVersion.prerelease[0] ?? 'stable';
+    const prerelease = parsedVersion?.prerelease[0] ?? 'stable';
     const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
 
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
