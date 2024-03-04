@@ -136,11 +136,15 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
 
       if(newChannel === 'beta') {
 
-        this.context.api.showDialog('question', 'Development update channel', {          
-          text: 'Development versions of Vortex can be unstable and cause irrepairable harm to your modding environment. Are you sure you want to switch to the this update channel?'
+        this.context.api.showDialog('question', 'Switching to Beta update channel', {          
+          text: `Development versions of Vortex can be unstable and cause irrepairable damage to your modding environment. 
+
+We recommend using the Beta channel only if you are comfortable with the risks and are willing to report any issues you encounter. We don't recommend downgrading back from beta to stable.
+
+Are you sure you want to switch to the Beta update channel?`
         }, [ 
           { label: 'Cancel' },
-          { label: 'Switch Channel', action: () => 
+          { label: 'Switch to Beta', action: () => 
             this.props.onSetUpdateChannel(newChannel)
           },
         ]);
@@ -153,7 +157,11 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
         // none
 
         this.context.api.showDialog('question', 'Turning off updates', {
-          text: 'This will stop notifying you about new updates to Vortex. Are you sure you want to do this?'
+          text: `This will stop notifying you about new updates to Vortex.
+
+This is not recommended as important security and stability updates are released regularly.
+
+Are you sure you want to turn off updates?`
         }, [ 
           { label: 'Cancel' },
           { label: 'Turn off updates', action: () => 

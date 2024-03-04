@@ -16,6 +16,7 @@ import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
 
 const UPDATE_AVAILABLE_ID = 'vortex-update-available-notification';
+const FORCED_SWITCH_TO_BETA_ID = 'switched-to-beta-channel';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -72,6 +73,8 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
   let channelOverride: UpdateChannel;
+  let updateChannel = state().settings.update.channel;
+  const currentVersion = semver.parse(getApplication().version);
 
   /*
   if (process.env.IS_PREVIEW_BUILD === 'true') {
@@ -83,8 +86,21 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   // a little bit of a hack here to force the update channel to be beta IN CASE someone is on next.
   // we don't want 'next' to be an update channel, only that IS_PREVIEW_BUILD sets what repo to check against
-  if (state().settings.update.channel === 'next') {
+  if (updateChannel === 'next') {
     api.store.dispatch(setUpdateChannel('beta'));
+  }
+
+  // if we are running a prerelease build, we want to force the update channel to be beta 
+  if(currentVersion.prerelease.length > 0) {
+    log('info', 'current version is a pre-release, setting update channel to beta');
+
+    api.store.dispatch(setUpdateChannel('beta'));
+    api.sendNotification({
+      id: FORCED_SWITCH_TO_BETA_ID,
+      type: 'info',
+      message: 'You are running a beta version of Vortex so auto update settings have been '
+             + 'changed to keep you up-to-date with current betas.',
+    });
   }
 
   log('info', 'setupAutoUpdate complete');
@@ -100,11 +116,6 @@ function setupAutoUpdate(api: IExtensionApi) {
       
       log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
 
-      if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
-        log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade. Switched update channels?!`);
-        // if it's a patch release (1.2.x) then we don't need to ask to download
-        //return resolve();
-      }
 
       // below is needed to make sure we only show release notes less than or equal to the current version
       let filteredReleaseNotes = updateInfo.releaseNotes;
@@ -120,38 +131,82 @@ function setupAutoUpdate(api: IExtensionApi) {
 
       notified = true;
 
-      api.sendNotification({
-        id: UPDATE_AVAILABLE_ID,
-        type: 'info',
-        title: 'Update available',
-        message: `${updateInfo.version} is available.`,
-        noDismiss: true,
-        actions: [          
-          { title: 'What\'s New', action: () => {
-            api.showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
-              htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
-                `<div class="changelog-dialog-release">
-                  <h4>${release.version} </h4>
-                  ${release.note}
-                </div>`
-                ).join(''),
-            }, [
-              { label: 'Close' },
-              { label: 'Ignore', action: () => reject(new UserCanceled()) },
-              { label: 'Download', action: () => resolve() }
-            ],
-            'new-update-changelog-dialog');
-          } },
-          {
-            title: 'Ignore',
-            action: dismiss => {
-              dismiss();
-              reject(new UserCanceled());
+      
+      if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
+
+        log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade.`);
+
+        api.sendNotification({
+          id: UPDATE_AVAILABLE_ID,
+          type: 'warning',
+          title: 'Downgrade available',
+          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          noDismiss: true,
+          actions: [          
+            { title: 'More Info', action: () => {
+              api.showDialog('info', `Downgrade warning`, {
+                text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
+
+Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
+                     
+Are you sure you want to downgrade?`,
+              }, [
+                { label: 'Close' },
+                { label: 'Ignore', action: () => reject(new UserCanceled()) },
+                { label: 'Downgrade', action: () => resolve() }
+              ],
+              'new-update-changelog-dialog');
+            } },
+            {
+              title: 'Ignore',
+              action: dismiss => {
+                dismiss();
+                reject(new UserCanceled());
+              },
             },
-          },
-        ],
-      });
-    });
+          ],
+        });
+
+        
+      
+      } else {
+
+        log('info', `${updateInfo.version} is greater than ${autoUpdater.currentVersion.version} so this is an upgrade.`);
+
+        api.sendNotification({
+          id: UPDATE_AVAILABLE_ID,
+          type: 'info',
+          title: 'Upgrade available',
+          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          noDismiss: true,
+          actions: [          
+            { title: 'What\'s New', action: () => {
+              api.showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
+                  `<div class="changelog-dialog-release">
+                    <h4>${release.version} </h4>
+                    ${release.note}
+                  </div>`
+                  ).join(''),
+              }, [
+                { label: 'Close' },
+                { label: 'Ignore', action: () => reject(new UserCanceled()) },
+                { label: 'Download', action: () => resolve() }
+              ],
+              'new-update-changelog-dialog');
+            } },
+            {
+              title: 'Ignore',
+              action: dismiss => {
+                dismiss();
+                reject(new UserCanceled());
+              },
+            },
+          ],
+        });
+        
+      }  
+    });    
   };
 
   autoUpdater.on('error', (err) => {
@@ -182,6 +237,10 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-not-available', () => {
+    
+    log('info', `Installed version is up to date using the ${updateChannel} channel.`);
+
+    /*
     if (channelOverride !== undefined) {
       log('info', 'installed version seems to be a non-stable release, switching update channel');
       api.store.dispatch(setUpdateChannel(channelOverride));
@@ -191,7 +250,7 @@ function setupAutoUpdate(api: IExtensionApi) {
         message: 'You are running a beta version of Vortex so auto update settings have been '
                + 'changed to keep you up-to-date with current betas.',
       });
-    }
+    }*/
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
@@ -333,7 +392,8 @@ function setupAutoUpdate(api: IExtensionApi) {
                 }, [
                   { label: 'Close' },
                 ]));
-                app.removeListener('before-quit', updateWarning);
+                app.removeListener('before-quit', updateWarning);                
+                autoUpdater.autoInstallOnAppQuit = false; // we want to control when the update is installed
 
               } else {
                 app.removeListener('before-quit', updateWarning);
@@ -409,12 +469,16 @@ function setupAutoUpdate(api: IExtensionApi) {
     checkNow(channel);
   });
 
-  ipcMain.on('set-update-channel', (event, channel: any, manual: boolean) => {
+  ipcMain.on('set-update-channel', (event, channel: UpdateChannel, manual: boolean) => {
     try {
       log('info', 'set channel', { channel, manual, channelOverride });
 
-      // need to remove notification?!
+      // need to remove notifications?!
       api.suppressNotification(UPDATE_AVAILABLE_ID, true);
+
+      if(channel !== 'beta') 
+        // remove just in case it might be on
+        api.suppressNotification(FORCED_SWITCH_TO_BETA_ID, true);
       
       if ((channel !== 'none')     
         && ((channelOverride === undefined) || manual)    
@@ -424,6 +488,8 @@ function setupAutoUpdate(api: IExtensionApi) {
         if (manual) {
           channelOverride = channel;
         }
+        
+        updateChannel = channel;
 
         checkNow(channel);
       }
