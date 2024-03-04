@@ -113,8 +113,10 @@ function setupAutoUpdate(api: IExtensionApi) {
         // if it's a patch release (1.2.x) then we don't need to ask to download
         return resolve();
       }
+
+      // if it's a minor release (1.x.0) then we need to ask to download
       
-      log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
+      // log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
 
 
       // below is needed to make sure we only show release notes less than or equal to the current version
@@ -132,8 +134,23 @@ function setupAutoUpdate(api: IExtensionApi) {
       notified = true;
 
       
+
+      // is installed version less than or equal to the update version?
+
       if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
 
+
+        if(autoUpdater.currentVersion.prerelease.length > 0 && autoUpdater.currentVersion.prerelease[0] === 'alpha') {
+
+          // alpha version so we don't need to downgrade
+
+            log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} but is an alpha and so ignore this downgrade.`);
+        
+          } else {
+
+            // warn about downgrading
+
+            
         log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade.`);
 
         api.sendNotification({
@@ -165,11 +182,16 @@ Are you sure you want to downgrade?`,
               },
             },
           ],
-        });
+        }); 
 
-        
+
+        }
+
+               
       
       } else {
+        
+        // normal upgrade
 
         log('info', `${updateInfo.version} is greater than ${autoUpdater.currentVersion.version} so this is an upgrade.`);
 
