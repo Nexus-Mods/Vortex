@@ -91,8 +91,8 @@ function setupAutoUpdate(api: IExtensionApi) {
   }
 
   // if we are running a prerelease build, we want to force the update channel to be beta 
-  if(currentVersion.prerelease.length > 0) {
-    log('info', 'current version is a pre-release, setting update channel to beta');
+  if(currentVersion.prerelease.length > 0 && updateChannel === 'stable') {
+    log('info', 'current version is a pre-release and current channel is stable, setting update channel to beta');
 
     api.store.dispatch(setUpdateChannel('beta'));
     api.sendNotification({
