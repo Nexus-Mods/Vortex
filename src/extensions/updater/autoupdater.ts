@@ -92,19 +92,24 @@ function setupAutoUpdate(api: IExtensionApi) {
   const queryUpdate = (updateInfo: UpdateInfo): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
 
-      if (semver.satisfies(updateInfo.version, '^' + autoUpdater.currentVersion.version)) {
-        // don't warn on a "compatible" update
+      if (semver.satisfies(updateInfo.version, `~${autoUpdater.currentVersion.version}`)) {
+        log('info', `${updateInfo.version} is a patch update from ${autoUpdater.currentVersion.version} so we need to force download`);
+        // if it's a patch release (1.2.x) then we don't need to ask to download
         return resolve();
+      }
+      
+      log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
+
+      if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
+        log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade. Switched update channels?!`);
+        // if it's a patch release (1.2.x) then we don't need to ask to download
+        //return resolve();
       }
 
       // below is needed to make sure we only show release notes less than or equal to the current version
       let filteredReleaseNotes = updateInfo.releaseNotes;
       
-      if(typeof filteredReleaseNotes === 'string') {
-        log('info', 'release notes are a string');
-      } else {
-        log('info', 'release notes are an array'); 
-
+      if(typeof filteredReleaseNotes !== 'string') {
         filteredReleaseNotes = filteredReleaseNotes.filter(release => {
           {
             const comparisonResult = semver.compare(release.version, updateInfo.version);
@@ -116,7 +121,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       notified = true;
 
       api.sendNotification({
-        id: 'vortex-update-avialblenotification',
+        id: UPDATE_AVAILABLE_ID,
         type: 'info',
         title: 'Update available',
         message: `${updateInfo.version} is available.`,
@@ -274,31 +279,67 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-downloaded',
-    (info: UpdateInfo) => {
-      log('info', 'update installed');
+    (updateInfo: UpdateInfo) => {
+      log('info', 'update downloaded');
 
       app.on('before-quit', updateWarning);
+
+      // below is needed to make sure we only show release notes less than or equal to the current version
+      let filteredReleaseNotes = updateInfo.releaseNotes;
+      
+      if(typeof filteredReleaseNotes === 'string') {
+        log('info', 'release notes are a string');
+      } else {
+        log('info', 'release notes are an array'); 
+
+        filteredReleaseNotes = filteredReleaseNotes.filter(release => {
+          {
+            const comparisonResult = semver.compare(release.version, updateInfo.version);
+            return comparisonResult === 0 || comparisonResult === -1;
+          }
+        });        
+      }
 
       api.sendNotification({
         id: UPDATE_AVAILABLE_ID,
         type: 'success',
-        message: 'Update available',
+        message: 'Update downloaded',
         actions: [
           {
-            title: 'Changelog',
+            title: 'What\'s New',
             action: () => {
-              api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
-                htmlText: info.releaseNotes as string,
+              api.store.dispatch(showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
+                  `<div class="changelog-dialog-release">
+                    <h4>${release.version} </h4>
+                    ${release.note}
+                  </div>`
+                  ).join(''),
               }, [
                   { label: 'Close' },
-                ]));
+                ],
+                'new-update-changelog-dialog'
+              ));
             },
           },
           {
             title: 'Restart & Install',
             action: () => {
-              app.removeListener('before-quit', updateWarning);
-              autoUpdater.quitAndInstall();
+
+              if (process.env.NODE_ENV === 'development') {
+
+                api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
+                  text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
+                }, [
+                  { label: 'Close' },
+                ]));
+                app.removeListener('before-quit', updateWarning);
+
+              } else {
+                app.removeListener('before-quit', updateWarning);
+                autoUpdater.quitAndInstall();
+              }
+
             },
           },
         ],
@@ -312,24 +353,27 @@ function setupAutoUpdate(api: IExtensionApi) {
 
     const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
 
-    log('info', 'checking for vortex update:', channel);
+    log('info', 'Checking for vortex update:', channel);
     const didOverride = channelOverride !== undefined;
     autoUpdater.allowPrerelease = channel !== 'stable';    
+
+    // if we are on stable channel, and the latest non-prerelease is less than what we have (suggesting we have installed a pre-release and then switched to stable)
+    // we have the potential to need to downgrade and that the latest stable is less than what we have
 
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Nexus-Mods',
       repo: isPreviewBuild ? 'Vortex-Staging' : 'Vortex',
       private: false,
-      publisherName: [
-        'Black Tree Gaming Limited',
-        'Black Tree Gaming Ltd'
+      publisherName: [        
+        'Black Tree Gaming Ltd',
+        'Black Tree Gaming Limited'
       ],
     });
 
-    autoUpdater.allowDowngrade = true;
-    autoUpdater.autoDownload = false;
-    autoUpdater.fullChangelog = true;
+    autoUpdater.allowDowngrade = true; // at this point we don't care about downgrades, not really checking I don't think
+    autoUpdater.autoDownload = false; // we never want to autodownload, we tell it to download if patch release, or ask user first if not
+    autoUpdater.fullChangelog = true; // so we get to show older changelogs other than the release we are downloading
 
     log('info', 'update config is ', {
       provider: 'github',

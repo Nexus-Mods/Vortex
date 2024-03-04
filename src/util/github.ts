@@ -84,11 +84,19 @@ class GitHub {
   private static CONFIG_BRANCH = 'announcements';
 
   private static repoUrl() {
-    return 'https://api.github.com/repos/Nexus-Mods/Vortex';
+    
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
+
+    return `https://api.github.com/repos/Nexus-Mods/${repo}`;
   }
 
   private static rawUrl() {
-    return 'https://raw.githubusercontent.com/Nexus-Mods/Vortex';
+
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
+
+    return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;
   }
 
   private mReleaseCache: Promise<IGitHubRelease[]>;

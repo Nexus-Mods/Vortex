@@ -361,10 +361,17 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='main-toolbar-right'>          
           
           <div className='toolbar-version'>
+
+            {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
+            <Icon name='conflict'></Icon>
+              <div className='toolbar-version-text'>Staging</div>
+            </div> : null}
+
             {process.env.NODE_ENV === 'development' ? <div className='toolbar-version-container toolbar-version-dev'>
               <Icon name='mods'></Icon>
-              <div className='toolbar-version-text'>DEVELOPMENT</div>
+              <div className='toolbar-version-text'>Development</div>
             </div> : null}
+
             <div className={updateChannelClassName}>
               { prerelease !== 'stable' ? <Icon name='settings'></Icon> : null }
               <div className='toolbar-version-text'>{version}</div>

@@ -38,7 +38,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           <div>
           <ControlLabel>
             <Alert>
-              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked but they won\'t be downloaded or installed.')}
+              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked and downloaded but won\'t be installed.')}
             </Alert>
           </ControlLabel>
           </div>
