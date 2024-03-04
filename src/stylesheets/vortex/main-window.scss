@@ -53,6 +53,9 @@
     justify-content: flex-end;
     gap: 8px;
     margin-right: 124px;
+    position: fixed;
+    right: 10px;
+    top: 10px;
     //height: 30px;
 
     .toolbar-version-dev {
@@ -61,7 +64,7 @@
     }
 
     .toolbar-version-staging {
-      background-color: #105C5C;
+      background-color: #f97316;
       color: $black;
     }
 
