@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "vortex_devel",
-  "version": "1.11.0-beta",
+  "version": "0.0.1",
   "main": "out/main.js",
   "author": "Black Tree Gaming Ltd.",
   "repository": {
