@@ -1,7 +1,9 @@
 $windows_sdk_ver = 20348
 $build_directory = "c:\build"
+$scoop_installer = "install_scoop.ps1";
 
-Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression
+Invoke-WebRequest -useb get.scoop.sh -outfile $scoop_installer
+Start-Process powershell $scoop_installer -Verb RunAs
 
 scoop install git
 scoop bucket add versions
