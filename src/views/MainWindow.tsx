@@ -373,7 +373,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </div> : null}
 
             <div className={updateChannelClassName}>
-              { prerelease !== 'stable' ? <Icon name='settings'></Icon> : null }
+              { prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null }
               <div className='toolbar-version-text'>{version}</div>
             </div>            
           </div>
