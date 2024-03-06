@@ -3057,10 +3057,7 @@
       "name": "Subnautica Below Zero Support",
       "timestamp": 1709043327,
       "tags": [],
-      "version": "2.0.4",
-      "dependencies": {
-        "vortex": "^1.8.0"
-      }
+      "version": "2.0.4"
     },
     {
       "modId": 202,
@@ -3077,10 +3074,7 @@
       "name": "Subnautica Support",
       "timestamp": 1709039176,
       "tags": [],
-      "version": "3.3.3",
-      "dependencies": {
-        "vortex": "^1.8.0"
-      }
+      "version": "3.3.3"
     },
     {
       "modId": 207,
