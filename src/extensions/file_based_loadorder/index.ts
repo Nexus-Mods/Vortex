@@ -164,8 +164,8 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, l
     const deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
     if (loadOrderRedundancy !== undefined && JSON.stringify(deserializedLO) !== JSON.stringify(loadOrderRedundancy)) {
       const batchedActions = [
-        setFBLoadOrder(profile.id, loadOrderRedundancy),
         setFBLoadOrderRedundancy(profile.id, []),
+        setFBLoadOrder(profile.id, loadOrderRedundancy),
       ];
       util.batchDispatch(api.store, batchedActions);
     } else {
@@ -218,7 +218,8 @@ function genDidDeploy(api: types.IExtensionApi) {
     }
     const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
     const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
-    const redundancy = (gameEntry.clearStateOnPurge === false)
+    const savedLO = util.getSafe(api.store.getState(), ['session', 'fblo', 'loadOrder', profileId], []);
+    const redundancy = (gameEntry.clearStateOnPurge === false && savedLO.length > 0)
       ? util.getSafe(api.store.getState(), ['session', 'fblo', 'loadOrder', profileId], [])
       : undefined;
     await genDeploymentEvent(api, profileId, redundancy);
