@@ -35,6 +35,7 @@ import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
+import * as semver from 'semver';
 
 import update from 'immutability-helper';
 import * as _ from 'lodash';
@@ -343,6 +344,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar, updateChannel, version } = this.props;
+    let parsedVersion = semver.parse(version);
+    const prerelease = parsedVersion?.prerelease[0] ?? 'stable';
+    const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
+
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
       return (<div className={className}/>);
@@ -353,39 +358,44 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
-        <div className='main-toolbar-right'>
+        <div className='main-toolbar-right'>          
           
-          
-            <div className='toolbar-version'>
-            {updateChannel === 'beta' 
-          ? (
-              <div className='toolbar-version-container toolbar-version-beta'>
-                <Icon name='settings'></Icon>
-                <div className='toolbar-version-text'>{updateChannel} {version}</div>
-              </div>            
-            ):(
-              <div className='toolbar-version-container toolbar-version-stable'>
-                <div className='toolbar-version-text'>{updateChannel} {version}</div>
-              </div>
-            )}
-            </div>
+          <div className='toolbar-version'>
 
-          <IconBar
-            className='application-icons'
-            group='application-icons'
-            staticElements={this.applicationButtons}
-            t={t}
-          />          
-          <NotificationButton id='notification-button' hide={switchingProfile} />
-          <IconBar
-            id='global-icons'
-            className='global-icons'
-            group='global-icons'
-            staticElements={this.globalButtons}
-            orientation='vertical'
-            collapse
-            t={t}
-          />
+            {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
+            <Icon name='conflict'></Icon>
+              <div className='toolbar-version-text'>Staging</div>
+            </div> : null}
+
+            {process.env.NODE_ENV === 'development' ? <div className='toolbar-version-container toolbar-version-dev'>
+              <Icon name='mods'></Icon>
+              <div className='toolbar-version-text'>Development</div>
+            </div> : null}
+
+            <div className={updateChannelClassName}>
+              { prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null }
+              <div className='toolbar-version-text'>{version}</div>
+            </div>            
+          </div>
+
+          <div className='application-icons-group'>
+            <IconBar
+              className='application-icons'
+              group='application-icons'
+              staticElements={this.applicationButtons}
+              t={t}
+            />          
+            <NotificationButton id='notification-button' hide={switchingProfile} />
+            <IconBar
+              id='global-icons'
+              className='global-icons'
+              group='global-icons'
+              staticElements={this.globalButtons}
+              orientation='vertical'
+              collapse
+              t={t}
+            />
+          </div>
         </div>
       </FlexLayout.Fixed>
     );

@@ -147,10 +147,14 @@ function init(context: IExtensionContext): boolean {
         const gameId = activeGameId(state);
         let gameVersion = '';
         let extensionVersion = '';
+        let gameProfileCount = 0;
+
         if (gameId) {
           const game = getGame(gameId);          
           extensionVersion = game.version;
           gameVersion = await game.getInstalledVersion(discoveryByGame(state, gameId));
+          gameProfileCount = Object.values(state.persistent.profiles).filter((profile) => { return profile.gameId === gameId }).length;
+          log('info', 'initializeAnalytics()', { gameId, gameVersion, extensionVersion, gameProfileCount });          
         }
 
         const theme = state.settings.interface['currentTheme'];
@@ -195,7 +199,7 @@ function init(context: IExtensionContext): boolean {
           ["CollectionCount"]: collectionCount,
           ["GameCount"]: gameCount,
           ["Language"]: language,
-          //["AuthType"]: authType,
+          ["GameProfileCount"]: gameProfileCount,
         });
         
         AnalyticsUA.start(instanceId, updateChannel, {

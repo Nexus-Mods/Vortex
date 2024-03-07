@@ -43,38 +43,61 @@
     margin-bottom: 8px;
   }
 
+  .application-icons-group {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
   .toolbar-version {
     display: flex;
     justify-content: flex-end;
+    gap: 8px;
     margin-right: 124px;
-    height: 30px;
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    //height: 30px;
 
-    .toolbar-version-beta {
-      background-color: $brand-info;
-      color: $white;
+    .toolbar-version-dev {
+      background-color: $white;
+      color: $black;
+    }
+
+    .toolbar-version-staging {
+      background-color: #f97316;
+      color: $black;
     }
 
     .toolbar-version-stable {
       background-color: transparent;
       color: $gray;
     }
+    
+    .toolbar-version-beta {
+      background-color: $brand-info;
+      color: $white;
+    }
+
+    .toolbar-version-alpha {
+      background-color: $brand-danger;
+      color: $white;
+    }
 
     .toolbar-version-container {
       border-radius: 24px;
       border: none;
-      //display: inline-block;
-      padding: 2px 12px;
-      //width: 120px;
+      padding: 4px 10px;
       font-weight: 800;
-      //flex: auto;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
       text-transform: uppercase;
+      font-family: 'Montserrat';
+      font-size: 0.8em;
 
       .toolbar-version-text {
         margin: 2px 0 0 0;
-        font-size: larger;
       }
     }
   }

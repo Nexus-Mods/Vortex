@@ -26,6 +26,11 @@ on:
           description: "Create a draft release?" 
           required: false 
           type: boolean 
+          default: true
+        staging-release: 
+          description: "Create a draft staging release?" 
+          required: false 
+          type: boolean 
           default: true 
  
 env:     
@@ -176,6 +181,22 @@ jobs:
           draft: true 
           name: ${{ steps.setOutputs.outputs.rawVersion }} 
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }} 
+
+      - name: Staging Release 
+        uses: softprops/action-gh-release@v1 
+        if: ${{ inputs.staging-release == true }} 
+        with: 
+          files: | 
+            ./dist/vortex-setup-*.*.*.exe 
+            ./dist/latest.yml 
+            ./dist/alpha.yml 
+            ./dist/beta.yml 
+          prerelease: true 
+          draft: true 
+          name: ${{ steps.setOutputs.outputs.rawVersion }} 
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repository: "Nexus-Mods/Vortex-Staging"
  
       - name: Deploy to Epic 
         if: ${{ inputs.deploy-epic == true }} 

@@ -15,6 +15,9 @@ import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
 
+const UPDATE_AVAILABLE_ID = 'vortex-update-available-notification';
+const FORCED_SWITCH_TO_BETA_ID = 'switched-to-beta-channel';
+
 let app = appIn;
 let dialog = dialogIn;
 if (process.type === 'renderer') {
@@ -70,49 +73,162 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
   let channelOverride: UpdateChannel;
+  let updateChannel = state().settings.update.channel;
+  const currentVersion = semver.parse(getApplication().version);
 
+  /*
   if (process.env.IS_PREVIEW_BUILD === 'true') {
     log('info', 'forcing update channel for preview builds so that we don\'t automatically downgrade');
     api.store.dispatch(setUpdateChannel('next'));
   } else if (state().settings.update.channel === 'next') {
     api.store.dispatch(setUpdateChannel('beta'));
+  }*/
+
+  // a little bit of a hack here to force the update channel to be beta IN CASE someone is on next.
+  // we don't want 'next' to be an update channel, only that IS_PREVIEW_BUILD sets what repo to check against
+  if (updateChannel === 'next') {
+    api.store.dispatch(setUpdateChannel('beta'));
+  }
+
+  // if we are running a prerelease build, we want to force the update channel to be beta 
+  if(currentVersion.prerelease.length > 0 && updateChannel === 'stable') {
+    log('info', 'current version is a pre-release and current channel is stable, setting update channel to beta');
+
+    api.store.dispatch(setUpdateChannel('beta'));
+    api.sendNotification({
+      id: FORCED_SWITCH_TO_BETA_ID,
+      type: 'info',
+      message: 'You are running a beta version of Vortex so auto update settings have been '
+             + 'changed to keep you up-to-date with current betas.',
+    });
   }
 
   log('info', 'setupAutoUpdate complete');
 
-  const queryUpdate = (version: string): Promise<void> => {
+  const queryUpdate = (updateInfo: UpdateInfo): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
 
-      if (semver.satisfies(version, '^' + autoUpdater.currentVersion.version)) {
-        // don't warn on a "compatible" update
+      if (semver.satisfies(updateInfo.version, `~${autoUpdater.currentVersion.version}`)) {
+        log('info', `${updateInfo.version} is a patch update from ${autoUpdater.currentVersion.version} so we need to force download`);
+        // if it's a patch release (1.2.x) then we don't need to ask to download
         return resolve();
+      }
+
+      // if it's a minor release (1.x.0) then we need to ask to download
+      
+      // log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
+
+
+      // below is needed to make sure we only show release notes less than or equal to the current version
+      let filteredReleaseNotes = updateInfo.releaseNotes;
+      
+      if(typeof filteredReleaseNotes !== 'string') {
+        filteredReleaseNotes = filteredReleaseNotes.filter(release => {
+          {
+            const comparisonResult = semver.compare(release.version, updateInfo.version);
+            return comparisonResult === 0 || comparisonResult === -1;
+          }
+        });        
       }
 
       notified = true;
 
-      api.sendNotification({
-        id: 'vortex-update-notification',
-        type: 'info',
-        title: 'Major update available',
-        message: `(${version}) After installing this update you shouldn't go back to an older version.`,
-        noDismiss: true,
-        actions: [
-          {
-            title: 'Download', action: dismiss => {
-              dismiss();
-              resolve();
+      
+
+      // is installed version less than or equal to the update version?
+
+      if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
+
+
+        if(autoUpdater.currentVersion.prerelease.length > 0 && autoUpdater.currentVersion.prerelease[0] === 'alpha') {
+
+          // alpha version so we don't need to downgrade
+
+            log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} but is an alpha and so ignore this downgrade.`);
+        
+          } else {
+
+            // warn about downgrading
+
+            
+        log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade.`);
+
+        api.sendNotification({
+          id: UPDATE_AVAILABLE_ID,
+          type: 'warning',
+          title: 'Downgrade available',
+          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          noDismiss: true,
+          actions: [          
+            { title: 'More Info', action: () => {
+              api.showDialog('info', `Downgrade warning`, {
+                text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
+
+Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
+                     
+Are you sure you want to downgrade?`,
+              }, [
+                { label: 'Close' },
+                { label: 'Ignore', action: () => reject(new UserCanceled()) },
+                { label: 'Downgrade', action: () => resolve() }
+              ],
+              'new-update-changelog-dialog');
+            } },
+            {
+              title: 'Ignore',
+              action: dismiss => {
+                dismiss();
+                reject(new UserCanceled());
+              },
             },
-          },
-          {
-            title: 'Remind me later',
-            action: dismiss => {
-              dismiss();
-              reject(new UserCanceled());
+          ],
+        }); 
+
+
+        }
+
+               
+      
+      } else {
+        
+        // normal upgrade
+
+        log('info', `${updateInfo.version} is greater than ${autoUpdater.currentVersion.version} so this is an upgrade.`);
+
+        api.sendNotification({
+          id: UPDATE_AVAILABLE_ID,
+          type: 'info',
+          title: 'Upgrade available',
+          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          noDismiss: true,
+          actions: [          
+            { title: 'What\'s New', action: () => {
+              api.showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
+                  `<div class="changelog-dialog-release">
+                    <h4>${release.version} </h4>
+                    ${release.note}
+                  </div>`
+                  ).join(''),
+              }, [
+                { label: 'Close' },
+                { label: 'Ignore', action: () => reject(new UserCanceled()) },
+                { label: 'Download', action: () => resolve() }
+              ],
+              'new-update-changelog-dialog');
+            } },
+            {
+              title: 'Ignore',
+              action: dismiss => {
+                dismiss();
+                reject(new UserCanceled());
+              },
             },
-          },
-        ],
-      });
-    });
+          ],
+        });
+        
+      }  
+    });    
   };
 
   autoUpdater.on('error', (err) => {
@@ -143,6 +259,10 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-not-available', () => {
+    
+    log('info', `Installed version is up to date using the ${updateChannel} channel.`);
+
+    /*
     if (channelOverride !== undefined) {
       log('info', 'installed version seems to be a non-stable release, switching update channel');
       api.store.dispatch(setUpdateChannel(channelOverride));
@@ -152,11 +272,18 @@ function setupAutoUpdate(api: IExtensionApi) {
         message: 'You are running a beta version of Vortex so auto update settings have been '
                + 'changed to keep you up-to-date with current betas.',
       });
-    }
+    }*/
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
-    log('info', 'found update available', info);
+
+    log('info', 'found update available', {
+      version: info.version,
+      files: info.files,
+      releaseName: info.releaseName,
+      releaseDate: info.releaseDate
+    });
+
     const installedVersion = semver.parse(getApplication().version);
     const version = semver.parse(info.version);
 
@@ -209,7 +336,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       instPath,
     });
 
-    queryUpdate(info.version)
+    queryUpdate(info)
       .then(() => autoUpdater.downloadUpdate()
         .catch(err => {
           log('warn', 'Downloading update failed', err);
@@ -224,7 +351,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   autoUpdater.on('download-progress', (progress: IProgressInfo) => {
     if (notified) {
       api.sendNotification({
-        id: 'vortex-update-notification',
+        id: UPDATE_AVAILABLE_ID,
         type: 'activity',
         message: 'Downloading update',
         progress: progress.percent,
@@ -233,31 +360,68 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-downloaded',
-    (info: UpdateInfo) => {
-      log('info', 'update installed');
+    (updateInfo: UpdateInfo) => {
+      log('info', 'update downloaded');
 
       app.on('before-quit', updateWarning);
 
+      // below is needed to make sure we only show release notes less than or equal to the current version
+      let filteredReleaseNotes = updateInfo.releaseNotes;
+      
+      if(typeof filteredReleaseNotes === 'string') {
+        log('info', 'release notes are a string');
+      } else {
+        log('info', 'release notes are an array'); 
+
+        filteredReleaseNotes = filteredReleaseNotes.filter(release => {
+          {
+            const comparisonResult = semver.compare(release.version, updateInfo.version);
+            return comparisonResult === 0 || comparisonResult === -1;
+          }
+        });        
+      }
+
       api.sendNotification({
-        id: 'vortex-update-notification',
+        id: UPDATE_AVAILABLE_ID,
         type: 'success',
-        message: 'Update available',
+        message: 'Update downloaded',
         actions: [
           {
-            title: 'Changelog',
+            title: 'What\'s New',
             action: () => {
-              api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
-                htmlText: info.releaseNotes as string,
+              api.store.dispatch(showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
+                  `<div class="changelog-dialog-release">
+                    <h4>${release.version} </h4>
+                    ${release.note}
+                  </div>`
+                  ).join(''),
               }, [
                   { label: 'Close' },
-                ]));
+                ],
+                'new-update-changelog-dialog'
+              ));
             },
           },
           {
             title: 'Restart & Install',
             action: () => {
-              app.removeListener('before-quit', updateWarning);
-              autoUpdater.quitAndInstall();
+
+              if (process.env.NODE_ENV === 'development') {
+
+                api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
+                  text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
+                }, [
+                  { label: 'Close' },
+                ]));
+                app.removeListener('before-quit', updateWarning);                
+                autoUpdater.autoInstallOnAppQuit = false; // we want to control when the update is installed
+
+              } else {
+                app.removeListener('before-quit', updateWarning);
+                autoUpdater.quitAndInstall();
+              }
+
             },
           },
         ],
@@ -269,28 +433,35 @@ function setupAutoUpdate(api: IExtensionApi) {
       log('info', 'Not checking for updates because network is offline');
     }
 
-    log('info', 'checking for vortex update:', channel);
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+
+    log('info', 'Checking for vortex update:', channel);
     const didOverride = channelOverride !== undefined;
     autoUpdater.allowPrerelease = channel !== 'stable';    
+
+    // if we are on stable channel, and the latest non-prerelease is less than what we have (suggesting we have installed a pre-release and then switched to stable)
+    // we have the potential to need to downgrade and that the latest stable is less than what we have
 
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Nexus-Mods',
-      repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
+      repo: isPreviewBuild ? 'Vortex-Staging' : 'Vortex',
       private: false,
-      publisherName: [
-        'Black Tree Gaming Limited',
-        'Black Tree Gaming Ltd'
+      publisherName: [        
+        'Black Tree Gaming Ltd',
+        'Black Tree Gaming Limited'
       ],
     });
-    autoUpdater.allowDowngrade = true;
-    autoUpdater.autoDownload = false;
+
+    autoUpdater.allowDowngrade = true; // at this point we don't care about downgrades, not really checking I don't think
+    autoUpdater.autoDownload = false; // we never want to autodownload, we tell it to download if patch release, or ask user first if not
+    autoUpdater.fullChangelog = true; // so we get to show older changelogs other than the release we are downloading
 
     log('info', 'update config is ', {
       provider: 'github',
       owner: 'Nexus-Mods',
-      repo: channel === 'next' ? 'Vortex-Next' : 'Vortex',
-      allowPrerelease: channel !== 'stable'
+      repo: isPreviewBuild ? 'Vortex-Staging' : 'Vortex',
+      allowPrerelease: autoUpdater.allowPrerelease
     });
     
     autoUpdater.checkForUpdates()
@@ -320,9 +491,16 @@ function setupAutoUpdate(api: IExtensionApi) {
     checkNow(channel);
   });
 
-  ipcMain.on('set-update-channel', (event, channel: any, manual: boolean) => {
+  ipcMain.on('set-update-channel', (event, channel: UpdateChannel, manual: boolean) => {
     try {
       log('info', 'set channel', { channel, manual, channelOverride });
+
+      // need to remove notifications?!
+      api.suppressNotification(UPDATE_AVAILABLE_ID, true);
+
+      if(channel !== 'beta') 
+        // remove just in case it might be on
+        api.suppressNotification(FORCED_SWITCH_TO_BETA_ID, true);
       
       if ((channel !== 'none')     
         && ((channelOverride === undefined) || manual)    
@@ -332,6 +510,8 @@ function setupAutoUpdate(api: IExtensionApi) {
         if (manual) {
           channelOverride = channel;
         }
+        
+        updateChannel = channel;
 
         checkNow(channel);
       }

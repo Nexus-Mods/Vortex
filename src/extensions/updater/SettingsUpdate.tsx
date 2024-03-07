@@ -11,6 +11,7 @@ import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-boots
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import VortexInstallType from '../../types/VortexInstallType';
+import { MainContext } from 'vortex-api';
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -24,8 +25,12 @@ interface IActionProps {
 type IProps = IActionProps & IConnectedProps;
 
 class SettingsUpdate extends ComponentEx<IProps, {}> {
+  
+  static contextType = MainContext
+  
   public render(): JSX.Element {
     const { t, installType, updateChannel } = this.props;
+
 
     const renderDevelopmentAlert = () => {
       if(process.env.NODE_ENV === 'development')
@@ -33,7 +38,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           <div>
           <ControlLabel>
             <Alert>
-              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked but they won\'t be downloaded or installed.')}
+              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked and downloaded but won\'t be installed.')}
             </Alert>
           </ControlLabel>
           </div>
@@ -61,11 +66,13 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
       // managed and not development
       if(process.env.NODE_ENV !== 'development') {
         return (
+          <div>
           <ControlLabel>
             <Alert>
               {t('Vortex was installed through a third-party service which will take care of updating it.')}
             </Alert>
           </ControlLabel>
+          </div>
         );
       }
       
@@ -77,6 +84,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
     return (
     <form>
         <FormGroup controlId='updateChannel'>
+
+          { renderDevelopmentAlert() }
 
           <ControlLabel>
             {t('Update')}
@@ -96,9 +105,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           </FormControl>
 
           { renderPreviewAlert() }
-
-          { renderDevelopmentAlert() }
           
+          <div>
           <ControlLabel>
             {updateChannel === 'none' ? [(
               <Alert key='manual-update-warning' bsStyle='warning'>
@@ -109,6 +117,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
               {t('Check now')}
             </Button>)] : null}
           </ControlLabel>
+          </div>
         </FormGroup>
       </form>
     );
@@ -122,7 +131,46 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   private selectChannel = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
     if (UPDATE_CHANNELS.includes(target.value as UpdateChannel)) {
-      this.props.onSetUpdateChannel(target.value as UpdateChannel);
+
+      const newChannel = target.value as UpdateChannel
+
+      if(newChannel === 'beta') {
+
+        this.context.api.showDialog('question', 'Switching to Beta update channel', {          
+          text: `Development versions of Vortex can be unstable and cause irrepairable damage to your modding environment. 
+
+We recommend using the Beta channel only if you are comfortable with the risks and are willing to report any issues you encounter. We don't recommend downgrading back from beta to stable.
+
+Are you sure you want to switch to the Beta update channel?`
+        }, [ 
+          { label: 'Cancel' },
+          { label: 'Switch to Beta', action: () => 
+            this.props.onSetUpdateChannel(newChannel)
+          },
+        ]);
+
+      } else if (newChannel === 'stable') {
+        // stable or latest
+        this.props.onSetUpdateChannel(newChannel);
+
+      } else if (newChannel === 'none'){
+        // none
+
+        this.context.api.showDialog('question', 'Turning off updates', {
+          text: `This will stop notifying you about new updates to Vortex.
+
+This is not recommended as important security and stability updates are released regularly.
+
+Are you sure you want to turn off updates?`
+        }, [ 
+          { label: 'Cancel' },
+          { label: 'Turn off updates', action: () => 
+            this.props.onSetUpdateChannel(newChannel)
+          },
+        ]);
+
+      }
+      
     } else {
       log('error', 'invalid channel', target.value);
     }
