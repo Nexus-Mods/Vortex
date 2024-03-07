@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.0] - 2024-xx-xx
 
 - Updated Electron and Node
+- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more human readable changelogs.
 - (Stardew) Fixed SMAPI update notification appearing while managing other games
 - (Collections) Added comparison of patches, installer choices, hashes when installing
 - (Collections) Updated styles to fix update changelog bounds
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
 - (Dependency Managment) Suppress error report when user cancels purge
 - Updated build script
+
 
 ## [1.10.6] - 2024-02-28
 
