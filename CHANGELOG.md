@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.0] - 2024-xx-xx
 
-- Updated Electron and Node
-- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more human readable changelogs.
+- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels.
+- (API) Fixed performance degradation when downloading collections for games that use the file based load order system.
 - (Stardew) Fixed SMAPI update notification appearing while managing other games
 - (Collections) Added comparison of patches, installer choices, hashes when installing
 - (Collections) Updated styles to fix update changelog bounds
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
 - (Dependency Managment) Suppress error report when user cancels purge
+- (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
+- (Baldur's Gate 3) Added caching to PAK reading
 - Updated build script
+- Updated Electron and Node
 
 
 ## [1.10.6] - 2024-02-28
