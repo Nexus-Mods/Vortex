@@ -3045,6 +3045,8 @@
     {
       "modId": 203,
       "fileId": 2814,
+      "type": "game",
+      "gameName": "Subnautica: Below Zero",
       "author": "toebeann",
       "uploader": "toebeann",
       "description": {
@@ -3062,6 +3064,8 @@
     {
       "modId": 202,
       "fileId": 2812,
+      "type": "game",
+      "gameName": "Subnautica",
       "author": "toebeann",
       "uploader": "toebeann",
       "description": {
