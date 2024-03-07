@@ -128,17 +128,17 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // Right installer choices?
-  if ((ref.installerChoices !== undefined) && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
+  if ((ref.installerChoices !== undefined && Object.keys(ref.installerChoices).length > 0) && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
     return false;
   }
 
   // Right hashes?
-  if ((ref.fileList !== undefined) && (!_.isEqual(ref.fileList, mod.fileList))) {
+  if ((ref.fileList !== undefined && ref.fileList.length > 0) && (!_.isEqual(ref.fileList, mod.fileList))) {
     return false;
   }
 
   // Right patches?
-  if ((ref.patches !== undefined) && (!_.isEqual(ref.patches, mod.patches))) {
+  if ((ref.patches !== undefined && Object.keys(ref.patches).length > 0) && (!_.isEqual(ref.patches, mod.patches))) {
     return false;
   }
 
