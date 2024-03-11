@@ -1,5 +1,5 @@
 {
-  "last_updated": 1710146813549,
+  "last_updated": 1710157291453,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7883,6 +7883,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Tomb Raider I-III Remastered"
+    },
+    {
+      "modId": 803,
+      "fileId": 2847,
+      "author": "ops75",
+      "uploader": "ops75",
+      "description": {
+        "short": "Adds basic functionality to manage Tekken 8 mods in Vortex mod manager",
+        "long": "Adds basic functionality to manage Tekken 8 mods in Vortex mod manager.\n<br />\n<br />Installation:\n<br />- go to \"Extensions\" in Vortex mod manager\n<br />- drop the zip file and restart Vortex"
+      },
+      "downloads": 31,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5622.jpg",
+      "name": "Tekken 8 Vortex Extension",
+      "timestamp": 1709407234,
+      "tags": [],
+      "version": "0.0.1",
+      "type": "game",
+      "gameName": "Tekken 8"
     }
   ]
 }
