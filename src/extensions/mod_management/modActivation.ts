@@ -70,11 +70,12 @@ function deployMods(api: IExtensionApi,
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         const modPath = path.join(installationPath, mod.installationPath);
+        const overrides = new Set<string>(skipFiles);
         if (mod.fileOverrides !== undefined) {
           mod.fileOverrides.map(file => path.relative(destinationPath, file))
-                           .forEach(file => skipFiles.add(normalize(file)));
+                           .forEach(file => overrides.add(normalize(file)));
         }
-        return method.activate(modPath, mod.installationPath, subDir(mod), skipFiles);
+        return method.activate(modPath, mod.installationPath, subDir(mod), overrides);
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }
