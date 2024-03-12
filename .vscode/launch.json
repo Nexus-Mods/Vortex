@@ -15,9 +15,9 @@
       "stopAll": true
     },
     {
-      "name": "Debug Electron (Next)",
+      "name": "Debug Electron (Staging)",
       "configurations": [
-        "Debug Main Process (Next)",
+        "Debug Main Process (Staging)",
         "Debug Renderer Process"
       ],
       "presentation": {
@@ -28,9 +28,9 @@
       "stopAll": true
     },
     {
-      "name": "Debug Electron (Staging)",
+      "name": "Debug Electron (Nexus Next)",
       "configurations": [
-        "Debug Main Process (Staging)",
+        "Debug Main Process (Nexus Next)",
         "Debug Renderer Process"
       ],
       "presentation": {
@@ -145,7 +145,7 @@
       "outFiles": []
     },
     {
-      "name": "Debug Main Process (Next)",
+      "name": "Debug Main Process (Staging)",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/out/main.js",
@@ -176,7 +176,7 @@
       "outFiles": []
     },
     {
-      "name": "Debug Main Process (Staging)",
+      "name": "Debug Main Process (Nexus Next)",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/out/main.js",
@@ -199,7 +199,6 @@
         "DEBUG_REACT_RENDERS": "false",
         "START_DEVTOOLS": "true",
       },
-      "envFile": "${workspaceFolder}/.staging.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": []
