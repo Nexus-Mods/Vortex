@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated build script
 - Updated Electron and Node
 
+## [1.10.7] - 2024-03-12
+
+- Fixed redundant mods notification raised incorrectly
+- Fixed redundant file override test removing entries incorrectly (or not removing them at all)
+- Fixed manually created file overrides not saved upon restart
+- Fixed purge event executed needlessly when no mod type conflicts are detected
 
 ## [1.10.6] - 2024-02-28
 
