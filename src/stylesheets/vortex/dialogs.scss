@@ -179,7 +179,8 @@
 #new-update-changelog-dialog {
 
   .modal-dialog {
-    width: 50vw;
+    width: 600px;
+    min-width: 600px;
 
     .dialog-container {
 

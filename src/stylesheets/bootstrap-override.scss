@@ -252,6 +252,11 @@ textarea {
   margin: 0;
 }
 
+.modal-footer {
+  margin: 0;
+  border-radius: 0 0 $border-radius-large $border-radius-large;
+}
+
 .modal-content {
   border: $border-width solid $modal-content-border-color;
   width: 100%;

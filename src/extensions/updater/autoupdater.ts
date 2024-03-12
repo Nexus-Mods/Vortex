@@ -203,7 +203,7 @@ Are you sure you want to downgrade?`,
           noDismiss: true,
           actions: [          
             { title: 'What\'s New', action: () => {
-              api.showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+              api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
                 htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
                   `<div class="changelog-dialog-release">
                     <h4>${release.version} </h4>
