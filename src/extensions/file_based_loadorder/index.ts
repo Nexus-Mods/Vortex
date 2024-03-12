@@ -219,7 +219,7 @@ function genDidDeploy(api: types.IExtensionApi) {
     const gameId = selectors.profileById(api.getState(), profileId)?.gameId;
     const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
     const savedLO = util.getSafe(api.store.getState(), ['session', 'fblo', 'loadOrder', profileId], []);
-    const redundancy = (gameEntry.clearStateOnPurge === false && savedLO.length > 0)
+    const redundancy = (gameEntry?.clearStateOnPurge === false && savedLO.length > 0)
       ? util.getSafe(api.store.getState(), ['session', 'fblo', 'loadOrder', profileId], [])
       : undefined;
     await genDeploymentEvent(api, profileId, redundancy);
