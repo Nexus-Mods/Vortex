@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Dependency Managment) Suppress error report when user cancels purge
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
+- (Theme) Fixed layout issues with Contrast and Compact theme
+- (Theme) Added a Classic theme that uses the old colors
 - Updated build script
 - Updated Electron and Node
 
