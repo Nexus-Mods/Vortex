@@ -3,15 +3,14 @@ import { UPDATE_CHANNELS, UpdateChannel, IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
-import getText from './texts';
 
 import { ipcRenderer } from 'electron';
 import * as React from 'react';
-import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { Alert, Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import VortexInstallType from '../../types/VortexInstallType';
-import { MainContext } from 'vortex-api';
+import { MainContext, util } from 'vortex-api';
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -22,15 +21,47 @@ interface IActionProps {
   onSetUpdateChannel: (channel: UpdateChannel) => void;
 }
 
+interface ISettingsUpdateState {
+  checkUpdateButtonDisabled: boolean;
+}
+
 type IProps = IActionProps & IConnectedProps;
 
-class SettingsUpdate extends ComponentEx<IProps, {}> {
+const CHECK_UPDATE_INTERVAL = 60000;
+class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   
-  static contextType = MainContext
-  
+  static contextType = MainContext 
+
+  constructor(props) {
+    super(props);
+
+    this.initState({
+      checkUpdateButtonDisabled: false
+    });
+  }
+
+  private checkUpdateDebouncer = new util.Debouncer(() => {
+
+    this.checkNow();
+
+    setTimeout(() => {
+      this.nextState.checkUpdateButtonDisabled = false;
+    }, CHECK_UPDATE_INTERVAL);
+
+    return null;
+  }, CHECK_UPDATE_INTERVAL, true, true);  
+
+  private manualUpdateCheck = () => {
+    this.nextState.checkUpdateButtonDisabled = true;
+    log('info', 'manual update check');
+    this.checkUpdateDebouncer.schedule();    
+  }
+
   public render(): JSX.Element {
+
     const { t, installType, updateChannel } = this.props;
 
+    const { checkUpdateButtonDisabled } = this.state;
 
     const renderDevelopmentAlert = () => {
       if(process.env.NODE_ENV === 'development')
@@ -90,32 +121,40 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           <ControlLabel>
             {t('Update')}
             <More id='more-update-channel' name={t('Update Channel')}>
-              {getText('update-channel', t)}
+              {t('You can choose to either receive automatic updates only after they went through some '
+      + 'community testing (Stable) or to always get the newest features (Beta). Manual checking for updates is '
+      + 'restricted to every 10 minutes.')}
             </More>
           </ControlLabel> 
 
-          <FormControl
-            componentClass='select'
-            onChange={this.selectChannel}
-            value={updateChannel}
-          >
-            <option value='stable'>{t('Stable')}</option>
-            <option value='beta'>{t('Beta')}</option>
-            <option value='none'>{t('No automatic updates')}</option>
-          </FormControl>
+          <InputGroup>
+
+            <FormControl
+              componentClass='select'
+              onChange={this.selectChannel}
+              value={updateChannel}
+            >
+              <option value='stable'>{t('Stable')}</option>
+              <option value='beta'>{t('Beta')}</option>
+              <option value='none'>{t('No automatic updates')}</option>
+            </FormControl>
+
+            <Button disabled={checkUpdateButtonDisabled} key='manual-update-button' onClick={this.manualUpdateCheck}>
+              {t('Check now')}
+            </Button>
+
+          </InputGroup>
 
           { renderPreviewAlert() }
           
           <div>
           <ControlLabel>
-            {updateChannel === 'none' ? [(
+            {updateChannel === 'none' ? (
               <Alert key='manual-update-warning' bsStyle='warning'>
                 {t('Very old versions of Vortex will be locked out of network features eventually '
                   + 'so please do keep Vortex up-to-date.')}
               </Alert>
-            ), (<Button key='manual-update-button' onClick={this.checkNow}>
-              {t('Check now')}
-            </Button>)] : null}
+            ) : null}
           </ControlLabel>
           </div>
         </FormGroup>
@@ -123,7 +162,9 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
     );
   }
 
-  private checkNow = () => {
+
+
+  private checkNow = () => {    
     // send what updateChannel you are on, unless it's none, then send stable
     ipcRenderer.send('check-for-updates', this.props.updateChannel === 'none' ? 'stable' : this.props.updateChannel);
   }
@@ -180,7 +221,7 @@ Are you sure you want to turn off updates?`
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     updateChannel: state.settings.update.channel,
-    installType: state.app.installType,
+    installType: state.app.installType
   };
 }
 
