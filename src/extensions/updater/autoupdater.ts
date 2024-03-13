@@ -9,7 +9,7 @@ import { truthy } from '../../util/util';
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 
 import {app as appIn, dialog as dialogIn, ipcMain} from 'electron';
-import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
+import {autoUpdater as AUType, CancellationToken, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
 import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
@@ -17,6 +17,7 @@ import { getApplication } from '../../util/application';
 
 const UPDATE_AVAILABLE_ID = 'vortex-update-available-notification';
 const FORCED_SWITCH_TO_BETA_ID = 'switched-to-beta-channel';
+
 
 let app = appIn;
 let dialog = dialogIn;
@@ -56,12 +57,15 @@ function openTesting() {
 }
 
 function updateWarning() {
+
+  // if dev, don't do this
+
   dialog.showMessageBoxSync(getVisibleWindow(), {
     type: 'info',
-    title: 'Vortex update',
-    message: 'Vortex will be updated after closing. '
-      + 'Please do not turn off your computer until it\'s done. '
-      + 'If you interrupt the installation process Vortex may stop working.',
+    title: 'Vortex critical update',
+    message: 'A critical update has been downloaded and needs installing. ' +
+            'Please do not turn off your computer until it\'s done. ' + 
+            'If the installation process is interrupted, Vortex may not work correctly.',
     buttons: ['Continue'],
     noLink: true,
   });
@@ -73,8 +77,10 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
   let channelOverride: UpdateChannel;
+  let cancellationToken: CancellationToken;
   let updateChannel = state().settings.update.channel;
   const currentVersion = semver.parse(getApplication().version);
+  
 
   /*
   if (process.env.IS_PREVIEW_BUILD === 'true') {
@@ -337,7 +343,7 @@ Are you sure you want to downgrade?`,
     });
 
     queryUpdate(info)
-      .then(() => autoUpdater.downloadUpdate()
+      .then(() => autoUpdater.downloadUpdate(cancellationToken)
         .catch(err => {
           log('warn', 'Downloading update failed', err);
         }))
@@ -350,11 +356,23 @@ Are you sure you want to downgrade?`,
 
   autoUpdater.on('download-progress', (progress: IProgressInfo) => {
     if (notified) {
+      
       api.sendNotification({
         id: UPDATE_AVAILABLE_ID,
         type: 'activity',
         message: 'Downloading update',
         progress: progress.percent,
+        actions: [
+          {
+            title: 'Cancel',
+            action: () => {
+              cancellationToken?.cancel();
+              api.suppressNotification(UPDATE_AVAILABLE_ID, true);
+              // check again in case we need to download again
+              checkNow(updateChannel);
+            },
+          },
+        ],
       });
     }
   });
@@ -430,8 +448,7 @@ Are you sure you want to downgrade?`,
 
   const checkNow = (channel: string) => {
     if (!state().session.base.networkConnected) {
-      log('info', 'Not checking for updates because network is offline');
-    }
+      log('info', 'Not checking for updates because network is offline');    }
 
     const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
 
@@ -468,9 +485,13 @@ Are you sure you want to downgrade?`,
       .then(check => {
         log('info', 'completed update check');
 
+        // set token for this update
+        cancellationToken = check.cancellationToken;
+
         // do a check here for if a regular type (properly installed, not dev or epic or whatever)
         // then that's the only time that we want to do the auto download
         if (api.getState().app.installType === 'regular') {
+
           if (truthy(check.downloadPromise)) {
             check.downloadPromise.catch(err => {
               log('warn', 'Checking for update failed', err);
@@ -488,6 +509,7 @@ Are you sure you want to downgrade?`,
   };
 
   ipcMain.on('check-for-updates', (event, channel: string) => {
+
     checkNow(channel);
   });
 
@@ -497,6 +519,9 @@ Are you sure you want to downgrade?`,
 
       // need to remove notifications?!
       api.suppressNotification(UPDATE_AVAILABLE_ID, true);
+
+      // cancel download in case?
+      cancellationToken?.cancel();
 
       if(channel !== 'beta') 
         // remove just in case it might be on
