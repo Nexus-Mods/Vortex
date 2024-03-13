@@ -1,10 +1,11 @@
 #diagnostics-files {
-  height: 80vh;
+  height: 75vh;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 
   > div {
-    margin: $half-gutter 0;
+    margin: 0;
     height: 100%;
   }
 
@@ -17,16 +18,29 @@
 .diagnostics-files-sessions-panel {
   height: 100%;
   overflow-y: auto;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-large;
+
   .session-from, .session-to {
-    color: $brand-info;
+    color: $brand-info-lighter;
     font-weight: bold;
   }
+
   .session-crashed {
     color: $brand-danger;
+  }
+
+  .list-group-item {
+    padding: 8px 12px;
+    border: none;
+    margin: 0;
   }
 }
 
 .diagnostics-files-log-panel {
+
+  gap: 12px;
+
   .checkbox {
     margin: 0px $half-gutter;
   }
@@ -36,18 +50,19 @@
     padding-left: 0px;
     overflow-y: auto;
     height: 100%;
+    word-break: break-word;
   }
 
   .log-time {
-    color: $text-color-disabled;
+    color: $gray-darker;
   }
 
   .log-filter-debug, .log-type-debug {
-    color: $gray;
+    color: $brand-info-lighter;
   }
 
   .log-filter-info, .log-type-info {
-    color: $brand-info;
+    color: $brand-success-lighter;
   }
 
   .log-filter-warn, .log-type-warn {
@@ -55,7 +70,7 @@
   }
 
   .log-filter-error, .log-type-error {
-    color: $brand-danger;
+    color: $brand-danger-lighter;
   }
 }
 

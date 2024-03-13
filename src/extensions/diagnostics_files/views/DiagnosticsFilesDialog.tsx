@@ -166,9 +166,9 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const sessionText = (
       <div style={{ width: '90%' }}>
         <span>{t('From') + ' '}</span>
-        <span className='session-from'>{from.toLocaleString(language)}</span>
+        <span className='session-from'>{from.toLocaleString()}</span>
         <span>{' ' + t('to') + ' '}</span>
-        <span className='session-to'>{to.toLocaleString(language)}</span>
+        <span className='session-to'>{to.toLocaleString()}</span>
         {errors.length > 0 ? (
           <span>
             {' - ' + t('{{ count }} error', { count: errors.length })}
@@ -233,9 +233,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <li key={line.lineno} className={`log-line-${line.type}`}>
         <span className='log-time'>{line.time}</span>
-        {' - '}
-        <span className={`log-type-${line.type}`}>{line.type}</span>
-        {': '}
+        {' - '}<span className={`log-type-${line.type}`}>{line.type.toUpperCase()}</span>{' - '}
         <span className='log-text'>{line.text}</span>
       </li>
     );
