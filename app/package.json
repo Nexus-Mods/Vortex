@@ -13,7 +13,7 @@
   "dependencies": {
     "@electron/remote": "^2.0.12",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#oauth",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
