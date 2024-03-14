@@ -30,7 +30,7 @@ type IProps = IActionProps & IConnectedProps;
 const CHECK_UPDATE_INTERVAL = 60000;
 class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   
-  static contextType = MainContext 
+  //static contextType = MainContext 
 
   constructor(props) {
     super(props);
@@ -69,7 +69,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           <div>
           <ControlLabel>
             <Alert>
-              {t('Vortex is running in development mode and version will always remain at 0.0.1. Updates will be checked and downloaded but won\'t be installed.')}
+              {t('Vortex is running in development mode. Updates will be checked and downloaded but can\'t be installed.')}
             </Alert>
           </ControlLabel>
           </div>
@@ -165,8 +165,9 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
 
   private checkNow = () => {    
-    // send what updateChannel you are on, unless it's none, then send stable
-    ipcRenderer.send('check-for-updates', this.props.updateChannel === 'none' ? 'stable' : this.props.updateChannel);
+
+    // send what updateChannel you are on, unless it's none, then send stable. manual check as well
+    ipcRenderer.send('check-for-updates', this.props.updateChannel === 'none' ? 'stable' : this.props.updateChannel, true);
   }
 
   private selectChannel = (evt) => {

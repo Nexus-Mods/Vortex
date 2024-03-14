@@ -15,6 +15,7 @@ import uuidv5 from 'uuid/v5';
 import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
 
+const CHECKING_FOR_UPDATES_ID = 'vortex-checking-updates-notification';
 const UPDATE_AVAILABLE_ID = 'vortex-update-available-notification';
 const FORCED_SWITCH_TO_BETA_ID = 'switched-to-beta-channel';
 
@@ -163,7 +164,7 @@ function setupAutoUpdate(api: IExtensionApi) {
           id: UPDATE_AVAILABLE_ID,
           type: 'warning',
           title: 'Downgrade available',
-          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          message: `${updateInfo.version} is available.`,
           noDismiss: true,
           actions: [          
             { title: 'More Info', action: () => {
@@ -205,7 +206,7 @@ Are you sure you want to downgrade?`,
           id: UPDATE_AVAILABLE_ID,
           type: 'info',
           title: 'Upgrade available',
-          message: `${updateInfo.version} is available on ${updateChannel}.`,
+          message: `${updateInfo.version} is available.`,
           noDismiss: true,
           actions: [          
             { title: 'What\'s New', action: () => {
@@ -238,6 +239,10 @@ Are you sure you want to downgrade?`,
   };
 
   autoUpdater.on('error', (err) => {
+
+    // need to remove notifications?!
+    api.dismissNotification(CHECKING_FOR_UPDATES_ID);
+
     if ((err.cmd !== undefined) && err.cmd.startsWith('powershell.exe')) {
       api.showErrorNotification(
         'Checking for update failed',
@@ -268,6 +273,13 @@ Are you sure you want to downgrade?`,
     
     log('info', `Installed version is up to date using the ${updateChannel} channel.`);
 
+    api.sendNotification({
+      id: CHECKING_FOR_UPDATES_ID,
+      type: 'success',
+      message: 'Vortex is up to date',
+      displayMS: 3000
+    });
+
     /*
     if (channelOverride !== undefined) {
       log('info', 'installed version seems to be a non-stable release, switching update channel');
@@ -282,6 +294,9 @@ Are you sure you want to downgrade?`,
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
+      
+    // need to remove notifications?!
+    api.dismissNotification(CHECKING_FOR_UPDATES_ID);
 
     log('info', 'found update available', {
       version: info.version,
@@ -379,9 +394,15 @@ Are you sure you want to downgrade?`,
 
   autoUpdater.on('update-downloaded',
     (updateInfo: UpdateInfo) => {
+
       log('info', 'update downloaded');
 
-      app.on('before-quit', updateWarning);
+      // sets up warning and autoUpdater to install on quit only if not in dev mode
+      if (process.env.NODE_ENV !== 'development') {
+        autoUpdater.autoInstallOnAppQuit = true;
+        app.on('before-quit', updateWarning);
+        log('info', 'auto install on quit is set');
+      }
 
       // below is needed to make sure we only show release notes less than or equal to the current version
       let filteredReleaseNotes = updateInfo.releaseNotes;
@@ -407,7 +428,7 @@ Are you sure you want to downgrade?`,
           {
             title: 'What\'s New',
             action: () => {
-              api.store.dispatch(showDialog('info', `What\'s New in ${updateInfo.version} (${new Date(updateInfo.releaseDate).toDateString()})`, {
+              api.store.dispatch(showDialog('info', `What\'s New in ${updateInfo.version}`, {
                 htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
                   `<div class="changelog-dialog-release">
                     <h4>${release.version} </h4>
@@ -425,19 +446,24 @@ Are you sure you want to downgrade?`,
             title: 'Restart & Install',
             action: () => {
 
-              if (process.env.NODE_ENV === 'development') {
 
+              if (process.env.NODE_ENV !== 'development') {
+
+                // only needed if the user force closes and doesn't use this notification button
+                app.removeListener('before-quit', updateWarning);
+
+                // we only want to quit and install if we are not running a dev build
+                autoUpdater.quitAndInstall();
+
+              } else {
+
+                // show a dialog to say that we are not going to install the update
                 api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
                   text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
                 }, [
                   { label: 'Close' },
                 ]));
-                app.removeListener('before-quit', updateWarning);                
-                autoUpdater.autoInstallOnAppQuit = false; // we want to control when the update is installed
 
-              } else {
-                app.removeListener('before-quit', updateWarning);
-                autoUpdater.quitAndInstall();
               }
 
             },
@@ -446,7 +472,8 @@ Are you sure you want to downgrade?`,
       });
     });
 
-  const checkNow = (channel: string) => {
+  const checkNow = (channel: string, manual: boolean = false) => {
+
     if (!state().session.base.networkConnected) {
       log('info', 'Not checking for updates because network is offline');    }
 
@@ -472,7 +499,8 @@ Are you sure you want to downgrade?`,
 
     autoUpdater.allowDowngrade = true; // at this point we don't care about downgrades, not really checking I don't think
     autoUpdater.autoDownload = false; // we never want to autodownload, we tell it to download if patch release, or ask user first if not
-    autoUpdater.fullChangelog = true; // so we get to show older changelogs other than the release we are downloading
+    autoUpdater.fullChangelog = true; // so we get to show older changelogs other than the release we are downloading                // we want to stop the updater from trying to install as we are running a dev build     
+    autoUpdater.autoInstallOnAppQuit = false; // default to false, we set to true if we want to install on quit and not a dev build
 
     log('info', 'update config is ', {
       provider: 'github',
@@ -480,7 +508,16 @@ Are you sure you want to downgrade?`,
       repo: isPreviewBuild ? 'Vortex-Staging' : 'Vortex',
       allowPrerelease: autoUpdater.allowPrerelease
     });
-    
+
+    // add notificaiton to show checking for updates only if manual check
+    if(manual) {
+      api.sendNotification({
+        id: CHECKING_FOR_UPDATES_ID,
+        type: 'activity',
+        message: 'Checking for updates...'
+      });
+    }
+      
     autoUpdater.checkForUpdates()
       .then(check => {
         log('info', 'completed update check');
@@ -508,9 +545,9 @@ Are you sure you want to downgrade?`,
       });
   };
 
-  ipcMain.on('check-for-updates', (event, channel: string) => {
+  ipcMain.on('check-for-updates', (event, channel: string, manual: boolean) => {
 
-    checkNow(channel);
+    checkNow(channel, manual);
   });
 
   ipcMain.on('set-update-channel', (event, channel: UpdateChannel, manual: boolean) => {
