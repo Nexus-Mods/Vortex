@@ -166,9 +166,9 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const sessionText = (
       <div style={{ width: '90%' }}>
         <span>{t('From') + ' '}</span>
-        <span className='session-from'>{from.toLocaleString()}</span>
+        <span className='session-from'>{from.toLocaleString(language)}</span>
         <span>{' ' + t('to') + ' '}</span>
-        <span className='session-to'>{to.toLocaleString()}</span>
+        <span className='session-to'>{to.toLocaleString(language)}</span>
         {errors.length > 0 ? (
           <span>
             {' - ' + t('{{ count }} error', { count: errors.length })}
