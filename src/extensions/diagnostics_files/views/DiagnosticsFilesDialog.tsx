@@ -233,9 +233,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <li key={line.lineno} className={`log-line-${line.type}`}>
         <span className='log-time'>{line.time}</span>
-        {' - '}
-        <span className={`log-type-${line.type}`}>{line.type}</span>
-        {': '}
+        {' - '}<span className={`log-type-${line.type}`}>{line.type.toUpperCase()}</span>{' - '}
         <span className='log-text'>{line.text}</span>
       </li>
     );

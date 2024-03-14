@@ -7,7 +7,7 @@ import Promise from 'bluebird';
 import * as path from 'path';
 import getVortexPath from '../../../util/getVortexPath';
 
-const lineRE = /^([^-]*) - ([a-z]*): (.*)\r?$/;
+const lineRE = /^(\S+) \[([A-Z]*)\] (.*)\r?/;
 
 function parseLine(line: string, idx: number): ILog {
   const match = line.match(lineRE);
@@ -15,7 +15,7 @@ function parseLine(line: string, idx: number): ILog {
     return {
       lineno: idx,
       time: match[1],
-      type: match[2] as LogLevel,
+      type: match[2].toLowerCase() as LogLevel,
       text: match[3],
     };
   } else {
@@ -35,7 +35,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
     })
     .then((data: string[]) => data.join('\n'))
     .then((text: string) => {
-      const splittedSessions = text.split('- info: --------------------------');
+      const splittedSessions = text.split('[INFO] --------------------------');
 
       return splittedSessions.map((sessionElement: string): ISession => {
         // const splittedLogs = sessionElement.split(/\r?\n(?!^[ ])(?!^\n)(?!^[ERROR])/m);
@@ -46,8 +46,8 @@ export function loadVortexLogs(): Promise<ISession[]> {
 
         return ((logElements.length > 1) ?
                     {
-                      from: new Date(logElements[0].time),
-                      to: new Date(logElements[logElements.length - 1].time),
+                      from: new Date(Date.parse(logElements[0].time)),
+                      to: new Date(Date.parse(logElements[logElements.length - 1].time)),
                       logs: logElements,
                     } :
                     undefined) as ISession;

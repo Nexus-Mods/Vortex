@@ -5,7 +5,7 @@
 /** dummy */
 import * as path from 'path';
 import * as util from 'util';
-import * as winstonT from 'winston';
+import winston from 'winston';
 
 export function valueReplacer() {
   const known = new Map();
@@ -26,12 +26,12 @@ export function valueReplacer() {
   };
 }
 
-function IPCTransport(options: winstonT.TransportOptions) {
+function IPCTransport(options: winston.TransportOptions) {
   this.name = 'IPCTransport';
   this.level = 'debug';
 }
 
-let logger: typeof winstonT = null;
+let logger: typeof winston = null;
 
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect
@@ -40,7 +40,7 @@ if ((process as any).type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
   const { ipcRenderer } = require('electron');
   IPCTransport.prototype.log =
-    (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
+    (level: string, message: string, meta: any[], callback: winston.LogCallback) => {
       ipcRenderer.send('log-message', level, message,
                        meta !== undefined ? JSON.stringify(meta, valueReplacer()) : undefined);
       callback(null);
@@ -88,8 +88,11 @@ if ((process as any).type === 'renderer') {
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export function setLogPath(basePath: string) {
+
+  // remove the original transport so we can add the new one back again
   logger.remove(logger.transports['File']);
 
+  // add the new transport
   logger.add(logger.transports['File'], {
     filename: path.join(basePath, 'vortex.log'),
     json: false,
@@ -97,7 +100,10 @@ export function setLogPath(basePath: string) {
     maxsize: 1024 * 1024,
     maxFiles: 5,
     tailable: true,
-    timestamp: () => new Date().toUTCString(),
+    timestamp: () => new Date().toISOString(),
+      formatter: (options: any) => {
+        return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+      }
   });
 }
 
@@ -107,7 +113,12 @@ export function setLogPath(basePath: string) {
  * @export
  */
 export function setupLogging(basePath: string, useConsole: boolean): void {
-  try {
+
+  try {     
+    // remove default one as we can't change things after added
+    logger.remove(logger.transports['Console']);
+
+    // add the new transport
     logger.add(logger.transports['File'], {
       filename: path.join(basePath, 'vortex.log'),
       json: false,
@@ -115,12 +126,23 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
       maxsize: 1024 * 1024,
       maxFiles: 5,
       tailable: true,
-      timestamp: () => new Date().toUTCString(),
+      timestamp: () => new Date().toISOString(),
+        formatter: (options: any) => {
+          return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+        }
     });
 
-    if (!useConsole) {
-      logger.remove(logger.transports['Console']);
+    // if we are using console (development enviorment) then add back a new console transport with better logging format
+    if (useConsole) {
+      logger.add(logger.transports['Console'], {
+        timestamp: () => new Date().toISOString(),
+        formatter: (options: any) => {
+          return `${options.timestamp()} [${winston.config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+            //(options.meta && Object.keys(options.meta).length ? '\n\t'+ JSON.stringify(options.meta) : '' );
+        }
+      });
     }
+
   } catch (err) {
     // logger.add dynamically calls requires('./transport/file'). For some reason that
     // fails when this exe is called from chrome as a protocol handler. I've debugged as
