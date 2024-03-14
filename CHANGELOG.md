@@ -12,13 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Stardew) Fixed SMAPI update notification appearing while managing other games
 - (Collections) Added comparison of patches, installer choices, hashes when installing
 - (Collections) Updated styles to fix update changelog bounds
+- (Collections) Better logging when profile switching
+- (Collections) Fixed rare crash where game version was being compared 
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
 - (Dependency Managment) Suppress error report when user cancels purge
+- (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
 - (Theme) Fixed layout issues with Contrast and Compact theme
 - (Theme) Added a Classic theme that uses the old colors
-- Updated build script
+- Updated Log format
+- Updated dev bootstrap script
 - Updated Electron and Node
 
 ## [1.10.8] - 2024-03-13
