@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Collections) Updated styles to fix update changelog bounds
 - (Collections) Better logging when profile switching
 - (Collections) Fixed rare crash where game version was being compared 
+- (Collections) Improved error handling when displaying instructions. Fixes [#14570](https://github.com/Nexus-Mods/Vortex/issues/14570)
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
 - (Dependency Managment) Suppress error report when user cancels purge
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
