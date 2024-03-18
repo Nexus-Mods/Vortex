@@ -1,5 +1,5 @@
 {
-  "last_updated": 1710752461897,
+  "last_updated": 1710752712046,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7938,6 +7938,25 @@
       "version": "1.1",
       "type": "translation",
       "language": "tr"
+    },
+    {
+      "modId": 812,
+      "fileId": 2908,
+      "author": "Rahl81",
+      "uploader": "Rahl81",
+      "description": {
+        "short": "Traduzione in italiano del programma Vortex",
+        "long": "Traduzione in italiano del programma Vortex"
+      },
+      "downloads": 150,
+      "endorsements": 7,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/812/812-1710334565-2022282686.png",
+      "name": "Italian Translation for Vortex 1.10.8",
+      "timestamp": 1710505468,
+      "tags": [],
+      "version": "1.10.8",
+      "type": "translation",
+      "language": "it"
     }
   ]
 }
