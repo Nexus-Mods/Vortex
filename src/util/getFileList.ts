@@ -13,7 +13,7 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
   const result: IFileEntry[] = [];
 
   return walk(basePath, (filePath: string, stats: fs.Stats) => {
-    if (!filePath.startsWith('__')) {
+    if (!filePath.toLowerCase().startsWith('__vortex')) {
       result.push({filePath, stats});
     }
     return Promise.resolve();
