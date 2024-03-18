@@ -1,5 +1,5 @@
 {
-  "last_updated": 1710751575043,
+  "last_updated": 1710752461897,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7919,6 +7919,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Orc Massage"
+    },
+    {
+      "modId": 811,
+      "fileId": 2921,
+      "author": "Ilker BINZET",
+      "uploader": "binzedd",
+      "description": {
+        "short": "Vortex Mod Manager için bu Türkçe çeviri paketi, kullanıcı arayüzünü tamamen Türkçeleştirerek oyun modlarınızı yönetmeyi kolaylaştırır. Yükleme ve güncelleme süreçleri şimdi daha kullanıcı dostu!",
+        "long": "[b][left][font=Verdana][size=3][/size][/font][/left][/b][center][b][font=Verdana][size=3][img]https://i.ibb.co/JpwfWd3/Vortex-Mod-Manager-Turkish-Localization-2024-1.png[/img]﻿\n<br />\n<br />\n<br />\n<br />﻿Vortex Mod Manager Türkçe Çeviri (Turkish Localization)\n<br />\n<br />\n<br />[/size][/font][/b][/center]Vortex Mod Manager için bu Türkçe çeviri paketi, kullanıcı arayüzünü tamamen Türkçeleştirerek oyun modlarınızı yönetmeyi kolaylaştırır. Yükleme ve güncelleme süreçleri şimdi daha kullanıcı dostu!\n<br />\n<br />\n<br />Elle Kurulum: \n<br />[list=1]\n<br />[*]Modunuzu manuel olarak kurmak için, indirdiğiniz arşivdeki klasörü [code]﻿﻿C:&#92;Program Files&#92;Black Tree Gaming Ltd&#92;Vortex&#92;resources&#92;locales[/code] dizinine kopyalayın. Bu işlem, Vortex Mod Manager'ın dil dosyalarını Türkçe çeviri ile güncelleyecektir.\n<br />[*]Lütfen kopyalama işleminden önce Vortex uygulamasının kapalı olduğundan emin olun. \n<br />[*]İşlem tamamlandıktan sonra Vortex'i açın ve Türkçe dil seçeneğini aktif hale getirin.\n<br />[/list]\n<br />Github: [url=https://github.com/ilker-binzet/Vortex-Mod-Manager-Turkish-Localization]Vortex Mod Manager Turkish Localization (github.com)\n<br />\n<br />[/url]\n<br />_______________________________________________________________________________________________________________________________________________________________\n<br />\n<br />[center][url=https://ibb.co/SPxcnvW][img]https://i.ibb.co/pxPQzXG/Turuncu-Siyah-ve-Beyaz-Modern-ve-Bilgilendirici-Ders-al-ma-Hakk-nda-nfografik.png[/img][/url][/center]"
+      },
+      "downloads": 295,
+      "endorsements": 9,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/811/811-1710657512-1108250514.png",
+      "name": "Vortex Mod Manager Turkish Localization 2024",
+      "timestamp": 1710659427,
+      "tags": [],
+      "version": "1.1",
+      "type": "translation",
+      "language": "tr"
     }
   ]
 }
