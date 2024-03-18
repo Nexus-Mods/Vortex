@@ -28,7 +28,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
       .catch(() => Promise.resolve(false)))
     .then((modNames: string[]) => {
       const filtered = modNames
-        .filter(name => !name.startsWith('__'))
+        .filter(name => !name.toLowerCase().startsWith('__vortex'))
         .map(name => name.replace(/.installing$/, ''));
       const addedMods =
           filtered.filter((name: string) => knownModNames.indexOf(name) === -1);
