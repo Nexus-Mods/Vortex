@@ -205,11 +205,11 @@ Are you sure you want to downgrade?`,
         api.sendNotification({
           id: UPDATE_AVAILABLE_ID,
           type: 'info',
-          title: 'Upgrade available',
+          title: 'Update available',
           message: `${updateInfo.version} is available.`,
           noDismiss: true,
           actions: [          
-            { title: 'What\'s New', action: () => {
+            { title: 'View Update', action: () => {
               api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
                 htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
                   `<div class="changelog-dialog-release">
@@ -437,6 +437,7 @@ Are you sure you want to downgrade?`,
                   ).join(''),
               }, [
                   { label: 'Close' },
+                  { label: 'Restart & Install', action: handleRestartInstall }
                 ],
                 'new-update-changelog-dialog'
               ));
@@ -444,33 +445,38 @@ Are you sure you want to downgrade?`,
           },
           {
             title: 'Restart & Install',
-            action: () => {
-
-
-              if (process.env.NODE_ENV !== 'development') {
-
-                // only needed if the user force closes and doesn't use this notification button
-                app.removeListener('before-quit', updateWarning);
-
-                // we only want to quit and install if we are not running a dev build
-                autoUpdater.quitAndInstall();
-
-              } else {
-
-                // show a dialog to say that we are not going to install the update
-                api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
-                  text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
-                }, [
-                  { label: 'Close' },
-                ]));
-
-              }
-
-            },
+            action: handleRestartInstall,
           },
         ],
       });
     });
+
+    /**
+     * Handles the restart and install action
+     */
+    const handleRestartInstall = () => {
+
+      if (process.env.NODE_ENV !== 'development') {
+
+          // only needed if the user force closes and doesn't use this notification button
+          app.removeListener('before-quit', updateWarning);
+
+          // we only want to quit and install if we are not running a dev build
+          autoUpdater.quitAndInstall();
+
+        } else {
+
+          // show a dialog to say that we are not going to install the update
+          api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
+            text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
+          }, [
+            { label: 'Close' },
+          ]));
+
+        }
+
+      
+    }
 
   const checkNow = (channel: string, manual: boolean = false) => {
 
