@@ -135,6 +135,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     // if we are using console (development enviorment) then add back a new console transport with better logging format
     if (useConsole) {
       logger.add(logger.transports['Console'], {
+        level: 'debug',
         timestamp: () => new Date().toISOString(),
         formatter: (options: any) => {
           return `${options.timestamp()} [${winston.config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
