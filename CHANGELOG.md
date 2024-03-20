@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
+- (Mod Management) Fixes [Underscores in archive names causing issues with mod installation #15334](https://github.com/Nexus-Mods/Vortex/issues/15334)
 - (Theme) Fixed layout issues with Contrast and Compact theme
 - (Theme) Added a Classic theme that uses the old colors
 - Updated Log format
