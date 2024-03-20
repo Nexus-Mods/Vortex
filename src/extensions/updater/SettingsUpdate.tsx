@@ -199,7 +199,7 @@ Are you sure you want to switch to the Beta update channel?`
         // none
 
         this.context.api.showDialog('question', 'Turning off updates', {
-          text: `This will stop notifying you about new updates to Vortex.
+          text: `This will stop notifications about Vortex updates.
 
 This is not recommended as important security and stability updates are released regularly.
 
