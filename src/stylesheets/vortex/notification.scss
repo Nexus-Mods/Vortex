@@ -23,6 +23,7 @@
   flex-direction: row;
   align-items: flex-start;
   position: relative;
+  border-radius: 4px;
 
   .notification-progress {
     position: absolute;
@@ -103,6 +104,9 @@
     max-height: 40vh;
     padding: calc(#{$half-gutter} * 0.5);
     overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 }
 
