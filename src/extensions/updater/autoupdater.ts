@@ -115,6 +115,8 @@ function setupAutoUpdate(api: IExtensionApi) {
   const queryUpdate = (updateInfo: UpdateInfo): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
 
+      log('debug', 'Querying update', { tag: updateInfo["tag"], version: updateInfo["version"] })
+
       if (semver.satisfies(updateInfo.version, `~${autoUpdater.currentVersion.version}`)) {
         log('info', `${updateInfo.version} is a patch update from ${autoUpdater.currentVersion.version} so we need to force download`);
         // if it's a patch release (1.2.x) then we don't need to ask to download
@@ -176,18 +178,19 @@ Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless
 Are you sure you want to downgrade?`,
               }, [
                 { label: 'Close' },
-                { label: 'Ignore', action: () => reject(new UserCanceled()) },
+                //{ label: 'Ignore', action: () => reject(new UserCanceled()) },
                 { label: 'Downgrade', action: () => resolve() }
               ],
               'new-update-changelog-dialog');
             } },
-            {
+            /*{
               title: 'Ignore',
               action: dismiss => {
+                log('debug', 'User ignored downgrade')
                 dismiss();
                 reject(new UserCanceled());
               },
-            },
+            },*/
           ],
         }); 
 
@@ -207,10 +210,10 @@ Are you sure you want to downgrade?`,
           type: 'info',
           title: 'Update available',
           message: `${updateInfo.version} is available.`,
-          noDismiss: true,
+          //noDismiss: true,
           actions: [          
-            { title: 'View Update', action: () => {
-              api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
+            { title: 'View Update', action: dismiss => {
+              return api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
                 htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
                   `<div class="changelog-dialog-release">
                     <h4>${release.version} </h4>
@@ -218,21 +221,28 @@ Are you sure you want to downgrade?`,
                   </div>`
                   ).join(''),
               }, [
-                { label: 'Close' },
-                { label: 'Ignore', action: () => reject(new UserCanceled()) },
-                { label: 'Download', action: () => resolve() }
+                { label: 'Close' , action: () => log('debug', 'User closed dialog')},
+                /*{ label: 'Ignore', action: () => {                  
+                  log('debug', 'User ignored update')
+                  return reject(new UserCanceled())
+                }},*/
+                { label: 'Download', action: () => {                                
+                  log('debug', 'User downloading update')
+                  return resolve()
+                } }
               ],
               'new-update-changelog-dialog');
-            } },
+            } },/*
             {
               title: 'Ignore',
               action: dismiss => {
+                log('debug', 'User ignored update')
                 dismiss();
                 reject(new UserCanceled());
               },
-            },
+            },*/
           ],
-        });
+        })
         
       }  
     });    
@@ -424,6 +434,7 @@ Are you sure you want to downgrade?`,
         id: UPDATE_AVAILABLE_ID,
         type: 'success',
         message: 'Update downloaded',
+        noDismiss: true,
         actions: [
           {
             title: 'What\'s New',
