@@ -7,6 +7,7 @@ export interface IAnnouncement {
   gamemode?: string;
   severity?: AnnouncementSeverity;
   version?: string;
+  title?: string;
 }
 
 export interface ISurveyInstance {
