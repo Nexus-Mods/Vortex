@@ -83,7 +83,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private severityToIcon(severity: AnnouncementSeverity): string {
     switch (severity) {
       case 'warning': return 'feedback-warning';
-      case 'critical': return 'feedback-warning';
+      case 'critical': return 'dialog-error';
     }
     return undefined;
   }
@@ -111,16 +111,31 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
       );
     };
 
-    const generateDate = (): JSX.Element => (
+    const renderDate = (): JSX.Element => (
       <div>
         {new Date(announcement.date).toLocaleDateString(this.context.api.locale())}
       </div>
     );
 
+    const renderTitle = (): JSX.Element => (
+      <div className='announcement-title'>
+        {announcement.title !== undefined ? announcement.title : this.severityToTooltip(t, announcement.severity)}
+      </div>
+    );
+
+    const renderLink = (): JSX.Element => (
+      <div>
+        {announcement.link !== undefined ? generateLinkButton() : null}
+      </div>
+    );
+
     return (
       <FlexLayout type='row' className='announcement-extras'>
-        {generateDate()}
-        {announcement.link !== undefined ? generateLinkButton() : null}
+        {this.renderIcon(announcement)}
+        {renderTitle()}
+        <div className='flex-fill' />
+        {renderDate()}
+        {renderLink()}
       </FlexLayout>
     );
   }
@@ -129,7 +144,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     return (
       <FlexLayout type='row' className='announcement-description'>
-        {this.renderIcon(announcement)}
+        
         <ReactMarkdown allowedElements={['p', 'a', 'em', 'strong']} unwrapDisallowed={true} >
             {announcement.description}
         </ReactMarkdown>       
@@ -143,8 +158,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
         {
         filtered.map((announcement, id) => (
           <div className='announcement-entry' key={id}>
-            {this.generateDescription(announcement)}
             {this.generateExtraPanel(announcement)}
+            {this.generateDescription(announcement)}
           </div>
         ))
         }
