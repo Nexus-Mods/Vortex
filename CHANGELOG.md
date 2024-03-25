@@ -15,17 +15,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Collections) Better logging when profile switching
 - (Collections) Fixed rare crash where game version was being compared 
 - (Collections) Improved error handling when displaying instructions. Fixes [#14570](https://github.com/Nexus-Mods/Vortex/issues/14570)
+- (Collections) Fixes instructions textarea not filling available space. Fixes [#15394](https://github.com/Nexus-Mods/Vortex/issues/15394)
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
 - (Dependency Managment) Suppress error report when user cancels purge
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
-- (Mod Management) Fixes [Underscores in archive names causing issues with mod installation #15334](https://github.com/Nexus-Mods/Vortex/issues/15334)
+- (Baldur's Gate 3) Added a better .NET error catch and shows a fix dialog. Fixes [#15391](https://github.com/Nexus-Mods/Vortex/issues/15391)
+- (Announcements) Restyled announcement dashlet
+- (Mod Management) Underscores in archive names no longer cause installation issues. Fixes [#15334](https://github.com/Nexus-Mods/Vortex/issues/15334)
 - (Theme) Fixed layout issues with Contrast and Compact theme
 - (Theme) Added a Classic theme that uses the old colors
 - Updated Log format
 - Updated dev bootstrap script
 - Updated Electron and Node
+ 
+## [1.10.9] - 2024-03-25 
+ 
+- Fixed file overrides being cleared when switching to an empty profile 
+- Fixed rare issue where it was possible for mods to fail deploying certain types 
 
 ## [1.10.8] - 2024-03-13
 
