@@ -7,17 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.0] - 2024-xx-xx
 
-- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels.
-- (API) Fixed performance degradation when downloading collections for games that use the file based load order system.
+- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. Fixes[#15363](https://github.com/Nexus-Mods/Vortex/issues/15363)
+- (API) Fixed performance degradation when downloading collections for games that use the file based load order system. Fixes [#15395](https://github.com/Nexus-Mods/Vortex/issues/15395)
 - (Stardew) Fixed SMAPI update notification appearing while managing other games
-- (Collections) Added comparison of patches, installer choices, hashes when installing
+- (Collections) Added comparison of patches, installer choices, hashes when installing. Fixes [#15396](https://github.com/Nexus-Mods/Vortex/issues/15396)
 - (Collections) Updated styles to fix update changelog bounds
 - (Collections) Better logging when profile switching
 - (Collections) Fixed rare crash where game version was being compared 
 - (Collections) Improved error handling when displaying instructions. Fixes [#14570](https://github.com/Nexus-Mods/Vortex/issues/14570)
-- (Collections) Fixes instructions textarea not filling available space. Fixes [#15394](https://github.com/Nexus-Mods/Vortex/issues/15394)
-- (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.X.X versions of BepInEx
-- (Dependency Managment) Suppress error report when user cancels purge
+- (Collections) Instructions textarea now fills available space. Fixes [#15394](https://github.com/Nexus-Mods/Vortex/issues/15394)
+- (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
+- (Dependency Management) Suppress error report when user cancels purge
+- (Dependency Management) Fixed file overrides being cleared when switching to an empty profile 
+- (Dependency Management) Fixed rare issue where it was possible for mods to fail deploying certain types 
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
@@ -29,11 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Log format
 - Updated dev bootstrap script
 - Updated Electron and Node
- 
-## [1.10.9] - 2024-03-25 
- 
-- Fixed file overrides being cleared when switching to an empty profile 
-- Fixed rare issue where it was possible for mods to fail deploying certain types 
 
 ## [1.10.8] - 2024-03-13
 

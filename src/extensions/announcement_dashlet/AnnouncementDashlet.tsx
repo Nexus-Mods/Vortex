@@ -16,6 +16,11 @@ import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
 import ReactMarkdown from 'react-markdown';
 
+import dayjs from 'dayjs';
+import relativeTimePlugin from 'dayjs/plugin/relativeTime' // import plugin
+
+dayjs.extend(relativeTimePlugin);
+
 interface IConnectedProps {
   gameMode: string;
   announcements: IAnnouncement[];
@@ -24,7 +29,9 @@ interface IConnectedProps {
 type IProps = WithTranslation & IConnectedProps;
 
 class AnnouncementDashlet extends ComponentEx<IProps, {}> {
+
   private mAppVersion: string;
+
   constructor(props: IProps) {
     super(props);
     this.mAppVersion = getApplication().version;
@@ -112,8 +119,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     };
 
     const renderDate = (): JSX.Element => (
-      <div>
-        {new Date(announcement.date).toLocaleDateString(this.context.api.locale())}
+      <div title={dayjs(announcement.date).toString()}>
+        { dayjs().to(announcement.date) }
       </div>
     );
 
