@@ -115,6 +115,9 @@ jobs:
         with: 
           node-version: '18.x' 
           cache: "yarn" 
+
+      - name: Check Packages
+        run: yarn run check_packages
  
       - name: Install dependencies 
         run: yarn --frozen-lockfile --network-timeout 600000 install 
