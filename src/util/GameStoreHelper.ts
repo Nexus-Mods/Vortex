@@ -25,6 +25,7 @@ export interface IStoreQuery {
 }
 
 class GameStoreHelper {
+  private mApi: IExtensionApi;
   private mStores: IGameStore[];
   private mStoresDict: { [storeId: string]: IGameStore };
 
@@ -260,8 +261,16 @@ class GameStoreHelper {
     return undefined;
   });
 
-  public reloadGames(): Bluebird<void> {
+  public reloadGames(api?: IExtensionApi): Bluebird<void> {
+    if (!!api && !this.mApi) {
+      this.mApi = api;
+    }
     const stores = this.getStores().filter(store => !!store);
+    this.mApi?.sendNotification({
+      id: 'gamestore-reload',
+      type: 'activity',
+      message: 'Loading game stores...',
+    });
     log('info', 'reloading game store games', stores.map(store => store.id)
                                                     .join(', '));
     return Bluebird.each(stores, (store: IGameStore) =>
@@ -275,7 +284,10 @@ class GameStoreHelper {
               return Bluebird.resolve();
             })
         : Bluebird.resolve())
-      .then(() => Bluebird.resolve());
+      .then(() => {
+        this.mApi?.dismissNotification('gamestore-reload');
+        return Bluebird.resolve()
+      });
   }
 
   /**

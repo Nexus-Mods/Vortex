@@ -1,7 +1,8 @@
+/* eslint-disable */
 import { setNextProfile } from '../../actions';
 import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { ThunkStore } from '../../types/IExtensionContext';
+import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { GameEntryNotFound, IGameStore } from '../../types/IGameStore';
 import { IState } from '../../types/IState';
@@ -55,6 +56,7 @@ export interface IGameStub {
  * @class GameModeManager
  */
 class GameModeManager {
+  private mApi: IExtensionApi;
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
   private mGameStubs: IGameStub[];
@@ -62,10 +64,12 @@ class GameModeManager {
   private mActiveSearch: Promise<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
-  constructor(extensionGames: IGame[],
+  constructor(api: IExtensionApi,
+              extensionGames: IGame[],
               gameStubs: IGameStub[],
               gameStoreExtensions: IGameStore[],
               onGameModeActivated: (mode: string) => void) {
+    this.mApi = api;
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mGameStubs = gameStubs;
@@ -376,7 +380,7 @@ class GameModeManager {
   }
 
   private reloadStoreGames() {
-    return GameStoreHelper.reloadGames();
+    return GameStoreHelper.reloadGames(this.mApi);
   }
 
   private isValidGame(game: IGameStored): boolean {

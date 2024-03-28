@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
 import OptionsFilter, { ISelectOption } from '../../controls/table/OptionsFilter';
@@ -42,7 +43,7 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import getDriveList from './util/getDriveList';
-import { getGame, getGameStore } from './util/getGame';
+import { getGame, getGameStore, getGameStores } from './util/getGame';
 import { getModType, getModTypeExtensions, registerModType } from './util/modTypeExtensions';
 import ProcessMonitor from './util/ProcessMonitor';
 import queryGameInfo from './util/queryGameInfo';
@@ -202,6 +203,34 @@ function findGamePath(game: IGame, selectedPath: string,
       findGamePath(game, path.dirname(selectedPath), depth + 1, maxDepth));
 }
 
+function manualGameStoreSelection(api: IExtensionApi, correctedGamePath: string): Promise<{ store: string, corrected: string }> {
+  const gameStores = getGameStores();
+  return GameStoreHelper.identifyStore(correctedGamePath)
+    .then((storeId) => {
+      const detectedStore = gameStores.find(store => store.id === storeId);
+      return api.showDialog('question', 'Choose a Game Store', {
+      bbcode: api.translate('The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]'
+        + 'If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]',
+          { replace: { gameStore: detectedStore?.name || 'Unknown' } }),
+      choices: gameStores.map((store) => ({ id: store.id, text: store.name, value: store.id === storeId }))
+                         .concat({ id: 'other', text: 'Other', value: storeId === undefined }),
+    }, [
+      { label: 'Select' },
+    ])
+    .then((res) => {
+      const selected = Object.keys(res.input).find(iter => res.input[iter]);
+      if (selected === undefined) {
+        return Promise.reject(new UserCanceled());
+      }
+      if (selected === 'other') {
+        return { store: storeId, corrected: correctedGamePath };
+      } else {
+        return { store: selected, corrected: correctedGamePath };
+      }
+    });
+  })
+}
+
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
 
@@ -230,8 +259,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         if (result !== undefined) {
           findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
-            .then((corrected: string) => GameStoreHelper.identifyStore(corrected)
-              .then(store => ({ corrected, store })))
+            .then((corrected: string) => manualGameStoreSelection(api, corrected))
             .then(({ corrected, store }) => {
               let executable = game.executable(corrected);
               if (executable === game.executable()) {
@@ -679,6 +707,7 @@ function init(context: IExtensionContext): boolean {
     context.api.ext['awaitProfileSwitch'] = () => awaitProfileSwitch(context.api);
 
     $.gameModeManager = new GameModeManagerImpl(
+      context.api,
       $.extensionGames,
       $.extensionStubs,
       gameStoreLaunchers,
