@@ -1,5 +1,5 @@
 {
-  "last_updated": 1711529172832,
+  "last_updated": 1711608119237,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7957,6 +7957,25 @@
       "version": "1.10.8",
       "type": "translation",
       "language": "it"
+    },
+    {
+      "modId": 797,
+      "fileId": 2941,
+      "author": "Asaidas",
+      "uploader": "asaidas",
+      "description": {
+        "short": "Adds vortex support for tales of glory.",
+        "long": "[size=5]Install to %AppData%&#92;Vortex&#92;plugins\n<br />\n<br />Adds Vortex support for the VR game Tales of Glory.\n<br />\n<br />IMPORTANT\n<br />\n<br />Ensure that your mod staging folder is on the same drive as your game install!\n<br />This can be done by clicking \"SETTINGS\" in Vortex, going to the Mods tab, finding the line that says \"Mod Staging Folder (Tales of Glory). Click suggest, or choose a custom folder, but it must be on the same drive as your game is installed.\n<br />\n<br />Thank you.[/size]"
+      },
+      "downloads": 9,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_2683.jpg",
+      "name": "Tales of Glory Vortex Support",
+      "timestamp": 1710895088,
+      "tags": [],
+      "version": "0.1.3",
+      "type": "game",
+      "gameName": "Tales Of Glory"
     }
   ]
 }
