@@ -100,6 +100,13 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
       ],
       iniFormat: 'winapi',
     },
+    enderalspecialedition: {
+      iniFiles: [
+        path.join('{mygames}', 'Enderal Special Edition GOG', 'Enderal.ini'),
+        path.join('{mygames}', 'Enderal Special Edition GOG', 'EnderalPrefs.ini'),
+      ],
+      iniFormat: 'winapi',
+    }
   },
   epic: {
     skyrimse: {
