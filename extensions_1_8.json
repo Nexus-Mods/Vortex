@@ -1,5 +1,5 @@
 {
-  "last_updated": 1711961173580,
+  "last_updated": 1712047280074,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -7995,6 +7995,24 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "Aliens: Fireteam Elite"
+    },
+    {
+      "modId": 824,
+      "fileId": 2958,
+      "author": "RisingDragonRonin",
+      "uploader": "RisingDragonRonin",
+      "description": {
+        "short": "Some Themes I made for my Rising Dragon Forge Modding Pack 1 Collection.",
+        "long": "[size=5][b][color=#000000][i]Overview:[/i][/color][/b][/size] \n<br />[b][color=#f9cb9c][size=3]The two main Themes have my Collection name as the title, Rising Dragon Forge Modding Pack 1. You can still use them in your Vortex setup if you wish.\n<br />The two optional Themes have the Elder Scrolls as the title for you to use with other Mods and Collections. [/size][/color][/b]\n<br />\n<br />[size=5][b][color=#f9cb9c][i][color=#000000]Permission:[/color][/i][/color][/b][/size] \n<br />[size=3][b][color=#f9cb9c]I have asked and received the permission from [url=https://www.nexusmods.com/site/users/65110741]Healz4Life[/url], to use the assets from [/color][/b][b][color=#f9cb9c][url=https://www.nexusmods.com/site/mods/541]Skyrim Vortex Theme - Night Sky,[/url] [/color][/b][/size][b][color=#f9cb9c][size=3]Thank You![/size][/color][color=#f9cb9c][size=4]\n<br />[/size][/color][/b][b][color=#f9cb9c][size=3]You will have to follow his rules and guidelines to use his assets.[/size][/color][/b]\n<br />\n<br />[size=5][b][color=#000000][i]Requirements:[/i][/color][/b][/size] \n<br />[b][size=3][url=https://www.nexusmods.com/site/mods/1]Vortex[/url][/size][/b]\n<br />\n<br />[size=5][b][color=#000000][i]Installation:[/i][/color][/b][/size][size=4][b][color=#f9cb9c] \n<br />[/color][color=#93c47d][Mod Manager Download][/color][/b][/size] [b]\n<br />[color=#f9cb9c][size=3]You should get a popup showing the Theme you have chosen.\n<br />Click install and close the popup.\n<br />It should now be in your Vortex Extensions.\n<br />Restart Vortex and go to Settings&gt;Theme&gt;Theme and choose the Theme from the drop down. \n<br />[/size][/color][color=#e06666][size=4]Note:[/size][/color][color=#f9cb9c][size=3]\n<br />[/size][/color][/b][b][color=#e06666][size=3]I'm still trying to figure out way using the Mod Manager Download option is not working right.\n<br />[/size][/color][/b][b][color=#e06666][size=3]I am trying to download in unpublished mode, it could make a difference in how testing Themes.[/size][/color][/b]\n<br />[b][color=#e06666][size=3]For now please use the Manual Option. If anyone would like to share their knowledge on this issue, please do so. Thanks! [/size][/color][/b]\n<br />\n<br />[b][color=#93c47d][size=4][Manual Download][/size][/color][/b] \n<br />[color=#f9cb9c][size=3][b]Go to Vortex&gt;Extensions.\n<br />Drag and drop the Theme 7z folder into the Drop File(s) Box.\n<br />Restart Vortex and go to Settings&gt;Theme&gt;Theme and choose the Theme from the drop down.[/b][/size][/color] \n<br />\n<br />[size=5][b][color=#000000][i]My Vortex Collection:[/i][/color][/b][/size] \n<br />[b][color=#e06666][size=3]Still working on it[/size][/color][color=#e06666][size=3].[/size][/color][/b] \n<br />[color=#93c47d][size=3][b]Go head and check out my Icons that I made to go with my Collection [/b][/size][/color][color=#93c47d][size=3][b][url=https://www.nexusmods.com/skyrimspecialedition/mods/114671]Rising Dragon Forge Tools Icon Replacers[/url][/b][/size][/color]\n<br />\n<br />[size=5][b][color=#f9cb9c][i][color=#000000]My Other Mods:[/color][/i][/color][/b][/size][size=4][b][color=#f9cb9c]\n<br />[/color][/b][/size][size=3][b][color=#f9cb9c][url=https://www.nexusmods.com/users/3015377?tab=user+files]https://www.nexusmods.com/users/3015377?tab=user+files[/url]﻿[/color][/b][/size] \n<br />\n<br />[size=5][b][color=#f9cb9c][i][color=#000000]My YouTube Channel:[/color][/i][/color][/b][/size][size=4][b][color=#f9cb9c]\n<br />[/color][/b][/size][size=3][b][color=#f9cb9c][url=https://youtube.com/@RisingDragonForge?si=5d4RVn7mg1doCmlO]https://youtube.com/@RisingDragonForge?si=5d4RVn7mg1doCmlO[/url]﻿[/color][/b][/size] \n<br />\n<br />[size=5][b][color=#000000][i]Wisdom:[/i][/color][/b][/size] \n<br />[size=4][b][i][color=#b6d7a8]“It is better to be a warrior in a garden, than a gardener in a war.”  Miyamoto Musashi[/color][/i][/b] [/size]\n<br />\n<br />[size=5][b][color=#000000][i]Credits:[/i][/color][/b][/size] \n<br />[b][color=#f9cb9c][size=3][url=https://www.nexusmods.com/site/users/65110741]Healz4Life[/url]: Thank You! For letting me use your Assets from your Vortex Theme [url=https://www.nexusmods.com/site/mods/541]Skyrim Vortex Theme - Night Sky[/url]\n<br />[/size][/color][/b]"
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/824/824-1711110856-1566861843.png",
+      "name": "Rising Dragon Forge Vortex Themes",
+      "timestamp": 1711195155,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "theme"
     }
   ]
 }
