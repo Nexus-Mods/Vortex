@@ -27,7 +27,13 @@
     flex-direction: column;
     gap: 8px;    
     margin: 0;
+
+    .input-group {
+      display: block;
+    }
   }
+
+
 }
 
 #settings-tab > .tab-content {
