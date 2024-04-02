@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Collections) Fixed rare crash where game version was being compared 
 - (Collections) Improved error handling when displaying instructions. Fixes [#14570](https://github.com/Nexus-Mods/Vortex/issues/14570)
 - (Collections) Instructions textarea now fills available space. Fixes [#15394](https://github.com/Nexus-Mods/Vortex/issues/15394)
+- (Collections) Override overflow now scrolls vertically.
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
 - (Dependency Management) Suppress error report when user cancels purge
 - (Dependency Management) Fixed file overrides being cleared when switching to an empty profile 
