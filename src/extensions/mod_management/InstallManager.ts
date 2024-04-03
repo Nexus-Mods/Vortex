@@ -1665,14 +1665,20 @@ class InstallManager {
         });
       };
 
+      const isDependency = mods[0].attributes?.installedAsDependency ?? false;
+      const addendum = isDependency
+        ? ' and is trying to be reinstalled as a dependency by another mod or collection.'
+        : '.'
+
       const queryDialog = () => api.showDialog('question', 'Install options',
         {
-          text: '"{{modName}}" has already been installed. Would you like to:',
+          bbcode: api.translate(`"{{modName}}" is already installed on your system${addendum}` + '[br][/br][br][/br]Would you like to:',
+            { replace: { modName: modName(mods[0], { version: false }), } }),
           choices: [
             {
               id: 'replace',
               value: true,
-              text: 'Replace the existing mod',
+              text: 'Replace the existing mod' + (isDependency ? ' (recommended)' : ''),
               subText: 'This will replace the existing mod on all your profiles.',
             },
             {
