@@ -1,8 +1,8 @@
 ---
-name: Verify extension
+name: Verify Extension
 about: Submit an extension for verification
-title: 'Verify extension: '
-labels: ''
+title: "Verify Extension: "
+labels: "extension :gear:"
 assignees: ''
 
 ---
