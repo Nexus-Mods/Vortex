@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added ability to select game store when manually choosing game folder. Fixes [#15371](https://github.com/Nexus-Mods/Vortex/issues/15371)
 - (PoE 2) Fixed broken Xbox launcher. Fixes [#15409](https://github.com/Nexus-Mods/Vortex/issues/15409)
 - Adding support for EnderalSE on GOG. Fixes [#15369](https://github.com/Nexus-Mods/Vortex/issues/15369)
+- Added status pill to collection overview
 
 ## [1.11.0] - 2024-04-02
 
