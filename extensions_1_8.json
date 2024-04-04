@@ -1,5 +1,5 @@
 {
-  "last_updated": 1712131123559,
+  "last_updated": 1712214615398,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8013,6 +8013,25 @@
       "tags": [],
       "version": "1.0.1",
       "type": "theme"
+    },
+    {
+      "modId": 819,
+      "fileId": 2967,
+      "author": "natedagreat121",
+      "uploader": "natedagreat121",
+      "description": {
+        "short": "This Vortex extension enables mod management for \"Destroy All Humans! 2 - Reprobed,\" auto-detecting the game via Steam and GOG IDs, ensuring mod directories exist, and facilitating correct mod installations to enhance gameplay seamlessly.",
+        "long": "This Vortex extension provides comprehensive support for \"Destroy All Humans! 2 - Reprobed\" by automating the discovery of the game's installation, ensuring mod directories are in place, and streamlining the mod installation process. It manages mods by ensuring a writable `~mods` folder within the game's `Paks` directory, where mod files are stored. Users can easily manage their mods through Vortex, with the extension taking care of the necessary setup, like validating game files and setting up the modding environment, making modding accessible even for those less familiar with the game's directory structure."
+      },
+      "downloads": 7,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4789.jpg",
+      "name": "Destroy All Humans 2 - Reprobed Extension",
+      "timestamp": 1711533961,
+      "tags": [],
+      "version": "0.0.3",
+      "type": "game",
+      "gameName": "Destroy All Humans 2 - Reprobed"
     }
   ]
 }
