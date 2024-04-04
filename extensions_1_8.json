@@ -1,5 +1,5 @@
 {
-  "last_updated": 1712216892885,
+  "last_updated": 1712220645904,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8032,6 +8032,25 @@
       "version": "0.0.3",
       "type": "game",
       "gameName": "Destroy All Humans 2 - Reprobed"
+    },
+    {
+      "modId": 825,
+      "fileId": 2962,
+      "author": "lucasskywalker64",
+      "uploader": "lucasskywalker64",
+      "description": {
+        "short": "This extension adds Ready Or Not Support",
+        "long": "[size=4]What is it?[/size]\n<br />This is a simple Vortex extension that adds support for Ready Or Not mods to allow automatic mod installation through the Vortex mod manager.\n<br />\n<br />Using Vortex, you can install, manage, track and uninstall mods for Ready Or Not just like you install mod archives for any of the other Vortex-supported games.\n<br />\n<br />\n<br />[size=4]Limitations:\n<br />[/size]Any mods that aren't simple .pak mods will not work!\n<br />\n<br />\n<br />\n<br />Please report any bugs or issues you find."
+      },
+      "downloads": 85,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4205.jpg",
+      "name": "Ready Or Not Support",
+      "timestamp": 1711232359,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Ready or Not"
     }
   ]
 }
