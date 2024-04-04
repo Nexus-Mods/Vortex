@@ -73,6 +73,7 @@ import * as url from 'url';
 import * as modMetaT from 'modmeta-db';
 
 import { generate as shortid } from 'shortid';
+import { IInstallOptions } from './types/IInstallOptions';
 
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
@@ -461,7 +462,13 @@ class InstallManager {
             log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
             return Promise.resolve(testModId);
           } else {
-            return this.queryUserReplace(api, existingIds, installGameId, ++variantCounter)
+            const installOptions: IInstallOptions = {
+              ...info,
+              unattended,
+              variantNumber: ++variantCounter,
+              fileList,
+            };
+            return this.queryUserReplace(api, existingIds, installGameId, installOptions)
               .then((choice: IReplaceChoice) => {
                 if (choice.id === undefined) {
                   log('error', '(nameloop) no valid id selection', { testModId, modNameMatches, variantMatches });
@@ -1589,7 +1596,7 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(api: IExtensionApi, modIds: string[], gameId: string, counter: number) {
+  private queryUserReplace(api: IExtensionApi, modIds: string[], gameId: string, installOptions: IInstallOptions) {
     return new Bluebird<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mods: IMod[] = Object.values(state.persistent.mods[gameId])
@@ -1635,7 +1642,7 @@ class InstallManager {
           text: 'Enter a variant name for "{{modName}}" to differentiate it from the original',
           input: [{
             id: 'variant',
-            value: counter > 2 ? counter.toString() : '2',
+            value: installOptions.variantNumber > 2 ? installOptions.variantNumber.toString() : '2',
             label: 'Variant',
           }],
           checkboxes: checkVariantRemember,
@@ -1665,7 +1672,13 @@ class InstallManager {
         });
       };
 
-      const isDependency = mods[0].attributes?.installedAsDependency ?? false;
+      const modReference: IModReference = {
+        fileList: installOptions?.fileList,
+        gameId,
+        installerChoices: installOptions?.choices,
+        patches: installOptions?.patches,
+      }
+      const isDependency = (installOptions?.unattended === true) && (testModReference(mods[0], modReference) === false);
       const addendum = isDependency
         ? ' and is trying to be reinstalled as a dependency by another mod or collection.'
         : '.'
@@ -1785,8 +1798,8 @@ class InstallManager {
                 remember: true,
               }));
           } else {
-            if ((variant !== undefined) && (counter > 1)) {
-              variant += `.${counter}`;
+            if ((variant !== undefined) && (installOptions.variantNumber > 1)) {
+              variant += `.${installOptions.variantNumber}`;
             }
             choices = Bluebird.resolve({
               action,

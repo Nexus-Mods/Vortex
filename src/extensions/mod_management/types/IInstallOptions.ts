@@ -6,4 +6,6 @@ export interface IInstallOptions {
   forceInstaller?: string;
   unattended?: boolean;
   fileList?: IFileListItem[];
+  patches?: any;
+  variantNumber?: number;
 }
