@@ -2424,26 +2424,27 @@ class InstallManager {
     };
 
     const installDownload = (dep: IDependency, downloadId: string) : Bluebird<string> => {
-      return new Bluebird((resolve, reject) => {
-        this.mDependencyInstallsLimit.do(async () => {
-        return abort.signal.aborted
-          ? reject(new UserCanceled(false))
-          : this.withInstructions(api,
-                              modName(sourceMod),
-                              renderModReference(dep.reference),
-                              dep.reference?.tag ?? downloadId,
-                              dep.extra?.['instructions'],
-                              recommended, () =>
-          this.installModAsync(dep.reference, api, downloadId,
-            { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
-            gameId, silent)).then(res => resolve(res))
-          .catch(err => {
-            if (err instanceof UserCanceled) {
-              err.skipped = true;
-            }
-            return reject(err);
-          });
-        })});
+      return new Bluebird<string>((resolve, reject) => {
+        return this.mDependencyInstallsLimit.do(async () => {
+          return abort.signal.aborted
+            ? reject(new UserCanceled(false))
+            : this.withInstructions(api,
+                                modName(sourceMod),
+                                renderModReference(dep.reference),
+                                dep.reference?.tag ?? downloadId,
+                                dep.extra?.['instructions'],
+                                recommended, () =>
+            this.installModAsync(dep.reference, api, downloadId,
+              { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
+              gameId, silent)).then(res => resolve(res))
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                err.skipped = true;
+              }
+              return reject(err);
+            });
+        })
+      });
     };
 
     const doDownload = (dep: IDependency) => {
