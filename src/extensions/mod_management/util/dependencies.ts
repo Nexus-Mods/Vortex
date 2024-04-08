@@ -459,13 +459,13 @@ function gatherDependencies(
     gatherDependenciesGraph(rule, api, gameMode, recommendations)))
     .then((node: IDependencyNode) => {
       onProgress();
-      return node;
+      return Promise.resolve(node);
     })
     .catch(err => {
       // gatherDependenciesGraph handles exceptions itself so we shouldn't get here
       // but better to make sure
       api.showErrorNotification('Failed to gather dependencies', err);
-      return null;
+      return Promise.resolve(null);
     })),
   )
     // tag duplicates
