@@ -2330,7 +2330,7 @@ class InstallManager {
         // adequate to show an error but not as a bug in Vortex
         api.showErrorNotification('Failed to install dependencies',
           err.message, { allowReport: false });
-        return [];
+        return Bluebird.resolve([]);
       })
       .catch(UserCanceled, () => {
         log('info', 'canceled out of dependency install');
@@ -2339,15 +2339,15 @@ class InstallManager {
           type: 'info',
           message: 'Installation of dependencies canceled',
         });
-        return [];
+        return Bluebird.resolve([]);
       })
       .catch(err => {
         api.showErrorNotification('Failed to install dependencies', err);
-        return [];
+        return Bluebird.resolve([]);
       })
       .filter(dep => dep !== undefined);
 
-    return res;
+    return Bluebird.resolve(res);
   }
 
   private doInstallDependencies(api: IExtensionApi,
@@ -2423,27 +2423,28 @@ class InstallManager {
           })));
     };
 
-    const installDownload = (dep: IDependency, downloadId: string)
-        : Bluebird<string> => {
-      return Bluebird.resolve(this.mDependencyInstallsLimit.do(() => {
-        return abort.signal.aborted
-          ? Bluebird.reject(new UserCanceled(false))
-          : this.withInstructions(api,
-                              modName(sourceMod),
-                              renderModReference(dep.reference),
-                              dep.reference?.tag ?? downloadId,
-                              dep.extra?.['instructions'],
-                              recommended, () =>
-          this.installModAsync(dep.reference, api, downloadId,
-            { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
-            gameId, silent))
-          .catch(err => {
-            if (err instanceof UserCanceled) {
-              err.skipped = true;
-            }
-            return Bluebird.reject(err);
-          });
-        }));
+    const installDownload = (dep: IDependency, downloadId: string) : Bluebird<string> => {
+      return new Bluebird<string>((resolve, reject) => {
+        return this.mDependencyInstallsLimit.do(async () => {
+          return abort.signal.aborted
+            ? reject(new UserCanceled(false))
+            : this.withInstructions(api,
+                                modName(sourceMod),
+                                renderModReference(dep.reference),
+                                dep.reference?.tag ?? downloadId,
+                                dep.extra?.['instructions'],
+                                recommended, () =>
+            this.installModAsync(dep.reference, api, downloadId,
+              { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
+              gameId, silent)).then(res => resolve(res))
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                err.skipped = true;
+              }
+              return reject(err);
+            });
+        })
+      });
     };
 
     const doDownload = (dep: IDependency) => {
@@ -2528,20 +2529,18 @@ class InstallManager {
             // being installed having a different tag than the rule
             dep.reference = this.updateModRule(api, gameId, sourceModId, dep, {
               ...dep.reference,
+              fileList: dep.fileList,
+              patches: dep.patches,
+              installerChoices: dep.installerChoices,
               tag: downloads[downloadId].modInfo.referenceTag,
             }, recommended)?.reference;
 
-            // now at this point there may in fact already be a mod for the updated reference tag
-            if ((dep.mod === undefined) && (dep.reference !== undefined)) {
-              dep.mod = findModByRef(
-                dep.reference, api.getState().persistent.mods[gameId]);
-              log('info', 'updated mod', JSON.stringify(dep.mod));
-            }
+            dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
           } else {
             log('info', 'downloaded as dependency', { downloadId });
           }
 
-          let queryWrongMD5 = Bluebird.resolve();
+          let queryWrongMD5 = () => Bluebird.resolve();
           if ((dep.mod === undefined)
               && (dep.reference?.versionMatch !== undefined)
               && !isFuzzyVersion(dep.reference.versionMatch)
@@ -2552,7 +2551,7 @@ class InstallManager {
               expected: dep.lookupResults[0].value.fileMD5,
               got: downloads[downloadId].fileMD5,
             });
-            queryWrongMD5 = api.showDialog('question', 'Unrecognized file {{reference}}', {
+            queryWrongMD5 = () => api.showDialog('question', 'Unrecognized file {{reference}}', {
               text: 'The file "{{fileName}}" that was just downloaded for dependency "{{reference}}" '
                   + 'is not the exact file expected. This might not be an issue if the mod has been '
                   + 'updated or repackaged by the author.\n'
@@ -2573,7 +2572,7 @@ class InstallManager {
           }
 
           return (dep.mod === undefined)
-            ? queryWrongMD5
+            ? queryWrongMD5()
                 .then(() => installDownload(dep, downloadId))
                 .catch(err => {
                   if (dep['reresolveDownloadHint'] === undefined) {
@@ -2629,7 +2628,7 @@ class InstallManager {
       abort.abort();
     };
 
-    return res;
+    return Bluebird.resolve(res);
   }
 
   private updateModRule(api: IExtensionApi, gameId: string, sourceModId: string,
@@ -2696,8 +2695,9 @@ class InstallManager {
         if (dep['error'] !== undefined) {
           prev.error.push(dep as IDependencyError);
         } else {
-          const { mod } = dep as IDependency;
-          if ((mod === undefined) || !(modState[mod.id]?.enabled ?? false) || (!!mods[mod.id] && findModByRef(mod, mods) === undefined)) {
+          const { mod, reference } = dep as IDependency;
+          const modReference: IModReference = { ...(dep as IDependency), ...reference };
+          if ((mod === undefined) || !(modState[mod.id]?.enabled ?? false) || (!!mods[mod.id] && testModReference(mods[mod.id], modReference) !== true)) {
             prev.success.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
