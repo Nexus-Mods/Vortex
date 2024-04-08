@@ -2689,13 +2689,15 @@ class InstallManager {
       ? (api.getState().persistent.profiles[profile.id]?.modState ?? {})
       : {};
 
+    const mods = api.getState().persistent.mods?.[gameId] ?? {};
+
     const { success, existing, error } = dependencies.reduce(
       (prev: IDependencySplit, dep: Dependency) => {
         if (dep['error'] !== undefined) {
           prev.error.push(dep as IDependencyError);
         } else {
           const { mod } = dep as IDependency;
-          if ((mod === undefined) || !(modState[mod.id]?.enabled ?? false)) {
+          if ((mod === undefined) || !(modState[mod.id]?.enabled ?? false) || (!!mods[mod.id] && findModByRef(mod, mods) === undefined)) {
             prev.success.push(dep as IDependency);
           } else {
             prev.existing.push(dep as IDependency);
