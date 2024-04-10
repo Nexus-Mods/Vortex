@@ -1,5 +1,5 @@
 {
-  "last_updated": 1712746578315,
+  "last_updated": 1712747440713,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8032,6 +8032,25 @@
     {
       "modId": 825,
       "fileId": 2962
+    },
+    {
+      "modId": 342,
+      "fileId": 1318,
+      "author": "BeYkeRYkt",
+      "uploader": "BeYkeRYkt",
+      "description": {
+        "short": "Adds management and load order support for .pak mods to Vortex Mod Manager for Ready Or Not game.",
+        "long": "This [url=https://www.nexusmods.com/about/vortex/]Vortex[/url] extension adds mod management and load order support for [url=https://www.nexusmods.com/readyornot]Ready Or Not[/url]. Extension is based on and uses Pickysaurus [url=https://www.nexusmods.com/site/mods/153]Unreal Engine Mod Installer[/url]﻿.\n<br />\n<br />[size=4]Installation[/size]\n<br />\n<br />In Vortex, simply go to the Games section, find Ready Or Not tile, click on \"Manage\", and follow the prompts to install the extension and restart\n<br /> Vortex. If a prompt appears to install the Unreal Engine Mod Installer, click \"Fix\" in the prompt and restart Vortex once more.\n<br />\n<br />You can also enable advanced mode in Vortex's settings, download the ZIP archive from the Files tab above, and drop the archive into Vortex's Extensions\n<br /> section. You can even do it more manually by extracting the ZIP archive to a custom subfolder in Vortex's plugins folder (likely %APPDATA%&#92;Vortex&#92;plugins).\n<br />\n<br />Source code: https://github.com/BeYkeRYkt/vortex_readyornot_extension"
+      },
+      "downloads": 143654,
+      "endorsements": 4038,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4205.jpg",
+      "name": "Ready Or Not - Vortex Extension",
+      "timestamp": 1642616109,
+      "tags": [],
+      "version": "1.1.0",
+      "type": "game",
+      "gameName": "Ready or Not"
     }
   ]
 }
