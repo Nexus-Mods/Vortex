@@ -1,5 +1,5 @@
 {
-  "last_updated": 1712821686965,
+  "last_updated": 1712832161360,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8051,6 +8051,25 @@
       "version": "1.1.0",
       "type": "game",
       "gameName": "Ready or Not"
+    },
+    {
+      "modId": 837,
+      "fileId": 2999,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Add A Plague Tale: Reqiuem support to Vortex with this extension",
+        "long": "SImple extension to enable Vortex support for A Plague Tale: Requiem. Aims mod installs at the game's root folder, so be sure your mod folder structures are correct per the mod instructions. Should automatically detect installation location for the Steam version of the game. Other versions will need to specify the game folder manually when activating the game. \n<br />\n<br />\n<br />A few things to note:  \n<br />- Until this extension is added to Vortex by the mod team, please use the \"Manual Download\" button and drop it into the Extensions in Vortex. The \"Mod Manager Download\" button does not seem to work when installing game extensions from the browser."
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_4874.jpg",
+      "name": "A Plague Tale Requiem Vortex Extension",
+      "timestamp": 1712371824,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "A Plague Tale: Requiem"
     }
   ]
 }
