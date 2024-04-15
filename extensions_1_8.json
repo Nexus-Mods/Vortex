@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713167281555,
+  "last_updated": 1713185278870,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8070,6 +8070,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "A Plague Tale: Requiem"
+    },
+    {
+      "modId": 801,
+      "fileId": 2995,
+      "author": "LuxenDM",
+      "uploader": "LuxenDM",
+      "description": {
+        "short": "Vortex support for FATE",
+        "long": "[size=4]Vortex Extension for FATE[/size]\n<br />\n<br />This is an extension for [url=https://www.nexusmods.com/about/vortex/]Vortex[/url] to add support for FATE. This is available for the PC from [url=https://store.steampowered.com/app/246840/FATE/]Steam[/url], [url=https://www.gog.com/game/FATE]GOG[/url], and [url=http://games.wildtangent.com/fate/]WildTangent[/url]﻿, as well as the original game disc. The extension is only tested with Steam, but should be compatible with the other installations as well.\n<br />[size=3]\n<br />[b]Game detection[/b][/size]\n<br />\n<br />The FATE game extension enables Vortex to automatically locate the installation directory from Steam's library.\n<br />It is also possible to manually set the game folder if the auto detection doesn't find the correct installation. A valid FATE game folder contains:\n<br />\n<br />[code]/fate.exe\n<br />[/code]\n<br />If your game lacks this file then it is likely that your installation has become corrupted somehow.\n<br />\n<br />[b][size=3]Requirements[/size][/b]:\n<br />\n<br />FATE doesn't support automatic mod installation normally. Please download and install [b][i][u][url=https://www.nexusmods.com/fate/mods/21][b][size=3]Fate Patcher Core[/size][/b][/url][/u][/i][/b] and install to the game directory manually.\n<br />When Vortex deploys your mods, it will prepare them for this utility; launch the tool from the tools category to integrate the mods into your game. You will be provided a link to download FPX Core when the extension loads, as well as when you deploy mods, if this utility's executable is missing from the game's root directory.\n<br />\n<br />[size=3][b]Mod Management[/b]\n<br />[/size]\n<br />The mods will be deployed to the game's mod folder (the [u][i]/mods[/i][/u] directory) and will respect the folder structure within the archive file (which should be single-nested before the mod's patch file). To integrate the mods into your game, run the Fate Patcher Core utility.\n<br />\n<br />Deployment method MUST be hardlink; the symlink method is NOT compatible with Fate Patcher Core's plugin loading system at this time.\n<br />\n<br />[size=3][b]To Do[/b][/size][size=2]:\n<br />[/size]\n<br />Auto-run Fate Patcher Core after mod deployment\n<br />[size=3]\n<br />[b]See also[/b][/size]\n<br />- [url=https://www.nexusmods.com/fate?tab=latest]NexusMods FATE Repository[/url].\n<br />- [url=https://pctalk.info/Games/FATE/Pages/ModsByAuthor.php]Original Modding Website[/url].\n<br />\n<br />- [url=https://discord.gg/WFhx8SmAWz]FATE Modding Discord Community\n<br />[img]https://i.imgur.com/972EjKy.png[/img][/url]\n<br />\n<br />\n<br />- [url=https://www.nexusmods.com/about/vortex/]Download Vortex (Nexus Mods)[/url]\n<br />- [url=https://wiki.nexusmods.com/index.php/Category:Vortex]Vortex Knowledge Base (Nexus Mods)[/url]"
+      },
+      "downloads": 11,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_3916.jpg",
+      "name": "FATE",
+      "timestamp": 1712290617,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "FATE"
     }
   ]
 }
