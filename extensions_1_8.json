@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713187754358,
+  "last_updated": 1713189568416,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8127,6 +8127,25 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "Content Warning"
+    },
+    {
+      "modId": 704,
+      "fileId": 3011,
+      "author": "yajneS",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Vortex extension support for Fear &amp; Hunger",
+        "long": "[size=4]Vortex extension support for Fear &amp; Hunger[/size][b][size=4]\n<br />[/size][/b][b][size=4]\n<br />[/size][/b][size=3]Acceptable mod package [/size][size=3]example[/size][b][size=4][size=3]\n<br />\n<br />[/size][code]﻿myMod.zip/\n<br />└── www/\n<br />    └── mods/\n<br />        ├── myModScript.js\n<br />        └── myModConfig.json\n<br />[/code]\n<br />[/size][/b]"
+      },
+      "downloads": 5,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_5546.jpg",
+      "name": "Fear and Hunger Vortex Extension",
+      "timestamp": 1712536976,
+      "tags": [],
+      "version": "1.0.1",
+      "type": "game",
+      "gameName": "Fear and Hunger"
     }
   ]
 }
