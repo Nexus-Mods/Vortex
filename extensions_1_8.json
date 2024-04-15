@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713185278870,
+  "last_updated": 1713186347107,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8089,6 +8089,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "FATE"
+    },
+    {
+      "modId": 844,
+      "fileId": 3024,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Vortex mod support for Horizon Forbidden West Complete Edition",
+        "long": "Vortex mod support for Horizon Forbidden West Complete Edition. Steam version should find the installation location automatically. Epic Games version will have to specify the location manually until I learn the Epic Games ID to add to this extension.\n<br />\n<br />Installs mods to the game's root folder by default (also the executable location). Another mod type for save games that installs to the Documents folder is also available. Note that you may need to add a folder or two to a save game mod in order to get it into the correct spot. \n<br />\n<br />If anyone can follow this guide and let me know the Epic Games ID, that would be very helpful. \n<br />[url=https://jayd.ml/games/2020/05/16/epic-games-store-steam-libraries.html]Library Information for Epic Games Store and Steam | Jayden’s Blog[/url]\n<br />\n<br />﻿A few things to note:  \n<br />- Until this extension is added to Vortex by the mod team, please use the \"Manual Download\" button and drop it into the Extensions in Vortex. The \"Mod Manager Download\" button does not seem to work when installing game extensions from the browser."
+      },
+      "downloads": 94,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6266.jpg",
+      "name": "Horizon Forbidden West Complete Edition Vortex Extension",
+      "timestamp": 1712796741,
+      "tags": [],
+      "version": "0.1.1",
+      "type": "game",
+      "gameName": "Horizon Forbidden West"
     }
   ]
 }
