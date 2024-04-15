@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713186347107,
+  "last_updated": 1713187754358,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8108,6 +8108,25 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Horizon Forbidden West"
+    },
+    {
+      "modId": 835,
+      "fileId": 2984,
+      "author": "yajneS",
+      "uploader": "yajneS",
+      "description": {
+        "short": "Vortex Extension Support for Content Warning",
+        "long": "[b][size=3]Vortex extension support for Content Warning\n<br />\n<br />[/size][/b][size=2]Accepted Mod package filetree sample\n<br />[/size]myMod.zip/\n<br />└── BepInEx/\n<br />    └── plugins/\n<br />        └── myplugin.dll"
+      },
+      "downloads": 108,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6301.jpg",
+      "name": "Content Warning Vortex Extension",
+      "timestamp": 1712082825,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "game",
+      "gameName": "Content Warning"
     }
   ]
 }
