@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713253678751,
+  "last_updated": 1713259217477,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8148,6 +8148,25 @@
       "version": "1.0.1",
       "type": "game",
       "gameName": "Fear and Hunger"
+    },
+    {
+      "modId": 851,
+      "fileId": 3045,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "This extension adds Vortex mod support for Dragon's Dogma 2.<br /><br />*** This extension is intended to be used in combination with Fluffy Mod Manager. Please install that as a mod after installing this extension.",
+        "long": "This extension adds Vortex mod support for Dragon's Dogma 2.  Should automatically detect the installation location for the Steam version of the game. Other versions will need to specify the game folder manually when activating the game. \n<br />\n<br />Targets the root folder for the game as the default mod installation location (same as the executable location). Be sure to set up your mod folders properly per individual mod instructions.\n<br />\n<br />Package (.pak) mods are intended to be used in combination with[url=https://www.nexusmods.com/site/mods/818] Fluffy Mod Manager[/url]. Please install that as a mod after installing this extension. A tool is included in the extension for this app. There is a mod type \"Fluffy Mod Manager\" included in this extension to direct mods to the folder that Fluffy uses. Install Fluffy as a mod to the game's root directory (default mod install location). \n<br />\n<br />﻿A few things to note:  \n<br />- Until this extension is added to Vortex by the mod team, please use the \"Manual Download\" button and drop it into the Extensions in Vortex. The \"Mod Manager Download\" button does not seem to work when installing game extensions from the browser."
+      },
+      "downloads": 46,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6234.jpg",
+      "name": "Dragon's Dogma 2 Vortex Extension",
+      "timestamp": 1713127961,
+      "tags": [],
+      "version": "0.1.1",
+      "type": "game",
+      "gameName": "Dragon's Dogma 2"
     }
   ]
 }
