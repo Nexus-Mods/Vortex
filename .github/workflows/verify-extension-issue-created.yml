@@ -1,0 +1,37 @@
+name: Verify Extension Issue Added
+on:
+  issues:
+    types:
+      - labeled
+jobs:
+  add-comment:
+    if: github.event.label.name == 'extension :gear:'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Append Issue Body
+        uses: julien-deramond/update-issue-body@v1
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ### Verification Tasks
+
+            If a task fails, contact the author to request changes before continuing.
+
+            - [ ] Double-check for existing extension
+            - [ ] Is the extension [packaged correctly](www.example.com)?
+            - [ ] Does it install into Vortex?
+            - [ ] Does it correctly discover the game?
+            - [ ] Does it successfully install a mod?
+            - [ ] Does it successfully install a collection?
+            - [ ] Does the game run correctly with the mods installed? ​
+
+            When verified, please complete the following tasks:
+
+            - [ ] Run the GitHub Actions to add to manifest
+            - [ ] Contact author
+            - [ ] Ask Community to enable the Vortex button for the game
+            - [ ] Update the #vortex-announcements channel on Discord
+          edit-mode: append
+          append-separator: newline

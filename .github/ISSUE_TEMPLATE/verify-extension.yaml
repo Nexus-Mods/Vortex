@@ -1,18 +1,85 @@
 name: Verify Extension
-description: Submit an extension for verification
-title: "Verify Extension: "
+description: Submit a game extension for verification
+title: "[Verify]: Game Name"
 labels: ["extension :gear:"]
-projects: ["Nexus-Mods/3"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        ### Thank you for taking the time to develop a game extension for Vortex! 
+        
+        We are excited to see what you have created and to help you get it verified.
+        
+        To submit your extension for verification and before one of our team can take a look, please fill in the form below. This form will provide you with details about the verification process, puts all the pertinent information in a single place and will give you the ability to track the submission journey. 
+
   - type: input
-    id: contact
+    id: nexus-username
     attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
+      label: Nexus Username
+      description: Username of your Nexus account
+      placeholder: ex. insomnious
+    validations:
+      required: true
+
+  - type: input
+    id: extension-url
+    attributes:
+      label: Extension URL
+      description: URL to the extension mod page on Nexus Mods that you uploaded
+      placeholder: ex. https://www.nexusmods.com/site/mods/634
+    validations:
+      required: true
+
+  - type: input
+    id: game-url
+    attributes:
+      label: Game URL
+      description: URL to the game section on Nexus Mods that contain the mods for this extension
+      placeholder: ex. https://www.nexusmods.com/starfield
+    validations:
+      required: true
+
+  - type: input
+    id: existing-extension-url
+    attributes:
+      label: Existing Extension URL
+      description: If there is an existing extension for this game, please let us know the URL
+      placeholder: ex. https://www.nexusmods.com/site/mods/634
     validations:
       required: false
+
+  - type: textarea
+    id: extension-features
+    attributes:
+      label: New features
+      description:  If there is an existing extension for this game, your extension will need to be functionally better and\or have greater features than the existing one in order for us to verify it.   
+      placeholder: ex. Has load order support and works with game version 1.2.3
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmations
+      description: Please double-check that all links above are accurate, working and that a check for any existing game extensions has been completed.  
+      options:
+        - label: I confirm the above is accurate
+          required: true     
+
+  - type: checkboxes
+    id: packaging
+    attributes:
+      label: Packaging
+      description: For more information, please see [How to package a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-package-a-game-extension)
+      options:
+        - label: This extension is packaged correctly
+          required: true    
+
+  - type: checkboxes
+    id: testing
+    attributes:
+      label: Testing
+      description: For more information, please see [How to test a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-test-a-game-extension)  
+      options:
+        - label: This game extension has been tested
+          required: true
