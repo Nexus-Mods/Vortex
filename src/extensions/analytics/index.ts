@@ -135,14 +135,14 @@ function init(context: IExtensionContext): boolean {
     }
 
     async function initializeAnalytics() {
+
       try {
         const info = userInfo();
         if (info === undefined) {
           return;
         }
+
         const state = context.api.getState();
-
-
 
         const gameId = activeGameId(state);
         let gameVersion = '';
@@ -153,8 +153,7 @@ function init(context: IExtensionContext): boolean {
           const game = getGame(gameId);          
           extensionVersion = game.version;
           gameVersion = await game.getInstalledVersion(discoveryByGame(state, gameId));
-          gameProfileCount = Object.values(state.persistent.profiles).filter((profile) => { return profile.gameId === gameId }).length;
-          log('info', 'initializeAnalytics()', { gameId, gameVersion, extensionVersion, gameProfileCount });          
+          gameProfileCount = Object.values(state.persistent.profiles).filter((profile) => { return profile.gameId === gameId }).length;         
         }
 
         const theme = state.settings.interface['currentTheme'];
@@ -185,9 +184,9 @@ function init(context: IExtensionContext): boolean {
           ? 'Premium'
           : info.isSupporter
             ? 'Supporter'
-            : 'Member';
-            
-        AnalyticsGA4.start(instanceId, updateChannel, {
+            : 'Member';       
+
+        const userProperties = {
           ["VortexVersion"]: getApplication().version,
           ["Membership"]: membership,
           ["Game"]: gameId,
@@ -200,7 +199,9 @@ function init(context: IExtensionContext): boolean {
           ["GameCount"]: gameCount,
           ["Language"]: language,
           ["GameProfileCount"]: gameProfileCount,
-        });
+        };
+
+        AnalyticsGA4.start(instanceId, updateChannel, userProperties);
         
         AnalyticsUA.start(instanceId, updateChannel, {
           [DIMENSIONS.VortexVersion]: getApplication().version,
@@ -210,6 +211,9 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Theme]: theme,
           [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
+        
+        log('info', `initializeAnalytics()`);
+        log('debug', `user properties ${updateChannel}`, userProperties); 
 
         AnalyticsUA.trackEvent('Vortex', 'Version', getApplication().version);
 

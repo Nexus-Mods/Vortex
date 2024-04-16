@@ -142,6 +142,7 @@ class AnalyticsGA4 {
       this.ga4track.setUserProperty("Game", value.gameId);
       this.ga4track.setUserProperty("GameVersion", value.gameVersion);
       this.ga4track.setUserProperty("GameExtensionVersion", value.extensionId);
+      this.ga4track.setUserProperty("GameProfileCount", value.gameProfileCount);
     }
 
     // send empty page_view as we don't need it for these events and if we dont, it'll always send a default 'Vortex'

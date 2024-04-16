@@ -737,19 +737,31 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-managed-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
+
     const gameId = instanceIds[0];
+    const state = context.api.getState();
 
     let gameVersion = '';
     let extensionVersion = '';
+    let gameProfileCount = 1;
+
     if (gameId) {
-      const game = getGame(gameId);
+      const game = getGame(gameId);          
       extensionVersion = game.version;
-      game.getInstalledVersion(discoveryByGame(context.api.getState(), gameId)).then((value) => {
-        gameVersion = value;
-      });
+      game.getInstalledVersion(discoveryByGame(state, gameId)).then((value) => {        gameVersion = value;      });
+      gameProfileCount = Object.values(state.persistent.profiles).filter((profile) => { return profile.gameId === gameId }).length;
     }
 
-    context.api.events.emit( 'analytics-track-event', 'Games', 'Activate' , gameId, {gameId: gameId, gameVersion: gameVersion, extensionVersion: extensionVersion});
+    const profileData = {
+      gameId: gameId,
+      gameVersion: gameVersion,
+      extensionVersion: extensionVersion,
+      gameProfileCount: gameProfileCount
+    };
+
+    log('info', 'activate profile', profileData);            
+
+    context.api.events.emit( 'analytics-track-event', 'Games', 'Activate' , gameId, profileData);
 
     checkOverridden(context.api, gameId)
       .then(() => {
