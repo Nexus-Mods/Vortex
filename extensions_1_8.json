@@ -3546,7 +3546,9 @@
       "name": "Days Gone - Vortex Extension",
       "timestamp": 1710621026,
       "tags": [],
-      "version": "1.0.3"
+      "version": "1.0.3",
+      "type": "game",
+      "gameName": "Days Gone"
     },
     {
       "modId": 253,
