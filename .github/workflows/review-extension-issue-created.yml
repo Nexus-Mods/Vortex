@@ -1,4 +1,4 @@
-name: Verify Extension Issue Added
+name: Review Extension Issue Added
 on:
   issues:
     types:
@@ -15,19 +15,19 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            ### Verification Tasks
+            ### Review Tasks
 
             If a task fails, contact the author to request changes before continuing.
 
             - [ ] Double-check for existing extension
-            - [ ] Is the extension [packaged correctly](www.example.com)?
+            - [ ] Is the extension [packaged correctly](https://github.com/Nexus-Mods/Vortex/wiki/How-to-package-a-game-extension)?
             - [ ] Does it install into Vortex?
             - [ ] Does it correctly discover the game?
             - [ ] Does it successfully install a mod?
             - [ ] Does it successfully install a collection?
             - [ ] Does the game run correctly with the mods installed? ​
 
-            When verified, please complete the following tasks:
+            When reviewed and passed, please complete the following tasks:
 
             - [ ] Run the GitHub Actions to add to manifest
             - [ ] Contact author

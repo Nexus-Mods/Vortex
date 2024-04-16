@@ -1,6 +1,6 @@
-name: Verify Extension
-description: Submit a game extension for verification
-title: "[Verify]: Game Name"
+name: Review Extension
+description: Submit a game extension for review
+title: "Review: Game Name"
 labels: ["extension :gear:"]
 body:
   - type: markdown
@@ -10,7 +10,7 @@ body:
         
         We are excited to see what you have created and to help you get it verified.
         
-        To submit your extension for verification and before one of our team can take a look, please fill in the form below. This form will provide you with details about the verification process, puts all the pertinent information in a single place and will give you the ability to track the submission journey. 
+        To submit your extension for review and before one of our team can take a look, please fill in the form below. This form will provide you with details about the review process, puts all the pertinent information in a single place and will give you the ability to track the submission journey. 
 
   - type: input
     id: nexus-username
@@ -60,8 +60,8 @@ body:
   - type: checkboxes
     id: confirmation
     attributes:
-      label: Confirmations
-      description: Please double-check that all links above are accurate, working and that a check for any existing game extensions has been completed.  
+      label: Information
+      description: Please double-check that all links above are working and that a check for any existing game extensions has been completed.  
       options:
         - label: I confirm the above is accurate
           required: true     
