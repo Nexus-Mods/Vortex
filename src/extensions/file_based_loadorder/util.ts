@@ -1,8 +1,12 @@
+/* eslint-disable */
 import * as types from '../../types/api';
 import * as util from '../../util/api';
+import { lastActiveProfileForGame } from '../profile_management/selectors';
 import { findGameEntry } from './gameSupport';
 import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
+
+import { setValidationResult } from './actions/session'
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
   if (collection.rules === undefined) {
@@ -60,6 +64,8 @@ export async function errorHandler(api: types.IExtensionApi,
     && !(err instanceof util.UserCanceled);
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
+    const profileId = lastActiveProfileForGame(api.getState(), gameId);
+    api.store.dispatch(setValidationResult(profileId, invalLOErr.validationResult));
     const errorMessage = 'Load order failed validation';
     const details = {
       message: errorMessage,

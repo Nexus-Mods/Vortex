@@ -18,6 +18,7 @@ import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
   LoadOrderValidationError } from '../types/types';
 import InfoPanel from './InfoPanel';
 import ItemRenderer from './ItemRenderer';
+import { setFBForceUpdate } from '../actions/session';
 
 const PanelX: any = Panel;
 
@@ -48,11 +49,14 @@ interface IConnectedProps {
   // The refresh id for the current profile
   //  (used to force a refresh of the list)
   refreshId: string;
+
+  validationResult: types.IValidationResult;
 }
 
 interface IActionProps {
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onSetOrder: (profileId: string, loadOrder: LoadOrder) => void;
+  onForceRefresh: (profileId: string) => void;
 }
 
 type IProps = IActionProps & IBaseProps & IConnectedProps;
@@ -114,8 +118,18 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     // Zuckerberg isn't going to like this...
     if (this.state.currentRefreshId !== newProps.refreshId) {
-      this.onRefreshList();
       this.nextState.currentRefreshId = newProps.refreshId;
+      this.onRefreshList();
+      return;
+    }
+
+    if (this.state.validationError !== undefined && newProps.validationResult === undefined) {
+      this.nextState.validationError = undefined;
+      return;
+    }
+
+    if ((this.state.validationError?.validationResult?.invalid) !== newProps.validationResult?.invalid) {
+      this.nextState.validationError = new LoadOrderValidationError(newProps.validationResult, newProps.loadOrder);
     }
   }
 
@@ -282,15 +296,19 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
     profile,
     needToDeploy: selectors.needToDeploy(state),
     refreshId: util.getSafe(state, ['session', 'fblo', 'refresh', profile?.id], ''),
+    validationResult: util.getSafe(state, ['session', 'fblo', 'validationResult', profile?.id], undefined),
   };
 }
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
-    onSetDeploymentNecessary: (gameId, necessary) =>
+    onSetDeploymentNecessary: (gameId: string, necessary: boolean) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
-    onSetOrder: (profileId, loadOrder) => {
+    onSetOrder: (profileId: string, loadOrder: types.LoadOrder) => {
       dispatch(setFBLoadOrder(profileId, loadOrder));
+    },
+    onForceRefresh: (profileId: string) => {
+      dispatch(setFBForceUpdate(profileId))
     },
   };
 }
