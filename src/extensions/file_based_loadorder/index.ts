@@ -2,9 +2,11 @@
 
 import * as _ from 'lodash';
 
+import { setValidationResult } from './actions/session';
+
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
-  LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
+  LoadOrderValidationError } from './types/types';
 
 import { ICollection } from './types/collections';
 
@@ -200,6 +202,8 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, newLO);
     }
+
+    api.store.dispatch(setValidationResult(profile.id, undefined));
     await gameEntry.serializeLoadOrder(newLO, prev);
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
@@ -360,7 +364,7 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
-
+    api.store.dispatch(setValidationResult(profileId, undefined));
     return Promise.resolve(loadOrder);
   } catch (err) {
     return errorHandler(api, gameId, err)
