@@ -12,7 +12,7 @@
         "group": "",
         "order": 1
       },
-      "stopAll": true
+      "stopAll": true,
     },
     {
       "name": "Debug Electron (Staging)",
@@ -43,79 +43,6 @@
   ],
   "configurations": [
     {
-      "name": "Launch",
-      "type": "node",
-      "request": "launch",
-      "protocol": "inspector",
-      "program": "${workspaceFolder}/out/main.js",
-      "stopOnEntry": false,
-      "args": [],
-      "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
-      "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
-      },
-      "runtimeArgs": [
-        "."
-      ],
-      "env": {
-        "NODE_ENV": "development",
-        "SIMULATE_FS_ERRORS": "false",
-        "HIGHLIGHT_I18N": "false",
-        "BLUEBIRD_DEBUG": "0",
-        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
-        "DEBUG_REACT_RENDERS": "false",
-        "START_DEVTOOLS": "true",
-      },
-      "envFile": "${workspaceFolder}/.env",
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "outFiles": []
-    },
-    {
-      "name": "Launch Linux",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceRoot}/out/main.js",
-      "stopOnEntry": false,
-      "args": [],
-      "cwd": "${workspaceRoot}",
-      "preLaunchTask": "prestart",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
-      "runtimeArgs": [
-        "."
-      ],
-      "env": {
-        "NODE_ENV": "development",
-        "BLUEBIRD_DEBUG": "0"
-      },
-      "console": "internalConsole",
-      "sourceMaps": true,
-      "outFiles": []
-    },
-    {
-      "name": "Attach to renderer",
-      "type": "node",
-      "request": "attach",
-      "port": 9222,
-      "sourceMaps": true
-    },
-    {
-      "name": "Debug Unit Tests",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
-      "args": [
-        "--runInBand"
-      ],
-      "cwd": "${workspaceRoot}",
-      "preLaunchTask": null,
-      "runtimeExecutable": null,
-      "runtimeArgs": [
-        "--nolazy"
-      ]
-    },
-    {
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",
@@ -126,17 +53,10 @@
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [
-        "--no-sandbox",
-        "--remote-debugging-port=9230",
         "."
       ],
       "env": {
         "NODE_ENV": "development",
-        "SIMULATE_FS_ERRORS": "false",
-        "HIGHLIGHT_I18N": "false",
-        "BLUEBIRD_DEBUG": "0",
-        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
-        "DEBUG_REACT_RENDERS": "false",
         "START_DEVTOOLS": "true",
       },
       "envFile": "${workspaceFolder}/.env",
@@ -155,18 +75,10 @@
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [
-        "--no-sandbox",
-        "--remote-debugging-port=9230",
-        "--enable-logging",
         "."
       ],
       "env": {
         "NODE_ENV": "development",
-        "SIMULATE_FS_ERRORS": "false",
-        "HIGHLIGHT_I18N": "false",
-        "BLUEBIRD_DEBUG": "0",
-        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
-        "DEBUG_REACT_RENDERS": "false",
         "START_DEVTOOLS": "true",
         "IS_PREVIEW_BUILD": "true"
       },
@@ -186,19 +98,13 @@
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [
-        "--no-sandbox",
-        "--remote-debugging-port=9230",
         "."
       ],
       "env": {
         "NODE_ENV": "development",
-        "SIMULATE_FS_ERRORS": "false",
-        "HIGHLIGHT_I18N": "false",
-        "BLUEBIRD_DEBUG": "0",
-        "FORCE_ALLOW_ELEVATED_SYMLINKING": "true",
-        "DEBUG_REACT_RENDERS": "false",
         "START_DEVTOOLS": "true",
       },
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "sourceMaps": true,
       "outFiles": []
