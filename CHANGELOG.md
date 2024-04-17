@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2024-04-17
+
+- (FBLO) Fixed re-render issue when enabling/disabling mod entries
+
 ## [1.11.0] - 2024-04-02
 
 - New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. Fixes[#15363](https://github.com/Nexus-Mods/Vortex/issues/15363)
