@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713340091552,
+  "last_updated": 1713346257829,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8167,6 +8167,25 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Dragon's Dogma 2"
+    },
+    {
+      "modId": 847,
+      "fileId": 3053,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "Adds Battlefield 1 support to Vortex. Note that FrostyToolSuite's Frosty Mod Manager is required. Install it as a mod with mod type \"Binaries (Engine Injector)\". <br /><br />You must have Steam and/or EA App open when launching the game from Vortex in order for mods to load and the game to start.",
+        "long": "Add Battlefield 1 support to Vortex. Note that FrostyToolSuite's Frosty Mod Manager is required. Install it as a mod as \"Binaries (Engine Injector)\".\n<br />\n<br />Frostbite Engine mods (.fbmods) will be installed to the default folder that Frosty Mod Manager uses (when Frosty is unzipped to the game's root folder). So basically, this extension allows you to download mods from Nexus and pass them directly to Frosty MM in the correct folder, so you don't have to move files around manually. \n<br />\n<br />For any upscalers, reshades, etc. use mod type \"Binaries (Engine Injector)\" to place the files next to the game executable in the root installation folder. \n<br />\n<br />\n<br />[size=4][url=https://github.com/CadeEvs/FrostyToolsuite/releases/tag/v1.0.6.3]https://github.com/CadeEvs/FrostyToolsuite/releases/tag/v1.0.6.3[/url] [/size][size=4]\n<br />[/size]\n<br />[b][size=4]INSTALL FROSTY MOD MANAGER AS A MOD WITH MOD TYPE \"Binaries (Engine Injector)\"\n<br />[/size][/b]\n<br />﻿A few things to note:  \n<br />[list]\n<br />[*][b][size=3]You must have Steam and/or EA App open when launching the game from Vortex in order for mods to load and the game to start.[/size][/b]\n<br />[*]Until this extension is added to Vortex by the mod team, please use the \"Manual Download\" button and drop it into the Extensions in Vortex. The \"Mod Manager Download\" button does not seem to work when installing game extensions from the browser.\n<br />[/list]\n<br />\n<br />[b][size=3]Credits:\n<br />[/size][/b]\n<br />Thanks to [url=https://www.nexusmods.com/site/users/2293947]alistair3149[/url]﻿ and his [url=https://www.nexusmods.com/site/mods/112]extension for Battlefront II[/url], which was very helpful in making this extension"
+      },
+      "downloads": 8,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_2587.jpg",
+      "name": "Battlefield 1 Vortex Extension",
+      "timestamp": 1713278727,
+      "tags": [],
+      "version": "0.1.3",
+      "type": "game",
+      "gameName": "Battlefield 1"
     }
   ]
 }
