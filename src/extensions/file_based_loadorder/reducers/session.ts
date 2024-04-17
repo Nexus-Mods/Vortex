@@ -15,6 +15,10 @@ export const sessionReducer: IReducerSpec = {
     [actions.setFBLoadOrderRedundancy as any]: (state, payload) => {
       const { profileId, loadOrder } = payload;
       return setSafe(state, ['loadOrder', profileId], loadOrder);
+    },
+    [actions.setValidationResult as any]: (state, payload) => {
+      const { profileId, result } = payload;
+      return setSafe(state, ['validationResult', profileId], result);
     }
   },
   defaults: {},
