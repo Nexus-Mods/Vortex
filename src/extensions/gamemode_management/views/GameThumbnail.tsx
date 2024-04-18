@@ -111,30 +111,11 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
             {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
           </div>
           {type !== 'launcher' ? (
-          <div className='game-thumbnail-tags'>
-            {game.contributed ? (
-              <IconButton
-                className='btn-embed'
-                icon='contributor'
-                tooltip={t('Contributed by {{name}}', { replace: { name: game.contributed } })}
-              />
-             ) : (
-              <IconButton
-                className='btn-embed'
-                icon='official'
-                tooltip={t('Officially Supported')}
-              />
-             )}
-            {game.final ? null : (
-              <a
-                className='fake-link'
-                onClick={nop}
-                title={t('Not fully tested, please provide feedback')}
-              >
-                {t('Beta')}
-              </a>
-            )}
-          </div>
+            game.contributed ? (
+              <div className='game-thumbnail-tags' title={game.contributed ? t('Contributed by {{name}}', { replace: { name: game.contributed } }) : null}>
+              {game.contributed ? ('Community') : null}
+            </div>
+            ) : null 
           ) : null}
         </Panel.Body>
       </Panel>
