@@ -12,7 +12,7 @@ import isIGame from '../../types/IGame.validator';
 import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
-import { COMPANY_ID } from '../../util/constants';
+import { COMPANY_ID, NEXUSMODS_EXT_ID } from '../../util/constants';
 import {DataInvalid, ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import GameStoreHelper from '../../util/GameStoreHelper';
@@ -588,7 +588,7 @@ function init(context: IExtensionContext): boolean {
       game.extensionPath = extensionPath;
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
-      game.contributed = (gameExtInfo.author === COMPANY_ID)
+      game.contributed = (gameExtInfo.author === COMPANY_ID || gameExtInfo.author === NEXUSMODS_EXT_ID)
         ? undefined
         : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, '1.0.0');

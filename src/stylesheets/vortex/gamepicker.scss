@@ -161,13 +161,22 @@ $thumbnail-width: 256px;
 }
 
 .game-thumbnail-tags {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  opacity: 0.75;
+
   display: flex;
   align-items: flex-end;
   font-size: smaller;
+
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  font-weight: 600;
+  box-shadow: 0px 2px 6px 1px rgba(0,0,0,0.5);
+  background-color: $brand-info;
+  text-transform: uppercase;
+  color: $white;
+  border-radius: 20px;
+  font-family: $font-family-base;
 }
 
 .game-list-selected {
