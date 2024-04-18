@@ -140,66 +140,13 @@ function setupAutoUpdate(api: IExtensionApi) {
         });        
       }
 
-      notified = true;
-
-      
-
-      // is installed version less than or equal to the update version?
-
-      if (semver.satisfies(updateInfo.version, `<=${autoUpdater.currentVersion.version}`)) {
+      notified = true;     
 
 
-        if(autoUpdater.currentVersion.prerelease.length > 0 && autoUpdater.currentVersion.prerelease[0] === 'alpha') {
 
-          // alpha version so we don't need to downgrade
+      // is update version greater than our current version?
 
-            log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} but is an alpha and so ignore this downgrade.`);
-        
-          } else {
-
-            // warn about downgrading
-
-            
-        log('info', `${updateInfo.version} is less than or equal to ${autoUpdater.currentVersion.version} so this is a downgrade.`);
-
-        api.sendNotification({
-          id: UPDATE_AVAILABLE_ID,
-          type: 'warning',
-          title: 'Downgrade available',
-          message: `${updateInfo.version} is available.`,
-          noDismiss: true,
-          actions: [          
-            { title: 'More Info', action: () => {
-              api.showDialog('info', `Downgrade warning`, {
-                text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
-
-Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
-                     
-Are you sure you want to downgrade?`,
-              }, [
-                { label: 'Close' },
-                //{ label: 'Ignore', action: () => reject(new UserCanceled()) },
-                { label: 'Downgrade', action: () => resolve() }
-              ],
-              'new-update-changelog-dialog');
-            } },
-            /*{
-              title: 'Ignore',
-              action: dismiss => {
-                log('debug', 'User ignored downgrade')
-                dismiss();
-                reject(new UserCanceled());
-              },
-            },*/
-          ],
-        }); 
-
-
-        }
-
-               
-      
-      } else {
+      if (semver.satisfies(updateInfo.version, `>${autoUpdater.currentVersion.version}`)) {
         
         // normal upgrade
 
@@ -242,7 +189,46 @@ Are you sure you want to downgrade?`,
               },
             },*/
           ],
-        })
+        })        
+
+      } else {
+
+        // downgrade?
+            
+        log('info', `${updateInfo.version} is less than ${autoUpdater.currentVersion.version} so this is a downgrade.`);
+
+        api.sendNotification({
+          id: UPDATE_AVAILABLE_ID,
+          type: 'warning',
+          title: 'Downgrade available',
+          message: `${updateInfo.version} is available.`,
+          noDismiss: true,
+          actions: [          
+            { title: 'More Info', action: () => {
+              api.showDialog('info', `Downgrade warning`, {
+                text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
+
+Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
+                    
+Are you sure you want to downgrade?`,
+              }, [
+                { label: 'Close' },
+                //{ label: 'Ignore', action: () => reject(new UserCanceled()) },
+                { label: 'Downgrade', action: () => resolve() }
+              ],
+              'new-update-changelog-dialog');
+            } },
+            /*{
+              title: 'Ignore',
+              action: dismiss => {
+                log('debug', 'User ignored downgrade')
+                dismiss();
+                reject(new UserCanceled());
+              },
+            },*/
+          ],
+        }); 
+        
         
       }  
     });    
