@@ -1,5 +1,5 @@
 {
-  "last_updated": 1713792426413,
+  "last_updated": 1713793452746,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -1484,7 +1484,7 @@
       "type": "game",
       "github": "Nexus-Mods/vortex-games",
       "githubRawPath": "game-teamfortress2",
-      "version": "1.1.1",
+      "version": "1.2.0",
       "id": "game-teamfortress2",
       "hide": true
     },
@@ -6674,7 +6674,7 @@
         "long": "This extension adds Star Wars Jedi: Survivor as a game supported in Vortex. Currently, the extension only supports PAK files, installing a non-PAK mod will result in a warning appearing. \n<br />\n<br />\n<br />[size=4]Vortex Install (Easy)\n<br />[/size]\n<br />[list]\n<br />[*]In Vortex, locate Star Wars Jedi: Fallen Order in the Games tab.\n<br />[*]Click on the game tile to manage it, and install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Vortex Install (Advanced)[/size]\n<br />\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4]Manual Install[/size]\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
       },
       "downloads": 21877,
-      "endorsements": 737,
+      "endorsements": 738,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/559/559-1682935951-402036526.jpeg",
       "name": "Star Wars Jedi Survivor Support",
       "timestamp": 1684423566,
