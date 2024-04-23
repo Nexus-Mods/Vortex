@@ -30,9 +30,16 @@ export { IRegisteredExtension } from '../util/ExtensionManager';
 export { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 export {
   LoadOrder,
+  LoadOrder as FBLOLoadOrder,
+  LockedState as FBLOLockState,
   ILoadOrderEntry,
+  ILoadOrderEntry as IFBLOLoadOrderEntry,
   ILoadOrderGameInfo,
+  ILoadOrderGameInfo as IFBLOGameInfo,
   IValidationResult,
+  IValidationResult as IFBLOValidationResult,
+  IInvalidResult as IFBLOInvalidResult,
+  IItemRendererProps as IFBLOItemRendererProps,
 } from '../extensions/file_based_loadorder/types/types';
 export {
   IDeploymentMethod,
