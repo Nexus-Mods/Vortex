@@ -1,5 +1,5 @@
 {
-  "last_updated": 1714376881820,
+  "last_updated": 1714378305028,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8224,6 +8224,24 @@
       "version": "1.1.4",
       "type": "game",
       "gameName": "The Last Of Us Part I"
+    },
+    {
+      "modId": 862,
+      "fileId": 3090,
+      "author": "EF Valentine",
+      "uploader": "valentine1999",
+      "description": {
+        "short": "As the title states.",
+        "long": "[center]Hello! I created this theme so that it would match the rest of my desktop and apps, which are all in the gruvbox color scheme as well. I thought I'd share it here too. \n<br />[u]Please note:[/u][b] this theme uses DejaVu Sans, which is a custom font. I've included it in a separate download on the mod page, but you could also go to a font-sharing website to download it yourself. [/b][url=https://www.fontsquirrel.com/fonts/dejavu-sans]Here's a link to it on FontSquirrel. [/url]﻿It should be installed first in order for the theme to work properly. [/center]"
+      },
+      "downloads": 13,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/862/862-1714258559-749237823.png",
+      "name": "Dark gruvbox theme for Vortex",
+      "timestamp": 1714259399,
+      "tags": [],
+      "version": "1.0",
+      "type": "theme"
     }
   ]
 }
