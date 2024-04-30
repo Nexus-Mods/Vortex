@@ -1,5 +1,5 @@
 {
-  "last_updated": 1714463281820,
+  "last_updated": 1714464263168,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8242,6 +8242,24 @@
       "tags": [],
       "version": "1.0.0",
       "type": "theme"
+    },
+    {
+      "modId": 863,
+      "fileId": 3092,
+      "author": "Pickysaurus",
+      "uploader": "Pickysaurus",
+      "description": {
+        "short": "Allows you to make a new, blank mod inside Vortex without messing with the staging folder directly.",
+        "long": "This extension adds a toolbar button to the Mods tab which allows for a new, empty mod to be created. Useful if you want to add files you created yourself or need a new mod to keep the items you intend to bundle with a collection.\n<br />\n<br />I wanted to be able to do this in Vortex so I made a quick and basic extension to do so."
+      },
+      "downloads": 7,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/863/863-1714331156-600883287.jpeg",
+      "name": "Add custom mod button",
+      "timestamp": 1714331240,
+      "tags": [],
+      "version": "0.0.1",
+      "type": null
     }
   ]
 }
