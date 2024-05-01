@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.1] - 2024-04-17
 
 - (FBLO) Fixed re-render issue when enabling/disabling mod entries
+- Loot updated to 0.22.3-14
+- Fallout 4 now supported on Epic
 
 ## [1.11.0] - 2024-04-02
 
