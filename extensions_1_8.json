@@ -1,5 +1,5 @@
 {
-  "last_updated": 1714636085831,
+  "last_updated": 1714637269044,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8260,6 +8260,24 @@
       "tags": [],
       "version": "0.0.1",
       "type": null
+    },
+    {
+      "modId": 867,
+      "fileId": 3139,
+      "author": "Fataliist",
+      "uploader": "Fataliist",
+      "description": {
+        "short": "As the title states.",
+        "long": "I decided to upload my old Vortex theme here in addition to the gruvbox theme that I posted a few days ago. This does not have any outside fonts required to work -- your PC should already have Montserrat installed. Downloading this is simple: just extract it into the 'themes' folder for Vortex and then return to the app and select it from the dropdown menu. \n<br />\n<br />If you aren't sure where to find your main Vortex folder, go to to the mod tab on the app, click 'Open Mod Staging Folder' from the toolbar, and then navigate backwards till you're in the main directory. The themes folder should be there."
+      },
+      "downloads": 4,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/867/867-1714589025-1133457178.png",
+      "name": "Primary color theme for Vortex",
+      "timestamp": 1714589223,
+      "tags": [],
+      "version": "1.0.0",
+      "type": "theme"
     }
   ]
 }
