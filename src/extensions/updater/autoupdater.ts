@@ -117,7 +117,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
       log('debug', 'Querying update', { tag: updateInfo["tag"], version: updateInfo["version"] })
 
-      if (semver.satisfies(updateInfo.version, `~${autoUpdater.currentVersion.version}`)) {
+      if (semver.satisfies(updateInfo.version, `~${autoUpdater.currentVersion.version}`, { includePrerelease: true })) {
         log('info', `${updateInfo.version} is a patch update from ${autoUpdater.currentVersion.version} so we need to force download`);
         // if it's a patch release (1.2.x) then we don't need to ask to download
         return resolve();
