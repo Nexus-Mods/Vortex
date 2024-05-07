@@ -5,13 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.1] - 2024-04-17
+## [1.11.2-beta] - 2024-05-07
+
+- Hotfix for BA2 archive check
+- Loot updated to 0.22.4
+
+## [1.11.1-beta] - 2024-04-17
 
 - (FBLO) Fixed re-render issue when enabling/disabling mod entries
 - Loot updated to 0.22.3-14
 - Fallout 4 now supported on Epic
 
-## [1.11.0] - 2024-04-02
+## [1.11.0-beta] - 2024-04-02
 
 - New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. Fixes[#15363](https://github.com/Nexus-Mods/Vortex/issues/15363)
 - (API) Fixed performance degradation when downloading collections for games that use the file based load order system. Fixes [#15395](https://github.com/Nexus-Mods/Vortex/issues/15395)
@@ -292,3 +297,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Blade & Sorcery) fixed 0.2.12 migration
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
+
+[1.11.2-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2-beta
+[1.11.1-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.1-beta
+[1.11.0-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.0-beta
+[1.10.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.8
