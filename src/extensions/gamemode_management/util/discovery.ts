@@ -4,7 +4,7 @@ import { IGame } from '../../../types/IGame';
 import { GameEntryNotFound } from '../../../types/IGameStore';
 import { IGameStoreEntry } from '../../../types/IGameStoreEntry';
 import { ITool } from '../../../types/ITool';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, SetupError } from '../../../util/CustomErrors';
 import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
 import GameStoreHelper from '../../../util/GameStoreHelper';
@@ -165,6 +165,9 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
 
   try {
     gamePath = game.queryPath();
+    if (typeof gamePath === 'function') {
+      throw new SetupError('queryPath must be a string or a promise that resolves to a string');
+    }
   } catch (err) {
     log('warn', 'failed to query game location', {
       game: game.id,
