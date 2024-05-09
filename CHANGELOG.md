@@ -2,8 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Common Changelog](https://common-changelog.org/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.11.2] - 2024-05-13
+
+_Stable release based on [1.11.2-beta]._
+
+- Fixed re-render issue when enabling/disabling mod entries in the file-based load order
+- Loot updated to 0.22.4
+- Add support for Fallout 4 on Epic ([#15580](https://github.com/Nexus-Mods/Vortex/issues/15580))
+- Add support for new BA2 archive headers in Gamebryo games 
+- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. ([#15363](https://github.com/Nexus-Mods/Vortex/issues/15363))
+- **vortex-api**: Fixed performance degradation when downloading collections for games that use the file based load order system. ([#15395](https://github.com/Nexus-Mods/Vortex/issues/15395))
+- **stardewvalley**: Fixed SMAPI update notification appearing while managing other games
+- **collections**: Added comparison of patches, installer choices, hashes when installing. ([#15396](https://github.com/Nexus-Mods/Vortex/issues/15396))
+- **collections**: Updated styles to fix update changelog bounds
+- **collections**: Better logging when profile switching
+- **collections**: Fixed rare crash where game version was being compared 
+- **collections**: Improved error handling when displaying instructions. ([#14570](https://github.com/Nexus-Mods/Vortex/issues/14570))
+- **collections**: Instructions textarea now fills available space. ([#15394](https://github.com/Nexus-Mods/Vortex/issues/15394))
+- **collections**: Override overflow now scrolls vertically.
+- **modtype-bepinex**: Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
+- **mod-dependencies**: Suppress error report when user cancels purge
+- **mod-dependencies**: Fixed file overrides being cleared when switching to an empty profile 
+- **mod-dependencies**: Fixed rare issue where it was possible for mods to fail deploying certain types 
+- **plugin-management**: Fixed long delays when ascertaining if a plugin is marked light
+- **baldursgate3**: Performance improvements when installing collections and using LSLib
+- **baldursgate3**: Added caching to PAK reading
+- **baldursgate3**: Added a better .NET error catch and shows a fix dialog. ([#15391](https://github.com/Nexus-Mods/Vortex/issues/15391))
+- Restyled announcement dashlet
+- Underscores in archive names no longer cause installation issues. ([#15334](https://github.com/Nexus-Mods/Vortex/issues/15334))
+- Fixed layout issues with Contrast and Compact theme
+- Added a Classic theme that uses the old colors
+- Updated Logging format
+- Updated dev bootstrap script
+- Bump Electron from 25.8.4 to 28.2.0
+- Bump Node from 18.15.0 to 18.18.2
 
 ## [1.11.2-beta] - 2024-05-07
 
@@ -14,19 +49,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - (FBLO) Fixed re-render issue when enabling/disabling mod entries
 - Loot updated to 0.22.3-14
-- Fallout 4 now supported on Epic
+- Fallout 4 now supported on Epic ([#15580](https://github.com/Nexus-Mods/Vortex/issues/15580))
 
 ## [1.11.0-beta] - 2024-04-02
 
-- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. Fixes[#15363](https://github.com/Nexus-Mods/Vortex/issues/15363)
-- (API) Fixed performance degradation when downloading collections for games that use the file based load order system. Fixes [#15395](https://github.com/Nexus-Mods/Vortex/issues/15395)
+- New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. ([#15363](https://github.com/Nexus-Mods/Vortex/issues/15363))
+- (API) Fixed performance degradation when downloading collections for games that use the file based load order system. ([#15395](https://github.com/Nexus-Mods/Vortex/issues/15395))
 - (Stardew) Fixed SMAPI update notification appearing while managing other games
-- (Collections) Added comparison of patches, installer choices, hashes when installing. Fixes [#15396](https://github.com/Nexus-Mods/Vortex/issues/15396)
+- (Collections) Added comparison of patches, installer choices, hashes when installing. ([#15396](https://github.com/Nexus-Mods/Vortex/issues/15396))
 - (Collections) Updated styles to fix update changelog bounds
 - (Collections) Better logging when profile switching
 - (Collections) Fixed rare crash where game version was being compared 
-- (Collections) Improved error handling when displaying instructions. Fixes [#14570](https://github.com/Nexus-Mods/Vortex/issues/14570)
-- (Collections) Instructions textarea now fills available space. Fixes [#15394](https://github.com/Nexus-Mods/Vortex/issues/15394)
+- (Collections) Improved error handling when displaying instructions. ([#14570](https://github.com/Nexus-Mods/Vortex/issues/14570))
+- (Collections) Instructions textarea now fills available space. ([#15394](https://github.com/Nexus-Mods/Vortex/issues/15394))
 - (Collections) Override overflow now scrolls vertically.
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
 - (Dependency Management) Suppress error report when user cancels purge
@@ -35,9 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
-- (Baldur's Gate 3) Added a better .NET error catch and shows a fix dialog. Fixes [#15391](https://github.com/Nexus-Mods/Vortex/issues/15391)
+- (Baldur's Gate 3) Added a better .NET error catch and shows a fix dialog. ([#15391](https://github.com/Nexus-Mods/Vortex/issues/15391))
 - (Announcements) Restyled announcement dashlet
-- (Mod Management) Underscores in archive names no longer cause installation issues. Fixes [#15334](https://github.com/Nexus-Mods/Vortex/issues/15334)
+- (Mod Management) Underscores in archive names no longer cause installation issues. ([#15334](https://github.com/Nexus-Mods/Vortex/issues/15334))
 - (Theme) Fixed layout issues with Contrast and Compact theme
 - (Theme) Added a Classic theme that uses the old colors
 - Updated Log format
@@ -70,7 +105,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed crash if fileOverrides are undefined for a mod instance
 
-## [1.10.3] - 2024-02-21
+## 1.10.3 - 2024-02-21
+
+_Yanked due to critical issue found with file overrides_
 
 - Sorting algorithm is now memoized
 - Fixed file overrides not applied/removed from all affected mods
@@ -298,7 +335,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.11.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2
 [1.11.2-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2-beta
 [1.11.1-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.1-beta
 [1.11.0-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.0-beta
 [1.10.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.8
+[1.10.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.7
+[1.10.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.6
+[1.10.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.5
+[1.10.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.4
+[1.10.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.2
+[1.10.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.1
+[1.10.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.10.2
+[1.9.13]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.13
+[1.9.12]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.12
+[1.9.11]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.11
+[1.9.10]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.10
+[1.9.9]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.9
+[1.9.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.8
+[1.9.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.7
+[1.9.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.6
+[1.9.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.5
+[1.9.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.4
+[1.9.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.3
+[1.9.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.2
+[1.9.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.1
+[1.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.0
+[1.8.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.8.5
