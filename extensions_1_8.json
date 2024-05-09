@@ -1,5 +1,5 @@
 {
-  "last_updated": 1715240889573,
+  "last_updated": 1715241981755,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8278,6 +8278,25 @@
       "tags": [],
       "version": "1.0.0",
       "type": "theme"
+    },
+    {
+      "modId": 868,
+      "fileId": 3160,
+      "author": "ChemBoy1",
+      "uploader": "ChemBoy1",
+      "description": {
+        "short": "This extension adds Manor Lords modding support to Vortex Mod Manager.",
+        "long": "This extension adds Manor Lords modding support to Vortex Mod Manager. \n<br />\n<br />The Steam and GOG versions of the game should be automatically discovered. Other versions may need to select the install location manually.\n<br />\n<br />Epic and GamePass versions may not work yet until I receive some information about those games that is only available after installation. \n<br />\n<br />This extension integrates the [url=https://www.nexusmods.com/site/mods/153]Unreal Engine Mod Installer extension[/url]. You can download and install it manually, or Vortex will ask you to install it after setup.\n<br />\n<br />\n<br />A few things to note:  \n<br />[list]\n<br />[*]For upscalers, reshades, and other mods that need to be next to the game executable, please use the \"Binaries (Engine Injector)\" mod type.\n<br />[*]In order to manage load order of .pak files, you need to make sure the mod type is \"Unreal Engine 4 Sortable Mod\" for each of those mods.\n<br />[/list]\n<br />\n<br />\n<br />\n<br />\n<br />\n<br />If you would like to support my work you can do so below. Your support is greatly appreciated!\n<br />\n<br />[url=https://buymeacoffee.com/chemboy1]Buy Me a Coffee\n<br />[/url]\n<br />[url=https://www.patreon.com/chemboy1/membership]Join My Patreon\n<br />\n<br />[/url]"
+      },
+      "downloads": 120,
+      "endorsements": 1,
+      "image": "https://staticdelivery.nexusmods.com/Images/games/4_3/tile_6352.jpg",
+      "name": "Manor Lords Vortex Extension",
+      "timestamp": 1715177292,
+      "tags": [],
+      "version": "0.1.3",
+      "type": "game",
+      "gameName": "Manor Lords"
     }
   ]
 }
