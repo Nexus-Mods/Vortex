@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Common Changelog](https://common-changelog.org/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.2] - 2024-05-13
+## [1.11.3] - 2024-05-13
 
 _Stable release based on [1.11.2-beta]._
 
