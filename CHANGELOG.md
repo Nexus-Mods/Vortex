@@ -335,7 +335,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-[1.11.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2
+[1.11.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.3
 [1.11.2-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2-beta
 [1.11.1-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.1-beta
 [1.11.0-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.0-beta
