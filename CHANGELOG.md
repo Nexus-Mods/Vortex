@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added status pill to collection overview
 - Fixed warning when potentially downgrading
 - Changed how community game extensions are highlighted
+- **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679)) 
 
 ## [1.11.3] - 2024-05-13
 
