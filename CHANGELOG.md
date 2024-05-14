@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Common Changelog](https://common-changelog.org/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2024-05-14
+
+- **collections**: Fixed re-install dialog showing when installing in unattended mode.
+- **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679)) 
+
 ## [1.11.3] - 2024-05-13
 
 _Stable release based on [1.11.2-beta]._
@@ -335,6 +340,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.11.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.4
 [1.11.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.3
 [1.11.2-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2-beta
 [1.11.1-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.1-beta
