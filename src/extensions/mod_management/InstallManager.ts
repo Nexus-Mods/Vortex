@@ -1811,7 +1811,7 @@ class InstallManager {
       }
 
       if (choices === undefined) {
-        choices = queryDialog();
+        choices = isDependency ? Bluebird.resolve({ action: 'replace', remember: true }) : queryDialog();
       }
 
       choices
@@ -1844,7 +1844,7 @@ class InstallManager {
 
           if (result.action === 'variant') {
             if (result.remember === true) {
-              context.set('replace-or-variant', 'variant');
+              context?.set?.('replace-or-variant', 'variant');
             }
             if (currentProfile !== undefined) {
               const actions = modIds.map(id => setModEnabled(currentProfile.id, id, false));
@@ -1869,7 +1869,7 @@ class InstallManager {
             });
           } else if (result.action === 'replace') {
             if (result.remember === true) {
-              context.set('replace-or-variant', 'replace');
+              context?.set?.('replace-or-variant', 'replace');
             }
             if (modIds.length > 1) {
               queryVariantReplacement()
