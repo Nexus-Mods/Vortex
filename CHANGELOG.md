@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed broken Xbox launcher for Pillars of Eternity 2. ([#15409](https://github.com/Nexus-Mods/Vortex/issues/15409))
 - Adding support for EnderalSE on GOG. ([#15369](https://github.com/Nexus-Mods/Vortex/issues/15369))
 - Added status pill to collection overview
+- Fixed warning when potentially downgrading
+- Changed how community game extensions are highlighted
 
 ## [1.11.3] - 2024-05-13
 
