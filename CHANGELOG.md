@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Stable release based on [1.11.2-beta]._
 
 - Fixed re-render issue when enabling/disabling mod entries in the file-based load order
-- Loot updated to 0.22.4
+- libloot updated to 0.22.4
 - Add support for Fallout 4 on Epic ([#15580](https://github.com/Nexus-Mods/Vortex/issues/15580))
 - Add support for new BA2 archive headers in Gamebryo games 
 - New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. ([#15363](https://github.com/Nexus-Mods/Vortex/issues/15363))
