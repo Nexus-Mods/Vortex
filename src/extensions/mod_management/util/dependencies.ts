@@ -323,7 +323,7 @@ function gatherDependenciesGraph(
     ...rule.reference,
     fileList: rule.fileList,
     patches: rule.extra?.patches ?? {},
-    installerChoices: rule.installerChoices,
+    installerChoices: rule.installerChoices ?? {},
   }
   const mod = findModByRef(modReference, state.persistent.mods[gameMode] ?? {});
 

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { truthy } from '../../../util/util';
 
 import { log } from '../../../util/log';
@@ -128,7 +129,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // Right installer choices?
-  if ((ref.installerChoices !== undefined && Object.keys(ref.installerChoices).length > 0) && (!_.isEqual(ref.installerChoices, mod.installerChoices))) {
+  if ((ref.installerChoices !== undefined && Object.keys(ref.installerChoices).length > 0) && (!_.isEqualWith(mod.installerChoices, ref.installerChoices))) {
     return false;
   }
 
@@ -138,8 +139,10 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // Right patches?
-  if ((ref.patches !== undefined && Object.keys(ref.patches).length > 0) && (!_.isEqual(ref.patches, mod.patches))) {
-    return false;
+  if ((ref.patches !== undefined && Object.keys(ref.patches).length > 0 && ref.tag !== undefined) && ((!_.isEqual(mod.patches, ref.patches)))) {
+    if (mod?.patches !== undefined) {
+      return false;
+    }
   }
 
   if (ref.tag !== undefined) {
