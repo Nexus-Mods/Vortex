@@ -1672,8 +1672,11 @@ class InstallManager {
         });
       };
 
+      const mod = mods[0];
       const modReference: IModReference = {
+        id: mod.id,
         fileList: installOptions?.fileList,
+        archiveId: mod.archiveId,
         gameId,
         installerChoices: installOptions?.choices,
         patches: installOptions?.patches,
@@ -2118,6 +2121,22 @@ class InstallManager {
       attributes['fileList'] = extra.fileList;
     }
 
+    // if (extra.installerChoices !== undefined) {
+      // This actually masks a long standing bug and can barely be considered a fix.
+      //  Consider the following case:
+      //  1. User1 creates a fomod with a specific structure and uploads it to the site.
+      //  2. Curator uploads a collection and adds the fomod.
+      //  3. User2 downloads the collection - everything works fine.
+      //  4. User1 changes the fomod structure significantly (i.e. some installer steps become optional or removed entirely) and uploads his update to the site.
+      //  5. Curator downloads the update and uploads a new revision of his collection. Due to memoization functionality in the collections extension, the same fomod options as in the
+      //     first version of the mod are uploaded as part of the collection instead of the newer generated options.
+      //  6. User2 updates to the new revision of the collection, the install manager attempts to install the mod but will only generate instructions based on
+      //     the new fomod's structure, ommitting installer options that are not present in the new fomod.
+      //  7. User2 now has a correct installation of the mod which should work fine depending on the new fomod structure, but our installer option comparisons will fail
+      //     making it impossible for the collection to be considered fully installed/complete.
+      // attributes['installerChoices'] = extra.installerChoices;
+    //}
+
     api.store.dispatch(setModAttributes(gameId, modId, attributes));
   }
 
@@ -2200,7 +2219,11 @@ class InstallManager {
             api.store.dispatch(setModEnabled(prof.id, modId, true));
           });
 
-          this.applyExtraFromRule(api, gameId, modId, dep.extra);
+          this.applyExtraFromRule(api, gameId, modId, {
+            ...dep.extra,
+            fileList: dep.fileList ?? dep.extra.fileList,
+            installerChoices: dep.installerChoices,
+            patches: dep.patches ?? dep.extra.patches, });
 
           const mods = api.store.getState().persistent.mods[gameId];
           return { ...dep, mod: mods[modId] };
