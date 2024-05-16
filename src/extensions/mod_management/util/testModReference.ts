@@ -140,7 +140,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
 
   // Right patches?
   if ((ref.patches !== undefined && Object.keys(ref.patches).length > 0 && ref.tag !== undefined) && ((!_.isEqual(mod.patches, ref.patches)))) {
-    if (mod?.patches !== undefined) {
+    if (mod?.patches !== undefined && mod.referenceTag !== ref.tag) {
       return false;
     }
   }
