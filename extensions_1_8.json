@@ -1,5 +1,5 @@
 {
-  "last_updated": 1716277690038,
+  "last_updated": 1716283722591,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -8316,6 +8316,24 @@
       "version": "0.0.1",
       "type": "game",
       "gameName": "Crab Champions"
+    },
+    {
+      "modId": 885,
+      "fileId": 3228,
+      "author": "Ilker BINZET",
+      "uploader": "binzedd",
+      "description": {
+        "short": "Nexus Mods Speed Test, Vortex Mod Yöneticisi'nde kullanılan bir eklentidir. Bu eklenti, size en uygun CDN'yi ayarlayarak indirme hızınıza katkıda bulunur. Bu eklentinin Türkçe çevirisidir.",
+        "long": "[center][font=Verdana]Nexus Mods Speed Test, Vortex Mod Yöneticisi'nde kullanılan bir eklentidir. Bu eklenti, size en uygun CDN'yi ayarlayarak indirme hızınıza katkıda bulunur. Bu eklentinin Türkçe çevirisidir. \n<br />\n<br />[/font]Kurulum: \n<br />[list]\n<br />[*]İsterseniz Vortex ile indirip otomatik kurulum yapabilirsiniz.\n<br />[/list]\n<br />Alternatif Kurulum:\n<br />[list]\n<br />[*]İndirdiğiniz ZIP uzantılı arşivin içindekileri olduğu gibi \n<br />[/list]\n<br />[code]&#92;AppData&#92;Roaming&#92;Vortex&#92;locales&#92;tr \n<br />[/code]\n<br />        dizinine atıp [b]Tümünü Değiştir[/b] diyerek kullanabilirsiniz.\n<br />\n<br />[img]https://i.ibb.co/jDnZ6nM/Vortex-2-Xfmy-Bsh-Am.png[/img]\n<br />[img]https://i.ibb.co/RQjg26g/Vortex-8-UDBxibwyq.png[/img]\n<br />[img]https://i.ibb.co/ss2vSJD/Vortex-b-P5l-Mi7f-PA.png[/img][/center]"
+      },
+      "downloads": 2,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/885/885-1716176341-1144021277.png",
+      "name": "Nexus Mods Speed Test - Turkish Translation",
+      "timestamp": 1716247921,
+      "tags": [],
+      "version": "1.1.1",
+      "type": null
     }
   ]
 }
