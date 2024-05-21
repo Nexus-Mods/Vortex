@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed how community game extensions are highlighted
 - **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
 
+## [1.11.5] - 2024-05-21 
+ 
+- **collections**: Fixed installer options of mods with changed FOMOD structures not publishing correctly. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679)) 
+- **collections**: Added status pill to collection overview 
+- **witcher3**: Added Epic Game Store discovery. ([#15362](https://github.com/Nexus-Mods/Vortex/issues/15362)) 
+- **witcher3**: Version information now displaying correctly 
+- **witcher3**: Migrated load ordering system to use new FBLO API. ([#15362](https://github.com/Nexus-Mods/Vortex/issues/15362)) 
+- **witcher3**: Bug fixes and code cleanup 
+
 ## [1.11.4] - 2024-05-14 
  
 - **collections**: Fixed re-install dialog showing when installing in unattended mode. 
