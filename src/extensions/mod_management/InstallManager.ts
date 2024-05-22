@@ -2221,9 +2221,9 @@ class InstallManager {
 
           this.applyExtraFromRule(api, gameId, modId, {
             ...dep.extra,
-            fileList: dep.fileList ?? dep.extra.fileList,
+            fileList: dep.fileList ?? dep.extra?.fileList,
             installerChoices: dep.installerChoices,
-            patches: dep.patches ?? dep.extra.patches, });
+            patches: dep.patches ?? dep.extra?.patches, });
 
           const mods = api.store.getState().persistent.mods[gameId];
           return { ...dep, mod: mods[modId] };
