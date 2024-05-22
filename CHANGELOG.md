@@ -2,10 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Common Changelog](https://common-changelog.org/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
 ## 1.12.0-alpha.1 - 2024-xx-xx
 
 - Added ability to select game store when manually choosing game folder. ([#15371](https://github.com/Nexus-Mods/Vortex/issues/15371))
@@ -18,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.11.6] - 2024-05-22
 
-- **collections**: Fixed dependency installation errors if no extra metadata available. ([#15763](https://github.com/Nexus-Mods/Vortex/issues/15763))
+- **collections**: Fixed dependency installation errors if no extra metadata available. ([#15746](https://github.com/Nexus-Mods/Vortex/issues/15746))
 - **witcher3**: fixed error when raising script merger notification. ([#15743](https://github.com/Nexus-Mods/Vortex/issues/15743))
 
 ## [1.11.5] - 2024-05-21
@@ -365,11 +363,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-<<<<<<< HEAD
-=======
 [1.11.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.6
 [1.11.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.5
->>>>>>> v1.11
 [1.11.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.4
 [1.11.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.3
 [1.11.2-beta]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.2-beta
