@@ -99,13 +99,14 @@ export function truthy(val: any): boolean {
  * return the delta between two objects
  * @param lhs the left, "before", object
  * @param rhs the right, "after", object
+ * @param skip properties to skip in the diff, string array
  */
 export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   const res = {};
 
   if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
     Object.keys(lhs || {}).forEach(key => {
-      if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
+      if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
         return;
       }
       if (!Object.prototype.hasOwnProperty.call(rhs, key)
