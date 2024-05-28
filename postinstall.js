@@ -15,7 +15,6 @@ const packageManager = 'yarn';
 // verify these modules are installed
 const verifyModules = [
   ['xxhash-addon', path.join('build', 'Release', 'addon.node'), false],
-  ['libxmljs', path.join('build', 'Release', 'xmljs.node'), false],
   ['vortexmt', path.join('build', 'Release', 'vortexmt.node'), true],
   ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
   ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
