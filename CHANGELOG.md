@@ -13,6 +13,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed warning when potentially downgrading
 - Changed how community game extensions are highlighted
 - **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
+- **bannerlord**: Game support has been moved to a new [community extension](https://www.nexusmods.com/site/mods/875) by [Aragas](https://github.com/Aragas) and the [BUTR team](https://github.com/BUTR). ([#15436](https://github.com/Nexus-Mods/Vortex/issues/15436))
 
 ## [1.11.6] - 2024-05-22
 
