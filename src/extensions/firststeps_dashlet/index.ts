@@ -1,6 +1,8 @@
 import { IExtensionContext, ToDoType } from '../../types/IExtensionContext';
+import { IState } from '../../types/api';
 import {showError} from '../../util/message';
 
+import TopModsDashlet from './TopModsDashlet';
 import Dashlet from './Dashlet';
 import { IToDo } from './IToDo';
 import settingsReducer from './reducers';
@@ -45,6 +47,11 @@ function init(context: IExtensionContext): boolean {
   }, () => ({
     todos: [].concat(todos(context.api), extTodos),
   }), undefined);
+
+  context.registerDashlet('Top Mods', 1, 3, 0, TopModsDashlet, (state: IState) => true, undefined, {
+    fixed: false,
+    closable: false,
+  });
 
   return true;
 }
