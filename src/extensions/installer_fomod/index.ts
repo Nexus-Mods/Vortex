@@ -340,7 +340,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
         + '[br][/br][br][/br]'
         + 'Click "Fix" below to install the required version.'
         + '[br][/br][br][/br]'
-        + '[spoiler label="Show detailed error"]ERROR WILL SHOW HERE[/spoiler]',
+        + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
       replace: { stderr: stderr.replace('\n', '[br][/br]') },
     },
     automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
