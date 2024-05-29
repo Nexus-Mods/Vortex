@@ -7,14 +7,8 @@ import Webview from '../../controls/Webview';
 import Icon from '../../controls/Icon';
 import { util } from 'vortex-api';
 
-export const VIDEO_WIDTH = 416;
-export const VIDEO_HEIGHT = 234;
 
-interface IBaseProps {
-  
-}
-
-export default function TopModsDashlet(props:IBaseProps) {
+export default function TopModsDashlet() {
 
   const context = React.useContext(MainContext);
 
@@ -30,20 +24,17 @@ export default function TopModsDashlet(props:IBaseProps) {
     e.stopPropagation();
   }
 
-
-
   return (
     <Dashlet title='Top Mods of the Month' className='dashlet-top-mods'>
-      <p>Some intro text here?</p>
-        <div>
+      <div>Some intro text here?</div>
+
           <Webview
-            style={{width: VIDEO_WIDTH, height: VIDEO_HEIGHT}}
+            style={{flex: 'auto'}}
             src={'https://www.youtube.com/embed/eYP_HWIswoE?si=JqVJ8tNV5jDq4y6N'}
             allowFullScreen
             onNewWindow={onNewWindow}
-            onFullscreen={onFullscreen}
+            //onFullscreen={onFullscreen}
           />          
-        </div>
 
     </Dashlet>
   );

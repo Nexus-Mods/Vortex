@@ -48,7 +48,7 @@ function init(context: IExtensionContext): boolean {
     todos: [].concat(todos(context.api), extTodos),
   }), undefined);
 
-  context.registerDashlet('Top Mods', 1, 3, 0, TopModsDashlet, (state: IState) => true, undefined, {
+  context.registerDashlet('Top Mods', 1, 3, 1, TopModsDashlet, (state: IState) => true, undefined, {
     fixed: false,
     closable: false,
   });
