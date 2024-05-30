@@ -243,6 +243,9 @@ export function onGameModeActivated(
   }
 
   setErrorContext('gamemode', game.name);
+  if (truthy(game?.version)) {
+    setErrorContext('extension_version', game.version);
+  }
 
   let instPath = installPath(state);
 
