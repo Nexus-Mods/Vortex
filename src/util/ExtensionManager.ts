@@ -2413,7 +2413,8 @@ class ExtensionManager {
       'tool_variables_base',
       'history_management',
       'analytics',
-      'onboarding_dashlet'
+      'onboarding_dashlet',
+      'mods_of_the_month_dashlet'
     ];
 
     require('./extensionRequire').default(() => this.extensions);

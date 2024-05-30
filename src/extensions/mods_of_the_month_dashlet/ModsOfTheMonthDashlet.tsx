@@ -25,17 +25,20 @@ export default function TopModsDashlet() {
   }
 
   return (
-    <Dashlet title='Top Mods of the Month' className='dashlet-top-mods'>
+    <Dashlet title='Mods of the Month' className='dashlet-mods-of-the-mods'>
+
       <div>Some intro text here?</div>
 
+      <div className='dashlet-mods-of-the-month-webview-container'>
+
           <Webview
-            style={{flex: 'auto'}}
-            src={'https://www.youtube.com/embed/eYP_HWIswoE?si=JqVJ8tNV5jDq4y6N'}
+            src={'https://www.youtube.com/embed/eYP_HWIswoE?si=JqVJ8tNV5jDq4y6N&origin=vortex.com'}
             allowFullScreen
             onNewWindow={onNewWindow}
             //onFullscreen={onFullscreen}
           />          
 
+      </div>
     </Dashlet>
   );
 

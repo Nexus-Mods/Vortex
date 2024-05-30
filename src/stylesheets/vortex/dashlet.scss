@@ -42,6 +42,20 @@
   align-items: center;
 }
 
+  .dashlet-mods-of-the-month-webview-container {
+
+    flex: auto;
+
+    webview {
+      width: 100%;
+      height: 100%;
+      /*border: 2px blue solid;
+      border-radius: 8px;
+      padding: 4px;  */  
+    }
+    
+  }
+
 .dashlet-todo {
   li {
     display: flex;
