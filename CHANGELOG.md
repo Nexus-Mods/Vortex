@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Common Changelog](https://common-changelog.org/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.7] - 2024-06-11
+
+- Fixed excessive logging when downloading collections. ([#15883](https://github.com/Nexus-Mods/Vortex/issues/15883)) 
+- **modtype-bepinex**: Fixed installation error for BepInEX 5.4.23 or higher. ([#15670](https://github.com/Nexus-Mods/Vortex/issues/15670)) 
+- **mod-dependencies**: Added workaround setting for disabling modtype conflicts.
+- **witcher3**: Fixed installer for mixed mods (both dlc and regular).
+
 ## [1.11.6] - 2024-05-22
 
 - **collections**: Fixed dependency installation errors if no extra metadata available. ([#15746](https://github.com/Nexus-Mods/Vortex/issues/15746))
-- **witcher3**: fixed error when raising script merger notification. ([#15743](https://github.com/Nexus-Mods/Vortex/issues/15743))
+- **witcher3**: Fixed error when raising script merger notification. ([#15743](https://github.com/Nexus-Mods/Vortex/issues/15743))
 
 ## [1.11.5] - 2024-05-21
 
@@ -354,6 +361,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.11.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.7
 [1.11.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.6
 [1.11.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.5
 [1.11.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.4
