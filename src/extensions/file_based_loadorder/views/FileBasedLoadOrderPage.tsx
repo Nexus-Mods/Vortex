@@ -84,7 +84,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             icon: 'deploy',
             text: 'Deploy Mods',
             className: this.props.needToDeploy ? 'toolbar-flash-button' : undefined,
-            onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
+            onClick: async () => {
+              await util.toPromise(cb => this.context.api.events.emit('deploy-mods', cb));
+              const gameId = selectors.activeGameId(this.context.api.getState());
+              this.props.onSetDeploymentNecessary(gameId, false);
+            },
           };
         },
       }, {
@@ -96,7 +100,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             icon: 'purge',
             text: 'Purge Mods',
             className: 'load-order-purge-list',
-            onClick: () => this.context.api.events.emit('purge-mods', false, () => undefined),
+            onClick: async () => {
+              await util.toPromise(cb => this.context.api.events.emit('purge-mods', false, cb));
+              const gameId = selectors.activeGameId(this.context.api.getState());
+              this.props.onSetDeploymentNecessary(gameId, true);
+            },
           };
         },
       }, {
