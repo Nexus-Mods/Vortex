@@ -7,21 +7,29 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 ## 1.12.0-alpha.1 - 2024-xx-xx
 
 - Added ability to select game store when manually choosing game folder. ([#15371](https://github.com/Nexus-Mods/Vortex/issues/15371))
-- Fixed broken Xbox launcher for Pillars of Eternity 2. ([#15409](https://github.com/Nexus-Mods/Vortex/issues/15409))
+- Fixes broken Xbox launcher for Pillars of Eternity 2. ([#15409](https://github.com/Nexus-Mods/Vortex/issues/15409))
 - Adding support for EnderalSE on GOG. ([#15369](https://github.com/Nexus-Mods/Vortex/issues/15369))
 - Added status pill to collection overview
-- Fixed warning when potentially downgrading
+- Fixes warning when potentially downgrading
 - Changed how community game extensions are highlighted
-- Fixed potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648)) 
+- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648)) 
 - Added stricter diff check on skippable properties. ([#15721](https://github.com/Nexus-Mods/Vortex/issues/15721))
-- Fixed crash when attempting to untrack (untracked) mods. ([#15801](https://github.com/Nexus-Mods/Vortex/issues/15801))
+- Fixes crash when attempting to untrack (untracked) mods. ([#15801](https://github.com/Nexus-Mods/Vortex/issues/15801))
 - Fixes error being missing if dotnet check fails
 - libxmljs is being deprecated in 1.13
+- Fixes excessive logging when testing mod references. ([#15884](https://github.com/Nexus-Mods/Vortex/issues/15884))
 - **api**: IRemoveModOptions is now being exported as part of the API
 - **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
 - **bannerlord**: Game support has been moved to a new [community extension](https://www.nexusmods.com/site/mods/875) by [Aragas](https://github.com/Aragas) and the [BUTR team](https://github.com/BUTR). ([#15436](https://github.com/Nexus-Mods/Vortex/issues/15436))
 - **witcher3**: Fixed crash if user has insufficient permissions. ([#15793](https://github.com/Nexus-Mods/Vortex/issues/15793))
 - **collections**: Added stricter collection checks before refreshing. ([#15414](https://github.com/Nexus-Mods/Vortex/issues/15414))
+
+## [1.11.7] - 2024-06-11 
+ 
+- Fixed excessive logging when downloading collections. ([#15883](https://github.com/Nexus-Mods/Vortex/issues/15883))  
+- **modtype-bepinex**: Fixed installation error for BepInEX 5.4.23 or higher. ([#15670](https://github.com/Nexus-Mods/Vortex/issues/15670))  
+- **mod-dependencies**: Added workaround setting for disabling modtype conflicts. 
+- **witcher3**: Fixed installer for mixed mods (both dlc and regular). 
 
 ## [1.11.6] - 2024-05-22
 
@@ -372,6 +380,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.11.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.7
 [1.11.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.6
 [1.11.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.5
 [1.11.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.4
