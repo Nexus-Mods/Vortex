@@ -1003,7 +1003,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => (mod !== undefined)
         ? (enable !== false)
           ? activator.activate(modPath, mod.installationPath, subdir(mod),
-                               new BlacklistSet([], game, normalize))
+                               new BlacklistSet(mod.fileOverrides ?? [], game, normalize))
           : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
