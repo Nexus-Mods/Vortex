@@ -29,6 +29,7 @@ function extenderForGame(gameId: string) {
     falloutnv: 'nvse',
     fallout4: 'f4se',
     fallout4vr: 'f4se',
+    starfield: 'sfse',
   }[gameId];
 }
 

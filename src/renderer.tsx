@@ -547,6 +547,10 @@ function init() {
     startDownloadFromURL(url, fileName, install);
   });
 
+  eventEmitter.on('relaunch-application', (gameId: string, ) => {
+    relaunch(['--game', gameId]);
+  });
+
   ipcRenderer.on(
     'external-url',
     (event, url: string, fileName?: string, install?: boolean) => {

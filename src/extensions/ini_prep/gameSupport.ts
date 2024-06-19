@@ -78,6 +78,14 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
     ],
     iniFormat: 'winapi',
   },
+  starfield: {
+    iniFiles: [
+      path.join('{mygames}', 'Starfield', 'Starfield.ini'),
+      path.join('{mygames}', 'Starfield', 'StarfieldPrefs.ini'),
+      path.join('{mygames}', 'Starfield', 'StarfieldCustom.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
   oblivion: {
     iniFiles: [
       path.join('{mygames}', 'Oblivion', 'Oblivion.ini'),
