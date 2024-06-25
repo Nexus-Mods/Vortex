@@ -6,7 +6,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: 8px;   
+  gap: 8px;
   border-radius: 8px;
 
   li {
@@ -42,19 +42,38 @@
   align-items: center;
 }
 
+.dashlet-mods-of-the-month {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #1c1e1d;
+  padding: 16px;
+  background-color: darken(#1c1e1d, 5%);
+  height: 100%;
+  width: 100%;
+  .dashlet-mods-of-the-month-info {
+    height: 8%;
+  }
   .dashlet-mods-of-the-month-webview-container {
-
     flex: auto;
-
+    border-radius: 8px;
+    background-color: white;
+    border: 1px solid #1c1e1d;
     webview {
       width: 100%;
       height: 100%;
-      /*border: 2px blue solid;
-      border-radius: 8px;
-      padding: 4px;  */  
     }
-    
   }
+
+  .dashlet-mods-of-the-month-button-container {
+    height: auto !important;
+    .btn-ghost {
+      height: fit-content;
+    }
+    .btn-ghost.right {
+      float: right
+    }
+  }
+}
 
 .dashlet-todo {
   li {
