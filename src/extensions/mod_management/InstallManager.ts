@@ -165,7 +165,7 @@ class InstallManager {
   private mQueue: Bluebird<void>;
   private mDependencyInstalls: { [modId: string]: () => void } = {};
   private mDependencyDownloadsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(3);
+    new ConcurrencyLimiter(10);
   private mDependencyInstallsLimit: ConcurrencyLimiter =
     new ConcurrencyLimiter(1);
   private mDependencyQueue = makeQueue<void>();
@@ -1982,16 +1982,31 @@ class InstallManager {
           referenceTag,
           meta: lookupResult,
         }, fileName,
-          (error, id) => {
+          async (error, id) => {
             if (error === null) {
-              resolve(id);
+              return resolve(id);
             } else if (error instanceof AlreadyDownloaded) {
-              resolve(error.downloadId);
+              return resolve(error.downloadId);
+            } else if (error instanceof DownloadIsHTML){
+              // If this is a google drive link and the file exceeds the
+              //  virus testing limit, Google will return an HTML page asking
+              //  the user for consent to download the file. Lets try this using
+              //  the browser extension.
+              const instructions = `You are trying to download "${lookupResult.fileName}" from "${resolvedSource}".\n`
+                                 + 'Depending on the portal, you may be re-directed several times.';
+              const result: string[] = await api.emitAndAwait('browse-for-download', resolvedSource, instructions);
+              if (result.length > 0) {
+                const newLookupRes = { ...lookupResult, sourceURI: result[0] };
+                const id = await this.downloadURL(api, newLookupRes, wasCanceled, referenceTag, campaign, fileName);
+                return resolve(id);
+              } else {
+                return reject(new UserCanceled());
+              }
             } else {
-              reject(error);
+              return reject(error);
             }
           }, 'never', { allowInstall: false, allowOpenHTML: false })) {
-          reject(new Error('download manager not installed?'));
+          return reject(new Error('download manager not installed?'));
         }
     }));
   }
