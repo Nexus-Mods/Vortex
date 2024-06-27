@@ -230,7 +230,7 @@ class Tracking {
     return this.mNexus
       .untrackMod(nexusModId, nexusId)
       .then(() => {
-        this.mTrackedMods[nexusId].delete(nexusModId);
+        this.mTrackedMods[nexusId]?.delete?.(nexusModId);
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
