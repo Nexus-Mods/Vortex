@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -86,7 +87,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequire) =>
                         void | Promise<void> | Bluebird<void>,
                      args?: any): Bluebird<any> {
   return new Bluebird((resolve, reject) => {
-    tmp.file((err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
+    tmp.file({ postfix: '.js' }, (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);
       }

@@ -76,7 +76,7 @@ function writeProgram(func, moduleBase, args) {
 }
 function runThreaded(func, moduleBase, ...args) {
     return new bluebird_1.default((resolve, reject) => {
-        tmp.file((err, tmpPath, fd, cleanup) => {
+        tmp.file({ postfix: '.js' }, (err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);
             }
