@@ -80,7 +80,7 @@ function spawnAsync(exe, args, options, out) {
     let desc = `${options.cwd || '.'}/${exe} ${args.join(' ')}`;
     out.log('started: ' + desc);
     try {
-      let proc = spawn(exe, args, options);
+      let proc = spawn(exe, args, { ...options, shell: true });
       proc.stdout.on('data', (data) => out.log(data.toString()));
       proc.stderr.on('data', (data) => out.err(data.toString()));
       proc.on('error', (err) => reject(err));
@@ -128,7 +128,7 @@ function changes(basePath, patterns, force) {
 
 function format(fmt, parameters) {
   return fmt.replace(/{([a-zA-Z_]+)}/g, (match, key) => {
-    return typeof parameters[key] !== undefined ? parameters[key] : match;
+    return typeof parameters[key] !== 'undefined' ? parameters[key] : match;
   });
 }
 

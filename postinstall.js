@@ -40,7 +40,7 @@ async function verifyModulesInstalled() {
       console.log('missing native module', modPath);
       const pkgcli = process.platform === 'win32' ? `${packageManager}.cmd` : packageManager;
       await new Promise(resolve => {
-        const proc = spawn(pkgcli, ['install'], { cwd: path.join(__dirname, 'node_modules', module[0]) });
+        const proc = spawn(pkgcli, ['install'], { shell: true, cwd: path.join(__dirname, 'node_modules', module[0]) });
         proc.on('exit', resolve);
       });
       try {
