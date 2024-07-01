@@ -1,0 +1,179 @@
+/**
+ *  NORMAL/REGULAR (400 WEIGHT)
+ */
+
+ @font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Inter-Regular'), url(assets/fonts/Inter-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 400;
+  src: local('Inter-Italic'), url(assets/fonts/Inter-Italic.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: normal;
+  src: local('Inter-Regular'), url(assets/fonts/Inter-Regular.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: normal;
+  src: local('Inter-Italic'), url(assets/fonts/Inter-Italic.ttf) format('truetype');
+}
+
+
+
+ /**
+ *   BOLD (700 WEIGHT)
+ */
+
+ @font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Inter-Bold'), url(assets/fonts/Inter-Bold.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: bold;
+  src: local('Inter-Bold'), url(assets/fonts/Inter-Bold.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 700;
+  src: local('Inter-BoldItalic'), url(assets/fonts/Inter-BoldItalic.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: bold;
+  src: local('Inter-BoldItalic'), url(assets/fonts/Inter-BoldItalic.ttf) format('truetype');
+}
+
+
+ /**
+ *   LIGHTER (100, 200, 300 WEIGHTS)
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100;
+  src: local('Inter-Thin'), url(assets/fonts/Inter-Light.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100;
+  src: local('Inter-ThinItalic'), url(assets/fonts/Inter-ThinLight.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 200;
+  src: local('Inter-ExtraLight'), url(assets/fonts/Inter-ExtraLight.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 200;
+  src: local('Inter-ExtraLightItalic'), url(assets/fonts/Inter-ExtraLightItalic.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Inter-Light'), url(assets/fonts/Inter-Light.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 300;
+  src: local('Inter-LightItalic'), url(assets/fonts/Inter-LightItalic.ttf) format('truetype');
+}
+
+
+
+ /**
+ *   MEDIUM (500, 600 WEIGHTS)
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  src: local('Inter-Medium'), url(assets/fonts/Inter-Medium.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 500;
+  src: local('Inter-MediumItalic'), url(assets/fonts/Inter-MediumItalic.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Inter-SemiBold'), url(assets/fonts/Inter-SemiBold.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 600;
+  src: local('Inter-SemiBoldItalic'), url(assets/fonts/Inter-SemiBoldItalic.ttf) format('truetype');
+}
+
+
+/**
+ *   BOLDER (800, 900 WEIGHTS)
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 800;
+  src: local('Inter-ExtraBold'), url(assets/fonts/Inter-ExtraBold.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 800;
+  src: local('Inter-ExtraBoldItalic'), url(assets/fonts/Inter-ExtraBoldItalic.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 900;
+  src: local('Inter-Black'), url(assets/fonts/Inter-Black.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 900;
+  src: local('Inter-BlackItalic'), url(assets/fonts/Inter-BlackItalic.ttf) format('truetype');
+}
