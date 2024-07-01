@@ -102,7 +102,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
  */
 function runElevated(ipcPath, func, args) {
     return new bluebird_1.default((resolve, reject) => {
-        tmp.file((err, tmpPath, fd, cleanup) => {
+        tmp.file({ postfix: '.js' }, (err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);
             }

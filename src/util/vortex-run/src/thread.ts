@@ -60,7 +60,7 @@ function writeProgram(func: (...args: any[]) => any, moduleBase: string, args?: 
 function runThreaded(func: (...args: any[]) => any,
                      moduleBase: string, ...args: any[]): Promise<any> {
   return new Promise((resolve, reject) => {
-    tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
+    tmp.file({ postfix: '.js' }, (err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);
       }
