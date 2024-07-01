@@ -868,6 +868,9 @@ class InstallManager {
 
   private augmentRules(api: IExtensionApi, gameId: string, mod: IMod): Bluebird<IRule[]> {
     const rules = (mod.rules ?? []).slice();
+    if (mod.attributes === undefined) {
+      return Bluebird.resolve(rules);
+    }
 
     return api.lookupModMeta({
       fileMD5: mod.attributes['fileMD5'],
@@ -876,7 +879,7 @@ class InstallManager {
     })
       .then(results => {
         rules.push(...(results[0]?.value?.rules ?? []));
-        return rules;
+        return Bluebird.resolve(rules);
       })
   }
 
