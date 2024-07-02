@@ -6,7 +6,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.12.0-alpha.1 - 2024-xx-xx
 
-
+- Set Inter as new default font
+- Added Mods of the Month to Dashboard. ([#15930](https://github.com/Nexus-Mods/Vortex/issues/15930))
 - Fixed build issues with node 18.20 and above. ([#15950](https://github.com/Nexus-Mods/Vortex/issues/15950))
 - Fixed inability to download files from Google Drive. ([#15893](https://github.com/Nexus-Mods/Vortex/issues/15893))
 - Fixed redundant mod metadata lookup. ([#15934](https://github.com/Nexus-Mods/Vortex/issues/15934))
