@@ -64,7 +64,7 @@ function renderInfo(t: any, entry: IMOTMEntryExt) {
 //  this means that dynamic src changes will keep adding listeners to the same stupid
 //  component. This is a workaround to ensure that we only open one window at a time.
 //  What makes this worse is the fact that the dashboard is refreshed every second.
-const debounce = new Debouncer((url) => open(url).catch(() => null), 1000, true, false);
+const debounce = new Debouncer((url) => open(url).catch(() => null), 250, true, false);
 
 export default function TopModsDashlet(props: IBaseProps) {
   const [t] = useTranslation(['common']);
