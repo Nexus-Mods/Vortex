@@ -179,6 +179,13 @@ export interface ILoadOrderGameInfo {
    *
    */
   validate: (prev: LoadOrder, current: LoadOrder) => Promise<IValidationResult>;
+
+  /**
+   * Predicate to allow the game extension to decide wheter the load order page should be visible
+   *  (In case the game extension wants to hide or switch between different LO management logic)
+   * @returns true if the load order page should be visible, false otherwise.
+   */
+  condition?: () => boolean;
 }
 
 export interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {

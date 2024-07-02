@@ -258,7 +258,7 @@ export default function init(context: IExtensionContext) {
     visible: () => {
       const currentGameId: string = selectors.activeGameId(context.api.store.getState());
       const gameEntry: ILoadOrderGameInfo = findGameEntry(currentGameId);
-      return (gameEntry !== undefined) ? true : false;
+      return (gameEntry?.condition !== undefined) ? gameEntry.condition() : gameEntry !== undefined;
     },
     priority: 120,
     props: () => {
