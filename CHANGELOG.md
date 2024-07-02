@@ -28,6 +28,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixes error being missing if dotnet check fails
 - libxmljs is being deprecated in 1.13
 - Fixes excessive logging when testing mod references. ([#15884](https://github.com/Nexus-Mods/Vortex/issues/15884))
+- **gamebryo**: Updates to better support Starfield
 - **api**: IRemoveModOptions is now being exported as part of the API
 - **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
 - **bannerlord**: Game support has been moved to a new [community extension](https://www.nexusmods.com/site/mods/875) by [Aragas](https://github.com/Aragas) and the [BUTR team](https://github.com/BUTR). ([#15436](https://github.com/Nexus-Mods/Vortex/issues/15436))
