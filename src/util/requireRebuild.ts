@@ -42,7 +42,6 @@ const nativeLibs = [
   'diskusage',
   'drivelist',
   'leveldown',
-  'libxmljs',
   'msgpack',
   'native-errors',
   'permissions',
