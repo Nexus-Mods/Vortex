@@ -1,6 +1,4 @@
 import { IExtensionContext, ToDoType } from '../../types/IExtensionContext';
-import {showError} from '../../util/message';
-
 import Dashlet from './Dashlet';
 import { IToDo } from './IToDo';
 import settingsReducer from './reducers';

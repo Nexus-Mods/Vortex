@@ -40,3 +40,4 @@ import {} from './test_runner';
 import {} from './tool_variables_base';
 import {} from './updater';
 import {} from './onboarding_dashlet';
+import {} from './mods_of_the_month_dashlet';

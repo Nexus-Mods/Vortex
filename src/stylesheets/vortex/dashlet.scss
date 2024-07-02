@@ -6,7 +6,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: 8px;   
+  gap: 8px;
   border-radius: 8px;
 
   li {
@@ -40,6 +40,35 @@
   padding-right: 50px;
   display: flex;
   align-items: center;
+}
+
+.dashlet-mods-of-the-month {
+
+  .dashlet-mods-of-the-month-info p {
+    margin: 0px;
+    margin-bottom: 4px;
+  }
+
+  .dashlet-mods-of-the-month-webview-container {
+    flex: auto;
+    background-color: $black;
+    border: $border-width solid $border-color;
+
+    webview {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .dashlet-mods-of-the-month-button-container {
+    height: auto !important;
+    .btn-ghost {
+      height: fit-content;
+    }
+    .btn-ghost.right {
+      float: right
+    }
+  }
 }
 
 .dashlet-todo {
