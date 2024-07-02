@@ -2,31 +2,34 @@
 import * as React from 'react';
 import Dashlet from '../../controls/Dashlet';
 import Webview from '../../controls/Webview';
-import { EmptyPlaceholder, Spinner, util } from 'vortex-api';
+import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
+import open from '../../util/opn';
+import Debouncer from '../../util/Debouncer';
 import { IMOTMEntryExt } from './types';
 import { Button } from '../../controls/TooltipControls';
+import { useTranslation } from 'react-i18next';
 
 interface IBaseProps {
   update: () => IMOTMEntryExt[],
 }
 
 type ButtonDir = 'left' | 'right';
-const placeHolder: IMOTMEntryExt = {
-  id: 'placeholder',
-  link: 'https://www.youtube.com/embed/eYP_HWIswoE?si=JqVJ8tNV5jDq4y6N&origin=vortex.com',
-  date: Date.now(),
-  month: 'Shmanuary',
-  year: '2024',
-}
 
-function renderWebView(entry: IMOTMEntryExt, onNewWindow: (url: string) => void) {
-  return !entry || entry.id === 'placeholder' ? renderPlaceholder() : <div className='dashlet-mods-of-the-month-webview-container'>
-    <Webview
-      src={entry.link}
-      allowFullScreen
-      onNewWindow={onNewWindow}
-    />
-  </div>
+interface IWebviewProps {
+  entry: IMOTMEntryExt;
+  onNewWindow: (url: string) => void;
+}
+function renderWebView(props: IWebviewProps) {
+  const { entry, onNewWindow } = props;
+  return (
+    <div className='dashlet-mods-of-the-month-webview-container'>
+      <Webview
+        src={entry.link}
+        allowFullScreen
+        onNewWindow={onNewWindow}
+      />
+    </div>
+  );
 }
 
 function renderPlaceholder() {
@@ -50,46 +53,53 @@ function renderButton(entry: IMOTMEntryExt, dir: ButtonDir, onClick: () => void)
   )
 }
 
-function renderInfo(entry: IMOTMEntryExt) {
+function renderInfo(t: any, entry: IMOTMEntryExt) {
+  const { month, year } = entry;
   return entry.id === 'placeholder' ? null : <div className='dashlet-mods-of-the-month-info'>
-    <p>Discover our top picks from {entry.month + ' ' + entry.year}</p>
+    <p>{t('Discover our top picks from {{month}} {{year}}', { replace: { month, year } })}</p>
   </div>
 }
 
+// Our WebView component does not remove listeners correctly for the onNewWindow event;
+//  this means that dynamic src changes will keep adding listeners to the same stupid
+//  component. This is a workaround to ensure that we only open one window at a time.
+//  What makes this worse is the fact that the dashboard is refreshed every second.
+const debounce = new Debouncer((url) => open(url).catch(() => null), 1000, true, false);
+
 export default function TopModsDashlet(props: IBaseProps) {
+  const [t] = useTranslation(['common']);
   const [currentIdx, setIdx] = React.useState<number>(-1);
   const [entries, setEntries] = React.useState<IMOTMEntryExt[]>([]);
+  const [loaded, setLoaded] = React.useState<boolean>(false);
   React.useEffect(() => {
     const runUpdate = async () => {
       const motm = await props.update();
-      if (motm.length === 0) {
-        setEntries([placeHolder]);
-        setIdx(0);
-      } else {
+      if (motm.length !== 0) {
         setEntries(motm);
         setIdx(Math.max(0, motm.length - 1));
+        setLoaded(true);
       }
     }
-    if (!entries || entries.length === 0) {
+    if (entries.length === 0) {
       runUpdate();
     }
-  }, [entries, currentIdx, setIdx, setEntries]);
+  }, [entries]);
 
   const back = React.useCallback(() => {
     setIdx(Math.max(0, currentIdx - 1));
-  }, [setIdx, currentIdx, entries]);
+  }, [currentIdx]);
 
   const forward = React.useCallback(() => {
     setIdx(Math.min(entries.length - 1, currentIdx + 1));
-  }, [setIdx, currentIdx, entries]);
+  }, [currentIdx, entries]);
 
-  const onNewWindow = (url: string) => {
-    util.opn(url).catch(() => null);
-  }
+  const onNewWindow = React.useCallback((url: string) => {
+    debounce.schedule((err) => null, url);
+  }, [currentIdx]);
   return (
     <Dashlet title='Mods of the Month' className='dashlet-mods-of-the-month'>
-      {currentIdx !== -1 && renderInfo(entries?.[currentIdx])}
-      {currentIdx !== -1 && renderWebView(entries?.[currentIdx], onNewWindow)}
+      {loaded && renderInfo(t, entries?.[currentIdx])}
+      {loaded ? renderWebView({ entry: entries?.[currentIdx], onNewWindow }) : renderPlaceholder()}
       <div className='dashlet-mods-of-the-month-button-container'>
         {renderButton(entries?.[currentIdx - 1], 'left', back)}
         {renderButton(entries?.[currentIdx + 1], 'right', forward)}
