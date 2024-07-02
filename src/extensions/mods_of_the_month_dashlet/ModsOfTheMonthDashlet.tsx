@@ -48,7 +48,7 @@ function renderButton(entry: IMOTMEntryExt, dir: ButtonDir, onClick: () => void)
       onClick={onClick}
       tooltip={'Switch to ' + entry.month + '' + entry.year}
     >
-      {dir === 'left' ? '‹ ' + entry.month : entry.month + ' ›'}
+      {dir === 'left' ? '◄ ' + entry.month : entry.month + ' ►'}
     </Button>
   )
 }
