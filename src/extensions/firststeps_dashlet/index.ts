@@ -1,8 +1,4 @@
 import { IExtensionContext, ToDoType } from '../../types/IExtensionContext';
-import { IState } from '../../types/api';
-import {showError} from '../../util/message';
-
-import TopModsDashlet from '../mods_of_the_month_dashlet/ModsOfTheMonthDashlet';
 import Dashlet from './Dashlet';
 import { IToDo } from './IToDo';
 import settingsReducer from './reducers';
