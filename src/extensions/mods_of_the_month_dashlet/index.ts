@@ -14,6 +14,9 @@ import ModsOfTheMonthDashlet from './ModsOfTheMonthDashlet';
 const MODS_OF_THE_MONTH_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/modsofthemonth.json';
 
+const YOUTUBE_EMBED_URL = `https://www.youtube.com/embed/`;
+const YOUTUBE_OPTS = `enablejsapi=1&origin=vortex.app&widget_referrer=vortex.app`;
+
 // Can be used for debugging.
 const DEBUG_MODE: boolean = false;
 const MOTM_LOCAL_PATH = path.join(__dirname, 'modsofthemonth.json');
@@ -62,6 +65,7 @@ function decorateData(data: IMOTMEntry[]): IMOTMEntryExt[] {
       ...entry,
       month: parsed.toLocaleString('default', { month: 'long' }),
       year: parsed.toLocaleString('default', { year: 'numeric' }),
+      link: `${YOUTUBE_EMBED_URL}${entry.videoid}?${YOUTUBE_OPTS}`
     });
   }
   return decorated;
