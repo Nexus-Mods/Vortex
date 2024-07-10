@@ -1,0 +1,38 @@
+name: Signing Test
+
+on:
+  schedule:
+    # At 14:05 on Wednesday
+    # https://crontab.guru
+    - cron: '5 14 * * 3'
+  workflow_dispatch:
+ 
+jobs:       
+  build: 
+    runs-on: windows-latest 
+    env: 
+      ES_USERNAME: ${{ secrets.ES_USERNAME }} 
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }} 
+      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }} 
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }} 
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands    
+       
+    strategy: 
+      matrix: 
+        dotnet-version: [ 6.0.x ] 
+ 
+    steps: 
+ 
+      - uses: actions/checkout@v4 
+        with: 
+          submodules: "false" 
+
+      - name: Download CodeSignTool 
+        id: codesign 
+        shell: pwsh 
+        run: .\download-codesigntool.ps1
+
+      - name: Test CodeSignTool 
+        id: testcodesign 
+        shell: pwsh 
+        run: .\test-codesigntool.ps1
