@@ -96,7 +96,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     if (this.isLoggedIn()) {
       return (
           <div id='membership-status' className={classes}>
-             {membership}
+             <div className='membership-status-text'>{membership}</div>
           </div>
       );
     } else {
