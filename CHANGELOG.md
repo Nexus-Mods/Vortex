@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.12.0-beta.1 - 2024-07-xx
+## [1.12.0-beta.1] - 2024-07-16
 
 - Set Inter as new default font
 - Added Mods of the Month to Dashboard. ([#15930](https://github.com/Nexus-Mods/Vortex/issues/15930))
@@ -394,6 +394,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.1
 [1.11.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.7
 [1.11.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.6
 [1.11.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.5
