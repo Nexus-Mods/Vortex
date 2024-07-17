@@ -4,9 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.12.0-beta.2] - 2024-xx-xx
+## [1.12.0-beta.2] - 2024-07-17
 
-- Removed some old hardcoded font names
+- Removed old hardcoded font names
+- **plugin-management**: Fixed parsing of light plugins for non-Starfield gamebryo games
 
 ## [1.12.0-beta.1] - 2024-07-16
 
@@ -398,6 +399,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.2
 [1.12.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.1
 [1.11.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.7
 [1.11.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.11.6
