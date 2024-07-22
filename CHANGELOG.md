@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0-beta.3] - 2024-07-22
+
+- Fixed errorneous missing masters notification when using fblo 
+
 ## [1.12.0-beta.2] - 2024-07-17
 
 - Removed old hardcoded font names
