@@ -6,7 +6,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.12.0-beta.3] - 2024-07-22
 
-- Fixed errorneous missing masters notification when using fblo 
+- **plugin-management:** Fixed incorrect missing masters notification when using fblo
 
 ## [1.12.0-beta.2] - 2024-07-17
 
