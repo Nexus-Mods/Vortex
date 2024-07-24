@@ -37,6 +37,9 @@ import Settings from './Settings';
 import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
+import { profileById } from '../util/selectors';
+import { getGame } from '../util/api';
+
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -430,11 +433,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const pages = objects.map(obj => this.renderPage(obj));
     pages.push(this.renderPage(this.settingsPage));
-
+    const state = this.props.api.getState();
+    const profile = profileById(state, this.props.activeProfileId);
+    const game = profile !== undefined ? getGame(profile.gameId) : undefined;
+    const gameName = game?.name || 'Mods';
     const pageGroups = [
       { title: undefined, key: 'dashboard' },
       { title: 'General', key: 'global' },
-      { title: 'Mods', key: 'per-game' },
+      { title: gameName, key: 'per-game' },
       { title: 'About', key: 'support' },
     ];
 
