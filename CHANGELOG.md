@@ -6,7 +6,9 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.12.0-beta.5] - 2024-07-29
 
+- Fixed deploy event on batch install/re-install
 - **plugin-management:** Fixed inability to sort through FBLO for Starfield
+- **baldursgate3:** Fixed inability to deserialize manually added mod entries. ([#16106](https://github.com/Nexus-Mods/Vortex/issues/16106))
 - **fallout4:** Adding Fallout: London game domain support
 
 ## [1.12.0-beta.4] - 2024-07-24
