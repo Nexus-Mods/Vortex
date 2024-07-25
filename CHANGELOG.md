@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0-beta.5] - 2024-07-29
+
+- **plugin-management:** Fixed inability to sort through FBLO for Starfield
+- **fallout4:** Adding Fallout: London game domain support
+
 ## [1.12.0-beta.4] - 2024-07-24
 
 - **plugin-management:** Fixed plugin list not being updated on startup
