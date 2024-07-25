@@ -255,11 +255,6 @@ export function testModReference(mod: IMod | IModLookupInfo, reference: IModRefe
     return false;
   }
 
-  if (!!mod['patches']) {
-    // This function will get called A LOT - logging anything here can slow down
-    //  the application massively - especially when downloading/installing collections!
-    log('info', 'mod has patches', { modId: mod?.id });
-  }
   if ((mod as any).attributes) {
     return testRef((mod as IMod).attributes as IModLookupInfo, mod.id,
                    reference, source, fuzzyVersion);

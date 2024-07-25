@@ -1378,8 +1378,23 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private install = (archiveIds: string | string[]) => {
     if (Array.isArray(archiveIds)) {
-      archiveIds.forEach(archiveId =>
-        this.context.api.events.emit('start-install-download', archiveId));
+      withBatchContext('install-mod', archiveIds, () => {
+        return Promise.all(archiveIds.map(async archiveId => {
+          return toPromise<string>(cb => this.context.api.events.emit('start-install-download', archiveId, {
+            allowAutoEnable: false,
+          }, cb)).catch(err => {
+            if (err instanceof UserCanceled) {
+              return Promise.resolve(null);
+            }
+          });
+        })).then((modIds: string[]) => {
+          const filtered = modIds.filter(modId => modId !== null);
+          if (this.props.autoInstall && filtered.length > 0) {
+            this.props.onSetModsEnabled(this.props.profileId, filtered, true);
+          }
+          return Promise.resolve();
+        });
+      })
     } else {
       this.context.api.events.emit('start-install-download', archiveIds);
     }
@@ -1409,8 +1424,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         return Promise.all(
           validIds.map(modId => {
             const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);
+            const installOpts: IInstallOptions = choices !== undefined ? {
+              choices, allowAutoEnable: false,
+            } : {
+              allowAutoEnable: false,
+            };
             return toPromise(cb => this.context.api.events.emit('start-install-download',
-                mods[modId].archiveId, { choices, allowAutoEnable: false }, cb))
+                mods[modId].archiveId, installOpts, cb))
               .catch(err => {
                 if (err instanceof UserCanceled) {
                   return;
