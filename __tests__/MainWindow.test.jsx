@@ -12,7 +12,7 @@ function renderMainWindow() {
     return input;
   }
 
-  const api = { events: { on: () => undefined } };
+  const api = { events: { on: () => undefined }, getState: () => ({}) };
 
   return shallow(<MainWindow objects={[]} t={ dummyT } api={api}/>);
 }
