@@ -812,10 +812,11 @@ export function onStartInstallDownload(api: IExtensionApi,
         return;
       }
       const fullPath: string = path.join(downloadPath, download.localPath);
+      const allowAutoDeploy = options.allowAutoEnable !== false;
       const { enable } = state.settings.automation;
       installManager.install(downloadId, fullPath, downloadGame, api,
-        { download, choices: options.choices }, true, enable && (options.allowAutoEnable !== false),
-        callback, gameId, options.fileList, options.unattended, options.forceInstaller);
+        { download, choices: options.choices }, true, enable && allowAutoDeploy,
+        callback, gameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
     })
     .catch(err => {
       if (callback !== undefined) {
