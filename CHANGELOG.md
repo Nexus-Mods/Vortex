@@ -6,6 +6,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [x.x.x] - 2024-xx-xx
 
+- **witcher3:** Fixed DLC entries displayed on Load Order page
 - **gameversion-hash:** Fixed hashmap location to point to dist file
 
 ## [1.12.0-beta.5] - 2024-07-29
