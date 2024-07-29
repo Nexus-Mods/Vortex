@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [x.x.x] - 2024-xx-xx
+
+- **gameversion-hash:** Fixed hashmap location to point to dist file
+
 ## [1.12.0-beta.5] - 2024-07-29
 
 - Fixed deploy event on batch install/re-install
