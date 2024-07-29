@@ -250,7 +250,7 @@ jobs:
           if-no-files-found: error 
  
       - name: Create Installer Artifact 
-        uses: actions/upload-artifact@v3 
+        uses: actions/upload-artifact@v4 
         if: ${{ inputs.create-artifacts == true }} 
         with: 
           name: ${{ steps.setOutputs.outputs.artifactNameInstaller }} 
