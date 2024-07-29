@@ -1,4 +1,5 @@
-import { clearOAuthCredentials, setDownloadModInfo, setForcedLogout, setModAttribute } from '../../actions';
+/* eslint-disable */
+import { setDownloadModInfo, setForcedLogout, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModLookupResult } from '../../types/IModLookupResult';
@@ -1480,6 +1481,38 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'nexus'], persistentReducer);
   context.registerReducer(['session', 'nexus'], sessionReducer);
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
+  context.registerAction('mods-action-icons', 800, 'open-ext', {}, 'Open Source Website', ids => {
+    const state: IState = context.api.getState();
+    const gameMode = activeGameId(state);
+    if (gameMode === undefined) {
+      return;
+    }
+
+    for (const id of ids) {
+      const mod = getSafe(state, ['persistent', 'mods', gameMode, id], undefined);
+      if (!mod || !mod.attributes?.url) {
+        return;
+      }
+
+      opn(mod.attributes.url).catch(err => null);
+    }
+  }, ids => {
+    const state: IState = context.api.getState();
+    const gameMode = activeGameId(state);
+    if (gameMode === undefined) {
+      return false;
+    }
+    let supported = true;
+    for (const id of ids) {
+      const mod = getSafe(state, ['persistent', 'mods', gameMode, id], undefined);
+      if (!mod || mod?.attributes?.source !== 'website') {
+        supported = false;
+        continue;
+      }
+    }
+
+    return supported;
+  })
   context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {
     const state: IState = context.api.store.getState();
