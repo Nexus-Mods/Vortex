@@ -227,6 +227,7 @@ function init(context: IExtensionContext): boolean {
 
     function showConsentDialog() {
       context.api.sendNotification({
+        id: 'vortex-analytics-consent',
         type: 'info',
         title: 'Diagnostics & Usage Data',
         message: 'Find out more about how we use diagnostic and usage data',
