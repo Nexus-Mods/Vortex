@@ -10,6 +10,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Added open website context menu button for externally sourced mods. ([#16137](https://github.com/Nexus-Mods/Vortex/issues/16137)) 
 - Fixed analytics consent notification being raised multiple times. ([#16145](https://github.com/Nexus-Mods/Vortex/issues/16145))
 - **witcher3:** Fixed DLC entries displayed on Load Order page
+- **witcher3:** Text on Load Order entries changed to contain mod and folder name 
 - **gameversion-hash:** Fixed hashmap location to point to dist file
 
 ## [1.12.0-beta.5] - 2024-07-29
