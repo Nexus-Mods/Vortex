@@ -6,6 +6,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [x.x.x] - 2024-xx-xx
 
+- Changed 'mods' nav title to game name
+- Added open website context menu button for externally sourced mods. ([#16137](https://github.com/Nexus-Mods/Vortex/issues/16137)) 
 - Fixed analytics consent notification being raised multiple times. ([#16145](https://github.com/Nexus-Mods/Vortex/issues/16145))
 - **witcher3:** Fixed DLC entries displayed on Load Order page
 - **gameversion-hash:** Fixed hashmap location to point to dist file
