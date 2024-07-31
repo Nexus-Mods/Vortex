@@ -22,7 +22,7 @@
   a:focus {
     background-color: $brand-bg;
     //background: url('assets/images/bg.png');
-    border-right: 4px solid $brand-clickable;
+    border-left: 4px solid $brand-clickable;
   }
 }
 
@@ -30,7 +30,8 @@
   a,
   a:hover,w
   a:focus {
-    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+    border-radius: 0;
   }
 }
 

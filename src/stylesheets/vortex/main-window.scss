@@ -183,6 +183,11 @@
     font-weight: 600;
     color: $gray-dark;
     // text-transform: uppercase;
+    overflow-x: hidden;
+    white-space: nowrap;
+    display: inline-block;
+    text-overflow: ellipsis;
+    width: calc(90%);
   }
 
   .menu-label {
@@ -196,7 +201,7 @@
 
   &.sidebar-expanded {
     #main-nav-container {
-      max-width: 500px;
+      max-width: 200px;
     }
 
     .menu-label {
