@@ -60,10 +60,12 @@ interface IComponentState {
 }
 
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
+  private mMounted = false;
   private mCacheDebouncer: Debouncer = new Debouncer(() => {
+    if (!this.mMounted) { return Promise.resolve(); }
     this.nextState.gameIconCache = this.genGameIconCache();
     return Promise.resolve();
-  }, 100);
+  }, 250);
 
   constructor(props: IProps) {
     super(props);
@@ -71,11 +73,14 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
+    this.mMounted = true;
     this.context.api.events.on('quick-launch', this.start);
   }
 
   public componentWillUnmount() {
+    this.mMounted = false;
     this.context.api.events.removeListener('quick-launch', this.start);
+    this.mCacheDebouncer.clear();
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
