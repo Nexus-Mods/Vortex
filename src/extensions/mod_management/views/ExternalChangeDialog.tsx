@@ -231,7 +231,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column' }}>
         {text}
-        <p>{actions.map(action => (
+        <div>{actions.map(action => (
           <div key={action.key}>
             <a
               key={action.key}
@@ -241,7 +241,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             </a><span className='link-action-seperator'>&nbsp; | &nbsp;</span>
           </div>
         ))
-        }</p>
+        }</div>
         <div style={{ overflowY: 'auto', flex: '1 1 0' }}>
           <Table
             tableId={`external-change-${type}`}
