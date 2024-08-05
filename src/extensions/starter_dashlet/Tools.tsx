@@ -44,7 +44,6 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 
 import Tool from './Tool';
-import ErrorBoundary from '../../controls/ErrorBoundary';
 
 interface IBaseProps {
   onGetValidTools: (starters: IStarterInfo[], gameMode: string) => Promise<string[]>;
@@ -93,7 +92,7 @@ interface IActionProps {
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-    actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
   onSetPrimary: (gameId: string, toolId: string) => void;
   onSetToolOrder: (gameId: string, tools: string[]) => void;
 }
@@ -210,7 +209,7 @@ export default function Tools(props: IStarterProps) {
         onClose={closeEditDialog}
       />
     ) : null
-    , [state.editTool, closeEditDialog]);
+  , [state.editTool, closeEditDialog]);
   if (gameMode === undefined) {
     content = (
       <EmptyPlaceholder
@@ -226,11 +225,7 @@ export default function Tools(props: IStarterProps) {
       <Media id='starter-dashlet'>
         <FlexLayout type='row' className='starter-dashlet-tools-header'>
           <div className='dashlet-title'>{t('Tools')}</div>
-          <ErrorBoundary
-            key={`dyndiv-tools-${gameMode}`}
-          >
-            <DynDiv group='starter-dashlet-tools-controls' />
-          </ErrorBoundary>
+          <DynDiv group='starter-dashlet-tools-controls' />
         </FlexLayout>
         <Media.Body>
           <FlexLayout type='column'>
@@ -414,7 +409,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
   const keys = Object.keys(res);
   if ((lastConnected === undefined)
-    || (keys.find(key => res[key] !== lastConnected[key]) !== undefined)) {
+      || (keys.find(key => res[key] !== lastConnected[key]) !== undefined)) {
     lastConnected = res;
   }
   return lastConnected;
