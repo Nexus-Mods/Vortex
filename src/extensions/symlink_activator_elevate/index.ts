@@ -1,8 +1,9 @@
+/* eslint-disable */
 import { clearUIBlocker, setUIBlocker } from '../../actions';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
-import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
@@ -101,7 +102,7 @@ class DeploymentMethod extends LinkingDeployment {
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mIPCServer: net.Server;
   private mDone: () => void;
-  private mWaitForUser: () => Promise<void>;
+  // private mWaitForUser: () => Promise<void>;
   private mOnReport: (report: string) => void;
   private mTmpFilePath: string;
 
@@ -114,18 +115,18 @@ class DeploymentMethod extends LinkingDeployment {
         api);
     this.mElevatedClient = null;
 
-    this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
-        type: 'info',
-        message: 'Deployment requires elevation',
-        noDismiss: true,
-        actions: [{
-          title: 'Elevate',
-          action: dismiss => { dismiss(); resolve(); },
-        }, {
-          title: 'Cancel',
-          action: dismiss => { dismiss(); reject(new UserCanceled()); },
-        }],
-      }));
+    // this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
+    //     type: 'info',
+    //     message: 'Deployment requires elevation',
+    //     noDismiss: true,
+    //     actions: [{
+    //       title: 'Elevate',
+    //       action: dismiss => { dismiss(); resolve(); },
+    //     }, {
+    //       title: 'Cancel',
+    //       action: dismiss => { dismiss(); reject(new UserCanceled()); },
+    //     }],
+    //   }));
 
     let lastReport: string;
     this.mOnReport = (report: string) => {
@@ -173,11 +174,21 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public userGate(): Promise<void> {
-    const state: IState = this.api.store.getState();
-
-    return state.settings.workarounds.userSymlinks
-      ? Promise.resolve()
-      : this.mWaitForUser();
+    // In the past, we used to block the user from deploying/purging his mods
+    //  until he would give us consent to elevate permissions to do so.
+    // That is a redundant anti-pattern as the elevation UI itself will already inform the user
+    //  of this requirement and give him the opportunity to cancel or proceed with the deployment!
+    //
+    // Additionally - blocking the deployment behind a collapsible notification is extremely bad UX
+    //  as it is not necessarily obvious to the user that we require him to click on the notification.
+    // Finally, this will block the user from switching to other games while Vortex awaits for elevation
+    //  causing the "Are you stuck?" overlay to appear and remain there, waiting for the user to click on an
+    //  invisible notification button.
+    //
+    // I could add a Promise.race([this.waitForUser(), this.waitForElevation()]) to replace the mWaitForUser
+    //  functor - but what's the point - if the user clicked deploy, he surely wants to elevate his instance
+    //  as well. (And if not, he can always cancel the Windows API dialog!)
+    return Promise.resolve();
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
