@@ -46,6 +46,7 @@ _Stable release based on [1.12.0-beta.5]_
 - **bladeandsorcery**: Removed legacy mod support. ([#16000](https://github.com/Nexus-Mods/Vortex/issues/16000))
 - **fallout4:** Adding Fallout: London game domain support
 - **witcher3**: Fixed crash if user has insufficient permissions. ([#15793](https://github.com/Nexus-Mods/Vortex/issues/15793))
+- **witcher3:** Fixed DLC entries displayed on Load Order page 
 
 ## [1.12.0-beta.5] - 2024-07-29
 
