@@ -198,7 +198,7 @@ class DownloadWorker {
           // to use it now
           job.received = job.size;
           job.size = 0;
-          const [ignore, fileName] = jobUrl.split('|');
+          const [ignore, fileName] = jobUrl.split('<')[0].split('|');
           finishCB(false, fileName);
         } else {
           this.assignJob(job, jobUrl);
