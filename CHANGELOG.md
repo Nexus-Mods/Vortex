@@ -4,18 +4,61 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [x.x.x] - 2024-xx-xx
+## [1.12.1] - 2024-08-12
 
-- Changed 'mods' nav title to game name
-- Added open website context menu button for externally sourced mods. ([#16137](https://github.com/Nexus-Mods/Vortex/issues/16137)) 
-- Fixed analytics consent notification being raised multiple times. ([#16145](https://github.com/Nexus-Mods/Vortex/issues/16145))
-- **witcher3:** Fixed DLC entries displayed on Load Order page
-- **witcher3:** Text on Load Order entries changed to contain mod and folder name 
-- **gameversion-hash:** Fixed hashmap location to point to dist file
+- Fixed extension installation not executing from downloads page. ([#16197](https://github.com/Nexus-Mods/Vortex/issues/16197))
+- Fixed inability to download from mega.nz as part of collection. ([#16176](https://github.com/Nexus-Mods/Vortex/issues/16176))
+- **plugin-management**: Improved error handling for lootAsync api calls. ([#16181](https://github.com/Nexus-Mods/Vortex/issues/16181))
+- **plugin-management**: Fixed inability to filter loot messages by "relevant messages"
+- **mod-dependency-manager**: Swapped default dependency icon drag actions to "after" to aid UX
+
+## [1.12.0] - 2024-08-06
+
+_Stable release based on [1.12.0-beta.5]_
+
+- Set Inter as new default font to align with site design system
+- Added Mods of the Month to Dashboard. ([#15930](https://github.com/Nexus-Mods/Vortex/issues/15930))
+- Fixed build issues with node 18.20 and above. ([#15950](https://github.com/Nexus-Mods/Vortex/issues/15950))
+- Fixed inability to download files from Google Drive. ([#15893](https://github.com/Nexus-Mods/Vortex/issues/15893))
+- Fixed redundant mod metadata lookup. ([#15934](https://github.com/Nexus-Mods/Vortex/issues/15934))
+- Fixed error when attempting to untrack mods. ([#15935](https://github.com/Nexus-Mods/Vortex/issues/15935))
+- Fixed symlink elevation scripts for Node.
+- Fixed overrides ignored when deploying single mods. ([#15917](https://github.com/Nexus-Mods/Vortex/issues/15917))
+- Fixed deployment flag not set when purging/deploying. ([#15925](https://github.com/Nexus-Mods/Vortex/issues/15925))
+- Added extension version to the global error context. ([#15833](https://github.com/Nexus-Mods/Vortex/issues/15833))
+- Added ability to select game store when manually choosing game folder. ([#15371](https://github.com/Nexus-Mods/Vortex/issues/15371))
+- Fixes broken Xbox launcher for Pillars of Eternity 2. ([#15409](https://github.com/Nexus-Mods/Vortex/issues/15409))
+- Adding support for EnderalSE on GOG. ([#15369](https://github.com/Nexus-Mods/Vortex/issues/15369))
+- Added status pill to collection overview.
+- Fixes warning when potentially downgrading.
+- Changed how community game extensions are highlighted.
+- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648)) 
+- Added stricter diff check on skippable properties. ([#15721](https://github.com/Nexus-Mods/Vortex/issues/15721))
+- Fixes crash when attempting to untrack (untracked) mods. ([#15801](https://github.com/Nexus-Mods/Vortex/issues/15801))
+- Fixes error being missing if dotnet check fails
+- libxmljs is being deprecated in 1.13
+- Fixes excessive logging when testing mod references. ([#15884](https://github.com/Nexus-Mods/Vortex/issues/15884))
+- Fixed deploy event on batch install/re-install. ([#16109](https://github.com/Nexus-Mods/Vortex/issues/16109))
+- **api**: IRemoveModOptions is now being exported as part of the API
+- **collections**: Added stricter collection checks before refreshing. ([#15414](https://github.com/Nexus-Mods/Vortex/issues/15414))
+- **collections**: Fixed crash if mods/downloads become unavailable. ([#15979](https://github.com/Nexus-Mods/Vortex/issues/15979))
+- **gamebryo**: Updates to better support Starfield. ([#15918](https://github.com/Nexus-Mods/Vortex/issues/15918))
+- **plugin-management**: Improve UI\UX for LOOT-enabled games. ([#15929 ](https://github.com/Nexus-Mods/Vortex/issues/15929))
+- **plugin-management:** Fixed inability to sort through FBLO for Starfield
+- **plugin-management:** Fixed plugin list not being updated on startup
+- **plugin-management:** Fixed incorrect missing masters notification when using fblo
+- **plugin-management**: Fixed parsing of light plugins for non-Starfield gamebryo games
+- **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
+- **baldursgate3:** Fixed inability to deserialize manually added mod entries. ([#16106](https://github.com/Nexus-Mods/Vortex/issues/16106))
+- **bannerlord**: Game support has been moved to a new [community extension](https://www.nexusmods.com/site/mods/875) by [Aragas](https://github.com/Aragas) and the [BUTR team](https://github.com/BUTR). ([#15436](https://github.com/Nexus-Mods/Vortex/issues/15436))
+- **bladeandsorcery**: Removed legacy mod support. ([#16000](https://github.com/Nexus-Mods/Vortex/issues/16000))
+- **fallout4:** Adding Fallout: London game domain support
+- **witcher3**: Fixed crash if user has insufficient permissions. ([#15793](https://github.com/Nexus-Mods/Vortex/issues/15793))
+- **witcher3:** Fixed DLC entries displayed on Load Order page 
 
 ## [1.12.0-beta.5] - 2024-07-29
 
-- Fixed deploy event on batch install/re-install
+- Fixed deploy event on batch install/re-install. ([#16109](https://github.com/Nexus-Mods/Vortex/issues/16109))
 - **plugin-management:** Fixed inability to sort through FBLO for Starfield
 - **baldursgate3:** Fixed inability to deserialize manually added mod entries. ([#16106](https://github.com/Nexus-Mods/Vortex/issues/16106))
 - **fallout4:** Adding Fallout: London game domain support
@@ -423,6 +466,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.1
+[1.12.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0
+[1.12.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.5
 [1.12.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.4
 [1.12.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.3
 [1.12.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.2
