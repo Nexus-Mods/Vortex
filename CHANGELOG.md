@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2024-08-12
+
+- Fixed extension installation not executing from downloads page. ([#16197](https://github.com/Nexus-Mods/Vortex/issues/16197))
+- Fixed inability to download from mega.nz as part of collection. ([#16176](https://github.com/Nexus-Mods/Vortex/issues/16176))
+- **plugin-management**: Improved error handling for lootAsync api calls. ([#16181](https://github.com/Nexus-Mods/Vortex/issues/16181))
+- **plugin-management**: Fixed inability to filter loot messages by "relevant messages"
+- **mod-dependency-manager**: Swapped default dependency icon drag actions to "after" to aid UX
+
 ## [1.12.0] - 2024-08-06
 
 _Stable release based on [1.12.0-beta.5]_
@@ -458,6 +466,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.1
 [1.12.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0
 [1.12.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.5
 [1.12.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.4
