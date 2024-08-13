@@ -1,7 +1,8 @@
+/* eslint-disable */
 import { setDownloadModInfo } from '../../actions';
 import { IExtensionApi, StateChangeCallback } from '../../types/IExtensionContext';
 import { IDownload, IModTable, IState } from '../../types/IState';
-import { ArgumentInvalid, DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -15,7 +16,7 @@ import { toPromise, truthy } from '../../util/util';
 import { resolveCategoryName } from '../category_management';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
-import {IGameStored} from '../gamemode_management/types/IGameStored';
+import { IGameStoredExt } from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
 import { IModListItem } from '../news_dashlet/types';
 
@@ -223,7 +224,7 @@ function getFileId(download: IDownload): number {
 }
 
 function downloadFile(api: IExtensionApi, nexus: Nexus,
-                      game: IGameStored, modId: number, fileId: number,
+                      game: IGameStoredExt, modId: number, fileId: number,
                       fileName?: string,
                       allowInstall?: boolean): Promise<string> {
     const state: IState = api.getState();
@@ -279,7 +280,8 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       return;
     }
 
-    downloadFile(api, nexus, game, modId, fileId, undefined, false)
+    const downloadGameId = (game !== undefined) && (game.id !== gameId) ? gameId : game.id;
+    downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
       .catch(AlreadyDownloaded, err => {
         const state = api.getState();
         const downloads = state.persistent.downloads.files;
