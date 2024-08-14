@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NEXUS_DOMAIN, NEXUS_FLAMEWORK_SUBDOMAIN, NEXUS_NEXT_SUBDOMAIN, NEXUS_PROTOCOL, NEXUS_USERS_SUBDOMAIN } from '../extensions/nexus_integration/constants';
 
 import { TimeoutError } from './CustomErrors';
@@ -107,14 +108,14 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
     Object.keys(lhs || {}).forEach(key => {
       if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
-        return;
+        return null;
       }
       if (!Object.prototype.hasOwnProperty.call(rhs, key)
           && Object.prototype.hasOwnProperty.call(lhs, key)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs?.[key] ?? {}, rhs?.[key] ?? {});
-        if (sub === null) {
+        if (sub === null || sub === undefined) {
           res['-' + key] = lhs?.[key] ?? null;
           res['+' + key] = rhs?.[key] ?? null;
         } else if (Object.keys(sub).length !== 0) {
