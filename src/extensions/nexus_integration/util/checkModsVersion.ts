@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
@@ -104,7 +105,7 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
   const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
   const game = gameById(store.getState(), gameId);
   const fallBackGameId = gameId === 'site'
-    ? 'site' : undefined;
+    ? 'site' : gameId;
 
   return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
