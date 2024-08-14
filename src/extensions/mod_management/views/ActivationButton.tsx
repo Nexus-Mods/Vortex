@@ -20,6 +20,7 @@ import { ThunkDispatch } from 'redux-thunk';
 interface IConnectedProps {
   activator: IDeploymentMethod;
   needToDeploy: boolean;
+  profileId: string;
 }
 
 interface IActionProps {
@@ -78,18 +79,20 @@ class ActivationButton extends ComponentEx<IProps, {}> {
           this.props.onShowError('Failed to activate mods', err);
         }
       }
-    }));
+    }), this.props.profileId, undefined, { manual: true });
   }
 }
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const gameId = selectors.activeGameId(state);
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
+  const profileId = selectors.lastActiveProfileForGame(state, gameId);
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
     activator = ownProps.getActivators().find((act: IDeploymentMethod) => act.id === activatorId);
   }
   return {
+    profileId,
     activator,
     needToDeploy: selectors.needToDeploy(state),
   };

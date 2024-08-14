@@ -13,6 +13,7 @@ import { INotification } from '../../types/INotification';
 import {IDiscoveryResult, IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
+import { IDeployOptions } from './types/IDeployOptions';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -1112,9 +1113,14 @@ function once(api: IExtensionApi) {
         updateModDeployment(api, manual, profileId, progressCB), 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
-                                progressCB?: (text: string, percent: number) => void) => {
+                                progressCB?: (text: string, percent: number) => void,
+                                deployOptions?: IDeployOptions) => { // Can't believe that 7+ years in, we still didn't have deployment options defined.
     if (!(callback as any).called) {
-      deploymentTimer.runNow(callback, true, profileId, progressCB);
+      if (deployOptions?.manual === true) {
+        deploymentTimer.runNow(callback, true, profileId, progressCB);
+      } else {
+        deploymentTimer.runNow(callback, false, profileId, progressCB);
+      }
     }
   });
 
