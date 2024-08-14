@@ -6,6 +6,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.12.2] - 2024-08-14
 
+- Fixed crash when comparing objects with skippable properties. ([#16234](https://github.com/Nexus-Mods/Vortex/issues/16234))
 - Fixed inability to update mods that are tagged as compatibleDownloads. ([#16231](https://github.com/Nexus-Mods/Vortex/issues/16231))
 - Fixed downloads/installation stalling when Vortex is in background.
 - **plugin-management**: Removed non-relevant loot messages from inlined view
