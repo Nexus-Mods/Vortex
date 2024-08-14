@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { setToolRunning } from '../actions';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
@@ -85,7 +86,12 @@ class StarterInfo implements IStarterInfo {
             // in requiresLauncher
             log('warn', 'failed to determine if launcher is required because user canceled something');
           } else {
-            onShowError('Failed to determine if launcher is required', err, true);
+            const allowReport = !game.contributed;
+            const errorObj = allowReport ? err : { message: 'Report this to the community extension author, not Vortex support!' };
+            onShowError('Failed to determine if launcher is required', errorObj, allowReport);
+            if (!allowReport) {
+              log('error', 'failed to determine if launcher is required', errorObj.message);
+            }
           }
           return Promise.resolve(undefined);
         })
