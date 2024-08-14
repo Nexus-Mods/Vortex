@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.2] - 2024-08-14
+
+- Fixed inability to update mods that are tagged as compatibleDownloads. ([#16231](https://github.com/Nexus-Mods/Vortex/issues/16231))
+- Fixed downloads/installation stalling when Vortex is in background.
+- **plugin-management**: Removed non-relevant loot messages from inlined view
+
 ## [1.12.1] - 2024-08-12
 
 - Fixed extension installation not executing from downloads page. ([#16197](https://github.com/Nexus-Mods/Vortex/issues/16197))
@@ -466,6 +472,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.2
 [1.12.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.1
 [1.12.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0
 [1.12.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.0-beta.5

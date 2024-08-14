@@ -1,9 +1,9 @@
 import { inspect } from 'util';
 import { IGame } from '../../../types/IGame';
-import { IGameStored } from '../../../types/IState';
 import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 import { SITE_ID } from '../../gamemode_management/constants';
+import { IGameStored, IGameStoredExt } from '../../gamemode_management/types/IGameStored';
 
 /**
  * get the nexus page id for a game
@@ -88,7 +88,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
 /**
  * get the nxm link id for a game
  */
-export function toNXMId(game: IGameStored, gameId: string): string {
+export function toNXMId(game: IGameStoredExt, gameId: string): string {
   // this is a bit of a workaround since "site" isn't and shouldn't be an
   // entry in the list of games (here or on the site)
   if (game === null) {
@@ -100,7 +100,7 @@ export function toNXMId(game: IGameStored, gameId: string): string {
     } else if (game.details.nexusPageId !== undefined) {
       return game.details.nexusPageId;
     }
-    gameId = game.id;
+    gameId = game.downloadGameId || game.id;
   }
   const gameIdL = gameId.toLowerCase();
   if (gameIdL === 'skyrimse') {

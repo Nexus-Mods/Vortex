@@ -25,3 +25,7 @@ export interface IGameStored {
   contributed?: string;
   final?: boolean;
 }
+
+export interface IGameStoredExt extends IGameStored {
+  downloadGameId?: string;
+}
