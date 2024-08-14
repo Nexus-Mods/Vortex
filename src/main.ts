@@ -177,6 +177,7 @@ async function main(): Promise<void> {
   }
 
   app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
+  app.commandLine.appendSwitch('disable-features', 'UseEcoQoSForBackgroundProcess');
 
   // --run has to be evaluated *before* we request the single instance lock!
   if (mainArgs.run !== undefined) {
