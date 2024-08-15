@@ -270,7 +270,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string, modId: number, fileId: number, source: string) => {
     let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
-    if (game === undefined) {
+    if (!game) {
       log('warn', 'mod update requested for unknown game id', gameId);
       game = currentGame(api.getState());
     }
@@ -280,8 +280,16 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       return;
     }
 
-    const downloadGameId = (game !== undefined) && (game.id !== gameId) ? gameId : game.id;
-    downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
+    const downloadGameId = truthy(game)
+        ? (game.id !== gameId)
+          ? gameId
+          : game.id
+        : gameId;
+    const downloadFunc = () => truthy(game)
+      ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
+      : Promise.reject(new ProcessCanceled('Game not found'));
+
+    downloadFunc()
       .catch(AlreadyDownloaded, err => {
         const state = api.getState();
         const downloads = state.persistent.downloads.files;
@@ -307,7 +315,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = [NEXUS_BASE_URL, nexusGameId(game), 'mods', modId].join('/');
+        const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), 'mods', modId].join('/');
         const params = `?tab=files&file_id=${fileId}&nmm=1`;
         return opn(url + params)
           .catch(() => undefined);
