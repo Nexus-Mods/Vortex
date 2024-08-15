@@ -272,6 +272,9 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
 
     if (!game) {
       log('warn', 'mod update requested for unknown game id', gameId);
+
+      // Attempt to get the current game from the state as a fallback - it's perfectly possible
+      //  for the passed gameId to be a compatibleDownload entry for the currently managed game.
       game = currentGame(api.getState());
     }
 
@@ -282,12 +285,12 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
 
     const downloadGameId = truthy(game)
         ? (game.id !== gameId)
-          ? gameId
+          ? gameId // download id is different from the game extension's id - this is a compatibleDownload entry.
           : game.id
-        : gameId;
+        : gameId; // Game is not present in the state. Concurrency issue? lets just assign it to gameId.
     const downloadFunc = () => truthy(game)
       ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
-      : Promise.reject(new ProcessCanceled('Game not found'));
+      : Promise.reject(new ProcessCanceled('Game not found')); // Can't download an update for a game extension that doesn't exist
 
     downloadFunc()
       .catch(AlreadyDownloaded, err => {
