@@ -50,6 +50,7 @@ _Stable release based on [1.12.0-beta.5]_
 - **collections**: Fixed crash if mods/downloads become unavailable. ([#15979](https://github.com/Nexus-Mods/Vortex/issues/15979))
 - **gamebryo**: Updates to better support Starfield. ([#15918](https://github.com/Nexus-Mods/Vortex/issues/15918))
 - **plugin-management**: Improve UI\UX for LOOT-enabled games. ([#15929 ](https://github.com/Nexus-Mods/Vortex/issues/15929))
+- **plugin-management:** Updated libloot to 0.23
 - **plugin-management:** Fixed inability to sort through FBLO for Starfield
 - **plugin-management:** Fixed plugin list not being updated on startup
 - **plugin-management:** Fixed incorrect missing masters notification when using fblo
