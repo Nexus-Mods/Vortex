@@ -1,8 +1,9 @@
+/* eslint-disable */
 import { get as getHTTP, IncomingMessage, request as requestHTTP, ClientRequest } from 'http';
 import { get as getHTTPS, request as requestHTTPS } from 'https';
 import { Readable } from 'stream';
 import * as url from 'url';
-import { DataInvalid } from './CustomErrors';
+import { DataInvalid, TemporaryError } from './CustomErrors';
 import { log } from './log';
 
 export interface IRequestOptions {
@@ -50,19 +51,20 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
         }
       });
       res.on('end', () => {
+        if (!!err) {
+          const errMsg = new TemporaryError(err);
+          errMsg.message = rawData.toString(options?.encoding || 'utf-8');
+          return reject(errMsg);
+        }
         try {
-          resolve(rawData);
+          return resolve(rawData);
         } catch (e) {
-          reject(e);
+          return reject(e);
         }
       })
-        .on('error', (reqErr: Error) => {
-          return reject(reqErr);
-        });
+        .on('error', reject);
     })
-    .on('error', err => {
-      return reject(err);
-    });
+    .on('error', reject);
   });
 }
 
