@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2024-xx-xx
+- Added ability to disable the experimental move deployment method through the game registration call ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
+- **api** (deprecated) libxmljs is no longrer exported as part of Vortex's API
+- **api** fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
+- **collections** Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
+
 ## [1.12.3] - 2024-08-19
 
 - Fixed inability to update/download folon mods through collections. ([16267](https://github.com/Nexus-Mods/Vortex/issues/16267))
