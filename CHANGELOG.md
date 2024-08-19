@@ -4,8 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.3] - 2024-08-19
+
+- Fixed inability to update/download folon mods through collections. ([16267](https://github.com/Nexus-Mods/Vortex/issues/16267))
+- Disallow error reports caused by faulty launchers in contributed extensions. ([16215](https://github.com/Nexus-Mods/Vortex/issues/16215), [16250](https://github.com/Nexus-Mods/Vortex/issues/16250))
+- Fixed mods update error handling. ([16251](https://github.com/Nexus-Mods/Vortex/issues/16251))
+- Fixed unsuccessful (statusCode 200) request error handling.
+- **masterchiefcollection**: New mod format support. ([13745](https://github.com/Nexus-Mods/Vortex/issues/13745))
+
 ## [1.12.2] - 2024-08-14
 
+- Fixed crash when comparing objects with skippable properties. ([#16234](https://github.com/Nexus-Mods/Vortex/issues/16234))
 - Fixed inability to update mods that are tagged as compatibleDownloads. ([#16231](https://github.com/Nexus-Mods/Vortex/issues/16231))
 - Fixed downloads/installation stalling when Vortex is in background.
 - **plugin-management**: Removed non-relevant loot messages from inlined view
