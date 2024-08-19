@@ -5,8 +5,10 @@ import * as _ from 'lodash';
 import { setValidationResult } from './actions/session';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
-  LoadOrderValidationError } from './types/types';
+import {
+  ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
+  LoadOrderValidationError
+} from './types/types';
 
 import { ICollection } from './types/collections';
 
@@ -28,6 +30,8 @@ import { setFBLoadOrderRedundancy } from './actions/session';
 
 import { addGameEntry, findGameEntry } from './gameSupport';
 import { assertValidationResult, errorHandler } from './util';
+
+import UpdateSet from './UpdateSet';
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -97,7 +101,14 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     ? oldState[profile.id] : [];
 
   if (JSON.stringify(oldState[profile.id]) !== JSON.stringify(newState[profile.id])) {
-    const loadOrder: LoadOrder = newState[profile.id] ?? [];
+    let loadOrder: LoadOrder = newState[profile.id] ?? [];
+    if (updateSet.isInitialized()) {
+      loadOrder = updateSet.restore(loadOrder);
+    } else {
+      // If we don't have an update set, we can't restore the load order, but rather than
+      //  throwing an exception here and ruining the user's day, we'll just log a debug message.
+      log('debug', 'update set is not initialized!', 'updating/re-installing mods will not recover their indexes');
+    }
     try {
       // This is the only place where we want applyNewLoadOrder to be called
       //  as we've detected a change in the load order.
@@ -247,6 +258,7 @@ function genDidPurge(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) => genDeploymentEvent(api, profileId);
 }
 
+let updateSet: UpdateSet;
 export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
   context.registerReducer(['session', 'fblo'], sessionReducer);
@@ -298,7 +310,8 @@ export default function init(context: IExtensionContext) {
     Interface,
   );
 
-  context.once(() =>  {
+  context.once(() => {
+    updateSet = new UpdateSet(context.api);
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
       (prev, current) => genToolsRunning(context.api, prev, current));
 
@@ -311,9 +324,48 @@ export default function init(context: IExtensionContext) {
     context.api.onAsync('did-deploy', genDidDeploy(context.api));
     context.api.onAsync('will-purge', genWillPurge(context.api));
     context.api.onAsync('did-purge', genDidPurge(context.api));
+
+    context.api.onAsync('will-remove-mods', (gameId: string, modIds: string[], removeOpts: types.IRemoveModOptions) =>
+      onWillRemoveMods(context.api, gameId, modIds, removeOpts));
+
+    context.api.onAsync('will-remove-mod', (gameId: string, modId, removeOpts: types.IRemoveModOptions) =>
+      onWillRemoveMods(context.api, gameId, [modId], removeOpts));
   });
 
   return true;
+}
+
+async function onWillRemoveMods(api: types.IExtensionApi,
+                                gameId: string,
+                                modIds: string[],
+                                removeOpts: types.IRemoveModOptions): Promise<void> {
+  const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+  if (gameEntry === undefined) {
+    // Game does not require LO.
+    return;
+  }
+  if (removeOpts?.willBeReplaced === true) {
+    const state = api.getState();
+    const profileId = selectors.lastActiveProfileForGame(state, gameId);
+    const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    const filtered = loadOrder.reduce((acc, lo, idx) => {
+      if (!modIds.includes(lo.modId)) {
+        return acc;
+      }
+      const loEntryExt = {
+        ...lo,
+        index: idx,
+      }
+      acc.push(loEntryExt);
+      return acc;
+    }, []);
+    if (!updateSet.isInitialized()) {
+      updateSet.init(filtered);
+    } else {
+      filtered.forEach(updateSet.addNumericModId);
+    }
+  }
+  return Promise.resolve();
 }
 
 async function validateLoadOrder(api: types.IExtensionApi,
