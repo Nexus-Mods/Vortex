@@ -270,8 +270,11 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string, modId: number, fileId: number, source: string) => {
     let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
-    if (game === undefined) {
+    if (!game) {
       log('warn', 'mod update requested for unknown game id', gameId);
+
+      // Attempt to get the current game from the state as a fallback - it's perfectly possible
+      //  for the passed gameId to be a compatibleDownload entry for the currently managed game.
       game = currentGame(api.getState());
     }
 
@@ -280,8 +283,16 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       return;
     }
 
-    const downloadGameId = (game !== undefined) && (game.id !== gameId) ? gameId : game.id;
-    downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
+    const downloadGameId = truthy(game)
+        ? (game.id !== gameId)
+          ? gameId // download id is different from the game extension's id - this is a compatibleDownload entry.
+          : game.id
+        : gameId; // Game is not present in the state. Concurrency issue? lets just assign it to gameId.
+    const downloadFunc = () => truthy(game)
+      ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
+      : Promise.reject(new ProcessCanceled('Game not found')); // Can't download an update for a game extension that doesn't exist
+
+    downloadFunc()
       .catch(AlreadyDownloaded, err => {
         const state = api.getState();
         const downloads = state.persistent.downloads.files;
@@ -307,7 +318,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = [NEXUS_BASE_URL, nexusGameId(game), 'mods', modId].join('/');
+        const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), 'mods', modId].join('/');
         const params = `?tab=files&file_id=${fileId}&nmm=1`;
         return opn(url + params)
           .catch(() => undefined);
