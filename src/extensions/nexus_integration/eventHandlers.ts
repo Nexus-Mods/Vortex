@@ -551,9 +551,8 @@ export function onDownloadUpdate(api: IExtensionApi,
       return Promise.resolve(undefined);
     }
 
-    const game = (gameId === SITE_ID)
-      ? null
-      : gameById(api.store.getState(), gameId);
+    const state = api.getState();
+    const game = (gameId === SITE_ID) ? null : gameById(state, gameId) || currentGame(state);
 
     if (game === undefined) {
       api.sendNotification({
