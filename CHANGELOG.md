@@ -9,7 +9,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed inability to update/download folon mods through collections. ([16267](https://github.com/Nexus-Mods/Vortex/issues/16267))
 - Disallow error reports caused by faulty launchers in contributed extensions. ([16215](https://github.com/Nexus-Mods/Vortex/issues/16215), [16250](https://github.com/Nexus-Mods/Vortex/issues/16250))
 - Fixed mods update error handling. ([16251](https://github.com/Nexus-Mods/Vortex/issues/16251))
-- Fixed unsuccessful (statusCode 200) request error handling.
+- Fixed unsuccessful (statusCode != 200) request error handling.
 - **masterchiefcollection**: New mod format support. ([13745](https://github.com/Nexus-Mods/Vortex/issues/13745))
 
 ## [1.12.2] - 2024-08-14
