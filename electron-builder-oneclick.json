@@ -111,7 +111,6 @@
     "!**/node_modules/fomod-installer/Build",
     "!**/node_modules/fomod-installer/lib",
     "!**/node_modules/fomod-installer/InstallScripting",
-    "!**/node_modules/libxmljs/vendor/libxml",
     "!**/node_modules/native-errors/Detours",
     "!**/node_modules/zeromq/build/libzmq",
     "!**/node_modules/zeromq/prebuilds"
