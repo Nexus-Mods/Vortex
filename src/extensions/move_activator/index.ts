@@ -71,6 +71,11 @@ class DeploymentMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
+    if ((game.details?.supportsMoveActivator === false)
+      || (game.compatible?.moveActivator === false)) {
+    return { description: t => t('Game doesn\'t support the move deployment method') };
+  }
+
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
