@@ -67,13 +67,13 @@ The following section aims to clarify and explain a few development decisions.
 
 The toolchain for development builds and release builds is quite different.
 
-In dev builds the typescript compiler (tsc) is used directly to transliterate each ts file to js individually, electron runs those files directly, dependencies are loaded from node_modules.
+In dev builds, the typescript compiler (tsc) is used directly to transliterate each `.ts` file to `.js` individually, electron runs those files directly, dependencies are loaded from `node_modules`.
 
-In release builds we use webpack and ts-loader to bake all ts files and dependencies into two javascript files (one for the main/browser process, one for the renderer). electron-builder is used to bundle code&assets, generate an nsis installer, build it into (two variants) of exe installers and sign them (and all the executables and dlls we ship). There are mulitple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
+In release builds we use webpack and ts-loader to bake all `.ts` files and dependencies into two javascript files (one for the main/browser process, one for the renderer). `electron-builder` is used to bundle code & assets, generate an nsis installer, build it into an exe installer and sign them (and all the executables and dlls we ship). There are mulitple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
 
-As a result, dev builds are easier to work with and building is much quicker but runtime is substantially.
+As a result, dev builds are easier to work with and building is much quicker but runtime is slower.
 
-Further, we use a two-package structure, meaning the /package.json file is used for all development and the build environment for releases (e.g. this file always controls the electron version being used/bundled) whereas /app/package.json decides settings (name, version, dependencies) for the release builds only. We use a custom script (checkPackages.js) to ensure that the dependencies for release are a subset of the build env dependencies and that they use the same version to avoid problems that didn't occur during testing because of differing dependencies.
+Further, we use a two-package structure, meaning the `/package.json` file is used for all development and the build environment for releases (e.g. this file always controls the electron version being used/bundled) whereas `/app/package.json` decides settings (name, version, dependencies) for the release builds only. We use a custom script (`checkPackages.js`) to ensure that the dependencies for release are a subset of the build `env` dependencies and that they use the same version to avoid problems that didn't occur during testing because of differing dependencies.
 
 Bundled extensions on the other hand are built the same between dev and release: they are always built with webpack and each have their own build setup - with the exception of simple game extensions which are already single js files, those simply get copied over.
 
@@ -83,7 +83,7 @@ This codebase still use yarn 1 (classic). Any attempt to use yarn 2 or 3 ended u
 
 #### ESM vs CommonJS
 
-At the time of writing, electron doesn't support ES modules so everything is transpiled to commonjs. This has the consequence that some updated libraries supporting only esm can't be used (e.g. new versions of d3). It also means that asynchronous imports (const foo = await import('bar')) are actually synchronous at runtime. Doesn't really matter though since everything is baked into a single file on release builds anyway and code splitting isn't really needed.
+At the time of writing, electron doesn't support ES modules so everything is transpiled to commonjs. This has the consequence that some updated libraries supporting only esm can't be used (e.g. new versions of d3). It also means that asynchronous imports (`const foo = await import('bar')`) are actually synchronous at runtime. Doesn't really matter though since everything is baked into a single file on release builds anyway and code splitting isn't really needed.
 
 #### Reporting Bugs
 
