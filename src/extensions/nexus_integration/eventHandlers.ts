@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { setDownloadModInfo } from '../../actions';
+import { setCompatibleGames, setDownloadModInfo } from '../../actions';
 import { IExtensionApi, StateChangeCallback } from '../../types/IExtensionContext';
 import { IDownload, IModTable, IState } from '../../types/IState';
 import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
@@ -552,9 +552,16 @@ export function onDownloadUpdate(api: IExtensionApi,
     }
 
     const state = api.getState();
-    const game = (gameId === SITE_ID) ? null : gameById(state, gameId) || currentGame(state);
-
-    if (game === undefined) {
+    const game = (gameId === SITE_ID) ? null : gameById(state, gameId);
+    let gameIdIsCompatible = false;
+    if (!game) {
+      const activeGame = currentGame(state);
+      const compatibleDownloads = activeGame.details.compatibleDownloads;
+      if (compatibleDownloads?.includes(gameId)) {
+        gameIdIsCompatible = true;
+      }
+    }
+    if (!gameIdIsCompatible && game === undefined) {
       api.sendNotification({
         type: 'error',
         title: 'Invalid game id',
