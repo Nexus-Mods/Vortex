@@ -86,9 +86,12 @@ export function coerceToSemver(version: string): string {
     }
   } else {
     if (coerceableRE.test(version)) {
-      return semver.coerce(version).version ?? version; 
+      const coerced = semver.coerce(version);
+      if (coerced) {
+        return coerced.version
+      }
+      return version;
     }
-    return version;
   }
 }
 
