@@ -67,7 +67,7 @@ export function safeCoerce(input: string): string {
 
 export function coerceToSemver(version: string): string {
   if (!version) {
-    return version;
+    return undefined;
   }
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
   if (match) {
@@ -85,7 +85,10 @@ export function coerceToSemver(version: string): string {
       return `${major}.${minor}.${patch}`;
     }
   } else {
-    return semver.coerce(version).version ?? version;
+    if (coerceableRE.test(version)) {
+      return semver.coerce(version).version ?? version; 
+    }
+    return version;
   }
 }
 
