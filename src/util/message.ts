@@ -1,3 +1,4 @@
+/* disable-eslint */
 import {
   addNotification,
   IDialogAction,
@@ -738,7 +739,11 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
 
   const func = {
     '429': () => {
-      return 'rate limit has been breached. Please try again later.';
+      const errorRendered: IErrorRendered = {
+        wrap: false,
+        message: 'Rate limit has been breached. Please try again later.',
+      }
+      return errorRendered;
     },
   }[err.statusCode] || fallback;
 
