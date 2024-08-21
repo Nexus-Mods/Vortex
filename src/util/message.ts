@@ -737,6 +737,9 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
   };
 
   const func = {
+    '429': () => {
+      return 'rate limit has been breached. Please try again later.';
+    },
   }[err.statusCode] || fallback;
 
   return func();
