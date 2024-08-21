@@ -1,8 +1,6 @@
-import * as path from 'path';
-import * as semver from 'semver';
 import { truthy } from '../../../util/util';
 import { IMod, IReference } from '../types/IMod';
-import { sanitizeExpression } from './testModReference';
+import { sanitizeExpression, coerceToSemver } from './testModReference';
 
 export function makeModReference(mod: IMod): IReference {
   if (!truthy(mod.attributes['fileMD5'])
@@ -21,7 +19,7 @@ export function makeModReference(mod: IMod): IReference {
       ? sanitizeExpression(fileName)
       : undefined,
     fileMD5: mod.attributes['fileMD5'],
-    versionMatch: semver.coerce(mod.attributes['version'])?.version ?? mod.attributes['version'],
+    versionMatch: coerceToSemver(mod.attributes['version']) ?? mod.attributes['version'],
     logicalFileName: mod.attributes['logicalFileName'],
   };
 }

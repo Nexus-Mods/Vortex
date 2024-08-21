@@ -59,13 +59,16 @@ const fuzzyVersionCache: { [input: string]: boolean } = {};
 
 const coerceableRE = /^v?[0-9.]+$/;
 
-function safeCoerce(input: string): string {
+export function safeCoerce(input: string): string {
   return coerceableRE.test(input)
     ? coerceToSemver(input) ?? input
     : input;
 }
 
 export function coerceToSemver(version: string): string {
+  if (!version) {
+    return version;
+  }
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
   if (match) {
     const major = match[1];
@@ -82,7 +85,7 @@ export function coerceToSemver(version: string): string {
       return `${major}.${minor}.${patch}`;
     }
   } else {
-    return version;
+    return semver.coerce(version).version ?? version;
   }
 }
 
