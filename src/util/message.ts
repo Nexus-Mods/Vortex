@@ -740,8 +740,8 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
   const func = {
     '429': () => {
       const errorRendered: IErrorRendered = {
-        wrap: false,
-        message: 'Rate limit has been breached. Please try again later.',
+        wrap: true,
+        message: 'Youu have exceeded the daily or hourly rate limit. Visit "help.nexusmods.com" and search for "Rate limit" for more information. Please try again later.',
       }
       return errorRendered;
     },
