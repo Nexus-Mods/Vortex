@@ -7,11 +7,16 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 ## [1.13.0] - 2024-xx-xx
 
 - Added ability to disable the experimental move deployment method through the game registration call ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
-- **api** (deprecated) libxmljs is no longrer exported as part of Vortex's API
-- **api** fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
-- **collections** Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
-- **baldursgate3** Fix to support Patch 7 load order format. ([#16384](https://github.com/Nexus-Mods/Vortex/issues/16384))
-- **plugin-management:** Updated libloot to 0.23.1
+- **api**: (deprecated) libxmljs is no longer exported as part of Vortex's API
+- **api**: Fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
+- **collections**: Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
+- **baldursgate3**: Fix to support Patch 7 load order format. ([#16384](https://github.com/Nexus-Mods/Vortex/issues/16384))
+- **witcher3**: Fixed incorrect mod type assignment for certain mods
+- **masterchiefcollection**: Reduced mod depth to better support the new mod type
+
+## [1.12.4] - 2024-09-11
+
+- **plugin-management:** Updated libloot to 0.23.1. ([16391](https://github.com/Nexus-Mods/Vortex/issues/16391)).
 
 ## [1.12.3] - 2024-08-19
 
@@ -491,6 +496,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.4
 [1.12.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.3
 [1.12.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.2
 [1.12.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.1
