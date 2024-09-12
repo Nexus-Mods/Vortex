@@ -6,10 +6,16 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.13.0] - 2024-xx-xx
 
-- Added ability to disable the experimental move deployment method through the game registration call ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
-- **api**: (deprecated) libxmljs is no longer exported as part of Vortex's API
+- Fixed manual deployment actions not recognized correctly.
+- Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
+- Less generic error for rate limit breaches.
+- Added ability to disable the experimental move deployment method through the game registration call. ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
+- **api**: Added coreceVersion as an API utility function ([#16304](https://github.com/Nexus-Mods/Vortex/issues/16304))
+- **api**: (Deprecated) libxmljs is no longer exported as part of Vortex's API.
 - **api**: Fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
 - **collections**: Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
+- **collections**: Now uses improved coercion to better support dependency detection
+- **mod-dependency-manager**: No longer trim the versions of the mods to 3 digits
 - **baldursgate3**: Fix to support Patch 7 load order format. ([#16384](https://github.com/Nexus-Mods/Vortex/issues/16384))
 - **witcher3**: Fixed incorrect mod type assignment for certain mods
 - **masterchiefcollection**: Reduced mod depth to better support the new mod type
