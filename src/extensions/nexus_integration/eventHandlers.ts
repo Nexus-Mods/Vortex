@@ -552,9 +552,11 @@ export function onDownloadUpdate(api: IExtensionApi,
     }
 
     const state = api.getState();
-    const game = (gameId === SITE_ID) ? null : gameById(state, gameId) || currentGame(state);
-
-    if (game === undefined) {
+    const game = (gameId === SITE_ID) ? null : gameById(state, gameId);
+    const activeGame = currentGame(state);
+    const compatibleDownloads = activeGame?.details?.compatibleDownloads || [];
+    const hasCompatibleDownloadId = compatibleDownloads.includes(gameId);
+    if (game === undefined && !hasCompatibleDownloadId) {
       api.sendNotification({
         type: 'error',
         title: 'Invalid game id',

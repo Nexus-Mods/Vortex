@@ -94,7 +94,7 @@ export function toNXMId(game: IGameStoredExt, gameId: string): string {
   if (game === null) {
     return SITE_ID;
   }
-  if (game.details !== undefined) {
+  if (game?.details !== undefined) {
     if (game.details.nxmLinkId !== undefined) {
       return game.details.nxmLinkId;
     } else if (game.details.nexusPageId !== undefined) {
