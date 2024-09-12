@@ -1,3 +1,4 @@
+/* disable-eslint */
 import {
   addNotification,
   IDialogAction,
@@ -737,6 +738,13 @@ function prettifyHTTPError(err: HTTPError): IErrorRendered {
   };
 
   const func = {
+    '429': () => {
+      const errorRendered: IErrorRendered = {
+        wrap: true,
+        message: 'You have exceeded the daily or hourly rate limit. Visit "help.nexusmods.com" and search for "Rate limit" for more information. Please try again later.',
+      }
+      return errorRendered;
+    },
   }[err.statusCode] || fallback;
 
   return func();
