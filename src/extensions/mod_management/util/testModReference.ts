@@ -59,10 +59,40 @@ const fuzzyVersionCache: { [input: string]: boolean } = {};
 
 const coerceableRE = /^v?[0-9.]+$/;
 
-function safeCoerce(input: string): string {
+export function safeCoerce(input: string): string {
   return coerceableRE.test(input)
-    ? semver.coerce(input)?.raw ?? input
+    ? coerceToSemver(input) ?? input
     : input;
+}
+
+export function coerceToSemver(version: string): string {
+  if (!version) {
+    return undefined;
+  }
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
+  if (match) {
+    const major = match[1];
+    const minor = match[2];
+    const patch = match[3];
+    let preRelease = match[4].trim();
+
+    // If there's something after the first three segments, treat it as pre-release
+    if (preRelease) {
+      // Remove leading punctuation from the pre-release part
+      preRelease = preRelease.replace(/^[\.\-\+]/, '');
+      return `${major}.${minor}.${patch}-${preRelease}`;
+    } else {
+      return `${major}.${minor}.${patch}`;
+    }
+  } else {
+    if (coerceableRE.test(version)) {
+      const coerced = semver.coerce(version);
+      if (coerced) {
+        return coerced.version
+      }
+      return version;
+    }
+  }
 }
 
 export function isFuzzyVersion(input: string) {
@@ -211,11 +241,11 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
       && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split('+')[0];
     const doesMatch = (mod.version === ref.versionMatch)
-                    || (mod.version === safeCoerce(versionMatch));
+                    || (safeCoerce(mod.version) === safeCoerce(versionMatch)) || ref.fileMD5 === mod.fileMD5;
     if (!doesMatch) {
-      const versionCoerced = semver.coerce(mod.version);
+      const versionCoerced = safeCoerce(mod.version);
       if (semver.valid(versionCoerced)) {
-        if (!semver.satisfies(versionCoerced, versionMatch, true)) {
+        if (!semver.satisfies(versionCoerced, versionMatch, { loose: true, includePrerelease: true })) {
           return false;
         } // the version is a valid semantic version and does match
       } else {

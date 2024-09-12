@@ -23,7 +23,7 @@ import { makeModReference } from '../extensions/mod_management/util/modReference
 import { getModSource, getModSources } from '../extensions/mod_management/util/modSource';
 import { removeMods } from '../extensions/mod_management/util/removeMods';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
-import testModReference from '../extensions/mod_management/util/testModReference';
+import testModReference, { coerceToSemver } from '../extensions/mod_management/util/testModReference';
 import { convertGameIdReverse, nexusGameId } from '../extensions/nexus_integration/util/convertGameId';
 import GameStoreHelper from '../util/GameStoreHelper';
 import { getApplication } from './application';
@@ -125,6 +125,7 @@ export {
   local,
   lookupFromDownload,
   makeModReference,
+  coerceToSemver,
   makeNormalizingDict,
   makeOverlayableDictionary,
   makeQueue,
