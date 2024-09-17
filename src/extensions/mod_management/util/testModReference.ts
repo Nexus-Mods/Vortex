@@ -211,10 +211,10 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   if (ref.logicalFileName !== undefined) {
     if (mod.additionalLogicalFileNames !== undefined) {
       if (!mod.additionalLogicalFileNames.includes(ref.logicalFileName)
-          && (ref.logicalFileName !== mod.logicalFileName)) {
+          && (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression === undefined)) {
         return false;
       }
-    } else if (ref.logicalFileName !== mod.logicalFileName) {
+    } else if (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression === undefined) {
       return false;
     }
   }
