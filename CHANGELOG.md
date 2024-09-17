@@ -4,18 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.0] - 2024-xx-xx
+## [1.13.0-beta.1] - 2024-09-17
 
 - Fixed manual deployment actions not recognized correctly.
 - Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
 - Less generic error for rate limit breaches.
 - Added ability to disable the experimental move deployment method through the game registration call. ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
+- Fixed premature fileName reference comparison failure during collection install
 - **api**: Added coreceVersion as an API utility function ([#16304](https://github.com/Nexus-Mods/Vortex/issues/16304))
 - **api**: (Deprecated) libxmljs is no longer exported as part of Vortex's API.
 - **api**: Fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
 - **collections**: Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
 - **collections**: Now uses improved coercion to better support dependency detection
+- **collections**: Added context menu action to apply collection rules manually
 - **mod-dependency-manager**: No longer trim the versions of the mods to 3 digits
+- **modtype-bepinex**: Improved error handling for when no matching bepinex pack is found. ([#15933](https://github.com/Nexus-Mods/Vortex/issues/15933))
 - **baldursgate3**: Fix to support Patch 7 load order format. ([#16384](https://github.com/Nexus-Mods/Vortex/issues/16384))
 - **witcher3**: Fixed incorrect mod type assignment for certain mods
 - **masterchiefcollection**: Reduced mod depth to better support the new mod type
@@ -502,6 +505,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.0-beta-1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta-1
 [1.12.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.4
 [1.12.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.3
 [1.12.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.2
