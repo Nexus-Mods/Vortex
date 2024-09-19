@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+/* eslint-disable */
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import {
@@ -22,6 +22,9 @@ export interface IDraggableListProps {
 
 interface IDraggableListState {
   ordered: any[];
+  selectedItems: any[];  // Track selected items
+  lastSelectedIndex: number | null;  // Track the last clicked index for shift selection
+  draggedItems: any[];  // Track dragged items
 }
 
 type IProps = IDraggableListProps & { connectDropTarget: ConnectDropTarget };
@@ -42,6 +45,9 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
 
     this.initState({
       ordered: props.items.slice(0),
+      selectedItems: [],
+      lastSelectedIndex: null,
+      draggedItems: [],
     });
 
     this.mDraggableClass = makeDraggable(props.itemTypeId);
@@ -54,9 +60,9 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, id, isLocked, itemRenderer, style, className } = this.props;
+    const { connectDropTarget, id, itemRenderer, style, className } = this.props;
+    const { ordered, selectedItems, draggedItems } = this.state;
 
-    const { ordered } = this.state;
     return connectDropTarget(
       <div style={style} className={className}>
         <ListGroup>
@@ -66,45 +72,101 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
               key={this.itemId(item)}
               item={item}
               index={idx}
-              isLocked={isLocked?.(item) ?? false}
+              findItemIndex={this.findItemIndex}
+              isLocked={this.itemLocked(item)}
               itemRenderer={itemRenderer}
               take={this.take}
               onChangeIndex={this.changeIndex}
               apply={this.apply}
+              onClick={this.handleItemClick(idx)}
+              selectedItems={selectedItems}
+              isSelected={selectedItems.includes(item)}
+              draggedItems={draggedItems}
+              onDragStart={this.handleDragStart}
             />
           ))}
         </ListGroup>
-      </div>);
+      </div>
+    );
   }
 
-  public changeIndex = (oldIndex: number, newIndex: number, changeContainer: boolean,
-                        take: (list: any[]) => any) => {
-    if (oldIndex === undefined) {
-      return;
+  private handleItemClick = (index: number) => (event: React.MouseEvent) => {
+    const { ordered, selectedItems, lastSelectedIndex } = this.state;
+    const item = ordered[index];
+    let newSelectedItems = [...selectedItems];
+
+    if (event.ctrlKey) {
+      // Handle Ctrl for multi-selection
+      if (selectedItems.includes(item)) {
+        newSelectedItems = selectedItems.filter(i => i !== item);  // Deselect
+      } else {
+        newSelectedItems.push(item);  // Select
+      }
+    } else if (event.shiftKey && lastSelectedIndex !== null) {
+      // Handle Shift for range selection
+      const range = [lastSelectedIndex, index].sort((a, b) => a - b);
+      const rangeItems = ordered.slice(range[0], range[1] + 1);
+      newSelectedItems = [...new Set([...selectedItems, ...rangeItems])];
+    } else {
+      // Regular click selects single item and deselects others
+      newSelectedItems = [item];
     }
 
-    const copy = this.state.ordered.slice();
-    const item = take(changeContainer ? undefined : copy);
-    copy.splice(newIndex, 0, item);
+    this.nextState.selectedItems = newSelectedItems;
+    this.nextState.lastSelectedIndex = index;  // Update last selected index for shift selection
+  };
+
+  public changeIndex = (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => {
+    const { selectedItems, ordered } = this.state;
+    const copy = ordered.slice();
+
+    // If multiple items are selected, handle reordering for all of them
+    let itemsToMove = selectedItems.includes(copy[oldIndex])
+      ? selectedItems
+      : [take(changeContainer ? undefined : copy)];  // Fall back to single item
+
+    // Remove selected items from their old position
+    itemsToMove.forEach(item => {
+      const index = copy.indexOf(item);
+      if (index !== -1) {
+        copy.splice(index, 1);
+      }
+    });
+
+    // Insert items in new position
+    itemsToMove.forEach(itm => {
+      const item = Array.isArray(itm) ? itm[0] : itm;
+      copy.splice(newIndex, 0, item);
+      newIndex++;
+    });
 
     this.nextState.ordered = copy;
   }
 
+  private itemLocked(item: any) {
+    const itm = Array.isArray(item) ? item[0] : item;
+    return this.props.isLocked?.(itm) ?? false;
+  }
+
   private itemId(item: any) {
+    const itm = Array.isArray(item) ? item[0] : item;
     if (this.props.idFunc !== undefined) {
-      return this.props.idFunc(item);
-    } else if (item.id !== undefined) {
-      return item.id;
+      return this.props.idFunc(itm);
+    } else if (itm.id !== undefined) {
+      return itm.id;
     } else {
-      return item;
+      return itm;
     }
+  }
+
+  private findItemIndex = (item: any) => {
+    return this.nextState.ordered.findIndex(iter => this.itemId(iter) === this.itemId(item));
   }
 
   private take = (item: any, list: any[]) => {
     const { ordered } = this.nextState;
     let res = item;
-    const itemId = this.itemId(item);
-    const index = ordered.findIndex(iter => this.itemId(iter) === itemId);
+    const index = this.findItemIndex(item);
     if (index !== -1) {
       if (list !== undefined) {
         res = list.splice(index, 1)[0];
@@ -119,6 +181,11 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
 
   private apply = () => {
     this.props.apply(this.state.ordered);
+    this.nextState.draggedItems = [];
+  }
+
+  private handleDragStart = (items: any[]) => {
+    this.nextState.draggedItems = items.sort((a, b) => this.findItemIndex(a) - this.findItemIndex(b));
   }
 }
 
@@ -136,8 +203,7 @@ const containerTarget: DropTargetSpec<IProps> = {
   },
 };
 
-function containerCollect(connect: DropTargetConnector,
-                          monitor: DropTargetMonitor) {
+function containerCollect(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };

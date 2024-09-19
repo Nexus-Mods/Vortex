@@ -18,7 +18,7 @@
   }
 
   .file-based-load-order-list {
-
+    
     .list-group {
       display: flex;
       align-items: stretch;
@@ -26,6 +26,11 @@
       gap: 4px;
       margin: 0;      
       padding: 0 8px 0 0; // padding between scrollbar and list items
+      
+      #draggable-list-drag-preview {
+        opacity: 0.5;
+        border: 3px solid white;
+      }
     }
 
     .fblo-spinner-container {
@@ -117,6 +122,10 @@
 
     &.dragging {
       opacity: 0;
+    }
+
+    &.selected {
+      border: 2px solid white;
     }
 
     &.locked {
