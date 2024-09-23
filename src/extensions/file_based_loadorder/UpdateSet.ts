@@ -7,7 +7,7 @@ import {getSafe} from '../../util/storeHelper';
 import * as _ from 'lodash';
 import { ILoadOrderEntry } from './types/types';
 import { log } from '../../util/log';
-import { activeGameId } from '../profile_management/selectors';
+import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
 
 export interface ILoadOrderEntryExt extends ILoadOrderEntry {
   index: number;
@@ -20,6 +20,7 @@ export default class UpdateSet extends Set<number> {
   constructor(api: IExtensionApi) {
     super([]);
     this.mApi = api;
+    this.init();
   }
 
   public addNumericModId = (lo: ILoadOrderEntryExt) => {
@@ -45,12 +46,31 @@ export default class UpdateSet extends Set<number> {
     return;
   }
 
-  public init = (modEntries: ILoadOrderEntryExt[]) => {
+  public init = (modEntries?: ILoadOrderEntryExt[]) => {
     this.reset();
     this.registerListeners();
     this.mInitialized = true;
+    modEntries = modEntries !== undefined ? modEntries : this.genExtendedItemsFromState();
     modEntries.forEach((iter: ILoadOrderEntryExt) => this.addNumericModId(iter));
   }
+
+  private genExtendedItemsFromState = () => {
+    const state = this.mApi.getState();
+    const gameMode = activeGameId(state);
+    if (!gameMode) {
+      return [];
+    }
+    const profileId = lastActiveProfileForGame(state, gameMode);
+    const loadOrder = getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    const filtered = loadOrder.reduce((acc, lo, idx) => {
+      if (!filtered.includes(lo.modId)) {
+        return acc;
+      }
+      acc.push({ ...lo, index: idx });
+      return acc;
+    }, []);
+    return filtered;
+  };
 
   private registerListeners = () => {
     this.mApi.events.on('gamemode-activated', this.reset);
