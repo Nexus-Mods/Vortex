@@ -1,19 +1,12 @@
 /* eslint-disable */
-import * as React from 'react';
-import {
-  ConnectDragPreview, ConnectDragSource,
-  ConnectDropTarget, DragSource, DragSourceConnector,
-  DragSourceMonitor, DragSourceSpec, DropTarget,
-  DropTargetConnector, DropTargetMonitor, DropTargetSpec,
-} from 'react-dnd';
-import * as ReactDOM from 'react-dom';
-import DraggableListDragPreview from './DraggableListDragPreview'; // Import the updated preview component
+import React, { useCallback, useRef } from 'react';
+import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 
 export interface IDraggableListItemProps {
   index: number;
   item: any;
   isLocked: boolean;
-  itemRenderer: React.ComponentType<{ className?: string, item: any, forwardedRef?: any }>;
+  itemRenderer: React.ComponentType<{ className?: string; item: any; forwardedRef?: any }>;
   containerId: string;
   isSelected: boolean;
   selectedItems: any[];
@@ -26,137 +19,104 @@ export interface IDraggableListItemProps {
   onDragStart: (items: any[]) => void;
 }
 
-interface IDragProps {
-  connectDragSource: ConnectDragSource;
-  connectDragPreview: ConnectDragPreview; // Connect drag preview
-  isDragging: boolean;
-}
+const DraggableItem: React.FC<IDraggableListItemProps> = ({
+  index,
+  item,
+  draggedItems,
+  isSelected,
+  itemRenderer: ItemRendererComponent,
+  onClick,
+  containerId,
+  isLocked,
+  onChangeIndex,
+  onDragStart,
+  selectedItems,
+  take,
+  apply,
+}) => {
+  const itemRef = useRef<HTMLDivElement | null>(null);
+  const [ startedDrag, setStartedDrag ] = React.useState(false);
 
-interface IDropProps {
-  connectDropTarget: ConnectDropTarget;
-  isOver: boolean;
-  canDrop: boolean;
-}
+  const isDraggedItem = draggedItems.includes(item);
+  const classes = isSelected
+    ? isDraggedItem
+      ? ['dragging', 'selected']
+      : ['selected']
+    : isDraggedItem
+    ? ['dragging']
+    : [];
 
-type IProps = IDraggableListItemProps & IDragProps & IDropProps;
+  const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag({
+    type: containerId,
+    item: {
+      index,
+      items: isSelected ? selectedItems : [item],
+      containerId,
+      take: (list: any[]) => (isSelected ? selectedItems : [item]).map((item) => take(item, list)),
+    },
+    end: () => {
+      apply();
+    },
+    canDrag: () => !isLocked,
+    collect: (monitor: DragSourceMonitor) => {
+      if (monitor.isDragging() && !startedDrag) {
+        onDragStart(draggedItems);
+        setStartedDrag(true);
+      }
+      return {
+        isDraggingItem: monitor.isDragging(),
+        // draggedStyle: ((isDraggedItem) ? { visibility: 'hidden' } : { visibility: 'visible' }) as React.CSSProperties,
+        draggedStyle: { visibility: 'visible' } as React.CSSProperties,
+      }
+    },
+  }, [startedDrag]);
 
-class DraggableItem extends React.Component<IProps, {}> {
-  public render(): JSX.Element {
-    const { item, draggedItems, isDragging, isSelected, connectDragPreview, itemRenderer } = this.props;
-    const refForwardedItem = (typeof item === 'object')
-      ? { ...item, setRef: this.setRef }
-      : { item, setRef: this.setRef };
+  const [, drop] = useDrop({
+    accept: containerId,
+    hover: (draggedItem: any, monitor) => {
+      const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
+      const hoverIndex = index;
 
-    // Not to be mistaken for the isDragging flag - that is only raised for the initial entry that
-    //  is being dragged. isDraggedItem is used for visual configuration, while isDragging modifies
-    //  functionality (The custom drag preview component only gets attached to the initial entry)
-    const isDraggedItem = draggedItems.includes(item);
+      if (dragIndex === hoverIndex || isLocked || monitor.isOver({ shallow: true })) {
+        return;
+      }
 
-    const classes = isSelected
-      ? isDraggedItem
-        ? ['dragging', 'selected']
-        : ['selected']
-      : isDraggedItem ? ['dragging'] : [];
+      const hoverBoundingRect = itemRef.current?.getBoundingClientRect();
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+      const hoverActualY = monitor.getClientOffset().y - hoverBoundingRect.top
+      // if dragging down, continue only when hover is smaller than middle Y
+      if (index < hoverIndex && hoverActualY < hoverMiddleY) return
+      // if dragging up, continue only when hover is bigger than middle Y
+      if (index > hoverIndex && hoverActualY > hoverMiddleY) return
 
-    const dragPreview = isDragging
-      ? <DraggableListDragPreview items={draggedItems} itemRenderer={itemRenderer} />
-      : null;
+      onChangeIndex(dragIndex, hoverIndex, sourceContainerId !== containerId, (list) =>
+        items.map((item) => take(item, list))
+      );
 
-    const ItemRendererComponent = this.props.itemRenderer;
-    const renderItemComponent = (!isDragging)
-      ? (
-        <ItemRendererComponent
-          className={`${classes.join(' ')}`}
-          item={refForwardedItem}
-        />
-      ) : null;
+      draggedItem.index = hoverIndex;
+      if (sourceContainerId !== containerId) {
+        draggedItem.containerId = containerId;
+        draggedItem.take = (list: any[]) => take(items, list);
+      }
+    },
+    drop(item, monitor) {
+      setStartedDrag(false);
+      return undefined;
+    },
+  });
 
-    return connectDragPreview(
-      <div ref={this.setRef} onClick={this.props.onClick}>
-        {dragPreview}
-        {renderItemComponent}
+  const setRef = useCallback((ref: HTMLDivElement | null) => {
+    itemRef.current = ref;
+    drag(drop(ref));
+  }, [drag, drop]);
+
+  return (
+    <div ref={dragPreview}>
+      <div style={draggedStyle} ref={setRef} onClick={onClick}>
+        <ItemRendererComponent className={classes.join(' ')} item={item} />
       </div>
-    );
-  }
-
-  private setRef = ref => {
-    const { connectDragSource, connectDropTarget } = this.props;
-    const node: any = ReactDOM.findDOMNode(ref);
-    connectDragSource(node);
-    connectDropTarget(node);
-  }
-}
-
-const entrySource: DragSourceSpec<IProps, any> = {
-  beginDrag(props: IProps, monitor: DragSourceMonitor) {
-    const draggedItems = props.isSelected ? props.selectedItems : [props.item];
-    props.onDragStart(draggedItems);
-    return {
-      index: props.index,
-      items: draggedItems,
-      containerId: props.containerId,
-      take: (list: any[]) => draggedItems.map(item => props.take(item, list)),
-    };
-  },
-  endDrag(props, monitor: DragSourceMonitor) {
-    props.apply();
-  },
-  canDrag(props, monitor: DragSourceMonitor) {
-    return !props.isLocked;
-  },
+    </div>
+  );
 };
 
-const entryTarget: DropTargetSpec<IProps> = {
-  hover(props: IProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, items, isLocked } = (monitor.getItem() as any);
-    const hoverIndex = props.index;
-
-    if ((index === hoverIndex) || !!isLocked || !!props.isLocked) {
-      return;
-    }
-
-    const domNode: Element = ReactDOM.findDOMNode(component) as Element;
-    if (domNode === null) {
-      return;
-    }
-    const hoverBoundingRect = domNode.getBoundingClientRect();
-    const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-    const clientOffset = monitor.getClientOffset();
-    const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-    if (((index < hoverIndex) && (hoverClientY < hoverMiddleY))
-        || ((index > hoverIndex) && (hoverClientY > hoverMiddleY))) {
-      return;
-    }
-
-    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, (list) => items.map(item => props.take(item, list)));
-
-    (monitor.getItem() as any).index = hoverIndex;
-    if (containerId !== props.containerId) {
-      (monitor.getItem() as any).containerId = props.containerId;
-      (monitor.getItem() as any).take = (list: any[]) => props.take(items, list);
-    }
-  },
-};
-
-function collectDrag(connect: DragSourceConnector, monitor: DragSourceMonitor) {
-  return {
-    connectDragSource: connect.dragSource(),
-    connectDragPreview: connect.dragPreview(),
-    isDragging: monitor.isDragging(),
-  };
-}
-
-function collectDrop(connect: DropTargetConnector, monitor: DropTargetMonitor) {
-  return {
-    connectDropTarget: connect.dropTarget(),
-  };
-}
-
-function makeDraggable(itemTypeId: string): React.ComponentClass<IDraggableListItemProps> {
-  return DropTarget(itemTypeId, entryTarget, collectDrop)(
-    DragSource(itemTypeId, entrySource, collectDrag)(
-      DraggableItem));
-}
-
-export default makeDraggable;
+export default DraggableItem;

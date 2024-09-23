@@ -3,10 +3,10 @@ import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import {
   ConnectDropTarget, DropTarget, DropTargetConnector, DropTargetMonitor,
-  DropTargetSpec,
+  DropTargetSpec
 } from 'react-dnd';
 import { ComponentEx } from '../util/ComponentEx';
-import makeDraggable, { IDraggableListItemProps } from './DraggableListItem';
+import DraggableItem from './DraggableListItem';
 
 export interface IDraggableListProps {
   id: string;
@@ -38,7 +38,6 @@ type IProps = IDraggableListProps & { connectDropTarget: ConnectDropTarget };
  *   to specify idFunc through props
  */
 class DraggableList extends ComponentEx<IProps, IDraggableListState> {
-  private mDraggableClass: React.ComponentClass<IDraggableListItemProps>;
 
   constructor(props: IProps) {
     super(props);
@@ -49,8 +48,6 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
       lastSelectedIndex: null,
       draggedItems: [],
     });
-
-    this.mDraggableClass = makeDraggable(props.itemTypeId);
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -67,7 +64,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
       <div style={style} className={className}>
         <ListGroup>
           {ordered.map((item, idx) => (
-            <this.mDraggableClass
+            <DraggableItem
               containerId={id}
               key={this.itemId(item)}
               item={item}

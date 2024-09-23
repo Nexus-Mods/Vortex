@@ -13,7 +13,8 @@ interface IProps {
 
 export const BoxWithHandle: FC<IProps> = (props: IProps) => {
   const [{ opacity, isDragging }, drag, dragPreview] = useDrag({
-    item: { idx: props.index, id: props.item.id, type: 'TOOL' },
+    type: 'TOOL',
+    item: { idx: props.index, id: props.item.id },
     collect: (monitor) => {
       return {
         isDragging: monitor.isDragging(),
