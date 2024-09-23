@@ -19,7 +19,7 @@ import { TFunction } from '../../util/i18n';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeProfile, downloadPathForGame, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
+import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
@@ -1581,31 +1581,40 @@ class InstallManager {
     });
   }
 
+  private queryProfileCount(store: ThunkStore<any>): number {
+    const state = store.getState();
+    const profiles = gameProfiles(state);
+    return profiles.length;
+  }
+
   private userVersionChoice(oldMod: IMod, store: ThunkStore<any>): Bluebird<string> {
-    return new Bluebird<string>((resolve, reject) => {
-      store.dispatch(showDialog(
-          'question', modName(oldMod),
-          {
-            text:
-            'An older version of this mod is already installed. '
-            + 'You can replace the existing one - which will update all profiles - '
-            + 'or install this one alongside it. In the latter case both versions '
-            + 'will be available and only the active profile will be updated. ',
-            options: { wrap: true },
-          },
-          [
-            { label: 'Cancel' },
-            { label: REPLACE_ACTION },
-            { label: INSTALL_ACTION },
-          ]))
-        .then((result: IDialogResult) => {
-          if (result.action === 'Cancel') {
-            reject(new UserCanceled());
-          } else {
-            resolve(result.action);
-          }
-        });
-    });
+    const totalProfiles = this.queryProfileCount(store);
+    return (totalProfiles === 1)
+      ? Bluebird.resolve(REPLACE_ACTION)
+      : new Bluebird<string>((resolve, reject) => {
+        store.dispatch(showDialog(
+            'question', modName(oldMod),
+            {
+              text:
+              'An older version of this mod is already installed. '
+              + 'You can replace the existing one - which will update all profiles - '
+              + 'or install this one alongside it. In the latter case both versions '
+              + 'will be available and only the active profile will be updated. ',
+              options: { wrap: true },
+            },
+            [
+              { label: 'Cancel' },
+              { label: REPLACE_ACTION },
+              { label: INSTALL_ACTION },
+            ]))
+          .then((result: IDialogResult) => {
+            if (result.action === 'Cancel') {
+              reject(new UserCanceled());
+            } else {
+              resolve(result.action);
+            }
+          });
+      });
   }
 
   private queryUserReplace(api: IExtensionApi, modIds: string[], gameId: string, installOptions: IInstallOptions) {
