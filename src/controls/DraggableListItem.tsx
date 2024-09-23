@@ -23,6 +23,7 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
   index,
   item,
   draggedItems,
+  findItemIndex,
   isSelected,
   itemRenderer: ItemRendererComponent,
   onClick,
@@ -37,6 +38,8 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
   const itemRef = useRef<HTMLDivElement | null>(null);
   const [ startedDrag, setStartedDrag ] = React.useState(false);
 
+  const sortByIndex = (list: any[]) => list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
+
   const isDraggedItem = draggedItems.includes(item);
   const classes = isSelected
     ? isDraggedItem
@@ -46,13 +49,16 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     ? ['dragging']
     : [];
 
+  const sortedSelected = sortByIndex(selectedItems);
+  const sortedDragged = sortByIndex(draggedItems);
+
   const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag({
     type: containerId,
     item: {
       index,
-      items: isSelected ? selectedItems : [item],
+      items: isSelected ? sortedSelected : [item],
       containerId,
-      take: (list: any[]) => (isSelected ? selectedItems : [item]).map((item) => take(item, list)),
+      take: (list: any[]) => (sortedSelected).map((item) => take(item, list)),
     },
     end: () => {
       apply();
@@ -60,7 +66,7 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     canDrag: () => !isLocked,
     collect: (monitor: DragSourceMonitor) => {
       if (monitor.isDragging() && !startedDrag) {
-        onDragStart(draggedItems);
+        onDragStart(sortedDragged);
         setStartedDrag(true);
       }
       return {
@@ -78,14 +84,18 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     hover: (draggedItem: any, monitor) => {
       const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
       const hoverIndex = index;
-
       if (dragIndex === hoverIndex || isLocked || monitor.isOver({ shallow: true })) {
         return;
       }
 
       const hoverBoundingRect = itemRef.current?.getBoundingClientRect();
+      if (!hoverBoundingRect) return;
+
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset) return;
+
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-      const hoverActualY = monitor.getClientOffset().y - hoverBoundingRect.top
+      const hoverActualY = clientOffset.y - hoverBoundingRect.top
       // if dragging down, continue only when hover is smaller than middle Y
       if (index < hoverIndex && hoverActualY < hoverMiddleY) return
       // if dragging up, continue only when hover is bigger than middle Y
@@ -113,7 +123,7 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
   }, [drag, drop]);
 
   return (
-    <div ref={dragPreview}>
+    <div key={item.id} ref={dragPreview}>
       <div style={draggedStyle} ref={setRef} onClick={onClick}>
         <ItemRendererComponent className={classes.join(' ')} item={item} />
       </div>

@@ -90,7 +90,8 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   private handleItemClick = (index: number) => (event: React.MouseEvent) => {
     const { ordered, selectedItems, lastSelectedIndex } = this.state;
     const item = ordered[index];
-    let newSelectedItems = [...selectedItems];
+    let newSelectedItems = selectedItems.slice();
+    this.nextState.draggedItems = [];
 
     if (event.ctrlKey) {
       // Handle Ctrl for multi-selection
