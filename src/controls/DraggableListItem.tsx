@@ -65,8 +65,10 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
       }
       return {
         isDraggingItem: monitor.isDragging(),
-        // draggedStyle: ((isDraggedItem) ? { visibility: 'hidden' } : { visibility: 'visible' }) as React.CSSProperties,
-        draggedStyle: { visibility: 'visible' } as React.CSSProperties,
+        draggedStyle: {
+          visibility: 'visible',
+          border: monitor.isDragging() && !isSelected ? '2px solid white' : undefined,
+        } as React.CSSProperties,
       }
     },
   }, [startedDrag]);
