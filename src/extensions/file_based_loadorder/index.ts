@@ -31,7 +31,7 @@ import { setFBLoadOrderRedundancy } from './actions/session';
 import { addGameEntry, findGameEntry } from './gameSupport';
 import { assertValidationResult, errorHandler } from './util';
 
-import UpdateSet from './UpdateSet';
+import UpdateSet, { ILoadOrderEntryExt } from './UpdateSet';
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -352,7 +352,7 @@ async function onWillRemoveMods(api: types.IExtensionApi,
       if (!modIds.includes(lo.modId)) {
         return acc;
       }
-      const loEntryExt = {
+      const loEntryExt: ILoadOrderEntryExt = {
         ...lo,
         index: idx,
       }
