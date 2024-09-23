@@ -178,8 +178,17 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 
   private apply = () => {
-    this.props.apply(this.state.ordered);
+    const orderSet = new Set<string>();
+    this.props.apply(this.state.ordered.slice().reduce((acc, item) => {
+      if (!orderSet.has(this.itemId(item))) {
+        orderSet.add(this.itemId(item));
+        acc.push(item);
+      }
+      return acc;
+    }, []));
+    this.nextState.selectedItems = [];
     this.nextState.draggedItems = [];
+    this.nextState.lastSelectedIndex = null;
   }
 
   private handleDragStart = (items: any[]) => {
