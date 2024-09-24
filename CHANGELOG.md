@@ -6,7 +6,10 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.13.0-beta.1] - 2024-09-24
 
-- Fixed file-based load order update set not initializing correctly.
+- Improved checks for mod updates. ([#16453](https://github.com/Nexus-Mods/Vortex/issues/16453))
+- Resolve mod installation profile query (if only 1 available). ([#16438](https://github.com/Nexus-Mods/Vortex/issues/16438))
+- Added multi-select drag-and-drop to file-based load order.
+- Removed redundant check when generating extended items.
 - Fixed manual deployment actions not recognized correctly.
 - Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
 - Less generic error for rate limit breaches.
