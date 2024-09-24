@@ -273,7 +273,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
       //  dependent on whether the installed mod is seen as the "primary" file
       if (isPrimary) {
         const primaryFile = notOld.find(file => file.is_primary);
-        const potentialCandidates = files.file_updates.filter(up => !isFileDeleted(up.new_file_id) && up.old_file_id === primaryFile.file_id);
+        const potentialCandidates = files.file_updates.filter(up => !isFileDeleted(up.new_file_id) && up.old_file_id === primaryFile?.file_id);
         if (potentialCandidates.length === 1) {
           // There should be only one primary file at this point
           fileUpdates = findLatestUpdate(potentialCandidates, [], potentialCandidates[0].new_file_id);
