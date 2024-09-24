@@ -59,6 +59,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer, style, className } = this.props;
     const { ordered, selectedItems, draggedItems } = this.state;
+    const isSelected = (item) => selectedItems.some(it => this.itemId(item) === this.itemId(it));
 
     return connectDropTarget(
       <div style={style} className={className}>
@@ -77,7 +78,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
               apply={this.apply}
               onClick={this.handleItemClick(idx)}
               selectedItems={selectedItems}
-              isSelected={selectedItems.includes(item)}
+              isSelected={isSelected(item)}
               draggedItems={draggedItems}
               onDragStart={this.handleDragStart}
             />

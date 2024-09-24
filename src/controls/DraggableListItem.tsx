@@ -40,17 +40,10 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
 
   const sortByIndex = (list: any[]) => list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
 
-  const isDraggedItem = draggedItems.includes(item);
-  const classes = isSelected
-    ? isDraggedItem
-      ? ['dragging', 'selected']
-      : ['selected']
-    : isDraggedItem
-    ? ['dragging']
-    : [];
+  const isDraggedItem = React.useCallback(() => findItemIndex(item) !== -1, [draggedItems]);
+  const classes = isSelected ? ['selected'] : [];
 
-  const sortedSelected = sortByIndex(selectedItems);
-  const sortedDragged = sortByIndex(draggedItems);
+  const sortedSelected = React.useMemo(() => sortByIndex(selectedItems), [selectedItems]);
 
   const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag({
     type: containerId,
@@ -65,19 +58,23 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     },
     canDrag: () => !isLocked,
     collect: (monitor: DragSourceMonitor) => {
-      if (monitor.isDragging() && !startedDrag) {
-        onDragStart(sortedDragged);
+      if (isDraggedItem() && !startedDrag) {
+        onDragStart(sortedSelected);
         setStartedDrag(true);
       }
+
+      if (isDraggedItem() && !classes.includes('dragging')) {
+        classes.push('dragging');
+      }
+
       return {
         isDraggingItem: monitor.isDragging(),
         draggedStyle: {
-          visibility: 'visible',
           border: monitor.isDragging() && !isSelected ? '2px solid #A1A1AA' : undefined,
         } as React.CSSProperties,
       }
     },
-  }, [startedDrag]);
+  }, [startedDrag, sortedSelected, isSelected]);
 
   const [, drop] = useDrop({
     accept: containerId,
