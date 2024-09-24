@@ -206,7 +206,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               gameId: string,
                               mod: IMod,
                               files: IModFiles) {
-  const { fileId } = mod.attributes ?? {};
+  const { fileId, isPrimary } = mod.attributes ?? {};
   if (fileId === undefined) {
     // mod.attributes.name may include a counter (.1, .2) at the end that would confuse
     // the following comparison against fileInfo.file_name so we're cutting off all extension.
@@ -215,6 +215,8 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
       ? (fileInfo.file_name === mod.attributes?.fileName)
       : (noExt(fileInfo.file_name) === noExt(mod.attributes?.name)));
     if (candidate !== undefined) {
+      fileId === candidate.file_id;
+      isPrimary === candidate.is_primary;
       dispatch(setModAttribute(gameId, mod.id, 'fileId', candidate.file_id));
       if (getSafe(mod.attributes, ['version'], undefined) === undefined) {
         dispatch(setModAttribute(gameId, mod.id, 'version', candidate.version));
@@ -243,16 +245,40 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
-    const notOld = files.files.filter(file => (file.category_id !== 4) && (file.category_id !== 6));
+    const notOld = files.files.filter(file => [4, 6, 7].includes(file.category_id));
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
-      fileUpdates = [{
+      const fallbackUpdate: IFileUpdate = {
         old_file_id: fileId,
         old_file_name: getSafe(mod.attributes, ['logicalFileName'], undefined),
         new_file_id: notOld[0].file_id,
         new_file_name: notOld[0].file_name,
         uploaded_time: notOld[0].uploaded_time,
         uploaded_timestamp: notOld[0].uploaded_timestamp,
-      }];
+      }
+      const potentialCandidates = files.file_updates.filter(up => !isFileDeleted(up.new_file_id) && up.old_file_id === fileId);
+      // We can only resolve the latest update if there is only one candidate
+      //  otherwise there's just no way for us to know which one is the latest
+      //  since the mod author might be providing multiple main files.
+      //
+      // This is fine - the user will be told that there's a new update and that
+      //  Vortex can't ascertain which file to download - the update column will
+      //  link the user to the mod page so that the user can select the right update
+      //  manually.
+      const latestUpdate = (potentialCandidates.length === 1)
+        ? findLatestUpdate(potentialCandidates, [], potentialCandidates[0].new_file_id) || [fallbackUpdate]
+        : [fallbackUpdate];
+      fileUpdates = latestUpdate;
+    } else {
+      // The only way we can find the correct update at this point is
+      //  dependent on whether the installed mod is seen as the "primary" file
+      if (isPrimary) {
+        const primaryFile = notOld.find(file => file.is_primary);
+        const potentialCandidates = files.file_updates.filter(up => !isFileDeleted(up.new_file_id) && up.old_file_id === primaryFile?.file_id);
+        if (potentialCandidates.length === 1) {
+          // There should be only one primary file at this point
+          fileUpdates = findLatestUpdate(potentialCandidates, [], potentialCandidates[0].new_file_id);
+        }
+      }
     }
   }
 
