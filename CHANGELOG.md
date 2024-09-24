@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.0-beta.1] - 2024-09-17
+## [1.13.0-beta.1] - 2024-09-24
 
+- Fixed file-based load order update set not initializing correctly.
 - Fixed manual deployment actions not recognized correctly.
 - Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
 - Less generic error for rate limit breaches.

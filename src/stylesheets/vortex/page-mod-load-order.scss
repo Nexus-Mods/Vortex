@@ -18,7 +18,7 @@
   }
 
   .file-based-load-order-list {
-
+    
     .list-group {
       display: flex;
       align-items: stretch;
@@ -117,6 +117,10 @@
 
     &.dragging {
       opacity: 0;
+    }
+
+    &.selected {
+      border: 2px solid #A1A1AA;
     }
 
     &.locked {

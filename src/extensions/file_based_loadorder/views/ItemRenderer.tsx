@@ -33,8 +33,10 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class ItemRenderer extends ComponentEx<IProps, {}> {
   public render() {
-    const item = this.props.item.loEntry;
-    const displayCheckboxes = this.props.item.displayCheckboxes;
+    const item = Array.isArray(this.props.item)
+      ? this.props.item[0].loEntry
+      : this.props.item.loEntry;
+    const displayCheckboxes = item.displayCheckboxes;
     return this.renderDraggable(item, displayCheckboxes);
   }
 

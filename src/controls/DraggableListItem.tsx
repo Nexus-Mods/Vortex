@@ -1,134 +1,134 @@
-import * as React from 'react';
-import { ConnectDragPreview, ConnectDragSource,
-         ConnectDropTarget, DragSource, DragSourceConnector,
-         DragSourceMonitor, DragSourceSpec, DropTarget,
-         DropTargetConnector, DropTargetMonitor, DropTargetSpec,
-        } from 'react-dnd';
-import * as ReactDOM from 'react-dom';
+/* eslint-disable */
+import React, { useCallback, useRef } from 'react';
+import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 
 export interface IDraggableListItemProps {
   index: number;
   item: any;
   isLocked: boolean;
-  itemRenderer: React.ComponentType<{ className?: string, item: any, forwardedRef?: any }>;
+  itemRenderer: React.ComponentType<{ className?: string; item: any; forwardedRef?: any }>;
   containerId: string;
-  take: (item: any, list: any[]) => any;
-  onChangeIndex: (oldIndex: number, newIndex: number,
-                  changeContainer: boolean, take: (list: any[]) => any) => void;
+  isSelected: boolean;
+  selectedItems: any[];
+  draggedItems: any[];
   apply: () => void;
+  findItemIndex: (item: any) => number;
+  take: (item: any, list: any[]) => any;
+  onChangeIndex: (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => void;
+  onClick: (event: React.MouseEvent) => void;
+  onDragStart: (items: any[]) => void;
 }
 
-interface IDragProps {
-  connectDragSource: ConnectDragSource;
-  connectDragPreview: ConnectDragPreview;
-  isDragging: boolean;
-}
+const DraggableItem: React.FC<IDraggableListItemProps> = ({
+  index,
+  item,
+  draggedItems,
+  findItemIndex,
+  isSelected,
+  itemRenderer: ItemRendererComponent,
+  onClick,
+  containerId,
+  isLocked,
+  onChangeIndex,
+  onDragStart,
+  selectedItems,
+  take,
+  apply,
+}) => {
+  const itemRef = useRef<HTMLDivElement | null>(null);
+  const [ startedDrag, setStartedDrag ] = React.useState(false);
 
-interface IDropProps {
-  connectDropTarget: ConnectDropTarget;
-  isOver: boolean;
-  canDrop: boolean;
-}
+  const sortByIndex = (list: any[]) => list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
 
-type IProps = IDraggableListItemProps & IDragProps & IDropProps;
+  const isDraggedItem = draggedItems.includes(item);
+  const classes = isSelected
+    ? isDraggedItem
+      ? ['dragging', 'selected']
+      : ['selected']
+    : isDraggedItem
+    ? ['dragging']
+    : [];
 
-class DraggableItem extends React.Component<IProps, {}> {
-  public render(): JSX.Element {
-    const { isDragging, item } = this.props;
-    // Function components cannot be assigned a refrence - in cases like these
-    //  we enhance the initial item to forward the setRef functor so that the
-    //  item renderer itself can decide which DOM node to ref.
-    const canReference = (this.props.itemRenderer.prototype?.render !== undefined);
-    const refForwardedItem = (typeof item === 'object')
-      ? { ...item, setRef: this.setRef }
-      : { item, setRef: this.setRef };
-    const ItemRendererComponent = this.props.itemRenderer;
-    return (
-      <ItemRendererComponent
-        className={isDragging ? 'dragging' : undefined}
-        item={canReference ? item : refForwardedItem}
-        forwardedRef={canReference ? this.setRef : refForwardedItem.setRef}
-      />
-    );
-  }
+  const sortedSelected = sortByIndex(selectedItems);
+  const sortedDragged = sortByIndex(draggedItems);
 
-  private setRef = ref => {
-    const { connectDragSource, connectDropTarget } = this.props;
-    const node: any = ReactDOM.findDOMNode(ref);
-    connectDragSource(node);
-    connectDropTarget(node);
-  }
-}
+  const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag({
+    type: containerId,
+    item: {
+      index,
+      items: isSelected ? sortedSelected : [item],
+      containerId,
+      take: (list: any[]) => (sortedSelected).map((item) => take(item, list)),
+    },
+    end: () => {
+      apply();
+    },
+    canDrag: () => !isLocked,
+    collect: (monitor: DragSourceMonitor) => {
+      if (monitor.isDragging() && !startedDrag) {
+        onDragStart(sortedDragged);
+        setStartedDrag(true);
+      }
+      return {
+        isDraggingItem: monitor.isDragging(),
+        draggedStyle: {
+          visibility: 'visible',
+          border: monitor.isDragging() && !isSelected ? '2px solid #A1A1AA' : undefined,
+        } as React.CSSProperties,
+      }
+    },
+  }, [startedDrag]);
 
-function collectDrag(connect: DragSourceConnector,
-                     monitor: DragSourceMonitor) {
-  return {
-    connectDragSource: connect.dragSource(),
-    isDragging: monitor.isDragging(),
-  };
-}
+  const [, drop] = useDrop({
+    accept: containerId,
+    hover: (draggedItem: any, monitor) => {
+      const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
+      const hoverIndex = index;
+      if (dragIndex === hoverIndex || isLocked || monitor.isOver({ shallow: true })) {
+        return;
+      }
 
-function collectDrop(connect: DropTargetConnector,
-                     monitor: DropTargetMonitor) {
-  return {
-    connectDropTarget: connect.dropTarget(),
-  };
-}
+      const hoverBoundingRect = itemRef.current?.getBoundingClientRect();
+      if (!hoverBoundingRect) return;
 
-const entrySource: DragSourceSpec<IProps, any> = {
-  beginDrag(props: IProps) {
-    return {
-      index: props.index,
-      item: props.item,
-      containerId: props.containerId,
-      take: (list: any[]) => props.take(props.item, list),
-    };
-  },
-  endDrag(props, monitor: DragSourceMonitor) {
-    props.apply();
-  },
-  canDrag(props, monitor: DragSourceMonitor) {
-    return !props.isLocked;
-  },
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset) return;
+
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+      const hoverActualY = clientOffset.y - hoverBoundingRect.top
+      // if dragging down, continue only when hover is smaller than middle Y
+      if (index < hoverIndex && hoverActualY < hoverMiddleY) return
+      // if dragging up, continue only when hover is bigger than middle Y
+      if (index > hoverIndex && hoverActualY > hoverMiddleY) return
+
+      onChangeIndex(dragIndex, hoverIndex, sourceContainerId !== containerId, (list) =>
+        items.map((item) => take(item, list))
+      );
+
+      draggedItem.index = hoverIndex;
+      if (sourceContainerId !== containerId) {
+        draggedItem.containerId = containerId;
+        draggedItem.take = (list: any[]) => take(items, list);
+      }
+    },
+    drop(item, monitor) {
+      setStartedDrag(false);
+      return undefined;
+    },
+  });
+
+  const setRef = useCallback((ref: HTMLDivElement | null) => {
+    itemRef.current = ref;
+    drag(drop(ref));
+  }, [drag, drop]);
+
+  return (
+    <div key={item.id} ref={dragPreview}>
+      <div style={draggedStyle} ref={setRef} onClick={onClick}>
+        <ItemRendererComponent className={classes.join(' ')} item={item} />
+      </div>
+    </div>
+  );
 };
 
-const entryTarget: DropTargetSpec<IProps> = {
-  hover(props: IProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
-    const hoverIndex = props.index;
-
-    if ((index === hoverIndex) || !!isLocked || !!props.isLocked) {
-      return;
-    }
-
-    const domNode: Element = ReactDOM.findDOMNode(component) as Element;
-    if (domNode === null) {
-      return;
-    }
-    const hoverBoundingRect = domNode.getBoundingClientRect();
-    const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-    const clientOffset = monitor.getClientOffset();
-    const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-    if (((index < hoverIndex) && (hoverClientY < hoverMiddleY))
-        || ((index > hoverIndex) && (hoverClientY > hoverMiddleY))) {
-      return;
-    }
-
-    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
-
-    (monitor.getItem() as any).index = hoverIndex;
-    if (containerId !== props.containerId) {
-      (monitor.getItem() as any).containerId = props.containerId;
-      (monitor.getItem() as any).take = (list: any[]) => props.take(item, list);
-    }
-  },
-};
-
-function makeDraggable(itemTypeId: string): React.ComponentClass<IDraggableListItemProps> {
-  return DropTarget(itemTypeId, entryTarget, collectDrop)(
-    DragSource(itemTypeId, entrySource, collectDrag)(
-      DraggableItem));
-}
-
-export default makeDraggable;
+export default DraggableItem;
