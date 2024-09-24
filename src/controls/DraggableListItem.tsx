@@ -70,7 +70,7 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
       return {
         isDraggingItem: monitor.isDragging(),
         draggedStyle: {
-          border: monitor.isDragging() && !isSelected ? '2px solid #A1A1AA' : undefined,
+          border: monitor.isDragging() && !isSelected && draggedItems.length === 0 ? '2px solid #A1A1AA' : undefined,
         } as React.CSSProperties,
       }
     },
