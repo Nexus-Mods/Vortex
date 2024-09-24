@@ -66,9 +66,6 @@ export default class UpdateSet extends Set<number> {
     }
     const loadOrder = getSafe(state, ['persistent', 'loadOrder', profileId], []);
     const filtered = loadOrder.reduce((acc, lo, idx) => {
-      if (!filtered.includes(lo.modId)) {
-        return acc;
-      }
       acc.push({ ...lo, index: idx });
       return acc;
     }, []);
