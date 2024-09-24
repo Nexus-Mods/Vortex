@@ -91,6 +91,9 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   private handleItemClick = (index: number) => (event: React.MouseEvent) => {
     const { ordered, selectedItems, lastSelectedIndex } = this.state;
     const item = ordered[index];
+    if (this.itemLocked(item)) {
+      return;
+    }
     let newSelectedItems = selectedItems.slice();
     this.nextState.draggedItems = [];
 
