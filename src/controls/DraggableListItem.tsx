@@ -3,6 +3,7 @@ import React, { useCallback, useRef } from 'react';
 import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 
 export interface IDraggableListItemProps {
+  disabled?: boolean
   index: number;
   item: any;
   isLocked: boolean;
@@ -20,6 +21,7 @@ export interface IDraggableListItemProps {
 }
 
 const DraggableItem: React.FC<IDraggableListItemProps> = ({
+  disabled,
   index,
   item,
   draggedItems,
@@ -56,7 +58,8 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     end: () => {
       apply();
     },
-    canDrag: () => !isLocked,
+    canDrag: () => !isLocked && !disabled,
+
     collect: (monitor: DragSourceMonitor) => {
       if (isDraggedItem() && !startedDrag) {
         onDragStart(sortedSelected);
@@ -81,7 +84,7 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     hover: (draggedItem: any, monitor) => {
       const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
       const hoverIndex = index;
-      if (dragIndex === hoverIndex || isLocked || monitor.isOver({ shallow: true })) {
+      if (dragIndex === hoverIndex || isLocked || disabled || monitor.isOver({ shallow: true })) {
         return;
       }
 

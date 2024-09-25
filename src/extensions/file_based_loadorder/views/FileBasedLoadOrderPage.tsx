@@ -12,6 +12,7 @@ import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
+import { log } from '../../../util/log';
 
 import { setFBLoadOrder } from '../actions/loadOrder';
 import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
@@ -51,6 +52,9 @@ interface IConnectedProps {
   refreshId: string;
 
   validationResult: types.IValidationResult;
+
+  // Allow dnd operations?
+  disabled: boolean;
 }
 
 interface IActionProps {
@@ -193,6 +197,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       ? this.renderWait()
       : (enabled.length > 0)
         ? <DraggableList
+            disabled={this.props.disabled}
             itemTypeId='file-based-lo-draggable-entry'
             id='mod-loadorder-draggable-list'
             items={enabled}
@@ -207,7 +212,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             text={t('You don\'t have any orderable entries')}
             subtext={t('Please make sure to deploy')}
         />;
-
+    const listClasses = this.props.disabled ? ['file-based-load-order-list', 'disabled'] : ['file-based-load-order-list'];
     return (
       <MainPage>
         <MainPage.Header>
@@ -223,7 +228,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             <PanelX.Body>
               <DNDContainer style={{ height: '100%' }}>
                 <FlexLayout type='row' className='file-based-load-order-container'>
-                  <FlexLayout.Flex className='file-based-load-order-list'>
+                  <FlexLayout.Flex className={listClasses.join(' ')}>
                     {draggableList()}
                   </FlexLayout.Flex>
                   <FlexLayout.Flex>
@@ -305,6 +310,7 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
     needToDeploy: selectors.needToDeploy(state),
     refreshId: util.getSafe(state, ['session', 'fblo', 'refresh', profile?.id], ''),
     validationResult: util.getSafe(state, ['session', 'fblo', 'validationResult', profile?.id], undefined),
+    disabled: shouldSuppressUpdate(state),
   };
 }
 
@@ -319,6 +325,14 @@ function mapDispatchToProps(dispatch: any): IActionProps {
       dispatch(setFBForceUpdate(profileId))
     },
   };
+}
+
+function shouldSuppressUpdate(state: types.IState) {
+  const suppressOnActivities = ['deployment', 'purging', 'installing_dependencies'];
+  const isActivityRunning = (activity: string) =>
+    util.getSafe(state, ['session', 'base', 'activity', 'mods'], []).includes(activity) // purge/deploy
+    || util.getSafe(state, ['session', 'base', 'activity', activity], []).length > 0; // installing_dependencies
+  return suppressOnActivities.some(activity => isActivityRunning(activity));
 }
 
 export default withTranslation(['common'])(

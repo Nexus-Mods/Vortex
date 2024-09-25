@@ -9,6 +9,7 @@ import { ComponentEx } from '../util/ComponentEx';
 import DraggableItem from './DraggableListItem';
 
 export interface IDraggableListProps {
+  disabled?: boolean;
   id: string;
   itemTypeId: string;
   items: any[];
@@ -66,6 +67,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
         <ListGroup>
           {ordered.map((item, idx) => (
             <DraggableItem
+              disabled={this.props.disabled}
               containerId={id}
               key={this.itemId(item)}
               item={item}
@@ -91,7 +93,10 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   private handleItemClick = (index: number) => (event: React.MouseEvent) => {
     const { ordered, selectedItems, lastSelectedIndex } = this.state;
     const item = ordered[index];
-    if (this.itemLocked(item)) {
+    if (this.itemLocked(item) || this.props.disabled) {
+      this.nextState.draggedItems = [];
+      this.nextState.selectedItems = [];
+      this.nextState.lastSelectedIndex = null;
       return;
     }
     let newSelectedItems = selectedItems.slice();
