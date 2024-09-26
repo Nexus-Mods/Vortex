@@ -3,6 +3,7 @@ import React, { useCallback, useRef } from 'react';
 import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 
 export interface IDraggableListItemProps {
+  disabled?: boolean
   index: number;
   item: any;
   isLocked: boolean;
@@ -20,6 +21,7 @@ export interface IDraggableListItemProps {
 }
 
 const DraggableItem: React.FC<IDraggableListItemProps> = ({
+  disabled,
   index,
   item,
   draggedItems,
@@ -40,17 +42,10 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
 
   const sortByIndex = (list: any[]) => list.sort((a, b) => findItemIndex(a) - findItemIndex(b));
 
-  const isDraggedItem = draggedItems.includes(item);
-  const classes = isSelected
-    ? isDraggedItem
-      ? ['dragging', 'selected']
-      : ['selected']
-    : isDraggedItem
-    ? ['dragging']
-    : [];
+  const isDraggedItem = React.useCallback(() => findItemIndex(item) !== -1, [draggedItems]);
+  const classes = isSelected ? ['selected'] : [];
 
-  const sortedSelected = sortByIndex(selectedItems);
-  const sortedDragged = sortByIndex(draggedItems);
+  const sortedSelected = React.useMemo(() => sortByIndex(selectedItems), [selectedItems]);
 
   const [{ isDraggingItem, draggedStyle }, drag, dragPreview] = useDrag({
     type: containerId,
@@ -63,28 +58,33 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
     end: () => {
       apply();
     },
-    canDrag: () => !isLocked,
+    canDrag: () => !isLocked && !disabled,
+
     collect: (monitor: DragSourceMonitor) => {
-      if (monitor.isDragging() && !startedDrag) {
-        onDragStart(sortedDragged);
+      if (isDraggedItem() && !startedDrag) {
+        onDragStart(sortedSelected);
         setStartedDrag(true);
       }
+
+      if (isDraggedItem() && !classes.includes('dragging')) {
+        classes.push('dragging');
+      }
+
       return {
         isDraggingItem: monitor.isDragging(),
         draggedStyle: {
-          visibility: 'visible',
-          border: monitor.isDragging() && !isSelected ? '2px solid #A1A1AA' : undefined,
+          border: monitor.isDragging() && !isSelected && draggedItems.length === 0 ? '2px solid #A1A1AA' : undefined,
         } as React.CSSProperties,
       }
     },
-  }, [startedDrag]);
+  }, [startedDrag, sortedSelected, isSelected]);
 
   const [, drop] = useDrop({
     accept: containerId,
     hover: (draggedItem: any, monitor) => {
       const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
       const hoverIndex = index;
-      if (dragIndex === hoverIndex || isLocked || monitor.isOver({ shallow: true })) {
+      if (dragIndex === hoverIndex || isLocked || disabled || monitor.isOver({ shallow: true })) {
         return;
       }
 

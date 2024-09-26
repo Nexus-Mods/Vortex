@@ -40,6 +40,10 @@
         width: 64px;
       }
     }
+
+    &.disabled {
+      opacity: 0.5;
+    }
   }
 
   .load-order-entry {
