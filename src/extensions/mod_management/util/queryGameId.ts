@@ -32,7 +32,7 @@ function queryGameId(store: ThunkStore<any>,
     return Promise.resolve(gameMode);
   }
 
-  if ((downloadGameIds.length === 1) && (downloadGameIds[0] === SITE_ID)) {
+  if ((downloadGameIds.length === 1) && (downloadGameIds[0] === SITE_ID) && fileName.toLowerCase().includes('extension')) {
     return Promise.resolve(downloadGameIds[0]);
   }
 
