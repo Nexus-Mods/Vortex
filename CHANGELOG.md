@@ -10,6 +10,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Resolve mod installation profile query (if only 1 available). ([#16438](https://github.com/Nexus-Mods/Vortex/issues/16438))
 - Added multi-select drag-and-drop to file-based load order.
 - Removed redundant check when generating extended items.
+- Fixed inability to install non-extensions from site domain. ([#16481](https://github.com/Nexus-Mods/Vortex/issues/16481))
+- Fixed file-based load order update set not initializing correctly.
 - Fixed manual deployment actions not recognized correctly.
 - Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
 - Less generic error for rate limit breaches.
