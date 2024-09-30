@@ -1248,8 +1248,8 @@ function once(api: IExtensionApi) {
       const options = optionsIn === undefined
         ? {}
         : (typeof(optionsIn) === 'boolean')
-        ? { allowAutoEnable: optionsIn }
-        : optionsIn;
+          ? { allowAutoEnable: optionsIn }
+          : optionsIn;
       onStartInstallDownload(api, installManager, downloadId, options, callback);
     });
 

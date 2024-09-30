@@ -428,7 +428,8 @@ class InstallManager {
           return api.emitAndAwait('install-extension-from-download', archiveId)
             .then(() => Bluebird.reject(new UserCanceled()));
         }
-        installContext = new InstallContext(gameId, api, allowAutoDeploy);
+        const silent = unattended && allowAutoDeploy && enable;
+        installContext = new InstallContext(gameId, api, silent);
         installContext.startIndicator(baseName);
         let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
         if (Array.isArray(dlGame)) {
