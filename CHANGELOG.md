@@ -4,9 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.5] - 2024-09-30
+
+- Fixed mod enable notification not appearing
+- **7daystodie**: Fixed UDF error when directory contains whitespace. ([16445](https://github.com/Nexus-Mods/Vortex/issues/16445))
+- **plugin-management**: Added Starfield: Shattered Space plugin to native list
+- **plugin-management**: Added ability to resolve native plugins through Regex patterns.
+
 ## [1.12.4] - 2024-09-11
 
-- **plugin-management:** Updated libloot to 0.23.1. ([16391](https://github.com/Nexus-Mods/Vortex/issues/16391)).
+- **plugin-management**: Updated libloot to 0.23.1. ([16391](https://github.com/Nexus-Mods/Vortex/issues/16391)).
 
 ## [1.12.3] - 2024-08-19
 
@@ -486,6 +493,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.12.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.5
+[1.12.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.4
 [1.12.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.3
 [1.12.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.2
 [1.12.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.1
