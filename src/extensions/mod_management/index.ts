@@ -16,6 +16,7 @@ import {ITestResult} from '../../types/ITestResult';
 import { IDeployOptions } from './types/IDeployOptions';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import { waitForCondition} from '../../util/waitForCondition';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
@@ -1224,7 +1225,11 @@ function once(api: IExtensionApi) {
     (previous, current) => {
       const gameMode = activeGameId(store.getState());
       if (previous[gameMode] !== current[gameMode]) {
-        onNeedToDeploy(api, current[gameMode]);
+        waitForCondition({
+          callback: () => onceCB(() => onNeedToDeploy(api, current[gameMode])),
+          condition: () => getSafe(api.getState(), ['session', 'base', 'activity', 'installing_dependencies'], []).length === 0,
+          required: () => getSafe(api.getState(), ['persistent', 'deployment', 'needToDeploy', gameMode], false),
+        });
       }
     },
   );

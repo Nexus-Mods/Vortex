@@ -79,16 +79,17 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     //  Maybe it was changed by an extension ?
     return;
   }
-  if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
-    // Don't do anything if we're in the middle of installing deps
-    log('info', 'skipping load order serialization/deserialization');
-    return;
-  }
 
   const gameEntry = findGameEntry(profile.gameId);
   if (gameEntry === undefined) {
     // This game wasn't registered with the LO component. That's fine
     //  probably just a game that doesn't need LO support.
+    return;
+  }
+
+  if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
+    // Don't do anything if we're in the middle of installing deps
+    log('info', 'skipping load order serialization/deserialization');
     return;
   }
 

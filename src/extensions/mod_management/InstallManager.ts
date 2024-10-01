@@ -167,7 +167,7 @@ class InstallManager {
   private mDependencyDownloadsLimit: ConcurrencyLimiter =
     new ConcurrencyLimiter(10);
   private mDependencyInstallsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(1);
+    new ConcurrencyLimiter(3);
   private mDependencyQueue = makeQueue<void>();
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
