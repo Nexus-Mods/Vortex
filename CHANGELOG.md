@@ -11,11 +11,15 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Added multi-select drag-and-drop to file-based load order.
 - Added ability to modify the index of a load order entry using keyboard (click on index and modify it)
 - Added ability to run up to 3 dependency installers in parallel
+- Added FNV sanity checks extension as a requirement for Fallout New Vegas
 - Removed redundant check when generating extended items.
 - Fixed/Removed redundant deployment events during collection installation.
 - Fixed inability to install non-extensions from site domain. ([#16481](https://github.com/Nexus-Mods/Vortex/issues/16481))
 - Fixed file-based load order update set not initializing correctly.
 - Fixed manual deployment actions not recognized correctly.
+- Fixed manual file override assignment if/when mod has multiple matching file base names.
+- Fixed FBLO spamming log information for games that do not use that component (e.g. Skyrim).
+- Fixed redundant file override logic execution when nothing had changed.
 - Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
 - Less generic error for rate limit breaches.
 - Added ability to disable the experimental move deployment method through the game registration call. ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
