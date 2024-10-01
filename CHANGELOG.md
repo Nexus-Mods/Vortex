@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.0-beta.1] - 2024-09-24
+## [1.13.0-beta.1] - 2024-10-01
 
 - Improved checks for mod updates. ([#16453](https://github.com/Nexus-Mods/Vortex/issues/16453))
 - Resolve mod installation profile query (if only 1 available). ([#16438](https://github.com/Nexus-Mods/Vortex/issues/16438))
 - Added multi-select drag-and-drop to file-based load order.
+- Added ability to modify the index of a load order entry using keyboard (click on index and modify it)
+- Added ability to run up to 3 dependency installers in parallel
 - Removed redundant check when generating extended items.
+- Fixed/Removed redundant deployment events during collection installation.
 - Fixed inability to install non-extensions from site domain. ([#16481](https://github.com/Nexus-Mods/Vortex/issues/16481))
 - Fixed file-based load order update set not initializing correctly.
 - Fixed manual deployment actions not recognized correctly.
