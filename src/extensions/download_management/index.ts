@@ -411,7 +411,7 @@ function postImport(api: IExtensionApi, destination: string,
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
   if (gameMode === undefined) {
-    throw new Error('no active game');
+    return Promise.reject(new Error('no active game'));
   }
 
   const dlId = shortid();
