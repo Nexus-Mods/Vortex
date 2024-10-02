@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.6] - 2024-10-02
+
+- Fixed Starfield CC plugins being detected as native
+
 ## [1.12.5] - 2024-09-30
 
 - Fixed mod enable notification not appearing
