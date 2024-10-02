@@ -7,6 +7,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 ## [1.12.6] - 2024-10-02
 
 - Fixed Starfield CC plugins being detected as native
+- **baldursgate3:** Load order will now serialize to exactly match IGMM `modsettings.lsx` format.
 
 ## [1.12.5] - 2024-09-30
 
