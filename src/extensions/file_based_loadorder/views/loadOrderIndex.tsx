@@ -46,6 +46,11 @@ export function LoadOrderIndexInput(props: IProps) {
     }
   }, [currentPosition, maxIndex, startIndex, inputValue]);
 
+  const handleBlur = React.useCallback(() => {
+    // User moved away from the input, reset the index.
+    setInputValue(currentPosition.toString());
+  }, [currentPosition]);
+
   React.useEffect(() => {
     setInputValue(currentPosition.toString());
   }, [currentPosition]);
@@ -59,9 +64,9 @@ export function LoadOrderIndexInput(props: IProps) {
         value={inputValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyPress}
+        onBlur={handleBlur}
         min={startIndex}
         max={maxIndex}
-        defaultValue={currentPosition}
       />
     </div>
   );
