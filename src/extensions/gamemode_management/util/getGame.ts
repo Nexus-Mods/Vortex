@@ -24,7 +24,7 @@ const gameExHandler = {
 
       return gamePath => {
         let defaultPath = target.queryModPath(gamePath);
-        if (defaultPath === undefined) {
+        if (!defaultPath) {
           defaultPath = '.';
         }
         if (!path.isAbsolute(defaultPath)) {
