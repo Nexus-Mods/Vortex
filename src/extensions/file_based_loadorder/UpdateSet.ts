@@ -20,7 +20,7 @@ export default class UpdateSet extends Set<number> {
   constructor(api: IExtensionApi) {
     super([]);
     this.mApi = api;
-    this.init();
+    this.registerListeners();
   }
 
   public addNumericModId = (lo: ILoadOrderEntryExt) => {
@@ -48,9 +48,8 @@ export default class UpdateSet extends Set<number> {
 
   public init = (modEntries?: ILoadOrderEntryExt[]) => {
     this.reset();
-    this.registerListeners();
     this.mInitialized = true;
-    modEntries = modEntries !== undefined ? modEntries : this.genExtendedItemsFromState();
+    modEntries = !!modEntries && Array.isArray(modEntries) ? modEntries : this.genExtendedItemsFromState();
     modEntries.forEach((iter: ILoadOrderEntryExt) => this.addNumericModId(iter));
   }
 
@@ -73,19 +72,19 @@ export default class UpdateSet extends Set<number> {
   };
 
   private registerListeners = () => {
-    this.mApi.events.on('gamemode-activated', this.reset);
+    this.mApi.events.on('gamemode-activated', this.init);
   }
 
   private removeListeners = () => {
-    this.mApi.events.removeListener('gamemode-activated', this.reset);
+    this.mApi.events.removeListener('gamemode-activated', this.init);
   }
 
   public destroy = () => {
+    this.removeListeners();
     this.reset();
   }
 
   private reset = () => {
-    this.removeListeners();
     super.clear();
     this.mModEntries = [];
     this.mInitialized = false;
