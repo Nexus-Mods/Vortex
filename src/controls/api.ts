@@ -43,11 +43,13 @@ import VisibilityProxy from './VisibilityProxy';
 import Webview from './Webview';
 import ZoomableImage from './ZoomableImage';
 
+import { LoadOrderIndexInput } from '../extensions/file_based_loadorder/views/loadOrderIndex';
+
 export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
   DraggableList, Dropdown, DropdownButton, Dropzone, EmptyPlaceholder, ErrorBoundary,
   FlexLayout, FormFeedback, FormInput, FormCheckboxItem, FormPathItem, FormTextItem, Icon, IconBar,
-  Image, ITableRowAction, makeGetSelection, Modal,
+  Image, ITableRowAction, LoadOrderIndexInput, makeGetSelection, Modal,
   More, OptionsFilter, Overlay, OverlayTrigger, PortalMenu, ProgressBar,
   RadialProgress, SelectUpDown, Spinner, Steps,
   Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter, Timer, TriStateCheckbox,
