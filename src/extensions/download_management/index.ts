@@ -410,6 +410,9 @@ function postImport(api: IExtensionApi, destination: string,
                     fileSize: number, silent: boolean): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
+  if (gameMode === undefined) {
+    return Promise.reject(new Error('no active game'));
+  }
 
   const dlId = shortid();
   const fileName = path.basename(destination);
@@ -477,6 +480,7 @@ function move(api: IExtensionApi,
     .then(() => fs.copyAsync(source, destination))
     .then(() => postImport(api, destination, fileSize, silent))
     .catch(err => {
+      api.showErrorNotification('Import Failed', err, { allowReport: false });
       log('info', 'failed to copy', {error: err.message});
       return undefined;
     })
@@ -507,6 +511,7 @@ function importDirectory(api: IExtensionApi,
     .then(() => fs.statAsync(destination))
     .then((stat: fs.Stats) => postImport(api, destination, stat.size, silent))
     .catch(err => {
+      api.showErrorNotification('Import Failed', err, { allowReport: false });
       log('info', 'failed to copy', {error: err.message});
       return undefined;
     })
