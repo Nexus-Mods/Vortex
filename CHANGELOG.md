@@ -6,9 +6,12 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.13.0-beta.1] - 2024-10-01
 
+- Fixed exception when unmanaging (some) community game extensions. ([#16507](https://github.com/Nexus-Mods/Vortex/issues/16507), [#16372](https://github.com/Nexus-Mods/Vortex/issues/16372))
+- Fixed attempts to import local downloads when no game is active. ([#16363](https://github.com/Nexus-Mods/Vortex/issues/16363))
 - Improved checks for mod updates. ([#16453](https://github.com/Nexus-Mods/Vortex/issues/16453))
 - Resolve mod installation profile query (if only 1 available). ([#16438](https://github.com/Nexus-Mods/Vortex/issues/16438))
 - Added multi-select drag-and-drop to file-based load order.
+- Added direct index typing to file-based load order.
 - Added ability to modify the index of a load order entry using keyboard (click on index and modify it)
 - Added ability to run up to 3 dependency installers in parallel
 - Added FNV sanity checks extension as a requirement for Fallout New Vegas
