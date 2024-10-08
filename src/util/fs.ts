@@ -208,7 +208,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     message:
       `The operating system has reported an error without details when accessing "${filePath}" `
       + 'This is usually due the user\'s environment and not a bug in Vortex.\n'
-      + 'Please diagonse your environment and then retry',
+      + 'Please diagnose your environment and then retry',
     type: 'warning',
     noLink: true,
   };
@@ -216,7 +216,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
   if (![255, 362, 383, 388, 390, 395, 396, 404].includes(err['nativeCode'])) {
     options.detail = 'Possible error causes:\n'
       + `1. "${filePath}" is a removable, possibly network drive which has been disconnected.\n`
-      + '2. An External application has interferred with file operations '
+      + '2. An External application has interfered with file operations '
       + '(Anti-virus, Disk Management Utility, Virus)\n';
   }
 
