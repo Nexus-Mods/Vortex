@@ -17,9 +17,11 @@ export default class UpdateSet extends Set<number> {
   private mApi: IExtensionApi;
   private mModEntries: { [modId: number]: ILoadOrderEntryExt[] } = {};
   private mInitialized = false;
-  constructor(api: IExtensionApi) {
+  private mIsFBLO: (gameId: string) => boolean;
+  constructor(api: IExtensionApi, isFBLO: (gameId: string) => boolean) {
     super([]);
     this.mApi = api;
+    this.mIsFBLO = isFBLO;
     this.registerListeners();
   }
 
@@ -46,8 +48,11 @@ export default class UpdateSet extends Set<number> {
     return;
   }
 
-  public init = (modEntries?: ILoadOrderEntryExt[]) => {
+  public init = (gameId: string, modEntries?: ILoadOrderEntryExt[]) => {
     this.reset();
+    if (!this.mIsFBLO(gameId)) {
+      return;
+    }
     this.mInitialized = true;
     modEntries = !!modEntries && Array.isArray(modEntries) ? modEntries : this.genExtendedItemsFromState();
     modEntries.forEach((iter: ILoadOrderEntryExt) => this.addNumericModId(iter));
@@ -64,6 +69,9 @@ export default class UpdateSet extends Set<number> {
       return [];
     }
     const loadOrder = getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    if (!loadOrder || !Array.isArray(loadOrder)) {
+      return [];
+    }
     const filtered = loadOrder.reduce((acc, lo, idx) => {
       acc.push({ ...lo, index: idx });
       return acc;

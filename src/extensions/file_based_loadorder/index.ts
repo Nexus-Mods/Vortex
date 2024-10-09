@@ -312,7 +312,10 @@ export default function init(context: IExtensionContext) {
   );
 
   context.once(() => {
-    updateSet = new UpdateSet(context.api);
+    updateSet = new UpdateSet(context.api, (gameId: string) => {
+      const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+      return gameEntry !== undefined;
+    });
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
       (prev, current) => genToolsRunning(context.api, prev, current));
 
@@ -361,7 +364,7 @@ async function onWillRemoveMods(api: types.IExtensionApi,
       return acc;
     }, []);
     if (!updateSet.isInitialized()) {
-      updateSet.init(filtered);
+      updateSet.init(gameId, filtered);
     } else {
       filtered.forEach(updateSet.addNumericModId);
     }
