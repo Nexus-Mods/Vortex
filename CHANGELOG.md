@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0-beta.2] - 2024-10-09
+
+- Fixed UpdateSet initializing for non-FBLO games. ([#16544](https://github.com/Nexus-Mods/Vortex/issues/16544), [#16545](https://github.com/Nexus-Mods/Vortex/issues/16545))
+- Fixed checkboxes not rendering on load order entries.
+
 ## [1.13.0-beta.1] - 2024-10-01
 
 - Fixed exception when unmanaging (some) community game extensions. ([#16507](https://github.com/Nexus-Mods/Vortex/issues/16507), [#16372](https://github.com/Nexus-Mods/Vortex/issues/16372))
@@ -521,6 +526,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.2
 [1.13.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.1
 [1.12.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.4
 [1.12.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.3
