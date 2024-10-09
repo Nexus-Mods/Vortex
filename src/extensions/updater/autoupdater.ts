@@ -146,7 +146,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
       // is update version greater than our current version?
 
-      if (semver.satisfies(updateInfo.version, `>${autoUpdater.currentVersion.version}`)) {
+      if (semver.satisfies(updateInfo.version, `>${autoUpdater.currentVersion.version}`, { includePrerelease: true })) {
         
         // normal upgrade
 
