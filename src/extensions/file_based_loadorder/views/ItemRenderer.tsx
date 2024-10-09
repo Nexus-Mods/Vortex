@@ -39,7 +39,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     const item = Array.isArray(this.props.item)
       ? this.props.item[0].loEntry
       : this.props.item.loEntry;
-    const displayCheckboxes = item.displayCheckboxes;
+    const displayCheckboxes = this.props.item.displayCheckboxes ?? false;
     return this.renderDraggable(item, displayCheckboxes);
   }
 
