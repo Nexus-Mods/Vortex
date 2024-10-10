@@ -6,7 +6,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## [1.13.0-beta.3] - 2024-10-xx
 
-- Fixed updater ignoring pre-release tag.
+- Fixed updater ignoring pre-release tag
+- Adding alternative game domains to future-proof API changes
 
 ## [1.13.0-beta.2] - 2024-10-09
 
