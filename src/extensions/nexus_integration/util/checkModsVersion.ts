@@ -245,7 +245,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
-    const notOld = files.files.filter(file => [4, 6, 7].includes(file.category_id));
+    const notOld = files.files.filter(file => ![4, 6, 7].includes(file.category_id));
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
       const fallbackUpdate: IFileUpdate = {
         old_file_id: fileId,
