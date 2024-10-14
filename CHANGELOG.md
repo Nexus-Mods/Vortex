@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.0-beta.3] - 2024-10-xx
+## [1.13.0-beta.3] - 2024-10-14
 
 - Fixed incorrect fallback mod update selection
 - Fixed updater ignoring pre-release tag
