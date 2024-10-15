@@ -48,17 +48,25 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
     return undefined;
   }
 
-  const game = knownGames.find(iter =>
+  const validGames = knownGames.filter(iter => iter.id === input.toLowerCase() ||
     (iter.details !== undefined) && (iter.details.nexusPageId === input));
+
+  // We obviously prefer the exact match first.
+  const game = validGames.find(iter => iter.id === input.toLowerCase());
   if (game !== undefined) {
     return game.id;
+  }
+
+  // Alternatively - there may be a nexus page id match.
+  if (validGames.length > 0) {
+    return validGames[0].id;
   }
 
   return {
     skyrimspecialedition: 'skyrimse',
     newvegas: 'falloutnv',
     elderscrollsonline: 'teso',
-  }[input.toLowerCase()] || input;
+  }[input.toLowerCase()] || input.toLowerCase();
 }
 
 /**
