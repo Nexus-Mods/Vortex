@@ -30,6 +30,7 @@ export interface IErrorBoundaryProps extends WithTranslation {
 }
 
 interface IErrorBoundaryState {
+  hasError: boolean;
   error: Error;
   errorInfo?: React.ErrorInfo;
 }
@@ -42,6 +43,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     this.state = {
       error: undefined,
       errorInfo: undefined,
+      hasError: false,
     };
 
     this.mErrContext = {
@@ -57,7 +59,13 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     };
   }
 
+  static getDerivedStateFromError(error) {
+    // Called before the render
+    return { hasError: true, error };
+  }
+
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Called after the render
     if (this.props.canDisplayError === false) {
       this.context.api.sendNotification({
         type: 'error',
@@ -88,9 +96,9 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
 
   public render(): React.ReactNode {
     const { t, className, canDisplayError, onHide, visible } = this.props;
-    const { error } = this.state;
+    const { hasError } = this.state;
 
-    if (error === undefined) {
+    if (!hasError) {
       return (
         <ErrorContext.Provider value={this.mErrContext}>
           {React.Children.only(this.props.children)}
@@ -153,7 +161,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
   }
 
   private retryRender = () => {
-    this.setState({ error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   }
 }
 
