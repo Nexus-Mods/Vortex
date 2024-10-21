@@ -66,6 +66,7 @@ export function safeCoerce(input: string): string {
 }
 
 export function coerceToSemver(version: string): string {
+  version = version?.trim?.();
   if (!version) {
     return undefined;
   }
