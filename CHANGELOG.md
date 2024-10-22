@@ -13,6 +13,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixes semantic coercion with leading zeroes
 - Fixed semver bug when whitespace in mod versions
 - Fixed promise chain when applying ini tweaks for Gamebryo games
+- **7daystodie**: Fixed UDF dialog being raised incorrectly
 - **collections**: Fixed collapsed mods tab table
 - **bepinex**: Fixed installation error when installing BepInEx 6.0. ([#16587](https://github.com/Nexus-Mods/Vortex/issues/16587), [#15933](https://github.com/Nexus-Mods/Vortex/issues/15933))
 - **bepinex**: Fixed issues with BepInEx's mod entry update.
