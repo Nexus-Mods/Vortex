@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0-beta.4] - 2024-10-22
+
+- Fixed failed profile switch when managing game using symlinks 
+- Fixed download notification spamming the UI during collection install
+- Fixes GameId/domainName reverse conversion not catering for multiple compatible games 
+- Improved Vortex corruption error message. ([#16591](https://github.com/Nexus-Mods/Vortex/issues/16591))
+- Fixes semantic coercion with leading zeroes
+- Fixed semver bug when whitespace in mod versions
+- Fixed promise chain when applying ini tweaks for Gamebryo games
+- **collections**: Fixed collapsed mods tab table
+- **bepinex**: Fixed installation error when installing BepInEx 6.0. ([#16587](https://github.com/Nexus-Mods/Vortex/issues/16587), [#15933](https://github.com/Nexus-Mods/Vortex/issues/15933))
+
 ## [1.13.0-beta.3] - 2024-10-14
 
 - Fixed incorrect fallback mod update selection
@@ -532,6 +544,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.4
 [1.13.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.3
 [1.13.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.2
 [1.13.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.1
