@@ -66,6 +66,7 @@ export function safeCoerce(input: string): string {
 }
 
 export function coerceToSemver(version: string): string {
+  version = version?.trim?.();
   if (!version) {
     return undefined;
   }
@@ -86,7 +87,10 @@ export function coerceToSemver(version: string): string {
     }
   } else {
     if (coerceableRE.test(version)) {
-      const coerced = semver.coerce(version);
+      // Remove leading 0's from the version segments as that's
+      //  an illegal semantic versioning format/pattern
+      const sanitizedVersion = version.replace(/\b0+(\d)/g, '$1');
+      const coerced = semver.coerce(sanitizedVersion);
       if (coerced) {
         return coerced.version
       }

@@ -1076,7 +1076,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateModGrouping(modsWithState) {
-    const modList = Object.keys(modsWithState).map(key => modsWithState[key]);
+    const modList = Object.keys(modsWithState).reduce((accum, key) => {
+      const mod = modsWithState[key];
+      if (mod) {
+        accum.push(mod);
+      }
+      return accum;
+    }, []);
     const grouped = groupMods(modList, { groupBy: 'file', multipleEnabled: false });
 
     const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) => {

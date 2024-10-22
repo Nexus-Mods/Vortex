@@ -43,6 +43,7 @@ async function setDownloadGames(
         // game may be undefined if the download is recognized but it's for a
         // game Vortex doesn't support
         api.sendNotification({
+          id: 'download-moved' + (game?.name ?? gameIds[0]),
           type: 'success',
           title: 'Download moved to game {{gameName}}',
           message: download.localPath,

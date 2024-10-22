@@ -126,7 +126,6 @@ class Application {
     this.mArgs = args;
 
     ipcMain.on('show-window', () => this.showMainWindow(args?.startMinimized));
-
     process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 1.5).toString();
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
@@ -1079,7 +1078,7 @@ class Application {
             message: 'Your Vortex installation has been corrupted. '
               + 'This could be the result of a virus or manual manipulation. '
               + 'Vortex might still appear to work (partially) but we suggest '
-              + 'you reinstall it.',
+              + 'you reinstall it. For more information please refer to Vortex\'s log files.',
             noLink: true,
             buttons: ['Quit', 'Ignore'],
           })

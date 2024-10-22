@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
@@ -175,8 +176,9 @@ function bakeSettings(t: TFunction,
                 setdefault(enabledTweaks, getBaseFile(file), [])
                     .push(path.join(tweaksPath, file));
               });
+          return Promise.resolve();
         })
-        .catch(err => undefined);
+        .catch(err => Promise.resolve(undefined));
   }).then(() => Promise.mapSeries(baseFiles, iniFileName => {
     // starting with the .base file for each ini, re-bake the file by applying
     // the ini tweaks
