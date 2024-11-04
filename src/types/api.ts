@@ -27,6 +27,10 @@ export { IStarterInfo } from '../util/StarterInfo';
 
 export { IRegisteredExtension } from '../util/ExtensionManager';
 
+export { IErrorContext } from './IErrorContext';
+export { IError } from './IError';
+export { IFeedbackReport } from './IFeedbackReport';
+
 export { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 export {
   LoadOrder,

@@ -1,31 +1,44 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+# Crash Report: {{error_title}}
+
+## System Information
+- **Platform**: {{platform}}
+- **Architecture**: {{architecture}}
+- **Application Version**: {{app_version}}
+- **Process**: {{process}}
+
+## Error Message
+{{error_message}}
+
+## Context
+- **Game/Mode**: {{game_mode}}
+- **Extension Version**: {{extension_version}}
+
+## Stack Trace
+{{stack_trace}}
+
+## External File (if applicable)
+- **File**: [{{external_file_name}}]({{external_file_url}})
+
+## Steps to Reproduce
+{{steps}}
+
+## Expected Behavior
+{{expected_behavior}}
+
+## Actual Behavior
+{{actual_behavior}}
+
+## Environment Details
+- **OS**: {{os}}
+- **Browser (if applicable)**: {{browser}}
+- **Node Version**: {{node_version}}
+- **Other Details**: {{additional_details}}
+
+## Reported By
+- **User**: {{reported_by}}
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Platform (please complete the following information):**
- - OS: [e.g. Windows 10]
- - Vortex Version [e.g. 0.16.12]
-
-**Additional context**
-Add any other context about the problem here.
+### Additional Information:
+- **Date Reported**: {{date_reported}}
+- **Additional Context**: {{additional_context}}

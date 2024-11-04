@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
