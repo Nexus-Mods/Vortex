@@ -34,7 +34,7 @@ import lazyRequire from './lazyRequire';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
-function createTitle(type: string, error: IError, hash: string) {
+function createTitle(type: string, error: IError) {
   return `${type}: ${error.message}`;
 }
 
@@ -126,11 +126,12 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
   spawnSelf(['--report', reportPath]);
 }
 
-function githubReport(api: IExtensionApi, hash: string, type: string, error: IError, labels: string[],
+function githubReport(api: IExtensionApi, type: string, error: IError, labels: string[],
                       context: IErrorContext, oauthToken: any, reporterProcess: string,
                       sourceProcess: string) {
-    const title = createTitle(type, error, hash);
+    const title = createTitle(type, error);
     const body = createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess);
+    const hash = genHash(body);
     const feedbackReport: IFeedbackReport = {
       title,
       message: body,
@@ -165,7 +166,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const anonymous = (oauthCredentials === undefined);
   return Promise.resolve(Nexus.createWithOAuth(oauthCredentials, config, 'Vortex', getApplication().version, undefined))
     .then(nexus => nexus.sendFeedback(
-      createTitle(type, error, hash),
+      createTitle(type, error),
       createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess),
       attachment,
       anonymous,
@@ -263,7 +264,6 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
                            reporterToken: any, reporterProcess: string,
                            sourceProcess: string, attachment: string): Promise<IFeedbackResponse | undefined> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
-  const hash = genHash(error);
   // return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
   //     reporterProcess, sourceProcess, attachment); 
   const api: IExtensionApi = context['extension-api'];
@@ -271,7 +271,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
     dialog.showErrorBox(error.title, error.message);
     return Promise.resolve(undefined);
   }
-  return githubReport(api, hash, type, error, labels, context, reporterToken || fallbackOauthToken,
+  return githubReport(api, type, error, labels, context, reporterToken || fallbackOauthToken,
     reporterProcess, sourceProcess);
 }
 

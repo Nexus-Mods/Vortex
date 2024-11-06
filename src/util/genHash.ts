@@ -78,8 +78,12 @@ export function extractToken(error: IError): string {
   return hashStack.join('\n');
 }
 
-export function genHash(error: IError) {
+export function genHash(input: IError | string): string {
   const { createHash } = require('crypto');
   const hash = createHash('md5');
-  return hash.update(extractToken(error)).digest('hex');
+  if (typeof input === 'string') {
+    return hash.update((input)).digest('hex');
+  } else {
+    return hash.update(extractToken(input)).digest('hex');
+  }
 }
