@@ -13,6 +13,8 @@ import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
 
+import { IFeedbackReport } from '../../types/IFeedbackReport';
+
 import { resolveCategoryName } from '../category_management';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
@@ -646,12 +648,23 @@ export function onDownloadUpdate(api: IExtensionApi,
   };
 }
 
-export function onSubmitFeedback(nexus: Nexus) {
+export function onSubmitFeedback(api: IExtensionApi, nexus: Nexus) {
   return (title: string, message: string, hash: string, feedbackFiles: string[],
           anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => {
-    submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
-      .then(response => callback(null, response))
-      .catch(err => callback(err));
+    const report: IFeedbackReport = {
+      title,
+      message,
+      files: feedbackFiles,
+      hash,
+      callback,
+    }
+
+    api.events.emit('report-feedback', report);
+    // Vortex used to send feedback reports to the Nexus Mods admin area
+    //  for curation. Left this here for posterity.
+    // submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
+    //   .then(response => callback(null, response))
+    //   .catch(err => callback(err));
   };
 }
 
