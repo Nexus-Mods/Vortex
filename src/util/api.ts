@@ -67,6 +67,8 @@ import walk from './walk';
 
 import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
+import { genHash } from './genHash';
+import {  getErrorContext, setErrorContext, clearErrorContext } from './errorHandling';
 
 export * from './network';
 
@@ -81,6 +83,7 @@ export {
   calculateFolderSize,
   Campaign,
   checksum,
+  clearErrorContext,
   convertGameIdReverse,
   copyFileAtomic,
   copyRecursive,
@@ -105,8 +108,10 @@ export {
   getCurrentActivator,
   getCurrentLanguage,
   getDriveList,
+  getErrorContext,
   getGame,
   getGames,
+  genHash,
   getManifest,
   getModSource,
   getModSources,
@@ -160,6 +165,7 @@ export {
   Section,
   semverCoerce,
   setdefault,
+  setErrorContext,
   SetupError,
   SevenZip,
   sortMods,

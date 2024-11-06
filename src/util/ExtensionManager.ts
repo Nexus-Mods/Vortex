@@ -32,7 +32,7 @@ import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
-import { disableErrorReport, isOutdated } from './errorHandling';
+import { disableErrorReport, isOutdated, setErrorContext } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n, TString } from './i18n';
 import lazyRequire from './lazyRequire';

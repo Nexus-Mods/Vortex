@@ -142,7 +142,7 @@ function githubReport(api: IExtensionApi, hash: string, type: string, error: IEr
       hash,
     }
     api.events.emit('report-feedback', feedbackReport);
-    return undefined;
+    return Promise.resolve(undefined);
   }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
@@ -264,13 +264,13 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
                            sourceProcess: string, attachment: string): Promise<IFeedbackResponse | undefined> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const hash = genHash(error);
-  if (!context?.['extension-api']) {
-    // Only crash reports will have the
-    return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
-      reporterProcess, sourceProcess, attachment); 
-  }
-
+  // return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
+  //     reporterProcess, sourceProcess, attachment); 
   const api: IExtensionApi = context['extension-api'];
+  if (api === undefined) {
+    dialog.showErrorBox(error.title, error.message);
+    return Promise.resolve(undefined);
+  }
   return githubReport(api, hash, type, error, labels, context, reporterToken || fallbackOauthToken,
     reporterProcess, sourceProcess);
 }
@@ -546,7 +546,7 @@ export function toError(input: any, title?: string,
  * @param id context id
  * @param value context value
  */
-export function setErrorContext(id: string, value: string) {
+export function setErrorContext(id: string, value: any) {
   globalContext[id] = value;
 }
 
