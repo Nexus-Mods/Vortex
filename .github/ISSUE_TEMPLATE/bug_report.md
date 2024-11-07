@@ -1,44 +1,38 @@
-# Crash Report: {{error_title}}
+# Bug/Crash Report: {{title}}
 
 ## System Information
-- **Platform**: {{platform}}
+- **Application Version**: {{appVersion}}
+- **Platform**: {{platformVersion}}
 - **Architecture**: {{architecture}}
-- **Application Version**: {{app_version}}
-- **Process**: {{process}}
+- **Process**: renderer
 
 ## Error Message
-{{error_message}}
+{{errorMessage}}
 
 ## Context
-- **Game/Mode**: {{game_mode}}
-- **Extension Version**: {{extension_version}}
-
-## Stack Trace
-{{stack_trace}}
+- **Game/Mode**: {{gameMode}}
+- **Extension Version**: {{extensionVersion}}
 
 ## External File (if applicable)
-- **File**: [{{external_file_name}}]({{external_file_url}})
+- **File**: [Archive Attachment]({{externalFileUrl}})
 
 ## Steps to Reproduce
 {{steps}}
 
 ## Expected Behavior
-{{expected_behavior}}
+{{expectedBehavior}}
 
 ## Actual Behavior
-{{actual_behavior}}
-
-## Environment Details
-- **OS**: {{os}}
-- **Browser (if applicable)**: {{browser}}
-- **Node Version**: {{node_version}}
-- **Other Details**: {{additional_details}}
+{{actualBehavior}}
 
 ## Reported By
-- **User**: {{reported_by}}
+- **User**: {{reportedBy}}
 
 ---
 
 ### Additional Information:
-- **Date Reported**: {{date_reported}}
-- **Additional Context**: {{additional_context}}
+- **Date Reported**:
+{{dateReported}}
+
+- **Additional Context**:
+{{additionalContext}}
