@@ -714,6 +714,7 @@ export function replaceRecursive(input: any, from: any, to: any) {
 }
 
 function removeLeadingZeros(input: string): string {
+  if (!input) { return input; }
   return input.split('.').map(seg => seg.replace(/^0+(\d+$)/, '$1')).join('.');
 }
 
