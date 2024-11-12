@@ -90,7 +90,7 @@ function newestFirst(lhs: IModWithState, rhs: IModWithState): number {
  */
 function byEnabled(input: IModWithState[]): IModWithState[][] {
   // put each enabled mod into its own group. Ideally there should only be one
-  const groups: IModWithState[][] = input.filter((mod => mod.enabled)).map(mod => [mod]);
+  const groups: IModWithState[][] = input.filter((mod => mod?.enabled === true)).map(mod => [mod]);
   // it is of course possible that no mod in input is enabled.
   if (groups.length === 0) {
     return [ input ];
