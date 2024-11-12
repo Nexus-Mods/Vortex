@@ -87,7 +87,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     return 'Free';
   }
 
-  private renderMembershipStatus() {
+  private renderMembershipStatus = () => {
     const { t, userInfo } = this.props;
 
     const membership = this.getMembershipText(userInfo);
@@ -95,16 +95,16 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     if (this.isLoggedIn()) {
       return (
-          <div id='membership-status' className={classes}>
-             <div className='membership-status-text'>{membership}</div>
-          </div>
+        <div id='membership-status' className={classes}>
+          <div className='membership-status-text'>{membership}</div>
+        </div>
       );
     } else {
       return null;
     }
   }
 
-  private renderLoginName() {
+  private renderLoginName = () => {
     const { t, userInfo } = this.props;
 
     if (this.isLoggedIn()) {
@@ -123,7 +123,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     }
   }
 
-  private renderAvatar() {
+  private renderAvatar = () => {
     const { t, userInfo } = this.props;
 
     const loggedIn = this.isLoggedIn();
@@ -176,7 +176,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     });
   }
 
-  private isLoggedIn() {
+  private isLoggedIn = () => {
     const { isLoggedIn, userInfo } = this.props;
     //return isLoggedIn;
     return isLoggedIn && (userInfo !== undefined) && (userInfo !== null);
@@ -186,7 +186,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     this.setDialogVisible(false);
   }
 
-  private setDialogVisible(visible: boolean): void {
+  private setDialogVisible = (visible: boolean): void => {
     this.props.onShowDialog();
   }
 }
