@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0-beta.5] - 2024-11-12
+
+* Fixed exception when attempting to resolve the version of manually added mods without metadata
+* Fixed crash when attempting to group by enabled state and mods are being actively removed. ([#16609](https://github.com/Nexus-Mods/Vortex/issues/16609))
+* Fixed exception when attempting to see if the user is logged in. ([#16600](https://github.com/Nexus-Mods/Vortex/issues/16600))
+* **api**: Updated libloot to 0.24.5
+* **api**: Fixed several issues with version coercion in the bepinex extension. ([#16626](https://github.com/Nexus-Mods/Vortex/issues/16626))
+* **witcher3**: Fixed minor issues caused by case sensitive checks
+
 ## [1.13.0-beta.4] - 2024-10-22
 
 - Fixed failed profile switch when managing game using symlinks 
