@@ -242,7 +242,7 @@ jobs:
           EPIC_CLIENTSECRET: ${{ secrets.EPIC_CLIENTSECRET }} 
  
       - name: Create Unpacked Artifact 
-        uses: actions/upload-artifact@v3 
+        uses: actions/upload-artifact@v4 
         if: ${{ inputs.create-artifacts == true }} 
         with: 
           name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }} 
