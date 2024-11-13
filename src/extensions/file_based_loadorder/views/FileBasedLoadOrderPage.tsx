@@ -12,7 +12,7 @@ import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
-import { log } from '../../../util/log';
+import FilterBox from './FilterBox';
 
 import { setFBLoadOrder } from '../actions/loadOrder';
 import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
@@ -28,6 +28,7 @@ interface IBaseState {
   updating: boolean;
   validationError: LoadOrderValidationError;
   currentRefreshId: string;
+  filterText: string;
 }
 
 export interface IBaseProps {
@@ -76,6 +77,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       updating: false,
       validationError: undefined,
       currentRefreshId: '',
+      filterText: '',
     });
 
     this.mStaticButtons = [
@@ -182,7 +184,10 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             displayCheckboxes: gameEntry.toggleableEntries || false,
             invalidEntries: validationError?.validationResult?.invalid,
           };
-          accum.push(rendOps);
+          // Filter based on the filterText, matching on loEntry.name or other attributes as needed
+          if (loEntry.name.toLowerCase().includes(this.state.filterText.toLowerCase())) {
+            accum.push(rendOps);
+          }
           return accum;
         }, [])
       : [];
@@ -197,7 +202,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       ? this.renderWait()
       : (enabled.length > 0)
         ? <DraggableList
-            disabled={this.props.disabled}
+            disabled={this.props.disabled || this.state.filterText !== ''}
             itemTypeId='file-based-lo-draggable-entry'
             id='mod-loadorder-draggable-list'
             items={enabled}
@@ -226,6 +231,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <Panel>
             <PanelX.Body>
+              <FilterBox currentFilterValue={this.state.filterText} setFilter={this.onFilter} />
               <DNDContainer style={{ height: '100%' }}>
                 <FlexLayout type='row' className='file-based-load-order-container'>
                   <FlexLayout.Flex className={listClasses.join(' ')}>
@@ -248,6 +254,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.nextState.validationError = undefined;
   }
 
+  private onFilter = (filterText: string) => this.nextState.filterText = filterText;
+
   private renderWait() {
     return (
       <div className='fblo-spinner-container'>
@@ -263,6 +271,16 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private onApply = (ordered: IItemRendererProps[]) => {
+    const { t } = this.props;
+    if (this.state.filterText !== '') {
+      this.context.api.sendNotification({
+        type: 'warning',
+        message: t('Must clear filter to apply changes'),
+        allowSuppress: true,
+        id: 'fblo-filter-not-cleared',
+      });
+      return;
+    }
     const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } = this.props;
     const newLO = ordered.map(item => item.loEntry);
     validateLoadOrder(profile, newLO)
