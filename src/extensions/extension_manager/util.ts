@@ -2,6 +2,7 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IDownload, IState } from '../../types/IState';
 import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { writeFileAtomic } from '../../util/fsAtomic';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { jsonRequest, rawRequest } from '../../util/network';
@@ -179,7 +180,7 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
       log('debug', 'extension list received');
       return manifest.extensions.filter(ext => ext.name !== undefined);
     })
-    .tap(extensions => fs.writeFileAsync(cachePath, JSON.stringify({ extensions }, undefined, 2), { encoding: 'utf8' }))
+    .tap(extensions => writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)))
     .tapCatch(err => log('error', 'failed to download extension list', err));
   }
 
