@@ -56,6 +56,11 @@
 
 .extension-item {
 
+  &.list-group-item.disabled {
+    background-color: $gray-lighter;
+    color: $gray-dark;
+  }
+
   &.selected {
     background-color: $table-bg-active;
   }
