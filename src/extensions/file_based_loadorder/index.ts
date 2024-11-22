@@ -2,13 +2,17 @@
 
 import * as _ from 'lodash';
 
-import { setValidationResult } from './actions/session';
+import { setFBForceUpdate, setValidationResult } from './actions/session';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import {
   ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderValidationError
 } from './types/types';
+
+import { migrateToFBLO } from './oldLoadOrderApi';
+
+import * as deprecated from '../mod_load_order/types/types';
 
 import { ICollection } from './types/collections';
 
@@ -289,6 +293,14 @@ export default function init(context: IExtensionContext) {
     addGameEntry(gameInfo, extPath);
   }) as any;
 
+  context.registerLoadOrderPage = ((gameEntry: deprecated.IGameLoadOrderEntry, extPath: string) => {
+    const fbloEntry = migrateToFBLO(context.api, { refresh: () => {
+      const profileId = selectors.lastActiveProfileForGame(context.api.getState(), gameEntry.gameId);
+      context.api.store.dispatch(setFBForceUpdate(profileId));
+    } },gameEntry);
+    addGameEntry(fbloEntry, extPath);
+  }) as any;
+  
   context.optional.registerCollectionFeature(
     'file_based_load_order_collection_data',
     (gameId: string, includedMods: string[]) => {

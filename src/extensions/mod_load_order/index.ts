@@ -35,9 +35,9 @@ export default function init(context: IExtensionContext) {
     },
   });
 
-  context.registerLoadOrderPage = (gameEntry: IGameLoadOrderEntry) => {
-    addGameEntry(gameEntry);
-  };
+  // context.registerLoadOrderPage = (gameEntry: IGameLoadOrderEntry) => {
+  //   addGameEntry(gameEntry);
+  // };
 
   context.optional.registerCollectionFeature(
     'generic_load_order_collection_data',
