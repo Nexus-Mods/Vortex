@@ -302,6 +302,7 @@ class MainWindow {
         webviewTag: true,
         enableWebSQL: false,
         contextIsolation: false,
+        backgroundThrottling: false,
       },
     };
   }
