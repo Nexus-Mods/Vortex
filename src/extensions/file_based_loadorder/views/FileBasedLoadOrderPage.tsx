@@ -259,7 +259,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
 
   private isLocked = (item: IItemRendererProps): boolean => {
-    return [true, 'true', 'always'].includes(item.loEntry.locked);
+    return [true, 'true', 'always'].includes(item?.loEntry?.locked);
   }
 
   private onApply = (ordered: IItemRendererProps[]) => {
