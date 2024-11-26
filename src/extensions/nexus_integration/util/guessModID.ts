@@ -121,6 +121,8 @@ export function fillNexusIdByMD5(api: IExtensionApi,
                                  : Bluebird<void> {
   const hasValidIds = truthy(mod?.attributes?.modId) && truthy(mod?.attributes?.fileId);
   const isNewestVersion = hasValidIds && (mod?.attributes?.newestFileId === mod?.attributes?.fileId);
+  // We're not using the gameId in the query intentionally as we can't
+  //  determine the game based on fileNames of locally imported archives.
   return api.lookupModMeta({
     fileMD5: mod.attributes?.fileMD5,
     fileName,
