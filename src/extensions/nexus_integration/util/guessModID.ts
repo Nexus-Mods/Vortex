@@ -169,7 +169,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
                 ];
                 // The only way for us to correctly assume the mod's version at this
                 //  point, is if we managed to confirm that the installed mod is the latest fileId.
-                if (!isNewestVersion) {
+                if (isNewestVersion) {
                   batched.push(setModAttribute(gameId, mod.id, 'version', mod.attributes.newestVersion));
                 } else {
                   // Let's try to guess the version from the filename and ask the user if it's correct.
