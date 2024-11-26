@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { IExtensionApi, ILookupResult, IModInfo } from '../../../types/IExtensionContext';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { batchDispatch, truthy } from '../../../util/util';
@@ -11,6 +12,9 @@ import NXMUrl from '../NXMUrl';
 
 import Bluebird from 'bluebird';
 import * as path from 'path';
+import { toNXMId } from './convertGameId';
+import { gameById } from '../../gamemode_management/selectors';
+import { SITE_ID } from '../../gamemode_management/constants';
 
 export function guessFromFileName(fileName: string): string {
   const match = fileName.match(/-([0-9]+)-/);
@@ -115,6 +119,8 @@ export function fillNexusIdByMD5(api: IExtensionApi,
                                  downloadPath: string,
                                  hasArchive: boolean)
                                  : Bluebird<void> {
+  const hasValidIds = truthy(mod?.attributes?.modId) && truthy(mod?.attributes?.fileId);
+  const isNewestVersion = hasValidIds && (mod?.attributes?.newestFileId === mod?.attributes?.fileId);
   return api.lookupModMeta({
     fileMD5: mod.attributes?.fileMD5,
     fileName,
@@ -122,26 +128,72 @@ export function fillNexusIdByMD5(api: IExtensionApi,
     filePath: path.join(downloadPath, fileName),
   }, true)
     .then(lookupResults => {
-      const applicable = lookupResults.filter(iter => !!iter.value.sourceURI);
+      const applicable = lookupResults.reduce((acc, iter) => {
+        const hasUri = !!iter.value.sourceURI;
+        const hasMd5Match = iter.value.fileMD5 === mod?.attributes?.fileMD5;
+        if (!hasUri && hasMd5Match && hasValidIds) {
+          // We know this is the mod; we just don't have the URI for it.
+          const game = iter.value.gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+          if (!game) {
+            return acc;
+          }
+          const url = `nxm://${toNXMId(game, iter.value.gameId)}/mods/${mod.attributes.modId}/files/${mod.attributes.fileId}`;
+          acc.push({ ...iter, value: { ...iter.value, sourceURI: url } });
+        } else if (iter.value.sourceURI) {
+          acc.push(iter);
+        }
+        return acc;
+      }, []);
       if (applicable.length > 0) {
         const idxProm = (applicable.length === 1)
           ? Bluebird.resolve(0)
           : queryLookupResult(api, applicable);
 
         return idxProm
-          .then(idx => {
+          .then(async idx => {
             const info: IModInfo = lookupResults[idx].value;
+            if (!info.sourceURI) {
+              // find the applicable entry and use that one as source uri
+              info.sourceURI = applicable.find(iter => iter.key === lookupResults[idx].key)?.value?.sourceURI ?? lookupResults[idx].value.sourceURI;
+            }
             try {
-              if (truthy(info.sourceURI)) {
+              if (!info.sourceURI) {
                 throw new ProcessCanceled('no source uri');
               }
               const nxmUrl = new NXMUrl(info.sourceURI);
               if (mod.state === 'installed') {
-                batchDispatch(api.store, [
+                const batched = [
                   setModAttribute(gameId, mod.id, 'modId', nxmUrl.modId),
                   setModAttribute(gameId, mod.id, 'fileId', nxmUrl.fileId),
                   setModAttribute(gameId, mod.id, 'downloadGame', info.gameId),
-                ]);
+                ];
+                // The only way for us to correctly assume the mod's version at this
+                //  point, is if we managed to confirm that the installed mod is the latest fileId.
+                if (!isNewestVersion) {
+                  batched.push(setModAttribute(gameId, mod.id, 'version', mod.attributes.newestVersion));
+                } else {
+                  // Let's try to guess the version from the filename and ask the user if it's correct.
+                  const versionRgx = new RegExp(`${nxmUrl.modId}-(.*?)-\\d{10,}\\.(zip|rar|7z|tar|gz)$`, 'i');
+                  const match = fileName.match(versionRgx);
+                  if (match) {
+                    // Group 1 will contain the version-like string
+                    let version = match[1].trim();
+                    version = version.replace(/\-/g, '.');
+                    const t = api.translate;
+                    const question = await api.showDialog('question', 'Mod version', {
+                      bbcode: t('The version of this mod ("{{modName}}") is "{{version}}". Is this correct?[br][/br][br][/br]'
+                              + 'If this is incorrect, you will have to manually enter the version number in the mod panel at a later time (if you wish).',
+                              { replace: { version, modName: modName(mod) } }),
+                    }, [
+                      { label: 'Incorrect Version' },
+                      { label: 'Correct Version', default: true },
+                    ]);
+                    if (question.action === 'Correct Version') {
+                      batched.push(setModAttribute(gameId, mod.id, 'version', version));
+                    }
+                  }
+                }
+                batchDispatch(api.store, batched);
               }
               if (hasArchive) {
                 batchDispatch(api.store, [
