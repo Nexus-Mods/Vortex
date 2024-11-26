@@ -129,7 +129,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
   }, true)
     .then(lookupResults => {
       const applicable = lookupResults.reduce((acc, iter) => {
-        const hasUri = !!iter.value.sourceURI;
+        const hasUri = truthy(iter.value.sourceURI);
         const hasMd5Match = iter.value.fileMD5 === mod?.attributes?.fileMD5;
         if (!hasUri && hasMd5Match && hasValidIds) {
           // We know this is the mod; we just don't have the URI for it.
@@ -139,7 +139,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
           }
           const url = `nxm://${toNXMId(game, iter.value.gameId)}/mods/${mod.attributes.modId}/files/${mod.attributes.fileId}`;
           acc.push({ ...iter, value: { ...iter.value, sourceURI: url } });
-        } else if (iter.value.sourceURI) {
+        } else if (hasUri) {
           acc.push(iter);
         }
         return acc;
