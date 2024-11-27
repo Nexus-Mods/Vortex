@@ -26,9 +26,9 @@ export const STEPS: IStep[] = [
   {
     title: 'Download Mods',
     desc: 'Download and install the first of many mods for your game. ',
-    length: '3:00',
+    length: '3:25',
     img: 'assets/images/dashlets/add-mods.png',
-    video: 'https://www.youtube.com/embed/Kt_6lwGd2Ns',
+    video: 'https://www.youtube.com/embed/noVpQl3mkfE',
     id: 'download-mods',
   },
 ];
