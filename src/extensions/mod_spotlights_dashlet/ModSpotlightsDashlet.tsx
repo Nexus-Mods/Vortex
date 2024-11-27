@@ -104,7 +104,7 @@ export default function TopModsDashlet(props: IBaseProps) {
     debounce.schedule((err) => null, url);
   }, [currentIdx]);
   return (
-    <Dashlet title='Mod Spotlights' className='dashlet-mod-spotlights'>
+    <Dashlet title='Mods Spotlight' className='dashlet-mod-spotlights'>
       {loaded && renderInfo(t, entries?.[currentIdx])}
       {loaded ? renderWebView({ entry: entries?.[currentIdx], onNewWindow }) : renderPlaceholder()}
       <div className='dashlet-mod-spotlights-button-container'>

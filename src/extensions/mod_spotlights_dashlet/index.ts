@@ -100,7 +100,7 @@ export async function update<T extends ModSpotlightEntry>(type: VideoEntryType):
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Mod Spotlights', 1, 3, 2, ModSpotlightsDashlet, (state: IState) => true, () => ({
+  context.registerDashlet('Mods Spotlight', 1, 3, 2, ModSpotlightsDashlet, (state: IState) => true, () => ({
     update: async () => {
       const entries = await Promise.all([update<IMOTMEntry>('modsofthemonth'), update<ModSpotlightEntry>('modspotlights')]);
       const flattened = entries.reduce((acc, curr) => acc.concat(curr), []);
