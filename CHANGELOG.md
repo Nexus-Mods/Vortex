@@ -4,27 +4,89 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.1] - 2024-12-02
+
+_Stable release based on [1.13.0-beta.7]_
+
+- Fixed exception when unmanaging (some) community game extensions. ([#16507](https://github.com/Nexus-Mods/Vortex/issues/16507), [#16372](https://github.com/Nexus-Mods/Vortex/issues/16372))
+- Fixed attempts to import local downloads when no game is active. ([#16363](https://github.com/Nexus-Mods/Vortex/issues/16363))
+- Improved checks for mod updates. ([#16453](https://github.com/Nexus-Mods/Vortex/issues/16453))
+- Resolve mod installation profile query (if only 1 available). ([#16438](https://github.com/Nexus-Mods/Vortex/issues/16438))
+- Added multi-select drag-and-drop to file-based load order.
+- Added direct index typing to file-based load order.
+- Added ability to modify the index of a load order entry using keyboard (click on index and modify it)
+- Added ability to run up to 3 dependency installers in parallel
+- Added FNV sanity checks extension as a requirement for Fallout New Vegas
+- Removed redundant check when generating extended items.
+- Fixed/Removed redundant deployment events during collection installation.
+- Fixed inability to install non-extensions from site domain. ([#16481](https://github.com/Nexus-Mods/Vortex/issues/16481))
+- Fixed manual deployment actions not recognized correctly.
+- Fixed manual file override assignment if/when mod has multiple matching file base names.
+- Fixed FBLO spamming log information for games that do not use that component (e.g. Skyrim).
+- Fixed redundant file override logic execution when nothing had changed.
+- Fixed FOLON/FO4 mixed collection issue. ([#16305](https://github.com/Nexus-Mods/Vortex/issues/16305))
+- Less generic error for rate limit breaches.
+- Added ability to disable the experimental move deployment method through the game registration call. ([#16200](https://github.com/Nexus-Mods/Vortex/issues/16200))
+- Fixed premature fileName reference comparison failure during collection install
+- Fixed download throttling when application is in background
+- Write the extensions manifest atomically to avoid corruption. ([#16666](https://github.com/Nexus-Mods/Vortex/issues/16666), [#16655](https://github.com/Nexus-Mods/Vortex/issues/16655))
+- Fixed checkboxes not rendering on load order entries.
+- Fixed exception when attempting to resolve the version of manually added mods without metadata
+- Fixed crash when attempting to group by enabled state and mods are being actively removed. ([#16609](https://github.com/Nexus-Mods/Vortex/issues/16609))
+- Fixed exception when attempting to see if the user is logged in. ([#16600](https://github.com/Nexus-Mods/Vortex/issues/16600))
+- Fixed failed profile switch when managing game using symlinks 
+- Fixed download notification spamming the UI during collection install
+- Fixes GameId/domainName reverse conversion not catering for multiple compatible games 
+- Improved Vortex corruption error message. ([#16591](https://github.com/Nexus-Mods/Vortex/issues/16591))
+- Fixes semantic coercion with leading zeroes
+- Fixed semver bug when whitespace in mod versions
+- Fixed promise chain when applying ini tweaks for Gamebryo games
+- Fixed incorrect fallback mod update selection
+- Fixed updater ignoring pre-release tag
+- Adding alternative game domains to future-proof API changes
+- **api**: Updated libloot to 0.24.5
+- **api**: Added coreceVersion as an API utility function ([#16304](https://github.com/Nexus-Mods/Vortex/issues/16304))
+- **api**: (Deprecated) libxmljs is no longer exported as part of Vortex's API.
+- **api**: Fixed load order entries losing their index on mod update/re-install. ([#16086](https://github.com/Nexus-Mods/Vortex/issues/16086))
+- **collections**: Fixed crash when switching profiles in the collection install dialog. ([#16242](https://github.com/Nexus-Mods/Vortex/issues/16242))
+- **collections**: Now uses improved coercion to better support dependency detection
+- **collections**: Added context menu action to apply collection rules manually
+- **collections**: Fixed collapsed mods tab table
+- **mod-dependency-manager**: No longer trim the versions of the mods to 3 digits
+- **modtype-bepinex**: Improved error handling for when no matching bepinex pack is found. ([#15933](https://github.com/Nexus-Mods/Vortex/issues/15933))
+- **modtype-bepinex**: Fixed installation error when installing BepInEx 6.0. ([#16587](https://github.com/Nexus-Mods/Vortex/issues/16587), [#15933](https://github.com/Nexus-Mods/Vortex/issues/15933))
+- **modtype-bepinex**: Fixed issues with BepInEx's mod entry update.
+- **7daystodie**: Attempts to block UDF from being set to Vortex directories
+- **7daystodie**: Fixed UDF dialog being raised incorrectly
+- **baldursgate3**: Fix to support Patch 7 load order format. ([#16384](https://github.com/Nexus-Mods/Vortex/issues/16384))
+- **masterchiefcollection**: Reduced mod depth to better support the new mod type
+- **stardewvalley**: Adds Settings option to backup mod config files. ([#15419](https://github.com/Nexus-Mods/Vortex/issues/15419))
+- **witcher3**: Fixed incorrect mod type assignment for certain mods
+- **witcher3**: Allows more granular load order support (multiple entries per mod)
+- **witcher3**: Fixes menu mod re-generation as part of collections
+- **witcher3**: Fixed minor issues caused by case sensitive checks
+
 ## [1.13.0-beta.7] - 2024-11-26
 
-* Fixed download throttling when application is in background
-* Fixed FBLO crash if mod removed while mutating the load order. ([#16585](https://github.com/Nexus-Mods/Vortex/issues/16585))
-* Write the extensions manifest atomically to avoid corruption. ([#16666](https://github.com/Nexus-Mods/Vortex/issues/16666), [#16655](https://github.com/Nexus-Mods/Vortex/issues/16655))
+- Fixed download throttling when application is in background
+- Fixed FBLO crash if mod removed while mutating the load order. ([#16585](https://github.com/Nexus-Mods/Vortex/issues/16585))
+- Write the extensions manifest atomically to avoid corruption. ([#16666](https://github.com/Nexus-Mods/Vortex/issues/16666), [#16655](https://github.com/Nexus-Mods/Vortex/issues/16655))
 
 ## [1.13.0-beta.6] - 2024-11-18
 
-* **witcher3**: Allows more granular load order support (multiple entries per mod)
-* **witcher3**: Fixes menu mod re-generation as part of collections
-* **7daystodie**: Attempts to block UDF from being set to Vortex directories
-* **stardewvalley**: Adds Settings option to backup mod config files. ([#15419](https://github.com/Nexus-Mods/Vortex/issues/15419))
+- **witcher3**: Allows more granular load order support (multiple entries per mod)
+- **witcher3**: Fixes menu mod re-generation as part of collections
+- **7daystodie**: Attempts to block UDF from being set to Vortex directories
+- **stardewvalley**: Adds Settings option to backup mod config files. ([#15419](https://github.com/Nexus-Mods/Vortex/issues/15419))
 
 ## [1.13.0-beta.5] - 2024-11-12
 
-* Fixed exception when attempting to resolve the version of manually added mods without metadata
-* Fixed crash when attempting to group by enabled state and mods are being actively removed. ([#16609](https://github.com/Nexus-Mods/Vortex/issues/16609))
-* Fixed exception when attempting to see if the user is logged in. ([#16600](https://github.com/Nexus-Mods/Vortex/issues/16600))
-* **api**: Updated libloot to 0.24.5
-* **api**: Fixed several issues with version coercion in the bepinex extension. ([#16626](https://github.com/Nexus-Mods/Vortex/issues/16626))
-* **witcher3**: Fixed minor issues caused by case sensitive checks
+- Fixed exception when attempting to resolve the version of manually added mods without metadata
+- Fixed crash when attempting to group by enabled state and mods are being actively removed. ([#16609](https://github.com/Nexus-Mods/Vortex/issues/16609))
+- Fixed exception when attempting to see if the user is logged in. ([#16600](https://github.com/Nexus-Mods/Vortex/issues/16600))
+- **api**: Updated libloot to 0.24.5
+- **api**: Fixed several issues with version coercion in the bepinex extension. ([#16626](https://github.com/Nexus-Mods/Vortex/issues/16626))
+- **witcher3**: Fixed minor issues caused by case sensitive checks
 
 ## [1.13.0-beta.4] - 2024-10-22
 
