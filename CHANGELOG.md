@@ -148,6 +148,18 @@ _Stable release based on [1.13.0-beta.7]_
 - **witcher3**: Fixed incorrect mod type assignment for certain mods
 - **masterchiefcollection**: Reduced mod depth to better support the new mod type
 
+## [1.12.6] - 2024-10-02
+
+- Fixed Starfield CC plugins being detected as native
+- **baldursgate3:** Load order will now serialize to exactly match IGMM `modsettings.lsx` format.
+
+## [1.12.5] - 2024-09-30
+
+- Fixed mod enable notification not appearing
+- **7daystodie**: Fixed UDF error when directory contains whitespace. ([16445](https://github.com/Nexus-Mods/Vortex/issues/16445))
+- **plugin-management**: Added Starfield: Shattered Space plugin to native list
+- **plugin-management**: Added ability to resolve native plugins through Regex patterns.
+
 ## [1.12.4] - 2024-09-11
 
 - **plugin-management:** Updated libloot to 0.23.1. ([16391](https://github.com/Nexus-Mods/Vortex/issues/16391)).
@@ -638,6 +650,8 @@ _Yanked due to critical issue found with file overrides_
 [1.13.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.3
 [1.13.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.2
 [1.13.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.1
+[1.12.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.6
+[1.12.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.5
 [1.12.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.4
 [1.12.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.3
 [1.12.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.12.2
