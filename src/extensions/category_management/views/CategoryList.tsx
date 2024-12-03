@@ -181,7 +181,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             onClick={this.selectNextMatch}
           />
         </div>
-        {((expandedTreeData || []).length > 0) ? (
           <SortableTree
             treeData={expandedTreeData}
             onChange={nop}
@@ -196,7 +195,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             getNodeKey={this.getNodeKey}
             generateNodeProps={this.generateNodeProps}
           />
-        ) : null}
       </div>
     );
   }

@@ -29,9 +29,7 @@ class CategoryDialog extends ComponentEx<IProps, {}> {
           <Modal.Title>{t('Categories')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <DNDContainer>
           <CategoryList />
-          </DNDContainer>
         </Modal.Body>
       </Modal>
     );
