@@ -28,7 +28,7 @@ import * as SortableTreeT from 'react-sortable-tree';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-const tree = lazyRequire<typeof SortableTreeT>(() => require('react-sortable-tree'));
+import SortableTree, { OnDragPreviousAndNextLocation, OnMovePreviousAndNextLocation, NodeData, FullTree } from 'react-sortable-tree';
 
 const nop = () => undefined;
 
@@ -135,7 +135,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const { expandedTreeData, searchString, searchFocusIndex,
             searchFoundCount } = this.state;
 
-    const Tree = tree.SortableTreeWithoutDndContext<INodeExtraArgs>;
     return (
       <div className='categories-dialog'>
         <IconBar
@@ -182,8 +181,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             onClick={this.selectNextMatch}
           />
         </div>
-        {((expandedTreeData || []).length > 0) ? (
-          <Tree
+          <SortableTree
             treeData={expandedTreeData}
             onChange={nop}
             onVisibilityToggle={this.toggleVisibility}
@@ -197,7 +195,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             getNodeKey={this.getNodeKey}
             generateNodeProps={this.generateNodeProps}
           />
-        ) : null}
       </div>
     );
   }
@@ -534,31 +531,26 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     this.updateExpandedTreeData(this.props.categories);
   }
 
-  private canDrop = (args: { node: SortableTreeT.TreeItem<INodeExtraArgs>,
-                             nextParent: SortableTreeT.TreeItem,
-                             prevParent: SortableTreeT.TreeItem,
-                             nextPath: Array<number | string>,
-                             prevPath: Array<number | string>,
-                             treeIndex: number }) => {
-    return !(args.nextPath ?? []).slice(0, -1).includes(args.node.categoryId);
+  private canDrop = (data: OnDragPreviousAndNextLocation & NodeData) => {
+    const { nextPath, node } = data;
+    return !(nextPath ?? []).slice(0, -1).includes(node['categoryId']);
   }
 
-  private moveNode =
-    (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem<INodeExtraArgs>,
-             treeIndex: number, path: string[] | number[] | React.ReactText[] }): void => {
+  private moveNode = (data: NodeData & FullTree & OnMovePreviousAndNextLocation) => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
-    if (args.path[args.path.length - 2] !== args.node.parentId) {
-      onSetCategory(gameMode, args.node.categoryId, {
-        name: args.node.title as string,
-        order: args.node.order,
-        parentCategory: (args.path as string[])[args.path.length - 2],
+    const { path, node, treeData } = data;
+    if (path[path.length - 2] !== node['parentId']) {
+      onSetCategory(gameMode, node['categoryId'], {
+        name: node.title as string,
+        order: node['order'],
+        parentCategory: (path as string[])[path.length - 2],
       });
     } else {
       const newOrder = (base: ICategoriesTree[]): string[] => {
         return [].concat(...base.map(node =>
           [node.categoryId, ...newOrder(node.children)]));
       };
-      onSetCategoryOrder(gameMode, newOrder(args.treeData as ICategoriesTree[]));
+      onSetCategoryOrder(gameMode, newOrder(treeData as ICategoriesTree[]));
     }
   }
 }

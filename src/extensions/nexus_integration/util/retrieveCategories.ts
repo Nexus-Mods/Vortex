@@ -65,7 +65,7 @@ function retrieveCategoryList(
           });
 
           fixLoops(res);
-          resolve(res);
+          return resolve(res);
         }
       })
       .catch((err) => {
