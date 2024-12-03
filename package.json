@@ -266,7 +266,7 @@
     "react-redux": "^7.1.3",
     "react-resize-detector": "^4.2.1",
     "react-select": "^1.2.1",
-    "react-sortable-tree": "TanninOne/react-sortable-tree",
+    "react-sortable-tree": "Nexus-Mods/react-sortable-tree",
     "recharts": "^1.8.5",
     "redux": "^4.0.4",
     "redux-act": "^1.7.7",

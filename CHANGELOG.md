@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.2] - 2024-12-03
+
+- Fixed rendering of categories 
+- Added ability to define optional extension requirements
+- **stardewvalley**: Fixed potential attempts to parse manifests of uninstalled mods ([#16650](https://github.com/Nexus-Mods/Vortex/issues/16650))
+- **falloutnv**: Sanity checks extension is now optional
+
+
 ## [1.13.1] - 2024-12-02
 
 _Stable release based on [1.13.0-beta.7]_
