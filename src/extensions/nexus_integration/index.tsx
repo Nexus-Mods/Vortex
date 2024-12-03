@@ -314,7 +314,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
       let gameId;
-      currentGame(api.store)
+      return currentGame(api.store)
         .then((game: IGameStored) => {
           gameId = game.id;
           const nexusId = nexusGameId(game);
