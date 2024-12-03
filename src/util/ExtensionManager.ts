@@ -486,14 +486,16 @@ class ContextProxyHandler implements ProxyHandler<any> {
                                     || (ext.name === id));
     };
 
-    const testValid = (extId: string, requiredId?: string, version?: string) => {
-      const req = findExt(requiredId);
-      if (req === undefined) {
-        setdefault(incompatibleExtensions, extId, []).push(
-          { id: 'dependency', args: { dependencyId: requiredId } });
-      } else if ((version !== undefined) && !semver.satisfies(req.info?.version, version)) {
-        setdefault(incompatibleExtensions, extId, []).push(
-          { id: 'dependency', args: { dependencyId: requiredId, version } });
+    const testValid = (extId: string, requiredId?: string, version?: string, optional?: boolean) => {
+      if (!optional) {
+        const req = findExt(requiredId);
+        if (req === undefined) {
+          setdefault(incompatibleExtensions, extId, []).push(
+            { id: 'dependency', args: { dependencyId: requiredId } });
+        } else if ((version !== undefined) && !semver.satisfies(req.info?.version, version)) {
+          setdefault(incompatibleExtensions, extId, []).push(
+            { id: 'dependency', args: { dependencyId: requiredId, version } });
+        }
       }
     };
 
