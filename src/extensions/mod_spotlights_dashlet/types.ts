@@ -35,3 +35,7 @@ export interface IMOTMEntryExt extends IMOTMEntry {
    */
   year: string;
 }
+
+export type ModSpotlightEntry = IMOTMEntry;
+export type ModSpotlightEntryExt = IMOTMEntryExt;
+export type VideoEntryType = 'modsofthemonth' | 'modspotlights';
