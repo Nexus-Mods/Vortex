@@ -45,7 +45,7 @@ function makeAddToHistory(api: IExtensionApi) {
 }
 
 function onErrorImpl(api: IExtensionApi, err: Error, evt: IHistoryEvent, stackId: string) {
-  const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled);
+  const allowReport = !(err instanceof ProcessCanceled || err instanceof UserCanceled || ['EPERM', 'EINVAL', 'ENOENT'].includes(err?.['code']));
   api.showErrorNotification('Failed to revert event', err, { allowReport });
   if (evt.reverted) {
     api.store.dispatch(setHistoryEvent(stackId, { ...evt, reverted: false }));
