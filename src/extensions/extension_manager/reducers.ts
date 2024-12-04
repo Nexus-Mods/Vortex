@@ -12,12 +12,15 @@ const sessionReducer: IReducerSpec = {
       setSafe(state, ['available'], payload),
     [actions.setInstalledExtensions as any]: (state, payload) =>
       setSafe(state, ['installed'], payload),
+    [actions.setOptionalExtensions as any]: (state, payload) =>
+      setSafe(state, ['optional'], payload),
     [actions.setExtensionsUpdate as any]: (state, payload) =>
       setSafe(state, ['updateTime'], payload),
   },
   defaults: {
     available: [],
     installed: {},
+    optional: {},
     updateTime: 0,
   },
 };
