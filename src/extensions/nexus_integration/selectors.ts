@@ -7,6 +7,9 @@ import { truthy } from '../../util/util';
 export const apiKey = (state: IState) =>
   getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
 
+export const userName = (state: IState) =>
+  getSafe(state, ['confidential', 'account', 'nexus', 'userInfo', 'name'], undefined);
+
 export const isLoggedIn = (state: IState) => {
   const APIKEY = state.confidential.account['nexus']?.APIKey;
   const OAuthCredentials = state.confidential.account['nexus']?.OAuthCredentials;

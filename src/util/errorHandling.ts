@@ -1,5 +1,6 @@
+/* eslint-disable */
 import { NEXUS_BASE_URL, OAUTH_CLIENT_ID } from '../extensions/nexus_integration/constants';
-import { IErrorOptions, IExtensionApi } from '../types/api';
+import { IErrorOptions, IExtensionApi, IFeedbackReport } from '../types/api';
 import { IError } from '../types/IError';
 
 import { COMPANY_ID } from './constants';
@@ -33,12 +34,12 @@ import lazyRequire from './lazyRequire';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
-function createTitle(type: string, error: IError, hash: string) {
+function createTitle(type: string, error: IError) {
   return `${type}: ${error.message}`;
 }
 
 interface IErrorContext {
-  [id: string]: string;
+  [id: string]: any;
 }
 
 const globalContext: IErrorContext = {};
@@ -91,7 +92,7 @@ ${error.details}
   if (Object.keys(context).length > 0) {
     sections.push(`#### Context
 \`\`\`
-${Object.keys(context).map(key => `${key} = ${context[key]}`)}
+${Object.keys(context).filter(key => context[key] !== 'extension-api').map(key => `${key} = ${context[key]}`)}
 \`\`\``);
   }
 
@@ -125,6 +126,26 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
   spawnSelf(['--report', reportPath]);
 }
 
+function githubReport(api: IExtensionApi, type: string, error: IError, labels: string[],
+                      context: IErrorContext, oauthToken: any, reporterProcess: string,
+                      sourceProcess: string) {
+    const title = createTitle(type, error);
+    const body = createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess);
+    const hash = genHash(body);
+    const feedbackReport: IFeedbackReport = {
+      title,
+      message: body,
+      files: [],
+      reporterProcess,
+      labels,
+      context,
+      error,
+      hash,
+    }
+    api.events.emit('report-feedback', feedbackReport);
+    return Promise.resolve(undefined);
+  }
+
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
                      context: IErrorContext, oauthToken: any,
                      reporterProcess: string, sourceProcess: string, attachment: string)
@@ -145,14 +166,12 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const anonymous = (oauthCredentials === undefined);
   return Promise.resolve(Nexus.createWithOAuth(oauthCredentials, config, 'Vortex', getApplication().version, undefined))
     .then(nexus => nexus.sendFeedback(
-      createTitle(type, error, hash),
+      createTitle(type, error),
       createReport(type, error, context, getApplication().version, reporterProcess, sourceProcess),
       attachment,
       anonymous,
       hash,
       referenceId))
-    .tap(() =>
-      opn(`${NEXUS_BASE_URL}/crash-report/?key=${referenceId}`).catch(() => null))
     .catch(err => {
       log('error', 'failed to report error to nexus', err.message);
       return undefined;
@@ -243,22 +262,17 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
 export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
                            reporterToken: any, reporterProcess: string,
-                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse | undefined> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
-  const hash = genHash(error);
-  if (process.env.NODE_ENV === 'development') {
-    const fullMessage = error.title !== undefined
-      ? error.message + `\n(${error.title})`
-      : error.message;
-    dialog.showErrorBox(fullMessage, JSON.stringify({
-      type, error, labels, context, reporterProcess, sourceProcess,
-      attachment,
-    }, undefined, 2));
+  // return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
+  //     reporterProcess, sourceProcess, attachment); 
+  const api: IExtensionApi = context['extension-api'];
+  if (api === undefined) {
+    dialog.showErrorBox(error.title, error.message);
     return Promise.resolve(undefined);
-  } else {
-    return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
-                       reporterProcess, sourceProcess, attachment);
   }
+  return githubReport(api, type, error, labels, context, reporterToken || fallbackOauthToken,
+    reporterProcess, sourceProcess);
 }
 
 let defaultWindow: BrowserWindow = null;
@@ -532,7 +546,7 @@ export function toError(input: any, title?: string,
  * @param id context id
  * @param value context value
  */
-export function setErrorContext(id: string, value: string) {
+export function setErrorContext(id: string, value: any) {
   globalContext[id] = value;
 }
 

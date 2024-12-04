@@ -4,6 +4,7 @@ import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';
+import { util } from '../../..';
 
 function zipFiles(files: string[]): Promise<string> {
   if (files.length === 0) {
@@ -26,6 +27,7 @@ function zipFiles(files: string[]): Promise<string> {
 
 function submitFeedback(nexus: NexusT, title: string, message: string, feedbackFiles: string[],
                         anonymous: boolean, hash: string): Promise<IFeedbackResponse> {
+  return Promise.reject(new util.NotSupportedError());
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {

@@ -1,31 +1,38 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+# Bug/Crash Report: {{title}}
+
+## System Information
+- **Application Version**: {{appVersion}}
+- **Platform**: {{platformVersion}}
+- **Architecture**: {{architecture}}
+- **Process**: renderer
+
+## Error Message
+{{errorMessage}}
+
+## Context
+- **Game/Mode**: {{gameMode}}
+- **Extension Version**: {{extensionVersion}}
+
+## External File (if applicable)
+- **File**: [Archive Attachment]({{externalFileUrl}})
+
+## Steps to Reproduce
+{{steps}}
+
+## Expected Behavior
+{{expectedBehavior}}
+
+## Actual Behavior
+{{actualBehavior}}
+
+## Reported By
+- **User**: {{reportedBy}}
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+### Additional Information:
+- **Date Reported**:
+{{dateReported}}
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Platform (please complete the following information):**
- - OS: [e.g. Windows 10]
- - Vortex Version [e.g. 0.16.12]
-
-**Additional context**
-Add any other context about the problem here.
+- **Additional Context**:
+{{additionalContext}}
