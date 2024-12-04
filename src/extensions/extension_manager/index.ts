@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
@@ -18,6 +19,7 @@ import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
 import { setDialogVisible, setExtensionEnabled } from '../../actions';
+import { getGame } from '../../util/api';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -362,6 +364,53 @@ function init(context: IExtensionContext) {
         });
       });
 
+    context.api.events.on('gamemode-activated', (gameMode: string) => {
+      const state = context.api.getState();
+      const game = getGame(gameMode);
+      const gameExtId = Object.keys(state.session.extensions.installed).find(key =>
+        game.extensionPath === state.session.extensions.installed[key].path);
+      if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
+        return;
+      }
+      const requiredIds = [];
+      for (const ext of state.session.extensions.optional[gameExtId]) {
+        if (!state.session.extensions.installed[ext.id]) {
+          requiredIds.push(ext.id);
+        }
+      }
+
+      if (requiredIds.length > 0) {
+        const t = context.api.translate;
+        context.api.sendNotification({
+          id: `missing-optional-extensions-${gameExtId}`,
+          type: 'warning',
+          message: 'Missing Optional Extension/s',
+          allowSuppress: true,
+          actions: [{
+            title: 'More', action: (dismiss) => {
+              context.api.showDialog('question', 'Missing Optional Extension/s', {
+                bbcode: t('Some optional extensions for "{{game}}" are missing.[br][/br][br][/br]'
+                      + 'Do you want to install them now?', { replace: { game: game.name } }),
+                message: `Missing extensions:\n\n${requiredIds.map(id => `- ${id}\n`).join('')}`,
+              }, [
+                { label: 'Cancel', action: () => dismiss() },
+                { label: 'Install', action: async () => {
+                  dismiss();
+                  for (const id of requiredIds) {
+                    await installDependency(context.api, id, updateExtensions);
+                  }    
+                }}
+              ])
+            }
+          }, {
+            title: 'Install Extension/s', action: async () => {
+              for (const id of requiredIds) {
+                await installDependency(context.api, id, updateExtensions);
+              }
+          }}]
+        });
+      }
+    });
     context.api.onAsync('install-extension-from-download', (archiveId: string) => {
       const state = context.api.getState();
       const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;

@@ -1,9 +1,11 @@
+/* eslint-disable */
 import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
 import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
 
+import { setOptionalExtensions } from '../extensions/extension_manager/actions';
 import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
@@ -26,7 +28,7 @@ import {
 } from '../types/IExtensionContext';
 import { ILookupOptions, IModLookupResult } from '../types/IModLookupResult';
 import { INotification } from '../types/INotification';
-import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
+import { IExtensionLoadFailure, IExtensionOptional, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
@@ -461,6 +463,25 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 
   /**
+   * Retrieve the map of optional extensions
+   *  Each optional requireExtension call is added against the id of the extension that requires it.
+   */
+  public getOptionalExtensions(allExtensions: IRegisteredExtension[]) {
+    const optionalRequireCalls = this.getCalls('requireExtension').filter(iter => iter.arguments.length > 2 && iter.arguments[2] === true);
+    const missingOptionals = optionalRequireCalls.reduce((acc, iter) => {
+      const callingExtensionKey = iter.extension;
+      const requiredKey = iter.arguments[0];
+      const ext = this.findExt(requiredKey, allExtensions);
+      if (ext === undefined) {
+        const optional: IExtensionOptional = { id: requiredKey, args: iter.arguments, extensionPath: iter.extensionPath };
+        acc = {...acc, [callingExtensionKey]: [].concat(acc[callingExtensionKey] || [], optional) as IExtensionOptional[]};
+      }
+      return acc;
+    }, {});
+    return missingOptionals;
+  }
+
+  /**
    * remove all init calls from incompatible extensions
    */
   public unloadIncompatible(furtherAPIs: Set<string>,
@@ -480,15 +501,9 @@ class ContextProxyHandler implements ProxyHandler<any> {
         .push({ id: 'unsupported-api' });
     });
 
-    const findExt = (id: string) => {
-      return allExtensions.find(ext => (ext.info?.name === id)
-                                    || (ext.info?.id === id)
-                                    || (ext.name === id));
-    };
-
     const testValid = (extId: string, requiredId?: string, version?: string, optional?: boolean) => {
       if (!optional) {
-        const req = findExt(requiredId);
+        const req = this.findExt(requiredId, allExtensions);
         if (req === undefined) {
           setdefault(incompatibleExtensions, extId, []).push(
             { id: 'dependency', args: { dependencyId: requiredId } });
@@ -625,6 +640,12 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     return Object.keys(dummy);
   }
+
+  public findExt = (id: string, allExtensions?: IRegisteredExtension[]) => {
+    return allExtensions.find(ext => (ext.info?.name === id)
+                                  || (ext.info?.id === id)
+                                  || (ext.name === id));
+  };
 }
 
 class EventProxy extends EventEmitter {
@@ -762,6 +783,7 @@ class ExtensionManager {
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
+  private mOptionalExtensions: { [extId: string]: IExtensionOptional[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: IStartHook[];
   private mToolParameterCBs: ToolParameterCB[];
@@ -987,6 +1009,7 @@ class ExtensionManager {
         this.mApi.showErrorNotification(message, data, options || undefined);
       });
 
+      store.dispatch(setOptionalExtensions(this.mOptionalExtensions));
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     } else {
       this.migrateExtensions();
@@ -1442,6 +1465,8 @@ class ExtensionManager {
       ...this.mContextProxyHandler.unloadIncompatible(
         ExtensionManager.sUIAPIs, this.mExtensions),
     };
+
+    this.mOptionalExtensions = this.mContextProxyHandler.getOptionalExtensions(this.mExtensions);
 
     // apply api extensions immediately after all extensions are loaded so they
     // become available asap
