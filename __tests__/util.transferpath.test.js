@@ -84,6 +84,10 @@ jest.mock('../src/util/fs', () => {
         size: 0,
       });
     },
+    ensureDirWritableAsync: jest.fn((dirPath) => {
+      insert(dirPath, { });
+      return Promise.resolve();
+    }),
     mkdirsAsync: jest.fn(dirPath => {
       insert(dirPath, { });
       return Promise.resolve();
