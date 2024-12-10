@@ -4,13 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.3] - 2024-12-10
+
+- Added notification for optional extension requirements
+- Updated 7zip binaries to latest version
+- **stardewvalley**: Fixed config mod sync failure. ([#16760](https://github.com/Nexus-Mods/Vortex/issues/16760))
+
 ## [1.13.2] - 2024-12-03
 
 - Fixed rendering of categories 
 - Added ability to define optional extension requirements
-- **stardewvalley**: Fixed potential attempts to parse manifests of uninstalled mods ([#16650](https://github.com/Nexus-Mods/Vortex/issues/16650))
+- **stardewvalley**: Fixed potential attempts to parse manifests of uninstalled mods. ([#16650](https://github.com/Nexus-Mods/Vortex/issues/16650))
 - **falloutnv**: Sanity checks extension is now optional
-
 
 ## [1.13.1] - 2024-12-02
 
@@ -650,6 +655,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.3
+[1.13.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.2
 [1.13.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.1
 [1.13.0-beta.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.7
 [1.13.0-beta.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.0-beta.6
