@@ -2441,7 +2441,7 @@ class ExtensionManager {
       'history_management',
       'analytics',
       'onboarding_dashlet',
-      'mods_of_the_month_dashlet'
+      'mod_spotlights_dashlet'
     ];
 
     require('./extensionRequire').default(() => this.extensions);

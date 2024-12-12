@@ -42,14 +42,14 @@
   align-items: center;
 }
 
-.dashlet-mods-of-the-month {
+.dashlet-mod-spotlights {
 
-  .dashlet-mods-of-the-month-info p {
+  .dashlet-mod-spotlights-info p {
     margin: 0px;
     margin-bottom: 4px;
   }
 
-  .dashlet-mods-of-the-month-webview-container {
+  .dashlet-mod-spotlights-webview-container {
     flex: auto;
     background-color: $black;
     border: $border-width solid $border-color;
@@ -60,7 +60,7 @@
     }
   }
 
-  .dashlet-mods-of-the-month-button-container {
+  .dashlet-mod-spotlights-button-container {
     height: auto !important;
     .btn-ghost {
       height: fit-content;
