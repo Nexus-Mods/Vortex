@@ -13,7 +13,6 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Added filter search bar to FBLO
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 
-
 ## [1.13.3] - 2024-12-10
 
 - Added notification for optional extension requirements
