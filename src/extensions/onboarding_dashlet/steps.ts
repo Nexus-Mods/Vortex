@@ -2,35 +2,19 @@ export const STEPS: IStep[] = [
   {
     title: 'Manage your game',
     desc: 'Learn how to add games for Vortex to manage.',
-    length: '2:28',
+    length: '2:25',
     img: 'assets/images/dashlets/add-game.png',
-    video: 'https://www.youtube.com/embed/vmJFBHD6gvg',
+    video: 'https://www.youtube.com/embed/_9ZT49X9fvQ',
     id: 'add-game',
   },
   {
-    title: 'Log in',
-    desc: 'Link your Nexus Mods account to Vortex.',
-    length: '2:25',
-    img: 'assets/images/dashlets/login-link.png',
-    video: 'https://www.youtube.com/embed/IMySUQ1flkQ',
-    id: 'login-and-link',
-  },
-  {
-    title: 'Install Tools',
-    desc: 'Install any required tools that will allow you to mod your game. ',
-    length: '4:13',
-    img: 'assets/images/dashlets/install-tools.png',
-    video: 'https://www.youtube.com/embed/boaEMPpmGDc',
-    id: 'install-tools',
-  },
-  {
-    title: 'Download Mods',
-    desc: 'Download and install the first of many mods for your game. ',
-    length: '3:00',
+    title: 'Download mods',
+    desc: 'Learn how to download mods to your games.',
+    length: '3:24',
     img: 'assets/images/dashlets/add-mods.png',
-    video: 'https://www.youtube.com/embed/Kt_6lwGd2Ns',
-    id: 'download-mods',
-  },
+    video: 'https://www.youtube.com/embed/noVpQl3mkfE',
+    id: 'add-mods',
+  }
 ];
 
 export interface IStep {

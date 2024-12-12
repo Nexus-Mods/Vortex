@@ -107,7 +107,7 @@ function OnBoardingDashletWrapper(props: {
           ? <CompletedOnBoardingDashlet getMoreMods={getMoreMods} />
           : <Dashlet title={t('Get Started')} className='dashlet-onboarding'>
             <p className='onboarding-subtitle'>
-              {t('Watch these 4 videos to guide you on how to start modding your favorite games.')}
+              {t('Watch these videos to guide you on how to start modding your favorite games.')}
             </p>
             <div className='onboarding-card-list'>
               {
