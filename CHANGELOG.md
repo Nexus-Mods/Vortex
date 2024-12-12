@@ -6,9 +6,13 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.14.0-beta.1 - 2025-xx-xx
 
+- Fixed recursive folder creation during staging path transfer. ([#16711](https://github.com/Nexus-Mods/Vortex/issues/16711))
+- Improved metadata lookup for locally imported downloads
 - Updated Onboarding videos
 - Changed Mods of the Month to Mods Spotlight
 - Added filter search bar to FBLO
+- **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
+
 
 ## [1.13.3] - 2024-12-10
 
