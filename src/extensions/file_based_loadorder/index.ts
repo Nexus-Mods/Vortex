@@ -2,7 +2,9 @@
 
 import * as _ from 'lodash';
 
-import { setValidationResult } from './actions/session';
+import * as path from 'path';
+
+import { setFBForceUpdate, setValidationResult } from './actions/session';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import {
@@ -30,6 +32,8 @@ import { setFBLoadOrderRedundancy } from './actions/session';
 
 import { addGameEntry, findGameEntry } from './gameSupport';
 import { assertValidationResult, errorHandler } from './util';
+
+import * as fs from '../../util/fs';
 
 import UpdateSet, { ILoadOrderEntryExt } from './UpdateSet';
 
@@ -219,6 +223,11 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
     await gameEntry.serializeLoadOrder(newLO, prev);
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
+  } finally {
+    // After serialization (even when failed), depending on the game extension,
+    //  we may need to force an update as the serialization function may have
+    //  changed the load order in some way.
+    api.store.dispatch(setFBForceUpdate(profile.id));
   }
 
   return;
@@ -264,6 +273,15 @@ export default function init(context: IExtensionContext) {
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
   context.registerReducer(['session', 'fblo'], sessionReducer);
 
+  const setOrder = async (profileId: string, loadOrder: types.LoadOrder, refresh?: boolean) => {
+    const profile = selectors.profileById(context.api.getState(), profileId);
+    if (!refresh) {
+      // Anything that isn't a refresh is a user action.
+      //  The Update set has to be re-initialized with the new load order.
+      updateSet.init(profile.gameId, loadOrder.map((lo, idx) => ({ ...lo, index: idx })));
+    }
+    context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder));
+  }
   context.registerMainPage('sort-none', 'Load Order', FileBasedLoadOrderPage, {
     id: 'file-based-loadorder',
     hotkey: 'E',
@@ -277,8 +295,46 @@ export default function init(context: IExtensionContext) {
     props: () => {
       return {
         getGameEntry: findGameEntry,
+        onImportList: async () => {
+          const api = context.api;
+          const file = await api.selectFile({ filters: [{ name: 'JSON', extensions: ['json'] }], title: 'Import Load Order' });
+          if (!file) {
+            return;
+          }
+          try {
+            const fileData = await fs.readFileAsync(file, { encoding: 'utf8' });
+            const loData: LoadOrder = JSON.parse(fileData);
+            if (!Array.isArray(loData)) {
+              throw new Error('invalid load order data');
+            }
+            updateSet.init(selectors.activeGameId(api.getState()), loData.map((lo, idx) => ({ ...lo, index: idx })));
+            const profileId = selectors.activeProfile(api.getState()).id;
+            context.api.store.dispatch(setFBLoadOrder(profileId, loData));
+            api.sendNotification({ type: 'success', message: 'Load order imported', id: 'import-load-order' });
+          } catch (err) {
+            api.showErrorNotification('Failed to import load order', err, { allowReport: false });
+          }
+        },
+        onExportList: async () => {
+          const api = context.api;
+          const state = api.getState();
+          const profileId = selectors.activeProfile(state).id;
+          const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+          const data = JSON.stringify(loadOrder, null, 2);
+          const loPath = await api.saveFile({ defaultPath: 'loadorder.json', filters: [{ name: 'JSON', extensions: ['json'] }], title: 'Export Load Order' });
+          if (loPath) {
+            try {
+              await fs.ensureDirWritableAsync(path.basename(loPath));
+              await fs.writeFileAsync(loPath, data);
+              api.sendNotification({ type: 'success', message: 'Load order exported', id: 'export-load-order' });
+            } catch (err) {
+              api.showErrorNotification('Failed to export load order', err, { allowReport: false });
+            }
+          }
+        },
         validateLoadOrder: (profile: types.IProfile, loadOrder: LoadOrder) =>
           validateLoadOrder(context.api, profile, loadOrder),
+        onSetOrder: setOrder,
         onStartUp: (gameId: string) => onStartUp(context.api, gameId),
         onShowError: (gameId: string, error: Error) => errorHandler(context.api, gameId, error),
       };
@@ -325,6 +381,8 @@ export default function init(context: IExtensionContext) {
     context.api.onStateChange(['persistent', 'profiles'],
       (prev, current) => genProfilesChange(context.api, prev, current));
 
+    context.api.events.on('gamemode-activated', (gameId: string) => onGameModeActivated(context.api, gameId));
+
     context.api.onAsync('did-deploy', genDidDeploy(context.api));
     context.api.onAsync('will-purge', genWillPurge(context.api));
     context.api.onAsync('did-purge', genDidPurge(context.api));
@@ -337,6 +395,15 @@ export default function init(context: IExtensionContext) {
   });
 
   return true;
+}
+
+async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
+  const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
+  if (gameEntry === undefined) {
+    // Game does not require LO.
+    return;
+  }
+  updateSet.init(gameId);
 }
 
 async function onWillRemoveMods(api: types.IExtensionApi,
