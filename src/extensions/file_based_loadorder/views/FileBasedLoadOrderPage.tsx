@@ -322,10 +322,6 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
       .finally(() => onSetOrder(profile.id, newLO));
   }
 
-  private onImportList = () => {
-    
-  }
-
   private onRefreshList = () => {
     const { onStartUp, onSetOrder, profile } = this.props;
     this.nextState.updating = true;
