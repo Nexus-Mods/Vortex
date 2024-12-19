@@ -354,7 +354,7 @@ export default function init(context: IExtensionContext) {
         util.getSafe(state, ['persistent', 'mods', gameId], {});
       return generate(context.api, state, gameId, stagingPath, includedMods, mods);
     },
-    (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
+    (gameId: string, collection: ICollection) => parser(context.api, gameId, collection, updateSet),
     () => Promise.resolve(),
     (t) => t('Load Order'),
     (state: types.IState, gameId: string) => {
