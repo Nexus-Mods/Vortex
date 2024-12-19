@@ -22,7 +22,6 @@ export default class UpdateSet extends Set<number> {
     super([]);
     this.mApi = api;
     this.mIsFBLO = isFBLO;
-    this.registerListeners();
   }
 
   public addNumericModId = (lo: ILoadOrderEntryExt) => {
@@ -79,19 +78,6 @@ export default class UpdateSet extends Set<number> {
     return filtered;
   };
 
-  private registerListeners = () => {
-    this.mApi.events.on('gamemode-activated', this.init);
-  }
-
-  private removeListeners = () => {
-    this.mApi.events.removeListener('gamemode-activated', this.init);
-  }
-
-  public destroy = () => {
-    this.removeListeners();
-    this.reset();
-  }
-
   private reset = () => {
     super.clear();
     this.mModEntries = [];
@@ -131,24 +117,22 @@ export default class UpdateSet extends Set<number> {
       return loadOrder;
     }
     const restoredLO: ILoadOrderEntry[] = [...loadOrder];
-    loadOrder.forEach((iter, idx) => {
-      // Check if the updateSet has this modId.
-      const stored: { numId: number, entries: ILoadOrderEntryExt[] } = this.findEntry(iter);
-      if (stored) {
-        // We're only interested in 1 specific entry, keep in mind that there might be multiple lo entries
-        //  that are associated with the same numeric mod id.
-        const entryExt: ILoadOrderEntryExt = stored.entries.find(l => l.name === iter.name);
-        if (entryExt && entryExt.index !== idx) {
-          // The entry is in the wrong position - re-arrange the array.
-          restoredLO.splice(idx, 1);
-          restoredLO.splice(entryExt.index, 0, iter);
-
-          // We only remove the numeric mod id if we confirm that we modified the
-          //  list, otherwise we keep it around as the restoration functionality
-          //  can be called multiple times without modification.
-          this.tryRemoveNumId(stored.numId, stored.entries, iter.name);
-        }
+    const getEntryExt = (entry: ILoadOrderEntry): ILoadOrderEntryExt | null => {
+      const stored = this.findEntry(entry);
+      if (!stored) {
+        // This is probably an entry for a manually added mod/native game entry
+        //  use the existing index.
+        return { ...entry, index: loadOrder.findIndex(l => l.name === entry.name) };
       }
+      return stored.entries.find(l => l.name === entry.name) || null;
+    }
+    restoredLO.sort((lhs, rhs) => {
+      const lhsEntry = getEntryExt(lhs);
+      const rhsEntry = getEntryExt(rhs);
+      if (!lhsEntry || !rhsEntry) {
+        return 0;
+      }
+      return lhsEntry.index - rhsEntry.index;
     });
     return restoredLO;
   }

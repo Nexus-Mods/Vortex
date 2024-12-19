@@ -15,6 +15,7 @@ import { findGameEntry } from '../gameSupport';
 import { genCollectionLoadOrder } from '../util';
 
 import LoadOrderCollections from '../views/LoadOrderCollections';
+import UpdateSet from '../UpdateSet';
 
 export async function generate(api: types.IExtensionApi,
                                state: types.IState,
@@ -49,7 +50,8 @@ export async function generate(api: types.IExtensionApi,
 
 export async function parser(api: types.IExtensionApi,
                              gameId: string,
-                             collection: ICollection): Promise<void> {
+                             collection: ICollection,
+                             updateSet: UpdateSet): Promise<void> {
   const state = api.getState();
 
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
@@ -57,6 +59,7 @@ export async function parser(api: types.IExtensionApi,
     return Promise.reject(new CollectionParseError(collection, 'Invalid profile id'));
   }
 
+  updateSet.init(gameId, (collection.loadOrder ?? []).map((lo, index) => ({ ...lo, index })));
   api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
   return Promise.resolve(undefined);
 }
