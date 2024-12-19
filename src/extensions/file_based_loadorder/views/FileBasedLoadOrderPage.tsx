@@ -2,7 +2,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
-import { withTranslation } from 'react-i18next';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
 import * as actions from '../../../actions/index';
@@ -20,6 +20,7 @@ import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
 import InfoPanel from './InfoPanel';
 import ItemRenderer from './ItemRenderer';
 import { setFBForceUpdate } from '../actions/session';
+import ToolbarDropdown from '../../../controls/ToolbarDropdown';
 
 const PanelX: any = Panel;
 
@@ -32,6 +33,9 @@ interface IBaseState {
 
 export interface IBaseProps {
   getGameEntry: (gameId: string) => ILoadOrderGameInfo;
+  onImportList: () => void;
+  onExportList: () => void;
+  onSetOrder: (profileId: string, loadOrder: LoadOrder, refresh?: boolean) => void;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
   onShowError: (gameId: string, error: Error) => void;
   validateLoadOrder: (profile: types.IProfile, newLO: LoadOrder) => Promise<void>;
@@ -59,7 +63,6 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
-  onSetOrder: (profileId: string, loadOrder: LoadOrder) => void;
   onForceRefresh: (profileId: string) => void;
 }
 
@@ -123,13 +126,34 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             onClick: this.onRefreshList,
           };
         },
-      },
+      }, {
+        component: ToolbarDropdown,
+        props: () => {
+          return {
+            t: this.props.t,
+            key: 'btn-import-export-list',
+            id: 'btn-import-export-list',
+            instanceId: [],
+            icons: [
+            {
+              icon: (this.state.updating || this.props.disabled) ? 'spinner' : 'import',
+              title: 'Load Order Import',
+              action: this.props.onImportList,
+              default: true,
+            }, {
+              icon: (this.state.updating || this.props.disabled) ? 'spinner' : 'import',
+              title: 'Load Order Export',
+              action: this.props.onExportList,
+            }]
+          }
+        }
+      }
     ];
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     // Zuckerberg isn't going to like this...
-    if (this.state.currentRefreshId !== newProps.refreshId) {
+    if (!!newProps.refreshId && this.state.currentRefreshId !== newProps.refreshId) {
       this.nextState.currentRefreshId = newProps.refreshId;
       this.onRefreshList();
       return;
@@ -286,12 +310,12 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     onStartUp(profile?.gameId)
       .then(lo => {
         this.nextState.validationError = undefined;
-        onSetOrder(profile.id, lo);
+        onSetOrder(profile.id, lo, true);
       })
       .catch(err => {
         if (err instanceof LoadOrderValidationError) {
           this.nextState.validationError = err as LoadOrderValidationError;
-          onSetOrder(profile.id, err.loadOrder);
+          onSetOrder(profile.id, err.loadOrder, true);
         }
       })
       .finally(() => this.nextState.updating = false);
@@ -318,9 +342,6 @@ function mapDispatchToProps(dispatch: any): IActionProps {
   return {
     onSetDeploymentNecessary: (gameId: string, necessary: boolean) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
-    onSetOrder: (profileId: string, loadOrder: types.LoadOrder) => {
-      dispatch(setFBLoadOrder(profileId, loadOrder));
-    },
     onForceRefresh: (profileId: string) => {
       dispatch(setFBForceUpdate(profileId))
     },
