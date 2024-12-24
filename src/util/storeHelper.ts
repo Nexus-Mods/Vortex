@@ -17,7 +17,7 @@ function clone<T>(input: T): T {
 
 /**
  * return an item from state or the fallback if the path doesn't lead
- * to an item.
+ * to an item or if the item is null/undefined.
  *
  * @export
  * @template T
@@ -28,19 +28,13 @@ function clone<T>(input: T): T {
  */
 export function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T {
   let current = state;
-  for (const segment of path) {
-    if ((current === undefined)
-        || (current === null)
-        || !Object.hasOwnProperty.call(current, segment)) {
+  for (let i = 0; i < path.length; i++) {
+    current = current?.[path[i]];
+    if (current == null) {
       return fallback;
-    } else {
-      current = current[segment];
     }
   }
-  if (current === undefined) {
-    return fallback;
-  }
-  return current;
+  return current ?? fallback;
 }
 
 /**
