@@ -213,11 +213,10 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
       const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
       const name: Element = xmlDoc.querySelector('fomod Name');
       return truthy(name)
-        ? {
-          customFileName: name.childNodes[0].nodeValue,
-        } : {};
+        ? Bluebird.resolve({ customFileName: name.childNodes[0].nodeValue })
+        : Bluebird.resolve({});
     })
-    .catch(() => ({}));
+    .catch(() => Bluebird.resolve({}));
 }
 
 function spawnAsync(command: string, args: string[]): Promise<void> {

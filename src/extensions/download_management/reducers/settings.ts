@@ -23,16 +23,19 @@ export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
       setSafe(state, ['copyOnIFF'], payload),
     [actions.setMaxBandwidth as any]: (state, payload) =>
       setSafe(state, ['maxBandwidth'], payload),
+    [actions.setCollectionConcurrency as any]: (state, payload) =>
+      setSafe(state, ['collectionsInstallWhileDownloading'], payload),
   },
   defaults: {
     minChunkSize: 1024 * 1024,
-    maxChunks: 4,
+    maxChunks: 10,
     maxParallelDownloads: 1,
     maxBandwidth: 0,
     path: path.join('{USERDATA}', 'downloads'),
     showDropzone: true,
     showGraph: true,
     copyOnIFF: false,
+    collectionsInstallWhileDownloading: false,
   },
   verifiers: {
     path: {

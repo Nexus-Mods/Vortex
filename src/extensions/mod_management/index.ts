@@ -153,8 +153,24 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
   mergers.push({ test, merge, modType });
 }
 
+const shouldSuppressUpdate = (api: IExtensionApi) => {
+  const state = api.getState();
+  const suppressOnActivities = ['conflicts', 'installing_dependencies', 'purging'];
+  const isActivityRunning = (activity: string) =>
+    getSafe(state, ['session', 'base', 'activity', 'mods'], []).includes(activity) // purge/deploy
+    || getSafe(state, ['session', 'base', 'activity', activity], []).length > 0; // installing_dependencies
+  const suppressingActivities = suppressOnActivities.filter(activity => isActivityRunning(activity));
+  const suppressing = suppressingActivities.length > 0;
+  if (suppressing) {
+    log('info', 'skipping settings bake', { activities: suppressingActivities });
+  }
+  return suppressing;
+}
+
 function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod[]) {
-  return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
+  return shouldSuppressUpdate(api)
+    ? Promise.resolve()
+    : api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
 }
 
 function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {

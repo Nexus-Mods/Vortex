@@ -384,10 +384,10 @@ class InstallManager {
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Bluebird.resolve(forceGameId)
         : queryGameId(api.store, downloadGameIds, modId))
-      .tap(gameId => {
+      .then(async gameId => {
         installGameId = gameId;
         if (installGameId === undefined) {
-          return Bluebird.reject(
+          return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
         if (installGameId === 'site' && baseName.toLowerCase().includes('extension')) {
@@ -397,7 +397,7 @@ class InstallManager {
           //  do without API providing a unique tag for us to identify Vortex extensions. (AFAIK we can't even query the existing tags from the website)
           // Installation of non-Vortex tools with the extension basename will just install as a mod for
           //  the current game which I guess should be fine.
-          return Promise.resolve();
+          return Promise.resolve(installGameId);
         }
         const state = api.getState();
         const games = knownGames(state);
@@ -408,20 +408,26 @@ class InstallManager {
           const installProfileId = lastActiveProfileForGame(state, installGameId);
           installProfile = profileById(state, installProfileId);
         }
-        return api.emitAndAwait('will-install-mod', gameId, archiveId, modId, fullInfo);
+        // TODO make the download first functionality optional
+        await api.emitAndAwait('will-install-mod', gameId, archiveId, modId, fullInfo);
+        return Bluebird.resolve(gameId);
       })
       // calculate the md5 hash here so we can store it with the mod meta information later,
       // otherwise we'd not remember the hash when installing from external file
       .tap(() => genHash(archivePath).then(hash => {
         archiveMD5 = hash.md5sum;
         archiveSize = hash.numBytes;
-        _.merge(fullInfo, {
-          download: {
-            fileMD5: archiveMD5,
-            size: archiveSize,
-          },
-        });
-      }).catch(() => null))
+        try {
+          _.merge(fullInfo, {
+            download: {
+              fileMD5: archiveMD5,
+              size: archiveSize,
+            },
+          });
+        } catch (err) {
+          // no operation
+        }
+    }))
       .then(gameId => {
         if (installGameId === 'site') {
           // install an already-downloaded extension
@@ -1480,8 +1486,8 @@ class InstallManager {
       }
     }
 
-    log('debug', 'installer instructions',
-        JSON.stringify(result.instructions.map(instr => _.omit(instr, ['data']))));
+    // log('debug', 'installer instructions',
+    //     JSON.stringify(result.instructions.map(instr => _.omit(instr, ['data']))));
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
@@ -2633,7 +2639,7 @@ class InstallManager {
 
           return (dep.mod === undefined)
             ? queryWrongMD5()
-                .then(() => installDownload(dep, downloadId))
+                .then(() => api.getState().settings.downloads.collectionsInstallWhileDownloading ? installDownload(dep, downloadId) : Bluebird.resolve(null))
                 .catch(err => {
                   if (dep['reresolveDownloadHint'] === undefined) {
                     return Bluebird.reject(err);
@@ -2666,6 +2672,9 @@ class InstallManager {
 
     const phaseList = Object.values(phases);
 
+    const findDownloadId = (dep: IDependency) => {
+      return Object.keys(downloads).find(dlId => downloads[dlId].modInfo?.referenceTag === dep.reference.tag);
+    }
     const res: Bluebird<IDependency[]> = Bluebird.reduce(phaseList,
       (prev: IDependency[], depList: IDependency[], idx: number) => {
         if (depList.length === 0) {
@@ -2674,6 +2683,18 @@ class InstallManager {
         return this.doInstallDependenciesPhase(api, depList, gameId, sourceModId,
                                                recommended,
                                                doDownload, abort)
+          .then(async (updated: IDependency[]) => api.getState().settings.downloads.collectionsInstallWhileDownloading
+            ? Promise.resolve(updated)
+            : new Promise<IDependency[]>(async (resolve, reject) => {
+              const sorted = ([...updated]).sort((a, b) => (a.reference.fileSize ?? 0) - (b.reference.fileSize ?? 0));
+              try {
+                // Give the state a chance to catch up
+                await Promise.all(sorted.map(dep => installDownload(dep, findDownloadId(dep))));
+                return resolve(updated);
+              } catch (err) {
+                return reject(err);
+              }
+          }))
           .then((updated: IDependency[]) => {
             if (idx === phaseList.length - 1) {
               return Bluebird.resolve(updated);
@@ -3255,13 +3276,13 @@ class InstallManager {
       const fullPath: string =
         path.join(downloadPathForGame(state, downloadGame[0]), download.localPath);
       this.install(downloadId, fullPath, downloadGame,
-        api, { ...modInfo, download }, false, false, (error, id) => {
+        api, { ...modInfo, download }, false, silent, (error, id) => {
           if (error === null) {
-            resolve(id);
+            return resolve(id);
           } else {
-            reject(error);
+            return reject(error);
           }
-        }, forceGameId, fileList, true, undefined, silent);
+        }, forceGameId, fileList, silent, undefined, false);
     });
   }
 
