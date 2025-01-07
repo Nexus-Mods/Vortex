@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.4-beta.1] - 2024-12-19
+## [1.13.5] - 2025-01-07
+
+_Stable release based on 1.13.4-beta.1_
+
+- Fixed intermittent Load Order reset when installing a mod
+
+## 1.13.4-beta.1 - 2024-12-19
+
+_Pre-release before xmas break. Barely distribtued._
 
 - Fixed intermittent Load Order reset when installing a mod
 
@@ -659,6 +667,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.5
 [1.13.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.3
 [1.13.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.2
 [1.13.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.1
