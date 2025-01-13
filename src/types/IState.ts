@@ -218,6 +218,7 @@ export interface ISettingsDownloads {
   showDropzone: boolean;
   showGraph: boolean;
   copyOnIFF: boolean;
+  collectionsInstallWhileDownloading: boolean;
 }
 
 export interface IStatePaths {

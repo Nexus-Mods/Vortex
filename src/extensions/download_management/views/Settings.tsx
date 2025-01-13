@@ -25,7 +25,7 @@ import { Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
          nexusModsURL, Section, Source } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
 import { PREMIUM_PATH } from '../../nexus_integration/constants';
-import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads } from '../actions/settings';
+import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads, setCollectionConcurrency } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from '../util/downloadDirectory';
@@ -54,6 +54,7 @@ interface IConnectedProps {
   instanceId: string;
   copyOnIFF: boolean;
   maxBandwidth: number;
+  collectionsInstallWhileDownloading: boolean;
 }
 
 interface IActionProps {
@@ -66,6 +67,7 @@ interface IActionProps {
                 allowReport: boolean, isBBCode?: boolean) => void;
   onSetCopyOnIFF: (enabled: boolean) => void;
   onSetMaxBandwidth: (bps: number) => void;
+  onSetCollectionConcurrency: (enabled: boolean) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -224,6 +226,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FormGroup>
         <FormGroup>
           <Toggle
+            checked={this.props.collectionsInstallWhileDownloading}
+            onToggle={this.toggleCollectionInstallConcurrency}
+          >
+            {t('Install mods during collection downloads')}
+          </Toggle>
+          <Toggle
             checked={copyOnIFF}
             onToggle={this.toggleCopyOnIFF}
           >
@@ -244,6 +252,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private toggleCopyOnIFF = (newValue: boolean) => {
     this.props.onSetCopyOnIFF(newValue);
+  }
+
+  private toggleCollectionInstallConcurrency = (newValue: boolean) => {
+    this.props.onSetCollectionConcurrency(newValue);
   }
 
   private isPathSensible(input: string): boolean {
@@ -704,6 +716,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     instanceId: state.app.instanceId,
     copyOnIFF: state.settings.downloads.copyOnIFF,
     maxBandwidth: state.settings.downloads.maxBandwidth,
+    collectionsInstallWhileDownloading: state.settings.downloads.collectionsInstallWhileDownloading
   };
 }
 
@@ -719,6 +732,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       showError(dispatch, message, details, { allowReport, isBBCode }),
     onSetCopyOnIFF: (enabled: boolean) => dispatch(setCopyOnIFF(enabled)),
     onSetMaxBandwidth: (bps: number) => dispatch(setMaxBandwidth(bps)),
+    onSetCollectionConcurrency: (enabled: boolean) => dispatch(setCollectionConcurrency(enabled)),
   };
 }
 
