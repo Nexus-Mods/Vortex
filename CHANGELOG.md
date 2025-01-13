@@ -11,6 +11,9 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Updated Onboarding videos
 - Changed Mods of the Month to Mods Spotlight
 - Added filter search bar to FBLO
+- **plugin-management**: Fixed plugin page displaying overriden mod as source
+- **collections**: Speed optimizations when installing collections and various performance tweaks ([#16858](https://github.com/Nexus-Mods/Vortex/issues/16858), [#16871](https://github.com/Nexus-Mods/Vortex/issues/16871), [#16906](https://github.com/Nexus-Mods/Vortex/issues/16906))
+- **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 
 ## [1.13.5] - 2025-01-07 
@@ -676,6 +679,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.5
 [1.13.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.3
 [1.13.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.2
 [1.13.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.1
