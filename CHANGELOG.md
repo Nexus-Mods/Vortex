@@ -13,6 +13,18 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Added filter search bar to FBLO
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 
+## [1.13.5] - 2025-01-07 
+ 
+_Stable release based on 1.13.4-beta.1_ 
+ 
+- Fixed intermittent Load Order reset when installing a mod 
+ 
+## 1.13.4-beta.1 - 2024-12-19 
+ 
+_Pre-release before xmas break. Barely distribtued._ 
+ 
+- Fixed intermittent Load Order reset when installing a mod 
+
 ## [1.13.3] - 2024-12-10
 
 - Added notification for optional extension requirements
