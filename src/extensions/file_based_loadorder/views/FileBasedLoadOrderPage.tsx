@@ -37,6 +37,7 @@ export interface IBaseProps {
   onImportList: () => void;
   onExportList: () => void;
   onSetOrder: (profileId: string, loadOrder: LoadOrder, refresh?: boolean) => void;
+  onSortByDeployOrder: (profileId: string) => void;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
   onShowError: (gameId: string, error: Error) => void;
   validateLoadOrder: (profile: types.IProfile, newLO: LoadOrder) => Promise<void>;
@@ -149,6 +150,19 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             }]
           }
         }
+      },
+      {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-sort-by-deploy-order',
+            key: 'btn-sort-by-deploy-order',
+            icon: this.state.updating ? 'spinner' : 'loot-sort',
+            text: 'Sort by Deploy Order',
+            className: 'load-order-sort-deploy-order',
+            onClick: () => this.state.updating ? null : this.props.onSortByDeployOrder(this.props.profile.id),
+          };
+        },
       }
     ];
   }
