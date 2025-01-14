@@ -27,7 +27,7 @@ export function migrateToFBLO(api: IExtensionApi, props: IProps, entry: deprecat
     usageInstructions: entry?.createInfoPanel({ refresh: () => props.refresh }),
     deserializeLoadOrder: deserializeLoadOrder.bind(null, api, entry),
     serializeLoadOrder: ((current, previous) =>
-      serializeLoadOrder(api, entry, current, previous)),
+      serializeLoadOrder.bind(api, entry, current, previous)),
     validate: validate.bind(null, entry),
     toggleableEntries: entry?.displayCheckboxes ?? false,
     clearStateOnPurge: true,
@@ -51,11 +51,9 @@ async function serializeLoadOrder(api: IExtensionApi, entry: deprecated.IGameLoa
   if (loadOrderPath === undefined) {
     return Promise.resolve();
   } else {
-    const mods: { [modId: string]: IMod } = api.getState().persistent.mods[entry.gameId];
-    const filtered = Object.values(mods).filter((m: IMod) =>
-      (!current.find(lo => lo.id === m.id)) && (entry.filter ? entry.filter([m]) : () => true));
-  
-    return fs.writeFileAsync(loadOrderPath, JSON.stringify(filtered, undefined, 2), { encoding: 'utf8' });
+    const deprecatedEntries = toDeprecatedDisplayItems(current) ?? [];
+    const preSorted = await entry.preSort(deprecatedEntries as any, 'ascending', 'drag-n-drop');
+    return fs.writeFileAsync(loadOrderPath, JSON.stringify(preSorted, undefined, 2), { encoding: 'utf8' });
   }
 }
 
@@ -95,6 +93,22 @@ export function getPersistentLoadOrder(api: IExtensionApi, loadOrder?: deprecate
     return Object.entries(loadOrder).map(([key, item]) => convertDisplayItem(key, item));
   }
   return [];
+}
+
+function toDeprecatedDisplayItems(items: ILoadOrderEntry[]): deprecated.ILoadOrderEntry[] {
+  return items.map((item, idx) => ({
+    id: item.id,
+    name: item.name,
+    enabled: item.enabled,
+    locked: item.locked,
+    prefix: item.data?.prefix,
+    pos: idx,
+    imgUrl: null,
+    external: !item.modId,
+    data: {
+      prefix: item.data?.prefix,
+    }
+  } as deprecated.ILoadOrderEntry));
 }
 
 function convertDisplayItem(key: string, item: deprecated.ILoadOrderEntry): ILoadOrderEntry {

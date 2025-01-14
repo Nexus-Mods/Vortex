@@ -76,6 +76,12 @@ export interface ILoadOrderGameInfo {
   toggleableEntries?: boolean;
 
   /**
+   * For cases like BG3 where the import/export functionality defined
+   *  in the game extension is more robust than the default one provided.
+   */
+  disableLoadOrderImportExportButtons?: boolean;
+
+  /**
    * Defaults to true unless specified otherwise.
    *  The load order will get cleared upon purge by default.
    * Set this to false if you want to preserve the load order.
