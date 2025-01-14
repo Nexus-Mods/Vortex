@@ -1098,7 +1098,7 @@ class Application {
   }
 
   private applyArguments(args: IParameters) {
-    if (args.download || args.install) {
+    if (args.download || args.install || args.installArchive) {
       const prom: Promise<void> = (this.mMainWindow === undefined)
         // give the main instance a moment to fully start up
         ? Promise.delay(2000)
@@ -1106,8 +1106,12 @@ class Application {
 
       prom.then(() => {
         if (this.mMainWindow !== undefined) {
-          this.mMainWindow.sendExternalURL(args.download || args.install,
-            args.install !== undefined);
+          if (args.download || args.install) {
+            this.mMainWindow.sendExternalURL(args.download || args.install, args.install !== undefined);
+          }
+          if (args.installArchive) {
+            this.mMainWindow.installModFromArchive(args.installArchive);
+          }
         } else {
           // TODO: this instructions aren't very correct because we know Vortex doesn't have
           // a UI and needs to be shut down from the task manager

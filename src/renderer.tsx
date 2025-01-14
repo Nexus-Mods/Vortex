@@ -1,6 +1,4 @@
-/**
- * entry point for the renderer process(es)
- */
+/* eslint-disable */
 
 if (process.env.DEBUG_REACT_RENDERS === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -518,9 +516,22 @@ function init() {
 
   const startupPromise = new Promise(resolve => (startupFinished = resolve));
 
+  const api = extensions.getApi();
   // tslint:disable-next-line:no-unused-variable
-  const globalNotifications = new GlobalNotifications(extensions.getApi());
+  const globalNotifications = new GlobalNotifications(api);
 
+  function startinstallFromArchive(filePath: string) {
+    startupPromise.then(() => {
+      if (typeof filePath !== 'string' || !path.isAbsolute(filePath)) {
+        return;
+      }
+      api.events.emit('import-downloads', [filePath], (dlIds: string[]) => {
+        dlIds.forEach(dlId => {
+          api.events.emit('start-install-download', dlId);
+        });
+      });
+    });
+  }
   function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
     startupPromise.then(() => {
       if (typeof url !== 'string') {
@@ -557,6 +568,12 @@ function init() {
       startDownloadFromURL(url, fileName, install);
     },
   );
+
+  ipcRenderer.on(
+    'install-archive',
+    (event, filePath: string) => {
+      startinstallFromArchive(filePath);
+  });
 
   ipcRenderer.on('relay-event', (sender, event, ...args) => {
     eventEmitter.emit(event, ...args);
