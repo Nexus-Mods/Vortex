@@ -14,7 +14,15 @@ export const STEPS: IStep[] = [
     img: 'assets/images/dashlets/add-mods.png',
     video: 'https://www.youtube.com/embed/noVpQl3mkfE',
     id: 'add-mods',
-  }
+  },
+  {
+    title: 'Use Profiles',
+    desc: 'Learn how to use Vortex profiles.',
+    length: '1:49',
+    img: 'assets/images/dashlets/install-tools.png',
+    video: 'https://www.youtube.com/embed/63oESK4MwH8',
+    id: 'use-profiles',
+  },
 ];
 
 export interface IStep {
