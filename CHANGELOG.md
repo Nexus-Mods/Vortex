@@ -16,6 +16,11 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 
+## [1.13.6] - 2025-01-20
+
+- Added sanity check to the setLoadOrder action
+- **baldursgate3**: Fixed incorrect action use during import from file
+
 ## [1.13.5] - 2025-01-07 
  
 _Stable release based on 1.13.4-beta.1_ 
