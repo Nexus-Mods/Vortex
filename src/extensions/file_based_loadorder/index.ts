@@ -367,6 +367,15 @@ export default function init(context: IExtensionContext) {
     Interface,
   );
 
+  context.registerActionCheck('SET_FB_LOAD_ORDER', (state, action: any) => {
+      const { profileId, loadOrder } = action.payload;
+      const profile = selectors.profileById(state, profileId);
+      if (updateSet && profile !== undefined) {
+        updateSet.init(profile.gameId, loadOrder.map((lo, idx) => ({ ...lo, index: idx })));
+      }
+      return undefined;
+    });
+
   context.once(() => {
     updateSet = new UpdateSet(context.api, (gameId: string) => {
       const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);

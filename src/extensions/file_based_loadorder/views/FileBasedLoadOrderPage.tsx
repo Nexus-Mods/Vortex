@@ -2,7 +2,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
-import { WithTranslation, withTranslation } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
 import * as actions from '../../../actions/index';
