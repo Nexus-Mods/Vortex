@@ -4,12 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.5] - 2025-01-07
+## [1.13.6] - 2025-01-20
 
-_Stable release based on 1.13.4-beta.1_
+- Added sanity check to the setLoadOrder action
+- **baldursgate3**: Fixed incorrect action use during import from file
 
-- Fixed intermittent Load Order reset when installing a mod
-
+## [1.13.5] - 2025-01-07 
+ 
+_Stable release based on 1.13.4-beta.1_ 
+ 
+- Fixed intermittent Load Order reset when installing a mod 
+ 
 ## 1.13.4-beta.1 - 2024-12-19
 
 _Pre-release before xmas break. Barely distribtued._
