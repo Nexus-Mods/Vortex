@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.7] - 2025-01-21
+
+- Suppressed mod combine action during collection install. ([#16889](https://github.com/Nexus-Mods/Vortex/issues/16889))
+- Added data validation to game path info provider. ([#17028](https://github.com/Nexus-Mods/Vortex/issues/17028))
+- Fixed rare case where attempting to update LO with null parameters. ([#17047](https://github.com/Nexus-Mods/Vortex/issues/17047))
+
 ## [1.13.6] - 2025-01-20
 
 - Added sanity check to the setLoadOrder action
@@ -672,6 +678,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.13.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.7
+[1.13.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.6
 [1.13.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.5
 [1.13.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.3
 [1.13.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.2
