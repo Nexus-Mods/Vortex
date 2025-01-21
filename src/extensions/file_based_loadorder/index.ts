@@ -295,6 +295,21 @@ export default function init(context: IExtensionContext) {
     props: () => {
       return {
         getGameEntry: findGameEntry,
+        onSortByDeployOrder: async (profileId: string) => {
+          const state = context.api.getState();
+          const profile = selectors.profileById(state, profileId);
+          const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+          const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', profile.gameId], {});
+          const filtered: types.IMod[] = Object.values(mods).filter((m: types.IMod) => loadOrder.find(lo => lo.modId === m.id) !== undefined);
+          const sorted = await util.sortMods(profile.gameId, filtered, context.api);
+          const findIndex = (entry: types.ILoadOrderEntry) => {
+            return sorted.findIndex(m => m.id === entry.modId);
+          }
+          const loadOrderSorted = [...loadOrder];
+          loadOrderSorted.sort((a, b) => findIndex(a) - findIndex(b));
+          updateSet.init(selectors.activeGameId(state), loadOrderSorted.map((lo, idx) => ({ ...lo, index: idx })));
+          context.api.store.dispatch(setFBLoadOrder(profileId, loadOrderSorted));
+        },
         onImportList: async () => {
           const api = context.api;
           const file = await api.selectFile({ filters: [{ name: 'JSON', extensions: ['json'] }], title: 'Import Load Order' });
