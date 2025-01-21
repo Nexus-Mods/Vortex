@@ -370,8 +370,9 @@ export default function init(context: IExtensionContext) {
   context.registerActionCheck('SET_FB_LOAD_ORDER', (state, action: any) => {
       const { profileId, loadOrder } = action.payload;
       const profile = selectors.profileById(state, profileId);
-      if (updateSet && profile !== undefined) {
-        updateSet.init(profile.gameId, loadOrder.map((lo, idx) => ({ ...lo, index: idx })));
+      const gameId = profile?.gameId ?? selectors.activeGameId(state);
+      if (updateSet && gameId) {
+        updateSet.init(gameId, (loadOrder ?? []).map((lo, idx) => ({ ...lo, index: idx })));
       }
       return undefined;
     });
