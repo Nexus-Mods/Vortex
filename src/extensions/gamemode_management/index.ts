@@ -614,7 +614,7 @@ function init(context: IExtensionContext): boolean {
   context.registerModType = registerModType;
 
   context.registerGameInfoProvider('game-path', 0, 1000,
-    ['path'], (game: IGame & IDiscoveryResult) => (game.path === undefined)
+    ['path'], (game: IGame & IDiscoveryResult) => (game.path == null || typeof game.path !== 'string')
       ? Promise.resolve({})
       : Promise.resolve({
         path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
@@ -633,7 +633,7 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     let gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
 
-    if (gamePath !== undefined) {
+    if (gamePath != null) {
       if (!gamePath.endsWith(path.sep)) {
         gamePath += path.sep;
       }
