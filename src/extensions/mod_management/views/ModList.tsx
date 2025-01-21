@@ -120,6 +120,9 @@ interface IConnectedProps extends IModProps {
   downloadPath: string;
   showDropzone: boolean;
   autoInstall: boolean;
+  // some mod actions are not allowed while installing dependencies/collections
+  //  e.g. combining a mod with other patch mods while the collection is still installing.
+  suppressModActions: boolean;
 }
 
 interface IActionProps {
@@ -1473,19 +1476,27 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private canBeCombined = (modIds: string[]) => {
-    const { t, mods } = this.props;
+    const { t, mods, suppressModActions } = this.props;
 
     const notInstalled = modIds.find(modId => mods[modId] === undefined);
     if (notInstalled !== undefined) {
       return t('You can only combine installed mods') ;
     }
+
+    if (suppressModActions) {
+      return t('Try again after installing dependencies');
+    }
+
     return true;
   }
 
   private combine = (modIds: string[]) => {
-    const { gameMode } = this.props;
+    const { gameMode, suppressModActions } = this.props;
     const { api } = this.context;
-
+    if (suppressModActions) {
+      api.showErrorNotification('Try again after installing dependencies', 'Mod actions are currently disabled', { allowReport: false });
+      return;
+    }
     return combineMods(api, gameMode, modIds);
   }
 
@@ -1530,10 +1541,20 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
 const empty = {};
 
+const shouldSuppressModActions = (state: IState): boolean => {
+  const suppressOnActivities = ['conflicts', 'installing_dependencies', 'deployment', 'purging'];
+  const isActivityRunning = (activity: string) =>
+    getSafe(state, ['session', 'base', 'activity', 'mods'], []).includes(activity) // purge/deploy
+    || getSafe(state, ['session', 'base', 'activity', activity], []).length > 0; // installing_dependencies
+  const suppressingActivities = suppressOnActivities.filter(activity => isActivityRunning(activity));
+  const suppressing = suppressingActivities.length > 0;
+  return suppressing;
+}
+
 function mapStateToProps(state: IState): IConnectedProps {
   const profile = selectors.activeProfile(state);
   const gameMode = selectors.activeGameId(state);
-
+  const suppressModActions = shouldSuppressModActions(state);
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
     modState: getSafe(profile, ['modState'], empty),
@@ -1545,6 +1566,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
     autoInstall: state.settings.automation.install,
+    suppressModActions,
   };
 }
 
