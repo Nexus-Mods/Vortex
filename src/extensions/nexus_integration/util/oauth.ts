@@ -1,4 +1,4 @@
-import { net } from 'electron';
+/* eslint-disable */
 import * as http from 'node:http';
 import * as https from 'node:https';
 import { AddressInfo } from 'node:net';
@@ -6,11 +6,8 @@ import * as querystring from 'node:querystring';
 import * as url from 'node:url';
 import { log } from '../../../util/log';
 import { OAUTH_REDIRECT_URL } from '../constants';
-import { inspect } from 'node:util';
-import VORTEX_ICON from './vortexicon';
 import NEXUSMODS_LOGO from './nexusmodslogo';
 import { ArgumentInvalid } from '../../../util/CustomErrors';
-import { IJWTAccessToken } from '../types/IJWTAccessToken';
 
 type TokenType = 'Bearer';
 
@@ -258,8 +255,10 @@ class OAuth {
                 err['details'] = errDetails?.error_description;
                 reject(err);
               } catch (err) {
-                reject(new Error(
-                  `Failed to parse failure response: "${responseStr.substring(0, 50)}"`));
+                const errMessage = responseStr.includes('<!DOCTYPE html>')
+                  ? `Received HTML response from ${tokenUrl} when JSON was expected. Please check your connection settings.`
+                  : `Failed to parse failure response: "${responseStr.substring(0, 50)}"`
+                reject(new Error(errMessage));
               }
             } else {
               resolve(responseStr);
