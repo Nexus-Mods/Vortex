@@ -209,7 +209,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             invalidEntries: validationError?.validationResult?.invalid,
           };
           // Filter based on the filterText, matching on loEntry.name or other attributes as needed
-          if (loEntry.name.toLowerCase().includes(this.state.filterText.toLowerCase())) {
+          if ((loEntry.name ?? loEntry.id).toLowerCase().includes(this.state.filterText.toLowerCase())) {
             accum.push(rendOps);
           }
           return accum;
