@@ -718,8 +718,8 @@ function removeLeadingZeros(input: string): string {
   return input.split('.').map(seg => seg.replace(/^0+(\d+$)/, '$1')).join('.');
 }
 
-export function semverCoerce(input: string): semver.SemVer {
-  let res = semver.coerce(removeLeadingZeros(input));
+export function semverCoerce(input: string, options?: semver.CoerceOptions): semver.SemVer {
+  let res = semver.coerce(removeLeadingZeros(input), options);
 
   if (res === null) {
     res = (input === '')
