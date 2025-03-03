@@ -275,6 +275,10 @@ export default function init(context: IExtensionContext) {
 
   const setOrder = async (profileId: string, loadOrder: types.LoadOrder, refresh?: boolean) => {
     const profile = selectors.profileById(context.api.getState(), profileId);
+    if (!profile) {
+      context.api.showErrorNotification('Failed to set load order', new Error('Please re-activate the game before trying again.'), { allowReport: false });
+      return;
+    }
     if (!refresh) {
       // Anything that isn't a refresh is a user action.
       //  The Update set has to be re-initialized with the new load order.
