@@ -637,13 +637,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private diffActivation(before: IDeployment, after: IDeployment) {
     const keysBefore = Object.keys(before);
     const keysAfter = Object.keys(after);
-    const keysBoth = _.intersection(keysBefore, keysAfter);
+    const keysBoth = _.intersection(keysBefore, keysAfter) || [];
     return {
       added: _.difference(keysAfter, keysBefore),
       removed: _.difference(keysBefore, keysAfter),
-      sourceChanged: keysBoth.filter((key: string) => before[key].source !== after[key].source),
+      sourceChanged: keysBoth.filter((key: string) => before[key]?.source !== after[key]?.source),
       contentChanged: keysBoth.filter((key: string) =>
-         (before[key].time !== after[key].time) && (before[key].source === after[key].source)),
+         (before[key]?.time !== after[key]?.time) && (before[key]?.source === after[key]?.source)),
     };
   }
 
