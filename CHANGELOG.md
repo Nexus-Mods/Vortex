@@ -4,17 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.14.0-beta.1 - 2025-xx-xx
+## 1.14.0-beta.1 - 2025-03-xx
 
+
+- Added the ability to provide semver coercion options
+- Fixed crash when setting LO of removed profile. ([#17162](https://github.com/Nexus-Mods/Vortex/issues/17162))
+- FBLO filter now filters by id if name doesn't exist
+- Provide better error message when encountering cloudflare errors
+- Added sanity checks to activation diff. ([#17117](https://github.com/Nexus-Mods/Vortex/issues/17117))
+- Added Vortex profiles tutorial
+- Added ability to sort Load Order by deployment order. ([#16886](https://github.com/Nexus-Mods/Vortex/issues/16886))
+- Adding ability to import and install archives via cmdline. ([#16896](https://github.com/Nexus-Mods/Vortex/issues/16896))
 - Fixed recursive folder creation during staging path transfer. ([#16711](https://github.com/Nexus-Mods/Vortex/issues/16711))
 - Improved metadata lookup for locally imported downloads
 - Updated Onboarding videos
 - Changed Mods of the Month to Mods Spotlight
 - Added filter search bar to FBLO
+- **open-directory**: Added ability to open archive from mods page. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
 - **plugin-management**: Fixed plugin page displaying overriden mod as source
+- **mod-dependency-manager**: Fixed rare crash when previewing files in override editor. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
 - **collections**: Speed optimizations when installing collections and various performance tweaks ([#16858](https://github.com/Nexus-Mods/Vortex/issues/16858), [#16871](https://github.com/Nexus-Mods/Vortex/issues/16871), [#16906](https://github.com/Nexus-Mods/Vortex/issues/16906))
+- **collections**: Fixed crash if unable to resolve collection mod rules when cloning. ([#17149](https://github.com/Nexus-Mods/Vortex/issues/17149))
+- **collections**: Added ability to quickly create a collection based on active profile
 - **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
+- **nomanssky**: Adding custom game version resolution
 
 ## [1.13.7] - 2025-01-21
 
