@@ -10,6 +10,7 @@ import startupSettings from './startupSettings';
 export interface IParameters {
   download?: string;
   install?: string;
+  installArchive?: string;
   installExtension?: string;
   report?: string;
   restore?: string;
@@ -50,6 +51,7 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--install-archive': 1,
   '--install-extension': 1,
   '--start-minimized': 1,
   '--game': 1,
@@ -168,6 +170,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                   + '(any supported protocol like nxm:, https:, ...).')
     .option('-i, --install <url>', 'Start downloadling & installing the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
+    .option('--install-archive <path>', 'Start installing the specified archive. Use absolute path.')
     .option('--install-extension <id>', 'Start downloadling & installing the specified '
                                        + 'vortex extension. id can be "modId:<number>".')
     .option('-g, --get <path>', 'Print the state variable at the specified path and quit. '
@@ -222,6 +225,7 @@ const SKIP_ARGS = {
   '--game': 1,
   '--profile': 1,
   '--install': 1,
+  '--install-archive': 1,
   '--install-extension': 1,
   '--restore': 1,
   '--merge': 1,

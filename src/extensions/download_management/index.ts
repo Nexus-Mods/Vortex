@@ -811,9 +811,17 @@ function processCommandline(api: IExtensionApi) {
   const { commandLine } = state.session.base;
 
   const cliUrl = commandLine.download ?? commandLine.install;
-
   if (cliUrl) {
     api.events.emit('start-download-url', cliUrl, undefined, commandLine.install !== undefined);
+  }
+
+  const arcPath = commandLine.installArchive;
+  if (typeof arcPath === 'string' && path.isAbsolute(arcPath)) {
+    api.events.emit('import-downloads', [arcPath], (dlIds: string[]) => {
+      dlIds.forEach(dlId => {
+        api.events.emit('start-install-download', dlId);
+      });
+    });
   }
 }
 

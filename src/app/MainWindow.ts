@@ -272,6 +272,16 @@ class MainWindow {
     }
   }
 
+  public installModFromArchive(archivePath: string) {
+    if (this.mWindow != null) {
+      try {
+        this.mWindow.webContents.send('install-archive', archivePath);
+      } catch (err) {
+        log('error', 'failed to send install-archive', { archivePath, error: err.message });
+      }
+    }
+  }
+
   public getHandle(): Electron.BrowserWindow {
     return this.mWindow;
   }
