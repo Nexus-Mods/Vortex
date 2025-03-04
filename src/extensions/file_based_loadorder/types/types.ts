@@ -18,6 +18,20 @@ export interface IItemRendererProps {
   setRef?: (ref: any) => void;
 }
 
+// Used by the update set to restore the order of the load order entries after
+//  a mod update/re-install.
+export interface ILoadOrderEntryExt extends ILoadOrderEntry {
+  // The known index of this entry.
+  index: number;
+
+  // The fileId of the mod to which this LO entry belongs.
+  //  There's currently no reliable way to determine the version of the mod
+  //  due to BE data - the fileId is the only unique identifier we can use
+  //  to detect a version change. (this is optional as some load order entries
+  //  may be managed externally and not have a fileId)
+  fileId?: number | undefined;
+}
+
 export interface ILoadOrderEntry<T = any> {
   // An arbitrary unique id for the load order item
   id: string;
