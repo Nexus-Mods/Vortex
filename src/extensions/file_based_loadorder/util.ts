@@ -1,12 +1,22 @@
 /* eslint-disable */
 import * as types from '../../types/api';
 import * as util from '../../util/api';
-import { lastActiveProfileForGame } from '../profile_management/selectors';
+import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
 import { findGameEntry } from './gameSupport';
 import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
-  LoadOrderSerializationError, LoadOrderValidationError } from './types/types';
+  LoadOrderSerializationError, LoadOrderValidationError, ILoadOrderEntryExt } from './types/types';
 
 import { setValidationResult } from './actions/session'
+
+export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
+  return (entry: types.ILoadOrderEntry, index: number) => {
+    const state = api.getState();
+    const gameMode = activeGameId(state);
+    const mods = util.getSafe(state, ['persistent', 'mods', gameMode], {});
+    const fileId = mods[entry?.modId]?.attributes?.fileId;
+    return { ...entry, index, fileId } as ILoadOrderEntryExt;
+  };
+}
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
   if (collection.rules === undefined) {
