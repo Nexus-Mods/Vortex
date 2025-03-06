@@ -270,7 +270,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           <Panel>
             <PanelX.Body>
               <FilterBox currentFilterValue={this.state.filterText} setFilter={this.onFilter} />
-              <DNDContainer style={{ height: '100%' }}>
+              <DNDContainer style={{ height: '95%' }}>
                 <FlexLayout type='row' className='file-based-load-order-container'>
                   <FlexLayout.Flex className={listClasses.join(' ')}>
                     {draggableList()}

@@ -1,17 +1,11 @@
 /* eslint-disable */
-import {
-  IExtensionApi,
-} from '../../types/IExtensionContext';
-import {getSafe} from '../../util/storeHelper';
+import { IExtensionApi, IMod } from '../../types/api';
+import { getSafe } from '../../util/storeHelper';
 
 import * as _ from 'lodash';
-import { ILoadOrderEntry } from './types/types';
+import { ILoadOrderEntry, ILoadOrderEntryExt } from './types/types';
 import { log } from '../../util/log';
 import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
-
-export interface ILoadOrderEntryExt extends ILoadOrderEntry {
-  index: number;
-}
 
 export default class UpdateSet extends Set<number> {
   private mApi: IExtensionApi;
@@ -53,7 +47,7 @@ export default class UpdateSet extends Set<number> {
       return;
     }
     this.mInitialized = true;
-    modEntries = !!modEntries && Array.isArray(modEntries) ? modEntries : this.genExtendedItemsFromState();
+    modEntries = (!!modEntries && Array.isArray(modEntries)) ? modEntries : this.genExtendedItemsFromState();
     modEntries.forEach((iter: ILoadOrderEntryExt) => this.addNumericModId(iter));
   }
 
@@ -71,8 +65,11 @@ export default class UpdateSet extends Set<number> {
     if (!loadOrder || !Array.isArray(loadOrder)) {
       return [];
     }
+
+    const mods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameMode], {});
     const filtered = loadOrder.reduce((acc, lo, idx) => {
-      acc.push({ ...lo, index: idx });
+      const fileId = getSafe(mods[lo.modId], ['attributes', 'fileId'], undefined);
+      acc.push({ ...lo, index: idx, fileId });
       return acc;
     }, []);
     return filtered;
