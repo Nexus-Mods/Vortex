@@ -54,7 +54,7 @@ import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
 import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
 
-import { MAX_VARIANT_NAME, MIN_VARIANT_NAME } from './constants';
+import { MAX_VARIANT_NAME, MIN_VARIANT_NAME, VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME } from './constants';
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
@@ -627,7 +627,30 @@ class InstallManager {
           return Bluebird.resolve(result);
         }
       })
-      .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
+      .then(async (result: { instructions: IInstruction[] }) => {
+        try {
+          const overrideFile = result.instructions.find(iter => path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+          if (!overrideFile) {
+            return result;
+          }
+
+          // Remove the override instruction - we don't want to deploy this.
+          result.instructions = result.instructions.filter(iter => iter !== overrideFile);
+          const content = await fs.readFileAsync(path.join(tempPath, overrideFile.source), 'utf8');
+          const rawInstructions: IInstruction[] = JSON.parse(content);
+
+          // filter out any instructions that could potentially be malicious.
+          const overrideInstructions: IInstruction[] = rawInstructions.filter(iter => !['generatefile', 'unsupported', 'error'].includes(iter.type));
+          return { instructions: result.instructions, overrideInstructions };
+        } catch (err) {
+          log('warn', 'failed to read override instructions', err);
+          return result;
+        }
+      })
+      .then((result: {
+        instructions: IInstruction[],
+        overrideInstructions?: IInstruction[],
+      }) => this.processInstructions(api, installContext, archivePath, tempPath, destinationPath,
                                                installGameId, modId, result,
                                                fullInfo.choices, unattended))
       .finally(() => {
@@ -1309,7 +1332,7 @@ class InstallManager {
     }).then(() => undefined);
   }
 
-  private processSubmodule(api: IExtensionApi, submodule: IInstruction[],
+  private processSubmodule(api: IExtensionApi, installContext: InstallContext, submodule: IInstruction[],
                            destinationPath: string,
                            gameId: string, modId: string,
                            choices: any, unattended: boolean): Bluebird<void> {
@@ -1324,7 +1347,7 @@ class InstallManager {
                                  gameId, subContext, undefined,
                                  choices, undefined, unattended)
           .then((resultInner) => this.processInstructions(
-            api, mod.path, tempPath, destinationPath,
+            api, installContext, mod.path, tempPath, destinationPath,
             gameId, modId, resultInner, choices, unattended))
           .then(() => {
             if (mod.submoduleType !== undefined) {
@@ -1357,10 +1380,12 @@ class InstallManager {
     return Bluebird.resolve();
   }
 
-  private processSetModType(api: IExtensionApi, types: IInstruction[],
+  private processSetModType(api: IExtensionApi, installContext: InstallContext, types: IInstruction[],
                             gameId: string, modId: string): Bluebird<void> {
     if (types.length > 0) {
-      api.store.dispatch(setModType(gameId, modId, types[types.length - 1].value));
+      const type = types[types.length - 1].value;
+      installContext.setModType(modId, type);
+      api.store.dispatch(setModType(gameId, modId, type));
       if (types.length > 1) {
         log('error', 'got more than one mod type, only the last was used', { types });
       }
@@ -1418,10 +1443,20 @@ class InstallManager {
     .then(() => undefined);
   }
 
-  private processInstructions(api: IExtensionApi, archivePath: string,
+  private modTypeExists = (gameId: string, modType: string): boolean => {
+    if (!modType || !gameId) {
+      return false;
+    }
+    const game = getGame(gameId);
+    if (game === undefined) {
+      return false;
+    }
+    return game.modTypes.some(type => type.typeId === modType);
+  }
+  private processInstructions(api: IExtensionApi, installContext: InstallContext, archivePath: string,
                               tempPath: string, destinationPath: string,
                               gameId: string, modId: string,
-                              result: { instructions: IInstruction[] },
+                              result: { instructions: IInstruction[], overrideInstructions?: IInstruction[] },
                               choices: any, unattended: boolean) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
@@ -1435,7 +1470,32 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
-    const invalidInstructions = this.validateInstructions(result.instructions);
+    const isInstallingDependencies = getBatchContext('install-dependencies', '') !== undefined;
+    if (isInstallingDependencies) {
+      // we don't want to override any instructions when installing as part of a collection!
+      //  this will just add extra complexity to an already complex process.
+      result.overrideInstructions = [];
+    }
+    const overrideMap = new Map<string, IInstruction>();
+    result.overrideInstructions?.forEach(instr => {
+      const key = instr.source ?? instr.type;
+      if (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) {
+        overrideMap.set(key, instr);
+      } else {
+        log('warn', 'mod type does not exist', instr);
+      }
+    });
+
+    const finalInstructions = result.instructions.map(instr => {
+      const key = instr.source ?? instr.type;
+      return overrideMap.get(key) ?? instr;
+    }).concat(result.overrideInstructions?.filter(instr => {
+      const key = instr.source ?? instr.type;
+      return (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) &&
+         !result.instructions.some(inst => (inst.source ?? inst.type) === key);
+    }) ?? []);
+
+    const invalidInstructions = this.validateInstructions(finalInstructions);
     if (invalidInstructions.length > 0) {
       const game = getGame(gameId);
       // we can also get here with invalid instructions from scripted installers
@@ -1460,7 +1520,7 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Invalid installer instructions'));
     }
 
-    const instructionGroups = this.transformInstructions(result.instructions);
+    const instructionGroups = this.transformInstructions(finalInstructions);
 
     if (instructionGroups.error.length > 0) {
       const fatal = instructionGroups.error.find(err => err.value === 'fatal');
@@ -1497,13 +1557,13 @@ class InstallManager {
                                             destinationPath))
       .then(() => this.processIniEdits(api, instructionGroups.iniedit, destinationPath,
                                        gameId, modId))
-      .then(() => this.processSubmodule(api, instructionGroups.submodule,
+      .then(() => this.processSubmodule(api, installContext, instructionGroups.submodule,
                                         destinationPath, gameId, modId,
                                         choices, unattended))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
                                                gameId, modId))
-      .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
+      .then(() => this.processSetModType(api, installContext, instructionGroups.setmodtype, gameId, modId))
       .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
       ;
   }
