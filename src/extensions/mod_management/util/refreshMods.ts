@@ -3,6 +3,7 @@ import { IState } from '../../../types/IState';
 import { getApplication } from '../../../util/application';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
+import { IGNORABLE_PREFIXES } from '../../../util/getFileList';
 import { getSafe } from '../../../util/storeHelper';
 
 import { setModArchiveId } from '../actions/mods';
@@ -20,7 +21,8 @@ import * as path from 'path';
 function refreshMods(api: IExtensionApi, gameId: string,
                      installPath: string, knownMods: {[modId: string]: IMod},
                      onAddMod: (mod: IMod) => void, onRemoveMods: (names: string[]) => void) {
-  const knownModNames: string[] = Object.keys(knownMods);
+  const knownModNames: string[] = Object.keys(knownMods)
+    .filter(modId => IGNORABLE_PREFIXES.every(prefix => !modId.toLowerCase().startsWith(prefix)));
   return fs.ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
     .filter((modName: string) => fs.statAsync(path.join(installPath, modName))
@@ -28,7 +30,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
       .catch(() => Promise.resolve(false)))
     .then((modNames: string[]) => {
       const filtered = modNames
-        .filter(name => !name.toLowerCase().startsWith('__vortex'))
+        .filter(name => !IGNORABLE_PREFIXES.some(prefix => name.toLowerCase().startsWith(prefix)))
         .map(name => name.replace(/.installing$/, ''));
       const addedMods =
           filtered.filter((name: string) => knownModNames.indexOf(name) === -1);

@@ -215,7 +215,7 @@ export function dealWithExternalChanges(api: IExtensionApi,
 
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
         const { merged, rest } = changes[typeId].reduce((prevInner, change) => {
-          if (path.basename(change.source) === MERGED_PATH) {
+          if (path.basename(change.source).startsWith(MERGED_PATH)) {
             prevInner.merged.push(change);
           } else {
             prevInner.rest.push(change);
