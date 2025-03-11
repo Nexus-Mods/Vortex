@@ -513,6 +513,7 @@
   width: 218px;
   height: 121px;
   border: 1px solid #6E6E6E;
+  object-fit: cover;
 
   &:hover {
     border-color: $brand-primary;
