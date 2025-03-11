@@ -9,7 +9,7 @@ import { setFBForceUpdate, setValidationResult } from './actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import {
   ILoadOrderGameInfo, ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
-  LoadOrderValidationError
+  LoadOrderValidationError, ILoadOrderEntryExt,
 } from './types/types';
 
 import { ICollection } from './types/collections';
@@ -31,11 +31,11 @@ import { setFBLoadOrder } from './actions/loadOrder';
 import { setFBLoadOrderRedundancy } from './actions/session';
 
 import { addGameEntry, findGameEntry } from './gameSupport';
-import { assertValidationResult, errorHandler } from './util';
+import { assertValidationResult, errorHandler, toExtendedLoadOrderEntry } from './util';
 
 import * as fs from '../../util/fs';
 
-import UpdateSet, { ILoadOrderEntryExt } from './UpdateSet';
+import UpdateSet from './UpdateSet';
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -105,8 +105,25 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
   const prevLO: LoadOrder = (oldState[profile.id] !== undefined)
     ? oldState[profile.id] : [];
 
-  if (JSON.stringify(oldState[profile.id]) !== JSON.stringify(newState[profile.id])) {
-    let loadOrder: LoadOrder = newState[profile.id] ?? [];
+  let loadOrder: LoadOrder = newState[profile.id] ?? [];
+  const prevIds = prevLO.map(lo => lo.id);
+  const newIds = loadOrder.map(lo => lo.id);
+
+  const added = newIds.filter(id => !prevIds.includes(id));
+  const removed = prevIds.filter(id => !newIds.includes(id));
+  const same = loadOrder.reduce((acc, lo, idx) => {
+    if (!prevIds.includes(lo.id) || prevIds.indexOf(lo.id) !== idx) {
+      return acc;
+    }
+    const currFileId = util.getSafe(state, ['persistent', 'mods', profile.gameId, lo?.modId, 'attributes', 'fileId'], undefined);
+    const prevFileId = updateSet.findEntry(lo)?.entries?.[0]?.fileId;
+    if (currFileId !== prevFileId) {
+      return acc;
+    }
+    acc.push(lo.id);
+    return acc;
+  }, []);
+  if (added.length > 0 || removed.length > 0 || same.length !== newIds.length) {
     if (updateSet.isInitialized()) {
       loadOrder = updateSet.restore(loadOrder);
     } else {
@@ -121,6 +138,13 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
     }
+  }
+
+  try {
+    api.store.dispatch(setValidationResult(profile.id, undefined));
+    await validateLoadOrder(api, profile, loadOrder);
+  } catch (err) {
+    return errorHandler(api, gameEntry.gameId, err);
   }
 }
 
@@ -282,7 +306,7 @@ export default function init(context: IExtensionContext) {
     if (!refresh) {
       // Anything that isn't a refresh is a user action.
       //  The Update set has to be re-initialized with the new load order.
-      updateSet.init(profile.gameId, loadOrder.map((lo, idx) => ({ ...lo, index: idx })));
+      updateSet.init(profile.gameId, loadOrder.map(toExtendedLoadOrderEntry(context.api)));
     }
     context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder));
   }
@@ -326,7 +350,7 @@ export default function init(context: IExtensionContext) {
             if (!Array.isArray(loData)) {
               throw new Error('invalid load order data');
             }
-            updateSet.init(selectors.activeGameId(api.getState()), loData.map((lo, idx) => ({ ...lo, index: idx })));
+            updateSet.init(selectors.activeGameId(api.getState()), loData.map(toExtendedLoadOrderEntry(context.api)));
             const profileId = selectors.activeProfile(api.getState()).id;
             context.api.store.dispatch(setFBLoadOrder(profileId, loData));
             api.sendNotification({ type: 'success', message: 'Load order imported', id: 'import-load-order' });
@@ -394,7 +418,7 @@ export default function init(context: IExtensionContext) {
       const profile = selectors.profileById(state, profileId);
       const gameId = profile?.gameId ?? selectors.activeGameId(state);
       if (updateSet && gameId) {
-        updateSet.init(gameId, (loadOrder ?? []).map((lo, idx) => ({ ...lo, index: idx })));
+        updateSet.init(gameId, (loadOrder ?? []).map(toExtendedLoadOrderEntry(context.api)));
       }
       return undefined;
     });
@@ -455,10 +479,7 @@ async function onWillRemoveMods(api: types.IExtensionApi,
       if (!modIds.includes(lo.modId)) {
         return acc;
       }
-      const loEntryExt: ILoadOrderEntryExt = {
-        ...lo,
-        index: idx,
-      }
+      const loEntryExt: ILoadOrderEntryExt = toExtendedLoadOrderEntry(api)(lo, idx);
       acc.push(loEntryExt);
       return acc;
     }, []);
