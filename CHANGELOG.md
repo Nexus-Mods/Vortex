@@ -6,7 +6,6 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.14.0-beta.1 - 2025-03-xx
 
-
 - Added the ability to provide semver coercion options
 - Fixed crash when setting LO of removed profile. ([#17162](https://github.com/Nexus-Mods/Vortex/issues/17162))
 - FBLO filter now filters by id if name doesn't exist
@@ -20,15 +19,25 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Updated Onboarding videos
 - Changed Mods of the Month to Mods Spotlight
 - Added filter search bar to FBLO
+- Fixed Load Order being automatically restored upon validation error. ([#17249](https://github.com/Nexus-Mods/Vortex/issues/17249))
+- Added ability to override mod installation instructions
+- Fixed merged mods raising the External Changes dialog incorrectly
 - **open-directory**: Added ability to open archive from mods page. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
 - **plugin-management**: Fixed plugin page displaying overriden mod as source
 - **mod-dependency-manager**: Fixed rare crash when previewing files in override editor. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
+- **mod-dependency-manager**: Fixed exception when trying to map invalid dependency rules. ([#17233](https://github.com/Nexus-Mods/Vortex/issues/17233))
+- **mod-content**: Adding ability to filter by mods with FOMOD options. ([#17227](https://github.com/Nexus-Mods/Vortex/issues/17227))
 - **collections**: Speed optimizations when installing collections and various performance tweaks ([#16858](https://github.com/Nexus-Mods/Vortex/issues/16858), [#16871](https://github.com/Nexus-Mods/Vortex/issues/16871), [#16906](https://github.com/Nexus-Mods/Vortex/issues/16906))
 - **collections**: Fixed crash if unable to resolve collection mod rules when cloning. ([#17149](https://github.com/Nexus-Mods/Vortex/issues/17149))
 - **collections**: Added ability to quickly create a collection based on active profile
+- **collections**: Adding quick collection to start-page card
+- **collections**: Concurrent installation tweaks
 - **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 - **nomanssky**: Adding custom game version resolution
+- **witcher3**: Various game support fixes and improvements
+- **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable) 
+
 
 ## [1.13.7] - 2025-01-21
 
