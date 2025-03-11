@@ -9,10 +9,10 @@ import {
   ICollectionLoadOrder, IGameSpecificInterfaceProps,
 } from '../types/collections';
 
-import { ILoadOrderGameInfoExt, IValidationResult, LoadOrderValidationError } from '../types/types';
+import { ILoadOrderGameInfoExt } from '../types/types';
 
 import { findGameEntry } from '../gameSupport';
-import { genCollectionLoadOrder } from '../util';
+import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from '../util';
 
 import LoadOrderCollections from '../views/LoadOrderCollections';
 import UpdateSet from '../UpdateSet';
@@ -59,7 +59,7 @@ export async function parser(api: types.IExtensionApi,
     return Promise.reject(new CollectionParseError(collection, 'Invalid profile id'));
   }
 
-  updateSet.init(gameId, (collection.loadOrder ?? []).map((lo, index) => ({ ...lo, index })));
+  updateSet.init(gameId, (collection.loadOrder ?? []).map(toExtendedLoadOrderEntry(api)));
   api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
   return Promise.resolve(undefined);
 }

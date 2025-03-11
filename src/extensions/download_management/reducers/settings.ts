@@ -35,7 +35,7 @@ export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
     showDropzone: true,
     showGraph: true,
     copyOnIFF: false,
-    collectionsInstallWhileDownloading: false,
+    collectionsInstallWhileDownloading: true,
   },
   verifiers: {
     path: {
