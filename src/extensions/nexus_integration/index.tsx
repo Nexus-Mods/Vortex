@@ -47,7 +47,6 @@ import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
-import * as semver from 'semver';
 
 import {
   genCollectionIdAttribute,

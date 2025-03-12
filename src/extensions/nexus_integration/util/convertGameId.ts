@@ -102,6 +102,9 @@ export function toNXMId(game: IGameStoredExt, gameId: string): string {
   if (game === null) {
     return SITE_ID;
   }
+  if (!!game.downloadGameId && game.downloadGameId !== game.id) {
+    return game.downloadGameId;
+  }
   if (game?.details !== undefined) {
     if (game.details.nxmLinkId !== undefined) {
       return game.details.nxmLinkId;
