@@ -136,7 +136,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                 <h2 className='media-heading'>
                   Vortex {this.mVersion} {releaseDate !== undefined ? `(${releaseDate.toLocaleDateString(I18next.language)})` : ''}
                 </h2>
-                <p>&#169;2024 Black Tree Gaming Ltd.</p>
+                <p>&#169;2025 Black Tree Gaming Ltd.</p>
                 <p>
                   {t('Released under')}
                   {' '}<a onClick={this.showOwnLicense}>GPL-3</a>{' '}
