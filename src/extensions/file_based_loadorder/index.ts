@@ -120,6 +120,11 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     if (currFileId !== prevFileId) {
       return acc;
     }
+
+    if (lo.enabled !== prevLO[idx].enabled) {
+      return acc;
+    }
+
     acc.push(lo.id);
     return acc;
   }, []);
@@ -423,6 +428,7 @@ export default function init(context: IExtensionContext) {
       return undefined;
     });
 
+  // context.registerActionCheck
   context.once(() => {
     updateSet = new UpdateSet(context.api, (gameId: string) => {
       const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
