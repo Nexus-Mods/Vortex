@@ -37,6 +37,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
 - **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
 - **nomanssky**: Adding custom game version resolution
+- **witcher3**: Several fixes and improvements to merging of .settings files
 - **witcher3**: Various game support fixes and improvements
 - **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable) 
 
