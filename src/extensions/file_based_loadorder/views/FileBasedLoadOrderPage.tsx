@@ -14,7 +14,6 @@ import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 import FilterBox from './FilterBox';
 
-import { setFBLoadOrder } from '../actions/loadOrder';
 import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,
   LoadOrderValidationError } from '../types/types';
 import InfoPanel from './InfoPanel';
@@ -236,11 +235,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         info={gameEntry?.usageInstructions}
       />;
 
-    const draggableList = () => (this.nextState.loading || this.nextState.updating)
+    const draggableList = () => (this.nextState.loading)
       ? this.renderWait()
       : (enabled.length > 0)
         ? <DraggableList
-            disabled={this.props.disabled || this.state.filterText !== ''}
+            disabled={this.props.disabled || this.state.loading || this.state.filterText !== ''}
             itemTypeId='file-based-lo-draggable-entry'
             id='mod-loadorder-draggable-list'
             items={enabled}
