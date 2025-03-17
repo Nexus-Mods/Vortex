@@ -321,6 +321,10 @@ function init(context: IExtensionContext) {
     updateAvailableExtensions(context.api, true);
   };
 
+  context.registerAction('extensions-layout-icons', 500, 'refresh', {}, 'Update Extensions', () => {
+    forceUpdateExtensions();
+  });
+
   context.registerDialog('browse-extensions', BrowseExtensions, () => ({
     localState,
     updateExtensions,
