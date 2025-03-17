@@ -75,6 +75,11 @@ async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any
   return;
 }
 
+const hasValidationErrors = (state: types.IState, profileId: string) => {
+  const validationResult = util.getSafe(state, ['session', 'fblo', 'validationResult', profileId], undefined);
+  return validationResult !== undefined;
+}
+
 async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newState: any) {
   const state = api.store.getState();
   const profile = selectors.activeProfile(state);
@@ -124,7 +129,7 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     return acc;
   }, []);
   if (added.length > 0 || removed.length > 0 || same.length !== newIds.length) {
-    if (updateSet.isInitialized()) {
+    if (updateSet.isInitialized() && !hasValidationErrors(state, profile.id)) {
       loadOrder = updateSet.restore(loadOrder);
     } else {
       // If we don't have an update set, we can't restore the load order, but rather than
@@ -141,7 +146,6 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
   }
 
   try {
-    api.store.dispatch(setValidationResult(profile.id, undefined));
     await validateLoadOrder(api, profile, loadOrder);
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
@@ -243,7 +247,6 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
       throw new LoadOrderValidationError(validRes, newLO);
     }
 
-    api.store.dispatch(setValidationResult(profile.id, undefined));
     await gameEntry.serializeLoadOrder(newLO, prev);
   } catch (err) {
     return errorHandler(api, gameEntry.gameId, err);
@@ -516,6 +519,7 @@ async function validateLoadOrder(api: types.IExtensionApi,
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
 
+    api.store.dispatch(setValidationResult(profile.id, undefined));
     return Promise.resolve(undefined);
   } catch (err) {
     return Promise.reject(err);
@@ -540,7 +544,6 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
     if (validRes !== undefined) {
       throw new LoadOrderValidationError(validRes, loadOrder);
     }
-    api.store.dispatch(setValidationResult(profileId, undefined));
     return Promise.resolve(loadOrder);
   } catch (err) {
     return errorHandler(api, gameId, err)
