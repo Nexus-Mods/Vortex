@@ -22,6 +22,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed Load Order being automatically restored upon validation error. ([#17249](https://github.com/Nexus-Mods/Vortex/issues/17249))
 - Added ability to override mod installation instructions
 - Fixed merged mods raising the External Changes dialog incorrectly
+- Fixed inability to update site domain tools. ([16480](https://github.com/Nexus-Mods/Vortex/issues/16480))
+- Added "Update Extensions" button to extensions page. ([17289](https://github.com/Nexus-Mods/Vortex/issues/17289))
 - **open-directory**: Added ability to open archive from mods page. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
 - **plugin-management**: Fixed plugin page displaying overriden mod as source
 - **mod-dependency-manager**: Fixed rare crash when previewing files in override editor. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
