@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.2 - 2025-03-xx
+
+- Updated Copyright text
+- Fixed wrapping of some game titles on the Games page 
+
 ## 1.14.0-beta.1 - 2025-03-11
 
 - Added the ability to provide semver coercion options
