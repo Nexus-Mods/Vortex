@@ -94,7 +94,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           />
           <div className='bottom'>
             <div className='name'>
-              {nameParts.map((part, idx) => (<div key={idx} className='name-part'>{t(part)}</div>))}
+              {game.name}
             </div>
             {
               modCount !== undefined
