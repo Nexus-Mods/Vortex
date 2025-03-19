@@ -9,8 +9,8 @@ export function registerAttributeExtractor(priority: number, extractor: Attribut
   attributeExtractors.sort((lhs, rhs) => rhs.priority - lhs.priority);
 }
 
-function filterUndefined(input: { [key: string]: any }) {
-  return Object.fromEntries(Object.entries(input).filter(([_, val]) => val !== undefined));
+function filterNullish(input: { [key: string]: any }) {
+  return Object.fromEntries(Object.entries(input ?? {}).filter(([_, val]) => val != null));
 }
 
 // Every mod installation is run through the attributeExtractors in order of priority.
@@ -30,7 +30,7 @@ function extractorOrSkip(extractor: AttributeExtractor, input: any, modPath: str
 
 function filterModInfo(input: any, modPath: string): Promise<any> {
   return Promise.all(attributeExtractors.map(extractor => extractorOrSkip(extractor.extractor, input, modPath)))
-    .then(infoBlobs => Object.assign({}, ...infoBlobs.map(filterUndefined)));
+    .then(infoBlobs => Object.assign({}, ...infoBlobs.map(filterNullish)));
 }
 
 export default filterModInfo;
