@@ -436,7 +436,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const state = this.props.api.getState();
     const profile = profileById(state, this.props.activeProfileId);
     const game = profile !== undefined ? getGame(profile.gameId) : undefined;
-    const gameName = game?.name || 'Mods';
+    const gameName = game?.shortName || game?.name || 'Mods';
     const pageGroups = [
       { title: undefined, key: 'dashboard' },
       { title: 'General', key: 'global' },
