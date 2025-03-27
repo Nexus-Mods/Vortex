@@ -29,7 +29,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     .catch(err => {
       if (['EBUSY', 'ENOENT', 'EPERM'].includes(err.code)) {
         // try a second time, might be the AV interfering with the new file
-        return delayed(1000).then(() => fileMD5Async(filePath, progressHash))
+        return delayed(100).then(() => fileMD5Async(filePath, progressHash))
       }
       return Promise.reject(err);
     })
@@ -38,7 +38,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     })
     .then(() => {
       api.store.dispatch(finishDownload(id, 'finished', undefined));
-      return queryInfo(api, [id], false);
+      queryInfo(api, [id], false);
     })
     .finally(() => {
       // still storing the download as successful even if we didn't manage to calculate its
