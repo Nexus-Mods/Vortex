@@ -6,16 +6,34 @@ import * as _ from 'lodash';
 import { ILoadOrderEntry, ILoadOrderEntryExt } from './types/types';
 import { log } from '../../util/log';
 import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
+import { toExtendedLoadOrderEntry } from './util';
 
 export default class UpdateSet extends Set<number> {
   private mApi: IExtensionApi;
   private mModEntries: { [modId: number]: ILoadOrderEntryExt[] } = {};
   private mInitialized = false;
+  private mShouldRestore = false;
   private mIsFBLO: (gameId: string) => boolean;
   constructor(api: IExtensionApi, isFBLO: (gameId: string) => boolean) {
     super([]);
     this.mApi = api;
     this.mIsFBLO = isFBLO;
+  }
+
+  public get shouldRestore(): boolean {
+    return this.mInitialized && this.mShouldRestore;
+  }
+
+  public set shouldRestore(value: boolean) {
+    this.mShouldRestore = value;
+  }
+
+  public get shouldReset(): boolean {
+    return this.mInitialized && !this.mShouldRestore;
+  }
+
+  public forceReset = () => {
+    this.reset();
   }
 
   public addNumericModId = (lo: ILoadOrderEntryExt) => {
@@ -42,9 +60,11 @@ export default class UpdateSet extends Set<number> {
   }
 
   public init = (gameId: string, modEntries?: ILoadOrderEntryExt[]) => {
-    this.reset();
-    if (!this.mIsFBLO(gameId)) {
+    if (!this.mIsFBLO(gameId) || this.mShouldRestore) {
       return;
+    }
+    if (this.shouldReset) {
+      this.reset();
     }
     this.mInitialized = true;
     modEntries = (!!modEntries && Array.isArray(modEntries)) ? modEntries : this.genExtendedItemsFromState();
@@ -79,6 +99,7 @@ export default class UpdateSet extends Set<number> {
     super.clear();
     this.mModEntries = [];
     this.mInitialized = false;
+    this.mShouldRestore = false;
   }
 
   public has = (value: number): boolean => {
@@ -131,6 +152,10 @@ export default class UpdateSet extends Set<number> {
       }
       return lhsEntry.index - rhsEntry.index;
     });
+    const state = this.mApi.getState();
+    const gameMode = activeGameId(state);
+    this.init(gameMode, restoredLO.map(toExtendedLoadOrderEntry(this.mApi)));
+    this.mShouldRestore = false;
     return restoredLO;
   }
 
