@@ -8,6 +8,15 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 - Updated Copyright text
 - Fixed wrapping of some game titles on the Games page 
+- Improved rule processing functionality
+- Removing next subdomain
+- Prefer game shortName for navigation title
+- Fixed race conditions causing file-based load order re-renders.
+- Fixed nullish check for attribute extractor blobs. ([#17309](https://github.com/Nexus-Mods/Vortex/issues/17309))
+
+
+
+
 
 ## 1.14.0-beta.1 - 2025-03-11
 
