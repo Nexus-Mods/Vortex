@@ -4,19 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.14.0-beta.2 - 2025-03-xx
+## 1.14.0-beta.2 - 2025-03-31
 
-- Updated Copyright text
+- Updated copyright text
 - Fixed wrapping of some game titles on the Games page 
 - Improved rule processing functionality
-- Removing next subdomain
+- Removed next subdomain
 - Prefer game shortName for navigation title
 - Fixed race conditions causing file-based load order re-renders.
 - Fixed nullish check for attribute extractor blobs. ([#17309](https://github.com/Nexus-Mods/Vortex/issues/17309))
-
-
-
-
+- **gta5/rdr2**: Fixed blocking of deployment during profile changes
+- **mod-dependency-manager**: Fixed log spam when installing collections
+- **plugin-management**: Load order attribute/column is now the default column
+- **collections**: Removed next subdomain
+- **witcher3**: Fixed incorrect detection of certain menu mod structures. ([#17312](https://github.com/Nexus-Mods/Vortex/issues/17312)) 
 
 ## 1.14.0-beta.1 - 2025-03-11
 
