@@ -629,7 +629,8 @@ class InstallManager {
       })
       .then(async (result: { instructions: IInstruction[] }) => {
         try {
-          const overrideFile = result.instructions.find(iter => path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+          const overrideFile = result.instructions.find(iter =>
+            iter.type === 'copy' && path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
           if (!overrideFile) {
             return result;
           }
@@ -1394,11 +1395,12 @@ class InstallManager {
   }
 
   private processRule(api: IExtensionApi, rules: IInstruction[],
-                      gameId: string, modId: string): Bluebird<void> {
-    rules.forEach(rule => {
-      api.store.dispatch(addModRule(gameId, modId, rule.rule));
-    });
-    return Bluebird.resolve();
+                      gameId: string, modId: string): void {
+    const batched = rules.reduce((acc, rule) => {
+      acc.push(addModRule(gameId, modId, rule.rule))
+      return acc;
+    }, [])
+    batchDispatch(api.store, batched);
   }
 
   private processIniEdits(api: IExtensionApi,
@@ -1564,8 +1566,10 @@ class InstallManager {
       .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
                                                gameId, modId))
       .then(() => this.processSetModType(api, installContext, instructionGroups.setmodtype, gameId, modId))
-      .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
-      ;
+      .then(() => {
+        this.processRule(api, instructionGroups.rule, gameId, modId);
+        return Bluebird.resolve();
+      });
   }
 
   private checkModVariantsExist(api: IExtensionApi, gameMode: string, archiveId: string): string[] {
