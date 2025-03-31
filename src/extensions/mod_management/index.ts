@@ -109,6 +109,14 @@ import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
 
+interface IAppContext {
+  isProfileChanging: boolean
+}
+
+const appContext: IAppContext = {
+  isProfileChanging: false,
+};
+
 let installManager: InstallManager;
 
 interface IInstaller {
@@ -587,7 +595,7 @@ function genUpdateModDeployment() {
     let sortedModList: IMod[];
 
     const userGate = () => {
-      if (game.deploymentGate !== undefined) {
+      if (!appContext.isProfileChanging && game.deploymentGate !== undefined) {
         return game.deploymentGate();
       } else {
         return activator.userGate();
@@ -1294,6 +1302,11 @@ function once(api: IExtensionApi) {
     // when the profile changes there is a good chance the cycle warning doesn't apply and if
     // the game changes the cycle dialog can't even be opened or it would trigger an error
     api.dismissNotification('mod-cycle-warning');
+    appContext.isProfileChanging = true;
+  });
+
+  api.events.on('profile-did-change', () => {
+    appContext.isProfileChanging = false;
   });
 
   api.events.on('simulate-installer',
