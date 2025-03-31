@@ -19,7 +19,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
   let lastProgress: number = 0;
   const progressHash = (progress: number, total: number) => {
     const prog = Math.floor(progress * 100 / total);
-    if (prog > lastProgress) {
+    if (prog - lastProgress >= 10) {
       lastProgress = prog;
       api.store.dispatch(finalizingProgress(id, progress));
     }
