@@ -17,6 +17,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **mod-dependency-manager**: Fixed log spam when installing collections
 - **plugin-management**: Load order attribute/column is now the default column
 - **collections**: Removed next subdomain
+- **collections**: Fixed invalid event handler. ([#17315](https://github.com/Nexus-Mods/Vortex/issues/17315)) 
 - **witcher3**: Fixed incorrect detection of certain menu mod structures. ([#17312](https://github.com/Nexus-Mods/Vortex/issues/17312)) 
 
 ## 1.14.0-beta.1 - 2025-03-11
