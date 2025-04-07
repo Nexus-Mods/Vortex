@@ -733,7 +733,7 @@ class DownloadManager {
     this.mMaxChunks = maxChunks;
     this.mUserAgent = userAgent;
     const speedCalcCB = (speed: number) => {
-      this.tickQueue();
+      this.tickQueue(false);
       speedCB(speed);
     }
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
@@ -1076,11 +1076,12 @@ class DownloadManager {
     download.failedCB(err);
   }
 
-  private tickQueue() {
+  private tickQueue(verbose: boolean = true) {
     const totalBusyWorkers = Object.entries(this.mBusyWorkers)
       .filter(([key, iter]) => this.mSlowWorkers[key] == null && !iter.isPending()).length;
     let freeSpots = Math.max(this.mMaxWorkers - totalBusyWorkers, 0);
-    log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
+    if (verbose)
+      log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
   
     for (let idx = 0; idx < this.mQueue.length && freeSpots > 0; idx++) {
       const queueItem = this.mQueue[idx];
@@ -1107,7 +1108,7 @@ class DownloadManager {
     // Remove already downloaded items from the queue
     this.mQueue = this.mQueue.filter(download => {
       const isCompleted = download.chunks.every(chunk => chunk.state === 'finished');
-      if (isCompleted) {
+      if (isCompleted && verbose) {
         log('info', 'removing completed download from queue', { id: download.id });
       }
       return !isCompleted;
