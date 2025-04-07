@@ -241,6 +241,12 @@ class DownloadWorker {
     }
   }
 
+  public isPending = () => {
+    return this.mEnded === false
+      && this.mWriting === false
+      && this.mJob.received === 0;
+  }
+
   public ended = () => {
     return this.mEnded;
   }
@@ -391,7 +397,7 @@ class DownloadWorker {
         this.mRedirected = false;
         this.mEnded = false;
         this.assignJob(this.mJob, this.mUrl);
-      }, 5000);
+      }, 1000);
     } // the else case doesn't really make sense
   }
 
@@ -592,7 +598,7 @@ class DownloadWorker {
   }
 
   private mergeBuffers = (): Buffer => {
-    const res = Buffer.concat(this.mBuffers);
+    const res = Buffer.concat(this.mBuffers.map(buffer => new Uint8Array(buffer)));
     this.mBuffers = [];
     return res;
   }
@@ -726,7 +732,11 @@ class DownloadManager {
     this.mMaxWorkers = maxWorkers;
     this.mMaxChunks = maxChunks;
     this.mUserAgent = userAgent;
-    this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
+    const speedCalcCB = (speed: number) => {
+      this.tickQueue();
+      speedCB(speed);
+    }
+    this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
     this.mProtocolHandlers = protocolHandlers;
     this.mThrottle = () => makeThrottle(maxBandwidth);
   }
@@ -1066,32 +1076,44 @@ class DownloadManager {
     download.failedCB(err);
   }
 
-  private tickQueue = async () => {
-    let freeSpots: number = this.mMaxWorkers - Object.keys(this.mBusyWorkers).length;
-    let idx = 0;
-    log('info', 'tick dl queue', { freeSpots, queue: this.mQueue.length });
-
-    while (freeSpots > 0 && idx < this.mQueue.length) {
+  private tickQueue() {
+    const totalBusyWorkers = Object.entries(this.mBusyWorkers)
+      .filter(([key, iter]) => this.mSlowWorkers[key] == null && !iter.isPending()).length;
+    let freeSpots = Math.max(this.mMaxWorkers - totalBusyWorkers, 0);
+    log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
+  
+    for (let idx = 0; idx < this.mQueue.length && freeSpots > 0; idx++) {
       const queueItem = this.mQueue[idx];
       const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
-
-      for (const chunk of unstartedChunks) {
-        if (freeSpots <= 0) break;
-
-        try {
-          await this.startWorker(queueItem);
-          --freeSpots;
-        } catch (err) {
-          const nowIdx = this.mQueue.indexOf(queueItem);
-          if (nowIdx !== -1) {
-            this.mQueue[nowIdx].failedCB(err);
-            this.mQueue.splice(nowIdx, 1);
-          }
-        }
+  
+      if (unstartedChunks.length === 0) continue;
+  
+      let chunkIndex = 0;
+      while (freeSpots > 0 && chunkIndex < unstartedChunks.length) {
+        this.startWorker(queueItem)
+          .catch(err => {
+            const itemIdx = this.mQueue.indexOf(queueItem);
+            if (itemIdx !== -1) {
+              this.mQueue[itemIdx].failedCB(err);
+              this.mQueue.splice(itemIdx, 1);
+            }
+          });
+  
+        freeSpots--;
+        chunkIndex++;
       }
-      ++idx;
     }
+
+    // Remove already downloaded items from the queue
+    this.mQueue = this.mQueue.filter(download => {
+      const isCompleted = download.chunks.every(chunk => chunk.state === 'finished');
+      if (isCompleted) {
+        log('info', 'removing completed download from queue', { id: download.id });
+      }
+      return !isCompleted;
+    });
   }
+  
   // private tickQueue() {
   //   let freeSpots: number = this.mMaxWorkers - Object.keys(this.mBusyWorkers).length;
   //   let idx = 0;
