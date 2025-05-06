@@ -3,6 +3,12 @@ const Module = require('module');
 
 import * as path from 'path';
 import * as electron from './electron';
+import {} from './libxmljs';
+
+if (process.type === 'browser') {
+  // on the main (node) process, this only sets up the ipc listeners as a side effect
+  require('./libxmljs');
+}
 
 // when spawning a binary, the code doing the spawning will be baked by webpack
 // in release builds and thus reside in the app.asar file.
@@ -24,14 +30,6 @@ class ChildProcessProxy {
   }
 }
 
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function(modulePath) {
-  if (modulePath === 'libxmljs') {
-    throw new Error('libxmljs has been deprecated in favor of xml2js. Please disable any extensions that use it. (community extensions only)');
-  }
-  return originalRequire.apply(this, arguments);
-};
-
 function patchedLoad(orig) {
   // tslint:disable-next-line:only-arrow-functions
   return function(request: string, parent, ...rest) {
@@ -43,6 +41,10 @@ function patchedLoad(orig) {
       return electron;
     } else if ((request === '@electron/remote') && (process.type !== 'renderer')) {
       return undefined;
+    } else if ((request === 'libxmljs') && (process.type === 'renderer')) {
+      // the renderer process can not load libxmljs correctly any more so in that case this
+      // returns a proxy object that will forward all calls to the main process
+      return require('./libxmljs');
     }
 
     let res = orig.apply(this, [request, parent, ...rest]);
