@@ -58,7 +58,7 @@ function ToolButton(props: IToolButtonProps) {
     {
       title: 'Run',
       icon: 'launch-simple',
-      action: () => run,
+      action: run,
       condition: () => valid ? true : t('Not configured') as string,
     },
     {
