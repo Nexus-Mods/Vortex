@@ -114,8 +114,8 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
       return acc;
     }
     const currFileId = util.getSafe(state, ['persistent', 'mods', profile.gameId, lo?.modId, 'attributes', 'fileId'], undefined);
-    const prevFileId = updateSet.findEntry(lo)?.entries?.[0]?.fileId;
-    if (currFileId !== prevFileId) {
+    const prevFileId = updateSet.findEntry(lo)?.entries?.filter(e => e.id === lo.id && e.name === lo.name)?.[0]?.fileId ?? -1;
+    if (!!currFileId && currFileId !== prevFileId) {
       updateSet.shouldRestore = true;
       return acc;
     }
