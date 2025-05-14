@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 
 import * as path from 'path';
 
-import { setFBForceUpdate, setValidationResult } from './actions/session';
+import { setValidationResult } from './actions/session';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import {
@@ -185,6 +185,11 @@ type DeploymentEvent = 'did-deploy' | 'will-purge' | 'did-purge';
 async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, eventType: DeploymentEvent) {
   // Yes - this gets executed on purge too (at least for now).
   const state = api.store.getState();
+  if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
+    // Don't do anything if we're in the middle of installing deps
+    log('info', 'skipping load order serialization/deserialization');
+    return Promise.resolve();
+  }
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId === undefined) {
     // I guess it's theoretically possible for the deployment
@@ -200,9 +205,21 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, e
     return;
   }
 
+  if (eventType === 'will-purge') {
+    // This is a purge event - we need to serialize the load order
+    //  to the update set.
+    const currentStoredLO: LoadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    updateSet.init(profile.gameId, currentStoredLO.map(toExtendedLoadOrderEntry(api)));
+    updateSet.shouldRestore = true;
+    return;
+  }
+
   try {
     let deserializedLO: LoadOrder = [] = await gameEntry.deserializeLoadOrder();
-    deserializedLO = updateSet.restore(deserializedLO);
+    if (eventType === 'did-deploy') {
+      // This is a deploy event - we need to restore the load order
+      deserializedLO = updateSet.restore(deserializedLO);
+    }
     api.store.dispatch(setFBLoadOrder(profile.id, deserializedLO));
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
@@ -238,15 +255,11 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 }
 
 function genDidDeploy(api: types.IExtensionApi) {
-  return async (profileId: string, deployment: IDeployment) => {
-    const state = api.getState();
-    if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
-      // Don't do anything if we're in the middle of installing deps
-      log('info', 'skipping load order serialization/deserialization');
-      return Promise.resolve();
-    }
-    await genDeploymentEvent(api, profileId, 'did-deploy');
-  }
+  return async (profileId: string, deployment: IDeployment) => genDeploymentEvent(api, profileId, 'did-deploy');
+}
+
+function genWillPurge(api: types.IExtensionApi) {
+  return async (profileId: string, deployment: IDeployment) => genDeploymentEvent(api, profileId, 'will-purge');
 }
 
 function genDidPurge(api: types.IExtensionApi) {
@@ -394,6 +407,7 @@ export default function init(context: IExtensionContext) {
     context.api.events.on('gamemode-activated', (gameId: string) => onGameModeActivated(context.api, gameId));
 
     context.api.onAsync('did-deploy', genDidDeploy(context.api));
+    context.api.onAsync('will-purge', genWillPurge(context.api));
     context.api.onAsync('did-purge', genDidPurge(context.api));
 
     context.api.onAsync('will-remove-mods', (gameId: string, modIds: string[], removeOpts: types.IRemoveModOptions) =>
@@ -441,7 +455,7 @@ async function onWillRemoveMods(api: types.IExtensionApi,
     if (!updateSet.isInitialized()) {
       updateSet.init(gameId, filtered);
     } else {
-      filtered.forEach(updateSet.addNumericModId);
+      filtered.forEach(updateSet.addEntry);
     }
   }
   return Promise.resolve();
