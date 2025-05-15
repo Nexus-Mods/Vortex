@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.3 - 2025-05-15
+
+- Fixed FBLO API not maintaining positions of external load order entries
+- Fixed FBLO API not maintaining position of loadorder entries that are sourced from the same mod page.
+- Fixed tool dashlet "Run" action not functioning ([#17466]https://github.com/Nexus-Mods/Vortex/pull/17466)
+
 ## 1.14.0-beta.2 - 2025-03-31
 
 - Updated copyright text
