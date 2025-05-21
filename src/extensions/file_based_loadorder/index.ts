@@ -56,9 +56,8 @@ async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any
     }
 
     const gameEntry = findGameEntry(profile.gameId);
-    if (gameEntry === undefined) {
-      // This game wasn't registered with the LO component. That's fine
-      //  probably just a game that doesn't need LO support.
+    if (gameEntry === undefined || gameEntry.condition?.() === false) {
+      // This game wasn't registered with the LO component or doesn't want to use it.
       return;
     }
 
@@ -83,9 +82,8 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
   }
 
   const gameEntry = findGameEntry(profile.gameId);
-  if (gameEntry === undefined) {
-    // This game wasn't registered with the LO component. That's fine
-    //  probably just a game that doesn't need LO support.
+  if (gameEntry === undefined || gameEntry.condition?.() === false) {
+    // This game wasn't registered with the LO component or doesn't want to use it.
     return;
   }
 
@@ -162,9 +160,8 @@ async function genProfilesChange(api: types.IExtensionApi,
   }
 
   const gameEntry = findGameEntry(profile.gameId);
-  if (gameEntry === undefined) {
-    // This game wasn't registered with the LO component. That's fine
-    //  probably just a game that doesn't need LO support.
+  if (gameEntry === undefined || gameEntry.condition?.() === false) {
+    // This game wasn't registered with the LO component or doesn't want to use it.
     return;
   }
 
@@ -200,7 +197,7 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, e
   }
 
   const gameEntry: ILoadOrderGameInfo = findGameEntry(profile.gameId);
-  if (gameEntry === undefined) {
+  if (gameEntry === undefined || gameEntry.condition?.() === false) {
     // Game does not require LO.
     return;
   }
@@ -369,7 +366,7 @@ export default function init(context: IExtensionContext) {
     (t) => t('Load Order'),
     (state: types.IState, gameId: string) => {
       const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
-      if (gameEntry === undefined) {
+      if (gameEntry === undefined || gameEntry.condition?.() === false) {
         return false;
       }
       return !(gameEntry.noCollectionGeneration ?? false);
@@ -422,8 +419,8 @@ export default function init(context: IExtensionContext) {
 
 async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
   const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
-  if (gameEntry === undefined) {
-    // Game does not require LO.
+  if (gameEntry === undefined || gameEntry.condition?.() === false) {
+    // Game does not require LO or doesn't want to use it.
     return;
   }
   updateSet.forceReset();
@@ -435,8 +432,8 @@ async function onWillRemoveMods(api: types.IExtensionApi,
                                 modIds: string[],
                                 removeOpts: types.IRemoveModOptions): Promise<void> {
   const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
-  if (gameEntry === undefined) {
-    // Game does not require LO.
+  if (gameEntry === undefined || gameEntry.condition?.() === false) {
+    // Game does not require LO or doesn't want to use it.
     return;
   }
   if (removeOpts?.willBeReplaced === true) {
