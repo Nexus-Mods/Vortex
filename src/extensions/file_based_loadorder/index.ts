@@ -98,8 +98,9 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     return;
   }
 
-  const prevLO: LoadOrder = (oldState[profile.id] != null)
-    ? oldState[profile.id] : [];
+  const prevLO: LoadOrder = Array.isArray(oldState[profile.id])
+    ? oldState[profile.id]
+    : [];
 
   let loadOrder: LoadOrder = newState[profile.id] ?? [];
   const prevIds = prevLO.map(lo => lo.id);
