@@ -92,6 +92,12 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
     ],
     iniFormat: 'winapi',
   },
+  oblivionremastered: {
+    iniFiles: [
+      path.join('{mygames}', 'Oblivion Remastered', 'Saved', 'Config', 'Windows', 'Altar.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
   morrowind: {
     iniFiles: [
       path.join('{game}', 'Morrowind.ini'),
