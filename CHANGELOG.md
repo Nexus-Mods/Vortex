@@ -14,7 +14,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 - Fixed FBLO API not maintaining positions of external load order entries
 - Fixed FBLO API not maintaining position of loadorder entries that are sourced from the same mod page.
-- Fixed tool dashlet "Run" action not functioning ([#17466]https://github.com/Nexus-Mods/Vortex/pull/17466)
+- Fixed tool dashlet "Run" action not functioning ([#17466](https://github.com/Nexus-Mods/Vortex/pull/17466))
 
 ## 1.14.0-beta.2 - 2025-03-31
 
