@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.4 - 2025-05-27
+
+- Updated loot masterlist
+- Updated libloot to 0.26.2
+- Added loot support for Oblivion: Remastered
+
 ## 1.14.0-beta.3 - 2025-05-15
 
 - Fixed FBLO API not maintaining positions of external load order entries
@@ -738,6 +744,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.14.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.4 
+[1.14.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.3 
+[1.14.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.2 
 [1.14.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.1 
 [1.13.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.7
 [1.13.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.6
