@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.5 - 2025-05-28
+
+- **plugin-management**: Now sanitizing gamesupport data before passing through IPC. ([#17573](https://github.com/Nexus-Mods/Vortex/issues/17573))
+
 ## 1.14.0-beta.4 - 2025-05-27
 
 - Updated loot masterlist
