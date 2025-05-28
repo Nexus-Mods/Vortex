@@ -5,6 +5,7 @@ import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 
+import BlacklistSet from './util/BlacklistSet';
 import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
 import { IMod } from './types/IMod';
 import renderModName from './util/modName';
@@ -47,7 +48,7 @@ function deployMods(api: IExtensionApi,
                     method: IDeploymentMethod,
                     lastActivation: IDeployedFile[],
                     typeId: string,
-                    skipFiles: Set<string>,
+                    skipFiles: BlacklistSet,
                     subDir: (mod: IMod) => string,
                     progressCB?: (name: string, progress: number) => void,
                    ): Promise<IDeployedFile[]> {
@@ -70,12 +71,11 @@ function deployMods(api: IExtensionApi,
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         const modPath = path.join(installationPath, mod.installationPath);
-        const overrides = new Set<string>(skipFiles);
         if (mod.fileOverrides !== undefined) {
           mod.fileOverrides.map(file => path.relative(destinationPath, file))
-                           .forEach(file => overrides.add(normalize(file)));
+                           .forEach(file => skipFiles.add(normalize(file)));
         }
-        return method.activate(modPath, mod.installationPath, subDir(mod), overrides);
+        return method.activate(modPath, mod.installationPath, subDir(mod), skipFiles);
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }

@@ -67,6 +67,7 @@ import {TestSupported} from './types/TestSupported';
 import { fallbackPurge, loadActivation,
         saveActivation, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
+import BlacklistSet from './util/BlacklistSet';
 import * as basicInstaller from './util/basicInstaller';
 import { genSubDirFunc, purgeMods, purgeModsInPath } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
@@ -91,7 +92,6 @@ import Workarounds from './views/Workarounds';
 
 import { opn } from '../../util/api';
 
-import { DEPLOY_BLACKLIST } from './constants';
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
          onRemoveMod, onRemoveMods, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
@@ -103,7 +103,6 @@ import { findModByRef } from './util/dependencies';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
-import minimatch from 'minimatch';
 import * as path from 'path';
 import React from 'react';
 import * as Redux from 'redux';
@@ -129,19 +128,6 @@ interface IInstaller {
 const installers: IInstaller[] = [];
 
 const mergers: IFileMerge[] = [];
-
-class BlacklistSet extends Set<string> {
-  private mPatterns: string[];
-  constructor(blacklist: string[], game: IGame, normalize: Normalize) {
-    super(blacklist.map(iter => normalize(iter)));
-    this.mPatterns = [].concat(DEPLOY_BLACKLIST, game.details?.ignoreDeploy ?? []);
-  }
-
-  public has(value: string): boolean {
-    return super.has(value)
-      || (this.mPatterns.find(pat => minimatch(value, pat, { nocase: true })) !== undefined);
-  }
-}
 
 function registerInstaller(id: string,
                            priority: number,
