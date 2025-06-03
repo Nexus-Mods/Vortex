@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.6 - 2025-06-03
+
+- Fixed default blacklist entries being ignored.
+- Improved error handling for network outages while installing collections. ([#17415](https://github.com/Nexus-Mods/Vortex/issues/17415))
+- **plugin-management**: fixed loot error when removing mods on startup. ([#17593](https://github.com/Nexus-Mods/Vortex/issues/17593))
+- **7daystodie**: Added ability to modify the user data folder.
+
 ## 1.14.0-beta.5 - 2025-05-28
 
 - **plugin-management**: Now sanitizing gamesupport data before passing through IPC. ([#17573](https://github.com/Nexus-Mods/Vortex/issues/17573))
