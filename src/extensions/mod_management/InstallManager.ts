@@ -3032,8 +3032,12 @@ class InstallManager {
         .catch((err) => {
           api.dismissNotification(notificationId);
           api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          if (!(err instanceof UserCanceled)) {
+          if (!(err instanceof UserCanceled) && !(err instanceof NotFound)) {
             api.showErrorNotification('Failed to check dependencies', err);
+          } else if (err instanceof NotFound) {
+            api.showErrorNotification('Failed to check dependencies',
+              'A mod dependency could not be found. This is usually caused by '
+            + 'a temporary networking issue. Please try again later.', { allowReport: false });
           }
         })
         .finally(() => {
