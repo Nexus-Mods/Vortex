@@ -1618,37 +1618,59 @@ class InstallManager {
   private queryIgnoreDependent(store: ThunkStore<any>, gameId: string,
                                dependents: Array<{ owner: string, rule: IModRule }>)
                                : Bluebird<void> {
+    const batchKey = 'remember-ignore-dependent-action';
+    let context = getBatchContext('install-mod', '', false);
+    const handleAction = (action: string, remember: boolean) => {
+      if (remember) {
+        context = getBatchContext('install-mod', '', true);
+        context?.set?.(batchKey, action);
+      }
+      if (action === 'Cancel') {
+        return Bluebird.reject(new UserCanceled());
+      } else {
+        const ruleActions = dependents.reduce((prev, dep) => {
+          prev.push(removeModRule(gameId, dep.owner, dep.rule));
+          prev.push(addModRule(gameId, dep.owner, {
+            ...dep.rule,
+            ignored: true,
+          }));
+          return prev;
+        }, []);
+        batchDispatch(store, ruleActions);
+        return Bluebird.resolve();
+      }
+    }
     return new Bluebird<void>((resolve, reject) => {
+      const rememberAction = context?.get?.(batchKey, false);
+      if (rememberAction) {
+        // if we already have a remembered action, just resolve
+        return handleAction(rememberAction, true)
+          .then(() => resolve())
+          .catch(err => reject(err));
+      }
       store.dispatch(showDialog(
-          'question', 'Updating may break dependencies',
-          {
-            text:
-            'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
-            + 'be compatible (according to the dependency information). '
-            + 'If you continue we have to disable these dependencies, otherwise you\'ll '
-            + 'continually get warnings about it.',
-            options: { wrap: true },
-          },
-          [
-            { label: 'Cancel' },
-            { label: 'Ignore' },
-          ]))
-        .then((result: IDialogResult) => {
-          if (result.action === 'Cancel') {
-            reject(new UserCanceled());
-          } else {
-            const ruleActions = dependents.reduce((prev, dep) => {
-              prev.push(removeModRule(gameId, dep.owner, dep.rule));
-              prev.push(addModRule(gameId, dep.owner, {
-                ...dep.rule,
-                ignored: true,
-              }));
-              return prev;
-            }, []);
-            batchDispatch(store, ruleActions);
-            resolve();
-          }
-        });
+        'question', 'Updating may break dependencies',
+        {
+          text:
+          'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
+          + 'be compatible (according to the dependency information). '
+          + 'If you continue we have to disable these dependencies, otherwise you\'ll '
+          + 'continually get warnings about it.',
+          options: { wrap: true },
+          checkboxes: [{
+            id: 'remember',
+            value: false,
+            text: 'Remember my choice',
+          }],
+        },
+        [
+          { label: 'Cancel' },
+          { label: 'Ignore' },
+        ]))
+        .then((result: IDialogResult) =>
+          handleAction(result.action, result.input.remember)
+            .then(() => resolve())
+            .catch(err => reject(err)));
     });
   }
 
@@ -1660,7 +1682,24 @@ class InstallManager {
 
   private userVersionChoice(oldMod: IMod, store: ThunkStore<any>): Bluebird<string> {
     const totalProfiles = this.queryProfileCount(store);
-    return (totalProfiles === 1)
+    const batchAction = 'remember-user-version-choice-action';
+    const handleAction = (action: string, remember: boolean) => {
+      if (remember) {
+        const context = getBatchContext('install-mod', '', true);
+        context?.set?.(batchAction, action);
+      }
+      if (action === 'Cancel') {
+        return Bluebird.reject(new UserCanceled());
+      } else if (action === REPLACE_ACTION) {
+        return Bluebird.resolve(REPLACE_ACTION);
+      } else if (action === INSTALL_ACTION) {
+        return Bluebird.resolve(INSTALL_ACTION);
+      }
+    };
+
+    const context = getBatchContext('install-mod', '', false);
+    const rememberAction = context?.get?.(batchAction);
+    return rememberAction ? Bluebird.resolve(rememberAction) : (totalProfiles === 1)
       ? Bluebird.resolve(REPLACE_ACTION)
       : new Bluebird<string>((resolve, reject) => {
         store.dispatch(showDialog(
@@ -1672,19 +1711,21 @@ class InstallManager {
               + 'or install this one alongside it. In the latter case both versions '
               + 'will be available and only the active profile will be updated. ',
               options: { wrap: true },
+              checkboxes: [{
+                id: 'remember',
+                value: false,
+                text: 'Remember my choice',
+              }]
             },
             [
               { label: 'Cancel' },
               { label: REPLACE_ACTION },
               { label: INSTALL_ACTION },
             ]))
-          .then((result: IDialogResult) => {
-            if (result.action === 'Cancel') {
-              reject(new UserCanceled());
-            } else {
-              resolve(result.action);
-            }
-          });
+          .then((result: IDialogResult) =>
+            handleAction(result.action, result.input.remember))
+              .then(resolve)
+              .catch(reject);
       });
   }
 
