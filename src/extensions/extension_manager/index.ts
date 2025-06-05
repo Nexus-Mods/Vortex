@@ -43,7 +43,9 @@ function checkForUpdates(api: IExtensionApi) {
           || (update.version === undefined)) {
         // as of Vortex 1.8 we expect to find all extension, including the bundled ones, in the
         // list of available extensions
-        log('warn', 'extension not available', { ext: JSON.stringify(ext) });
+        if (ext.modId !== undefined) {
+          log('warn', 'extension not available', { ext: JSON.stringify(ext) });
+        }
         return prev;
       }
 
