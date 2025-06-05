@@ -1039,6 +1039,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
+  api.events.on('mods-update', eh.onModsUpdate(api, nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
   api.events.on('open-collection-page', eh.onOpenCollectionPage(api));
   api.events.on('open-mod-page', eh.onOpenModPage(api));

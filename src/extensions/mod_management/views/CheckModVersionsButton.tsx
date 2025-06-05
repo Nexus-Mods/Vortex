@@ -52,13 +52,19 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
             {
               icon: 'refresh',
               title: 'Check for Updates (Optimized)',
-              action: this.checkModsVersion,
+              action: () => this.checkForUpdates(),
               default: true,
             }, {
               icon: 'refresh',
               title: 'Check for Updates (Full)',
-              action: this.checkForUpdateForce,
+              action: () => this.checkForUpdates(true),
             },
+            {
+              icon: 'download',
+              title: 'Check for Updates (Apply All Updates)',
+              action: () => this.dispatchCheckModsVersionEvent(true)
+                .then((modIds: string[]) => this.updateAll(modIds)),
+            }
           ]}
           orientation={'horizontal'}
         />
@@ -66,37 +72,49 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     }
   }
 
-  private checkModsVersion = () => {
-    const { gameMode, mods } = this.props;
-
-    this.context.api.emitAndAwait('check-mods-version', gameMode, mods)
-      .then((modIdsResults: string[][]) => {
-        const modIds = modIdsResults
-          .filter(iter => iter !== undefined)
-          .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
-
-        this.context.api.sendNotification({
-          type: 'success',
-          message: 'Check for mod updates complete ({{count}} update/s found)',
-          replace: {
-            count: modIds.length,
+  private raiseUpdateAllNotification = (modIds: string[]) => {
+    this.context.api.sendNotification({
+      type: 'success',
+      message: 'Check for mod updates complete ({{count}} update/s found)',
+      replace: {
+        count: modIds.length,
+      },
+      actions: modIds.length > 0 ? [
+        {
+          title: 'Update All',
+          action: (dismiss) => {
+            dismiss();
+            this.updateAll(modIds)
           },
-          displayMS: 5000,
-        });
+        },
+      ] : null,
+    })
+  }
+
+  private dispatchCheckModsVersionEvent = async (force: boolean): Promise<string[]> => {
+    const { mods, gameMode} = this.props;
+    try {
+      const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, mods, force);
+      const modIds = modIdsResults
+        .filter(iter => iter !== undefined)
+        .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
+      return Promise.resolve(modIds);
+    } catch (error) {
+      this.context.api.showErrorNotification('Error checking for mod updates', error);
+      return Promise.resolve([]);
+    }
+  }
+
+  private checkForUpdates = (force: boolean = false) => {
+    this.dispatchCheckModsVersionEvent(force)
+      .then((modIds: string[]) => {
+        this.raiseUpdateAllNotification(modIds);
       });
   }
 
-  private checkForUpdateForce = () => {
-    const { gameMode, mods } = this.props;
-
-    this.context.api.emitAndAwait('check-mods-version', gameMode, mods, true)
-      .then(() => {
-        this.context.api.sendNotification({
-          type: 'success',
-          message: 'Check for mod updates complete',
-          displayMS: 5000,
-        });
-      });
+  private updateAll = (modIds: string[]) => {
+    const { gameMode } = this.props;
+    this.context.api.events.emit('mods-update', gameMode, modIds);
   }
 }
 
