@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0-beta.7 - 2025-06-05
+
+- Updating libloot dependency due to rules changes when sorting OBR master plugins
+
 ## 1.14.0-beta.6 - 2025-06-03
 
 - Fixed default blacklist entries being ignored.
