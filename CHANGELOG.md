@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.0 - 2025-06-10
+
+_Stable release based on 1.14.0-beta.7_ 
+
+- Updated libloot to 0.26.3
+- Updated loot masterlist
+- Updating libloot dependency due to rules changes when sorting OBR master plugins
+- Added loot support for Oblivion: Remastered
+- Added the ability to provide semver coercion options
+- Added Vortex profiles tutorial
+- Added ability to sort Load Order by deployment order. ([#16886](https://github.com/Nexus-Mods/Vortex/issues/16886))
+- Adding ability to import and install archives via cmdline. ([#16896](https://github.com/Nexus-Mods/Vortex/issues/16896))
+- Added filter search bar to FBLO
+- Added ability to override mod installation instructions
+- Added "Update Extensions" button to extensions page. ([17289](https://github.com/Nexus-Mods/Vortex/issues/17289))
+- Updated copyright text
+- Updated Onboarding videos
+- Changed Mods of the Month to Mods Spotlight
+- Removed next subdomain
+- Prefer game shortName for navigation title
+- Improved rule processing functionality
+- Improved error handling for network outages while installing collections. ([#17415](https://github.com/Nexus-Mods/Vortex/issues/17415))
+- Improved metadata lookup for locally imported downloads
+- Provide better error message when encountering cloudflare errors
+- Added sanity checks to activation diff. ([#17117](https://github.com/Nexus-Mods/Vortex/issues/17117))
+- Fixed default blacklist entries being ignored.
+- Fixed FBLO API not maintaining positions of external load order entries
+- Fixed FBLO API not maintaining position of loadorder entries that are sourced from the same mod page.
+- Fixed tool dashlet "Run" action not functioning ([#17466](https://github.com/Nexus-Mods/Vortex/pull/17466))
+- Fixed wrapping of some game titles on the Games page
+- Fixed race conditions causing file-based load order re-renders.
+- Fixed nullish check for attribute extractor blobs. ([#17309](https://github.com/Nexus-Mods/Vortex/issues/17309))
+- Fixed crash when setting LO of removed profile. ([#17162](https://github.com/Nexus-Mods/Vortex/issues/17162))
+- Fixed recursive folder creation during staging path transfer. ([#16711](https://github.com/Nexus-Mods/Vortex/issues/16711))
+- Fixed Load Order being automatically restored upon validation error. ([#17249](https://github.com/Nexus-Mods/Vortex/issues/17249))
+- Fixed merged mods raising the External Changes dialog incorrectly
+- Fixed inability to update site domain tools. ([16480](https://github.com/Nexus-Mods/Vortex/issues/16480))
+- FBLO filter now filters by id if name doesn't exist
+- **7daystodie**: Added ability to modify the user data folder.
+- **collections**: Speed optimizations when installing collections and various performance tweaks ([#16858](https://github.com/Nexus-Mods/Vortex/issues/16858), [#16871](https://github.com/Nexus-Mods/Vortex/issues/16871), [#16906](https://github.com/Nexus-Mods/Vortex/issues/16906))
+- **collections**: Fixed crash if unable to resolve collection mod rules when cloning. ([#17149](https://github.com/Nexus-Mods/Vortex/issues/17149))
+- **collections**: Added ability to quickly create a collection based on active profile
+- **collections**: Adding quick collection to start-page card
+- **collections**: Concurrent installation tweaks
+- **collections**: Removed next subdomain
+- **collections**: Fixed invalid event handler. ([#17315](https://github.com/Nexus-Mods/Vortex/issues/17315))
+- **gta5/rdr2**: Fixed blocking of deployment during profile changes
+- **mod-content**: Adding ability to filter by mods with FOMOD options. ([#17227](https://github.com/Nexus-Mods/Vortex/issues/17227))
+- **mod-dependency-manager**: Fixed rare crash when previewing files in override editor. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
+- **mod-dependency-manager**: Fixed exception when trying to map invalid dependency rules. ([#17233](https://github.com/Nexus-Mods/Vortex/issues/17233))
+- **mod-dependency-manager**: Fixed log spam when installing collections
+- **modtype-bepinex**: Improved injector installer to support nested/non-standard BepInEx packaging
+- **nomanssky**: Adding custom game version resolution
+- **open-directory**: Added ability to open archive from mods page. ([#16929](https://github.com/Nexus-Mods/Vortex/issues/16929))
+- **plugin-management**: Fixed plugin page displaying overriden mod as source
+- **plugin-management**: Load order attribute/column is now the default column
+- **plugin-management**: fixed loot error when removing mods on startup. ([#17593](https://github.com/Nexus-Mods/Vortex/issues/17593))
+- **plugin-management**: Now sanitizing gamesupport data before passing through IPC. ([#17573](https://github.com/Nexus-Mods/Vortex/issues/17573))
+- **stardewvalley**: Fixed mod file filtering for archives with multiple manifests
+- **witcher3**: Several fixes and improvements to merging of .settings files
+- **witcher3**: Various game support fixes and improvements
+- **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable)
+- **witcher3**: Fixed incorrect detection of certain menu mod structures. ([#17312](https://github.com/Nexus-Mods/Vortex/issues/17312))
+
 ## 1.14.0-beta.7 - 2025-06-05
 
 - Updating libloot dependency due to rules changes when sorting OBR master plugins
@@ -83,7 +147,6 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **witcher3**: Several fixes and improvements to merging of .settings files
 - **witcher3**: Various game support fixes and improvements
 - **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable) 
-
 
 ## [1.13.7] - 2025-01-21
 
