@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.15.0 - 2025-xx-xx
+
+- Fixed download queue memory leak
+- **plugin-management**: Fixed libloot potentially running in the background while installing collections
+
 ## 1.14.1 - 2025-06-10
 
 _Stable release based on 1.14.0-beta.7_ 
