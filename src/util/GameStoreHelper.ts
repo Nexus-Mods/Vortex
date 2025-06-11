@@ -413,7 +413,7 @@ class GameStoreHelper {
 
           return Bluebird.resolve(accum);
         })
-        .catch(GameEntryNotFound, () => Bluebird.resolve([])), [])
+        .catch(GameEntryNotFound, () => Bluebird.resolve(accum)), [])
       .then(foundEntries => {
         // TODO: A cool future feature here would be to allow the user to select
         //  the gamestore he wants to use. But for now, we just return the
