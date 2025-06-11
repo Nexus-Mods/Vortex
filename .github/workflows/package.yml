@@ -162,7 +162,7 @@ jobs:
           Remove-Item -Path $certPath 
        
       - name: Release 
-        uses: softprops/action-gh-release@v2 
+        uses: softprops/action-gh-release@v2.2.2 
         if: ${{ inputs.release == true }} 
         with: 
           files: | 
@@ -176,7 +176,7 @@ jobs:
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }} 
 
       - name: Staging Release 
-        uses: softprops/action-gh-release@v2 
+        uses: softprops/action-gh-release@v2.2.2 
         if: ${{ inputs.staging-release == true }} 
         with: 
           files: | 
