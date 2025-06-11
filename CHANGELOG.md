@@ -7,6 +7,9 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 ## 1.15.0 - 2025-xx-xx
 
 - Fixed download queue memory leak
+- Fixed warnings raised on startup for old bundled extensions. ([#17374](https://github.com/Nexus-Mods/Vortex/issues/17374))
+- Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
+- Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 
 ## 1.14.1 - 2025-06-10
