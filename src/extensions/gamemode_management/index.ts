@@ -64,6 +64,8 @@ import * as Redux from 'redux';
 import * as semver from 'semver';
 import React from 'react';
 
+import { clipboard } from 'electron';
+
 const gameStoreLaunchers: IGameStore[] = [];
 
 const $ = local<{
@@ -470,6 +472,17 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
         };
       });
   };
+
+  const copyToClipboard = (value: string) => {
+    if (value) {
+      clipboard.writeText(value);
+      api.sendNotification({
+        type: 'success',
+        message: api.translate('Copied mod type id to clipboard'),
+        displayMS: 2000,
+      });
+    }
+  };
   
   const modTypeCalc = (mods: IModWithState | IModWithState[]) => {
     const mod: IModWithState = Array.isArray(mods) ? mods[0] : mods;
@@ -489,7 +502,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
     calc: modTypeCalc,
     customRenderer: (mods, detailCell) =>
         detailCell
-          ? React.createElement(ModTypeWidget, { mods })
+          ? React.createElement(ModTypeWidget, { mods, copyToClipboard })
           : React.createElement('span', {}, [modTypeCalc(mods)]),
     cssClass: mod => (mod.type !== '')
         ? `mod-modtype-${mod.type}`
