@@ -21,6 +21,7 @@ import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
+import BlacklistSet from './util/BlacklistSet';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -290,16 +291,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public activate(sourcePath: string, sourceName: string, deployPath: string,
-                  blackList: Set<string>): Promise<void> {
+                  blackList: BlacklistSet): Promise<void> {
     return fs.statAsync(sourcePath)
       .then(() => turbowalk(sourcePath, entries => {
         if (this.mContext === undefined) {
           return;
         }
-        entries.forEach(entry => {
+        entries.filter(x => !x.isDirectory).forEach(entry => {
           const relPath: string = path.relative(sourcePath, entry.filePath);
+          const relPathWithSource = path.join(sourceName, relPath);
+          const relPathWithSourceNorm = this.mNormalize(relPathWithSource);
           const relPathNorm = this.mNormalize(path.join(deployPath, relPath));
-          if (!entry.isDirectory && !blackList.has(relPathNorm)) {
+          if (!blackList.has(relPathWithSourceNorm)) {
             // mods are activated in order of ascending priority so
             // overwriting is fine here
             this.mContext.newDeployment[relPathNorm] = {
