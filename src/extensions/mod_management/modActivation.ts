@@ -72,8 +72,12 @@ function deployMods(api: IExtensionApi,
         }
         const modPath = path.join(installationPath, mod.installationPath);
         if (mod.fileOverrides !== undefined) {
-          mod.fileOverrides.map(file => path.relative(destinationPath, file))
-                           .forEach(file => skipFiles.add(normalize(file)));
+          mod.fileOverrides.map(file => {
+            const relPath = path.relative(destinationPath, file);
+            const relPathWithSource = path.join(mod.installationPath, relPath);
+            const normRelPathWithSource = normalize(relPathWithSource);
+            return normRelPathWithSource;
+          }).forEach(file => skipFiles.add(file));
         }
         return method.activate(modPath, mod.installationPath, subDir(mod), skipFiles);
       } catch (err) {
