@@ -12,6 +12,9 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+## 1.14.2 - 2025-06-12
+
+- Fixed blacklist blocking deployment when file overrides defined
 
 ## 1.14.1 - 2025-06-10
 
