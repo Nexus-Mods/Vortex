@@ -62,7 +62,6 @@ import { bringToFront, endorseThing, ensureLoggedIn, getCollectionInfo, getInfo,
          nexusGames, nexusGamesProm, oauthCallback, onCancelLoginImpl,
          processErrorMessage, requestLogin, retrieveNexusGames, startDownload, updateKey, updateToken } from './util';
 import { checkModVersion } from './util/checkModsVersion';
-import transformUserInfo from './util/transformUserInfo';
 
 import NexusT, {
   IDownloadURL, IFileInfo, IModFile,
