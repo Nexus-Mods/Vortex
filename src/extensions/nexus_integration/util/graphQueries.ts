@@ -95,6 +95,7 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   commentLink: true,
   overallRating: true,
   overallRatingCount: true,
+  viewerIsBlocked: true,
   recentRating: true,
   recentRatingCount: true,
 };
