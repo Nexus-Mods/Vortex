@@ -1120,7 +1120,7 @@ class InstallManager {
               });
           }
         })
-        .then(supportedInstaller => {
+        .then(async supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
@@ -1128,15 +1128,31 @@ class InstallManager {
           const {installer, requiredFiles} = supportedInstaller;
           log('debug', 'invoking installer',
             { installer: installer.id, enforced: forceInstaller !== undefined });
-          return installer.install(
-              fileList, tempPath, gameId,
-              (perc: number) => {
-                log('info', 'progress', perc);
-                progress([], perc);
-              },
-              installChoices,
-              unattended,
-              archivePath);
+          const installerResult = await installer.install(
+            fileList, tempPath, gameId,
+            (perc: number) => {
+              log('info', 'progress', perc);
+              progress([], perc);
+            },
+            installChoices,
+            unattended,
+            archivePath
+          );
+
+          const overrideInstructionsFilePresentInArchive = fileList.some(file =>
+            path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+          const overrideCopyInstructionExists = installerResult.instructions.some(instr =>
+            instr.type === 'copy' && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+          if (overrideInstructionsFilePresentInArchive && !overrideCopyInstructionExists) {
+            installerResult.instructions.push({
+              type: 'copy',
+              source: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+              destination: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+            });
+          }
+          return installerResult;
         });
   }
 
@@ -1472,7 +1488,7 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
-    const isInstallingDependencies = getBatchContext('install-dependencies', '') !== undefined;
+    const isInstallingDependencies = getBatchContext('install-dependencies', '', false) !== undefined;
     if (isInstallingDependencies) {
       // we don't want to override any instructions when installing as part of a collection!
       //  this will just add extra complexity to an already complex process.
