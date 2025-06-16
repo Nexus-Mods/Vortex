@@ -105,7 +105,7 @@ export function isFuzzyVersion(input: string) {
     return cachedRes;
   }
 
-  if (!truthy(input)) {
+  if (!truthy(input) || typeof input !== 'string') {
     fuzzyVersionCache[input] = false;
   } else if (input.endsWith('+prefer') || (input === '*')) {
     // +prefer can be used with non-semver versions as well
