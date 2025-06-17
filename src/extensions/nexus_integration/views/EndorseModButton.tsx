@@ -36,6 +36,7 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
       abstained: { icon: 'endorse-maybe', tooltip: t('Abstained') },
       endorsed: { icon: 'endorse-yes', tooltip: t('Endorsed') },
       disabled: { icon: 'endorse-disabled', tooltip: t('Endorsement disabled by author') },
+      blocked: { icon: 'endorse-disabled', tooltip: t('You have been blocked by the curator.') },
     }[endorsedStatus.toLowerCase()] || { icon: 'like-maybe', tooltip: t('Undecided') };
 
     return (
