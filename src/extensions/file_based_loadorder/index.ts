@@ -168,8 +168,11 @@ async function genProfilesChange(api: types.IExtensionApi,
     return;
   }
 
+  updateSet.forceReset();
+
   try {
     const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
+    updateSet.init(profile.gameId, loadOrder.map(toExtendedLoadOrderEntry(api)));
     api.store.dispatch(setFBLoadOrder(profile.id, loadOrder));
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
@@ -399,7 +402,7 @@ export default function init(context: IExtensionContext) {
     context.api.onStateChange(['persistent', 'profiles'],
       (prev, current) => genProfilesChange(context.api, prev, current));
 
-    context.api.events.on('gamemode-activated', (gameId: string) => onGameModeActivated(context.api, gameId));
+    //context.api.events.on('gamemode-activated', (gameId: string) => onGameModeActivated(context.api, gameId));
 
     context.api.onAsync('did-deploy', genDidDeploy(context.api));
     context.api.onAsync('will-purge', genWillPurge(context.api));
