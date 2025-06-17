@@ -16,6 +16,7 @@ import { ILoadOrderEntry, LoadOrder } from '../types/types';
 import { genCollectionLoadOrder, isModInCollection, isValidMod } from '../util';
 
 import { findGameEntry } from '../gameSupport';
+import { currentGameMods, currentLoadOrderForProfile } from '../selectors';
 
 const NAMESPACE: string = 'generic-load-order-extension';
 
@@ -174,16 +175,11 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
 }
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder: LoadOrder = [];
-  if (!!profile?.gameId) {
-    loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
-  }
-
+  const profile = selectors.activeProfile(state);
   return {
-    gameId: profile?.gameId,
-    loadOrder,
-    mods: util.getSafe(state, ['persistent', 'mods', profile.gameId], {}),
+    gameId: selectors.activeGameId(state),
+    loadOrder: currentLoadOrderForProfile(state, profile.id),
+    mods: currentGameMods(state),
     profile,
   };
 }

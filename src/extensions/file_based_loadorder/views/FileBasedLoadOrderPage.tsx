@@ -21,6 +21,8 @@ import ItemRenderer from './ItemRenderer';
 import { setFBForceUpdate } from '../actions/session';
 import ToolbarDropdown from '../../../controls/ToolbarDropdown';
 
+import { currentLoadOrderForProfile } from '../selectors';
+
 const PanelX: any = Panel;
 
 interface IBaseState {
@@ -355,10 +357,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile?.id], []);
-  if (!Array.isArray(loadOrder)) {
-    loadOrder = [];
-  }
+  let loadOrder = currentLoadOrderForProfile(state, profile.id) || [];
   return {
     loadOrder,
     profile,
