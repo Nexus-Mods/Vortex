@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.3 - 2025-06-17
+
+- Load order entry restoration is now profile-based
+- Fixed fuzzy version mod reference check. ([#17676](https://github.com/Nexus-Mods/Vortex/issues/17676))
+- Fixed override instructions ignored by fomod installer
+- **collections**: Added checksum tests when exporting a collection with replicate. ([#17368](https://github.com/Nexus-Mods/Vortex/issues/17368))
+- **plugin-management**: Avoid sorting ghosted plugins. ([#17677](https://github.com/Nexus-Mods/Vortex/issues/17677))
+- **plugin-management**: Fixed mod name column not rendering correctly. ([#17678](https://github.com/Nexus-Mods/Vortex/issues/17678), [#17652](https://github.com/Nexus-Mods/Vortex/issues/17652))
+
 ## 1.14.2 - 2025-06-12
 
 - Fixed blacklist blocking deployment when file overrides defined
