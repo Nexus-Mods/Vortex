@@ -33,6 +33,8 @@ import { assertValidationResult, errorHandler, toExtendedLoadOrderEntry } from '
 
 import * as fs from '../../util/fs';
 
+import { currentGameMods, currentLoadOrderForProfile } from './selectors';
+
 import UpdateSet from './UpdateSet';
 
 interface IDeployment {
@@ -206,7 +208,10 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, e
   if (eventType === 'will-purge') {
     // This is a purge event - we need to serialize the load order
     //  to the update set.
-    const currentStoredLO: LoadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    let currentStoredLO: LoadOrder = currentLoadOrderForProfile(state, profileId);
+    if (!Array.isArray(currentStoredLO)) {
+      currentStoredLO = [];
+    }
     updateSet.init(profile.gameId, currentStoredLO.map(toExtendedLoadOrderEntry(api)));
     updateSet.shouldRestore = true;
     return;
@@ -293,8 +298,8 @@ export default function init(context: IExtensionContext) {
         onSortByDeployOrder: async (profileId: string) => {
           const state = context.api.getState();
           const profile = selectors.profileById(state, profileId);
-          const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
-          const mods: { [modId: string]: types.IMod } = util.getSafe(state, ['persistent', 'mods', profile.gameId], {});
+          const loadOrder = currentLoadOrderForProfile(state, profileId);
+          const mods: { [modId: string]: types.IMod } = currentGameMods(state);
           const filtered: types.IMod[] = Object.values(mods).filter((m: types.IMod) => loadOrder.find(lo => lo.modId === m.id) !== undefined);
           const sorted = await util.sortMods(profile.gameId, filtered, context.api);
           const findIndex = (entry: types.ILoadOrderEntry) => {
@@ -327,7 +332,7 @@ export default function init(context: IExtensionContext) {
           const api = context.api;
           const state = api.getState();
           const profileId = selectors.activeProfile(state).id;
-          const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+          const loadOrder = currentLoadOrderForProfile(state, profileId);
           const data = JSON.stringify(loadOrder, null, 2);
           const loPath = await api.saveFile({ defaultPath: 'loadorder.json', filters: [{ name: 'JSON', extensions: ['json'] }], title: 'Export Load Order' });
           if (loPath) {
@@ -358,8 +363,7 @@ export default function init(context: IExtensionContext) {
     (gameId: string, includedMods: string[]) => {
       const state = context.api.getState();
       const stagingPath = selectors.installPathForGame(state, gameId);
-      const mods: { [modId: string]: types.IMod } =
-        util.getSafe(state, ['persistent', 'mods', gameId], {});
+      const mods: { [modId: string]: types.IMod } = currentGameMods(state);
       return generate(context.api, state, gameId, stagingPath, includedMods, mods);
     },
     (gameId: string, collection: ICollection) => parser(context.api, gameId, collection, updateSet),
@@ -441,7 +445,7 @@ async function onWillRemoveMods(api: types.IExtensionApi,
     updateSet.shouldRestore = true;
     const state = api.getState();
     const profileId = selectors.lastActiveProfileForGame(state, gameId);
-    const loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    const loadOrder = currentLoadOrderForProfile(state, profileId);
     const filtered = loadOrder.reduce((acc, lo, idx) => {
       if (!modIds.includes(lo.modId ?? lo.id)) {
         return acc;
@@ -468,7 +472,7 @@ async function validateLoadOrder(api: types.IExtensionApi,
       log('error', 'failed to validate load order due to undefined profile', loadOrder);
       throw new util.DataInvalid('invalid profile');
     }
-    const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
+    const prevLO = currentLoadOrderForProfile(state, profile.id);
     const gameEntry: ILoadOrderGameInfo = findGameEntry(profile.gameId);
     if (gameEntry === undefined) {
       const details = (gameEntry === undefined)
@@ -500,7 +504,7 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
     return Promise.resolve(undefined);
   }
 
-  const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+  const prev = currentLoadOrderForProfile(state, profileId);
   try {
     const loadOrder = await gameEntry.deserializeLoadOrder();
     const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);

@@ -7,12 +7,12 @@ import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError, ILoadOrderEntryExt } from './types/types';
 
 import { setValidationResult } from './actions/session'
+import { currentGameMods, currentLoadOrderForProfile } from './selectors';
 
 export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
   return (entry: types.ILoadOrderEntry, index: number) => {
     const state = api.getState();
-    const gameMode = activeGameId(state);
-    const mods = util.getSafe(state, ['persistent', 'mods', gameMode], {});
+    const mods = currentGameMods(state);
     const fileId = mods[entry?.modId]?.attributes?.fileId;
     return { ...entry, index, fileId } as ILoadOrderEntryExt;
   };
@@ -35,7 +35,7 @@ export async function genCollectionLoadOrder(api: types.IExtensionApi,
   const state = api.getState();
   let loadOrder: LoadOrder = [];
   try {
-    const prev = util.getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    const prev = currentLoadOrderForProfile(state, profileId);
     loadOrder = await gameEntry.deserializeLoadOrder();
     loadOrder = loadOrder.filter(entry => (collection !== undefined)
       ? isValidMod(mods[entry.modId]) && (isModInCollection(collection, mods[entry.modId]))

@@ -47,6 +47,7 @@ const basicMockState = {
 }
 
 jest.mock('../src/extensions/profile_management/selectors', () => ({
+  profileById: jest.fn(() => ({})), // TODO: mock this properly
   activeGameId: jest.fn(() => 'gameId'),
   lastActiveProfileForGame: jest.fn(() => 'profile1'),
 }));

@@ -8,6 +8,7 @@ import { log } from '../../util/log';
 import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
 import { toExtendedLoadOrderEntry } from './util';
 import { util } from 'vortex-api';
+import { currentLoadOrderForProfile } from './selectors';
 
 export default class UpdateSet {
   private mApi: IExtensionApi;
@@ -80,7 +81,7 @@ export default class UpdateSet {
     if (!profileId) {
       return [];
     }
-    const loadOrder: ILoadOrderEntry[] = getSafe(state, ['persistent', 'loadOrder', profileId], []);
+    const loadOrder: ILoadOrderEntry[] = currentLoadOrderForProfile(state, profileId);
     if (!loadOrder || !Array.isArray(loadOrder)) {
       return [];
     }
