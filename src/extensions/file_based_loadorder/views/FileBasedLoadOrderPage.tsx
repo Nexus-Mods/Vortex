@@ -357,7 +357,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder = currentLoadOrderForProfile(state, profile.id) || [];
+  let loadOrder = (profile?.id) ? currentLoadOrderForProfile(state, profile.id) : [];
   return {
     loadOrder,
     profile,
