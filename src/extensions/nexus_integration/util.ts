@@ -562,9 +562,22 @@ function startDownloadMod(api: IExtensionApi,
       if (!handleErrors) {
         return Promise.reject(err);
       }
-      if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {
+      const t = api.translate;
+      // Handle "UNKNOWN" error code with errno 22 (EINVAL) as a non-fatal, warning.
+      if (err.code === 'UNKNOWN' && err.errno === 22) {
+        api.sendNotification({
+          id: url.fileId?.toString?.() ?? 'unknown-download-error',
+          type: 'warning',
+          title: 'Download failed',
+          message: t('The operation completed successfully, but the file could not be processed. '
+            + 'This may be due to a temporary issue or a problem with the downloaded file. Please '
+            + 'try again or check the file integrity.'),
+          localize: {
+            message: false,
+          },
+        });
+      } else if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {
         const userName = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
-        const t = api.translate;
         api.sendNotification({
           id: url.fileId.toString(),
           type: 'warning',
@@ -595,8 +608,7 @@ function startDownloadMod(api: IExtensionApi,
           allowReport = false;
           delete detail.noReport;
         }
-        showError(api.store.dispatch, 'Download failed', detail,
-                  { allowReport });
+        showError(api.store.dispatch, 'Download failed', detail, { allowReport });
       } else if (err.statusCode >= 400) {
           api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof HTTPError) {
@@ -639,8 +651,7 @@ function startDownloadMod(api: IExtensionApi,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
       } else {
-        const allowReport = (err['nativeCode'] === undefined)
-                         || ([225].indexOf(err['nativeCode']) === -1);
+        const allowReport = (err['nativeCode'] != null) || ([225].indexOf(err['nativeCode']) === -1);
         api.showErrorNotification('Download failed', err, { allowReport });
       }
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
