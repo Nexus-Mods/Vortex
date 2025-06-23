@@ -245,9 +245,10 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
       && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split('+')[0];
     const doesMatch = (mod.version === ref.versionMatch)
-                    || (safeCoerce(mod.version) === safeCoerce(versionMatch)) || ref.fileMD5 === mod.fileMD5;
+                    || ref.fileMD5 === mod.fileMD5
+                    || (safeCoerce(mod.version) === safeCoerce(versionMatch));
     if (!doesMatch) {
-      const versionCoerced = safeCoerce(mod.version);
+      const versionCoerced = coerceToSemver(mod.version);
       if (semver.valid(versionCoerced)) {
         if (!semver.satisfies(versionCoerced, versionMatch, { loose: true, includePrerelease: true })) {
           return false;
