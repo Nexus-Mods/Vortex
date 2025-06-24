@@ -10,11 +10,11 @@ import { Icon, tooltip } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
 
 import * as selectors from '../../../util/selectors';
-import { getSafe } from '../../../util/storeHelper';
 
 import { setFBLoadOrder, setFBLoadOrderEntry } from '../actions/loadOrder';
 
 import { LoadOrderIndexInput } from './loadOrderIndex';
+import { currentLoadOrderForProfile, currentModStateForProfile } from '../selectors';
 
 interface IConnectedProps {
   modState: any;
@@ -169,13 +169,12 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   }
 }
 
-const empty = {};
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
-  const profile: IProfile = selectors.activeProfile(state);
+  const profile = selectors.activeProfile(state);
   return {
-    profile,
-    loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], []),
-    modState: getSafe(profile, ['modState'], empty),
+    profile: profile,
+    loadOrder: currentLoadOrderForProfile(state, profile.id),
+    modState: currentModStateForProfile(state, profile.id),
   };
 }
 
