@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.4 - 2025-06-24
+
+- Fixed override instructions not being applied correctly
+- Fixed instances where collection claimed mods are uninstalled
+- Fixed dependency installation errors if game becomes unmanaged. ([#17685](https://github.com/Nexus-Mods/Vortex/issues/17685))
+- Added error handling for completed downloads that can't be processed. ([#17707](https://github.com/Nexus-Mods/Vortex/issues/17707))
+- Avoid render attempts of invalid LO entries. ([#17669](https://github.com/Nexus-Mods/Vortex/issues/17669))
+- Log attempts to find a mod using an undefined reference. ([#17680](https://github.com/Nexus-Mods/Vortex/issues/17680),[#17710](https://github.com/Nexus-Mods/Vortex/issues/17710))
+- Consolidated loadOrder db queries across FBLO API. ([#17703](https://github.com/Nexus-Mods/Vortex/issues/17703),[#17719](https://github.com/Nexus-Mods/Vortex/issues/17719))
+- Fixed potential attempts to start downloads that have already started. ([#17713](https://github.com/Nexus-Mods/Vortex/issues/17713))
+- Bypass file override checks if no instructions were generated. ([#17708](https://github.com/Nexus-Mods/Vortex/issues/17708))
+- **collections**: Fixed incorrect crc hash mismatch errors blocking collection publish. ([#17748](https://github.com/Nexus-Mods/Vortex/issues/17748))
+- **collections**: Fixed checksum exception when using replicate install mode. ([#17712](https://github.com/Nexus-Mods/Vortex/issues/17712))
+- **witcher3**: Improved error handling when merging xml files. ([#17700](https://github.com/Nexus-Mods/Vortex/issues/17700))
+
 ## 1.14.3 - 2025-06-17
 
 - Load order entry restoration is now profile-based
