@@ -1138,7 +1138,9 @@ class InstallManager {
             unattended,
             archivePath
           );
-
+          if (!installerResult.instructions) {
+            return installerResult;
+          }
           const overrideInstructionsFilePresentInArchive = fileList.some(file =>
             path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
 
