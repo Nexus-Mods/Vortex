@@ -1506,12 +1506,35 @@ class InstallManager {
 
     const finalInstructions = result.instructions.map(instr => {
       const key = instr.source ?? instr.type;
-      return overrideMap.get(key) ?? instr;
-    }).concat(result.overrideInstructions?.filter(instr => {
-      const key = instr.source ?? instr.type;
-      return (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) &&
-         !result.instructions.some(inst => (inst.source ?? inst.type) === key);
-    }) ?? []);
+      const overrideEntry = overrideMap.get(key);
+      if (overrideEntry) {
+        log('debug', 'overriding instruction', { key, type: instr.type, override: JSON.stringify(overrideEntry) });
+      }
+      return overrideEntry ?? instr;
+    });
+
+    // Add instructions from result.overrideInstructions that are not already present in finalInstructions
+    if (Array.isArray(result.overrideInstructions)) {
+      const existingKeys = new Set(finalInstructions.map(instr => instr.source ?? instr.type));
+        for (const instr of result.overrideInstructions) {
+        const key = instr.source ?? instr.type;
+        // For copy instructions, ensure no duplicate destinations
+        if (instr.type === 'copy') {
+          const isDuplicate = finalInstructions.some(existingInstr =>
+            existingInstr.type === 'copy' &&
+            existingInstr.destination === instr.destination
+          );
+          if (isDuplicate) {
+            // The assumption here is that the override instruction does not contain
+            //  the correct source information so we use the original instruction
+            continue;
+          }
+        }
+        if (!existingKeys.has(key) && (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value))) {
+          finalInstructions.push(instr);
+        }
+      }
+    }
 
     const invalidInstructions = this.validateInstructions(finalInstructions);
     if (invalidInstructions.length > 0) {
