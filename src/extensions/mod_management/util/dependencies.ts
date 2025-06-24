@@ -27,6 +27,10 @@ interface IBrowserResult {
 
 export function findModByRef(reference: IModReference, mods: { [modId: string]: IMod },
   source?: { gameId: string, modId: string }): IMod {
+  if (!reference) {
+    log('error', 'findModByRef called with undefined reference', { source, stack: new Error().stack });
+    return undefined;
+  }
   const fuzzy = isFuzzyVersion(reference.versionMatch);
   if ((reference['idHint'] !== undefined)
     && (testModReference(mods[reference['idHint']], reference, source, fuzzy))) {
