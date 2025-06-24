@@ -1147,6 +1147,10 @@ class DownloadManager {
     this.mSpeedCalculator.initCounter(workerId);
 
     const job: IDownloadJob = download.chunks.find(ele => ele.state === 'init');
+    if (!job) {
+      // No init chunks? no problem.
+      return Bluebird.resolve();
+    }
     job.state = 'running';
     job.workerId = workerId;
 
