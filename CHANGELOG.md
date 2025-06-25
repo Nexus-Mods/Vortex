@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.5 - 2025-06-25
+
+- Fixed inability to download community extensions through the games page.
+
 ## 1.14.4 - 2025-06-24
 
 - Fixed override instructions not being applied correctly
