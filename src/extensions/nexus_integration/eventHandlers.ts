@@ -230,7 +230,7 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
                       allowInstall?: boolean): Promise<string> {
     const state: IState = api.getState();
     const gameId = game?.id ?? SITE_ID;
-    if ((game != null)
+    if ((game != null && gameId !== SITE_ID)
         && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
