@@ -150,20 +150,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     };
 
     this.applicationButtons = [];
-
-    this.props.api.events.on('show-main-page', pageId => {
-      this.setMainPage(pageId, false);
-    });
-
-    this.props.api.events.on('refresh-main-page', () => {
-      this.forceUpdate();
-    });
-
-    this.props.api.events.on('show-modal', id => {
-      this.updateState({
-        showLayer: { $set: id },
-      });
-    });
   }
 
   public getChildContext(): IComponentContext {
@@ -183,6 +169,20 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     this.updateSize();
 
+    this.props.api.events.on('show-main-page', pageId => {
+      this.setMainPage(pageId, false);
+    });
+
+    this.props.api.events.on('refresh-main-page', () => {
+      this.forceUpdate();
+    });
+
+    this.props.api.events.on('show-modal', id => {
+      this.updateState({
+        showLayer: { $set: id },
+      });
+    });
+
     window.addEventListener('resize', this.updateSize);
     window.addEventListener('keydown', this.updateModifiers);
     window.addEventListener('keyup', this.updateModifiers);
@@ -191,6 +191,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public componentWillUnmount() {
+    this.props.api.events.removeAllListeners('show-main-page');
+    this.props.api.events.removeAllListeners('refresh-main-page');
+    this.props.api.events.removeAllListeners('show-modal');
     window.removeEventListener('resize', this.updateSize);
     window.removeEventListener('keydown', this.updateModifiers);
     window.removeEventListener('keyup', this.updateModifiers);
