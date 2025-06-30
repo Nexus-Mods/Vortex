@@ -240,7 +240,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // right version?
-  if ((ref.versionMatch !== undefined)
+  if ((truthy(ref.versionMatch))
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split('+')[0];
