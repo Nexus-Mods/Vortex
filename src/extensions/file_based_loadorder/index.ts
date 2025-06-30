@@ -149,7 +149,7 @@ async function genProfilesChange(api: types.IExtensionApi,
   const state = api.store.getState();
   if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
     // Don't do anything if we're in the middle of installing deps
-    log('info', 'skipping load order serialization/deserialization');
+    //log('info', 'skipping load order serialization/deserialization');
     return;
   }
   const profile = selectors.activeProfile(state);
@@ -187,7 +187,7 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string, e
   const state = api.store.getState();
   if ((state.session.base.activity?.installing_dependencies ?? []).length > 0) {
     // Don't do anything if we're in the middle of installing deps
-    log('info', 'skipping load order serialization/deserialization');
+    //log('info', 'skipping load order serialization/deserialization');
     return Promise.resolve();
   }
   const profile = selectors.profileById(state, profileId);
