@@ -38,7 +38,7 @@ const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
 // don't follow redirects arbitrarily long
 const MAX_REDIRECT_FOLLOW = 5;
 // if we receive no data for this amount of time, reset the connection
-const STALL_TIMEOUT = 15 * 1000;
+const STALL_TIMEOUT = 2000;
 const MAX_STALL_RESETS = 2;
 
 export type RedownloadMode = 'always' | 'never' | 'ask' | 'replace';
@@ -263,9 +263,9 @@ class DownloadWorker {
     }
   }
 
-  public restart = () => {
-    this.mResponse.removeAllListeners('error');
-    this.mRequest.destroy();
+  public restart = async () => {
+    this.mResponse?.removeAllListeners?.('error');
+    this.mRequest?.destroy?.();
     this.mRestart = true;
   }
 
@@ -372,7 +372,7 @@ class DownloadWorker {
     }
   }
 
-  private stalled = () => {
+  public stalled = () => {
     if (this.mEnded) {
       return;
     }
@@ -397,7 +397,7 @@ class DownloadWorker {
         this.mRedirected = false;
         this.mEnded = false;
         this.assignJob(this.mJob, this.mUrl);
-      }, 1000);
+      }, 200);
     } // the else case doesn't really make sense
   }
 
@@ -736,6 +736,7 @@ class DownloadManager {
       this.tickQueue(false);
       speedCB(speed);
     }
+    setInterval(() => this.tickQueue(false), 1000);
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
     this.mProtocolHandlers = protocolHandlers;
     this.mThrottle = () => makeThrottle(maxBandwidth);
@@ -1077,41 +1078,54 @@ class DownloadManager {
   }
 
   private tickQueue(verbose: boolean = true) {
-    const totalBusyWorkers = Object.entries(this.mBusyWorkers)
-      .filter(([key, iter]) => this.mSlowWorkers[key] == null && !iter.isPending()).length;
-    let freeSpots = Math.max(this.mMaxWorkers - totalBusyWorkers, 0);
-    if (verbose)
+    // Calculate available worker slots
+    this.mQueue.forEach(download => {
+      download.chunks.forEach(chunk => {
+        if (this.mBusyWorkers[chunk.workerId] && (chunk.state !== 'init') && (chunk.received <= 0)) {
+          this.mSlowWorkers[chunk.workerId] = (this.mSlowWorkers[chunk.workerId] || 0) + 1;
+          if ((this.mSlowWorkers[chunk.workerId] > 5)
+            && (download.started !== undefined)
+            && ((Date.now() - download.started.getTime()) < 5000)) {
+            this.mBusyWorkers[chunk.workerId].restart();
+            delete this.mSlowWorkers[chunk.workerId];
+          }
+        }
+      });
+    });
+    const busyWorkerIds = Object.keys(this.mBusyWorkers);
+    const busyCount = busyWorkerIds.reduce((count, key) => {
+      const worker = this.mBusyWorkers[key];
+      return count + ((this.mSlowWorkers[key] == null && !worker.isPending()) ? 1 : 0);
+    }, 0);
+    let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
+
+    if (verbose) {
       log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
-  
+    }
+
     for (let idx = 0; idx < this.mQueue.length && freeSpots > 0; idx++) {
       const queueItem = this.mQueue[idx];
       const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
-  
       if (unstartedChunks.length === 0) continue;
-  
-      let chunkIndex = 0;
-      while (freeSpots > 0 && chunkIndex < unstartedChunks.length) {
-        this.startWorker(queueItem)
-          .catch(err => {
-            const itemIdx = this.mQueue.indexOf(queueItem);
-            if (itemIdx !== -1) {
-              this.mQueue[itemIdx].failedCB(err);
-              this.mQueue.splice(itemIdx, 1);
-            }
-          });
-  
-        freeSpots--;
-        chunkIndex++;
+
+      // Start as many chunks as we have free spots
+      for (let chunkIdx = 0; chunkIdx < unstartedChunks.length && freeSpots > 0; chunkIdx++, freeSpots--) {
+        this.startWorker(queueItem).catch(err => {
+          const itemIdx = this.mQueue.indexOf(queueItem);
+          if (itemIdx !== -1) {
+            this.mQueue[itemIdx].failedCB(err);
+            this.mQueue.splice(itemIdx, 1);
+          }
+        });
       }
     }
 
-    // Remove already downloaded items from the queue
     this.mQueue = this.mQueue.filter(download => {
-      const isCompleted = download.chunks.every(chunk => chunk.state === 'finished');
-      if (isCompleted && verbose) {
+      const completed = download.chunks.every(chunk => chunk.state === 'finished');
+      if (completed && verbose) {
         log('info', 'removing completed download from queue', { id: download.id });
       }
-      return !isCompleted;
+      return !completed;
     });
   }
   
@@ -1162,12 +1176,10 @@ class DownloadManager {
       const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
       if (starving) {
         this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
-        // only restart slow workers within 15 minutes after starting the download,
-        // otherwise the url may have expired. There is no way to know how long the
-        // url remains valid, not even with the nexus api (at least not currently)
-        if ((this.mSlowWorkers[job.workerId] > 15)
+        // restart slow workers within 5 seconds after starting the download,
+        if ((this.mSlowWorkers[job.workerId] > 5)
           && (download.started !== undefined)
-          && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
+          && ((Date.now() - download.started.getTime()) < 5000)) {
           log('debug', 'restarting slow worker', { workerId: job.workerId });
           this.mBusyWorkers[job.workerId].restart();
           delete this.mSlowWorkers[job.workerId];
