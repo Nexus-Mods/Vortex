@@ -348,15 +348,17 @@ async function gatherDependenciesGraph(
 
     lookupResults = await api.lookupModReference(rule.reference, { requireURL: true });
 
-    const subRules = [
+    const subRules: IModRule[] = [
       ...(rule.extra?.['rules'] ?? []),
       ...(lookupResults?.[0]?.value?.rules ?? []),
     ].filter(iter => iter.type === (recommendations ? 'recommends' : 'requires'));
 
-    const dependencies = await Bluebird.all(
-      subRules.map(subRule => limit.do(() =>
-        gatherDependenciesGraph(subRule, api, gameMode, recommendations)))
-    );
+    const dependencies = subRules.length > 0
+      ? await Promise.all(
+          subRules.map(subRule => limit.do(() =>
+            gatherDependenciesGraph(subRule, api, gameMode, recommendations)))
+        )
+      : [];
 
     const node: IDependencyNode = {
       download,
@@ -388,17 +390,16 @@ async function gatherDependenciesGraph(
           },
         },
       });
-    }
-
-    if (urlFromHint && rule.downloadHint?.mode === 'browse') {
-      node.reresolveDownloadHint = () => lookupDownloadHint(api, rule.downloadHint)
-        .then(dlHintRes => {
-          node.lookupResults[0].value = {
-            ...node.lookupResults[0].value,
-            sourceURI: dlHintRes.url,
-            referer: dlHintRes.referer,
-          };
-        });
+      if (rule.downloadHint?.mode === 'browse') {
+        node.reresolveDownloadHint = () => lookupDownloadHint(api, rule.downloadHint)
+          .then(dlHintRes => {
+            node.lookupResults[0].value = {
+              ...node.lookupResults[0].value,
+              sourceURI: dlHintRes.url,
+              referer: dlHintRes.referer,
+            };
+          });
+      }
     }
 
     return node;
