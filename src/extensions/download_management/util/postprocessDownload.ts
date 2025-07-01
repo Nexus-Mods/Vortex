@@ -36,10 +36,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     .then((md5Hash: string) => {
       api.store.dispatch(setDownloadHash(id, md5Hash));
     })
-    .then(() => {
-      api.store.dispatch(finishDownload(id, 'finished', undefined));
-      return queryInfo(api, [id], false);
-    })
+    .then(() => queryInfo(api, [id], false))
     .finally(() => {
       // still storing the download as successful even if we didn't manage to calculate its
       // hash

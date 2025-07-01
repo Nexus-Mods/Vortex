@@ -736,7 +736,7 @@ class DownloadManager {
       this.tickQueue(false);
       speedCB(speed);
     }
-    setInterval(() => this.tickQueue(false), 1000);
+    setInterval(() => this.tickQueue(true), 500);
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
     this.mProtocolHandlers = protocolHandlers;
     this.mThrottle = () => makeThrottle(maxBandwidth);
@@ -821,7 +821,6 @@ class DownloadManager {
           progressCB(0, undefined,
                      download.chunks.map(this.toStoredChunk), download.chunkable,
                      undefined, filePath);
-          this.tickQueue();
         }))
       .finally(() => {
         if (download?.assembler !== undefined) {
@@ -876,7 +875,6 @@ class DownloadManager {
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
         this.mQueue.push(download);
-        this.tickQueue();
       } else {
         return reject(new ProcessCanceled('No unfinished chunks'));
       }
@@ -1083,9 +1081,9 @@ class DownloadManager {
       download.chunks.forEach(chunk => {
         if (this.mBusyWorkers[chunk.workerId] && (chunk.state !== 'init') && (chunk.received <= 0)) {
           this.mSlowWorkers[chunk.workerId] = (this.mSlowWorkers[chunk.workerId] || 0) + 1;
+          // Has this been a slow worker for more than 5 ticks and didn't even start downloading?
           if ((this.mSlowWorkers[chunk.workerId] > 5)
-            && (download.started !== undefined)
-            && ((Date.now() - download.started.getTime()) < 5000)) {
+            && (download.started == null) || (download.started.getTime() < Date.now() - 2500)) {
             this.mBusyWorkers[chunk.workerId].restart();
             delete this.mSlowWorkers[chunk.workerId];
           }
@@ -1099,7 +1097,7 @@ class DownloadManager {
     }, 0);
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
 
-    if (verbose) {
+    if (verbose && this.mQueue.length > 0) {
       log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
     }
 
@@ -1368,7 +1366,6 @@ class DownloadManager {
       }
       log('debug', 'downloading file in chunks',
         { size: chunkSize, count: download.chunks.length, max: maxChunks, total: fileSize });
-      this.tickQueue();
     } else {
       log('debug', 'download not chunked (no server support or it\'s too small)',
         { name: download.finalName, size: fileSize });
@@ -1448,7 +1445,6 @@ class DownloadManager {
       .catch(err => {
         download.failedCB(err);
       });
-    this.tickQueue();
   }
 
   /**
@@ -1517,7 +1513,6 @@ class DownloadManager {
           });
         });
     }
-    this.tickQueue();
   }
 
   private stopWorker = (id: number) => {
