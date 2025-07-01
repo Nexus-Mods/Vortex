@@ -546,7 +546,7 @@ export class DownloadObserver {
   private handleUnknownDownloadError(err: any,
                                      downloadId: string,
                                      callback?: (err: Error, id?: string) => void) {
-    if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF'].includes(err.code)) {
+    if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF', 'EIO'].includes(err.code)) {
       // may be resumable
       this.handlePauseDownload(downloadId);
       if (callback !== undefined) {
@@ -558,6 +558,11 @@ export class DownloadObserver {
           allowReport: false,
         });
       }
+        new Promise((resolve) => setTimeout(resolve, 1000))
+          .then(() => {
+            log('info', 'resuming download after I/O error', { downloadId, code: err.code });
+            this.handleResumeDownload(downloadId, callback);
+          })
     } else if ((err.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
                || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
       // may be resumable
