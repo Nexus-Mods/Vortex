@@ -247,12 +247,14 @@ export class DownloadObserver {
         }
         return;
       }
-      
     const downloadDomain = this.extractNxmDomain(urls[0]);
     const compatibleGames = getGames().filter(game =>
       (game.details?.compatibleDownloads ?? []).includes(gameId));
 
-    const gameIds = Array.from(new Set<string>([downloadDomain, gameId])).concat(compatibleGames.map(game => game.id));
+    const baseIds = downloadDomain != null
+      ? [downloadDomain, gameId]
+      : [gameId];
+    const gameIds = Array.from(new Set<string>(baseIds.concat(compatibleGames.map(game => game.id))));
     this.mApi.store.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
