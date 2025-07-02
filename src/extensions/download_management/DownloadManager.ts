@@ -1177,7 +1177,7 @@ class DownloadManager {
         // restart slow workers within 5 seconds after starting the download,
         if ((this.mSlowWorkers[job.workerId] > 5)
           && (download.started !== undefined)
-          && ((Date.now() - download.started.getTime()) < 5000)) {
+          && ((Date.now() - download.started.getTime()) > 5000)) {
           log('debug', 'restarting slow worker', { workerId: job.workerId });
           this.mBusyWorkers[job.workerId].restart();
           delete this.mSlowWorkers[job.workerId];
