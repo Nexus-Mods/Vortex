@@ -1490,8 +1490,8 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
-    const isInstallingDependencies = getBatchContext('install-dependencies', '', false) !== undefined;
-    if (isInstallingDependencies) {
+    const batchContext = getBatchContext('install-dependencies', '', false);
+    if (unattended && batchContext.itemCount > 0) {
       // we don't want to override any instructions when installing as part of a collection!
       //  this will just add extra complexity to an already complex process.
       result.overrideInstructions = [];
