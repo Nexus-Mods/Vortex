@@ -36,6 +36,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
+import { util } from '../..';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], chunkable: boolean,
@@ -195,6 +196,11 @@ export class DownloadObserver {
     return Promise.resolve();
   }
 
+  private extractNxmDomain(url: string): string | undefined {
+    const match = url.match(/^nxm:\/\/([^\/]+)/);
+    return match ? match[1] : undefined;
+  }
+
   private handleStartDownload(urls: string[],
                               modInfo: any,
                               fileName: string,
@@ -238,18 +244,21 @@ export class DownloadObserver {
       if (callback !== undefined) {
         callback(new ProcessCanceled(
           'You need to select a game to manage before downloading this file'));
+        }
+        return;
       }
-      return;
-    }
-
+    const downloadDomain = this.extractNxmDomain(urls[0]);
     const compatibleGames = getGames().filter(game =>
       (game.details?.compatibleDownloads ?? []).includes(gameId));
-    const gameIds = [gameId].concat(compatibleGames.map(game => game.id));
 
+    const baseIds = downloadDomain != null
+      ? [downloadDomain, gameId]
+      : [gameId];
+    const gameIds = Array.from(new Set<string>(baseIds.concat(compatibleGames.map(game => game.id))));
     this.mApi.store.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
-    const downloadPath = selectors.downloadPathForGame(state, gameId);
+    const downloadPath = selectors.downloadPathForGame(state, downloadDomain);
 
     const processCB = this.genProgressCB(id);
 
@@ -335,8 +344,11 @@ export class DownloadObserver {
       callback?.(null, id);
       return onceFinished();
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
-      this.mApi.store.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
-      this.mApi.store.dispatch(finishDownload(id, 'redirect', {htmlFile: res.filePath}));
+      const batched = [
+        downloadProgress(id, res.size, res.size, [], undefined),
+        finishDownload(id, 'redirect', {htmlFile: res.filePath})
+      ];
+      util.batchDispatch(this.mApi.store.dispatch, batched);
       this.mApi.events.emit('did-finish-download', id, 'redirect');
       callback?.(new Error('html result'), id);
       return onceFinished();
@@ -344,9 +356,8 @@ export class DownloadObserver {
       return finalizeDownload(this.mApi, id, res.filePath)
         .then(() => {
           const flattened = flatten(res.metaInfo ?? {});
-          Object.keys(flattened).forEach(key =>
-              this.mApi.store.dispatch(setDownloadModInfo(id, key, flattened[key])));
-
+          const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
+          util.batchDispatch(this.mApi.store.dispatch, batchedActions);
           const state = this.mApi.getState();
           if ((state.settings.automation?.install && (allowInstall === true))
               || (allowInstall === 'force')
