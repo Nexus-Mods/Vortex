@@ -4,9 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.6 - 2025-07-02
+
+- Fixed crash if reference version matching property is nullish. ([#17801](https://github.com/Nexus-Mods/Vortex/issues/17801))
+- Fixed wrong domain assigned to downloads if dlInfo is incorrect. ([#17808](https://github.com/Nexus-Mods/Vortex/issues/17808))
+- Reduced log spam for when installing collections
+- Fixed race condition causing file not found errors. ([#17799](https://github.com/Nexus-Mods/Vortex/issues/17799),[#17808](https://github.com/Nexus-Mods/Vortex/issues/17808))
+- **collections**: Use new urls when opening collection related pages
+- **witcher3**: Improved error handling when game is missing native xmls. ([#17776](https://github.com/Nexus-Mods/Vortex/issues/17776))
+- **plugin-management**: Fixed sorting action failing if an invalid plugin is detected
+
 ## 1.14.5 - 2025-06-25
 
-- Fixed inability to download community extensions through the games page.
+Fixed inability to download community extensions through the games page.
 
 ## 1.14.4 - 2025-06-24
 
