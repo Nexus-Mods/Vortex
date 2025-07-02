@@ -2344,7 +2344,7 @@ class InstallManager {
         return Bluebird.reject(new UserCanceled());
       }
       log('debug', 'installing as dependency', {
-        ref: JSON.stringify(dep.reference),
+        ref: dep.reference.logicalFileName,
         downloadRequired: dep.download === undefined,
       });
 
@@ -2352,7 +2352,9 @@ class InstallManager {
 
       return downloadAndInstall(dep)
         .then((modId: string) => {
-          log('info', 'installed as dependency', { modId });
+          if (modId != null) {
+            log('info', 'installed as dependency', { modId });
+          }
 
           if (!alreadyInstalled) {
             api.store.dispatch(
@@ -2487,7 +2489,7 @@ class InstallManager {
         })
         .then((updatedDependency: IDependency) => {
           log('debug', 'done installing dependency', {
-            ref: JSON.stringify(dep.reference),
+            ref: dep.reference.logicalFileName,
           });
           return updatedDependency;
         });
@@ -2708,7 +2710,7 @@ class InstallManager {
 
             dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
           } else {
-            log('info', 'downloaded as dependency', { downloadId });
+            log('info', 'downloaded as dependency', { dependency: dep.reference.logicalFileName, downloadId });
           }
 
           let queryWrongMD5 = () => Bluebird.resolve();
