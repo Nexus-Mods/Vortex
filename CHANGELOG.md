@@ -22,6 +22,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **collections**: Use new urls when opening collection related pages
 - **witcher3**: Improved error handling when game is missing native xmls. ([#17776](https://github.com/Nexus-Mods/Vortex/issues/17776))
 - **plugin-management**: Fixed sorting action failing if an invalid plugin is detected
+- **modtype-bepinex**: Fixed couldn't find matching BIX asset error for pre 6.0.0 versions
 
 ## 1.14.5 - 2025-06-25
 
