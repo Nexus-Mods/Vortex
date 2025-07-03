@@ -6,7 +6,8 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.14.7 - 2025-07-03
 
-Fixes the recursive sorting loop. ([#17842](https://github.com/Nexus-Mods/Vortex/issues/17842), [#17810](https://github.com/Nexus-Mods/Vortex/issues/17810))
+- Fixes the recursive sorting loop. ([#17842](https://github.com/Nexus-Mods/Vortex/issues/17842), [#17810](https://github.com/Nexus-Mods/Vortex/issues/17810))
+- Updated libloot to 0.27.0
 
 ## 1.14.6 - 2025-07-02
 
