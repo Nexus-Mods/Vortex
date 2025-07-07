@@ -79,6 +79,7 @@
     "confinement": "devmode"
   },
   "extraResources": [
+    "build/VC_redist.x64.exe",
     "locales"
   ],
   "files": [
