@@ -93,9 +93,6 @@ jobs:
       - uses: actions/checkout@v4 
         with: 
           submodules: "recursive" 
-           
-      - name: Create build directory
-        run: mkdir build
 
       - name: Download VC_redist
         shell: pwsh
