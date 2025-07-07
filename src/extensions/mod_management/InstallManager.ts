@@ -1490,15 +1490,16 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
-    const isInstallingDependencies = getBatchContext('install-dependencies', '', false) !== undefined;
-    if (isInstallingDependencies) {
+    const isActivityRunning = (activity: string) =>
+      getSafe(api.getState(), ['session', 'base', 'activity', 'mods'], []).includes(activity) // purge/deploy
+    if (isActivityRunning('installing_dependencies')) {
       // we don't want to override any instructions when installing as part of a collection!
       //  this will just add extra complexity to an already complex process.
       result.overrideInstructions = [];
     }
     const overrideMap = new Map<string, IInstruction>();
     result.overrideInstructions?.forEach(instr => {
-      const key = instr.source ?? instr.type;
+      const key = (instr.source ?? instr.type).toUpperCase();
       if (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) {
         overrideMap.set(key, instr);
       } else {
@@ -1507,7 +1508,7 @@ class InstallManager {
     });
 
     const finalInstructions = result.instructions.map(instr => {
-      const key = instr.source ?? instr.type;
+      const key = (instr.source ?? instr.type).toUpperCase();
       const overrideEntry = overrideMap.get(key);
       if (overrideEntry) {
         log('debug', 'overriding instruction', { key, type: instr.type, override: JSON.stringify(overrideEntry) });
@@ -1517,9 +1518,9 @@ class InstallManager {
 
     // Add instructions from result.overrideInstructions that are not already present in finalInstructions
     if (Array.isArray(result.overrideInstructions)) {
-      const existingKeys = new Set(finalInstructions.map(instr => instr.source ?? instr.type));
+      const existingKeys = new Set(finalInstructions.map(instr => (instr.source ?? instr.type).toUpperCase()));
         for (const instr of result.overrideInstructions) {
-        const key = instr.source ?? instr.type;
+        const key = (instr.source ?? instr.type).toUpperCase();
         // For copy instructions, ensure no duplicate destinations
         if (instr.type === 'copy') {
           const isDuplicate = finalInstructions.some(existingInstr =>
