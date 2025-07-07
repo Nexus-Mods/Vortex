@@ -18,7 +18,7 @@ ignore:
 
 !macro customInstall
   SetOutPath "$TEMP"
-  File "build\\VC_redist.x64.exe"
+  File "..\\build\\VC_redist.x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
 !macroend
 
