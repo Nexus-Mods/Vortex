@@ -94,11 +94,16 @@ jobs:
         with: 
           submodules: "recursive" 
            
-      - name: Download VC_redist 
-        shell: pwsh 
-        run: | 
-          $vcredist = "https://aka.ms/vs/17/release/vc_redist.x64.exe" 
-          Invoke-WebRequest $vcredist -OutFile build\VC_redist.x64.exe 
+      - name: Create build directory
+        run: mkdir build
+
+      - name: Download VC_redist
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "build\\VC_redist.x64.exe"
+
+      - name: List build contents for debugging
+        run: dir build
  
       - name: Download CodeSignTool 
         id: codesign 
