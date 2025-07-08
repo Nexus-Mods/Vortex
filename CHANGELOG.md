@@ -13,6 +13,11 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
 
+## 1.14.8 - 2025-07-08
+
+- **plugin-management**: Fixed plugins not auto-sorting on deployment
+- MSVC 2022 distributable will now install alongside Vortex to fix crashes for Windows 10 users
+
 ## 1.14.7 - 2025-07-03
 
 - Fixes the recursive sorting loop. ([#17842](https://github.com/Nexus-Mods/Vortex/issues/17842), [#17810](https://github.com/Nexus-Mods/Vortex/issues/17810))
