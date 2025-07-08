@@ -18,8 +18,10 @@ ignore:
 
 !macro customInstall
   SetOutPath "$TEMP"
+  File "D:\\a\\Vortex\\Vortex\\dist\\win-unpacked\\resources\\build\\windowsdesktop-runtime-9.0.6-win-x64.exe"
   File "D:\\a\\Vortex\\Vortex\\dist\\win-unpacked\\resources\\build\\VC_redist.x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
+  ExecWait '"$TEMP\\windowsdesktop-runtime-9.0.6-win-x64.exe" /install /quiet /norestart'
 !macroend
 
 !macro customUnInstall

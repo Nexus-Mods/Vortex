@@ -98,6 +98,11 @@ jobs:
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "build\\VC_redist.x64.exe"
+
+      - name: Download .NET 9 Runtime
+        shell: pwsh
+        run: | 
+          Invoke-WebRequest -Uri "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/9.0.6/windowsdesktop-runtime-9.0.6-win-x64.exe" -OutFile "build\\windowsdesktop-runtime-9.0.6-win-x64.exe"
  
       - name: Download CodeSignTool 
         id: codesign 
