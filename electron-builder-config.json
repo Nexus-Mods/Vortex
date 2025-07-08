@@ -48,6 +48,7 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "uninstallDisplayName": "${productName}",
+    "include": "build/installer_ci.nsh",
     "artifactName": "vortex-setup-${version}.${ext}"
   },
   "linux": {
@@ -78,9 +79,11 @@
     "confinement": "devmode"
   },
   "extraResources": [
+    "build/VC_redist.x64.exe",
     "locales"
   ],
   "files": [
+    "build/VC_redist.x64.exe",
     "**/*",
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
     "!**/node_modules/.bin${/*}",

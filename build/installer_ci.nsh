@@ -1,5 +1,4 @@
 !include WinVer.nsh
- 
 !macro preInit
   ${IfNot} ${AtLeastWin10}
 
@@ -15,6 +14,12 @@ ignore:
   Nop
 
   ${EndIf}
+!macroend
+
+!macro customInstall
+  SetOutPath "$TEMP"
+  File "D:\\a\\Vortex\\Vortex\\dist\\win-unpacked\\resources\\build\\VC_redist.x64.exe"
+  ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
 !macroend
 
 !macro customUnInstall
