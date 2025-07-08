@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.8 - 2025-07-08
+
+- **plugin-management**: Fixed plugins not auto-sorting on deployment
+- MSVC 2022 distributable will now install alongside Vortex to fix crashes for Windows 10 users
+
 ## 1.14.7 - 2025-07-03
 
 - Fixes the recursive sorting loop. ([#17842](https://github.com/Nexus-Mods/Vortex/issues/17842), [#17810](https://github.com/Nexus-Mods/Vortex/issues/17810))
