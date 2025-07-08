@@ -49,7 +49,10 @@
     "allowToChangeInstallationDirectory": true,
     "uninstallDisplayName": "${productName}",
     "include": "build/installer_ci.nsh",
-    "artifactName": "vortex-setup-${version}.${ext}"
+    "artifactName": "vortex-setup-${version}.${ext}",
+    "define": {
+      "VC_REDIST_PATH": "${projectDir}/build/VC_redist.x64.exe"
+    } 
   },
   "linux": {
     "target": [
