@@ -17,8 +17,11 @@ ignore:
 !macroend
 
 !macro customInstall
+  Var /GLOBAL CURDIR
+  GetCurrentDirectory $CURDIR
+  MessageBox MB_OK "Current directory: $CURDIR"
   SetOutPath "$TEMP"
-  File "VC_redist.x64.exe"
+  File "D:\\a\\Vortex\\Vortex\\build\\VC_redist.x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
 !macroend
 
