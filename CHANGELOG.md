@@ -15,8 +15,10 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.14.8 - 2025-07-08
 
-- **plugin-management**: Fixed plugins not auto-sorting on deployment
 - MSVC 2022 distributable will now install alongside Vortex to fix crashes for Windows 10 users
+- Fixed downloads going into the wrong game folder
+- The File Based Overrides not working as expected in some situations
+- **plugin-management**: Fixed plugins not auto-sorting on deployment
 
 ## 1.14.7 - 2025-07-03
 
