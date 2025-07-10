@@ -575,10 +575,17 @@ export class DownloadObserver {
           allowReport: false,
         });
       }
-        new Promise((resolve) => setTimeout(resolve, 1000))
+        return new Promise((resolve) => setTimeout(resolve, 1000))
           .then(() => {
+            // Does the download id still exist?
+            const download = this.mApi.store.getState().persistent.downloads.files[downloadId];
+            if (download === undefined) {
+              if (callback !== undefined) {
+                callback(new ProcessCanceled('download no longer exists'));
+              }
+            }
             log('info', 'resuming download after I/O error', { downloadId, code: err.code });
-            this.handleResumeDownload(downloadId, callback);
+            return this.handleResumeDownload(downloadId, callback);
           })
     } else if ((err.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
                || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
