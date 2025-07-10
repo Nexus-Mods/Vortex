@@ -165,9 +165,9 @@ class InstallManager {
   private mQueue: Bluebird<void>;
   private mDependencyInstalls: { [modId: string]: () => void } = {};
   private mDependencyDownloadsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(10);
-  private mDependencyInstallsLimit: ConcurrencyLimiter =
     new ConcurrencyLimiter(3);
+  private mDependencyInstallsLimit: ConcurrencyLimiter =
+    new ConcurrencyLimiter(1);
   private mDependencyQueue = makeQueue<void>();
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
@@ -2516,6 +2516,7 @@ class InstallManager {
               id: notiId,
             });
           } else {
+            return downloadAndInstall(dep);
             const pretty = prettifyNodeErrorMessage(err);
             const newErr = new Error(pretty.message);
             newErr.stack = err.stack;
@@ -2835,7 +2836,7 @@ class InstallManager {
           .then(async (updated: IDependency[]) => api.getState().settings.downloads.collectionsInstallWhileDownloading
             ? Promise.resolve(updated)
             : new Promise<IDependency[]>(async (resolve, reject) => {
-              const sorted = ([...updated]).sort((a, b) => (a.reference.fileSize ?? 0) - (b.reference.fileSize ?? 0));
+              const sorted = ([...updated]).sort((a, b) => (a?.reference?.fileSize ?? 0) - (b?.reference?.fileSize ?? 0));
               try {
                 // Give the state a chance to catch up
                 await Promise.all(sorted.map(dep => installDownload(dep, findDownloadId(dep))));
