@@ -16,6 +16,7 @@ import { batch } from 'redux-act';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
 import * as url from 'url';
+import { getApplication } from './application';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -81,7 +82,7 @@ export function midClip(input: string, maxLength: number): string {
  * @param {string} check the string to check
  */
 export function isNullOrWhitespace(check: string): boolean {
-    return (!check || (check.trim().length === 0));
+  return (!check || (check.trim().length === 0));
 }
 
 /**
@@ -105,13 +106,13 @@ export function truthy(val: any): boolean {
 export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   const res = {};
 
-  if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
+  if ((typeof (lhs) === 'object') && (typeof (rhs) === 'object')) {
     Object.keys(lhs || {}).forEach(key => {
       if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
         return null;
       }
       if (!Object.prototype.hasOwnProperty.call(rhs, key)
-          && Object.prototype.hasOwnProperty.call(lhs, key)) {
+        && Object.prototype.hasOwnProperty.call(lhs, key)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs?.[key] ?? {}, rhs?.[key] ?? {});
@@ -125,7 +126,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
     });
     Object.keys(rhs || {}).forEach(key => {
       if (!Object.prototype.hasOwnProperty.call(lhs, key)
-          && Object.prototype.hasOwnProperty.call(rhs, key)) {
+        && Object.prototype.hasOwnProperty.call(rhs, key)) {
         res['+' + key] = rhs[key];
       }
     });
@@ -164,7 +165,7 @@ interface IQueueItem {
  * and with the promise that nothing else in the queue is run in parallel.
  */
 export function makeQueue<T>() {
-  const pending: IQueueItem[] =  [];
+  const pending: IQueueItem[] = [];
   let processing: IQueueItem;
 
   const tick = () => {
@@ -208,7 +209,7 @@ export function spawnSelf(args: string[]) {
   });
 }
 
-const BYTE_LABELS = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
+const BYTE_LABELS = ['B', 'KB', 'MB', 'GB', 'TB'];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;
@@ -223,7 +224,7 @@ export function bytesToString(bytes: number): string {
   }
 }
 
-const NUM_LABELS = [ '', 'K', 'M' ];
+const NUM_LABELS = ['', 'K', 'M'];
 
 export function largeNumToString(num: number): string {
   let labelIdx = 0;
@@ -292,7 +293,7 @@ const PROP_BLACKLIST = ['constructor',
   'toString',
   'valueOf',
   '__proto__',
-  'toLocaleString' ];
+  'toLocaleString'];
 
 export function getAllPropertyNames(obj: object): string[] {
   let props: string[] = [];
@@ -404,9 +405,9 @@ export interface ITimeoutOptions {
  * @param options options detailing how this timeout acts
  */
 export function timeout<T>(prom: Bluebird<T>,
-                           delayMS: number,
-                           options?: ITimeoutOptions)
-                           : Bluebird<T> {
+  delayMS: number,
+  options?: ITimeoutOptions)
+  : Bluebird<T> {
   let timedOut: boolean = false;
   let resolved: boolean = false;
 
@@ -461,8 +462,8 @@ export function delay(timeoutMS: number): Bluebird<void> {
  * characters invalid in a file path
  */
 const INVALID_FILEPATH_CHARACTERS = process.platform === 'win32'
-      ? ['/', '?', '*', ':', '|', '"', '<', '>']
-      : [];
+  ? ['/', '?', '*', ':', '|', '"', '<', '>']
+  : [];
 
 /**
  * characters invalid in a file name
@@ -478,7 +479,7 @@ const RESERVED_NAMES = new Set(process.platform === 'win32'
     'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
     '..', '.',
   ]
-  : [ '..', '.' ]);
+  : ['..', '.']);
 
 export function isFilenameValid(input: string): boolean {
   if (input.length === 0) {
@@ -591,8 +592,8 @@ export function flatten(obj: any, options?: IFlattenParameters): any {
 }
 
 function flattenInner(obj: any, key: string[],
-                      objStack: any[],
-                      options: IFlattenParameters): any {
+  objStack: any[],
+  options: IFlattenParameters): any {
   if ((obj.length !== undefined) && (obj.length > 10)) {
     return { [key.join(options.separator)]: '<long array cut>' };
   }
@@ -603,7 +604,7 @@ function flattenInner(obj: any, key: string[],
     if (objStack.indexOf(obj[attr]) !== -1) {
       return prev;
     }
-    if ((typeof(obj[attr]) === 'object') && (obj[attr] !== null)) {
+    if ((typeof (obj[attr]) === 'object') && (obj[attr] !== null)) {
       prev = {
         ...prev,
         ...flattenInner(obj[attr], [...key, attr], [].concat(objStack, [obj[attr]]), options),
@@ -696,15 +697,15 @@ export function toBlue<T, ArgsT extends any[]>(
 
 export function replaceRecursive(input: any, from: any, to: any) {
   if ((input === undefined)
-      || (input === null)
-      || Array.isArray(input)) {
+    || (input === null)
+    || Array.isArray(input)) {
     return input;
   }
   return Object.keys(input)
     .reduce((prev: any, key: string) => {
       if (input[key] === from) {
         prev[key] = to;
-      } else if (typeof(input[key]) === 'object') {
+      } else if (typeof (input[key]) === 'object') {
         prev[key] = replaceRecursive(input[key], from, to);
       } else {
         prev[key] = input[key];
@@ -763,7 +764,7 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
     try {
       return Bluebird.resolve(cb(...args))
         .catch?.(err => {
-          if (typeof(err) === 'string') {
+          if (typeof (err) === 'string') {
             err = new Error(err);
           }
           if ((extInfo !== undefined) && !extInfo.official) {
@@ -800,30 +801,46 @@ export function wrapExtCBSync<ArgT extends any[], ResT>(
   };
 }
 
+/**
+ * Represents the different sections available in the application and is used to construct URLs for specific subdomains.
+ */
 export enum Section {
   Mods,
   Collections,
   Users,
 }
 
+/**
+ * Represents the available campaign types for tracking user interactions.
+ * @property BuyPremium - Campaign for premium subscription advertisements.
+ * @property GeneralNavigation - Campaign for general navigation events.
+ */
 export enum Campaign {
-  ViewCollection = 'view_collection',
-  ViewCollectionAsCurator = 'curator_view_collection',
-  BuyPremium = 'buy_premium'
+  BuyPremium = 'buy_premium',
+  GeneralNavigation = 'general_navigation'
 }
 
-export enum Source {
+/**
+ * Represents the different types of content placements for advertisements within the application.
+ * @property HeaderAd - Ad displayed in the titlebar.
+ * @property DownloadsBannerAd - Banner shown at top of downloads page.
+ * @property CollectionsDownloadModModal - Modal shown when downloading a mod from a collection.
+ * @property DashboardDashletAd - Advertisement displayed in a dashboard dashlet.
+ * @property CollectionsDownloadAd - Advertisement shown during collection downloads.
+ * @property SettingsDownloadAd - Advertisement displayed in the settings download section.
+ */
+export enum Content {
   HeaderAd = 'header_ad',
   DownloadsBannerAd = 'downloads_banner_ad',
-  DownloadsNagAd = 'downloads_nag_ad',
-  DashboardAd = 'dashboard_ad',
-  CollectionsAd = 'collections_ad',
-  SettingsAd = 'settings_ad'
+  CollectionsDownloadModModal = 'collections_downloadmod_modal',
+  DashboardDashletAd = 'dashboard_dashlet_ad',
+  CollectionsDownloadAd = 'collections_download_ad',
+  SettingsDownloadAd = 'settings_download_ad'
 }
 
 export interface INexusURLOptions {
   section?: Section;
-  source?: Source;
+  content?: Content;
   campaign?: Campaign | string;
   parameters?: string[];
 }
@@ -839,29 +856,39 @@ function sectionHost(section?: Section) {
 export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
 
   // if no parameters set, then just empty array to start
-  const parameters = options?.parameters ?? []; 
-  
-  // if we have a campaign, then we want to track some data  
+  const parameters = options?.parameters ?? [];
+
+  // if we set a campaign then we want to track some data, fill in all the parameters
   if (options?.campaign !== undefined) {
 
-    // always need this and will always be 'vortex'
-    parameters.push('utm_medium=vortex');
+    // always need these
+    parameters.push(`utm_source=vortex`);
+    parameters.push('utm_medium=in_app');
 
-    // source is location within vortex if we want to differenciate, if not, then just 'vortex' 
-    const source = options?.source ?? 'vortex'; 
-    parameters.push(`utm_source=${source}`);
-    
+    // content is optional, but if set, we want to track it
+    if (options?.content !== undefined) {
+      parameters.push(`utm_content=${options.content}`);
+    }
+
     // we add the campaign
     parameters.push(`utm_campaign=${options.campaign.toString()}`);
+
+    // add release channel like beta (rarely alpha) anything else is considered stable
+    const version = semver.parse(getApplication().version);
+    const release = version?.prerelease[0] ?? 'stable';
+
+    parameters.push(`utm_releasechannel=${release}`);
   }
 
   const urlParameters: url.UrlObject = {
     protocol: NEXUS_PROTOCOL,
     host: sectionHost(options?.section),
   };
+
   if (reqPath.length > 0) {
     urlParameters.pathname = '/' + reqPath.join('/');
   }
+
   if (parameters.length > 0) {
     urlParameters.search = '?' + parameters.join('&');
   }
@@ -891,7 +918,7 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
   private mDeduce: (key: KeyT, extraArg: any) => string;
 
   public constructor(baseData: Record<KeyT, ObjT>,
-                     deduceLayer: (key: KeyT, extraArg: any) => string) {
+    deduceLayer: (key: KeyT, extraArg: any) => string) {
     this.mBaseData = baseData;
     this.mDeduce = deduceLayer;
   }
@@ -916,7 +943,7 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
       return this.mBaseData[key]?.[attr] as ValT;
     }
     return (this.mLayers[layer]?.[key]?.[attr] as any)
-        ?? this.mBaseData[key]?.[attr];
+      ?? this.mBaseData[key]?.[attr];
   }
 
   public get baseData() {
@@ -930,7 +957,7 @@ const proxyHandler: ProxyHandler<Overlayable<any, any>> = {
   },
   getOwnPropertyDescriptor(target, prop) {
     if (Reflect.has(target, prop)) {
-      return Reflect.getOwnPropertyDescriptor(target,  prop);
+      return Reflect.getOwnPropertyDescriptor(target, prop);
     } else {
       return {
         enumerable: true,
