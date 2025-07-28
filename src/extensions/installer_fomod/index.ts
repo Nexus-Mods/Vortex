@@ -6,7 +6,6 @@ import {
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
-import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -206,7 +205,7 @@ function processAttributes(input: any, modPath: string): Bluebird<any> {
       if (data.readUInt16LE(0) === 0xFEFF) {
         encoding = 'utf16le';
         offset = 2;
-      } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
+      } else if (data[0] === 0xEF && data[1] === 0xBB && data[2] === 0xBF) {
         offset = 3;
       }
       const parser = new DOMParser();
@@ -292,7 +291,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   const downloadsPath = downloadPathForGame(state, SITE_ID);
   const fullPath = path.join(downloadsPath, download.localPath);
 
-  api.showDialog('info', 'Microsoft .NET Desktop Runtime 6 is being installed', {
+  api.showDialog('info', 'Microsoft .NET Desktop Runtime 9 is being installed', {
     bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
     + '[br][/br][br][/br]'
         + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
@@ -309,45 +308,44 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   return spawnRetry(api, fullPath, args);
 }
 
-async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
+// async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
+//   if (process.platform !== 'win32') {
+//     // currently only supported/tested on windows
+//     onFoundDotNet();
+//     return Promise.resolve(undefined);
+//   }
+
+//   const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+//   let stderr: string = '';
+//   const exitCode = await new Promise<number>((resolve) => {
+//     const proc = execFile(probeExe).on('close', code => resolve(code));
+//     proc.stderr.on('data', dat => stderr += dat.toString());
+//   });
+
   
-  if (process.platform !== 'win32') {
-    // currently only supported/tested on windows
-    onFoundDotNet();
-    return Promise.resolve(undefined);
-  }
+//   if (exitCode === 0) {
+//     onFoundDotNet();
+//     return Promise.resolve(undefined);
+//   }
 
-  const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
-  let stderr: string = '';
-  const exitCode = await new Promise<number>((resolve) => {
-    const proc = execFile(probeExe).on('close', code => resolve(code));
-    proc.stderr.on('data', dat => stderr += dat.toString());
-  });
+//   const result: ITestResult = {
+//     description: {
+//       short: 'Microsoft .NET Desktop Runtime 6 required',
+//       long: 'Vortex requires .NET Desktop Runtime 6 to be installed even though you may already have a newer version. This is due to incompatible changes in the more recent versions.'
+//         + '[br][/br][br][/br]'
+//         + 'If you already have .NET Desktop Runtime 6 installed then there may be a problem with your installation and a reinstall might be needed.'
+//         + '[br][/br][br][/br]'
+//         + 'Click "Fix" below to install the required version.'
+//         + '[br][/br][br][/br]'
+//         + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+//       replace: { stderr: stderr.replace('\n', '[br][/br]') },
+//     },
+//     automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
+//     severity: 'fatal',
+//   };
 
-  
-  if (exitCode === 0) {
-    onFoundDotNet();
-    return Promise.resolve(undefined);
-  }
-
-  const result: ITestResult = {
-    description: {
-      short: 'Microsoft .NET Desktop Runtime 6 required',
-      long: 'Vortex requires .NET Desktop Runtime 6 to be installed even though you may already have a newer version. This is due to incompatible changes in the more recent versions.'
-        + '[br][/br][br][/br]'
-        + 'If you already have .NET Desktop Runtime 6 installed then there may be a problem with your installation and a reinstall might be needed.'
-        + '[br][/br][br][/br]'
-        + 'Click "Fix" below to install the required version.'
-        + '[br][/br][br][/br]'
-        + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
-      replace: { stderr: stderr.replace('\n', '[br][/br]') },
-    },
-    automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
-    severity: 'fatal',
-  };
-
-  return Promise.resolve(result);
-}
+//   return Promise.resolve(result);
+// }
 
 interface IAwaitingPromise {
   resolve: (data: any) => void;
@@ -1070,7 +1068,7 @@ function init(context: IExtensionContext): boolean {
             } else if ([0xC0000005, 0xC0000096, 0xC000041D, 0xCFFFFFFFFF].includes(err.code)) {
               context.api.sendNotification({
                 type: 'error',
-                message: 'Installer process crashed. This likely means your .NET 6 installation is damaged. '
+                message: 'Installer process crashed. This likely means your .NET 9 installation is damaged. '
                        + 'Vortex can try to repair .NET automatically here, this will require a download '
                        + 'of the .NET installer (~55MB).',
                 actions: [
@@ -1235,11 +1233,6 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 20, wrapper('test', testSupportedScripted), wrapper('install', installWrap));
   context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
 
-  if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
-  } else {
-    onFoundDotNet();
-  }
   context.registerDialog('fomod-installer', InstallerDialog);
 
   context.registerSettings('Workarounds', Workarounds, () => ({
