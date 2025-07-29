@@ -30,7 +30,7 @@ async function setDownloadGames(
   if ((download?.localPath === undefined)
       || (gameIds.length === 0)
       || (gameIds[0] === undefined)) {
-    return Promise.resolve();
+    return;
   }
 
   const fromGameId = (Array.isArray(download.game) ? download.game[0] : download.game);
@@ -75,6 +75,7 @@ async function setDownloadGames(
   } else {
     api.store.dispatch(setCompatibleGames(dlId, gameIds));
   }
+  return;
 }
 
 async function moveDownload(state: IState, fileName: string, fromGameId: string, toGameId: string)
