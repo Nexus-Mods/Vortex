@@ -2804,9 +2804,9 @@ class InstallManager {
               : Bluebird.resolve());
           }
 
-          return (dep.mod === undefined)
+          return (dep.mod == null)
             ? queryWrongMD5()
-                .then(() => api.getState().settings.downloads.collectionsInstallWhileDownloading ? installDownload(dep, downloadId) : Bluebird.resolve(null))
+                .then(() => api.getState().settings.downloads.collectionsInstallWhileDownloading && !!dep ? installDownload(dep, downloadId) : Bluebird.resolve(null))
                 .catch(err => {
                   if (dep['reresolveDownloadHint'] === undefined) {
                     return Bluebird.reject(err);
@@ -2853,7 +2853,7 @@ class InstallManager {
           .then(async (updated: IDependency[]) => api.getState().settings.downloads.collectionsInstallWhileDownloading
             ? Promise.resolve(updated)
             : new Promise<IDependency[]>(async (resolve, reject) => {
-              const sorted = ([...updated]).sort((a, b) => (a?.reference?.fileSize ?? 0) - (b?.reference?.fileSize ?? 0));
+              const sorted = ([...updated]).sort((a, b) => (a?.reference?.fileSize ?? 0) - (b?.reference?.fileSize ?? 0)).filter(dep => !!dep);
               try {
                 // Give the state a chance to catch up
                 await Promise.all(sorted.map(dep => installDownload(dep, findDownloadId(dep))));
