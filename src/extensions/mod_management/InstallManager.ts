@@ -2823,7 +2823,7 @@ class InstallManager {
     const phaseList = Object.values(phases);
 
     const findDownloadId = (dep: IDependency) => {
-      return Object.keys(downloads).find(dlId => downloads[dlId].modInfo?.referenceTag === dep.reference.tag);
+      return Object.keys(downloads).find(dlId => downloads[dlId].modInfo?.referenceTag === dep?.reference?.tag);
     }
     const res: Bluebird<IDependency[]> = Bluebird.reduce(phaseList,
       (prev: IDependency[], depList: IDependency[], idx: number) => {
