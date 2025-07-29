@@ -863,7 +863,7 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
 
     // always need these
     parameters.push(`utm_source=vortex`);
-    parameters.push('utm_medium=in_app');
+    parameters.push('utm_medium=app');
 
     // content is optional, but if set, we want to track it
     if (options?.content !== undefined) {
@@ -872,12 +872,6 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
 
     // we add the campaign
     parameters.push(`utm_campaign=${options.campaign.toString()}`);
-
-    // add release channel like beta (rarely alpha) anything else is considered stable
-    const version = semver.parse(getApplication().version);
-    const release = version?.prerelease[0] ?? 'stable';
-
-    parameters.push(`utm_releasechannel=${release}`);
   }
 
   const urlParameters: url.UrlObject = {
