@@ -1098,7 +1098,14 @@ class DownloadManager {
       return count + ((this.mSlowWorkers[key] == null && !worker.isPending()) ? 1 : 0);
     }, 0);
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
-
+    if (busyCount === 0 && Object.keys(this.mBusyWorkers).length > 0) {
+      for (const workerId of busyWorkerIds) {
+        if (this.mSlowWorkers[workerId] > 5) {
+          this.mBusyWorkers[workerId].restart?.();
+          delete this.mSlowWorkers[workerId];
+        }
+      }
+    }
     this.mQueue.forEach(download => {
       if (this.isStarvingTick(download)) {
         download.chunks.forEach(chunk => {
