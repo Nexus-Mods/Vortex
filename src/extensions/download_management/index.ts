@@ -137,7 +137,7 @@ function attributeExtractor(input: any) {
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
-    version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
+    version: getSafe(input, ['download', 'modInfo', 'version'], undefined) ?? getSafe(input, ['download', 'modInfo', 'meta', 'fileVersion'], undefined),
     logicalFileName,
     modId: getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined),
     fileId: getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined),
