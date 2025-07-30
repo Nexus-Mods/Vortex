@@ -572,14 +572,9 @@ export class DownloadObserver {
       }
       return;
     }
-    if (['init', 'started'].includes(download.state)) {
+    if (['init', 'paused'].includes(download.state)) {
       log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
-      this.handleResumeDownload(downloadId, callback);
-    } else {
-      log('debug', 'download not resumable', { id: downloadId, state: download.state });
-      if (callback !== undefined) {
-        callback(new ProcessCanceled('download not resumable'));
-      }
+      return this.handleResumeDownload(downloadId, callback);
     }
     return Promise.resolve();
   }
