@@ -77,10 +77,12 @@ export class DownloadObserver {
   // time we allow a download to be intercepted. If it's too short we may end up
   // processing a download that was supposed to be canceled
   private static INTERCEPT_TIMEOUT = 60000;
+  private static MAX_RESUME_ATTEMPTS = 3;
   private mApi: IExtensionApi;
   private mManager: DownloadManager;
   private mOnFinishCBs: { [dlId: string]: Array<() => Promise<void>> } = {};
   private mInterceptedDownloads: Array<{ time: number, tag: string }> = [];
+  private mResumeAttempts: { [downloadId: string]: number } = {};
 
   constructor(api: IExtensionApi, manager: DownloadManager) {
     this.mApi = api;
@@ -205,9 +207,9 @@ export class DownloadObserver {
         err.downloadId = dlId;
       }
       this.mApi.store.dispatch(removeDownload(id));
-      return this.handleUnknownDownloadError(err, id, callback);
+      return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
     } else {
-      return this.handleUnknownDownloadError(err, id, callback);
+      return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
     }
 
     return Promise.resolve();
@@ -560,33 +562,54 @@ export class DownloadObserver {
     }
   }
 
+  private async attemptResumeDownload(downloadId: string, callback?: (err: Error, id?: string) => void) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const download = this.mApi.store.getState().persistent.downloads.files[downloadId];
+    if (download === undefined) {
+      log('warn', 'attempted to resume unknown download', { downloadId });
+      if (callback !== undefined) {
+        callback(new ProcessCanceled('invalid download id'));
+      }
+      return;
+    }
+    if (['init', 'started'].includes(download.state)) {
+      log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
+      this.handleResumeDownload(downloadId, callback);
+    } else {
+      log('debug', 'download not resumable', { id: downloadId, state: download.state });
+      if (callback !== undefined) {
+        callback(new ProcessCanceled('download not resumable'));
+      }
+    }
+    return Promise.resolve();
+  }
+
+  private incrementResumeAttempts(downloadId: string) {
+    this.mResumeAttempts[downloadId] = (this.mResumeAttempts[downloadId] || 0) + 1;
+    log('info', `Resume attempt #${this.mResumeAttempts[downloadId]} for download`, { downloadId });
+  }
+
   private handleUnknownDownloadError(err: any,
                                      downloadId: string,
                                      callback?: (err: Error, id?: string) => void) {
     if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF', 'EIO'].includes(err.code)) {
       // may be resumable
       this.handlePauseDownload(downloadId);
-      if (callback !== undefined) {
-        callback(new TemporaryError('I/O Error'), downloadId);
+      // Track the number of resume attempts for this download
+      this.incrementResumeAttempts(downloadId);
+      if (this.mResumeAttempts[downloadId] > DownloadObserver.MAX_RESUME_ATTEMPTS) {
+        if (callback !== undefined) {
+          callback(new TemporaryError('I/O Error'), downloadId);
+        } else {
+          showError(this.mApi.store.dispatch, 'Download failed',
+            'The download failed due to an I/O error (network or writing to disk). '
+            + 'This is likely a temporary issue, please try resuming later.', {
+            allowReport: false,
+          });
+        }  
       } else {
-        showError(this.mApi.store.dispatch, 'Download failed',
-          'The download failed due to an I/O error (network or writing to disk). '
-          + 'This is likely a temporary issue, please try resuming later.', {
-          allowReport: false,
-        });
+        return this.attemptResumeDownload(downloadId, callback);
       }
-        return new Promise((resolve) => setTimeout(resolve, 1000))
-          .then(() => {
-            // Does the download id still exist?
-            const download = this.mApi.store.getState().persistent.downloads.files[downloadId];
-            if (download === undefined) {
-              if (callback !== undefined) {
-                callback(new ProcessCanceled('download no longer exists'));
-              }
-            }
-            log('info', 'resuming download after I/O error', { downloadId, code: err.code });
-            return this.handleResumeDownload(downloadId, callback);
-          })
     } else if ((err.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
                || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
       // may be resumable
@@ -605,13 +628,18 @@ export class DownloadObserver {
       }
     } else if (err instanceof TemporaryError) {
       this.handlePauseDownload(downloadId);
-      if (callback !== undefined) {
-        callback(err, downloadId);
+      this.incrementResumeAttempts(downloadId);
+      if (this.mResumeAttempts[downloadId] > DownloadObserver.MAX_RESUME_ATTEMPTS) {
+        if (callback !== undefined) {
+          callback(err, downloadId);
+        } else {
+          showError(this.mApi.store.dispatch, 'Download failed',
+            err.message, {
+            allowReport: false,
+          });
+        }  
       } else {
-        showError(this.mApi.store.dispatch, 'Download failed',
-          err.message, {
-          allowReport: false,
-        });
+        return this.attemptResumeDownload(downloadId, callback);
       }
     } else {
       const message = this.translateError(err);
