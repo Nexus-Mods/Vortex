@@ -38,7 +38,7 @@ const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
 // don't follow redirects arbitrarily long
 const MAX_REDIRECT_FOLLOW = 5;
 // if we receive no data for this amount of time, reset the connection
-const STALL_TIMEOUT = 2000;
+const STALL_TIMEOUT = 5000;
 const MAX_STALL_RESETS = 2;
 
 export type RedownloadMode = 'always' | 'never' | 'ask' | 'replace';
@@ -267,6 +267,7 @@ class DownloadWorker {
     this.mResponse?.removeAllListeners?.('error');
     this.mRequest?.destroy?.();
     this.mRestart = true;
+    this.handleComplete();
   }
 
   private startDownload = (job: IDownloadJob, jobUrl: string, electronCookies: Electron.Cookie[]) => {
