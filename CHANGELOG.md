@@ -7,11 +7,17 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 ## 1.15.0 - 2025-xx-xx
 
 - Fixed download queue memory leak
-- Fixed warnings raised on startup for old bundled extensions. ([#17374](https://github.com/Nexus-Mods/Vortex/issues/17374))
+- Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+
+## 1.14.9 - 2025-07-30
+
+- Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
+- **collections**: Fixed intermittent download version resolution error when installing collections.
+- **plugin-management**: fixed plugin info not retrieved if plugin contains no metadata (light plugins identification). ([#17962](https://github.com/Nexus-Mods/Vortex/issues/17962))
 
 ## 1.14.8 - 2025-07-08
 
