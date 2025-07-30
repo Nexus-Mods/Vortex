@@ -1091,30 +1091,12 @@ class DownloadManager {
     return starving
   }
   private tickQueue(verbose: boolean = true) {
-    // Calculate available worker slots
-    const busyWorkerIds = Object.keys(this.mBusyWorkers);
-    const busyCount = busyWorkerIds.reduce((count, key) => {
+    let busyWorkerIds = Object.keys(this.mBusyWorkers);
+    let busyCount = busyWorkerIds.reduce((count, key) => {
       const worker = this.mBusyWorkers[key];
       return count + ((this.mSlowWorkers[key] == null && !worker.isPending()) ? 1 : 0);
     }, 0);
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
-    if (busyCount === 0 && Object.keys(this.mBusyWorkers).length > 0) {
-      for (const workerId of busyWorkerIds) {
-        if (this.mSlowWorkers[workerId] > 5) {
-          this.mBusyWorkers[workerId].restart?.();
-          delete this.mSlowWorkers[workerId];
-        }
-      }
-    }
-    this.mQueue.forEach(download => {
-      if (this.isStarvingTick(download)) {
-        download.chunks.forEach(chunk => {
-          this.mBusyWorkers[chunk.workerId]?.restart?.();
-          delete this.mSlowWorkers[chunk.workerId];
-        });
-      }
-    });
-
     if (verbose && this.mQueue.length > 0) {
       log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
     }
@@ -1122,6 +1104,8 @@ class DownloadManager {
     for (let idx = 0; idx < this.mQueue.length && freeSpots > 0; idx++) {
       const queueItem = this.mQueue[idx];
       const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
+      const runningChunks = queueItem.chunks.filter(chunk => chunk.state !== 'init');
+      runningChunks.forEach(chunk => this.makeProgressCB(chunk, queueItem)(0));
       if (unstartedChunks.length === 0) continue;
 
       // Start as many chunks as we have free spots
