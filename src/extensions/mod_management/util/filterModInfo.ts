@@ -21,9 +21,10 @@ function filterNullish(input: { [key: string]: any }) {
 function extractorOrSkip(extractor: AttributeExtractor, input: any, modPath: string): Promise<any> {
   return Promise.race([
     extractor(input, modPath),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Extractor timed out')), 1000))
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Extractor timed out')), 2000))
   ]).catch(err => {
-    log('error', `Extractor skipped: "${extractor.name ?? extractor.toString()}" - ${err.message}`);
+    const extractorName = extractor.name || extractor.constructor?.name || '[anonymous extractor]';
+    log('error', `Extractor skipped: "${extractorName}" (modPath: "${modPath}") - ${err.message}`);
     return {};
   });
 }
