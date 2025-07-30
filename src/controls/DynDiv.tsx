@@ -5,6 +5,8 @@ import { extend } from '../util/ExtensionProvider';
 import * as React from 'react';
 import { IExtensibleProps } from '../types/IExtensionProvider';
 
+import ErrorBoundary from '../controls/ErrorBoundary';
+
 interface IDynDivDefinition {
   component: React.ComponentClass<any>;
   options: IDynDivOptions;
@@ -41,9 +43,11 @@ class DynDiv extends React.Component<IProps, {}> {
     }
 
     return (
-      <div id={group} className={classes.join(' ')}>
-        {visible.map((comp, idx) => this.renderComponent(comp, idx))}
-      </div>
+      <ErrorBoundary key={`dynamic-div-${group}`}>
+        <div id={group} className={classes.join(' ')}>
+          {visible.map((comp, idx) => this.renderComponent(comp, idx))}
+        </div>
+      </ErrorBoundary>
     );
   }
 
