@@ -22,7 +22,7 @@ import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
-         nexusModsURL, Section, Source } from '../../../util/util';
+         nexusModsURL, Section, Content } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
 import { PREMIUM_PATH } from '../../nexus_integration/constants';
 import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads, setCollectionConcurrency } from '../actions/settings';
@@ -364,7 +364,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
-      source: Source.SettingsAd }))
+      content: Content.SettingsDownloadAd }))
       .catch(() => null);
   }
 
