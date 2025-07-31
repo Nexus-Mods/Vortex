@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.14.9 - 2025-07-30
+## 1.14.9 - 2025-07-31
 
 - Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
 - **collections**: Fixed intermittent download version resolution error when installing collections.
+- **collections**: Greatly simplified checksum matching when exporting with replicate
 - **plugin-management**: fixed plugin info not retrieved if plugin contains no metadata (light plugins identification). ([#17962](https://github.com/Nexus-Mods/Vortex/issues/17962))
 
 ## 1.14.8 - 2025-07-08
