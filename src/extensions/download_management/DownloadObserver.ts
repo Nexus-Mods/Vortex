@@ -41,22 +41,27 @@ import { util } from '../..';
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], chunkable: boolean,
                         urls: string[], filePath: string, smallUpdate: boolean) {
-  const download: IDownload = store.getState().persistent.downloads.files[dlId];
+  const state = store.getState();
+  const download: IDownload = state.persistent.downloads.files[dlId];
   if (download === undefined) {
     // progress for a download that's no longer active
     return;
   }
+  const updates: any[] = [];
   if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
     if (received < 0)  {
       log('warn', 'invalid download progress', { received, total });
     }
-    store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
+    updates.push(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) && (path.basename(filePath) !== download.localPath)) {
-    store.dispatch(setDownloadFilePath(dlId, path.basename(filePath)));
+    updates.push(setDownloadFilePath(dlId, path.basename(filePath)));
   }
   if ((chunkable !== undefined) && (chunkable !== download.pausable)) {
-    store.dispatch(setDownloadPausable(dlId, chunkable));
+    updates.push(setDownloadPausable(dlId, chunkable));
+  }
+  if (updates.length > 0) {
+    util.batchDispatch(store.dispatch, updates);
   }
 }
 
@@ -381,8 +386,12 @@ export class DownloadObserver {
             urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
-      const newPerc = Math.floor((received * 100) / total);
-      const small = ((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc);
+      const newPerc = total > 0 ? Math.floor((received * 100) / total) : 0;
+      const timeDiff = now - lastUpdateTick;
+      
+      // Only update if significant change or enough time has passed
+      const small = (timeDiff < 500) && (newPerc === lastUpdatePerc) && (filePath === undefined);
+      
       if (!small) {
         lastUpdateTick = now;
         lastUpdatePerc = newPerc;
