@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.10 - 2025-08-05
+
+- Improved collection install tracking 
+
 ## 1.14.9 - 2025-07-31
 
 - Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
