@@ -50,33 +50,33 @@ const FILE_QUERY: IModFileQuery = {
 
 type RecursivePartial<T> = {
   [P in keyof T]?:
-    T[P] extends Array<(infer U)> ? Array<RecursivePartial<U>> :
-    T[P] extends object ? RecursivePartial<T[P]> :
-    T[P];
+  T[P] extends Array<(infer U)> ? Array<RecursivePartial<U>> :
+  T[P] extends object ? RecursivePartial<T[P]> :
+  T[P];
 };
 
 const makeUnknown: (t: TFunction, url: NXMUrl) => RecursivePartial<IModFile> =
-    (t: TFunction, url: NXMUrl) => {
-      return {
-        modId: undefined,
-        mod: {
-          summary: t('N/A'),
-          name: t('Mod with id {{modId}}', { modId: url.modId }),
-          pictureUrl: null,
-          uploader: {
-            name: t('N/A'),
-            avatar: undefined,
-          },
+  (t: TFunction, url: NXMUrl) => {
+    return {
+      modId: undefined,
+      mod: {
+        summary: t('N/A'),
+        name: t('Mod with id {{modId}}', { modId: url.modId }),
+        pictureUrl: null,
+        uploader: {
+          name: t('N/A'),
+          avatar: undefined,
         },
-        game: {
-          domainName: undefined,
-        },
-        name: t('N/A'),
-        owner: {
-          member_id: undefined,
-        } as any,
-      };
-};
+      },
+      game: {
+        domainName: undefined,
+      },
+      name: t('N/A'),
+      owner: {
+        member_id: undefined,
+      } as any,
+    };
+  };
 
 function nop() {
   // nop
@@ -85,10 +85,6 @@ function nop() {
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
-
-  //return oauthCred !== undefined ? oauthCred.token : undefined;
-
-
 
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
@@ -101,12 +97,29 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
+  const show = urls.length > 0;
+
   React.useEffect(() => {
-    //log('info', '[FreeUserDLDialog] userInfo has changed', {userInfo:userInfo, urls: urls});
+    if (!show) return;
+
+    const handleFocus = () => {
+      console.log('Window gained focus. Modal is open');
+      checkStatus();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [show]);
+
+
+  React.useEffect(() => {
     // if userInfo is updated, and isPremium is true, then retry
-    if(userInfo !== undefined) 
-      if(userInfo?.isPremium && urls.length > 0)
-        onRetry(urls[0]);
+    if (userInfo !== undefined)
+      if (userInfo?.isPremium && urls.length > 0)
+        retry();
   }, [userInfo]);
 
   React.useEffect(() => {
@@ -140,7 +153,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const checkStatus = React.useCallback(() => {
     onCheckStatus();
-  }, [])
+  }, [onCheckStatus]);
 
   const retry = React.useCallback(() => {
     onRetry(urls[0]);
@@ -166,13 +179,16 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
   }, [fileInfo]);
 
+
   return (
-    <Modal show={urls.length > 0} onHide={nop}>
+    <Modal show={show} onHide={nop}>
       <Modal.Header>
         <Modal.Title>
-          {t('Download "{{modName}}"', { replace: {
-            modName: fileInfo !== null ? fileInfo.name : '...',
-          } })}
+          {t('Download "{{modName}}"', {
+            replace: {
+              modName: fileInfo !== null ? fileInfo.name : '...',
+            }
+          })}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
