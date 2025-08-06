@@ -256,9 +256,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.emit('analytics-track-event-with-payload', 'Launch game', {
       game_id: starter.gameId,
       enabled_mods: numberOfEnabledModsExcludingCollections,
-      enabled_collections: numberOfEnabledCollections,
-      page_title: "",
-      page_location: ""
+      enabled_collections: numberOfEnabledCollections
     });
     StarterInfo.run(starter, this.context.api, onShowError);
   }
