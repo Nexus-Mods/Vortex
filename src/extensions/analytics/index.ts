@@ -102,6 +102,11 @@ function init(context: IExtensionContext): boolean {
       AnalyticsGA4.trackEvent(action.toLocaleLowerCase(), category, label, value);
     });
 
+    // Custom event for event tracking (with raw payload)
+    context.api.events.on('analytics-track-event-with-payload', (action, payload) => {
+      AnalyticsGA4.trackEventWithRawPayload(action.toLocaleLowerCase(), payload);
+    });
+
     // Custom event for event tracking
     context.api.events.on('analytics-track-click-event', (category, label?, value?) => {
       AnalyticsUA.trackClickEvent(category, label, value);
