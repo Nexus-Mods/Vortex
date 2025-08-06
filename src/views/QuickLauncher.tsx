@@ -251,10 +251,13 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const numberOfEnabledCollections = enabledCollections.length;
     const numberOfEnabledModsExcludingCollections = enabledMods.length - numberOfEnabledCollections;
-    log('info', `Enabled mods at launch: ${numberOfEnabledModsExcludingCollections}`)
-    log('info', `Enabled collections at launch: ${numberOfEnabledCollections}`)
-    this.context.api.events.emit('analytics-track-event', 'Collections', 'Enabled Mods at Launch', 'Count', numberOfEnabledModsExcludingCollections);
-    this.context.api.events.emit('analytics-track-event', 'Collections', 'Enabled Collections at Launch', 'Count', numberOfEnabledCollections);
+    log('info', `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`)
+    log('info', `Enabled collections at game launch: ${numberOfEnabledCollections}`)
+    this.context.api.events.emit('analytics-track-event-with-payload', 'Launch game', {
+      game_id: starter.gameId,
+      enabled_mods: numberOfEnabledModsExcludingCollections,
+      enabled_collections: numberOfEnabledCollections
+    });
     StarterInfo.run(starter, this.context.api, onShowError);
   }
 
