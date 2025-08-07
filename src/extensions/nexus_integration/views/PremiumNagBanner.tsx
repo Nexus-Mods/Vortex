@@ -6,7 +6,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import { IComponentContext } from '../../../types/IComponentContext';
 import opn from '../../../util/opn';
-import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
+import { Campaign, Content, nexusModsURL, Section } from '../../../util/util';
 import { MainContext } from '../../../views/MainWindow';
 import { PREMIUM_PATH } from '../constants';
 
@@ -34,7 +34,7 @@ function PremiumNagBanner(props: IPremiumNagBanner) {
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
-      source: Source.DownloadsNagAd
+      content: Content.CollectionsDownloadModModal
     })).catch(() => null);
   }, [campaign]);
 
