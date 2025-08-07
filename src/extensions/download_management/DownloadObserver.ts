@@ -326,12 +326,7 @@ export class DownloadObserver {
           return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath,
-                                               options?.allowOpenHTML ?? true, callback)))
-        .finally(() => {
-          if ((callback !== undefined) && !callbacked) {
-            callback(new ProcessCanceled('forgot to invoke the callback: ' + id));
-          }
-        });
+                                               options?.allowOpenHTML ?? true, callback)));
   }
 
   private handleDownloadFinished(id: string,
@@ -377,7 +372,7 @@ export class DownloadObserver {
       callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      return finalizeDownload(this.mApi, id, res.filePath)
+      finalizeDownload(this.mApi, id, res.filePath)
         .then(() => {
           const flattened = flatten(res.metaInfo ?? {});
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
@@ -393,6 +388,7 @@ export class DownloadObserver {
         })
         .catch(err => callback?.(err, id))
         .finally(() => onceFinished());
+        return Promise.resolve();
     }
   }
 
@@ -572,7 +568,7 @@ export class DownloadObserver {
   }
 
   private async attemptResumeDownload(downloadId: string, callback?: (err: Error, id?: string) => void) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const download = this.mApi.store.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'attempted to resume unknown download', { downloadId });
@@ -581,9 +577,18 @@ export class DownloadObserver {
       }
       return;
     }
-    if (['init', 'paused'].includes(download.state)) {
-      log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
-      return this.handleResumeDownload(downloadId, callback);
+    if (['paused'].includes(download.state)) {
+      if (download.chunks > 0) {
+        log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
+        return this.handleResumeDownload(downloadId, callback);
+      } else {
+        return this.handleStartDownload(download.urls, download.modInfo,
+          download.localPath, callback, 'never');
+      }
+    }
+    log('debug', 'not resuming download', { id: downloadId, state: download.state })
+    if (callback !== undefined) {
+      callback(new ProcessCanceled('download not paused'));
     }
     return Promise.resolve();
   }
