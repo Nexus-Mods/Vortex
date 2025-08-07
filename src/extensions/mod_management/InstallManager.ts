@@ -165,7 +165,7 @@ class InstallManager {
   private mQueue: Bluebird<void>;
   private mDependencyInstalls: { [modId: string]: () => void } = {};
   private mDependencyDownloadsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(3);
+    new ConcurrencyLimiter(5);
   private mDependencyInstallsLimit: ConcurrencyLimiter =
     new ConcurrencyLimiter(1);
   private mDependencyQueue = makeQueue<void>();
