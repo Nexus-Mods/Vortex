@@ -299,9 +299,7 @@ class DownloadWorker {
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
-    const allCookies = (electronCookies || [])
-      .map(cookie => `${cookie.name}=${cookie.value}`)
-      .concat(this.mJob.extraCookies);
+    const allCookies = this.formatCookies(electronCookies, this.mJob.extraCookies);
 
     try {
       const headers = {
@@ -313,7 +311,8 @@ class DownloadWorker {
       if (referer !== undefined) {
         headers['Referer'] = referer;
       }
-      this.mRequest = lib.request({
+
+      const requestOptions = {
         method: 'GET',
         protocol: parsed.protocol,
         port: parsed.port,
@@ -321,56 +320,117 @@ class DownloadWorker {
         path: parsed.path,
         headers,
         agent: false,
-      }, (res) => {
+        timeout: 5000, // 5 second timeout
+      };
+
+      this.mRequest = lib.request(requestOptions, (res) => {
+        if (!res || !res.socket) {
+          this.handleError(new Error('Invalid response received'));
+          return;
+        }
+
         log('debug', 'downloading from',
-          { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
+          { address: `${res.socket.remoteAddress}:${res.socket.remotePort}` });
+
         this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
         this.mResponse = res;
+
         let recodedURI: string;
         try {
-          recodedURI = encodeURI(decodeURI(jobUrl));
+          // Only re-encode if the URL appears to need it
+          if (jobUrl.includes('%')) {
+            recodedURI = jobUrl; // Already encoded
+          } else {
+            recodedURI = encodeURI(jobUrl); // Encode special characters
+          }
         } catch (err) {
-          this.handleError(err);
-          return;
+          log('warn', 'URL encoding failed, using original', { url: jobUrl, error: err.message });
+          recodedURI = jobUrl;
         }
         this.handleResponse(res, recodedURI);
         let str: stream.Readable = res;
 
-        str = str.pipe(this.mThrottle());
+        try {
+          str = str.pipe(this.mThrottle());
 
-        switch (res.headers['content-encoding']) {
-          case 'gzip':
-            str = str.pipe(zlib.createGunzip());
-            break;
-          case 'deflate':
-            str = str.pipe(zlib.createInflate());
-            break;
+          const encoding = res.headers['content-encoding'];
+          if (encoding === 'gzip') {
+            const gunzip = zlib.createGunzip();
+            gunzip.on('error', (err) => {
+              log('warn', 'gzip decompression error', err.message);
+              // Continue without decompression
+            });
+            str = str.pipe(gunzip);
+          } else if (encoding === 'deflate') {
+            const inflate = zlib.createInflate();
+            inflate.on('error', (err) => {
+              log('warn', 'deflate decompression error', err.message);
+              // Continue without decompression
+            });
+            str = str.pipe(inflate);
+          }
+        } catch (err) {
+          log('error', 'stream pipeline setup failed', err.message);
+          this.handleError(err);
+          return;
         }
 
         str
           .on('data', (data: Buffer) => {
+            if (this.mEnded) return;
+
             clearTimeout(this.mStallTimer);
             this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
             this.mStallResets = MAX_STALL_RESETS;
             this.handleData(data, str);
           })
-          .on('error', err => this.handleError(err))
+          .on('error', err => {
+            clearTimeout(this.mStallTimer);
+            this.handleError(err);
+          })
           .on('end', () => {
-            if (!this.mRedirected) {
+            clearTimeout(this.mStallTimer);
+            if (!this.mRedirected && !this.mEnded) {
               this.handleComplete(str);
             }
-            this.mRequest.destroy();
+            if (!this.mRequest?.destroyed) {
+              this.mRequest.destroy();
+            }
           });
       });
 
       this.mRequest
         .on('error', (err) => {
+          clearTimeout(this.mStallTimer);
           this.handleError(err);
+        })
+        .on('timeout', () => {
+          clearTimeout(this.mStallTimer);
+          this.handleError(new Error('Request timeout'));
         })
         .end();
     } catch (err) {
+      clearTimeout(this.mStallTimer);
       this.handleError(err);
     }
+  }
+
+  private formatCookies(electronCookies: Electron.Cookie[], extraCookies: string[]): string {
+    const cookies: string[] = [];
+
+    if (electronCookies && electronCookies.length > 0) {
+      for (const cookie of electronCookies) {
+        if (cookie.name && cookie.value) {
+          cookies.push(`${cookie.name}=${cookie.value}`);
+        }
+      }
+    }
+
+    if (extraCookies && extraCookies.length > 0) {
+      cookies.push(...extraCookies);
+    }
+
+    return cookies.join('; ');
   }
 
   public stalled = () => {
@@ -393,7 +453,7 @@ class DownloadWorker {
       this.mBuffers = [];
 
       this.mRedirected = true;
-      this.mRequest.abort();
+      this.mRequest.destroy();
       setTimeout(() => {
         this.mRedirected = false;
         this.mEnded = false;
@@ -404,7 +464,6 @@ class DownloadWorker {
 
   private handleError = (err) => {
     if (this.mEnded) {
-      // don't report errors again
       return;
     }
     clearTimeout(this.mStallTimer);
@@ -414,7 +473,7 @@ class DownloadWorker {
       this.mJob.errorCB(err);
     }
     if (this.mRequest !== undefined) {
-      this.mRequest.abort();
+      this.mRequest.destroy();
     }
     if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].includes(err.code))
         && !this.mEnded
@@ -442,7 +501,7 @@ class DownloadWorker {
       return false;
     }
     if (this.mRequest !== undefined) {
-      this.mRequest.abort();
+      this.mRequest.destroy();
     }
     this.mEnded = true;
     this.mFinishCB(paused);
@@ -652,8 +711,8 @@ class DownloadWorker {
   private handleData = (data: Buffer, str: stream.Readable) => {
     if (this.mEnded || ['paused', 'finished'].includes(this.mJob.state)) {
       log('debug', 'got data after ended',
-          { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
-      this.mRequest.abort();
+          { workerId: this.mJob.workerId, ended: this.mEnded, destroyed: this.mRequest.destroyed });
+      this.mRequest.destroy();
       return;
     }
 
@@ -691,6 +750,12 @@ class DownloadWorker {
   }
 }
 
+// Configuration constants for slow worker handling
+const SLOW_WORKER_THRESHOLD = 10;              // Number of "starving" measurements before considering restart
+const SLOW_WORKER_MIN_AGE_MS = 10000;          // Minimum time (10s) before allowing restart
+const SLOW_WORKER_RESTART_COOLDOWN_MS = 30000; // Cooldown period (30s) between restarts
+const MAX_WORKER_RESTARTS = 3;                 // Maximum restarts per worker
+
 /**
  * manages downloads
  *
@@ -703,6 +768,8 @@ class DownloadManager {
   private mDownloadPath: string;
   private mBusyWorkers: { [id: number]: DownloadWorker } = {};
   private mSlowWorkers: { [id: number]: number } = {};
+  private mWorkerRestartCounts: { [id: number]: number } = {};
+  private mWorkerLastRestart: { [id: number]: number } = {};
   private mQueue: IRunningDownload[] = [];
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
@@ -734,10 +801,9 @@ class DownloadManager {
     this.mMaxChunks = maxChunks;
     this.mUserAgent = userAgent;
     const speedCalcCB = (speed: number) => {
-      this.tickQueue(false);
       speedCB(speed);
     }
-    setInterval(() => this.tickQueue(true), 500);
+    setInterval(() => this.tickQueue(true), 200);
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
     this.mProtocolHandlers = protocolHandlers;
     this.mThrottle = () => makeThrottle(maxBandwidth);
@@ -1076,21 +1142,6 @@ class DownloadManager {
     download.failedCB(err);
   }
 
-  private isStarvingTick = (download: IRunningDownload): boolean => {
-    // if the download has no chunks, it can't be starving
-    let starving = false;
-    download.chunks.forEach(chunk => {
-        if (this.mBusyWorkers[chunk.workerId] && (chunk.state !== 'init') && (chunk.received <= 0)) {
-          this.mSlowWorkers[chunk.workerId] = (this.mSlowWorkers[chunk.workerId] || 0) + 1;
-          // Has this been a slow worker for more than 5 ticks and didn't even start downloading?
-          if (((this.mSlowWorkers[chunk.workerId] > 5) && (download.started == null))
-            || ((download.started.getTime() + 5000) < Date.now())) {
-            starving = true;
-          }
-        }
-      })
-    return starving
-  }
   private tickQueue(verbose: boolean = true) {
     let busyWorkerIds = Object.keys(this.mBusyWorkers);
     let busyCount = busyWorkerIds.reduce((count, key) => {
@@ -1099,63 +1150,73 @@ class DownloadManager {
     }, 0);
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
     if (verbose && this.mQueue.length > 0) {
-      log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length });
+      log('info', 'tick dl queue', { freeSpots, queueLength: this.mQueue.length, busyCount });
     }
 
-    for (let idx = 0; idx < this.mQueue.length && freeSpots > 0; idx++) {
-      const queueItem = this.mQueue[idx];
-      const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
-      const runningChunks = queueItem.chunks.filter(chunk => chunk.state !== 'init');
-      runningChunks.forEach(chunk => this.makeProgressCB(chunk, queueItem)(0));
-      if (unstartedChunks.length === 0) continue;
+    // Categorize downloads for optimized processing
+    const singleChunkDownloads: IRunningDownload[] = this.mQueue.filter(item => item.chunks.length === 1 || !item.chunkable);
+    const multiChunkDownloads: IRunningDownload[] = this.mQueue.filter(item => item.chunks.length > 1 && item.chunkable);
 
-      // Start as many chunks as we have free spots
+    // Prioritize single-chunk downloads first
+    for (let idx = 0; idx < singleChunkDownloads.length; idx++) {
+      const queueItem = singleChunkDownloads[idx];
+      if (queueItem.chunks[0].state === 'finished') {
+        this.mQueue.splice(this.mQueue.indexOf(queueItem), 1);
+      }
+      const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
+      const runningChunks = queueItem.chunks.filter(chunk => chunk.state === 'running');
+
+      runningChunks.forEach(chunk => this.makeProgressCB(chunk, queueItem)(0));
+
+      if (unstartedChunks.length === 0 || freeSpots <= 0) continue;
+      if (freeSpots <= 0) break;
+
+      this.startWorker(queueItem).catch(err => {
+        const itemIdx = this.mQueue.indexOf(queueItem);
+        if (itemIdx !== -1) {
+          this.mQueue[itemIdx].failedCB(err);
+          this.mQueue.splice(itemIdx, 1);
+        }
+      });
+      freeSpots--;
+    }
+
+    // Deal with multi-chunk downloads
+    for (const queueItem of multiChunkDownloads) {
+      if (freeSpots <= 0) break;
+      const finishedChunks = queueItem.chunks.filter(chunk => chunk.state === 'finished');
+      if (finishedChunks.length === queueItem.chunks.length) {
+        this.mQueue.splice(this.mQueue.indexOf(queueItem), 1);
+        continue;
+      }
+      const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
+
+      // Start as many chunks as we have free spots for this download
       for (let chunkIdx = 0; chunkIdx < unstartedChunks.length && freeSpots > 0; chunkIdx++, freeSpots--) {
         this.startWorker(queueItem).catch(err => {
-          const itemIdx = this.mQueue.indexOf(queueItem);
-          if (itemIdx !== -1) {
-            this.mQueue[itemIdx].failedCB(err);
-            this.mQueue.splice(itemIdx, 1);
+          // For multi-chunk downloads, be more resilient - don't fail the entire download
+          // if one chunk fails to start, unless it's the first/only chunk
+          if (queueItem.chunks.length === 1 || chunkIdx === 0) {
+            const itemIdx = this.mQueue.indexOf(queueItem);
+            if (itemIdx !== -1) {
+              this.mQueue[itemIdx].failedCB(err);
+              this.mQueue.splice(itemIdx, 1);
+            }
+          } else {
+            log('warn', 'failed to start chunk for multi-chunk download', {
+              downloadId: queueItem.id,
+              chunkIndex: chunkIdx,
+              error: err.message
+            });
+            // Mark this specific chunk as failed/paused rather than failing the entire download
+            if (chunkIdx < unstartedChunks.length) {
+              unstartedChunks[chunkIdx].state = 'paused';
+            }
           }
         });
       }
     }
-
-    this.mQueue = this.mQueue.filter(download => {
-      const completed = download.chunks.every(chunk => chunk.state === 'finished');
-      if (completed && verbose) {
-        log('info', 'removing completed download from queue', { id: download.id });
-      }
-      return !completed;
-    });
   }
-  
-  // private tickQueue() {
-  //   let freeSpots: number = this.mMaxWorkers - Object.keys(this.mBusyWorkers).length;
-  //   let idx = 0;
-  //   log('info', 'tick dl queue', { freeSpots, queue: this.mQueue.length });
-  //   while ((freeSpots > 0) && (idx < this.mQueue.length)) {
-  //     let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
-  //     while ((freeSpots > 0) && (unstartedChunks > 0)) {
-  //       --unstartedChunks;
-  //       const queueItem = this.mQueue[idx];
-  //       this.startWorker(queueItem)
-  //         .then(() => {
-  //           --freeSpots;
-  //         })
-  //         .catch(err => {
-  //           const nowIdx = this.mQueue.indexOf(queueItem);
-  //           if (nowIdx !== -1) {
-  //             this.mQueue[nowIdx].failedCB(err);
-  //           }
-  //           this.mQueue.splice(nowIdx, 1);
-
-  //         });
-  //       --freeSpots;
-  //     }
-  //     ++idx;
-  //   }
-  // }
 
   private startWorker = (download: IRunningDownload) => {
     const workerId: number = this.mNextId++;
@@ -1177,18 +1238,66 @@ class DownloadManager {
       const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
       if (starving) {
         this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
-        // restart slow workers within 5 seconds after starting the download,
-        if ((this.mSlowWorkers[job.workerId] > 5)
-          && (download.started !== undefined)
-          && ((Date.now() - download.started.getTime()) > 5000)) {
-          log('debug', 'restarting slow worker', { workerId: job.workerId });
-          this.mBusyWorkers[job.workerId].restart();
-          delete this.mSlowWorkers[job.workerId];
+        if (this.shouldRestartSlowWorker(job.workerId, download)) {
+          log('debug', 'restarting slow worker', {
+            workerId: job.workerId,
+            slowCount: this.mSlowWorkers[job.workerId],
+            restartCount: this.mWorkerRestartCounts[job.workerId] || 0,
+            downloadAge: Date.now() - download.started.getTime()
+          });
+
+          if (this.mBusyWorkers[job.workerId]) {
+            this.mBusyWorkers[job.workerId].restart();
+
+            this.mWorkerRestartCounts[job.workerId] = (this.mWorkerRestartCounts[job.workerId] || 0) + 1;
+            this.mWorkerLastRestart[job.workerId] = Date.now();
+
+            delete this.mSlowWorkers[job.workerId];
+          } else {
+            log('warn', 'attempted to restart non-existent worker', { workerId: job.workerId });
+          }
         }
       } else if (starving === false) {
+        // Worker is performing well, clear slow status
         delete this.mSlowWorkers[job.workerId];
       }
     };
+  }
+
+  private shouldRestartSlowWorker(workerId: number, download: IRunningDownload): boolean {
+    const slowCount = this.mSlowWorkers[workerId] || 0;
+    const restartCount = this.mWorkerRestartCounts[workerId] || 0;
+    const lastRestart = this.mWorkerLastRestart[workerId] || 0;
+    const downloadAge = Date.now() - download.started.getTime();
+    const timeSinceLastRestart = Date.now() - lastRestart;
+
+    // Don't restart if:
+    // 1. Slow count hasn't reached threshold
+    // 2. Download is too young (less than minimum age)
+    // 3. Too many restarts already
+    // 4. Not enough time since last restart (cooldown period)
+    if (slowCount < SLOW_WORKER_THRESHOLD) {
+      return false;
+    }
+
+    if (downloadAge < SLOW_WORKER_MIN_AGE_MS) {
+      return false;
+    }
+
+    if (restartCount >= MAX_WORKER_RESTARTS) {
+      log('debug', 'worker has reached maximum restart limit', {
+        workerId,
+        restartCount,
+        maxRestarts: MAX_WORKER_RESTARTS
+      });
+      return false;
+    }
+
+    if (lastRestart > 0 && timeSinceLastRestart < SLOW_WORKER_RESTART_COOLDOWN_MS) {
+      return false;
+    }
+
+    return true;
   }
 
   private startJob = (download: IRunningDownload, job: IDownloadJob) => {
@@ -1522,6 +1631,8 @@ class DownloadManager {
     this.mSpeedCalculator.stopCounter(id);
     delete this.mBusyWorkers[id];
     delete this.mSlowWorkers[id];
+    delete this.mWorkerRestartCounts[id];
+    delete this.mWorkerLastRestart[id];
   }
 
   private sanitizeFilename(input: string): string {
