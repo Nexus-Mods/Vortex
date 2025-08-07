@@ -183,7 +183,7 @@ function genDownloadChangeHandler(api: IExtensionApi,
                 store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
               }
             });
-        }, 5000);
+        }, 1000);
       }
     } else if (evt === 'rename') {
       if (addLocalInProgress.has(fileName)) {
@@ -1034,8 +1034,8 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
 
-    context.api.onAsync('set-download-games', (dlId: string, gameIds: string[]) =>
-      setDownloadGames(context.api, dlId, gameIds, withAddInProgress));
+    context.api.onAsync('set-download-games', (dlId: string, gameIds: string[], fromMetadata?: boolean) =>
+      setDownloadGames(context.api, dlId, gameIds, withAddInProgress, fromMetadata === true));
 
     // This debouncer is only needed to avoid a race condition caused primarily by the
     //  testDownloadPath functionality, where the update downloads function gets called twice
@@ -1063,7 +1063,7 @@ function init(context: IExtensionContextExt): boolean {
       const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
         return null;
-      }, 10000, false);
+      }, 5000, false);
 
       const maxWorkersDebouncer = new Debouncer((newValue: number) => {
         manager.setMaxConcurrentDownloads(newValue);
