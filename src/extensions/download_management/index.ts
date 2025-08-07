@@ -12,7 +12,7 @@ import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { sum, toPromise, truthy } from '../../util/util';
+import { batchDispatch, sum, toPromise, truthy } from '../../util/util';
 
 import {
   addLocalDownload,
@@ -1081,7 +1081,7 @@ function init(context: IExtensionContextExt): boolean {
             manager.pause(dlId);
             batched.push(removeDownload(dlId));
           });
-
+          batchDispatch(store, batched);
           if (newValue?.isPremium === true) {
             manager.setMaxConcurrentDownloads(state.settings.downloads.maxParallelDownloads);
           } else {
