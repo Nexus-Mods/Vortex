@@ -1,9 +1,232 @@
+// Font Families Map
+$font-families: (
+  'base': ('Inter', sans-serif),
+  'heading': ('Inter', sans-serif),
+  'mono': ('Menlo', 'Monaco', 'Consolas', 'Courier New', monospace)
+);
+
+// Typography Scale Map
+$typography: (
+  'body-lg-normal': ('font-family': map-get($font-families, 'base'),
+    'font-size': 16px,
+    'font-style': normal,
+    'font-weight': 400,
+    'line-height': 150%),
+  'body-lg-semibold': ('font-family': map-get($font-families, 'base'),
+    'font-size': 16px,
+    'font-style': normal,
+    'font-weight': 600,
+    'line-height': 150%),
+  'body-md-normal': ('font-family': map-get($font-families, 'base'),
+    'font-size': 14px,
+    'font-style': normal,
+    'font-weight': 400,
+    'line-height': 150%),
+  'body-sm-normal': ('font-family': map-get($font-families, 'base'),
+    'font-size': 12px,
+    'font-style': normal,
+    'font-weight': 400,
+    'line-height': 137.5%,
+    'letter-spacing': 0.3px),
+);
+
+
+// Mixin to apply typography styles
+@mixin typography($style) {
+  $config: map-get($typography, $style);
+
+  @if $config {
+    font-family: map-get($config, 'font-family');
+    font-size: map-get($config, 'font-size');
+    font-weight: map-get($config, 'font-weight');
+    line-height: map-get($config, 'line-height');
+    font-style: map-get($config, 'font-style');
+    letter-spacing: map-get($config, 'letter-spacing', 1);
+  }
+
+  @else {
+    @warn "Typography style '#{$style}' not found!";
+  }
+}
+
+#free-user-dl-dialog {
+
+  --Border-radius-rounded: 4px;
+
+  --Neutral-Strong: #F4F4F5;
+  --Neutral-Moderate: #D4D4D8;
+  --Neutral-Subdued: #A1A1AA;
+
+  --Neutral-Translucent-Strong: rgba(255, 255, 255, 0.95);
+
+  --Stroke-Neutral-Translucent-Strong: rgba(255, 255, 255, 0.60);
+  --Stroke-Neutral-Translucent-Moderate: rgba(255, 255, 255, 0.30);
+  --Stroke-Neutral-Translucent-Weak: rgba(255, 255, 255, 0.10);
+
+  --Surface-Translucent-Low: rgba(255, 255, 255, 0.05);
+  --Surface-Translucent-High: rgba(255, 255, 255, 0.20);
+
+  --Neutral-800: #29292E;
+
+  --Premium-600: #7C3AED;
+
+  --Violet-300: #C4B5FD;
+
+  hr {
+    margin: 8px 0;
+    border: none;
+    border-top: 1px solid var(--Stroke-Neutral-Translucent-Weak);
+    height: 0;
+  }
+
+  .modal-dialog {
+    width: 700px;
+  }
+
+  Button {
+    border-radius: var(--Border-radius-rounded);
+    padding: 4px 8px;
+    margin-left: 8px;
+    color: var(--Neutral-Moderate);
+
+    &#cancel-button {
+      background-color: transparent;
+      border: none;
+
+      &:hover {
+        background: var(--Surface-Translucent-High);
+        border: none;
+        color: var(--Neutral-Strong);
+      }
+    }
+
+    &#skip-button {
+      background-color: transparent;
+      border: 1px solid var(--Stroke-Neutral-Translucent-Moderate);
+
+      &:hover {
+        background: var(--Surface-Translucent-High);
+        border: 1px solid var(--Stroke-Neutral-Translucent-Strong);
+        color: var(--Neutral-Strong);
+      }
+    }
+
+    &#download-mod-button {
+      border: 1px solid var(--Stroke-Neutral-Translucent-Moderate);
+      background: var(--Neutral-800, #29292E);
+
+      &:hover {
+        border: 1px solid var(--Stroke-Neutral-Translucent-Strong);
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Neutral-800);
+      }
+    }
+
+    &#get-premium-button {
+      color: var(--Neutral-Strong);
+      background-color: var(--Premium-600);
+      border: none;
+
+      &:hover {
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Premium-600);
+      }
+    }
+  }
+
+  div#content-container {
+    gap: 12px;
+  }
+
+  div#top-row {
+
+    align-items: center;
+    padding: 12px;
+    gap: 24px;
+
+    border-radius: 8px;
+    border: none;
+    background: #18181B;
+
+    img#mod-thumbnail {
+      width: 72px;
+      height: 40px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    div#mod-name {
+      color: var(--Neutral-Moderate, #D4D4D8);
+
+      @include typography('body-lg-semibold');
+    }
+
+    div#mod-author {
+      color: var(--Neutral-Subdued, #A1A1AA);
+
+      @include typography('body-sm-normal');
+    }
+
+    div#mod-count {
+      @include typography('body-md-normal');
+    }
+  }
+
+  div#bottom-row {
+    gap: 12px;
+
+    div#free-container {
+      padding: 24px;
+
+      border-radius: 8px;
+      background: var(--Surface-Translucent-Low, rgba(255, 255, 255, 0.05));
+      backdrop-filter: blur(6px);
+
+      .title {
+        @include typography('body-md-normal');
+        color: var(--Neutral-Subdued);
+      }
+
+      .membership-type {
+        @include typography('body-lg-semibold');
+        color: var(--Neutral-Translucent-Strong);
+      }
+    }
+
+    div#premium-container {
+      padding: 24px;
+
+      border-radius: 8px;
+      border: 1px solid #C4B5FD;
+      background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
+      backdrop-filter: blur(6px);
+
+
+      .title {
+        @include typography('body-md-normal');
+        color: var(--Violet-300, #C4B5FD);
+      }
+
+      .membership-type {
+        @include typography('body-lg-semibold');
+        color: var(--Neutral-Translucent-Strong);
+      }
+    }
+
+  }
+
+
+}
+
+
+
+
+
 .nexusmods-action-button {
   display: inline;
   background: $brand-primary;
   padding: 10px 9px;
   margin: 0 8px;
-  > svg {
+
+  >svg {
     margin-right: 5px;
     color: transparent;
     --nexus-outline-color: transparent;
@@ -26,6 +249,7 @@
   padding: 4px 0;
   border: $border-width solid $border-color;
   border-bottom: 0;
+
   .btn {
     margin-left: 8px;
   }
@@ -43,7 +267,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  
+
   div:first-child {
     font-weight: bold;
     margin-bottom: 4px;
@@ -72,7 +296,7 @@
 
   border-top: $border-width solid $border-color;
 
-  > .layout-container {
+  >.layout-container {
     align-items: center;
     margin: 0.5em 0;
     font-size: larger;
@@ -122,6 +346,7 @@
   display: flex;
   align-items: center;
   font-family: $font-family-headings;
+
   img {
     width: 1.5em;
     height: 1.5em;
@@ -137,9 +362,11 @@
   table {
     margin-bottom: 1em;
   }
+
   tr {
     border-top: 0.5em solid transparent;
   }
+
   th {
     margin-right: 1em;
   }

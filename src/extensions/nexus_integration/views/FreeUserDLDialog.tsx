@@ -16,6 +16,7 @@ import NXMUrl from '../NXMUrl';
 import { makeFileUID } from '../util/UIDs';
 import PremiumNagBanner from './PremiumNagBanner';
 import { IValidateKeyDataV2 } from '../types/IValidateKeyData';
+import NewFreeDownloadModal from './NewFreeDownloadModal';
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -167,16 +168,20 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [fileInfo]);
 
   return (
-    <Modal show={urls.length > 0} onHide={nop}>
+    <Modal show={show} onHide={nop} id='free-user-dl-dialog'>
       <Modal.Header>
         <Modal.Title>
-          {t('Download "{{modName}}"', { replace: {
-            modName: fileInfo !== null ? fileInfo.name : '...',
-          } })}
+          {t('Download mod')}
+          {/* {t('Download "{{modName}}"', {
+            replace: {
+              modName: fileInfo !== null ? fileInfo.name : '...',
+            }
+          })} */}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {t('You need to download {{modName}} from the Nexus Mods website. '
+          <NewFreeDownloadModal fileInfo={fileInfo} t={t} />
+        {/* {t('You need to download {{modName}} from the Nexus Mods website. '
           + 'The link below will open the mod page.')}
         <Panel className='margin-top-hg'>
           <FlexLayout type='row' className='padding-hg'>
@@ -211,12 +216,12 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
             </FlexLayout.Flex>
           </FlexLayout>
           <PremiumNagBanner t={t} onCheckStatus={checkStatus} onDownload={download} campaign={campaign} />
-        </Panel>
+        </Panel> */}
       </Modal.Body>
       <Modal.Footer>
 
-        <Button onClick={cancel}>{t('Cancel')}</Button>
-        <Button onClick={skip}>{t('Skip')}</Button>
+        <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>
+        <Button id='skip-button' onClick={skip}>{t('Skip mod')}</Button>
       </Modal.Footer>
     </Modal>
   );
