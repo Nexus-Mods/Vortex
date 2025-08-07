@@ -1347,10 +1347,6 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(err);
     }
 
-    log('warn', 'userInfo checking for downloads?');
-
-
-
     const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
     if ((url.userId !== undefined) && (url.userId !== userInfo?.userId)) {
       const userName: string =
