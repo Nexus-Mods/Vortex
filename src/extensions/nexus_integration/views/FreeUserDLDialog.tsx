@@ -97,7 +97,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
-  const show = urls.length > 0 && !userInfo.isPremium;
+  const show = urls.length > 0 && !userInfo?.isPremium;
 
   React.useEffect(() => {
     if (!show) return;
