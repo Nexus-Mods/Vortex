@@ -1070,6 +1070,26 @@ function init(context: IExtensionContextExt): boolean {
         return null;
       }, 500, true);
 
+      context.api.onStateChange(['persistent', 'nexus', 'userInfo'], (old, newValue) => {
+        if (old?.isPremium !== newValue?.isPremium) {
+          // User's premium status has changed
+          // Clear the download queue by pausing all active downloads
+          const state = context.api.getState();
+          const activeDownloadsList = selectors.queueClearingDownloads(state);
+          const batched = [];
+          Object.keys(activeDownloadsList).forEach(dlId => {
+            manager.pause(dlId);
+            batched.push(removeDownload(dlId));
+          });
+
+          if (newValue?.isPremium === true) {
+            manager.setMaxConcurrentDownloads(state.settings.downloads.maxParallelDownloads);
+          } else {
+            manager.setMaxConcurrentDownloads(1);
+          }
+        }
+      });
+
       context.api.onStateChange<number>(['settings', 'downloads', 'maxParallelDownloads'],
         (old, newValue: number) => {
           maxWorkersDebouncer.schedule(undefined, newValue);
