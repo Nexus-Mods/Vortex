@@ -77,6 +77,22 @@
       ]
     },
     {
+      "srcPath": "assets/icons/",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "assets/pictograms/",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
       "srcPath": "assets/fonts/*",
       "outPath": "",
       "target": [

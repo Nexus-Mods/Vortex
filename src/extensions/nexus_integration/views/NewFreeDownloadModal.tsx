@@ -3,7 +3,9 @@ import { TFunction } from 'i18next';
 import FlexLayout from '../../../controls/FlexLayout';
 import { Button, Panel } from 'react-bootstrap';
 import Image from '../../../controls/Image';
-import { FALLBACK_AVATAR } from '../constants';
+
+const premiumPictogramPath ='assets/pictograms/premium-pictogram.svg';
+const freePictogramPath = 'assets/pictograms/free-pictogram.svg';
 
 export interface INewFreeDownloadModal {
   t: TFunction;
@@ -57,7 +59,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
             <FlexLayout.Flex>
 
               <FlexLayout type='column' id='free-container'>
-                <div>PICTOGRAM</div>
+                <Image className='free-pictogram' srcs={[freePictogramPath]} />
                 <div className='membership-type'>Free</div>
                 <div className='title'>Download one by one</div>
                 <hr />
@@ -72,7 +74,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
             <FlexLayout.Flex>
               <FlexLayout type='column' id='premium-container'>
-                <div>PICTOGRAM</div>
+                <Image className='premium-pictogram' srcs={[premiumPictogramPath]}  />
                 <div className='membership-type'>Premium</div>
                 <div className='title'>Get all your mods fast</div>
                 <hr />

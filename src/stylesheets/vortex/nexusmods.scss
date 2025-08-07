@@ -8,22 +8,22 @@ $font-families: (
 // Typography Scale Map
 $typography: (
   'body-lg-normal': ('font-family': map-get($font-families, 'base'),
-    'font-size': 16px,
-    'font-style': normal,
-    'font-weight': 400,
-    'line-height': 150%),
-  'body-lg-semibold': ('font-family': map-get($font-families, 'base'),
-    'font-size': 16px,
-    'font-style': normal,
-    'font-weight': 600,
-    'line-height': 150%),
-  'body-md-normal': ('font-family': map-get($font-families, 'base'),
     'font-size': 14px,
     'font-style': normal,
     'font-weight': 400,
     'line-height': 150%),
-  'body-sm-normal': ('font-family': map-get($font-families, 'base'),
+  'body-lg-semibold': ('font-family': map-get($font-families, 'base'),
+    'font-size': 14px,
+    'font-style': normal,
+    'font-weight': 600,
+    'line-height': 150%),
+  'body-md-normal': ('font-family': map-get($font-families, 'base'),
     'font-size': 12px,
+    'font-style': normal,
+    'font-weight': 400,
+    'line-height': 150%),
+  'body-sm-normal': ('font-family': map-get($font-families, 'base'),
+    'font-size': 10px,
     'font-style': normal,
     'font-weight': 400,
     'line-height': 137.5%,
@@ -72,6 +72,16 @@ $typography: (
 
   --Violet-300: #C4B5FD;
 
+  ul {
+    padding-inline-start: 24px;
+    margin-bottom: 16px;
+  }
+
+  li {
+    @include typography('body-md-normal');
+    margin-bottom: 2px
+  }
+
   hr {
     margin: 8px 0;
     border: none;
@@ -86,7 +96,6 @@ $typography: (
   Button {
     border-radius: var(--Border-radius-rounded);
     padding: 4px 8px;
-    margin-left: 8px;
     color: var(--Neutral-Moderate);
 
     &#cancel-button {
@@ -103,6 +112,7 @@ $typography: (
     &#skip-button {
       background-color: transparent;
       border: 1px solid var(--Stroke-Neutral-Translucent-Moderate);
+      margin-left: 8px;
 
       &:hover {
         background: var(--Surface-Translucent-High);
@@ -114,6 +124,7 @@ $typography: (
     &#download-mod-button {
       border: 1px solid var(--Stroke-Neutral-Translucent-Moderate);
       background: var(--Neutral-800, #29292E);
+      padding: 8px;
 
       &:hover {
         border: 1px solid var(--Stroke-Neutral-Translucent-Strong);
@@ -125,6 +136,7 @@ $typography: (
       color: var(--Neutral-Strong);
       background-color: var(--Premium-600);
       border: none;
+      padding: 8px;
 
       &:hover {
         background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Premium-600);
@@ -154,19 +166,20 @@ $typography: (
     }
 
     div#mod-name {
-      color: var(--Neutral-Moderate, #D4D4D8);
 
       @include typography('body-lg-semibold');
+      color: var(--Neutral-Moderate, #D4D4D8);
     }
 
     div#mod-author {
-      color: var(--Neutral-Subdued, #A1A1AA);
 
       @include typography('body-sm-normal');
+      color: var(--Neutral-Subdued, #A1A1AA);
     }
 
     div#mod-count {
       @include typography('body-md-normal');
+      color: var(--Neutral-Moderate, #D4D4D8);
     }
   }
 
@@ -180,12 +193,18 @@ $typography: (
       background: var(--Surface-Translucent-Low, rgba(255, 255, 255, 0.05));
       backdrop-filter: blur(6px);
 
-      .title {
+      img.free-pictogram {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 12px;
+      }
+
+      .membership-type {
         @include typography('body-md-normal');
         color: var(--Neutral-Subdued);
       }
 
-      .membership-type {
+      .title {
         @include typography('body-lg-semibold');
         color: var(--Neutral-Translucent-Strong);
       }
@@ -199,13 +218,41 @@ $typography: (
       background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
       backdrop-filter: blur(6px);
 
+      /* custom bullets */
+      ul {
+        list-style: none;
+        padding-left: 0;
 
-      .title {
+        li {
+          display: flex;
+          align-items: center;
+          /* ⬅️ key for vertical alignment */
+          gap: 8px;
+        }
+
+        li::before {
+          content: '';
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          background: url('assets/icons/check.svg') no-repeat center center;
+          background-size: contain;
+          flex-shrink: 0;
+        }
+      }
+
+      img.premium-pictogram {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 12px;
+      }
+
+      .membership-type {
         @include typography('body-md-normal');
         color: var(--Violet-300, #C4B5FD);
       }
 
-      .membership-type {
+      .title {
         @include typography('body-lg-semibold');
         color: var(--Neutral-Translucent-Strong);
       }

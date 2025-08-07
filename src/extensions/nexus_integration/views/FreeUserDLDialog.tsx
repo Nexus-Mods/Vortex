@@ -89,8 +89,6 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   //return oauthCred !== undefined ? oauthCred.token : undefined;
 
-
-
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
 
@@ -168,7 +166,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [fileInfo]);
 
   return (
-    <Modal show={show} onHide={nop} id='free-user-dl-dialog'>
+    <Modal show={urls.length > 0} onHide={nop} id='free-user-dl-dialog'>
       <Modal.Header>
         <Modal.Title>
           {t('Download mod')}
