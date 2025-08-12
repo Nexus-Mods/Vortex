@@ -245,7 +245,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     // Get total number of enabled mods (this includes collections)
     const enabledMods = Object.keys(currentModsState).filter(modId => util.getSafe(currentModsState, [modId, 'enabled'], false));
     // Get total number of collections for game
-    const collections = Object.values(state.persistent.mods[starter.gameId]).filter((val) => (val.type == 'collection')).map((val) => val.id);
+    const gameMods = state.persistent.mods[profile.gameId] || {};
+    const collections = Object.values(gameMods).filter((val) => (val.type == 'collection')).map((val) => val.id);
     // Determine enabled collections
     const enabledCollections = collections.filter((collectionId) => enabledMods.includes(collectionId));
 
@@ -254,7 +255,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     log('info', `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`)
     log('info', `Enabled collections at game launch: ${numberOfEnabledCollections}`)
     this.context.api.events.emit('analytics-track-event-with-payload', 'Launch game', {
-      game_id: starter.gameId,
+      game_id: profile.gameId,
       enabled_mods: numberOfEnabledModsExcludingCollections,
       enabled_collections: numberOfEnabledCollections
     });
