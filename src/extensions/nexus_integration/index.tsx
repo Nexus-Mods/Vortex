@@ -1689,6 +1689,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
+    const electricBoltIconPath = 'assets/icons/electric-bolt.svg';
     const trackAndGoToPremium = (e) => {
       context.api.events.emit(
         'analytics-track-click-event',
@@ -1697,15 +1698,14 @@ function init(context: IExtensionContextExt): boolean {
       goBuyPremium(e);
     };
     return (
-      <div className='nexus-download-banner'>
-        {t('Nexus downloads are capped at 1.5-3MB/s - '
-          + 'Go Premium for uncapped download speeds')}
+
+      <div id='nexus-download-banner'>
+        <div className='banner-text'>Free users are <span className='text-highlight'>capped at 3MB/s</span> (1.5 MB/s with AdBlock). Play your modded games <span className='text-highlight'>faster with premium</span>.</div>
         <Button
-          bsStyle='ad'
-          data-campaign={Source.DownloadsBannerAd}
-          onClick={trackAndGoToPremium}
-        >
-          {t('Go Premium')}
+          id='get-premium-button'
+          onClick={trackAndGoToPremium}>
+          <Image srcs={[electricBoltIconPath]} />
+          {t('Unlock max download speeds')}
         </Button>
       </div>
     );

@@ -79,36 +79,14 @@ $typography: (
 
   --Neutral-800: #29292E;
 
+  --Premium-100: #EDE9FE;
   --Premium-600: #7C3AED;
 
   --Violet-300: #C4B5FD;
 }
 
-
-
-#free-user-dl-dialog {
-
-  ul {
-    padding-inline-start: 24px;
-    margin-bottom: 16px;
-    color: var(--Neutral-Translucent-Moderate, rgba(255, 255, 255, 0.70));
-  }
-
-  li {
-    @include typography('body-md-normal');
-    margin-bottom: 2px
-  }
-
-  hr {
-    margin: 8px 0;
-    border: none;
-    height: 1px;
-    background-color: var(--Stroke-Neutral-Translucent-Weak);
-  }
-
-  .modal-dialog {
-    width: 700px;
-  }
+#free-user-dl-dialog,
+#nexus-download-banner {
 
   Button {
     border-radius: var(--Border-radius-rounded);
@@ -175,6 +153,34 @@ $typography: (
       }
     }
   }
+
+}
+
+#free-user-dl-dialog {
+
+  ul {
+    padding-inline-start: 24px;
+    margin-bottom: 16px;
+    color: var(--Neutral-Translucent-Moderate, rgba(255, 255, 255, 0.70));
+  }
+
+  li {
+    @include typography('body-md-normal');
+    margin-bottom: 2px
+  }
+
+  hr {
+    margin: 8px 0;
+    border: none;
+    height: 1px;
+    background-color: var(--Stroke-Neutral-Translucent-Weak);
+  }
+
+  .modal-dialog {
+    width: 700px;
+  }
+
+
 
   div#content-container {
     gap: 12px;
@@ -392,16 +398,26 @@ $typography: (
 }
 
 
-.nexus-download-banner {
-  background-color: $brand-info;
-  text-align: center;
-  padding: 4px 0;
-  border: $border-width solid $border-color;
-  border-bottom: 0;
+#nexus-download-banner {
+  display: flex;
+  padding: 16px 24px;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--Premium-100, #EDE9FE);
 
-  .btn {
-    margin-left: 8px;
+  .banner-text {
+    color: var(--Neutral-Inverted, #0F0F10);
+
+    .text-highlight {
+      @include typography('body-md-semibold');
+      color: var(--Translucent-Dark-950, rgba(0, 0, 0, 0.95));
+    }
   }
+
+
 }
 
 .nexus-main-banner {
