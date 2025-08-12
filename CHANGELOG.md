@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.14.11 - 2025-08-12
+
+- Fixed unhandled exception when launching games without installed collections/mods ([#18022](https://github.com/Nexus-Mods/Vortex/issues/18022))
+
 ## 1.14.10 - 2025-08-06
 
 - Improved collection install tracking 
