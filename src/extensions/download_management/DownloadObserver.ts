@@ -10,6 +10,7 @@ import { getSafe } from '../../util/storeHelper';
 import { flatten, setdefault, truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import {
   downloadProgress,
@@ -437,7 +438,8 @@ export class DownloadObserver {
         // would put manually added downloads into the download root if no game was being managed.
         // Newer versions won't do this anymore (hopefully) but we still need to enable users to
         // clean up these broken downloads
-        const gameId = getDownloadGames(download)[0];
+        const rawGameId = getDownloadGames(download)[0];
+        const gameId = rawGameId ? convertGameIdReverse(selectors.knownGames(this.mApi.store.getState()), rawGameId) : undefined;
         const dlPath = truthy(gameId)
           ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
           : selectors.downloadPath(this.mApi.store.getState());
