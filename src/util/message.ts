@@ -579,8 +579,9 @@ export function prettifyNodeErrorMessage(err: any,
   } else if (['CERT_HAS_EXPIRED', 'CERT_NOT_YET_VALID'].includes(err.code)) {
     return {
       message: 'A secure connection was rejected because the server certificate is not valid. '
-             + 'If this problem persists it probably indicates an issue with your setup, either your '
-             + 'ISP or Anti Virus interfering with the certification or your system is infected '
+             + 'If this problem persists it probably indicates an issue with your setup, most commonly it is down to '
+             + 'incorrect date time settings on your local machine. But it can also be caused by '
+             + 'ISP issues, or Anti Virus interfering with the certification, or worst case scenario - your system is infected '
              + 'with malicious software.',
       allowReport: false,
     };
