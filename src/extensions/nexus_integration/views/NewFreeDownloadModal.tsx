@@ -12,11 +12,15 @@ const freePictogramPath = 'assets/pictograms/free-pictogram.svg';
 export interface INewFreeDownloadModal {
   t: TFunction;
   fileInfo: any;
+  openModPage: () => void;
+  goPremium: () => void;
 }
 
 function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
-  const { t, fileInfo } = props;
+  const { t, fileInfo, openModPage, goPremium } = props;
+
+
 
   return (
     <div>
@@ -70,7 +74,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
                   <li>Throttled download speeds (3 MB/s)</li>
                   <li>Ads and delay for each download</li>
                 </ul>
-                <Button id='download-mod-button' onClick={() => console.log('download-mod-button clicked')}>{t('Download manually')}</Button>
+                <Button id='download-mod-button' onClick={openModPage}>{t('Download manually')}</Button>
               </FlexLayout>
             </FlexLayout.Flex>
 
@@ -87,11 +91,10 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
                 </ul>
                 <Button
                   id='get-premium-button'
-                  onClick={() => console.log('get-premium-button clicked')}>
-                    <Image srcs={[electricBoltIconPath]} />
-                    {t('Auto-download all')}
-                </Button>
-                {/* <Button id='get-premium-button' onClick={() => console.log('get-premium-button clicked')}>{t('Auto-download all')}</Button> */}
+                  onClick={goPremium}>
+                  <Image srcs={[electricBoltIconPath]} />
+                  {t('Auto-download all')}
+                </Button> 
               </FlexLayout>
             </FlexLayout.Flex>
 
