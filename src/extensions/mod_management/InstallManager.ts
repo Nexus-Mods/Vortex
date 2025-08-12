@@ -3197,7 +3197,6 @@ class InstallManager {
     };
 
     const installDownload = (dep: IDependency, downloadId: string) : Bluebird<string> => {
-      // Use dependency installs limit for proper concurrency control
       return new Bluebird<string>((resolve, reject) => {
         return this.mDependencyInstallsLimit.do(async () => {
           return abort.signal.aborted
