@@ -58,6 +58,7 @@ $typography: (
   --Neutral-Subdued: #A1A1AA;
 
   --Neutral-Translucent-Strong: rgba(255, 255, 255, 0.95);
+  --Neutral-Translucent-Moderate: rgba(255, 255, 255, 0.70);
 
   --Stroke-Neutral-Translucent-Strong: rgba(255, 255, 255, 0.60);
   --Stroke-Neutral-Translucent-Moderate: rgba(255, 255, 255, 0.30);
@@ -75,6 +76,7 @@ $typography: (
   ul {
     padding-inline-start: 24px;
     margin-bottom: 16px;
+    color: var(--Neutral-Translucent-Moderate, rgba(255, 255, 255, 0.70));
   }
 
   li {
@@ -85,8 +87,8 @@ $typography: (
   hr {
     margin: 8px 0;
     border: none;
-    border-top: 1px solid var(--Stroke-Neutral-Translucent-Weak);
-    height: 0;
+    height: 1px;
+    background-color: var(--Stroke-Neutral-Translucent-Weak);
   }
 
   .modal-dialog {
@@ -122,6 +124,8 @@ $typography: (
     }
 
     &#download-mod-button {
+
+      @include typography('body-lg-normal');
       border: 1px solid var(--Stroke-Neutral-Translucent-Moderate);
       background: var(--Neutral-800, #29292E);
       padding: 8px;
@@ -133,13 +137,26 @@ $typography: (
     }
 
     &#get-premium-button {
+
+      @include typography('body-lg-normal');
       color: var(--Neutral-Strong);
       background-color: var(--Premium-600);
       border: none;
       padding: 8px;
 
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+
       &:hover {
         background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Premium-600);
+      }
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin: 0;
       }
     }
   }
@@ -151,7 +168,7 @@ $typography: (
   div#top-row {
 
     align-items: center;
-    padding: 12px;
+    padding: 16px 24px;
     gap: 24px;
 
     border-radius: 8px;
@@ -161,7 +178,7 @@ $typography: (
     img#mod-thumbnail {
       width: 72px;
       height: 40px;
-      border-radius: 8px;
+      border-radius: 4px;
       overflow: hidden;
     }
 
@@ -194,8 +211,8 @@ $typography: (
       backdrop-filter: blur(6px);
 
       img.free-pictogram {
-        width: 36px;
-        height: 36px;
+        width: 48px;
+        height: 48px;
         margin-bottom: 12px;
       }
 
@@ -213,10 +230,11 @@ $typography: (
     div#premium-container {
       padding: 24px;
 
-      border-radius: 8px;
-      border: 1px solid #C4B5FD;
       background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
       backdrop-filter: blur(6px);
+
+      border-radius: 8px;
+      border: 1px solid rgba(196, 181, 253, 0.40);
 
       /* custom bullets */
       ul {
@@ -242,8 +260,8 @@ $typography: (
       }
 
       img.premium-pictogram {
-        width: 36px;
-        height: 36px;
+        width: 48px;
+        height: 48px;
         margin-bottom: 12px;
       }
 
@@ -256,12 +274,16 @@ $typography: (
         @include typography('body-lg-semibold');
         color: var(--Neutral-Translucent-Strong);
       }
-    }
 
+      hr {
+            background: linear-gradient(252deg, rgba(196, 181, 253, 0.2) 26.43%, rgba(117, 108, 151, 0.2) 81.67%);
+      }
+    }
   }
 
 
 }
+
 
 
 

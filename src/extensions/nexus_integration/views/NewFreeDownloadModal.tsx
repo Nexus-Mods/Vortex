@@ -3,8 +3,10 @@ import { TFunction } from 'i18next';
 import FlexLayout from '../../../controls/FlexLayout';
 import { Button, Panel } from 'react-bootstrap';
 import Image from '../../../controls/Image';
+import { IconButton } from '../../../controls/TooltipControls';
 
-const premiumPictogramPath ='assets/pictograms/premium-pictogram.svg';
+const electricBoltIconPath = 'assets/icons/electric-bolt.svg';
+const premiumPictogramPath = 'assets/pictograms/premium-pictogram.svg';
 const freePictogramPath = 'assets/pictograms/free-pictogram.svg';
 
 export interface INewFreeDownloadModal {
@@ -33,12 +35,12 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
               <FlexLayout.Flex>
                 <FlexLayout type='column'>
                   <div id='mod-name'>{fileInfo.mod.name}</div>
-                  <div id='mod-author'>{fileInfo.mod.uploader.name}</div>
+                  <div id='mod-author'>by {fileInfo.mod.uploader.name}</div>
                 </FlexLayout>
               </FlexLayout.Flex>
 
               <FlexLayout.Fixed>
-                <div id='mod-count'>1 / 233 mods</div>
+                {/* <div id='mod-count'>1 / 233 mods</div> */}
               </FlexLayout.Fixed>
 
             </FlexLayout>
@@ -67,14 +69,14 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
                   <li>Manual download for collections</li>
                   <li>Throttled download speeds (3 MB/s)</li>
                   <li>Ads and delay for each download</li>
-                </ul>                        
-                <Button id='download-mod-button' onClick={() => console.log('download-mod-button clicked')}>{t('Download mod')}</Button>
+                </ul>
+                <Button id='download-mod-button' onClick={() => console.log('download-mod-button clicked')}>{t('Download manually')}</Button>
               </FlexLayout>
             </FlexLayout.Flex>
 
             <FlexLayout.Flex>
               <FlexLayout type='column' id='premium-container'>
-                <Image className='premium-pictogram' srcs={[premiumPictogramPath]}  />
+                <Image className='premium-pictogram' srcs={[premiumPictogramPath]} />
                 <div className='membership-type'>Premium</div>
                 <div className='title'>Get all your mods fast</div>
                 <hr />
@@ -82,8 +84,14 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
                   <li>Auto-download collections</li>
                   <li>Max download speeds</li>
                   <li>No more ads</li>
-                </ul>                        
-                <Button id='get-premium-button' onClick={() => console.log('get-premium-button clicked')}>{t('Auto-download all')}</Button>
+                </ul>
+                <Button
+                  id='get-premium-button'
+                  onClick={() => console.log('get-premium-button clicked')}>
+                    <Image srcs={[electricBoltIconPath]} />
+                    {t('Auto-download all')}
+                </Button>
+                {/* <Button id='get-premium-button' onClick={() => console.log('get-premium-button clicked')}>{t('Auto-download all')}</Button> */}
               </FlexLayout>
             </FlexLayout.Flex>
 
