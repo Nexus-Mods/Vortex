@@ -46,6 +46,9 @@ import * as winapi from 'winapi-bindings';
 import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
+import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
+
+const fomodProcessLimiter = new ConcurrencyLimiter(2);
 
 // The rest of the error message is localized
 const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*');
@@ -434,7 +437,21 @@ class ConnectionIPC {
   public static async bind(securityLevel: SecurityLevel,
                            retry: boolean = false)
                            : Promise<ConnectionIPC> {
-    let onResolve: () => void;
+    // Use concurrency limiter with isolated IPC connections per installation
+    return fomodProcessLimiter.do(async () => {
+      // Increase max listeners to handle concurrent FOMOD installations
+      // Each installation adds exit listeners, and with parallel installations
+      // we can exceed the default limit of 10
+      const currentMaxListeners = process.getMaxListeners();
+      if (currentMaxListeners < 50) {
+        process.setMaxListeners(50);
+        log('debug', 'Increased process max listeners for FOMOD installations', {
+          previous: currentMaxListeners,
+          new: 50
+        });
+      }
+
+      let onResolve: () => void;
     let onReject: (err: Error) => void;
     const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;
@@ -449,26 +466,25 @@ class ConnectionIPC {
     const debug = false;
 
     const pipeId = pipe ? (debug ? 'debug' : shortid()) : undefined;
+    
+    log('debug', 'Starting FOMOD installer with isolated IPC connections', {
+      pipe,
+      securityLevel: SecurityLevel[securityLevel],
+      retry,
+      pipeId
+    });
 
     const useAppContainer = securityLevel === SecurityLevel.Sandbox;
 
-    if ((ConnectionIPC.sListenOut === undefined) || retry) {
-      // only set up the listening server once, otherwise we might end
-      // up creating orphaned connections if a connection later dies
-      ConnectionIPC.sListenOut = await createSocket(
-        { debug, pipeId, useAppContainer });
-    } else {
-      ConnectionIPC.sListenOut.server.removeAllListeners('connection');
-    }
+    let listenOut: { ipcId: string, server: net.Server };
+    let listenIn: { ipcId: string, server: net.Server };
+
+    // Each FOMOD installation gets its own dedicated sockets
+    listenOut = await createSocket({ debug, pipeId, useAppContainer });
 
     if (pipe) {
-      if ((ConnectionIPC.sListenIn === undefined) || retry) {
-        ConnectionIPC.sListenIn = await createSocket(
-          { debug, pipeId: pipeId + '_reply', useAppContainer });
-      } else {
-        ConnectionIPC.sListenIn.server.removeAllListeners('connection');
-      }
-      ConnectionIPC.sListenIn.server.on('connection', sockIn => {
+      listenIn = await createSocket({ debug, pipeId: pipeId + '_reply', useAppContainer });
+      listenIn.server.on('connection', sockIn => {
         log('debug', '[installer] peer connected reply');
         sockIn.setEncoding('utf8');
         cliSocket = sockIn;
@@ -487,11 +503,11 @@ class ConnectionIPC {
       });
     }
 
-    const { ipcId } = ConnectionIPC.sListenOut;
+    const { ipcId } = listenOut;
 
     log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
 
-    ConnectionIPC.sListenOut.server.on('connection', sockIn => {
+    listenOut.server.on('connection', sockIn => {
       log('debug', '[installer] peer connected there');
       sockIn.setEncoding('utf8');
       if (!wasConnected) {
@@ -634,11 +650,18 @@ class ConnectionIPC {
         const oldGlobInvariant = process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
         process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = '1';
 
-        pid = await createIPC(
-          pipe, ipcId, onExit, onStdout,
-          securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
-          false);
-          // securityLevel === SecurityLevel.LowIntegrity);
+        try {
+          log('debug', 'Creating FOMOD IPC connection', { pipe, ipcId, securityLevel });
+          pid = await createIPC(
+            pipe, ipcId, onExit, onStdout,
+            securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
+            false);
+            // securityLevel === SecurityLevel.LowIntegrity);
+          log('debug', 'FOMOD IPC connection created successfully', { pid });
+        } catch (ipcErr) {
+          log('error', 'Failed to create FOMOD IPC connection', { error: ipcErr.message, securityLevel });
+          throw ipcErr;
+        }
 
         if (oldGlobInvariant === undefined) {
           delete process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'];
@@ -658,13 +681,21 @@ class ConnectionIPC {
       res = new ConnectionIPC({ in: cliSocket, out: servSocket }, pid);
       onExitCBs = code => {
         res.onExit(code);
+        // Clean up isolated IPC connections when process exits
+        try {
+          listenOut.server.close();
+          if (pipe && listenIn) {
+            listenIn.server.close();
+          }
+          log('debug', 'Cleaned up isolated FOMOD IPC connections', { ipcId });
+        } catch (cleanupErr) {
+          log('warn', 'Error cleaning up FOMOD IPC connections', { error: cleanupErr.message, ipcId });
+        }
       };
     }
     return res;
+    });
   }
-
-  private static sListenOut: { ipcId: string, server: net.Server };
-  private static sListenIn: { ipcId: string, server: net.Server };
 
   private mSocket: { in: net.Socket, out: net.Socket };
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
@@ -759,6 +790,12 @@ class ConnectionIPC {
 
   public async onExit(code: number) {
     log(code === 0 ? 'info' : 'error', 'remote process exited', { code });
+    const currentListenerCount = process.listenerCount('exit');
+    if (currentListenerCount > 20) {
+      log('warn', 'High number of process exit listeners detected', {
+        count: currentListenerCount
+      });
+    }
     try {
       await toPromise(cb => this.mSocket.out.end(cb));
     } catch (err) {
@@ -959,6 +996,16 @@ function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bl
 }
 
 function init(context: IExtensionContext): boolean {
+  // Proactively increase max listeners to handle concurrent FOMOD installations
+  // The fomod-installer package adds process exit listeners and with our new
+  // parallel installation system, we can have many concurrent FOMOD installs
+  if (process.getMaxListeners() < 50) {
+    process.setMaxListeners(50);
+    log('info', 'Increased process max listeners for concurrent FOMOD installations', {
+      maxListeners: 50
+    });
+  }
+
   initGameSupport(context.api);
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
 
