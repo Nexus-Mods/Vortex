@@ -86,7 +86,8 @@ $typography: (
 }
 
 #free-user-dl-dialog,
-#nexus-download-banner {
+#nexus-download-banner,
+#collection-premium-banner {
 
   Button {
     border-radius: var(--Border-radius-rounded);
@@ -135,7 +136,6 @@ $typography: (
       color: var(--Neutral-Strong);
       background-color: var(--Premium-600);
       border: none;
-      padding: 8px;
 
       display: flex;
       align-items: center;
@@ -150,6 +150,12 @@ $typography: (
         width: 16px;
         height: 16px;
         margin: 0;
+      }
+
+      &.small {
+        @include typography('body-md-normal');
+        padding: 6px 0px;
+        gap: 4px;
       }
     }
   }
