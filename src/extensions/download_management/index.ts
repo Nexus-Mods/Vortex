@@ -59,7 +59,7 @@ import setDownloadGames from './util/setDownloadGames';
 import { ensureLoggedIn } from '../nexus_integration/util';
 import NXMUrl from '../nexus_integration/NXMUrl';
 import { knownGames } from '../../util/selectors';
-import { convertNXMIdReverse } from '../nexus_integration/util/convertGameId';
+import { convertNXMIdReverse, convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -704,7 +704,7 @@ function checkForUnfinalized(api: IExtensionApi,
 
             Promise.map(unfinalized, id => {
               const gameId = Array.isArray(downloads[id].game)
-                ? downloads[id].game[0]
+                ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
                 : gameMode;
               const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
@@ -766,7 +766,7 @@ function processInterruptedDownloads(api: IExtensionApi,
       // download was interrupted before receiving urls, has to be canceled
       log('info', 'download removed because urls were never retrieved', { id });
       const gameId = Array.isArray(downloads[id].game)
-        ? downloads[id].game[0]
+        ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
         : gameMode;
 
       const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
@@ -987,7 +987,7 @@ function init(context: IExtensionContextExt): boolean {
         }
         context.api.lookupModMeta({
           filePath: path.join(downloadPath, cur[dlId].localPath),
-          gameId: cur[dlId].game[0],
+          gameId: convertGameIdReverse(knownGames(context.api.getState()), cur[dlId].game[0]),
         })
           .then(result => {
             if (result.length > 0) {
@@ -1123,6 +1123,15 @@ function init(context: IExtensionContextExt): boolean {
       removeDownloadsWithoutFile(store, downloads);
 
       processCommandline(context.api);
+
+      // Expose download manager free slots to other extensions
+      context.api.events.on('get-download-free-slots', (callback: (freeSlots: number) => void) => {
+        if (manager) {
+          callback(manager.getFreeSlots());
+        } else {
+          callback(0);
+        }
+      });
 
       presetManager.on('installmod', (stepIn: IPresetStep) => {
         const step = stepIn as IPresetStepInstallMod;
