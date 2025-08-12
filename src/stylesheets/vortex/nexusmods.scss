@@ -7,6 +7,11 @@ $font-families: (
 
 // Typography Scale Map
 $typography: (
+  'body-xl-semibold': ('font-family': map-get($font-families, 'base'),
+    'font-size': 16px,
+    'font-style': normal,
+    'font-weight': 600,
+    'line-height': 150%),
   'body-lg-normal': ('font-family': map-get($font-families, 'base'),
     'font-size': 14px,
     'font-style': normal,
@@ -21,6 +26,11 @@ $typography: (
     'font-size': 12px,
     'font-style': normal,
     'font-weight': 400,
+    'line-height': 150%),
+  'body-md-semibold': ('font-family': map-get($font-families, 'base'),
+    'font-size': 12px,
+    'font-style': normal,
+    'font-weight': 600,
     'line-height': 150%),
   'body-sm-normal': ('font-family': map-get($font-families, 'base'),
     'font-size': 10px,
@@ -49,13 +59,13 @@ $typography: (
   }
 }
 
-#free-user-dl-dialog {
-
+:root {
   --Border-radius-rounded: 4px;
 
   --Neutral-Strong: #F4F4F5;
   --Neutral-Moderate: #D4D4D8;
   --Neutral-Subdued: #A1A1AA;
+  --Neutral-Inverted: #0F0F10;
 
   --Neutral-Translucent-Strong: rgba(255, 255, 255, 0.95);
   --Neutral-Translucent-Moderate: rgba(255, 255, 255, 0.70);
@@ -72,6 +82,11 @@ $typography: (
   --Premium-600: #7C3AED;
 
   --Violet-300: #C4B5FD;
+}
+
+
+
+#free-user-dl-dialog {
 
   ul {
     padding-inline-start: 24px;
@@ -276,7 +291,7 @@ $typography: (
       }
 
       hr {
-            background: linear-gradient(252deg, rgba(196, 181, 253, 0.2) 26.43%, rgba(117, 108, 151, 0.2) 81.67%);
+        background: linear-gradient(252deg, rgba(196, 181, 253, 0.2) 26.43%, rgba(117, 108, 151, 0.2) 81.67%);
       }
     }
   }
@@ -285,32 +300,97 @@ $typography: (
 }
 
 
+#nexus-header-ad {
+  background: url('assets/images/premium-ad-background-small.png') no-repeat center center;
+  width: 365px;
+  height: 104px;
 
+  button {
+    background-color: transparent;
+    margin: 0;
+    padding: 16px;
+    height: 100%;
+    width: 100%;
+    border: none;
 
+    .hover-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 363px;
+      height: 102px;
+      background-color: rgba(0, 0, 0, 0.80);
+      /* dark overlay */
+      color: white;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      /* hidden initially */
+      transition: opacity 0.3s ease;
 
+      .hover-overlay-content {
+        height: 28px;
+        padding: 0 14px;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        border-radius: var(--Border-radius-rounded, 4px);
+        background: var(--Neutral-Strong, #F4F4F5);
+        color: var(--Neutral-Inverted, #0F0F10);
 
-.nexusmods-action-button {
-  display: inline;
-  background: $brand-primary;
-  padding: 10px 9px;
-  margin: 0 8px;
+        .arrow-forward {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          background: url('assets/icons/arrow-forward.svg') no-repeat center center;
+          background-size: contain;
+          flex-shrink: 0;
+        }
+      }
+    }
 
-  >svg {
-    margin-right: 5px;
-    color: transparent;
-    --nexus-outline-color: transparent;
-    --nexus-orange-color: transparent;
-    --nexus-orange-darker-color: transparent;
+    &:hover .hover-overlay {
+      opacity: 1;
+    }
   }
 
-  >.nexusmods-fake-link {
-    color: $white;
-    font-size: 12px;
-    text-transform: uppercase;
-    text-decoration: none;
-    line-height: 1.3;
+  .ad-flex-container {
+    align-items: center;
+    gap: 32px
+  }
+
+  .text-flex-container {
+    align-items: start;
+    gap: 8px
+  }
+
+  .nexus-header-ad-title {
+    @include typography('body-xl-semibold');
+    color: var(--Premium-50, #F5F3FF);
+    text-align: left;
+
+    .ad-title-highlight {
+      color: var(--Premium-300, #C4B5FD);
+    }
+  }
+
+  .nexus-header-ad-body {
+    @include typography('body-md-normal');
+    color: var(--Neutral-Translucent-Moderate);
+    text-align: left;
+
+    .ad-body-highlight {
+      @include typography('body-md-semibold');
+      color: var(--Neutral-Translucent-Strong, rgba(255, 255, 255, 0.95));
+    }
+  }
+
+  .premium-pictogram {
+    width: 48px;
+    height: 48px;
   }
 }
+
 
 .nexus-download-banner {
   background-color: $brand-info;
@@ -357,105 +437,4 @@ $typography: (
       color: $gray-darker;
     }
   }
-}
-
-.nexus-premium-banner {
-  margin: 0 $half-gutter $half-gutter;
-  height: 100%;
-
-  border-top: $border-width solid $border-color;
-
-  >.layout-container {
-    align-items: center;
-    margin: 0.5em 0;
-    font-size: larger;
-  }
-
-  .icon {
-    width: 2em;
-    height: 2em;
-    margin-right: 0.5em;
-    fill: $brand-primary;
-  }
-
-  .nexus-premium-highlight {
-    color: $brand-primary;
-  }
-}
-
-.flex-spread {
-  display: flex;
-  justify-content: space-between;
-}
-
-.padding-hg {
-  padding: $half-gutter;
-}
-
-.margin-top-hg {
-  margin-top: $half-gutter;
-}
-
-.free-user-dl-image {
-  max-width: 220px;
-  max-height: 120px;
-  width: auto;
-  height: auto;
-  margin-right: $half-gutter;
-}
-
-.free-user-dl-name {
-  font-weight: bold;
-  font-size: larger;
-  font-family: $font-family-headings;
-  margin-bottom: 0.5em;
-}
-
-.free-user-dl-uploader {
-  display: flex;
-  align-items: center;
-  font-family: $font-family-headings;
-
-  img {
-    width: 1.5em;
-    height: 1.5em;
-    margin-right: 0.5em;
-  }
-}
-
-.free-user-dl-summary {
-  margin-top: 0.5em;
-}
-
-.modid-detail {
-  table {
-    margin-bottom: 1em;
-  }
-
-  tr {
-    border-top: 0.5em solid transparent;
-  }
-
-  th {
-    margin-right: 1em;
-  }
-}
-
-.nexus-id-valid {
-  color: $brand-success;
-}
-
-.nexus-id-invalid {
-  color: $brand-warning;
-}
-
-.modid-detail-control {
-  vertical-align: top;
-}
-
-.no-margin {
-  margin-top: 0;
-  margin-bottom: 0;
-  margin-left: 0;
-  margin-right: 0;
 }
