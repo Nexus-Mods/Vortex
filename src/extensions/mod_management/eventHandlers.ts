@@ -766,11 +766,11 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   });
 }
 
-export function onStartInstallDownload(api: IExtensionApi,
+export async function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
                                        options: IInstallOptions,
-                                       callback?: (error, id: string) => void): Promise<void> {
+                                       callback?: (error, id: string) => void) {
   const store = api.store;
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -787,6 +787,54 @@ export function onStartInstallDownload(api: IExtensionApi,
       { allowReport: false });
     }
     return Promise.resolve();
+  }
+
+  if (download.state !== 'finished') {
+    const message = `Download not finished (state: ${download.state}), cannot install`;
+    log('warn', message, { downloadId, state: download.state });
+    if (callback !== undefined) {
+      callback(new DataInvalid(message), undefined);
+    } else {
+      api.showErrorNotification('Download Not Ready',
+        'The download must be completely finished before installation can begin. '
+        + `Current state: ${download.state}`,
+        { allowReport: false });
+    }
+    return Promise.resolve();
+  }
+
+  const downloadPath = downloadPathForGame(state, getDownloadGames(download)[0]);
+  const fullPath: string = path.join(downloadPath, download.localPath);
+
+  try {
+    // Small delay to ensure file handles are released and filesystem buffers are flushed
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify file exists and is accessible by checking its stats
+    const stats = await fs.statAsync(fullPath);
+
+    // Additional verification: ensure file is readable and has expected size
+    if (stats.size === 0) {
+      throw new Error('File appears to be empty or still being written');
+    }
+
+    log('debug', 'Download file verified as accessible for installation', {
+      downloadId,
+      filePath: path.basename(fullPath),
+      fileSize: stats.size
+    });
+  } catch (accessError) {
+    const message = `Download file not accessible for installation: ${accessError.message}`;
+    log('warn', message, { downloadId, filePath: path.basename(fullPath) });
+    if (callback !== undefined) {
+      callback(new DataInvalid(message), undefined);
+    } else {
+      api.showErrorNotification('Download File Locked',
+        'The download file is still being processed or is locked by another process. '
+        + 'Please wait a moment and try again.',
+        { allowReport: false });
+    }
+    return;
   }
 
   return queryGameId(api.store, download.game, download.localPath)
