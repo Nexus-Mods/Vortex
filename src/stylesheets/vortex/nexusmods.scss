@@ -403,11 +403,12 @@ $typography: (
 
   .text-flex-container {
     align-items: start;
-    gap: 8px
+    gap: 4px
   }
 
   .nexus-header-ad-title {
     @include typography('body-xl-semibold');
+    font-size: 18px;
     color: var(--Premium-50, #F5F3FF);
     text-align: left;
 
@@ -417,7 +418,7 @@ $typography: (
   }
 
   .nexus-header-ad-body {
-    @include typography('body-md-normal');
+    @include typography('body-lg-normal');
     color: var(--Neutral-Translucent-Moderate);
     text-align: left;
 
@@ -428,8 +429,8 @@ $typography: (
   }
 
   .premium-pictogram {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
   }
 }
 

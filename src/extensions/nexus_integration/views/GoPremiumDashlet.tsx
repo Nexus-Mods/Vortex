@@ -21,7 +21,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
       <Dashlet title='' className='dashlet-go-premium'>
         <Image className='premium-pictogram' srcs={[premiumPictogramPath]} />
         <div className='dashlet-premium-title'>Get fast downloads with <span className='text-highlight'>Premium</span></div>
-        <div className='dashlet-premium-body'><span className='text-highlight'>Upgrade to unlock</span> uncapped download speeds,
+        <div className='dashlet-premium-body'><span className='text-highlight'>Upgrade to unlock</span> uncapped download speeds, 
           <span className='text-highlight'>auto-install collections</span> and <span className='text-highlight'>no ads</span>.</div>
         <button className='dashlet-premium-button' onClick={this.goBuyPremium}>
           <FlexLayout type='row' className='dashlet-premium-button-content'>
