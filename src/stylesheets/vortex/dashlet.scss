@@ -144,31 +144,6 @@
   }
 }
 
-.dashlet-go-premium {
-  width: 100% !important; 
-  position: relative;
-
-  div:not(last-child) {
-    z-index: 1;
-  }
-
-  .nexus-ad-image {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: url(assets/images/ad-banner-large.png);
-    background-size: cover;
-    background-position-x: 50%;
-    z-index: 0;
-    border-radius: 8px;
-  }
-
-  .gopremium-widget-text {
-    width: 55%;
-  }
-}
 
 .dashlet-announcement {
 

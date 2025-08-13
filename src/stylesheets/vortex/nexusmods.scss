@@ -7,6 +7,11 @@ $font-families: (
 
 // Typography Scale Map
 $typography: (
+  'heading-sm-semibold': ('font-family': map-get($font-families, 'base'),
+    'font-size': 22px,
+    'font-style': normal,
+    'font-weight': 600,
+    'line-height': 125%),
   'body-xl-semibold': ('font-family': map-get($font-families, 'base'),
     'font-size': 16px,
     'font-style': normal,
@@ -85,11 +90,42 @@ $typography: (
   --Violet-300: #C4B5FD;
 }
 
+#get-premium-button {
+
+  @include typography('body-lg-normal');
+  color: var(--Neutral-Strong);
+  background-color: var(--Premium-600);
+  border: none;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+
+  &:hover {
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Premium-600);
+  }
+
+  img {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+
+  &.small {
+    @include typography('body-md-normal');
+    padding: 6px 0px;
+    gap: 4px;
+  }
+}
+
 #free-user-dl-dialog,
 #nexus-download-banner,
-#collection-premium-banner {
+#collection-premium-banner,
+.dashlet-go-premium,
+#download-path-form {
 
-  Button {
+  button {
     border-radius: var(--Border-radius-rounded);
     padding: 4px 8px;
     color: var(--Neutral-Moderate);
@@ -102,6 +138,20 @@ $typography: (
         background: var(--Surface-Translucent-High);
         border: none;
         color: var(--Neutral-Strong);
+      }
+    }
+
+    &.dashlet-premium-button {
+      border: none;
+      border-radius: var(--Border-radius-rounded, 4px);
+      background: var(--Neutral-Strong, #F4F4F5);
+      color: var(--Neutral-Inverted, #0F0F10);
+      text-align: center;
+
+      &:hover {
+        border: none;
+        border-radius: var(--Border-radius-rounded, 4px);
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.20) 0%, rgba(0, 0, 0, 0.20) 100%), var(--Neutral-Strong, #F4F4F5);
       }
     }
 
@@ -128,36 +178,12 @@ $typography: (
         border: 1px solid var(--Stroke-Neutral-Translucent-Strong);
         background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Neutral-800);
       }
+
+
     }
 
-    &#get-premium-button {
 
-      @include typography('body-lg-normal');
-      color: var(--Neutral-Strong);
-      background-color: var(--Premium-600);
-      border: none;
 
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-
-      &:hover {
-        background: linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), var(--Premium-600);
-      }
-
-      img {
-        width: 16px;
-        height: 16px;
-        margin: 0;
-      }
-
-      &.small {
-        @include typography('body-md-normal');
-        padding: 6px 0px;
-        gap: 4px;
-      }
-    }
   }
 
 }
@@ -305,6 +331,10 @@ $typography: (
       hr {
         background: linear-gradient(252deg, rgba(196, 181, 253, 0.2) 26.43%, rgba(117, 108, 151, 0.2) 81.67%);
       }
+
+      button {
+        padding: 8px;
+      }
     }
   }
 
@@ -313,7 +343,7 @@ $typography: (
 
 
 #nexus-header-ad {
-  background: url('assets/images/premium-ad-background-small.png') no-repeat center center;
+  background: url('assets/images/premium-pattern-background.webp') no-repeat center center;
   width: 365px;
   height: 104px;
 
@@ -422,41 +452,61 @@ $typography: (
       color: var(--Translucent-Dark-950, rgba(0, 0, 0, 0.95));
     }
   }
-
-
 }
 
-.nexus-main-banner {
-  background-size: cover !important;
-  // no vertical padding. If custom titlebar mode this makes no difference as the
-  // banner fills the available vertical space and that produces the exact same padding.
-  // In generic titlebar mode, the padding was pretty bad because it forced the entire
-  // header area to be wider for non-premium users compared to premium users.
-  padding: 0 10px;
-  width: 320px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 
-  div:first-child {
-    font-weight: bold;
-    margin-bottom: 4px;
-    font-size: x-large;
+.dashlet-go-premium {
+
+  padding: 16px;
+
+  background: url('assets/images/premium-pattern-background.webp') no-repeat center center;
+  // background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
+  backdrop-filter: blur(6px);
+
+  border-radius: 8px;
+  border: 1px solid rgba(196, 181, 253, 0.40);
+
+  align-items: center;
+  gap: 4px;
+
+  .premium-pictogram {
+    width: 80px;
+    height: 80px;
   }
 
-  .right-center {
-    position: absolute;
-    right: 16px;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  .dashlet-premium-title {
+    @include typography('heading-sm-semibold');
+    color: var(--Neutral-Translucent-Strong, rgba(255, 255, 255, 0.95));
+    text-align: center;
 
-    &.btn.btn-default:hover {
-      background-color: $brand-primary;
-      color: $gray-darker;
+    .text-highlight {
+      color: var(--Premium-400, #A78BFA);
+    }
+  }
+
+  .dashlet-premium-body {
+    @include typography('body-md-normal');
+    color: var(--Neutral-Translucent-Moderate, rgba(255, 255, 255, 0.70));
+    text-align: center;
+    margin-bottom: 16px;
+
+    .text-highlight {
+      @include typography('body-md-semibold');
+      color: var(--Neutral-Strong, #F4F4F5);
+    }
+  }
+
+  .dashlet-premium-button-content {
+    align-items: center;
+    gap: 4px;
+
+    .arrow-forward {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background: url('assets/icons/arrow-forward.svg') no-repeat center center;
+      background-size: contain;
+      flex-shrink: 0;
     }
   }
 }
