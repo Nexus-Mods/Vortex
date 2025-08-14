@@ -128,7 +128,7 @@ $typography: (
   button {
     border-radius: var(--Border-radius-rounded);
     padding: 4px 8px;
-    color: var(--Neutral-Moderate);
+    // color: var(--Neutral-Moderate);
 
     &#cancel-button {
       background-color: transparent;
@@ -344,6 +344,7 @@ $typography: (
 
 #nexus-header-ad {
   background: url('assets/images/premium-pattern-background.webp') no-repeat center center;
+  border: 1px solid rgba(196, 181, 253, 0.40);
   width: 365px;
   height: 104px;
 
@@ -359,8 +360,6 @@ $typography: (
       position: absolute;
       top: 0;
       left: 0;
-      width: 363px;
-      height: 102px;
       background-color: rgba(0, 0, 0, 0.80);
       /* dark overlay */
       color: white;
@@ -470,9 +469,16 @@ $typography: (
   align-items: center;
   gap: 4px;
 
+  container-type: inline-size; // enable size queries on width/height
+
   .premium-pictogram {
     width: 80px;
     height: 80px;
+
+    // hide when dashles is too narrow
+    @container (max-width: 363px) {
+      display: none;
+    }
   }
 
   .dashlet-premium-title {
