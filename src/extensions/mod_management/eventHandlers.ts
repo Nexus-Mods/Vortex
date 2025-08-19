@@ -812,6 +812,16 @@ export async function onStartInstallDownload(api: IExtensionApi,
     ? convertGameIdReverse(knownGamesList, downloadGames[0]) || downloadGames[0]
     : downloadGames[0];
 
+  if (!truthy(download.localPath)) {
+    api.events.emit('refresh-downloads', convertedGameId, () => {
+      api.showErrorNotification('Download invalid',
+        'Sorry, the meta data for this download is incomplete. Vortex has '
+        + 'tried to refresh it, please try again.',
+        { allowReport: false });
+    });
+    return Promise.resolve();
+  }
+
   const downloadPath = downloadPathForGame(state, convertedGameId);
   const fullPath: string = path.join(downloadPath, download.localPath);
 
@@ -846,40 +856,10 @@ export async function onStartInstallDownload(api: IExtensionApi,
     return;
   }
 
-  return queryGameId(api.store, download.game, download.localPath)
-    .then(gameId => {
-      if (!truthy(download.localPath)) {
-        api.events.emit('refresh-downloads', gameId, () => {
-          api.showErrorNotification('Download invalid',
-            'Sorry, the meta data for this download is incomplete. Vortex has '
-            + 'tried to refresh it, please try again.',
-            { allowReport: false });
-        });
-        return Promise.resolve();
-      }
-
-      const downloadGame: string[] = getDownloadGames(download);
-      const downloadPath: string = downloadPathForGame(state, downloadGame[0]);
-      if (downloadPath === undefined) {
-        api.showErrorNotification('Unknown Game',
-          'Failed to determine download directory. This shouldn\'t have happened', {
-            message: downloadGame[0],
-            allowReport: true,
-          });
-        return;
-      }
-      const fullPath: string = path.join(downloadPath, download.localPath);
-      const allowAutoDeploy = options.allowAutoEnable !== false;
-      const { enable } = state.settings.automation;
-      installManager.install(downloadId, fullPath, downloadGame, api,
-        { download, choices: options.choices }, true, enable && allowAutoDeploy,
-        callback, gameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
-    })
-    .catch(err => {
-      if (callback !== undefined) {
-        callback(err, undefined);
-      } else if (!(err instanceof UserCanceled)) {
-        api.showErrorNotification('Failed to start download', err);
-      }
-    });
+  const allowAutoDeploy = options.allowAutoEnable !== false;
+  const { enable } = state.settings.automation;
+  installManager.install(downloadId, fullPath, download.game, api,
+    { download, choices: options.choices }, true, enable && allowAutoDeploy,
+    callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
+  return;
 }
