@@ -58,9 +58,9 @@
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.8.0.tgz#4210deb771ee3912964f14a15ddfb5ff877e70b9"
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
-"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
+"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#quota-modification":
   version "1.4.27"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/29721da7495e0c6d7b2e1a89d31028775c515b7e"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/1f3c2aea7068cd4f4ff00ca8ea7756c8b7d423ba"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -1510,8 +1510,8 @@ flux-standard-action@^2.0.0:
     lodash.isstring "^4.0.1"
 
 fomod-installer@Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup:
-  version "0.7.21"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3b461b600c5f6680a7fbd540c7a4edd1115f232b"
+  version "0.8.0"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/18201eafaefd4219a8f881547a2f8e80e1a71b16"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
