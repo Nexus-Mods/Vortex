@@ -148,12 +148,8 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as url from 'url';
 
-import * as modMetaT from 'modmeta-db';
-
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
-
-const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -677,7 +673,7 @@ class InstallManager {
         }
 
         // Only calculate hash if we don't have it
-        return genHash(archivePath).then(hash => {
+        return api.genMd5Hash(archivePath).then(hash => {
           archiveMD5 = hash.md5sum;
           archiveSize = hash.numBytes;
           try {
@@ -1084,7 +1080,7 @@ class InstallManager {
           callback?.(err, null);
         } else {
           return prom
-            .then(() => genHash(archivePath).catch(() => ({})))
+            .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
               let replace = {};
@@ -1784,7 +1780,7 @@ class InstallManager {
     }
     const missing = unsupported.map(instruction => instruction.source);
     const makeReport = () =>
-        genHash(archivePath)
+        api.genMd5Hash(archivePath)
             .catch(err => ({}))
             .then(
                 (hashResult: IHashResult) => createErrorReport(
