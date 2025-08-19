@@ -1,9 +1,12 @@
 import * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-  IOAuthCredentials,
-  IRevision, IRevisionQuery, IUpdateEntry, IValidateKeyResponse, NexusError, ProtocolError, RateLimitError, TimeoutError,
+  IOAuthCredentials, IModFile, IModFileQuery, IModFiles, IModQuery, ITrackResponse,
+  IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
+import { IModLookupResult } from '../../types/IModLookupResult';
+import { IModRepoId } from '../mod_management/types/IMod';
+import { makeFileUID, makeModUID } from './util/UIDs';
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
@@ -38,7 +41,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import { setLoginError, setLoginId, setOauthPending } from './actions/session';
-import { NEXUS_DOMAIN, OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL } from './constants';
+import { NEXUS_DOMAIN, NEXUS_BASE_URL, OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL } from './constants';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { isLoggedIn } from './selectors';
@@ -51,6 +54,7 @@ import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
+import Debouncer from '../../util/Debouncer';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -416,14 +420,140 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
                         : Promise<IRemoteInfo> {
   return Promise.resolve((async () => {
     try {
-      const modInfo = await nexus.getModInfo(modId, domain);
-      const fileInfo = await nexus.getFileInfo(modId, fileId, domain);
+      // Run both API calls concurrently for better performance
+      const [modInfo, fileInfo] = await Promise.all([
+        nexus.getModInfo(modId, domain),
+        nexus.getFileInfo(modId, fileId, domain)
+      ]);
       return { modInfo, fileInfo };
     } catch (err) {
       err['attachLogOnReport'] = true;
       throw err;
     }
   })());
+}
+
+// GraphQL-based version of getInfo function
+export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, fileId: number): Promise<IRemoteInfo> {
+  // Define the GraphQL query for file information
+  const fileQuery: Partial<IModFileQuery> = {
+        categoryId: true,
+        count: true,
+        date: true,
+        description: true,
+        fileId: true,
+        mod: {
+          author: true,
+          category: true,
+          game: {
+            id: true,
+            domainName: true,
+          },
+          gameId: true,
+          id: true,
+          modCategory: {
+            id: true,
+            name: true,
+          },
+          pictureUrl: true,
+          status: true,
+          uid: true,
+        },
+        modId: true,
+        name: true,
+        primary: true,
+        size: true,
+        uid: true,
+        uri: true,
+        version: true,
+      } as any; 
+  // const query: Partial<IModFileQuery> = {
+  //   name: true,
+  //   categoryId: true,
+  //   description: true,
+  //   size: true,
+  //   version: true,
+  //   game: {
+  //     id: true,
+  //     domainName: true,
+  //   },
+  //   uid: true,
+  //   uri: true,
+  //   mod: {
+  //     author: true,
+  //     modCategory: {
+  //       id: true,
+  //     },
+  //   },
+  // } as any;
+
+  return new Promise((resolve, reject) => {
+    nexus.modFilesByUid(fileQuery, [makeFileUID({ fileId: fileId.toString(), modId: modId.toString(), gameId: domain })])
+      .then(fileResult => {
+        const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
+        const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
+        return resolve({ modInfo, fileInfo });
+      })
+      .catch(err => {
+        err['attachLogOnReport'] = true;
+        return reject(err);
+      });
+  });
+}
+
+// Helper function to transform GraphQL mod data to IModInfo format
+function transformGraphQLModToIModInfo(graphqlFile: any): IModInfo {
+  const mod = graphqlFile.mod;
+  return {
+    mod_id: graphqlFile.modId || mod?.id,
+    name: mod?.name,
+    summary: mod?.summary,
+    description: mod?.description,
+    picture_url: mod?.pictureUrl,
+    version: mod?.version,
+    author: mod?.author,
+    uploaded_by: mod?.author,
+    uploaded_users_profile_url: mod?.user?.memberId ? `https://www.nexusmods.com/users/${mod.user.memberId}` : '',
+    allow_rating: true, // Default value, might need to be fetched separately
+    category_id: mod?.modCategory?.id || mod?.category?.id,
+    user: {
+      member_id: mod?.user?.memberId,
+      name: mod?.user?.name,
+      avatar: mod?.user?.avatar,
+    },
+    uploaded_timestamp: mod?.uploadedTimestamp,
+    updated_timestamp: mod?.updatedTimestamp,
+    game_id: mod?.gameId || mod?.game?.id,
+    domain_name: mod?.domainName || mod?.game?.domainName,
+    contains_adult_content: mod?.adultContent || false,
+    status: mod?.status || 'published',
+    available: mod?.available !== false,
+    mod_downloads: mod?.modDownloads || 0,
+    mod_unique_downloads: mod?.modUniqueDownloads || 0,
+    uid: mod?.uid,
+  } as unknown as IModInfo;
+}
+
+// Helper function to transform GraphQL file data to IFileInfo format
+function transformGraphQLFileToIFileInfo(graphqlFile: any): IFileInfo {
+  return {
+    id: [graphqlFile.fileId || parseInt(graphqlFile.uid?.split(':')[2], 10) || 0],
+    file_id: graphqlFile.fileId || parseInt(graphqlFile.uid?.split(':')[2], 10) || 0,
+    name: graphqlFile.name,
+    version: graphqlFile.version,
+    category_name: graphqlFile.categoryName,
+    category_id: graphqlFile.categoryId || 1,
+    is_primary: graphqlFile.primary || false,
+    size: graphqlFile.sizeInBytes || graphqlFile.size || 0,
+    size_kb: Math.round((graphqlFile.sizeInBytes || graphqlFile.size || 0) / 1024),
+    uploaded_timestamp: graphqlFile.uploadedTimestamp || graphqlFile.date,
+    changelog_html: graphqlFile.changelogHtml || '',
+    file_name: graphqlFile.name,
+    description: graphqlFile.description || '',
+    content_preview_link: '', // Default value
+    external_virus_scan_url: '', // Default value
+    mod_version: graphqlFile.mod?.version || graphqlFile.version,
+  } as unknown as IFileInfo;
 }
 
 export function getCollectionInfo(nexus: Nexus,
@@ -494,8 +624,7 @@ function startDownloadMod(api: IExtensionApi,
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
 
   let nexusFileInfo: IFileInfo;
-
-  return getInfo(nexus, pageId, url.modId, url.fileId)
+  return getInfoGraphQL(nexus, pageId, url.modId, url.fileId)
     .then(({ modInfo, fileInfo }) => {
       nexusFileInfo = fileInfo;
       return new Promise<string>((resolve, reject) => {
