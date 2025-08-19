@@ -138,13 +138,13 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
   // Add timeout to prevent slow metadata lookups from blocking new downloads
   const lookupPromise = api.lookupModMeta({
     fileMD5: dl.fileMD5,
-    filePath: path.join(downloadPath, dl.localPath),
+    filePath: undefined,
     gameId,
     fileSize: dl.size,
   }, ignoreCache);
 
-  const timeoutMs = 10000;
-  // Apply timeout - if metadata lookup takes longer than 10 seconds, continue without it
+  const timeoutMs = 5000;
+  // Apply timeout - if metadata lookup takes longer than 5 seconds, continue without it
   const timeoutPromise = new Promise<ILookupResult[]>((resolve) => {
     setTimeout(() => {
       log('warn', 'metadata lookup timed out, continuing without metadata', {
