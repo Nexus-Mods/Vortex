@@ -220,7 +220,12 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
     log('warn', 'failed to look up mod meta info', { message: err.message });
   })
   .finally(() => {
-    batchDispatch(api.store, actions);
+    // Defer the batch dispatch to prevent blocking the metadata lookup completion
+    if (actions.length > 0) {
+      setImmediate(() => {
+        batchDispatch(api.store, actions);
+      });
+    }
     log('debug', 'done querying info', { dlId });
   });
 }
