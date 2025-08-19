@@ -2,17 +2,12 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { delayed, toPromise } from '../../../util/util';
 import { log } from '../../../util/log';
 import { finalizingDownload, finalizingProgress,
-         finishDownload, setDownloadHash } from '../actions/state';
+         finishDownload, setDownloadHash, 
+         setDownloadHashByFile} from '../actions/state';
 import queryInfo from './queryDLInfo';
 import { batchDispatch } from '../../../util/util';
-
-import { fileMD5 } from 'vortexmt';
-
-function fileMD5Async(filePath: string,
-                      progressFunc: (progress: number, total: number) => void)
-                      : Promise<string> {
-  return Promise.resolve(toPromise<string>(cb => fileMD5(filePath, cb, progressFunc)));
-}
+import path from 'path';
+import { IHashResult } from 'modmeta-db';
 
 export function finalizeDownload(api: IExtensionApi, id: string,
                                  filePath: string) {
@@ -26,17 +21,17 @@ export function finalizeDownload(api: IExtensionApi, id: string,
       api.store.dispatch(finalizingProgress(id, progress));
     }
   };
-  return fileMD5Async(filePath , progressHash)
+  return api.genMd5Hash(filePath, progressHash)
     .catch(err => {
       if (['EBUSY', 'ENOENT', 'EPERM'].includes(err.code)) {
         // try a second time, might be the AV interfering with the new file
-        return delayed(100).then(() => fileMD5Async(filePath, progressHash))
+        return delayed(100).then(() => api.genMd5Hash(filePath, progressHash))
       }
       return Promise.reject(err);
     })
-    .then((md5Hash: string) => {;
+    .then((result: IHashResult) => {;
       const batched = [
-        setDownloadHash(id, md5Hash),
+        setDownloadHashByFile(path.basename(filePath), result.md5sum, result.numBytes),
         finishDownload(id, 'finished', undefined)
       ];
       batchDispatch(api.store, batched);
