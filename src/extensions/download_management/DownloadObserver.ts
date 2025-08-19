@@ -11,6 +11,7 @@ import { flatten, setdefault, truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
+import { knownGames } from '../gamemode_management/selectors';
 
 import {
   downloadProgress,
@@ -273,6 +274,12 @@ export class DownloadObserver {
         return;
       }
     const downloadDomain = this.extractNxmDomain(urls[0]);
+
+    // Convert nexus domain to internal game ID for proper path resolution
+    const downloadGameId = downloadDomain
+      ? convertGameIdReverse(knownGames(state), downloadDomain)
+      : gameId;
+
     const compatibleGames = getGames().filter(game =>
       (game.details?.compatibleDownloads ?? []).includes(gameId));
 
@@ -283,7 +290,10 @@ export class DownloadObserver {
     this.mApi.store.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
-    const downloadPath = selectors.downloadPathForGame(state, downloadDomain);
+    // Use the converted internal game ID for download path instead of the domain name
+    // This ensures downloads are saved to the correct directory based on Vortex's
+    // internal game identification rather than the Nexus domain name
+    const downloadPath = selectors.downloadPathForGame(state, downloadGameId);
 
     const processCB = this.genProgressCB(id);
 
@@ -373,45 +383,60 @@ export class DownloadObserver {
       callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      finalizeDownload(this.mApi, id, res.filePath)
-        .then(() => {
-          const flattened = flatten(res.metaInfo ?? {});
-          const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
-          util.batchDispatch(this.mApi.store.dispatch, batchedActions);
-          const state = this.mApi.getState();
-          if ((state.settings.automation?.install && (allowInstall === true))
-              || (allowInstall === 'force')
-              || (download.modInfo?.['startedAsUpdate'] === true)) {
-            this.mApi.events.emit('start-install-download', id);
-          }
+      // Defer download finalization to prevent blocking
+      setImmediate(() => {
+        finalizeDownload(this.mApi, id, res.filePath)
+          .then(() => {
+            const flattened = flatten(res.metaInfo ?? {});
+            const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
+            if (batchedActions.length > 0) {
+              util.batchDispatch(this.mApi.store.dispatch, batchedActions);
+            }
+            const state = this.mApi.getState();
+            if ((state.settings.automation?.install && (allowInstall === true))
+                || (allowInstall === 'force')
+                || (download.modInfo?.['startedAsUpdate'] === true)) {
+              this.mApi.events.emit('start-install-download', id);
+            }
 
-          callback?.(null, id);
-        })
-        .catch(err => callback?.(err, id))
-        .finally(() => onceFinished());
-        return Promise.resolve();
+            callback?.(null, id);
+          })
+          .catch(err => callback?.(err, id))
+          .finally(() => onceFinished());
+      });
+      return Promise.resolve();
     }
   }
 
   private genProgressCB(id: string): ProgressCallback {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
+    let pendingUpdate = false;
     return (received: number, total: number, chunks: IChunk[], chunkable: boolean,
             urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
       const newPerc = total > 0 ? Math.floor((received * 100) / total) : 0;
       const timeDiff = now - lastUpdateTick;
-      
       // Only update if significant change or enough time has passed
       const small = (timeDiff < 500) && (newPerc === lastUpdatePerc) && (filePath === undefined);
-      
       if (!small) {
         lastUpdateTick = now;
         lastUpdatePerc = newPerc;
+        // Use setImmediate to defer UI updates and prevent blocking
+        if (!pendingUpdate) {
+          pendingUpdate = true;
+          setImmediate(() => {
+            pendingUpdate = false;
+            progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
+                          urls, filePath, false);
+          });
+        }
+      } else if (small) {
+        // For small updates, still call progressUpdate but mark as small
+        progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
+                       urls, filePath, small);
       }
-      progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                     urls, filePath, small);
     };
   }
 
