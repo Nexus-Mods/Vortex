@@ -9,7 +9,6 @@ import {
 import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
-import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
@@ -29,6 +28,7 @@ import {
   getPluginPath,
   getStopPatterns,
   initGameSupport,
+  hasActiveFomodDialog,
 } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
 
@@ -37,7 +37,7 @@ import Workarounds from './views/Workarounds';
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
 import Bluebird from 'bluebird';
-import { createIPC } from 'fomod-installer';
+import { createIPC, killProcess } from 'fomod-installer';
 import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
@@ -48,7 +48,126 @@ import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 
-const fomodProcessLimiter = new ConcurrencyLimiter(2);
+const fomodProcessLimiter = new ConcurrencyLimiter(5);
+
+// Process management for FOMOD installer processes
+interface IActiveProcess {
+  pid: number;
+  connectionId: string;
+  kill?: () => void;
+  isolated?: boolean;
+  containerName?: string;
+  integrity?: string;
+}
+
+// Keep track of all spawned processes for cleanup per connection
+const activeProcessesByConnection = new Map<string, IActiveProcess>();
+let exitHandlerRegistered = false;
+
+// Global cleanup function to kill all active processes
+function cleanupAllProcesses() {
+  log('info', 'Cleaning up all FOMOD installer processes', {
+    count: activeProcessesByConnection.size
+  });
+
+  activeProcessesByConnection.forEach((proc, connectionId) => {
+    try {
+      log('debug', 'Cleaning up process for connection', {
+        connectionId,
+        pid: proc.pid
+      });
+      killProcess(proc.pid);
+    } catch (err) {
+      log('warn', 'Failed to kill process', {
+        connectionId,
+        pid: proc.pid,
+        error: err.message
+      });
+    }
+  });
+
+  activeProcessesByConnection.clear();
+}
+
+// Register global exit handler only once
+function ensureExitHandler() {
+  if (!exitHandlerRegistered) {
+    // Handle normal exit
+    process.on('exit', (code) => {
+      log('info', 'Process exiting, cleaning up FOMOD processes', {
+        code,
+        processCount: activeProcessesByConnection.size
+      });
+      cleanupAllProcesses();
+    });
+
+    // Handle Ctrl+C
+    process.on('SIGINT', () => {
+      log('info', 'Received SIGINT, cleaning up FOMOD processes');
+      cleanupAllProcesses();
+      process.exit(0);
+    });
+
+    // Handle termination signal
+    process.on('SIGTERM', () => {
+      log('info', 'Received SIGTERM, cleaning up FOMOD processes');
+      cleanupAllProcesses();
+      process.exit(0);
+    });
+
+    exitHandlerRegistered = true;
+  }
+}
+
+function registerProcess(connectionId: string, pid: number, killCallback?: () => void) {
+  ensureExitHandler();
+
+  const processInfo: IActiveProcess = {
+    pid,
+    connectionId,
+    kill: killCallback,
+  };
+
+  activeProcessesByConnection.set(connectionId, processInfo);
+
+  log('debug', 'Registered process for connection', {
+    connectionId,
+    pid,
+    totalProcesses: activeProcessesByConnection.size
+  });
+}
+
+// Function to unregister a process for a specific connection
+function unregisterProcess(connectionId: string) {
+  const removed = activeProcessesByConnection.delete(connectionId);
+  if (removed) {
+    log('debug', 'Unregistered process for connection', {
+      connectionId,
+      remainingProcesses: activeProcessesByConnection.size
+    });
+  }
+}
+
+// Function to kill a specific process by connection ID
+function killProcessForConnection(connectionId: string): boolean {
+  const proc = activeProcessesByConnection.get(connectionId);
+  if (proc) {
+    try {
+      log('debug', 'Killing process for connection', { connectionId, pid: proc.pid });
+      killProcess(proc.pid);
+      unregisterProcess(connectionId);
+      return true;
+    } catch (err) {
+      log('warn', 'Failed to kill process for connection', {
+        connectionId,
+        pid: proc.pid,
+        error: err.message
+      });
+      return false;
+    }
+  }
+  return false;
+}
 
 // The rest of the error message is localized
 const assemblyMissing = new RegExp('Could not load file or assembly \'([a-zA-Z0-9.]*).*');
@@ -198,29 +317,29 @@ function transformError(err: any): Error {
   return result;
 }
 
-function processAttributes(input: any, modPath: string): Bluebird<any> {
-  if (modPath === undefined) {
-    return Bluebird.resolve({});
-  }
-  return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
-    .then((data: Buffer) => {
-      let offset = 0;
-      let encoding: BufferEncoding = 'utf8';
-      if (data.readUInt16LE(0) === 0xFEFF) {
-        encoding = 'utf16le';
-        offset = 2;
-      } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
-        offset = 3;
-      }
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
-      const name: Element = xmlDoc.querySelector('fomod Name');
-      return truthy(name)
-        ? Bluebird.resolve({ customFileName: name.childNodes[0].nodeValue })
-        : Bluebird.resolve({});
-    })
-    .catch(() => Bluebird.resolve({}));
-}
+// function processAttributes(input: any, modPath: string): Bluebird<any> {
+//   if (modPath === undefined) {
+//     return Bluebird.resolve({});
+//   }
+//   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
+//     .then((data: Buffer) => {
+//       let offset = 0;
+//       let encoding: BufferEncoding = 'utf8';
+//       if (data.readUInt16LE(0) === 0xFEFF) {
+//         encoding = 'utf16le';
+//         offset = 2;
+//       } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
+//         offset = 3;
+//       }
+//       const parser = new DOMParser();
+//       const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
+//       const name: Element = xmlDoc.querySelector('fomod Name');
+//       return truthy(name)
+//         ? Bluebird.resolve({ customFileName: name.childNodes[0].nodeValue })
+//         : Bluebird.resolve({});
+//     })
+//     .catch(() => Bluebird.resolve({}));
+// }
 
 function spawnAsync(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -439,6 +558,16 @@ class ConnectionIPC {
                            : Promise<ConnectionIPC> {
     // Use concurrency limiter with isolated IPC connections per installation
     return fomodProcessLimiter.do(async () => {
+      return ConnectionIPC.bindDirect(securityLevel, retry);
+    });
+  }
+
+  public static async bindDirect(securityLevel: SecurityLevel,
+                                 retry: boolean = false)
+                                 : Promise<ConnectionIPC> {
+      // Generate unique connection ID for this installation
+      const connectionId = shortid();
+
       // Increase max listeners to handle concurrent FOMOD installations
       // Each installation adds exit listeners, and with parallel installations
       // we can exceed the default limit of 10
@@ -447,7 +576,8 @@ class ConnectionIPC {
         process.setMaxListeners(50);
         log('debug', 'Increased process max listeners for FOMOD installations', {
           previous: currentMaxListeners,
-          new: 50
+          new: 50,
+          connectionId
         });
       }
 
@@ -471,7 +601,8 @@ class ConnectionIPC {
       pipe,
       securityLevel: SecurityLevel[securityLevel],
       retry,
-      pipeId
+      pipeId,
+      connectionId
     });
 
     const useAppContainer = securityLevel === SecurityLevel.Sandbox;
@@ -485,13 +616,11 @@ class ConnectionIPC {
     if (pipe) {
       listenIn = await createSocket({ debug, pipeId: pipeId + '_reply', useAppContainer });
       listenIn.server.on('connection', sockIn => {
-        log('debug', '[installer] peer connected reply');
+        log('debug', '[installer] peer connected (inbound channel)');
         sockIn.setEncoding('utf8');
         cliSocket = sockIn;
-        // technically we should verify both connections are established but the cli
-        // is supposed to open the reply channel last anyway
         const onInitMsg = (msg: Buffer) => {
-          log('info', 'client says', { msg: msg.toString() });
+          log('info', 'client handshake received', { msg: msg.toString() });
           wasConnected = true;
           cliSocket.off('data', onInitMsg);
           setTimeout(() => {
@@ -507,17 +636,18 @@ class ConnectionIPC {
 
     log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
 
-    listenOut.server.on('connection', sockIn => {
-      log('debug', '[installer] peer connected there');
-      sockIn.setEncoding('utf8');
+    listenOut.server.on('connection', sockOut => {
+      log('debug', '[installer] peer connected (outbound channel)');
+      sockOut.setEncoding('utf8');
       if (!wasConnected) {
-        servSocket = sockIn;
+        servSocket = sockOut;
         if (!pipe) {
+          // For non-pipe connections, use bidirectional socket
           cliSocket = servSocket;
           log('info', 'bidir channel connected');
           // onResolve?.();
         } else {
-          log('info', 'there channel connected');
+          log('info', 'outbound channel connected, waiting for inbound channel');
         }
       }
     });
@@ -566,6 +696,30 @@ class ConnectionIPC {
       // invoke the c# installer, passing the id/port
       try {
         const onExit = (code: number) => {
+          exitCode = code;
+          log('debug', 'FOMOD installer process exited', {
+            code,
+            connectionId,
+            hasConnection: res !== undefined,
+            wasConnected
+          });
+
+          if (code !== 0) {
+            log('warn', 'FOMOD installer process failed', {
+              code,
+              connectionId,
+              hasConnection: res !== undefined
+            });
+
+            // If we have a non-zero exit code and no connection was established,
+            // this indicates a critical failure in the installer executable
+            if (!wasConnected && res === undefined) {
+              const err = new Error(`FOMOD installer process exited with code ${code}. This usually indicates the installer executable (ModInstallerIPC.exe) could not start properly.`);
+              err['code'] = code;
+              err['attachLogOnReport'] = true;
+              setConnectOutcome(err, true);
+            }
+          }
           onExitCBs?.(code);
         };
 
@@ -603,6 +757,39 @@ class ConnectionIPC {
           });
 
           log('info', 'from installer:', lines.join(';'));
+
+          // Check for specific error patterns that indicate executable issues
+          const hasExecutableError = lines.some(line =>
+            line.includes('Failed to resolve full path of the current executable') ||
+            line.includes('could not execute the application') ||
+            line.includes('application failed to initialize') ||
+            line.includes('The application was unable to start correctly')
+          );
+          if (hasExecutableError) {
+            log('error', 'FOMOD installer executable error detected', {
+              lines,
+              connectionId,
+              exitCode,
+              securityLevel: SecurityLevel[securityLevel] || 'unknown',
+              processEnv: {
+                DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'],
+                TEMP: process.env['TEMP'],
+              },
+              nodeVersion: process.version,
+              platform: process.platform,
+              arch: process.arch
+            });
+
+            // Create specific error for executable resolution failures
+            const err = new Error('FOMOD installer executable failed to start properly. This typically indicates a .NET runtime issue, Windows App Container restrictions, or corrupted installation files.');
+            err['code'] = exitCode || 'EXECUTABLE_RESOLUTION_FAILED';
+            err['attachLogOnReport'] = true;
+            err['executablePath'] = 'ModInstallerIPC.exe';
+            err['securityLevel'] = SecurityLevel[securityLevel];
+            setConnectOutcome(err, false);
+            wasConnected = true;
+            return Promise.resolve();
+          }
 
           if (isErr !== -1) {
             const errStack = lines.slice(isErr + 1).join('\n');
@@ -651,15 +838,55 @@ class ConnectionIPC {
         process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'] = '1';
 
         try {
-          log('debug', 'Creating FOMOD IPC connection', { pipe, ipcId, securityLevel });
+          log('debug', 'Creating FOMOD IPC connection', {
+            pipe,
+            ipcId,
+            securityLevel: SecurityLevel[securityLevel],
+            connectionId,
+            containerName: securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
+            currentWorkingDir: process.cwd(),
+            executableEnv: {
+              DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'],
+              TEMP: process.env['TEMP']
+            }
+          });
+
           pid = await createIPC(
             pipe, ipcId, onExit, onStdout,
             securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
             false);
             // securityLevel === SecurityLevel.LowIntegrity);
-          log('debug', 'FOMOD IPC connection created successfully', { pid });
+          log('debug', 'FOMOD IPC connection created successfully', { pid, connectionId });
+
+          // Register the process with our management system
+          registerProcess(connectionId, pid, () => {
+            return killProcess(pid);
+          });
+
         } catch (ipcErr) {
-          log('error', 'Failed to create FOMOD IPC connection', { error: ipcErr.message, securityLevel });
+          log('error', 'Failed to create FOMOD IPC connection', {
+            error: ipcErr.message,
+            securityLevel: SecurityLevel[securityLevel],
+            connectionId,
+            pipe,
+            ipcId,
+            stack: ipcErr.stack,
+            containerName: securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined
+          });
+
+          // Enhanced error reporting for common issues
+          if (ipcErr.message.includes('ENOENT') || ipcErr.message.includes('file not found')) {
+            const enhancedErr = new Error('FOMOD installer executable (ModInstallerIPC.exe) could not be found. This may indicate a corrupted Vortex installation or missing .NET runtime components.');
+            enhancedErr['code'] = 'ENOENT';
+            enhancedErr['originalError'] = ipcErr;
+            throw enhancedErr;
+          } else if (ipcErr.message.includes('access denied') || ipcErr.message.includes('EACCES')) {
+            const enhancedErr = new Error('Access denied when trying to start FOMOD installer. This may be caused by antivirus software or insufficient permissions.');
+            enhancedErr['code'] = 'EACCES';
+            enhancedErr['originalError'] = ipcErr;
+            throw enhancedErr;
+          }
+
           throw ipcErr;
         }
 
@@ -678,7 +905,14 @@ class ConnectionIPC {
     await awaitConnected();
 
     if (res === undefined) {
-      res = new ConnectionIPC({ in: cliSocket, out: servSocket }, pid);
+      // Ensure proper socket assignment based on connection type
+      if (pipe) {
+        // For pipe connections, we have separate in/out sockets
+        res = new ConnectionIPC({ in: cliSocket, out: servSocket }, pid, connectionId);
+      } else {
+        // For network connections, we use the same socket bidirectionally
+        res = new ConnectionIPC({ in: servSocket, out: servSocket }, pid, connectionId);
+      }
       onExitCBs = code => {
         res.onExit(code);
         // Clean up isolated IPC connections when process exits
@@ -694,7 +928,6 @@ class ConnectionIPC {
       };
     }
     return res;
-    });
   }
 
   private mSocket: { in: net.Socket, out: net.Socket };
@@ -705,11 +938,13 @@ class ConnectionIPC {
   private mActionLog: string[];
   private mOnDrained: Array<() => void> = [];
   private mPid: number;
+  private mConnectionId: string;
 
-  constructor(socket: { in: net.Socket, out: net.Socket }, pid: number) {
+  constructor(socket: { in: net.Socket, out: net.Socket }, pid: number, connectionId?: string) {
     this.mSocket = socket;
     this.mActionLog = [];
     this.mPid = pid;
+    this.mConnectionId = connectionId || shortid();
 
     socket.out.on('drain', (hadError) => {
       this.mOnDrained.forEach(cb => cb());
@@ -718,14 +953,15 @@ class ConnectionIPC {
 
     socket.in.on('close', async () => {
       socket.out.destroy();
-      log('info', 'remote was disconnected');
+      log('info', 'remote was disconnected', { connectionId: this.mConnectionId });
       try {
-        // just making sure, the remote is probably closing anyway
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        process.kill(pid);
+        killProcessForConnection(this.mConnectionId);
         this.interrupt(new Error(`Installer process disconnected unexpectedly`));
       } catch (err) {
-        // nop
+        log('warn', 'Error during socket close cleanup', {
+          connectionId: this.mConnectionId,
+          error: err.message
+        });
       }
     });
   }
@@ -737,46 +973,52 @@ class ConnectionIPC {
         this.mReceivedBuffer = (this.mReceivedBuffer === undefined)
           ? data
           : this.mReceivedBuffer + data;
-        if (this.mReceivedBuffer.endsWith('\uffff')) {
-          this.logAction(`processing ${this.mReceivedBuffer.length} bytes`);
+
+        // Process complete messages (ending with delimiter)
+        while (this.mReceivedBuffer && this.mReceivedBuffer.includes('\uffff')) {
+          const delimiterIndex = this.mReceivedBuffer.indexOf('\uffff');
+          const completeMessage = this.mReceivedBuffer.substring(0, delimiterIndex + 1);
+          this.mReceivedBuffer = this.mReceivedBuffer.substring(delimiterIndex + 1);
+
+          this.logAction(`processing complete message of ${completeMessage.length} bytes`);
           try {
-            this.processData(this.mReceivedBuffer);
-            this.mReceivedBuffer = undefined;
+            this.processData(completeMessage);
           } catch (err) {
-            log('error', 'failed to parse data from remote process', err.message);
-            this.mReceivedBuffer = undefined;
+            log('error', 'failed to parse data from remote process', {
+              error: err.message,
+              connectionId: this.mConnectionId
+            });
           }
         }
       }
     })
       .on('error', (err) => {
-        log('error', 'ipc socket error', err.message);
+        log('error', 'ipc socket error', {
+          error: err.message,
+          connectionId: this.mConnectionId
+        });
       });
   }
 
   public quit(): boolean {
-    try {
-      process.kill(this.mPid);
-      return true;
-    } catch (err) {
-      return false;
-    }
+    log('debug', 'Quitting connection', { connectionId: this.mConnectionId, pid: this.mPid });
+    return killProcessForConnection(this.mConnectionId);
   }
 
-  public isActive(): boolean {
-    // kill accepts numeric signal codes and returns a boolean to signal success
-    // For some reason the type declaration is incomplete
+  public hasActiveDelegates(): boolean {
+    return Object.keys(this.mDelegates).length > 0 || Object.keys(this.mAwaitedReplies).length > 0;
+  }
 
-    // return (this.mProcess === null) ||  (this.mProcess.kill as any)(0);
-    if (this.mPid === undefined) {
-      return true;
-    }
-    try {
-      process.kill(this.mPid, 0);
-      return true;
-    } catch (err) {
-      return false;
-    }
+  public getConnectionId(): string {
+    return this.mConnectionId;
+  }
+
+  public getActiveDelegateCount(): number {
+    return Object.keys(this.mDelegates).length;
+  }
+
+  public getAwaitedRepliesCount(): number {
+    return Object.keys(this.mAwaitedReplies).length;
   }
 
   public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
@@ -789,23 +1031,34 @@ class ConnectionIPC {
   }
 
   public async onExit(code: number) {
-    log(code === 0 ? 'info' : 'error', 'remote process exited', { code });
+    log(code === 0 ? 'info' : 'error', 'remote process exited', {
+      code,
+      connectionId: this.mConnectionId
+    });
+
+    // Unregister the process from our management system
+    unregisterProcess(this.mConnectionId);
+
     const currentListenerCount = process.listenerCount('exit');
     if (currentListenerCount > 20) {
       log('warn', 'High number of process exit listeners detected', {
-        count: currentListenerCount
+        count: currentListenerCount,
+        connectionId: this.mConnectionId
       });
     }
     try {
       await toPromise(cb => this.mSocket.out.end(cb));
     } catch (err) {
-      log('warn', 'failed to close connection to fomod installer process', err.message);
+      log('warn', 'failed to close connection to fomod installer process', {
+        error: err.message,
+        connectionId: this.mConnectionId
+      });
     }
     this.interrupt(new InstallerFailedException(code));
   }
 
   private logAction(message: string) {
-    this.mActionLog.push(message);
+    this.mActionLog.push(`[${this.mConnectionId}] ${message}`);
   }
 
   private async interruptible() {
@@ -856,15 +1109,18 @@ class ConnectionIPC {
   }
 
   private processData(data: string) {
+    // Remove the delimiter before processing
+    const cleanData = data.replace(/\uffff$/, '');
+
     // there may be multiple messages sent at once
-    const messages = data.split('\uFFFF');
+    const messages = cleanData.split('\uffff');
     messages.forEach(msg => {
       if (msg.length > 0) {
         try {
-          this.logAction(`processing message "${this.mReceivedBuffer}"`);
+          this.logAction(`processing individual message: ${msg.substring(0, 100)}...`);
           this.processDataImpl(msg);
         } catch (err) {
-          log('error', 'failed to parse', { input: msg, error: err.message });
+          log('error', 'failed to parse individual message', { input: msg.substring(0, 100), error: err.message });
         }
       }
     });
@@ -883,6 +1139,10 @@ class ConnectionIPC {
       Object.keys(this.mAwaitedReplies).forEach(replyId => {
         this.mAwaitedReplies[replyId].reject(err);
         delete this.mAwaitedReplies[replyId];
+        // Also clean up any associated delegates on error
+        if (this.mDelegates[replyId] !== undefined) {
+          delete this.mDelegates[replyId];
+        }
       });
     } else if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
@@ -908,6 +1168,10 @@ class ConnectionIPC {
         this.mAwaitedReplies[data.id].resolve(data.data);
       }
       delete this.mAwaitedReplies[data.id];
+      // Also clean up any associated delegate to prevent connection leaks
+      if (this.mDelegates[data.id] !== undefined) {
+        delete this.mDelegates[data.id];
+      }
     }
   }
 
@@ -924,28 +1188,21 @@ class ConnectionIPC {
   }
 }
 
-const ensureConnected = (() => {
-  let conn: ConnectionIPC;
-  let lastSecurityLevel: SecurityLevel;
-  return async (securityLevel: SecurityLevel): Promise<ConnectionIPC> => {
-    if ((conn === undefined) || !conn.isActive() || (lastSecurityLevel !== securityLevel)) {
-      if (conn !== undefined) {
-        conn.quit();
-      }
-      conn = await ConnectionIPC.bind(securityLevel);
-      log('debug', '[installer] connection bound');
-      lastSecurityLevel = securityLevel;
-      conn.handleMessages();
-    }
-    return Promise.resolve(conn);
-  };
-})();
+// Create isolated connections for each installation to prevent message mixing
+async function createIsolatedConnection(securityLevel: SecurityLevel): Promise<ConnectionIPC> {
+  return fomodProcessLimiter.do(async () => {
+    const conn = await ConnectionIPC.bindDirect(securityLevel);
+    conn.handleMessages();
+    return conn;
+  });
+}
 
 async function testSupportedScripted(securityLevel: SecurityLevel,
                                      files: string[])
                                      : Promise<ISupportedResult> {
+  let connection: ConnectionIPC;
   try {
-    const connection = await ensureConnected(securityLevel);
+    connection = await createIsolatedConnection(securityLevel);
 
     log('debug', '[installer] test supported');
     const res: ISupportedResult = await connection.sendMessage(
@@ -954,14 +1211,20 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
     return res;
   } catch (err) {
     throw transformError(err);
+  } finally {
+    // Clean up the isolated connection
+    if (connection) {
+      connection.quit();
+    }
   }
 }
 
 async function testSupportedFallback(securityLevel: SecurityLevel,
                                      files: string[])
                                      : Promise<ISupportedResult> {
+  let connection: ConnectionIPC;
   try {
-    const connection = await ensureConnected(securityLevel);
+    connection = await createIsolatedConnection(securityLevel);
 
     const res = await connection.sendMessage(
       'TestSupported', { files, allowedTypes: ['Basic'] })
@@ -971,6 +1234,11 @@ async function testSupportedFallback(securityLevel: SecurityLevel,
     return res;
   } catch (err) {
     throw transformError(err);
+  } finally {
+    // Clean up the isolated connection
+    if (connection) {
+      connection.quit();
+    }
   }
 }
 
@@ -982,13 +1250,25 @@ async function install(securityLevel: SecurityLevel,
                        fomodChoices: any,
                        validate: boolean,
                        progressDelegate: ProgressDelegate,
-                       coreDelegates: Core): Promise<IInstallResult> {
-  const connection = await ensureConnected(securityLevel);
+                       coreDelegates: Core,
+                       store?): Promise<IInstallResult> {
+  let connection: ConnectionIPC;
+  try {
+    // Use regular process limiter - let UI delegate queue handle dialog conflicts
+    connection = await createIsolatedConnection(securityLevel);
 
-  return await connection.sendMessage(
-    'Install',
-    { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
-    coreDelegates);
+    const result = await connection.sendMessage(
+      'Install',
+      { files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate },
+      coreDelegates);
+
+    return result;
+  } finally {
+    // Clean up the isolated connection after installation completes
+    if (connection) {
+      connection.quit();
+    }
+  }
 }
 
 function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
@@ -1012,10 +1292,12 @@ function init(context: IExtensionContext): boolean {
   const installWrap = async (useAppContainer, files, scriptPath, gameId,
                              progressDelegate, choicesIn, unattended) => {
     const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
-    const coreDelegates = new Core(context.api, gameId, canBeUnattended && (unattended === true));
+    // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
+    const shouldBypassDialog = canBeUnattended && (unattended === true);
+    const instanceId = shortid();
+    const coreDelegates = new Core(context.api, gameId, shouldBypassDialog, instanceId);
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
     const pluginPath = getPluginPath(gameId);
-    // await currentInstallPromise;
 
     if (useAppContainer) {
       log('info', 'granting app container access to',
@@ -1023,7 +1305,7 @@ function init(context: IExtensionContext): boolean {
       winapi?.GrantAppContainer?.(
         CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     }
-    context.api.store.dispatch(setInstallerDataPath(scriptPath));
+    context.api.store.dispatch(setInstallerDataPath(instanceId, scriptPath));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
       ? (choicesIn.options ?? {})
@@ -1032,10 +1314,12 @@ function init(context: IExtensionContext): boolean {
     const invokeInstall = async (validate: boolean) => {
       const result = await install(
         useAppContainer, files, stopPatterns, pluginPath,
-        scriptPath, fomodChoices, validate, progressDelegate, coreDelegates);
+        scriptPath, fomodChoices, validate, progressDelegate, coreDelegates, 
+        context.api.store);
 
       const state = context.api.store.getState();
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
+      const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
+      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId];
 
       const choices = (dialogState === undefined)
         ? undefined
@@ -1066,7 +1350,8 @@ function init(context: IExtensionContext): boolean {
     try {
       return await invokeInstall(true);
     } catch (err) {
-      context.api.store.dispatch(endDialog());
+      // Don't immediately close dialog on error - other installations might be using it
+      // The finally block will handle safe cleanup
       if (err.name === 'System.Xml.XmlException') {
         const res = await context.api.showDialog('error', 'Invalid fomod', {
           text: 'This fomod failed validation. Vortex tends to be stricter validating installers '
@@ -1092,7 +1377,6 @@ function init(context: IExtensionContext): boolean {
 
       return Promise.reject(transformError(err));
     } finally {
-      context.api.store.dispatch(clearDialog());
       coreDelegates.detach();
     }
   };
@@ -1316,9 +1600,17 @@ function init(context: IExtensionContext): boolean {
     isDefaultVisible: false,
   });
 
-  context.registerAttributeExtractor(75, processAttributes);
+  // This attribute extractor is reading and parsing xml files just for the sake
+  //  of finding the fomod's name - it's not worth the hassle.
+  // context.registerAttributeExtractor(75, processAttributes);
 
   return true;
 }
+
+export {
+  cleanupAllProcesses,
+  killProcessForConnection,
+  activeProcessesByConnection,
+};
 
 export default init;
