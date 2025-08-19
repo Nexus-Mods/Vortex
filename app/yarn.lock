@@ -2607,9 +2607,9 @@ modify-filename@^1.1.0:
   resolved "https://registry.yarnpkg.com/modify-filename/-/modify-filename-1.1.0.tgz#9a2dec83806fbb2d975f22beec859ca26b393aa1"
   integrity sha512-EickqnKq3kVVaZisYuCxhtKbZjInCuwgwZWyAmRIp1NTMhri7r3380/uqwrUHfaDiPzLVTuoNy4whX66bxPVog==
 
-modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.9.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ff8b9cff17357a837fca6153df4cdd1e946694d2"
+modmeta-db@Nexus-Mods/modmeta-db#simplify-file-hash-query:
+  version "0.9.2"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/f97ff5404789890e66226f5e48f0159f64a63852"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"

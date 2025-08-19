@@ -53,7 +53,7 @@
     "lodash": "^4.17.21",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.5",
-    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "modmeta-db": "Nexus-Mods/modmeta-db#simplify-file-hash-query",
     "native-errors": "Nexus-Mods/node-native-errors",
     "node-7z": "Nexus-Mods/node-7z",
     "normalize-url": "^6.0.1",
