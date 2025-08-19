@@ -239,19 +239,22 @@ function validateVariantName(t: TFunction, content: IDialogContent): IConditionR
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
-  // Removed mTask: Zip - each installation now creates its own Zip instance to prevent conflicts
   private mDependencyInstalls: { [modId: string]: () => void } = {};
-
-  // Parallel concurrency limiters for optimal performance
   private mDependencyDownloadsLimit: DynamicDownloadConcurrencyLimiter;
-  private mDependencyInstallsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(10); // Concurrent dependency installations
-  private mPendingInstalls: Map<string, IDependency> = new Map(); // Queue for pending installations
-  private mActiveInstalls: Map<string, IActiveInstallation> = new Map(); // Track active installations with full context
+
+  // This limiter drives the DownloadManager to queue up new downloads.
+  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
+
+  // Queues installations for processing - primarily used to keep track of pending installations
+  //  for the current dependency phase if/when concurrent download and installation is disabled.
+  private mPendingInstalls: Map<string, IDependency> = new Map();
+
+  // Tracks the currently active installations - can be used with debug functions
+  //  to inspect the state of ongoing installations
+  private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
 
   // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter =
-    new ConcurrencyLimiter(3); // Allow up to 3 concurrent main installations for optimal performance
+  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(3);
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
@@ -338,6 +341,72 @@ class InstallManager {
    */
   public getActiveInstallationCount(): number {
     return this.mActiveInstalls.size;
+  }
+
+  /**
+   * Debug method: Get details about active installations
+   */
+  public debugActiveInstalls(): any[] {
+    const now = Date.now();
+    return Array.from(this.mActiveInstalls.entries()).map(([key, install]) => ({
+      installId: key,
+      modId: install.modId,
+      gameId: install.gameId,
+      baseName: install.baseName,
+      durationMs: now - install.startTime,
+      durationMinutes: Math.round((now - install.startTime) / 60000 * 100) / 100
+    }));
+  }
+
+  /**
+   * Force cleanup of stuck installations (for debugging)
+   * @param maxAgeMinutes - installations older than this will be force-cleaned
+   */
+  public forceCleanupStuckInstalls(api: IExtensionApi, maxAgeMinutes: number = 10): number {
+    const now = Date.now();
+    const maxAgeMs = maxAgeMinutes * 60 * 1000;
+    const stuckInstalls: IActiveInstallation[] = [];
+
+    this.mActiveInstalls.forEach((install, installId) => {
+      const age = now - install.startTime;
+      if (age > maxAgeMs) {
+        stuckInstalls.push(install);
+        log('warn', 'InstallManager: Force cleaning stuck installation', {
+          installId,
+          modId: install.modId,
+          ageMinutes: Math.round(age / 60000 * 100) / 100,
+          baseName: install.baseName
+        });
+      }
+    });
+
+    // Force cleanup of stuck installations
+    stuckInstalls.forEach(install => {
+      const { installId, modId, callback } = install;
+      this.mActiveInstalls.delete(installId);
+      try {
+        const timeoutError = new Error(`Installation timed out after ${maxAgeMinutes} minutes`);
+        timeoutError.name = 'InstallationTimeoutError';
+        callback(timeoutError, modId);
+        log('info', 'InstallManager: Called callback for stuck installation', { installId, modId });
+      } catch (callbackError) {
+        log('error', 'InstallManager: Error calling callback for stuck installation', {
+          installId,
+          modId,
+          error: callbackError.message
+        });
+      }
+
+      // Try to dismiss any lingering notifications
+      try {
+        api.store.dispatch(dismissNotification(`install_${installId}`));
+        api.store.dispatch(dismissNotification(`ready-to-install-${installId}`));
+      } catch (err) {
+        log('warn', 'Error dismissing notification during force cleanup', { installId, error: err.message });
+      }
+    });
+
+    return stuckInstalls.length;
   }
 
   /**
@@ -2969,11 +3038,7 @@ class InstallManager {
           });
           return updatedDependency;
         });
-        // Allow parallel processing - underlying limiters control actual concurrency
-        // you may ask yourself, why is this set to 20 while the download queue only allows
-        // 10 workers - that's because it gives Vortex more time to resolve the actual size
-        // of the downloads before actually starting to download them.
-    }, { concurrency: 20 }) 
+    }, { concurrency: 10 })
       .finally(() => {
         delete this.mDependencyInstalls[sourceModId];
         this.cleanupPendingInstalls(sourceModId);
