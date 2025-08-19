@@ -1378,24 +1378,25 @@ class DownloadManager {
   }
 
   private cleanupCompletedDownloads() {
-    // Remove downloads that are fully completed or failed from the queue
-    this.mQueue = this.mQueue.filter(download => {
-      // Check if all chunks are finished
-      const allChunksFinished = download.chunks.every(chunk => chunk.state === 'finished');
-      
-      // Check if download has any active or pending chunks
-      const hasActiveChunks = download.chunks.some(chunk => 
-        chunk.state === 'running' || chunk.state === 'init'
-      );
-      
-      // Check if download has been sitting with only paused chunks for too long
-      const onlyPausedChunks = download.chunks.every(chunk => 
-        chunk.state === 'paused' || chunk.state === 'finished'
-      );
+    // Defer cleanup to prevent blocking the tick queue
+    setImmediate(() => {
+      // Remove downloads that are fully completed or failed from the queue
+      this.mQueue = this.mQueue.filter(download => {
+        // Check if all chunks are finished
+        const allChunksFinished = download.chunks.every(chunk => chunk.state === 'finished');
+        // Check if download has any active or pending chunks
+        const hasActiveChunks = download.chunks.some(chunk =>
+          chunk.state === 'running' || chunk.state === 'init'
+        );
+        // Check if download has been sitting with only paused chunks for too long
+        const onlyPausedChunks = download.chunks.every(chunk =>
+          chunk.state === 'paused' || chunk.state === 'finished'
+        );
 
-      const shouldRemove = allChunksFinished || (!hasActiveChunks && onlyPausedChunks);
-      
-      return !shouldRemove;
+        const shouldRemove = allChunksFinished || (!hasActiveChunks && onlyPausedChunks);
+        
+        return !shouldRemove;
+      });
     });
   }
 
@@ -1551,6 +1552,9 @@ class DownloadManager {
   }
 
   private makeDataCB = (download: IRunningDownload) => {
+    let lastProgressUpdate = 0;
+    let pendingProgressUpdate = false;
+
     return (offset: number, data: Buffer) => {
       if (isNaN(download.received)) {
         download.received = 0;
@@ -1568,14 +1572,28 @@ class DownloadManager {
           if (download.received > download.size) {
             download.size = download.received;
           }
-          download.progressCB(
-              receivedNow, download.size,
-              synced
-                ? download.chunks.map(this.toStoredChunk)
-                : undefined,
-              download.chunkable,
-              urls,
-              download.tempName);
+
+          // Throttle progress updates to reduce UI blocking
+          const now = Date.now();
+          const shouldUpdate = synced || (now - lastProgressUpdate > 1000); // Update max once per second
+
+          if (shouldUpdate && !pendingProgressUpdate) {
+            lastProgressUpdate = now;
+            pendingProgressUpdate = true;
+
+            // Defer progress callback to prevent blocking file operations
+            setImmediate(() => {
+              pendingProgressUpdate = false;
+              download.progressCB(
+                  receivedNow, download.size,
+                  synced
+                    ? download.chunks.map(this.toStoredChunk)
+                    : undefined,
+                  download.chunkable,
+                  urls,
+                  download.tempName);
+            });
+          }
           return Bluebird.resolve(synced);
         })
         .catch(err => {
