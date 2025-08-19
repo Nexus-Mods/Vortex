@@ -6,7 +6,7 @@ import Nexus, {
 } from '@nexusmods/nexus-api';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
-import { makeFileUID, makeModUID } from './util/UIDs';
+import { makeFileUID } from './util/UIDs';
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
