@@ -13,9 +13,11 @@ import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {batchDispatch, truthy} from '../../util/util';
+import { knownGames } from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
@@ -803,7 +805,15 @@ export async function onStartInstallDownload(api: IExtensionApi,
     return Promise.resolve();
   }
 
-  const downloadPath = downloadPathForGame(state, getDownloadGames(download)[0]);
+  const downloadGames = getDownloadGames(download);
+  
+  // Convert legacy game IDs to current internal IDs (e.g., skyrimspecialedition -> skyrimse)
+  const knownGamesList = knownGames(state);
+  const convertedGameId = downloadGames.length > 0 
+    ? convertGameIdReverse(knownGamesList, downloadGames[0]) || downloadGames[0]
+    : downloadGames[0];
+    
+  const downloadPath = downloadPathForGame(state, convertedGameId);
   const fullPath: string = path.join(downloadPath, download.localPath);
 
   try {
