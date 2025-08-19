@@ -6255,9 +6255,9 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-fomod-installer@Nexus-Mods/fomod-installer#support-multiple-sandbox-containers:
-  version "0.7.22"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/d10672815751919db79d7aff4d9d5ab7542a7a50"
+fomod-installer@Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup:
+  version "0.7.21"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3b461b600c5f6680a7fbd540c7a4edd1115f232b"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
