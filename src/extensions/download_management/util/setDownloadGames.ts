@@ -55,8 +55,7 @@ async function setDownloadGames(
       // Use progress tracking for user-initiated moves, bypass for metadata-triggered moves
       if (bypassProgressTracking) {
         log('debug', 'performing non-blocking game move for metadata update', { dlId, fromGameId, toGameId: gameIds[0] });
-        moveOperation();
-        return Promise.resolve();
+        return await moveOperation();
       } else {
         log('debug', 'performing blocking game move for user action', { dlId, fromGameId, toGameId: gameIds[0] });
         return await withAddInProgress(download.localPath, moveOperation);
@@ -102,18 +101,21 @@ async function moveDownload(state: IState, fileName: string, fromGameId: string,
   }
   await fs.ensureDirWritableAsync(newPath);
   try {
-    const oStat = await fs.statAsync(oldPath);
+    const oStat = await fs.statAsync(oldPath).catch((err) => err.code === 'ENOENT' ? Promise.resolve(undefined) : Promise.reject(err));
     const nStat = await fs.statAsync(newPath);
-    if (oStat?.ino === nStat?.ino) {
+    if (!!oStat && (oStat.ino === nStat.ino)) {
       const err = new ProcessCanceled('source same as destination');
       err['oldPath'] = oldPath;
       err['newPath'] = newPath;
       throw err;
+    } else {
+      if (!oStat) return Promise.resolve(dest);
     }
   } catch (err) {
     log('error', 'failed to stat source or dest on move', err);
   }
-  return fs.moveRenameAsync(source, dest);
+  return fs.moveRenameAsync(source, dest)
+    .catch(err => err.code === 'ENOENT' ? Promise.resolve(dest) : Promise.reject(err));
 }
 
 export default setDownloadGames;
