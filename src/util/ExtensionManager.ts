@@ -46,7 +46,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { filteredEnvironment, isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
+import { filteredEnvironment, isFunction, setdefault, timeout, toPromise, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -69,6 +69,8 @@ import * as winapiT from 'vortex-run';
 import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
 import { VCREDIST_URL } from '../constants';
+import { fileMD5 } from 'vortexmt';
+import { setDownloadHashByFile } from '../actions';
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -833,6 +835,7 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
+      genMd5Hash: this.genMd5Hash,
       clearStylesheet: () => this.mStyleManager.clearCache(),
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
@@ -1719,7 +1722,7 @@ class ExtensionManager {
     let promise: Promise<void>;
 
     if (fileMD5 === undefined) {
-      promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
+      promise = this.genMd5Hash(detail.filePath).then((res: IHashResult) => {
         fileMD5 = res.md5sum;
         fileSize = res.numBytes;
         lookupId = this.modLookupId({
@@ -1814,6 +1817,24 @@ class ExtensionManager {
           resolve();
         });
       });
+  }
+
+  private genMd5Hash = (filePath: string, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
+    let lastProgress: number = 0;
+    const progressHash = (progress: number, total: number) => {
+      progressFunc?.(progress, total);
+      if (lastProgress !== total) {
+        lastProgress = total;
+      }
+    };
+    return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
+      .then((result) => {
+        this.mApi.store.dispatch(setDownloadHashByFile(path.basename(filePath), result, lastProgress));
+        return Promise.resolve({
+          md5sum: result,
+          numBytes: lastProgress
+        });
+    });
   }
 
   private openArchive = (archivePath: string,
