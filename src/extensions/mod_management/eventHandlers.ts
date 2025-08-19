@@ -806,13 +806,12 @@ export async function onStartInstallDownload(api: IExtensionApi,
   }
 
   const downloadGames = getDownloadGames(download);
-  
-  // Convert legacy game IDs to current internal IDs (e.g., skyrimspecialedition -> skyrimse)
+  // Convert to internal IDs (e.g., skyrimspecialedition -> skyrimse)
   const knownGamesList = knownGames(state);
-  const convertedGameId = downloadGames.length > 0 
+  const convertedGameId = downloadGames.length > 0
     ? convertGameIdReverse(knownGamesList, downloadGames[0]) || downloadGames[0]
     : downloadGames[0];
-    
+
   const downloadPath = downloadPathForGame(state, convertedGameId);
   const fullPath: string = path.join(downloadPath, download.localPath);
 
