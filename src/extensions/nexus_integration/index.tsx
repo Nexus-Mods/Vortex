@@ -1115,7 +1115,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 
     return (
       <div id='nexus-header-ad'>
-        <button onClick={trackAndGoToPremium} >
+        <button onClick={trackAndGoToPremium} data-campaign={Content.HeaderAd} >
 
           <FlexLayout type='row' className='ad-flex-container'>
 
@@ -1151,12 +1151,12 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 }
 
 function goBuyPremium(evt: React.MouseEvent<any>) {
-  const source = evt.currentTarget.getAttribute('data-campaign');
+  const content = evt.currentTarget.getAttribute('data-campaign');
   opn(nexusModsURL(PREMIUM_PATH, {
     section: Section.Users,
     campaign: Campaign.BuyPremium,
-    content: Content.HeaderAd
-   })).catch(err => undefined);
+    content: content
+  })).catch(err => undefined);
 }
 
 function idValid(thingId: string,
@@ -1704,6 +1704,7 @@ function init(context: IExtensionContextExt): boolean {
         <div className='banner-text'>Free users are <span className='text-highlight'>capped at 3MB/s</span> (1.5 MB/s with AdBlock). Play your modded games <span className='text-highlight'>faster with premium</span>.</div>
         <Button
           id='get-premium-button'
+          data-campaign={Content.DownloadsBannerAd}
           onClick={trackAndGoToPremium}>
           <Image srcs={[electricBoltIconPath]} />
           {t('Unlock max download speeds')}

@@ -832,7 +832,7 @@ export enum Campaign {
 export enum Content {
   HeaderAd = 'header_ad',
   DownloadsBannerAd = 'downloads_banner_ad',
-  CollectionsDownloadModModal = 'collections_downloadmod_modal',
+  DownloadModModal = 'downloadmod_modal',
   DashboardDashletAd = 'dashboard_dashlet_ad',
   CollectionsDownloadAd = 'collections_download_ad',
   SettingsDownloadAd = 'settings_download_ad'
