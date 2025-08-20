@@ -1,4 +1,8 @@
 jest.mock('../src/util/ExtensionProvider');
+jest.mock('react-i18next', () => ({
+  withTranslation: () => (component) => component,
+  translate: () => (component) => component,
+}));
 
 import { MainWindow } from '../src/views/MainWindow';
 import React from 'react';
