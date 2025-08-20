@@ -1,8 +1,8 @@
 'use strict';
 
-import React from 'react';
+const React = require('react');
 
-const react_i18n = jest.genMockFromModule('react-i18next');
+const react_i18n = jest.createMockFromModule('react-i18next');
 
 function translate(namespace) {
   return (component) => {

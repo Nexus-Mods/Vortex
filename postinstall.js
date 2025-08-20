@@ -16,22 +16,36 @@ const packageManager = 'yarn';
 const verifyModules = [
   ['xxhash-addon', path.join('build', 'Release', 'addon.node'), false],
   ['vortexmt', path.join('build', 'Release', 'vortexmt.node'), true],
-  ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
-  ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
   ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), false],
 ];
 
+// Only verify Windows-specific modules on Windows
 if (process.platform === 'win32') {
   verifyModules.push(
+    ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
+    ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
     ['winapi-bindings', path.join('build', 'Release', 'winapi.node'), true],
     ['native-errors', path.join('build', 'Release', 'native-errors.node'), true],
-    ['crash-dump', path.join('build', 'Release', 'windump.node'), true],
+    ['crash-dump', path.join('build', 'Release', 'windump.node'), true]
   );
 }
+
+
 
 async function verifyModulesInstalled() {
   console.log('checking native modules');
   for (const module of verifyModules) {
+    // Skip verification if mock exists on macOS
+    if (process.platform === 'darwin') {
+      const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
+      try {
+        await fs.stat(mockPath);
+        console.log(`Using mock for ${module[0]} on macOS`);
+        continue;
+      } catch (err) {
+        // No mock found, proceed with verification
+      }
+    }
     const modPath = path.join(__dirname, 'node_modules', module[0], module[1]);
     try {
       await fs.stat(modPath);

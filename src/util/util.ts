@@ -525,24 +525,69 @@ export function sanitizeFilename(input: string): string {
 const trimTrailingSep = new RegExp(`\\${path.sep}*$`, 'g');
 
 export function isPathValid(input: string, allowRelative: boolean = false): boolean {
-  if ((process.platform === 'win32') && input.startsWith('\\\\')) {
-    // UNC path, skip the leading \\ for validation
-    input = input.slice(2);
-  } else if ((process.platform !== 'win32') && input.startsWith('/')) {
-    input = input.slice(1);
+  if (input === undefined || input === null || input === '') {
+    return false;
   }
-  let split = input.replace(trimTrailingSep, '').split(path.sep);
-  if (allowRelative) {
-    split = split.filter(segment => (segment !== '.') && (segment !== '..'));
+
+  // Check for mixed separators
+  if (input.includes('/') && input.includes('\\')) {
+    return false;
   }
-  const found = split.find((segment: string, idx: number) => {
-    if (idx === 0 && isDriveLetter(segment)) {
+
+  // On Windows, only allow absolute paths starting with drive letter or UNC
+  if (process.platform === 'win32' && input.startsWith('\\') && !input.startsWith('\\\\')) {
+    return false;
+  }
+
+  // First validate raw segments before normalization
+  const rawSegments = input.split(/[\\/]/);
+  for (const segment of rawSegments) {
+    // Skip empty segments and drive letters
+    if (segment === '' || (process.platform === 'win32' && isDriveLetter(segment))) {
+      continue;
+    }
+    // Allow . and .. for relative paths
+    if (allowRelative && (segment === '.' || segment === '..')) {
+      continue;
+    }
+    // Check for reserved names on Windows
+    if (process.platform === 'win32') {
+      const upperSegment = segment.toUpperCase();
+      if (RESERVED_NAMES.has(upperSegment) || RESERVED_NAMES.has(upperSegment.split('.')[0])) {
+        return false;
+      }
+    }
+    // Validate segment as filename
+    if (!isFilenameValid(segment)) {
       return false;
     }
-    return !isFilenameValid(segment);
-  });
+  }
 
-  return found === undefined;
+  // Handle UNC paths on Windows
+  const isUNC = process.platform === 'win32' && input.startsWith('\\\\');
+  if (isUNC) {
+    // UNC path must have at least \\server\share
+    const segments = input.slice(2).split(/[\\/]/);
+    if (segments.length < 2 || !segments[0] || !segments[1]) {
+      return false;
+    }
+  }
+
+  // Normalize path separators
+  input = input.replace(/[\\/]/g, path.sep);
+
+  // Split path into segments
+  let segments = input.replace(trimTrailingSep, '').split(path.sep);
+  
+  // Handle drive letter specially for Windows
+  const hasDriveLetter = process.platform === 'win32' && isDriveLetter(segments[0]);
+  
+  // For non-relative paths, reject paths containing .. segments
+  if (!allowRelative && segments.some(segment => segment === '..')) {
+    return false;
+  }
+
+  return true;
 }
 
 export {

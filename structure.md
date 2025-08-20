@@ -1,4 +1,4 @@
-# Project structrue
+# Project Structure
 
 - **/**: project base directory. contains mostly configuration on the top level
   - **src/**: Vortex source code
@@ -15,8 +15,8 @@
     - **views/**: contains the react views that make up the main application user interface
     - **stylesheets/**: (s)css for the default application look
   - **extensions/**: bundled extensions (dynamically loaded but shipped with the main application)
-  - **\_\_mocks\_\_/**: mocks for use in unit tests
-  - **\_\_tests\_\_/**: unit tests
+  - **__mocks__/**: mocks for use in unit tests
+  - **__tests__/**: unit tests
   - **.vscode/**: Configuration files for Visual Studio Code
     - *launch.json*: launch options (F5 primarily)
     - *tasks.json*: ide build commands (ctrl-shift-b)
@@ -24,7 +24,7 @@
   - **build/**: contains assets for the packaging process (i.e. application icon)
   - **app/**: staging directory for production build
     - *package.json*: project file for production
-  - **dist/**: production builds (one-click installer, updater) (unpacked and instellers, created during packaging)
+  - **dist/**: production builds (one-click installer, updater) (unpacked and installers, created during packaging)
   - **dist_custom/**: production builds (lets user choose installation directory)
   - **out/**: development build (created by *npm build*)
   - **node_modules/**: dependencies (created by *npm install*)
@@ -38,7 +38,7 @@
 - .eslintrc.js: configuration for our coding guidelines
 - .npmrc: configuration for npm/yarn, mostly controlling settings for native module builds
 - BuildSubprojects.json: configuration for bundled extensions
-- electron-builder-\*.json: configuration for (various) installers, only oneclick, advanced and ci are actively being used, the rest is there for reference
+- electron-builder-*.json: configuration for (various) installers, only oneclick, advanced and ci are actively being used, the rest is there for reference
 - InstallAssets.json: lists static assets to be included in builds (can specify if assets are for development, production or both)
 - versions.json: specifies minimum Vortex version that is allowed to send feedback. Not sure if this is actually obeyed by the server
 - webpack.*.config.js: bundler configuration for release builds (development builds are not bundled)
@@ -55,7 +55,6 @@
 - postinstall.js: verifies all native modules were built, yarn doesn't necessarily produce an error message if noe failed. Will further warn if modules that we expect to get prebuilt had to be built
 - setupTests.js: part of the jest unit testing framework
 
-
 # package.json tasks
 
 - install: download&install dependencies, this will also build native dependencies
@@ -66,3 +65,64 @@
 - start: starts the program in development mode
 - dist: build for release, creating two installers (one-click and one asking for installation directory)
 - ci: create unsigned release build
+
+# Building on macOS
+
+## Prerequisites
+1. Install Node.js (LTS version recommended)
+2. Install Yarn package manager
+3. Install Xcode Command Line Tools:
+   ```bash
+   xcode-select --install
+   ```
+4. Install required build tools:
+   ```bash
+   brew install python cmake
+   ```
+
+## Development Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Nexus-Mods/Vortex.git
+   cd Vortex
+   ```
+
+2. Install dependencies:
+   ```bash
+   yarn install
+   ```
+   Note: Some Windows-specific native modules are marked as optional dependencies and will be skipped on macOS.
+
+3. Build the project:
+   ```bash
+   yarn build
+   ```
+
+4. Start the development server:
+   ```bash
+   yarn start
+   ```
+
+## Known macOS Considerations
+- Windows-specific native modules (winapi-bindings, etc.) are marked as optional dependencies
+- Mock implementations are provided in `__mocks__` directory for Windows-only functionalities
+- Some features may have limited functionality on macOS due to platform differences
+- File path handling may need special attention due to different path separators
+
+## Troubleshooting
+1. If native module build fails:
+   ```bash
+   yarn rebuild
+   ```
+
+2. If you encounter module resolution issues:
+   ```bash
+   yarn clean
+   rm -rf node_modules
+   yarn install
+   ```
+
+3. For development environment issues:
+   - Ensure all prerequisites are installed
+   - Check system Python version (some native modules may require Python 2.x)
+   - Verify Xcode Command Line Tools installation
