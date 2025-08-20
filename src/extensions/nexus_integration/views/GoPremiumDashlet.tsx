@@ -8,19 +8,27 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
+import FlexLayout from '../../../controls/FlexLayout';
+import Image from '../../../controls/Image';
 
 class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
+
+    const premiumPictogramPath = 'assets/pictograms/premium-pictogram.svg';
+
     return (
-      <Dashlet title='' className='dashlet-go-premium nexus-main-banner'>
-        <div className='gopremium-widget-text'>{t('Go Premium')}</div>
-        <div className='gopremium-widget-text'>{t('Uncapped downloads, no adverts')}</div>
-        <div className='gopremium-widget-text'>{t('Support Nexus Mods')}</div>
-        <div className='right-center'>
-          <Button bsStyle='ad' onClick={this.goBuyPremium}>{t('Go Premium')}</Button>
-        </div>
-        <div className='nexus-ad-image' />
+      <Dashlet title='' className='dashlet-go-premium'>
+        <Image className='premium-pictogram' srcs={[premiumPictogramPath]} />
+        <div className='dashlet-premium-title'>Get fast downloads with <span className='text-highlight'>premium</span></div>
+        <div className='dashlet-premium-body'><span className='text-highlight'>Upgrade to unlock</span> uncapped download speeds, 
+          <span className='text-highlight'> auto-install collections</span> and <span className='text-highlight'>no ads</span>.</div>
+        <button className='dashlet-premium-button' onClick={this.goBuyPremium}>
+          <FlexLayout type='row' className='dashlet-premium-button-content'>
+            {t('Go Premium')}
+            <div className='arrow-forward' />
+          </FlexLayout>
+        </button>
       </Dashlet>
     );
   }
@@ -31,7 +39,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
       source: Source.DashboardAd
-     }))
+    }))
       .catch(err => undefined);
   }
 }

@@ -13,10 +13,14 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
 
-## 1.14.9 - 2025-07-30
+## 1.14.11 - 2025-08-12
 
-- Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
-- **collections**: Fixed intermittent download version resolution error when installing collections.
+- Fixed unhandled exception when launching games without installed collections/mods ([#18022](https://github.com/Nexus-Mods/Vortex/issues/18022))
+
+## 1.14.10 - 2025-08-06
+
+- Improved collection install tracking 
+
 ## 1.14.9 - 2025-07-31
 
 - Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
