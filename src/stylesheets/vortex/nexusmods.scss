@@ -84,8 +84,12 @@ $typography: (
 
   --Neutral-800: #29292E;
 
+  --Premium-Strong: #C4B5FD;
+
   --Premium-100: #EDE9FE;
   --Premium-600: #7C3AED;
+  --Premium-900: #4C1D95;
+  --Premium-950: #2E1065;
 
   --Violet-300: #C4B5FD;
 }
@@ -205,7 +209,7 @@ $typography: (
     margin: 8px 0;
     border: none;
     height: 1px;
-    background-color: var(--Stroke-Neutral-Translucent-Weak);
+        background: var(--Stroke-Neutral-Translucent-Weak, rgba(255, 255, 255, 0.10));
   }
 
   .modal-dialog {
@@ -283,16 +287,15 @@ $typography: (
     div#premium-container {
       padding: 24px;
 
-      background: linear-gradient(0deg, rgba(46, 16, 101, 0.25) 25.42%, rgba(92, 32, 203, 0.25) 74.58%);
-      backdrop-filter: blur(6px);
-
       border-radius: 8px;
-      border: 1px solid rgba(196, 181, 253, 0.40);
+      border: 1px solid var(--Premium-600, #7C3AED);
+      background: linear-gradient(0deg, var(--Premium-950, #2E1065) 25.42%, var(--Premium-900, #4C1D95) 74.58%);
 
       /* custom bullets */
       ul {
         list-style: none;
         padding-left: 0;
+        color: var(--Neutral-Translucent-Strong, rgba(255, 255, 255, 0.95));
 
         li {
           display: flex;
@@ -320,16 +323,12 @@ $typography: (
 
       .membership-type {
         @include typography('body-md-normal');
-        color: var(--Violet-300, #C4B5FD);
+        color: var(--Premium-Strong, #C4B5FD);
       }
 
       .title {
         @include typography('body-lg-semibold');
         color: var(--Neutral-Translucent-Strong);
-      }
-
-      hr {
-        background: linear-gradient(252deg, rgba(196, 181, 253, 0.2) 26.43%, rgba(117, 108, 151, 0.2) 81.67%);
       }
 
       button {
