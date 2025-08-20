@@ -196,7 +196,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [campaign]);
 
   return (
-    <Modal show={show} onHide={nop}>
+    <Modal show={show} onHide={nop} id='free-user-dl-dialog'>
       <Modal.Header>
         <Modal.Title>
           {t('Download mod')}
