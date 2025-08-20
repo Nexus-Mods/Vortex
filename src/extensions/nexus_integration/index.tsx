@@ -49,6 +49,8 @@ import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
+import FlexLayout from '../../controls/FlexLayout';
+import Image from '../../controls/Image';
 
 import {
   genCollectionIdAttribute,
@@ -90,6 +92,7 @@ import { MainContext } from '../../views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
 import { selectors } from 'vortex-api';
 import { app } from 'electron';
+import Icon from '../../controls/Icon';
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
@@ -1045,6 +1048,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.onAsync('get-latest-mods', eh.onGetLatestMods(api, nexus));
   api.onAsync('get-trending-mods', eh.onGetTrendingMods(api, nexus));
+  api.onAsync('send-metric', eh.sendMetric(api, nexus));
   api.events.on('refresh-user-info', eh.onRefreshUserInfo(nexus, api));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
@@ -1099,6 +1103,8 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
   return () => {
     const context = React.useContext<IComponentContext>(MainContext);
+    const premiumPictogramPath = 'assets/pictograms/premium-pictogram.svg';
+
     const trackAndGoToPremium = (e) => {
       context.api.events.emit(
         'analytics-track-click-event',
@@ -1106,20 +1112,39 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
         'Header');
       goBuyPremium(e);
     };
+
     return (
-      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
-        <div>{t('Go Premium')}</div>
-        <div>{t('Uncapped downloads, no adverts')}</div>
-        <div>{t('Support Nexus Mods')}</div>
-        <div className='right-center'>
-          <Button
-            bsStyle='ad'
-            data-campaign={Content.HeaderAd}
-            onClick={trackAndGoToPremium}
-          >
-            {t('Go Premium')}
-          </Button>
-        </div>
+      <div id='nexus-header-ad'>
+        <button onClick={trackAndGoToPremium} >
+
+          <FlexLayout type='row' className='ad-flex-container'>
+
+            <FlexLayout.Flex>
+              <FlexLayout type='column' className='text-flex-container'>
+                <div className='nexus-header-ad-title'>
+                  Want <span className='ad-title-highlight'>more time</span> playing?
+                </div>
+                <div className='nexus-header-ad-body'>
+                  Save time with <span className='ad-body-highlight'>max download speeds</span>, <span className='ad-body-highlight'>auto-install collections</span>, and <span className='ad-body-highlight'>no ads</span>.
+                </div>
+              </FlexLayout>
+            </FlexLayout.Flex>
+
+            <FlexLayout.Fixed>
+              <Image className='premium-pictogram' srcs={[premiumPictogramPath]} />
+            </FlexLayout.Fixed>
+          </FlexLayout>
+
+          <FlexLayout type='row' className='hover-overlay' >
+            <FlexLayout.Fixed>
+              <FlexLayout type='row' className='hover-overlay-content' >
+                {t('Go Premium')}
+                <div className='arrow-forward' />
+              </FlexLayout>
+            </FlexLayout.Fixed>
+          </FlexLayout>
+
+        </button>
       </div>
     );
   };
@@ -1665,6 +1690,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
+    const electricBoltIconPath = 'assets/icons/electric-bolt.svg';
     const trackAndGoToPremium = (e) => {
       context.api.events.emit(
         'analytics-track-click-event',
@@ -1673,15 +1699,14 @@ function init(context: IExtensionContextExt): boolean {
       goBuyPremium(e);
     };
     return (
-      <div className='nexus-download-banner'>
-        {t('Nexus downloads are capped at 1.5-3MB/s - '
-          + 'Go Premium for uncapped download speeds')}
+
+      <div id='nexus-download-banner'>
+        <div className='banner-text'>Free users are <span className='text-highlight'>capped at 3MB/s</span> (1.5 MB/s with AdBlock). Play your modded games <span className='text-highlight'>faster with premium</span>.</div>
         <Button
-          bsStyle='ad'
-          data-campaign={Content.DownloadsBannerAd}
-          onClick={trackAndGoToPremium}
-        >
-          {t('Go Premium')}
+          id='get-premium-button'
+          onClick={trackAndGoToPremium}>
+          <Image srcs={[electricBoltIconPath]} />
+          {t('Unlock max download speeds')}
         </Button>
       </div>
     );

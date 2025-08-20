@@ -1,3 +1,4 @@
+import { util } from '..';
 import { showDialog } from '../actions/notifications';
 import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import Spinner from '../controls/Spinner';
@@ -14,7 +15,7 @@ import Debouncer from '../util/Debouncer';
 import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { showError } from '../util/message';
-import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
+import { activeGameId, currentGame, currentGameDiscovery, activeProfile } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
@@ -238,6 +239,26 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return;
     }
     this.context.api.events.emit('analytics-track-click-event', 'Header', 'Play game');
+    const state: IState = this.context.api.store.getState();
+    const profile = activeProfile(state);
+    const currentModsState = util.getSafe(profile, ['modState'], false)
+    // Get total number of enabled mods (this includes collections)
+    const enabledMods = Object.keys(currentModsState).filter(modId => util.getSafe(currentModsState, [modId, 'enabled'], false));
+    // Get total number of collections for game
+    const gameMods = state.persistent.mods[profile.gameId] || {};
+    const collections = Object.values(gameMods).filter((val) => (val.type == 'collection')).map((val) => val.id);
+    // Determine enabled collections
+    const enabledCollections = collections.filter((collectionId) => enabledMods.includes(collectionId));
+
+    const numberOfEnabledCollections = enabledCollections.length;
+    const numberOfEnabledModsExcludingCollections = enabledMods.length - numberOfEnabledCollections;
+    log('info', `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`)
+    log('info', `Enabled collections at game launch: ${numberOfEnabledCollections}`)
+    this.context.api.events.emit('analytics-track-event-with-payload', 'Launch game', {
+      game_id: profile.gameId,
+      enabled_mods: numberOfEnabledModsExcludingCollections,
+      enabled_collections: numberOfEnabledCollections
+    });
     StarterInfo.run(starter, this.context.api, onShowError);
   }
 

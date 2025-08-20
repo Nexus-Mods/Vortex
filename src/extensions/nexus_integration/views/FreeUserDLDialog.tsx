@@ -11,11 +11,16 @@ import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
-import { FALLBACK_AVATAR, NEXUS_BASE_URL } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL, PREMIUM_PATH } from '../constants';
 import NXMUrl from '../NXMUrl';
 import { makeFileUID } from '../util/UIDs';
 import PremiumNagBanner from './PremiumNagBanner';
 import { IValidateKeyDataV2 } from '../types/IValidateKeyData';
+import NewFreeDownloadModal from './NewFreeDownloadModal';
+import { MainContext } from '../../../views/MainWindow';
+import { IComponentContext } from '../../../types/IComponentContext';
+import opn from '../../../util/opn';
+import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -86,23 +91,19 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
 
-  //return oauthCred !== undefined ? oauthCred.token : undefined;
-
-
-
   const urls: string[] = useSelector<IState, string[]>(state =>
     state.session['nexus'].freeUserDLQueue);
 
   const userInfo = useSelector<IState, IValidateKeyDataV2>(state =>
     state.persistent['nexus'].userInfo);
+    
+  const context = React.useContext<IComponentContext>(MainContext);
 
-  // const [fileInfo, setFileInfo] = React.useState<Partial<IModFile>>(null);
   const [fileInfo, setFileInfo] = React.useState<any>(null);
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
   React.useEffect(() => {
-    //log('info', '[FreeUserDLDialog] userInfo has changed', {userInfo:userInfo, urls: urls});
     // if userInfo is updated, and isPremium is true, then retry
     if(userInfo !== undefined) 
       if(userInfo?.isPremium && urls.length > 0)
@@ -166,57 +167,29 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
   }, [fileInfo]);
 
+  const goPremium = React.useCallback(() => {
+    context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
+
+    opn(nexusModsURL(PREMIUM_PATH, {
+      section: Section.Users,
+      campaign: Campaign.BuyPremium,
+      source: Source.DownloadsNagAd
+    })).catch(() => null);
+  }, [campaign]);
+
   return (
-    <Modal show={urls.length > 0} onHide={nop}>
+    <Modal show={urls.length > 0} onHide={nop} id='free-user-dl-dialog'>
       <Modal.Header>
         <Modal.Title>
-          {t('Download "{{modName}}"', { replace: {
-            modName: fileInfo !== null ? fileInfo.name : '...',
-          } })}
+          {t('Download mod')}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {t('You need to download {{modName}} from the Nexus Mods website. '
-          + 'The link below will open the mod page.')}
-        <Panel className='margin-top-hg'>
-          <FlexLayout type='row' className='padding-hg'>
-            <FlexLayout.Fixed>
-              {(fileInfo !== null) ? (
-                <Image className='free-user-dl-image' srcs={[fileInfo.mod.pictureUrl]} />
-              ) : <Spinner />}
-            </FlexLayout.Fixed>
-            <FlexLayout.Flex>
-              {(fileInfo !== null) ? (
-                <FlexLayout type='column'>
-                  <div className='free-user-dl-name'>
-                    {fileInfo.mod.name}
-                    {' '}
-                    <IconButton
-                      icon='open-in-browser'
-                      className='btn-embed'
-                      tooltip={t('Open mod page')}
-                      onClick={openModPage}
-                    />
-                  </div>
-                  <div className='free-user-dl-uploader'>
-                    <Image
-                      circle
-                      srcs={[fileInfo.mod.uploader.avatar, FALLBACK_AVATAR]}
-                    />
-                    <a onClick={openAuthorPage}>{fileInfo.mod.uploader.name}</a>
-                  </div>
-                  <div className='free-user-dl-summary'>{fileInfo.mod.summary}</div>
-                </FlexLayout>
-              ) : null}
-            </FlexLayout.Flex>
-          </FlexLayout>
-          <PremiumNagBanner t={t} onCheckStatus={checkStatus} onDownload={download} campaign={campaign} />
-        </Panel>
+          <NewFreeDownloadModal fileInfo={fileInfo} t={t} openModPage={openModPage} goPremium={goPremium} />      
       </Modal.Body>
       <Modal.Footer>
-
-        <Button onClick={cancel}>{t('Cancel')}</Button>
-        <Button onClick={skip}>{t('Skip')}</Button>
+        <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>
+        <Button id='skip-button' onClick={skip}>{t('Skip mod')}</Button>
       </Modal.Footer>
     </Modal>
   );
