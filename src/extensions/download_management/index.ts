@@ -12,7 +12,7 @@ import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { sum, toPromise, truthy } from '../../util/util';
+import { batchDispatch, sum, toPromise, truthy } from '../../util/util';
 
 import {
   addLocalDownload,

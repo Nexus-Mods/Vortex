@@ -105,6 +105,23 @@ export class DownloadObserver {
     events.on('intercept-download', (tag) => {
       this.mInterceptedDownloads.push({ time: Date.now(), tag });
     });
+
+    api.onStateChange(['persistent', 'nexus', 'userInfo'], (old, newValue) => {
+      if (old?.isPremium !== newValue?.isPremium) {
+        // User's premium status has changed
+        // Clear the download queue by pausing all active downloads
+        const state = api.getState();
+        const activeDownloadsList = selectors.queueClearingDownloads(state);
+        Object.keys(activeDownloadsList).forEach(dlId => {
+          this.handleRemoveDownload(dlId);
+        });
+        if (newValue?.isPremium === true) {
+          manager.setMaxConcurrentDownloads(state.settings.downloads.maxParallelDownloads);
+        } else {
+          manager.setMaxConcurrentDownloads(1);
+        }
+      }
+    });
   }
 
   // enqueues an operation to be run when a download finishes
