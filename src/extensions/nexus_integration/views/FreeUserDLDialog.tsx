@@ -98,11 +98,29 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const [campaign, setCampaign] = React.useState<string>(undefined);
   const lastFetchUrl = React.useRef<string>();
 
+  const show = urls.length > 0 && !userInfo?.isPremium;
+
+  React.useEffect(() => {
+    if (!show) return;
+
+    const handleFocus = () => {
+      console.log('Window gained focus. Modal is open');
+      checkStatus();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [show]);
+
+
   React.useEffect(() => {
     // if userInfo is updated, and isPremium is true, then retry
     if (userInfo !== undefined)
       if (userInfo?.isPremium && urls.length > 0)
-        onRetry(urls[0]);
+        retry();
   }, [userInfo]);
 
   React.useEffect(() => {
@@ -136,7 +154,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const checkStatus = React.useCallback(() => {
     onCheckStatus();
-  }, [])
+  }, [onCheckStatus]);
 
   const retry = React.useCallback(() => {
     onRetry(urls[0]);
@@ -173,7 +191,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [campaign]);
 
   return (
-    <Modal show={urls.length > 0} onHide={nop} id='free-user-dl-dialog'>
+    <Modal show={show} onHide={nop} id='free-user-dl-dialog'>
       <Modal.Header>
         <Modal.Title>
           {t('Download mod')}
