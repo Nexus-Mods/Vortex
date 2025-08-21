@@ -4,23 +4,18 @@ import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { util } from '../../..';
-import FlexLayout from '../../../controls/FlexLayout';
-import Image from '../../../controls/Image';
 import Modal from '../../../controls/Modal';
-import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
-import { FALLBACK_AVATAR, NEXUS_BASE_URL, PREMIUM_PATH } from '../constants';
+import { NEXUS_BASE_URL, PREMIUM_PATH } from '../constants';
 import NXMUrl from '../NXMUrl';
 import { makeFileUID } from '../util/UIDs';
-import PremiumNagBanner from './PremiumNagBanner';
 import { IValidateKeyDataV2 } from '../types/IValidateKeyData';
 import NewFreeDownloadModal from './NewFreeDownloadModal';
 import { MainContext } from '../../../views/MainWindow';
 import { IComponentContext } from '../../../types/IComponentContext';
 import opn from '../../../util/opn';
-import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
+import { Campaign, Content, nexusModsURL, Section } from '../../../util/util';
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -96,7 +91,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const userInfo = useSelector<IState, IValidateKeyDataV2>(state =>
     state.persistent['nexus'].userInfo);
-    
+
   const context = React.useContext<IComponentContext>(MainContext);
 
   const [fileInfo, setFileInfo] = React.useState<any>(null);
@@ -191,7 +186,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
-      source: Source.DownloadsNagAd
+      content: Content.DownloadModModal
     })).catch(() => null);
   }, [campaign]);
 
@@ -203,7 +198,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-          <NewFreeDownloadModal fileInfo={fileInfo} t={t} openModPage={openModPage} goPremium={goPremium} />      
+        <NewFreeDownloadModal 
+        fileInfo={fileInfo} 
+        t={t} 
+        openModPage={openModPage} 
+        goPremium={goPremium} />
       </Modal.Body>
       <Modal.Footer>
         <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>

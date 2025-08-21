@@ -19,7 +19,7 @@ import opn from '../../util/opn';
 import presetManager from '../../util/PresetManager';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy, Source, Campaign } from '../../util/util';
+import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy, Content, Campaign } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -1115,7 +1115,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 
     return (
       <div id='nexus-header-ad'>
-        <button onClick={trackAndGoToPremium} >
+        <button onClick={trackAndGoToPremium} data-campaign={Content.HeaderAd} >
 
           <FlexLayout type='row' className='ad-flex-container'>
 
@@ -1151,11 +1151,11 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 }
 
 function goBuyPremium(evt: React.MouseEvent<any>) {
-  const source = evt.currentTarget.getAttribute('data-campaign');
+  const content = evt.currentTarget.getAttribute('data-campaign');
   opn(nexusModsURL(PREMIUM_PATH, {
     section: Section.Users,
     campaign: Campaign.BuyPremium,
-    source
+    content: content
   })).catch(err => undefined);
 }
 
@@ -1700,6 +1700,7 @@ function init(context: IExtensionContextExt): boolean {
         <div className='banner-text'>Free users are <span className='text-highlight'>capped at 3MB/s</span> (1.5 MB/s with AdBlock). Play your modded games <span className='text-highlight'>faster with premium</span>.</div>
         <Button
           id='get-premium-button'
+          data-campaign={Content.DownloadsBannerAd}
           onClick={trackAndGoToPremium}>
           <Image srcs={[electricBoltIconPath]} />
           {t('Unlock max download speeds')}

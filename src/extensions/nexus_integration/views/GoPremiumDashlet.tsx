@@ -7,7 +7,7 @@ import { PREMIUM_PATH } from '../constants';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
-import { Campaign, nexusModsURL, Section, Source } from '../../../util/util';
+import { Campaign, nexusModsURL, Section, Content } from '../../../util/util';
 import FlexLayout from '../../../controls/FlexLayout';
 import Image from '../../../controls/Image';
 
@@ -38,8 +38,8 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
     opn(nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
-      source: Source.DashboardAd
-    }))
+      content: Content.DashboardDashletAd
+     }))
       .catch(err => undefined);
   }
 }
