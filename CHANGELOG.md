@@ -6,10 +6,13 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.15.0 - 2025-xx-xx
 
+- Updated Premium branding
+- Optimized user subscription checking 
 - Fixed download queue memory leak
 - Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
+- **collections**: Added collection install tracking for Nexus API use
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
 
