@@ -12323,9 +12323,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-vortex-api@Nexus-Mods/vortex-api#fblo_api_update_1.8.11:
-  version "1.8.11"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/9d51cfafea5f96eb6eca2be4371e32b236f77891"
+vortex-api@Nexus-Mods/vortex-api:
+  version "1.8.14"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/8a3b78187df16603696367e0e6aeb11e0e7d6e8b"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.3.0"
