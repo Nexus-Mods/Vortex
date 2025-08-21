@@ -11,9 +11,11 @@ import { useTranslation } from 'react-i18next';
 import { activeGameId } from '../../profile_management/selectors';
 import { midClip, truthy } from '../../../util/util';
 import { util } from '../../..';
+import { IconButton } from '../../../controls/TooltipControls';
 
 export interface IModTypeWidget {
   mods: IModWithState | IModWithState[];
+  copyToClipboard: (value: string) => void;
 }
 
 function ModTypeWidget(props: IModTypeWidget) {
@@ -54,6 +56,12 @@ function ModTypeWidget(props: IModTypeWidget) {
     }
   }, [gameMode]);
   
+  const toClipboard = React.useCallback(() => {
+    if (modTypeId) {
+      props.copyToClipboard(modTypeId);
+    }
+  }, [modTypeId, props.copyToClipboard]);
+
   const openPath = React.useCallback(() => {
     util.opn(modTypePath).catch(() => null);
   }, [modTypePath]);
@@ -78,6 +86,16 @@ function ModTypeWidget(props: IModTypeWidget) {
       {truthy(modTypePath)
         ? <div>{t('Deploys to')}&nbsp;<a onClick={openPath} title={modTypePath} className='modtype-path'>{midClip(modTypePath, 40)}</a></div>
         : t('Does not deploy')}
+      <div>
+        {t('ID:')}&nbsp;<span className='modtype-id'>"{modTypeId}"</span>
+        &nbsp;
+        <IconButton
+          className='btn-embed'
+          icon='clipboard-copy'
+          onClick={toClipboard}
+          tooltip={t('Copy ID to clipboard')}
+        />
+      </div>
     </div>
   );
 }
