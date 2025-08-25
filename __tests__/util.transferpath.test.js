@@ -1,3 +1,4 @@
+/* eslint-env jest */
 import { testPathTransfer, transferPath } from '../src/util/transferPath';
 import * as path from 'path';
 const walk = require('turbowalk');
@@ -155,7 +156,19 @@ describe('testPathTransfer', () => {
   });
   it('fails if there is less than 512 MB free', async () => {
     du.__setCheckResult(baseB, { free: 256 * MB });
-    await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${path.sep}driveb" has insufficient space.`);
+    // Mock process.platform to be win32 so it uses device ID comparison
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', {
+      value: 'win32'
+    });
+    try {
+      await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${path.sep}driveb" has insufficient space.`);
+    } finally {
+      // Restore original platform
+      Object.defineProperty(process, 'platform', {
+        value: originalPlatform
+      });
+    }
   });
 });
 

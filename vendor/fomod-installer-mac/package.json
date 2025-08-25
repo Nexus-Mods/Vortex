@@ -1,0 +1,8 @@
+{
+  "name": "fomod-installer",
+  "version": "0.0.0-macmock",
+  "description": "macOS-friendly shim for fomod-installer (no native deps).",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "MIT"
+}

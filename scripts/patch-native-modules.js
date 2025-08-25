@@ -62,14 +62,17 @@ const windowsOnlyModules = [
 process.env.SKIP_NATIVE_BUILD = '1';
 process.env.PREBUILD_INSTALL_ONLY = '1';
 process.env.npm_config_build_from_source = 'false';
+process.env.YARN_IGNORE_PATH = '1';
+process.env.YARN_SKIP_NATIVE_BUILD = '1';
+process.env.YARN_PREBUILD_INSTALL_ONLY = '1';
 
 // Force npm to use prebuilt binaries for all native modules
 for (const moduleName of [...macOnlyMocks, ...windowsOnlyModules]) {
   const upperModuleName = moduleName.toUpperCase().replace(/-/g, '_');
-  process.env[`npm_config_${moduleName}_binary_host_mirror`] = 'none';
-  process.env[`npm_config_${moduleName}_skip_build`] = 'true';
-  process.env[`npm_config_${moduleName}_prebuild`] = 'false';
-  process.env[`npm_config_${moduleName}_build_from_source`] = 'false';
+  process.env[`YARN_${moduleName}_binary_host_mirror`] = 'none';
+  process.env[`YARN_${moduleName}_skip_build`] = 'true';
+  process.env[`YARN_${moduleName}_prebuild`] = 'false';
+  process.env[`YARN_${moduleName}_build_from_source`] = 'false';
   process.env[`SKIP_${upperModuleName}_BUILD`] = '1';
   process.env[`SKIP_${upperModuleName}_PREBUILD`] = '1';
   process.env[`SKIP_${upperModuleName}_DOWNLOAD`] = '1';

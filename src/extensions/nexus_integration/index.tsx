@@ -1410,50 +1410,50 @@ function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> 
             return result;
           })
         : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, revNumber)
-          .catch(err => {
-            err['collectionSlug'] = url.collectionSlug;
-            err['revisionNumber'] = url.revisionNumber;
-            return Promise.reject(err);
-          })
-          .then((revision: Partial<IRevision>) => {
-            revisionInfo = revision;
-            return nexus.getCollectionDownloadLink(revision.downloadLink);
-          })
- 
-          .then(downloadUrls => {
-            const result = {
-              urls: downloadUrls.map(iter => iter.URI),
-              updatedUrl: input,
-              meta: {
-                source: 'nexus',
-                nexus: {
-                  ids: {
-                    collectionId: revisionInfo.collection.id,
-                    revisionId: revisionInfo.id,
-                    collectionSlug: url.collectionSlug,
-                    revisionNumber: url.revisionNumber,
+            .catch(err => {
+              err['collectionSlug'] = url.collectionSlug;
+              err['revisionNumber'] = url.revisionNumber;
+              return Promise.reject(err);
+            })
+            .then((revision: Partial<IRevision>) => {
+              revisionInfo = revision;
+              return nexus.getCollectionDownloadLink(revision.downloadLink);
+            })
+            .then(downloadUrls => {
+              const result = {
+                urls: downloadUrls.map(iter => iter.URI),
+                updatedUrl: input,
+                meta: {
+                  source: 'nexus',
+                  nexus: {
+                    ids: {
+                      collectionId: revisionInfo.collection.id,
+                      revisionId: revisionInfo.id,
+                      collectionSlug: url.collectionSlug,
+                      revisionNumber: url.revisionNumber,
+                    },
                   },
-                },
-              } as any,
-            };
+                } as any,
+              };
 
-            // Cache the result
-            downloadURLCache[cacheKey] = {
-              urls: result.urls,
-              expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
-              meta: result.meta,
-            };
+              // Cache the result
+              downloadURLCache[cacheKey] = {
+                urls: result.urls,
+                expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
+                meta: result.meta,
+              };
 
-            return result;
-          }))
- 
-      .catch(NexusError, err => {
-        const newError = new HTTPError(err.statusCode, err.message, err.request);
-        newError.stack = err.stack;
-        return Promise.reject(newError);
-      })
-      .catch(RateLimitError, err => {
-        api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
+              return result;
+            }))
+      .catch(err => {
+        if (err instanceof NexusError) {
+          const newError = new HTTPError(err.statusCode, err.message, err.request);
+          newError.stack = err.stack;
+          return Promise.reject(newError);
+        } else if (err instanceof RateLimitError) {
+          api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
+          return Promise.reject(err);
+        }
         return Promise.reject(err);
       });
   }

@@ -100,6 +100,9 @@ import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
+
+// Add DynamicDownloadConcurrencyLimiter to exports
+export { DynamicDownloadConcurrencyLimiter };
 import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
@@ -236,6 +239,7 @@ class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
   private mDependencyInstalls: { [modId: string]: () => void } = {};
+  private mDependencyQueue = makeQueue<void>();
   private mDependencyDownloadsLimit: DynamicDownloadConcurrencyLimiter;
 
   // This limiter drives the DownloadManager to queue up new downloads.
@@ -304,7 +308,7 @@ class InstallManager {
       this.mDependencyQueue = makeQueue<void>();
       
       // Reset concurrency limiters
-      this.mDependencyDownloadsLimit = new ConcurrencyLimiter(10);
+      this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
       this.mDependencyInstallsLimit = new ConcurrencyLimiter(3);
 
       return Bluebird.resolve();

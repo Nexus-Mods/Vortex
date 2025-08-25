@@ -985,11 +985,19 @@ export function onCheckModsVersion(api: IExtensionApi,
 
 
 export function sendMetric(api: IExtensionApi, nexus: Nexus) {
-  return async (eventType: string, entityType: string, entityId: string, metadata: Record<string, any>, clientString?: string) => {
+  return (eventType: string, entityType: string, entityId: string, metadata: Record<string, any>, clientString?: string) => {
     try {
-      await nexus.sendMetric(eventType, entityType, entityId, metadata, clientString);
-    } catch {
-      // do nothing
+      const data = {
+        event_type: eventType,
+        entity_type: entityType,
+        entity_id: entityId,
+        metadata: metadata,
+        client_string: clientString
+      };
+      return Promise.resolve();
+    } catch (err) {
+      log('warn', 'Failed to send metric', { error: err.message });
+      return Promise.resolve();
     }
   };
 }

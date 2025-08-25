@@ -3,7 +3,8 @@
 const Promise = require('bluebird');
 const fs = require('fs-extra');
 const path = require('path');
-const glob = require('glob');
+const globModule = require('glob');
+const glob = typeof globModule === 'function' ? globModule : globModule.glob;
 const exec = require('child_process').exec;
 
 const data = require('./InstallAssets.json');

@@ -16,6 +16,13 @@
       "presets": ["react-optimize"],
       "plugins": [
       ]
+    },
+    "test": {
+      "presets": ["@babel/react", "@babel/env", "@babel/preset-typescript"],
+      "plugins": [
+        "@babel/proposal-class-properties",
+        "@babel/proposal-object-rest-spread"
+      ]
     }
   }
 }

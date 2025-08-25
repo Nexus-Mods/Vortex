@@ -1,0 +1,10 @@
+{
+    "name": "bsdiff-node",
+    "version": "0.0.0-macmock",
+    "description": "Pure JS shim for bsdiff-node to avoid native builds on macOS during development.",
+    "main": "index.js",
+    "license": "MIT",
+    "engines": {
+        "node": ">=12"
+    }
+}

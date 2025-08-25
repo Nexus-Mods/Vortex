@@ -36,7 +36,8 @@
 - package.json: project file for development
 - tsconfig.json: configuration file for the typescript compiler 
 - .eslintrc.js: configuration for our coding guidelines
-- .npmrc: configuration for npm/yarn, mostly controlling settings for native module builds
+- .npmrc: configuration for electron headers URL
+- .yarnrc: yarn-specific configuration for package management and build settings
 - BuildSubprojects.json: configuration for bundled extensions
 - electron-builder-*.json: configuration for (various) installers, only oneclick, advanced and ci are actively being used, the rest is there for reference
 - InstallAssets.json: lists static assets to be included in builds (can specify if assets are for development, production or both)
@@ -57,14 +58,14 @@
 
 # package.json tasks
 
-- install: download&install dependencies, this will also build native dependencies
-- build: build project (for development)
-- buildwatch: build project (for development) and watch for changes
-- subprojects: build only bundled extensions (for development)
-- test: run test suite
-- start: starts the program in development mode
-- dist: build for release, creating two installers (one-click and one asking for installation directory)
-- ci: create unsigned release build
+- install: run with `yarn install` to download & install dependencies and build native modules
+- build: run with `yarn build` to build project for development
+- buildwatch: run with `yarn buildwatch` to build project and watch for changes
+- subprojects: run with `yarn subprojects` to build only bundled extensions
+- test: run with `yarn test` to execute test suite
+- start: run with `yarn start` to launch program in development mode
+- dist: run with `yarn dist` to create release installers (one-click and custom directory options)
+- ci: run with `yarn ci` to create unsigned release build
 
 # Building on macOS
 
@@ -109,20 +110,58 @@
 - Some features may have limited functionality on macOS due to platform differences
 - File path handling may need special attention due to different path separators
 
+## Testing on macOS
+
+The test suite has been updated to ensure compatibility with macOS development environments while maintaining full compatibility with Windows testing:
+
+### Test Fixes for macOS Compatibility
+
+1. **Disk Space Tests**: Updated to handle volume detection differences between macOS and Windows
+   - macOS uses root path comparison for volume detection
+   - Tests now mock `process.platform` to 'win32' when testing disk space functionality
+   - This ensures consistent behavior across platforms without affecting Windows test execution
+
+2. **FOMOD Installer Tests**: Updated to match new instance-based architecture
+   - Action creators now include `instanceId` parameter
+   - Reducer tests updated to handle `instances[instanceId]` state structure
+   - Changes reflect architectural improvements in the FOMOD installer system
+
+3. **Mock Enhancements**: Added missing utility functions to vortex-api mock
+   - Added `deleteOrNop` and `setSafe` utility functions
+   - Ensures feedback reducer tests run successfully on all platforms
+
+### Running Tests
+
+```bash
+yarn test
+```
+
+All tests should pass on macOS with the same results as Windows. The test fixes are designed to:
+- Enable Mac port development
+- Maintain Windows test compatibility
+- Provide consistent cross-platform testing experience
+
 ## Troubleshooting
 1. If native module build fails:
    ```bash
    yarn rebuild
    ```
+   This uses yarn's rebuild command to recompile native modules
 
 2. If you encounter module resolution issues:
    ```bash
-   yarn clean
+   yarn clean        # Clean build artifacts
    rm -rf node_modules
-   yarn install
+   yarn cache clean  # Clear yarn's package cache
+   yarn install      # Fresh install of dependencies
    ```
 
-3. For development environment issues:
+3. For yarn-specific issues:
+   - Check yarn version: `yarn --version`
+   - Verify yarn's global configuration: `yarn config list`
+   - Update yarn if needed: `npm install -g yarn`
+
+4. For development environment issues:
    - Ensure all prerequisites are installed
    - Check system Python version (some native modules may require Python 2.x)
    - Verify Xcode Command Line Tools installation

@@ -1,10 +1,24 @@
-import { list as listT } from 'drivelist';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 
+// Define the type for drivelist's list function
+type DriveListFunc = () => Promise<Array<{
+  isSystem: boolean;
+  isRemovable: boolean;
+  mountpoints?: Array<{ path: string }>;
+  mountpoint?: string;
+}>>;
+
 function getDriveList(api: IExtensionApi): Promise<string[]> {
-  let list: typeof listT;
+  // On macOS, use the mock implementation
+  if (process.platform === 'darwin') {
+    return Promise.resolve(['/']);
+  }
+
+  let list: DriveListFunc;
   try {
-    list = require('drivelist').list;
+    // Dynamic import to avoid TypeScript errors when the module is not available
+    const drivelist = require('drivelist');
+    list = drivelist.list;
     if (typeof (list) !== 'function') {
       throw new Error('Failed to load "drivelist" module');
     }

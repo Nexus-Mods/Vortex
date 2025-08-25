@@ -13,13 +13,19 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
-- Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
-- Adding ability to view/copy modtype id using mods panel widget
-- Improved error message for expired/not valid certificates
-- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
-- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
-- **collections**: Added API-based metrics endpoint usage
-- **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
+ - Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
+ - Adding ability to view/copy modtype id using mods panel widget
+ - Improved error message for expired/not valid certificates
+ - **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
+ - **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
+ - **collections**: Added API-based metrics endpoint usage
+ - **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
+ - **testing**: Fixed test suite compatibility for macOS development environment
+   - Updated disk space test to properly handle volume detection differences between macOS and Windows
+   - Fixed FOMOD installer action and reducer tests to match new instance-based architecture
+   - Added missing utility functions to vortex-api mock for feedback reducer tests
+   - These changes enable Mac port development without affecting Windows test behavior
+ - **collections**: Added collection install tracking for Nexus API use
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when SMAPI installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
 - **mod-content**: Fixed mod content column not displaying FOMOD installations. ([#17634](https://github.com/Nexus-Mods/Vortex/issues/17634))

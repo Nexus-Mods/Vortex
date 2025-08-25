@@ -48,6 +48,34 @@ module.exports = {
           }
         }
       },
+      {
+        test: /\.scss$/,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+              importLoaders: 2
+            }
+          },
+          {
+            loader: 'resolve-url-loader',
+            options: {
+              sourceMap: true
+            }
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sourceMap: true,
+              sassOptions: {
+                outputStyle: 'compressed'
+              }
+            }
+          }
+        ]
+      },
     ]
   },
   resolve: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'] },

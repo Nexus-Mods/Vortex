@@ -1,0 +1,11 @@
+{
+  "name": "electron-redux",
+  "version": "1.4.9-compat-macmock",
+  "description": "Compatibility shim for electron-redux wiring in dev.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "redux": "*"
+  }
+}

@@ -1,3 +1,4 @@
+/* eslint-env jest */
 import * as net from 'net';
 import { Readable } from 'stream';
 import * as network from '../src/util/network';
@@ -27,7 +28,7 @@ User-Agent: Vortex\r
 Content-Type: application/octet-stream\r
 Content-Length: 6\r
 Host: localhost:${port}\r
-Connection: close\r
+Connection: keep-alive\r
 \r
 foobar`);
           socket.write('HTTP/1.1 200 OK\r\nConnection: Closed\r\n\r\n');

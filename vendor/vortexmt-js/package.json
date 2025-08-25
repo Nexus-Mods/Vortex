@@ -1,0 +1,10 @@
+{
+    "name": "vortexmt",
+    "version": "0.2.6-macmock",
+    "description": "JS shim of vortexmt for macOS builds (MD5 only).",
+    "main": "index.js",
+    "license": "GPL-3.0",
+    "engines": {
+        "node": ">=12"
+    }
+}

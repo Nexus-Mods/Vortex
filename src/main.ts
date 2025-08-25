@@ -5,7 +5,7 @@
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 
-import { app, dialog } from 'electron';
+import { app, dialog, Menu, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
 
 const earlyErrHandler = (error) => {
@@ -178,6 +178,64 @@ async function main(): Promise<void> {
 
   app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
   app.commandLine.appendSwitch('disable-features', 'UseEcoQoSForBackgroundProcess');
+
+  if (process.platform === 'darwin') {
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: app.name,
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      },
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectAll' }
+        ]
+      },
+      {
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ]
+      }
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+  }
 
   // --run has to be evaluated *before* we request the single instance lock!
   if (mainArgs.run !== undefined) {

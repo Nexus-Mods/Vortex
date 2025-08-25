@@ -24,7 +24,7 @@ const globOptions = { };
 
 const copyfilesAsync = Promise.promisify(copyfiles);
 const rimrafAsync = Promise.promisify(rimraf);
-const globAsync = Promise.promisify(glob);
+const globAsync = Promise.promisify(glob.glob);
 
 class Unchanged extends Error {
   constructor() {

@@ -68,6 +68,24 @@
     "maintainer": "Black Tree Gaming Ltd. <support@nexusmods.com> (https://www.nexusmods.com/)",
     "mimeTypes": ["x-scheme-handler/nxm"]
   },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "assets/images/vortex.png",
+    "category": "public.app-category.games",
+    "darkModeSupport": true,
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Nexus-Mods",
+        "repo": "Vortex",
+        "private": false
+      }
+    ]
+  },
   "flatpak": {},
   "freebsd": {
     "compression": "bzip2"

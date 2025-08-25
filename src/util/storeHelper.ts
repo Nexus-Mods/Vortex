@@ -11,7 +11,7 @@ import * as Redux from 'redux';
 
 function clone<T>(input: T): T {
   return Array.isArray(input)
-    ? [].concat(input)
+    ? [...input] as unknown as T
     : { ...(input as any) };
 }
 
@@ -96,7 +96,7 @@ export function setSafe<T extends object>(state: T, path: Array<(string | number
   }
   const firstElement = path[0];
   const copy = Array.isArray(state)
-    ? state.slice()
+    ? [...state] as unknown as T
     : { ...(state as any) }; // "as any" is a workaround for
                              // https://github.com/Microsoft/TypeScript/issues/13557
 
@@ -213,8 +213,8 @@ export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fal
 
   if (path.length === 0) {
     return ((copy !== undefined) && Array.isArray(copy))
-      ? copy
-      : fallback as any;
+      ? copy as unknown as T
+      : fallback as unknown as T;
   } else if (path.length === 1) {
     copy[firstElement] = (!Object.hasOwnProperty.call(copy, firstElement)
                           || !Array.isArray(copy[firstElement]))

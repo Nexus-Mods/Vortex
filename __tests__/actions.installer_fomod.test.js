@@ -1,3 +1,4 @@
+/* eslint-env jest */
 import * as actions from '../src/extensions/installer_fomod/actions/installerUI';
 
 
@@ -7,19 +8,19 @@ describe('startDialog', () => {
       moduleName: 'test',
       image: 'test',
     };
-    expect(actions.startDialog(installerInfo)).toEqual({
+    expect(actions.startDialog(installerInfo, 'test-instance')).toEqual({
       error: false,
       type: 'START_FOMOD_DIALOG',
-      payload: { moduleName: 'test', image: 'test' },
+      payload: { info: installerInfo, instanceId: 'test-instance' },
     });
   });
 });
 
 describe('endDialog', () => {
   it('creates the correct action', () => {
-    expect(actions.endDialog({})).toEqual({
+    expect(actions.endDialog('test-instance')).toEqual({
       error: false,
-      payload: {},
+      payload: { instanceId: 'test-instance' },
       type: 'END_FOMOD_DIALOG',
     });
   });
@@ -31,20 +32,20 @@ describe('setDialogState', () => {
       installSteps: [],
       currentStep: 1,
     };
-    expect(actions.setDialogState(state)).toEqual({
+    expect(actions.setDialogState(state, 'test-instance')).toEqual({
       error: false,
       type: 'SET_FOMOD_DIALOG_STATE',
-      payload: { installSteps: [], currentStep: 1},
+      payload: { dialogState: state, instanceId: 'test-instance'},
     });
   });
 });
 
 describe('setInstallerDataPath', () => {
   it('creates the correct action', () => {
-    expect(actions.setInstallerDataPath('path')).toEqual({
+    expect(actions.setInstallerDataPath('path', 'test-instance')).toEqual({
       error: false,
       type: 'SET_INSTALLER_DATA_PATH',
-      payload: 'path',
+      payload: { path: 'path', instanceId: 'test-instance' },
     });
   });
 });

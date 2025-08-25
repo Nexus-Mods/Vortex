@@ -10,13 +10,34 @@
       ]
     },
     {
-      "srcPath": "src/stylesheets",
+      "srcPath": "src/stylesheets/**/*.scss",
       "outPath": "assets/css",
       "skipPaths": 2,
       "target": [
         "out",
         "app"
-      ]
+      ],
+      "preserveTimestamps": true
+    },
+    {
+      "srcPath": "src/stylesheets/**/*.css",
+      "outPath": "assets/css",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ],
+      "preserveTimestamps": true
+    },
+    {
+      "srcPath": "src/stylesheets/**/_*.scss",
+      "outPath": "assets/css",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ],
+      "preserveTimestamps": true
     },
     {
       "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
