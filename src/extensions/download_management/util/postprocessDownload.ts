@@ -38,7 +38,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
     })
     .then(() => {
       api.store.dispatch(finishDownload(id, 'finished', undefined));
-      queryInfo(api, [id], false);
+      return queryInfo(api, [id], false);
     })
     .finally(() => {
       // still storing the download as successful even if we didn't manage to calculate its

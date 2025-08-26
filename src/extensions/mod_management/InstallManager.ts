@@ -210,6 +210,23 @@ class InstallManager {
       this.mDependencyInstalls[modId]?.();
       return Bluebird.resolve();
     });
+
+    api.onAsync('reset-dependency-installs', () => {
+      // Cancel all dependency installs
+      Object.values(this.mDependencyInstalls).forEach(cancel => cancel());
+      
+      // Clear the dependency installs map
+      this.mDependencyInstalls = {};
+      
+      // Reset dependency queue
+      this.mDependencyQueue = makeQueue<void>();
+      
+      // Reset concurrency limiters
+      this.mDependencyDownloadsLimit = new ConcurrencyLimiter(10);
+      this.mDependencyInstallsLimit = new ConcurrencyLimiter(3);
+
+      return Bluebird.resolve();
+    });
   }
 
   /**
@@ -1120,7 +1137,7 @@ class InstallManager {
               });
           }
         })
-        .then(supportedInstaller => {
+        .then(async supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
@@ -1128,15 +1145,33 @@ class InstallManager {
           const {installer, requiredFiles} = supportedInstaller;
           log('debug', 'invoking installer',
             { installer: installer.id, enforced: forceInstaller !== undefined });
-          return installer.install(
-              fileList, tempPath, gameId,
-              (perc: number) => {
-                log('info', 'progress', perc);
-                progress([], perc);
-              },
-              installChoices,
-              unattended,
-              archivePath);
+          const installerResult = await installer.install(
+            fileList, tempPath, gameId,
+            (perc: number) => {
+              log('info', 'progress', perc);
+              progress([], perc);
+            },
+            installChoices,
+            unattended,
+            archivePath
+          );
+          if (!installerResult.instructions) {
+            return installerResult;
+          }
+          const overrideInstructionsFilePresentInArchive = fileList.some(file =>
+            path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+          const overrideCopyInstructionExists = installerResult.instructions.some(instr =>
+            instr.type === 'copy' && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+          if (overrideInstructionsFilePresentInArchive && !overrideCopyInstructionExists) {
+            installerResult.instructions.push({
+              type: 'copy',
+              source: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+              destination: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+            });
+          }
+          return installerResult;
         });
   }
 
@@ -1472,15 +1507,16 @@ class InstallManager {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
-    const isInstallingDependencies = getBatchContext('install-dependencies', '') !== undefined;
-    if (isInstallingDependencies) {
+    const isActivityRunning = (activity: string) =>
+      getSafe(api.getState(), ['session', 'base', 'activity', 'mods'], []).includes(activity) // purge/deploy
+    if (isActivityRunning('installing_dependencies')) {
       // we don't want to override any instructions when installing as part of a collection!
       //  this will just add extra complexity to an already complex process.
       result.overrideInstructions = [];
     }
     const overrideMap = new Map<string, IInstruction>();
     result.overrideInstructions?.forEach(instr => {
-      const key = instr.source ?? instr.type;
+      const key = (instr.source ?? instr.type).toUpperCase();
       if (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) {
         overrideMap.set(key, instr);
       } else {
@@ -1489,13 +1525,36 @@ class InstallManager {
     });
 
     const finalInstructions = result.instructions.map(instr => {
-      const key = instr.source ?? instr.type;
-      return overrideMap.get(key) ?? instr;
-    }).concat(result.overrideInstructions?.filter(instr => {
-      const key = instr.source ?? instr.type;
-      return (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value)) &&
-         !result.instructions.some(inst => (inst.source ?? inst.type) === key);
-    }) ?? []);
+      const key = (instr.source ?? instr.type).toUpperCase();
+      const overrideEntry = overrideMap.get(key);
+      if (overrideEntry) {
+        log('debug', 'overriding instruction', { key, type: instr.type, override: JSON.stringify(overrideEntry) });
+      }
+      return overrideEntry ?? instr;
+    });
+
+    // Add instructions from result.overrideInstructions that are not already present in finalInstructions
+    if (Array.isArray(result.overrideInstructions)) {
+      const existingKeys = new Set(finalInstructions.map(instr => (instr.source ?? instr.type).toUpperCase()));
+        for (const instr of result.overrideInstructions) {
+        const key = (instr.source ?? instr.type).toUpperCase();
+        // For copy instructions, ensure no duplicate destinations
+        if (instr.type === 'copy') {
+          const isDuplicate = finalInstructions.some(existingInstr =>
+            existingInstr.type === 'copy' &&
+            existingInstr.destination === instr.destination
+          );
+          if (isDuplicate) {
+            // The assumption here is that the override instruction does not contain
+            //  the correct source information so we use the original instruction
+            continue;
+          }
+        }
+        if (!existingKeys.has(key) && (instr.type !== 'setmodtype' || this.modTypeExists(gameId, instr?.value))) {
+          finalInstructions.push(instr);
+        }
+      }
+    }
 
     const invalidInstructions = this.validateInstructions(finalInstructions);
     if (invalidInstructions.length > 0) {
@@ -2344,7 +2403,7 @@ class InstallManager {
         return Bluebird.reject(new UserCanceled());
       }
       log('debug', 'installing as dependency', {
-        ref: JSON.stringify(dep.reference),
+        ref: dep.reference.logicalFileName,
         downloadRequired: dep.download === undefined,
       });
 
@@ -2352,7 +2411,9 @@ class InstallManager {
 
       return downloadAndInstall(dep)
         .then((modId: string) => {
-          log('info', 'installed as dependency', { modId });
+          if (modId != null) {
+            log('info', 'installed as dependency', { modId });
+          }
 
           if (!alreadyInstalled) {
             api.store.dispatch(
@@ -2487,7 +2548,7 @@ class InstallManager {
         })
         .then((updatedDependency: IDependency) => {
           log('debug', 'done installing dependency', {
-            ref: JSON.stringify(dep.reference),
+            ref: dep.reference.logicalFileName,
           });
           return updatedDependency;
         });
@@ -2708,7 +2769,7 @@ class InstallManager {
 
             dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
           } else {
-            log('info', 'downloaded as dependency', { downloadId });
+            log('info', 'downloaded as dependency', { dependency: dep.reference.logicalFileName, downloadId });
           }
 
           let queryWrongMD5 = () => Bluebird.resolve();

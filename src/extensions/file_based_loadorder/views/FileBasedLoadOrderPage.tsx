@@ -21,6 +21,8 @@ import ItemRenderer from './ItemRenderer';
 import { setFBForceUpdate } from '../actions/session';
 import ToolbarDropdown from '../../../controls/ToolbarDropdown';
 
+import { currentLoadOrderForProfile } from '../selectors';
+
 const PanelX: any = Panel;
 
 interface IBaseState {
@@ -222,7 +224,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             invalidEntries: validationError?.validationResult?.invalid,
           };
           // Filter based on the filterText, matching on loEntry.name or other attributes as needed
-          if ((loEntry.name ?? loEntry.id).toLowerCase().includes(this.state.filterText.toLowerCase())) {
+          const entryName = (loEntry.name ?? loEntry.id);
+          if (!entryName) {
+            return accum; // Skip entries without a name
+          }
+          if (entryName.toLowerCase().includes(this.state.filterText.toLowerCase())) {
             accum.push(rendOps);
           }
           return accum;
@@ -355,10 +361,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile?.id], []);
-  if (!Array.isArray(loadOrder)) {
-    loadOrder = [];
-  }
+  let loadOrder = (profile?.id) ? currentLoadOrderForProfile(state, profile.id) : [];
   return {
     loadOrder,
     profile,

@@ -105,7 +105,7 @@ export function isFuzzyVersion(input: string) {
     return cachedRes;
   }
 
-  if (!truthy(input)) {
+  if (!truthy(input) || typeof input !== 'string') {
     fuzzyVersionCache[input] = false;
   } else if (input.endsWith('+prefer') || (input === '*')) {
     // +prefer can be used with non-semver versions as well
@@ -240,14 +240,15 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // right version?
-  if ((ref.versionMatch !== undefined)
+  if ((truthy(ref.versionMatch))
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
     const versionMatch = ref.versionMatch.split('+')[0];
     const doesMatch = (mod.version === ref.versionMatch)
-                    || (safeCoerce(mod.version) === safeCoerce(versionMatch)) || ref.fileMD5 === mod.fileMD5;
+                    || ref.fileMD5 === mod.fileMD5
+                    || (safeCoerce(mod.version) === safeCoerce(versionMatch));
     if (!doesMatch) {
-      const versionCoerced = safeCoerce(mod.version);
+      const versionCoerced = coerceToSemver(mod.version);
       if (semver.valid(versionCoerced)) {
         if (!semver.satisfies(versionCoerced, versionMatch, { loose: true, includePrerelease: true })) {
           return false;

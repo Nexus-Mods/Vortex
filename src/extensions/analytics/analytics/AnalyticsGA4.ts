@@ -155,6 +155,23 @@ class AnalyticsGA4 {
     });
   }
 
+  /**
+   * 
+   * @param action
+   * @param payload 
+   * @returns 
+   */
+  public trackEventWithRawPayload(action: string, payload: object) {
+
+    if (!this.isUserSet()) return;
+
+    // we don't use these so we set them to empty so they don't show up in the analytics
+    payload['page_title'] = '';
+    payload['page_location'] = '';
+
+    this.ga4track.trackEvent(action, payload);    
+  }
+
   public setUserProperty(key:string, value: any) {
     // this is updated remotely the next time an event is sent
     this.ga4track.setUserProperty(key, value);

@@ -229,8 +229,8 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
                       fileName?: string,
                       allowInstall?: boolean): Promise<string> {
     const state: IState = api.getState();
-    const gameId = game !== null ? game.id : SITE_ID;
-    if ((game !== null)
+    const gameId = game?.id ?? SITE_ID;
+    if ((game != null && gameId !== SITE_ID)
         && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
@@ -435,7 +435,13 @@ export function onNexusDownload(api: IExtensionApi,
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
     log('debug', 'on nexus download', fileName);
     return ensureLoggedIn(api)
-      .then(() => downloadFile(api, nexus, game, modId, fileId, fileName, allowInstall))
+      .then(() => {
+        if (gameId === SITE_ID || game) {
+          return downloadFile(api, nexus, { ...game, downloadGameId: gameId }, modId, fileId, fileName, allowInstall);
+        } else {
+          return Promise.reject(new ProcessCanceled('Game not found'));
+        }
+      })
       .catch(UserCanceled, () => {
         return Promise.resolve(undefined);
       })
@@ -963,6 +969,17 @@ export function onCheckModsVersion(api: IExtensionApi,
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));
         });
+    }
+  };
+}
+
+
+export function sendMetric(api: IExtensionApi, nexus: Nexus) {
+  return async (eventType: string, entityType: string, entityId: string, metadata: Record<string, any>, clientString?: string) => {
+    try {
+      await nexus.sendMetric(eventType, entityType, entityId, metadata, clientString);
+    } catch {
+      // do nothing
     }
   };
 }

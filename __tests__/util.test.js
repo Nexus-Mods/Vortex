@@ -187,14 +187,14 @@ describe('nexusModsURL', () => {
       .toBe('https://users.nexusmods.com/foo/bar');
   });
   it('supports tracking campaigns', () => {
-    expect(util.nexusModsURL(['foo', 'bar'], { campaign: util.Campaign.ViewCollection }))
-      .toBe('https://www.nexusmods.com/foo/bar?utm_medium=vortex&utm_source=vortex&utm_campaign=view_collection');
+    expect(util.nexusModsURL(['foo', 'bar'], { campaign: util.Campaign.BuyPremium }))
+      .toBe('https://www.nexusmods.com/foo/bar?utm_source=vortex&utm_medium=app&utm_campaign=buy_premium');
   });
   it('supports additional parameters', () => {
     expect(util.nexusModsURL(['foo', 'bar'], {
-      campaign: util.Campaign.ViewCollection,
+      campaign: util.Campaign.BuyPremium,
       parameters: ['foo=bar'],
     }))
-      .toBe('https://www.nexusmods.com/foo/bar?foo=bar&utm_medium=vortex&utm_source=vortex&utm_campaign=view_collection');
+      .toBe('https://www.nexusmods.com/foo/bar?foo=bar&utm_source=vortex&utm_medium=app&utm_campaign=buy_premium');
   });
 });

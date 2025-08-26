@@ -6,12 +6,82 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 ## 1.15.0 - 2025-xx-xx
 
+- Updated Premium branding
+- Optimized user subscription checking 
 - Fixed download queue memory leak
-- Fixed warnings raised on startup for old bundled extensions. ([#17374](https://github.com/Nexus-Mods/Vortex/issues/17374))
+- Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
+- **collections**: Added collection install tracking for Nexus API use
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+
+## 1.14.11 - 2025-08-12
+
+- Fixed unhandled exception when launching games without installed collections/mods ([#18022](https://github.com/Nexus-Mods/Vortex/issues/18022))
+
+## 1.14.10 - 2025-08-06
+
+- Improved collection install tracking 
+
+## 1.14.9 - 2025-07-31
+
+- Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
+- **collections**: Fixed intermittent download version resolution error when installing collections.
+- **collections**: Greatly simplified checksum matching when exporting with replicate
+- **plugin-management**: fixed plugin info not retrieved if plugin contains no metadata (light plugins identification). ([#17962](https://github.com/Nexus-Mods/Vortex/issues/17962))
+
+## 1.14.8 - 2025-07-08
+
+- MSVC 2022 distributable will now install alongside Vortex to fix crashes for Windows 10 users
+- Fixed downloads going into the wrong game folder
+- The File Based Overrides not working as expected in some situations
+- **plugin-management**: Fixed plugins not auto-sorting on deployment
+
+## 1.14.7 - 2025-07-03
+
+- Fixes the recursive sorting loop. ([#17842](https://github.com/Nexus-Mods/Vortex/issues/17842), [#17810](https://github.com/Nexus-Mods/Vortex/issues/17810))
+- Updated libloot to 0.27.0
+
+## 1.14.6 - 2025-07-02
+
+- Fixed crash if reference version matching property is nullish. ([#17801](https://github.com/Nexus-Mods/Vortex/issues/17801))
+- Fixed wrong domain assigned to downloads if dlInfo is incorrect. ([#17808](https://github.com/Nexus-Mods/Vortex/issues/17808))
+- Reduced log spam for when installing collections
+- Fixed race condition causing file not found errors. ([#17799](https://github.com/Nexus-Mods/Vortex/issues/17799), [#17808](https://github.com/Nexus-Mods/Vortex/issues/17808))
+- **collections**: Use new urls when opening collection related pages
+- **witcher3**: Improved error handling when game is missing native xmls. ([#17776](https://github.com/Nexus-Mods/Vortex/issues/17776))
+- **plugin-management**: Fixed sorting action failing if an invalid plugin is detected
+- **modtype-bepinex**: Fixed couldn't find matching BIX asset error for pre 6.0.0 versions
+
+## 1.14.5 - 2025-06-25
+
+Fixed inability to download community extensions through the games page.
+
+## 1.14.4 - 2025-06-24
+
+- Fixed override instructions not being applied correctly
+- Fixed instances where collection claimed mods are uninstalled
+- Fixed dependency installation errors if game becomes unmanaged. ([#17685](https://github.com/Nexus-Mods/Vortex/issues/17685))
+- Added error handling for completed downloads that can't be processed. ([#17707](https://github.com/Nexus-Mods/Vortex/issues/17707))
+- Avoid render attempts of invalid LO entries. ([#17669](https://github.com/Nexus-Mods/Vortex/issues/17669))
+- Log attempts to find a mod using an undefined reference. ([#17680](https://github.com/Nexus-Mods/Vortex/issues/17680),[#17710](https://github.com/Nexus-Mods/Vortex/issues/17710))
+- Consolidated loadOrder db queries across FBLO API. ([#17703](https://github.com/Nexus-Mods/Vortex/issues/17703),[#17719](https://github.com/Nexus-Mods/Vortex/issues/17719))
+- Fixed potential attempts to start downloads that have already started. ([#17713](https://github.com/Nexus-Mods/Vortex/issues/17713))
+- Bypass file override checks if no instructions were generated. ([#17708](https://github.com/Nexus-Mods/Vortex/issues/17708))
+- **collections**: Fixed incorrect crc hash mismatch errors blocking collection publish. ([#17748](https://github.com/Nexus-Mods/Vortex/issues/17748))
+- **collections**: Fixed checksum exception when using replicate install mode. ([#17712](https://github.com/Nexus-Mods/Vortex/issues/17712))
+- **witcher3**: Improved error handling when merging xml files. ([#17700](https://github.com/Nexus-Mods/Vortex/issues/17700))
+
+## 1.14.3 - 2025-06-17
+
+- Load order entry restoration is now profile-based
+- Fixed fuzzy version mod reference check. ([#17676](https://github.com/Nexus-Mods/Vortex/issues/17676))
+- Fixed override instructions ignored by fomod installer
+- **collections**: Added checksum tests when exporting a collection with replicate. ([#17368](https://github.com/Nexus-Mods/Vortex/issues/17368))
+- **plugin-management**: Avoid sorting ghosted plugins. ([#17677](https://github.com/Nexus-Mods/Vortex/issues/17677))
+- **plugin-management**: Fixed mod name column not rendering correctly. ([#17678](https://github.com/Nexus-Mods/Vortex/issues/17678), [#17652](https://github.com/Nexus-Mods/Vortex/issues/17652))
+
 ## 1.14.2 - 2025-06-12
 
 - Fixed blacklist blocking deployment when file overrides defined

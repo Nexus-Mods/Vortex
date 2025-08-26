@@ -99,7 +99,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
 export function toNXMId(game: IGameStoredExt, gameId: string): string {
   // this is a bit of a workaround since "site" isn't and shouldn't be an
   // entry in the list of games (here or on the site)
-  if (game === null) {
+  if (game == null) {
     return SITE_ID;
   }
   if (!!game.downloadGameId && game.downloadGameId !== game.id) {
