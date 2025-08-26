@@ -19,7 +19,9 @@ ignore:
 !macro customInstall
   SetOutPath "$TEMP"
   File "D:\\a\\Vortex\\Vortex\\dist\\win-unpacked\\resources\\build\\VC_redist.x64.exe"
+  File "D:\\a\\Vortex\\Vortex\\dist\\win-unpacked\\resources\\build\\dotnet-runtime-6.0.36-win-x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
+  ExecWait '"$TEMP\\dotnet-runtime-6.0.36-win-x64.exe" /install /quiet /norestart'
 !macroend
 
 !macro customUnInstall
