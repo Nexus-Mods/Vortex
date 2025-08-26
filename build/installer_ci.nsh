@@ -24,6 +24,14 @@ ignore:
   ExecWait '"$TEMP\\dotnet-runtime-6.0.36-win-x64.exe" /install /quiet /norestart'
 !macroend
 
+!macro customFinish
+  MessageBox MB_YESNO "Installation completed successfully.$\r$\n$\r$\nA system restart is recommended to ensure all components work properly.$\r$\n$\r$\nWould you like to restart your computer now?" IDYES restart IDNO finish
+  restart:
+    Reboot
+  finish:
+    Nop
+!macroend
+
 !macro customUnInstall
   # if we are updating (i.e. auto uninstall before an install), don't ask for feedback
   ${ifNot} ${isUpdated}
