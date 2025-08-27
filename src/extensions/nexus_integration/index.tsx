@@ -51,6 +51,8 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 import FlexLayout from '../../controls/FlexLayout';
 import Image from '../../controls/Image';
+import { toast } from 'react-hot-toast';
+
 
 import {
   genCollectionIdAttribute,
@@ -1611,7 +1613,11 @@ function init(context: IExtensionContextExt): boolean {
       return Promise.resolve();
     }
 
+    toast.success('User info refreshed!');
+
     context.api.events.emit('refresh-user-info');
+
+
     return Promise.resolve();
   }, 1000, true, true);
 
