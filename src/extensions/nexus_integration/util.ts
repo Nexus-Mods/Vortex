@@ -1191,26 +1191,26 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
       log('info', '[update check] done');
       tStore.dispatch(dismissNotification('check-update-progress'));
       // if forceFull is 'silent' we show no notifications
-      if (forceFull === true) {
-        if (updatesMissed.length === 0) {
-          tStore.dispatch(addNotification({
-            id: 'check-update-progress',
-            type: 'info',
-            message: 'Full update check found no updates that the regular check didn\'t.',
-          }));
-        } else {
-          tStore.dispatch(addNotification({
-            id: 'check-update-progress',
-            type: 'info',
-            message:
-              'Full update found {{count}} updates that the regular check would have missed. '
-              + 'Please send in a feedback with your log attached to help debug the cause.',
-            replace: {
-              count: updatesMissed.length,
-            },
-          }));
-        }
-      }
+      // if (forceFull === true) {
+      //   if (updatesMissed.length === 0) {
+      //     tStore.dispatch(addNotification({
+      //       id: 'check-update-progress',
+      //       type: 'info',
+      //       message: 'Full update check found no updates that the regular check didn\'t.',
+      //     }));
+      //   } else {
+      //     tStore.dispatch(addNotification({
+      //       id: 'check-update-progress',
+      //       type: 'info',
+      //       message:
+      //         'Full update found {{count}} updates that the regular check would have missed. '
+      //         + 'Please send in a feedback with your log attached to help debug the cause.',
+      //       replace: {
+      //         count: updatesMissed.length,
+      //       },
+      //     }));
+      //   }
+      // }
     })
     .then((messages: string[]) => ({
       errorMessages: messages,
