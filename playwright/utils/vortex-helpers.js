@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import path from 'path';
 import fs from 'fs';
 import { _electron as electron } from '@playwright/test';

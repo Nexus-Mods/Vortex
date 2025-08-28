@@ -61,3 +61,5 @@ log.txt
 playwright/playwright-report/
 playwright/run-*
 playwright/test-results/
+
+playwright/.test-session

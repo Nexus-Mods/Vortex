@@ -4,6 +4,7 @@ import fs from 'fs';
 import { launchVortex } from '../utils/vortex-helpers.js';
 
 test('app launches successfully', async () => {
+  
   const { app, mainWindow, testRunDir } = await launchVortex('app-launch');
   
   try {
