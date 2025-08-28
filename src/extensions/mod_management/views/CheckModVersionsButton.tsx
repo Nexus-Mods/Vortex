@@ -108,7 +108,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     const updateAble = modIds.filter(modId => {
       const mod = this.props.mods[modId];
       const state = updateState(mod.attributes);
-      return state === 'update';
+      return state === 'update' && mod.type !== 'collection';
     });
     if (updateAble.length < modIds.length) {
       this.context.api.sendNotification({
