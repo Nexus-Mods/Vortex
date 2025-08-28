@@ -7,6 +7,7 @@ export async function waitForMainWindow(app) {
   const splashWindow = await app.firstWindow();
   let mainWindow = splashWindow;
   
+  // First, find the main window
   for (let attempts = 0; attempts < 30; attempts++) {
     const windows = app.windows();
     
@@ -43,10 +44,30 @@ export async function waitForMainWindow(app) {
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
+  // Now wait for React to fully render
   await mainWindow.waitForLoadState('domcontentloaded', { timeout: 20000 });
+  
+  // Wait for React components to mount and render
   await mainWindow.waitForFunction(() => {
-    return document.body.children.length > 2;
-  }, { timeout: 30000 });
+    // Check for React-specific indicators
+    const hasReact = window.React || window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    const hasContent = document.body.children.length > 2;
+    const hasVortexContent = document.body.textContent.includes('Vortex') || 
+                             document.querySelector('[class*="App"], [class*="application"], [data-testid]') !== null;
+    
+    return hasContent && (hasReact || hasVortexContent);
+  }, { timeout: 40000 }); // Increased to 40 seconds
+  
+  // Additional wait for async React components to fully render
+  console.log('Waiting for React components to fully render...');
+  await mainWindow.waitForTimeout(2000); // Increased from previous waits
+  
+  // Final check - wait for interactive elements to be ready
+  await mainWindow.waitForFunction(() => {
+    const buttons = document.querySelectorAll('button').length;
+    const interactiveElements = document.querySelectorAll('input, select, textarea, [role="button"]').length;
+    return buttons > 0 || interactiveElements > 0;
+  }, { timeout: 15000 });
   
   return mainWindow;
 }
