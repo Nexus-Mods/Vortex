@@ -1,0 +1,30 @@
+import { test, expect } from '@playwright/test';
+import path from 'path';
+import fs from 'fs';
+import { launchVortex } from '../utils/vortex-helpers.js';
+
+test('app launches successfully', async () => {
+  const { app, mainWindow, testRunDir } = await launchVortex('app-launch');
+  
+  try {
+    await mainWindow.screenshot({ path: path.join(testRunDir, 'app-loaded.png') });
+    
+    const finalInfo = await mainWindow.evaluate(() => ({
+      title: document.title,
+      url: window.location.href,
+      width: window.outerWidth,
+      height: window.outerHeight,
+      contentPreview: document.body.textContent.substring(0, 200)
+    }));
+    
+    console.log('App launch info:', finalInfo);
+    fs.writeFileSync(path.join(testRunDir, 'launch-info.json'), JSON.stringify(finalInfo, null, 2));
+    
+    expect(finalInfo.title).toBeTruthy();
+    expect(finalInfo.url).toContain('index.html');
+    
+  } finally {
+    await app.close();
+    console.log(`Test completed. Results in: ${testRunDir}`);
+  }
+});
