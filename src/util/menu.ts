@@ -3,6 +3,7 @@ import { IMainPageOptions } from '../types/IExtensionContext';
 import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
+import { isMacOS } from './platform';
 
 import * as RemoteT from '@electron/remote';
 import { webFrame } from 'electron';
@@ -100,7 +101,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({ type: 'separator' });
       viewMenu.push({
         label: 'Toggle Developer Tools',
-        accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+        accelerator: isMacOS() ? 'Alt+Command+I' : 'Ctrl+Shift+I',
         click(item, focusedWindow) {
           if (focusedWindow) {
             focusedWindow.webContents.toggleDevTools();
@@ -244,7 +245,11 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       { label: 'View', submenu: viewMenu },
       { label: 'Performance', submenu: performanceMenu },
     ]);
-    remote.Menu.setApplicationMenu(menu);
+    
+    // On macOS, don't override the native menu set by the main process
+    if (!isMacOS()) {
+      remote.Menu.setApplicationMenu(menu);
+    }
   };
   refresh();
   return refresh;

@@ -1,4 +1,5 @@
 import { log } from './log';
+import { isWindows, getCurrentPlatform } from './platform';
 
 import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { createHash } from 'crypto';
@@ -80,7 +81,7 @@ function makeRebuildFunc(orig) {
     const nodeModules = segments.slice(0, modulesIdx + 1).join(path.sep);
     const moduleName = segments[modulesIdx + 1];
     const modulePath = path.join(nodeModules, moduleName);
-    const versionString = `${process.platform}-${process.arch}-${process.versions.modules}`;
+    const versionString = `${getCurrentPlatform()}-${process.arch}-${process.versions.modules}`;
     const abiPath = path.resolve(modulePath, 'bin', versionString);
     const buildPath = path.join(modulePath, 'build', 'Release');
     fs.ensureDirSync(buildPath);
@@ -132,7 +133,7 @@ function makeRebuildFunc(orig) {
 
     // let nodeGyp = path.join(nodeModules, '.bin', 'node-gyp');
     let nodeGyp = 'yarn';
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       nodeGyp = nodeGyp + '.cmd';
     }
 

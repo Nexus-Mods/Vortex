@@ -9,6 +9,7 @@ import Modal from '../../../controls/Modal';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { TFunction } from '../../../util/i18n';
+import { isWindows } from '../../../util/platform';
 
 export interface IGameSelectionDialogProps {
   visible: boolean;
@@ -25,7 +26,7 @@ function GameSelectionDialog(props: IProps): JSX.Element {
   const [paths, setPaths] = React.useState(searchPaths);
 
   const addSearchPath = React.useCallback(() => {
-    setPaths([].concat(paths, process.platform === 'win32' ? 'C:' : '/'));
+    setPaths([].concat(paths, isWindows() ? 'C:' : '/'));
   }, [paths, setPaths]);
 
   const updateSearchPath = React.useCallback((idx: number, newPath: string) => {

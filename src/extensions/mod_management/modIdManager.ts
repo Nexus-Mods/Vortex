@@ -1,9 +1,11 @@
+import { getCurrentPlatform } from '../../util/platform';
+
 const invalidWindowsChars: string[] = [ '<',  '>', ':', '"', '/', '\\', '|', '?', '*' ];
 const invalidOSXChars: string[] = [ '/'];
 const invalidLinuxChars: string[] = [ '/' ];
 
 export function deriveModInstallName(archiveName: string, info: any) {
-  return maskFSInvalidChars(archiveName, process.platform);
+  return maskFSInvalidChars(archiveName, getCurrentPlatform());
 }
 
 function maskFSInvalidChars(archiveName: string, OS: string) {

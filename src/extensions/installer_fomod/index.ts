@@ -17,6 +17,7 @@ import { delayed, toPromise, truthy} from '../../util/util';
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 import { IMod } from '../mod_management/types/IMod';
+import { isWindows, getCurrentPlatform } from '../../util/platform';
 
 import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
 import { setInstallerSandbox } from './actions/settings';
@@ -42,7 +43,7 @@ import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
-import * as winapi from 'winapi-bindings';
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
@@ -433,7 +434,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
 
 async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
   
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     // currently only supported/tested on windows
     onFoundDotNet();
     return Promise.resolve(undefined);
@@ -592,7 +593,7 @@ class ConnectionIPC {
     let cliSocket: net.Socket;
 
     // on windows, retry using a network socket, maybe that will work
-    const pipe = (process.platform === 'win32') && !retry;
+    const pipe = isWindows() && !retry;
     const debug = false;
 
     const pipeId = pipe ? (debug ? 'debug' : shortid()) : undefined;
@@ -776,7 +777,7 @@ class ConnectionIPC {
                 TEMP: process.env['TEMP'],
               },
               nodeVersion: process.version,
-              platform: process.platform,
+              platform: getCurrentPlatform(),
               arch: process.arch
             });
 
@@ -851,10 +852,15 @@ class ConnectionIPC {
             }
           });
 
-          pid = await createIPC(
-            pipe, ipcId, onExit, onStdout,
-            securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
-            false);
+          const ipcHandle = await createIPC({
+            pipe,
+            ipcId,
+            onExit,
+            onStdout,
+            containerName: securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
+            debug: false
+          });
+          pid = ipcHandle.pid;
             // securityLevel === SecurityLevel.LowIntegrity);
           log('debug', 'FOMOD IPC connection created successfully', { pid, connectionId });
 
@@ -1566,7 +1572,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 20, wrapper('test', testSupportedScripted), wrapper('install', installWrap));
   context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
 
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
   } else {
     onFoundDotNet();

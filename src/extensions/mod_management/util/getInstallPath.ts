@@ -1,5 +1,6 @@
 import getVortexPath from '../../../util/getVortexPath';
 import makeCI from '../../../util/makeCaseInsensitive';
+import { isWindows } from '../../../util/platform';
 
 import * as os from 'os';
 import * as path from 'path';
@@ -30,7 +31,7 @@ function getInstallPath(pattern: string, gameId: string): string {
   // directory - which makes no fing sense since windows is supposed to have separate cwds
   // per drive and ... uuuuugh windows...
   if (!path.isAbsolute(result)
-      || ((process.platform === 'win32')
+      || (isWindows()
           && ((result[0] === '\\') && (result[1] !== '\\'))
               || (result[0] === '/') && (result[1] !== '/'))) {
     result = path.resolve(getVortexPath('userData'), result);

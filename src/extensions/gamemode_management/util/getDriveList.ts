@@ -1,4 +1,5 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
+import { isMacOS } from '../../../util/platform';
 
 // Define the type for drivelist's list function
 type DriveListFunc = () => Promise<Array<{
@@ -10,7 +11,7 @@ type DriveListFunc = () => Promise<Array<{
 
 function getDriveList(api: IExtensionApi): Promise<string[]> {
   // On macOS, use the mock implementation
-  if (process.platform === 'darwin') {
+  if (isMacOS()) {
     return Promise.resolve(['/']);
   }
 

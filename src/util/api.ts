@@ -52,6 +52,7 @@ import local from './local';
 import makeReactive from './makeReactive';
 import onceCB from './onceCB';
 import opn from './opn';
+import * as platform from './platform';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
@@ -145,6 +146,7 @@ export {
   opn,
   Overlayable,
   pad,
+  platform,
   ProcessCanceled,
   ReduxProp,
   readExtensibleDir,

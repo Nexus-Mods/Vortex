@@ -2,24 +2,27 @@ import { MissingInterpreter } from './CustomErrors';
 import { log } from './log';
 
 import Promise from 'bluebird';
-import * as winapiT from 'winapi-bindings';
-
 import {ipcMain, ipcRenderer, shell} from 'electron';
 
-let winapi: typeof winapiT;
+import { isWindows } from './platform';
+import * as winapiT from 'winapi-bindings';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
+// Platform detection utilities
+
 try {
   // tslint:disable-next-line:no-var-requires
-  winapi = require('winapi-bindings');
+  // Platform-specific initialization
 } catch (err) {
   // nop
 }
 
 // apparently the browser process is treated as the foreground process and only it
 // can bring a window to the foreground
-if (ipcMain !== undefined && (winapi?.ShellExecuteEx !== undefined)) {
+if (ipcMain !== undefined && winapi?.ShellExecuteEx) {
   ipcMain.on('__opn_win32', (evt, target) => {
     try {
-      winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+      winapi?.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
     } catch (err) {
       log('warn', 'failed to run', { target, error: err.message });
     }
@@ -35,7 +38,7 @@ function open(target: string, wait?: boolean): Promise<void> {
         return Promise.resolve();
       } else {
         try {
-          winapi.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
+          winapi?.ShellExecuteEx({ verb: 'open', show: 'foreground' as any, file: target, mask: ['flag_no_ui'] });
           return Promise.resolve();
         } catch (err) {
           return Promise.reject(err);

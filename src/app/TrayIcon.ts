@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../types/api';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
+import { isWindows, isMacOS } from '../util/platform';
 import { truthy } from '../util/util';
 
 import { app, BrowserWindow, Menu, Tray } from 'electron';
@@ -14,9 +15,7 @@ class TrayIcon {
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
-    this.mImagePath = path.resolve(
-        getVortexPath('assets'), 'images',
-        process.platform === 'win32' ? 'vortex.ico' : 'vortex.png');
+    this.setImage();
     try {
       this.initTrayIcon();
     } catch (err) {
@@ -42,6 +41,18 @@ class TrayIcon {
     }
   }
 
+  private setImage() {
+    if (isWindows()) {
+      this.mImagePath = path.join(getVortexPath('assets'), 'images', 'vortex.ico');
+    } else if (isMacOS()) {
+      // Use vortexTemplate.png for proper macOS tray icon support
+      this.mImagePath = path.join(getVortexPath('assets'), 'images', 'vortexTemplate.png');
+    } else {
+      this.mImagePath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
+    }
+    log('debug', 'Tray icon path set to:', this.mImagePath);
+  }
+
   public setMainWindow(window: BrowserWindow) {
     if (this.mTrayIcon.isDestroyed()) {
       return;
@@ -59,16 +70,23 @@ class TrayIcon {
   }
 
   private initTrayIcon() {
-    this.mTrayIcon = new Tray(this.mImagePath);
+    try {
+      log('debug', 'Creating tray icon with path:', this.mImagePath);
+      this.mTrayIcon = new Tray(this.mImagePath);
 
-    this.mTrayIcon.setContextMenu(Menu.buildFromTemplate([
-      { label: 'Start Game', click: () => this.startGame() },
-      { label: 'Quit', click: () => app.quit() },
-    ]));
+      this.mTrayIcon.setContextMenu(Menu.buildFromTemplate([
+        { label: 'Start Game', click: () => this.startGame() },
+        { label: 'Quit', click: () => app.quit() },
+      ]));
 
-    this.mApi.events.on('show-balloon',
-      (title: string, content: string) => this.showNotification(title, content));
-    this.mInitialized = true;
+      this.mApi.events.on('show-balloon',
+        (title: string, content: string) => this.showNotification(title, content));
+      this.mInitialized = true;
+      log('debug', 'Tray icon initialized successfully');
+    } catch (err) {
+      log('error', 'Failed to create tray icon', { path: this.mImagePath, error: err.message });
+      throw err;
+    }
   }
 
   private startGame() {

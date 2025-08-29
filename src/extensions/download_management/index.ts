@@ -8,6 +8,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
+import { isWindows } from '../../util/platform';
 import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
@@ -53,7 +54,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import { fileMD5 } from 'vortexmt';
-import winapi from 'winapi-bindings';
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
 import { ensureLoggedIn } from '../nexus_integration/util';
@@ -915,7 +916,7 @@ function init(context: IExtensionContextExt): boolean {
     shutdownPending,
     activeDownloads: selectors.activeDownloads(context.api.getState()),
     toggleShutdown: () => toggleShutdown(context.api),
-    }), () => process.platform === 'win32');
+    }), () => isWindows());
 
   context.registerTest('verify-downloads-transfers', 'gamemode-activated',
     () => checkPendingTransfer(context.api));

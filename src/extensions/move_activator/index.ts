@@ -17,7 +17,12 @@ import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
-import * as winapi from 'winapi-bindings';
+
+import * as winapiT from 'winapi-bindings';
+import { isWindows } from '../../util/platform';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
+// Platform detection utilities
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -103,7 +108,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: t => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = winapi?.GetVolumePathName(modPaths[typeId]);
             } catch (err) {
               log('warn', 'Failed to resolve volume path', { path: modPaths[typeId] });
             }

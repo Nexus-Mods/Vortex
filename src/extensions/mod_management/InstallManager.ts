@@ -153,6 +153,7 @@ import * as url from 'url';
 
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
+import { isWindows } from '../../util/platform';
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -1483,7 +1484,7 @@ class InstallManager {
   }
 
   private isBrowserAssistantError(error: string): boolean {
-    return (process.platform === 'win32')
+    return isWindows()
         && (error.indexOf('Roaming\\Browser Assistant') !== -1);
   }
 
@@ -1769,7 +1770,7 @@ class InstallManager {
 
         // Ensure we use windows path separators as scripted installers
         //  will sometime return *nix separators.
-        const sanitized = (process.platform === 'win32')
+        const sanitized = isWindows()
           ? destination.replace(sanitizeSep, path.sep)
           : destination;
         return (!isPathValid(sanitized, true));

@@ -12,7 +12,7 @@
   },
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
-    "fomod-installer": "Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup",
+    "fomod-installer": "file:../vendor/fomod-installer-mac",
     "vortexmt": "file:../vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
   },
@@ -20,10 +20,10 @@
     "@electron/remote": "^2.0.12",
     "cheerio": "1.0.0-rc.12",
     "bsdiff-node": "file:../vendor/bsdiff-node-js",
-    "glob": "7.2.3",
+    "glob": "file:../vendor/glob-shim",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#quota-modification",
-    "bbcode-to-react": "TanninOne/bbcode-to-react#0.2.8",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#master",
+    "bbcode-to-react": "^0.2.9",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
     "bootstrap-sass": "^3.4.1",
@@ -39,7 +39,7 @@
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.6.1",
-    "electron-redux": "TanninOne/electron-redux#v1.2.10",
+    "electron-redux": "file:../vendor/electron-redux-compat",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version#master",
@@ -119,6 +119,13 @@
     "**/@types/react": "^16.9.43",
     "@types/react-dom": "^16.9.4",
     "**/@types/react-dom": "^16.9.4",
-    "node-gyp": "^9.0.0"
+    "node-gyp": "^9.0.0",
+    "**/dir-compare/minimatch": "3.0.5",
+    "**/glob": "7.2.3",
+    "**/cheerio": "1.0.0-rc.12",
+    "vortexmt": "file:../vendor/vortexmt-js",
+    "**/bsdiff-node": "file:../vendor/bsdiff-node-js",
+    "**/electron-redux": "file:../vendor/electron-redux-compat",
+    "**/fomod-installer": "file:../vendor/fomod-installer-mac"
   }
 }

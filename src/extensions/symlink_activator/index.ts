@@ -4,6 +4,7 @@ import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
+import { isWindows } from '../../util/platform';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
 
@@ -243,7 +244,7 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   private isUnsupportedGame(gameId: string): boolean {
-    const unsupportedGames = (process.platform === 'win32')
+    const unsupportedGames = isWindows()
       ? ['nomanssky', 'stateofdecay', 'factorio']
       : ['nomanssky', 'stateofdecay'];
 

@@ -3,7 +3,21 @@ import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';
-import * as winapi from 'winapi-bindings';
+
+// Platform detection utilities
+function isWindows(): boolean {
+  return process.platform === 'win32';
+}
+
+function isMacOS(): boolean {
+  return process.platform === 'darwin';
+}
+
+function isLinux(): boolean {
+  return process.platform === 'linux';
+}
+
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequire) =>
@@ -35,6 +49,7 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   const JsonSocket = require('json-socket');
   // tslint:disable-next-line:no-shadowed-variable
   const path = require('path');
+
 
   client = new JsonSocket(new net.Socket());
   client.connect(path.join('\\\\?\\pipe', ipcPath));

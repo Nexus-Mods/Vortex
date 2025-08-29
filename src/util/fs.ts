@@ -19,6 +19,7 @@ import { TFunction } from './i18n';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { decodeSystemError } from './nativeErrors';
+import { isWindows } from './platform';
 import { restackErr, truthy } from './util';
 
 import PromiseBB from 'bluebird';
@@ -750,7 +751,7 @@ export function readlinkAsync(linkPath: string): PromiseBB<string> {
 function readlinkInt(linkPath: string, stackErr: Error, tries: number): PromiseBB<string> {
   return simfail(() => PromiseBB.resolve(fs.readlink(linkPath)))
     .catch(err => {
-      if ((err.code === 'UNKNOWN') && (process.platform === 'win32')) {
+      if ((err.code === 'UNKNOWN') && isWindows()) {
         // on windows this return UNKNOWN if the file is not a link.
         // of course there could be a thousand other things returning UNKNOWN but we'll never
         // know, will we? libuv? will we?
@@ -810,7 +811,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
     vortexRun.runElevated(ipcPath, func, parameters)
       .catch(err => {
         if ((err.code === 5)
-            || ((process.platform === 'win32') && (err.systemCode === 1223))) {
+            || (isWindows() && (err.systemCode === 1223))) {
           // this code is returned when the user rejected the UAC dialog. Not currently
           // aware of another case
           reject(new UserCanceled());
@@ -906,7 +907,7 @@ export function ensureDirWritableAsync(dirPath: string,
 }
 
 export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB<void> {
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     // This is a *nix only function.
     return PromiseBB.resolve();
   }
@@ -949,7 +950,7 @@ export function changeFileAttributes(filePath: string,
 
 export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
   const stackErr = new Error();
-  const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
+  const wantedAttributes = isWindows() ? parseInt('0666', 8) : parseInt('0600', 8);
   return PromiseBB.resolve(fs.stat(filePath)).then(stat => {
     if (!stat.isFile()) {
       const err: NodeJS.ErrnoException =
@@ -1026,7 +1027,7 @@ export function forcePerm<T>(t: TFunction,
     .catch(err => {
       const fileToAccess = filePath !== undefined ? filePath : err.path;
       if ((['EPERM', 'EACCES'].indexOf(err.code) !== -1) || (err.systemCode === 5)) {
-        const wantedAttributes = process.platform === 'win32'
+        const wantedAttributes = isWindows()
           ? parseInt('0666', 8)
           : parseInt('0600', 8);
         return fs.stat(fileToAccess)

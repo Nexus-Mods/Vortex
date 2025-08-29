@@ -5,19 +5,43 @@
     <meta charset="UTF-8">
     <title>Vortex</title>
     <style>
-    .fade-out {
+    body {
+      margin: 0;
+      padding: 0;
+      width: 476px;
+      height: 167px;
+      overflow: hidden;
+      background-color: transparent;
+      display: table-cell;
+    }
+    
+    .splash-image {
       opacity: 1;
       -webkit-user-drag: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-image: url('assets/images/splash.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    /* Use high-resolution image for retina displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .splash-image {
+        background-image: url('assets/images/splash@2x.png');
+      }
+    }
+    
+    /* Fallback background color for GPU disabled mode */
+    body.disable-gpu {
+      background-color: #d78f46;
     }
     </style>
 </head>
 
-<body id="bg" style="background-color: transparent; overflow: visible; display: table-cell; overflow: hidden">
-  <img id="splash" class="fade-out" src="assets/images/splash.png" />
-
-  <script>
-    require('./splash.js');
-  </script>
-
+<body id="bg">
+  <div class="splash-image"></div>
 </body>
 </html>

@@ -20,6 +20,7 @@ import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
+import { isWindows, isMacOS } from '../util/platform';
 import presetManager from '../util/PresetManager';
 import { StateError } from '../util/reduxSanity';
 import startupSettings from '../util/startupSettings';
@@ -29,6 +30,7 @@ import { allHives, createFullStateBackup, createVortexStore, currentStatePath, e
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 import { isMajorDowngrade, replaceRecursive, spawnSelf, timeout, truthy } from '../util/util';
+import { initializeNativeThemeManager } from '../util/nativeThemeManager';
 
 import { addNotification, setCommandLine, showDialog } from '../actions';
 
@@ -49,11 +51,9 @@ import * as permissionsT from 'permissions';
 import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
-import * as winapiT from 'winapi-bindings';
-
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 const permissions = lazyRequire<typeof permissionsT>(() => require('permissions'));
-const winapi = lazyRequire<typeof winapiT>(() => require('winapi-bindings'));
+const winapi = isWindows() ? lazyRequire(() => (isWindows() ? require('winapi-bindings') : undefined)) : undefined;
 
 const STATE_CHUNK_SIZE = 128 * 1024;
 
@@ -184,6 +184,18 @@ class Application {
       log('debug', 'window created');
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
+      
+      // Initialize native theme manager after store and extensions are ready
+      try {
+        initializeNativeThemeManager(this.mExtensions.getApi());
+        log('debug', 'native theme manager initialized');
+      } catch (error) {
+        log('warn', 'failed to initialize native theme manager', error.message);
+      }
+      
+      // Show the main window after everything is ready
+      this.showMainWindow(this.mArgs?.startMinimized);
+      
       // in the past we would process some command line arguments the same as we do when
       // they get passed in from a second instance but that was inconsistent
       // because we don't use most arguments from secondary instances and the
@@ -220,7 +232,7 @@ class Application {
           if (this.mDeinitCrashDump !== undefined) {
             this.mDeinitCrashDump();
           }
-          if (process.platform !== 'darwin') {
+          if (!isMacOS()) {
             app.quit();
           }
         });
@@ -238,6 +250,12 @@ class Application {
     });
 
     app.whenReady().then(() => {
+      // Set the dock icon on macOS
+      if (isMacOS()) {
+        const iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
+        app.dock.setIcon(iconPath);
+      }
+
       const vortexPath = process.env.NODE_ENV === 'development'
           ? 'vortex_devel'
           : 'vortex';
@@ -245,7 +263,7 @@ class Application {
       // if userData specified, use it
       let userData = args.userData
           // (only on windows) use ProgramData from environment
-          ?? ((args.shared && process.platform === 'win32')
+          ?? ((args.shared && isWindows())
             ? path.join(process.env.ProgramData, 'vortex')
             // this allows the development build to access data from the
             // production version and vice versa
@@ -446,7 +464,7 @@ class Application {
   }
 
   private isUACEnabled(): Promise<boolean> {
-    if (process.platform !== 'win32') {
+    if (!isWindows()) {
       return Promise.resolve(true);
     }
 
@@ -716,7 +734,7 @@ class Application {
   }
 
   private multiUserPath() {
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       const muPath = path.join(process.env.ProgramData, 'vortex');
       try {
         fs.ensureDirSync(muPath);
@@ -1051,7 +1069,7 @@ class Application {
     //  issues before starting up Vortex.
     // On Windows:
     //  - Ensure we're able to retrieve the user's documents folder.
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       try {
         const documentsFolder = app.getPath('documents');
         return (documentsFolder !== '')

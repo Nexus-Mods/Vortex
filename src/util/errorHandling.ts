@@ -10,6 +10,7 @@ import { fallbackTFunc } from './i18n';
 import { log } from './log';
 import { bundleAttachment } from './message';
 import opn from './opn';
+import { isWindows, getCurrentPlatform } from './platform';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
@@ -44,11 +45,11 @@ interface IErrorContext {
 const globalContext: IErrorContext = {};
 
 function isWine() {
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     return false;
   }
   try {
-    const winapi = require('winapi-bindings');
+    const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
     return winapi.IsThisWine();
   } catch (err) {
     return false;
@@ -65,7 +66,7 @@ function createReport(type: string, error: IError, context: IErrorContext,
     `#### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform} ${os.release()} ${isWine() ? '(Wine)' : ''} |
+|Platform | ${getCurrentPlatform()} ${os.release()} ${isWine() ? '(Wine)' : ''} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |
 |Process | ${proc} |`,

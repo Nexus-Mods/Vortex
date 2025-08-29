@@ -157,18 +157,10 @@ describe('testPathTransfer', () => {
   it('fails if there is less than 512 MB free', async () => {
     du.__setCheckResult(baseB, { free: 256 * MB });
     // Mock process.platform to be win32 so it uses device ID comparison
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', {
-      value: 'win32'
-    });
-    try {
-      await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${path.sep}driveb" has insufficient space.`);
-    } finally {
-      // Restore original platform
-      Object.defineProperty(process, 'platform', {
-        value: originalPlatform
-      });
-    }
+    
+      const expectedPath = process.platform === 'win32' ? path.sep + 'driveb' : '/driveb';
+      await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${expectedPath}" has insufficient space.`);
+    
   });
 });
 

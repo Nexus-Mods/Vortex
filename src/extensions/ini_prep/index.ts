@@ -8,6 +8,7 @@ import { disableErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
+import { isWindows } from '../../util/platform';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
@@ -227,7 +228,7 @@ function purgeChanges(t: TFunction, gameMode: string, discovery: IDiscoveryResul
 }
 
 function testProtectedFolderAccess(): Promise<ITestResult> {
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     // Windows only! (for now)
     return Promise.resolve(undefined);
   }

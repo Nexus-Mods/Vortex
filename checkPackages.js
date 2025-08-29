@@ -2,9 +2,11 @@ const lockfile = require('@yarnpkg/lockfile');
 const fs = require('fs');
 
 const develLock = lockfile.parse(fs.readFileSync('yarn.lock', { encoding: 'utf8' })).object;
-const develPackage = JSON.parse(fs.readFileSync('package.json', { encoding: 'utf8' })).dependencies;
+const develPackageJson = JSON.parse(fs.readFileSync('package.json', { encoding: 'utf8' }));
+const develPackage = { ...develPackageJson.dependencies, ...develPackageJson.optionalDependencies };
 const releaseLock = lockfile.parse(fs.readFileSync('app/yarn.lock', { encoding: 'utf8' })).object;
-const releasePackage = JSON.parse(fs.readFileSync('app/package.json', { encoding: 'utf8' })).dependencies;
+const releasePackageJson = JSON.parse(fs.readFileSync('app/package.json', { encoding: 'utf8' }));
+const releasePackage = { ...releasePackageJson.dependencies, ...releasePackageJson.optionalDependencies };
 
 function checkVersions() {
   let valid = true;

@@ -22,6 +22,7 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-indexlock",
       "path": "extensions/gamebryo-plugin-indexlock",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-indexlock"
@@ -39,6 +40,7 @@
       "type": "build-copy",
       "name": "gamebryo-test-settings",
       "path": "extensions/gamebryo-test-settings",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-test-settings"
@@ -81,6 +83,7 @@
       "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
       "path": "extensions/gamebryo-archive-invalidation",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-invalidation"
@@ -90,7 +93,7 @@
       "name": "gamestore-gog",
       "path": "extensions/gamestore-gog",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "../../../src/util/platform.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-gog"
     },
     {

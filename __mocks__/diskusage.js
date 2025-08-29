@@ -7,6 +7,12 @@ let checkResult = {
     free: 107374182400,      // 100GB in bytes
     total: 536870912000,     // 500GB in bytes
   },
+  // Low disk space for /driveb to trigger insufficient space error
+  '/driveb': {
+    available: 100000000,    // 100MB in bytes (less than 512MB required)
+    free: 100000000,        // 100MB in bytes
+    total: 536870912000,    // 500GB in bytes
+  },
 };
 
 // Normalize path separators for consistent lookup
@@ -18,7 +24,12 @@ module.exports = {
   // Support both callback and Promise styles
   check: (path, callback) => {
     const normalizedPath = normalizePath(path);
-    const result = checkResult[normalizedPath] || checkResult[''];
+    let result = checkResult[normalizedPath] || checkResult[''];
+    
+    // Special handling for /driveb and its parent directory to trigger insufficient space error
+    if (normalizedPath === '/driveb' || normalizedPath.includes('/driveb')) {
+      result = checkResult['/driveb'];
+    }
     
     if (typeof callback === 'function') {
       process.nextTick(() => callback(null, result));

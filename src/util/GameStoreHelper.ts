@@ -4,7 +4,6 @@ import * as path from 'path';
 import * as fs from '../util/fs';
 import { log } from '../util/log';
 
-import * as winapi from 'winapi-bindings';
 import { makeExeId } from '../reducers/session';
 
 import { getGameStores } from '../extensions/gamemode_management/util/getGame';
@@ -15,6 +14,12 @@ import { IGameStoreEntry } from '../types/IGameStoreEntry';
 import { IExtensionApi } from '../types/IExtensionContext';
 import getNormalizeFunc from './getNormalizeFunc';
 import { toBlue } from './util';
+
+import { isWindows } from './platform';
+import * as winapiT from 'winapi-bindings';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
+// Platform detection utilities
 
 type SearchType = 'name' | 'id';
 
@@ -94,7 +99,7 @@ class GameStoreHelper {
     }
 
     try {
-      const instPath = winapi.RegGetValue(chunked[0] as any, chunked[1], chunked[2]);
+      const instPath = winapi?.RegGetValue?.(chunked[0] as any, chunked[1], chunked[2]);
       if (!instPath || (instPath.type !== 'REG_SZ')) {
         throw new Error('empty or invalid registry key');
       }
@@ -299,7 +304,7 @@ class GameStoreHelper {
   }
 
   private isStoreRunning(storeExecPath: string) {
-    const runningProcesses = winapi.GetProcessList();
+    const runningProcesses = winapi?.GetProcessList();
     const exeId = makeExeId(storeExecPath);
     return runningProcesses.find(runningProc =>
       (exeId === runningProc.exeFile.toLowerCase())) !== undefined;

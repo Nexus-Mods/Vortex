@@ -11,7 +11,12 @@ import { setdefault } from '../../../util/util';
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
-import * as winapi from 'winapi-bindings';
+
+import * as winapiT from 'winapi-bindings';
+import { isWindows } from '../../../util/platform';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
+// Platform detection utilities
 
 class ProcessMonitor {
   private mTimer: NodeJS.Timeout;
@@ -24,7 +29,7 @@ class ProcessMonitor {
   }
 
   public start(): void {
-    if (winapi.GetProcessList === undefined) {
+    if (winapi?.GetProcessList === undefined) {
       // Linux, MacOS
       return;
     }
@@ -40,6 +45,7 @@ class ProcessMonitor {
 
     if (process.type === 'renderer') {
       this.mWindow = require('@electron/remote').getCurrentWindow();
+
     }
 
     log('debug', 'start process monitor');
@@ -74,15 +80,15 @@ class ProcessMonitor {
   }
 
   private doCheck(): void {
-    const processes = winapi.GetProcessList();
+    const processes = winapi?.GetProcessList();
 
-    const byPid: { [pid: number]: winapi.ProcessEntry } = processes.reduce((prev, proc) => {
+    const byPid: { [pid: number]: any } = processes.reduce((prev, proc) => {
       prev[proc.processID] = proc;
       return prev;
     }, {});
 
-    const byName: { [exeId: string]: winapi.ProcessEntry[] } =
-      processes.reduce((prev: { [exeId: string]: winapi.ProcessEntry[] }, entry) => {
+    const byName: { [exeId: string]: any[] } =
+      processes.reduce((prev: { [exeId: string]: any[] }, entry) => {
         setdefault(prev, entry.exeFile.toLowerCase(), []).push(entry);
         return prev;
       }, {});
@@ -90,7 +96,7 @@ class ProcessMonitor {
 
     const vortexPid = process.pid;
 
-    const isChildProcess = (proc: winapi.ProcessEntry, visited: Set<number>): boolean => {
+    const isChildProcess = (proc: any, visited: Set<number>): boolean => {
       if ((proc === undefined) || (proc.parentProcessID === 0)) {
         return false;
       } else if (visited.has(proc.parentProcessID)) {
@@ -140,7 +146,7 @@ class ProcessMonitor {
         ? exeRunning
         : exeRunning.filter(proc => isChildProcess(proc, new Set()));
       const match = candidates.find(exe => {
-        const modules = winapi.GetModuleList(exe.processID);
+        const modules = winapi?.GetModuleList(exe.processID);
 
         return (modules.length > 0)
             && (modules[0].exePath.toLowerCase() === exePath.toLowerCase());

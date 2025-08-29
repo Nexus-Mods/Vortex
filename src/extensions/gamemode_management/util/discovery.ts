@@ -11,6 +11,7 @@ import GameStoreHelper from '../../../util/GameStoreHelper';
 import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
+import { isWindows } from '../../../util/platform';
 import StarterInfo from '../../../util/StarterInfo';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -26,7 +27,7 @@ import Bluebird from 'bluebird';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import * as winapi from 'winapi-bindings';
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (gameId: string, result: IDiscoveredTool) => void;
@@ -661,7 +662,7 @@ export async function suggestStagingPath(api: IExtensionApi, gameId: string): Pr
   let suggestion: string;
 
   if ((statModPath.dev === statUserData.dev)
-      || (process.platform !== 'win32')) {
+      || !isWindows()) {
     // main mod folder is on same drive as userdata, use a subdirectory below that
     suggestion = path.join('{USERDATA}', '{game}', 'mods');
   } else {

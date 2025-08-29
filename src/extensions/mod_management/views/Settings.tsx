@@ -19,6 +19,7 @@ import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import { isWindows } from '../../../util/platform';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
@@ -50,7 +51,7 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import * as winapi from 'winapi-bindings';
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import { ProvidePlugin } from 'webpack';
 
 interface IBaseProps {
@@ -675,7 +676,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private isPathSensible(input: string): boolean {
     const sanitizeSep = new RegExp('/', 'g');
     const trimTrailingSep = new RegExp(`\\${path.sep}*$`, 'g');
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       // Ensure the user isn't trying to set the partition's root path
       //  as the staging folder.
       input = input.replace(sanitizeSep, path.sep).replace(trimTrailingSep, '');

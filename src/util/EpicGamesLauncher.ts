@@ -1,17 +1,19 @@
 import { log } from './log';
+import { isWindows, isMacOS, isLinux } from './platform';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import * as winapiT from 'winapi-bindings';
+const winapiT = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import * as fs from './fs';
 import { getSafe } from './storeHelper';
+import getVortexPath from './getVortexPath';
 
 import opn from './opn';
 
 import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 import lazyRequire from './lazyRequire';
 
-const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
+const winapi: typeof winapiT = lazyRequire(() => (isWindows() ? require('winapi-bindings') : undefined));
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
@@ -32,20 +34,40 @@ class EpicGamesLauncher implements IGameStore {
   private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
-    if (process.platform === 'win32') {
+    this.mDataPath = this.getEpicDataPath();
+  }
+
+  private getEpicDataPath(): Promise<string> {
+    if (isWindows()) {
       try {
         // We find the launcher's dataPath
         const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
           'AppDataPath');
-        this.mDataPath = Promise.resolve(epicDataPath.value as string);
+        return Promise.resolve(epicDataPath.value as string);
       } catch (err) {
         log('info', 'Epic games launcher not found', { error: err.message });
-        this.mDataPath = Promise.resolve(undefined);
+        return Promise.resolve(undefined);
       }
+    } else if (isMacOS()) {
+      // macOS: Epic Games Launcher stores data in ~/Library/Application Support/Epic
+      const epicDataPath = path.join(getVortexPath('home'), 'Library', 'Application Support', 'Epic');
+      return fs.statAsync(epicDataPath)
+        .then(() => epicDataPath)
+        .catch(() => {
+          log('info', 'Epic games launcher not found on macOS');
+          return undefined;
+        });
     } else {
-      // TODO: Is epic launcher even available on non-windows platforms?
-      this.mDataPath = Promise.resolve(undefined);
+      // Linux: Epic Games Launcher is not officially supported, but we can check for Heroic Games Launcher
+      // Heroic stores Epic games data in ~/.config/heroic
+      const heroicDataPath = path.join(getVortexPath('home'), '.config', 'heroic');
+      return fs.statAsync(heroicDataPath)
+        .then(() => heroicDataPath)
+        .catch(() => {
+          log('info', 'Epic games launcher (via Heroic) not found on Linux');
+          return undefined;
+        });
     }
   }
 
@@ -126,16 +148,51 @@ class EpicGamesLauncher implements IGameStore {
 
   public getGameStorePath(): Promise<string> {
     const getExecPath = () => {
-      try {
-        const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-          'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
-          '(Default)');
-        const val = epicLauncher.value;
-        this.mLauncherExecPath = val.toString().split(',')[0];
-        return Promise.resolve(this.mLauncherExecPath);
-      } catch (err) {
-        log('info', 'Epic games launcher not found', { error: err.message });
-        return Promise.resolve(undefined);
+      if (isWindows()) {
+        try {
+          const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+            'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
+            '(Default)');
+          const val = epicLauncher.value;
+          this.mLauncherExecPath = val.toString().split(',')[0];
+          return Promise.resolve(this.mLauncherExecPath);
+        } catch (err) {
+          log('info', 'Epic games launcher not found', { error: err.message });
+          return Promise.resolve(undefined);
+        }
+      } else if (isMacOS()) {
+        // macOS: Epic Games Launcher is typically in /Applications
+        const epicAppPath = '/Applications/Epic Games Launcher.app';
+        return fs.statAsync(epicAppPath)
+          .then(() => {
+            this.mLauncherExecPath = epicAppPath;
+            return epicAppPath;
+          })
+          .catch(() => {
+            log('info', 'Epic games launcher not found in /Applications');
+            return undefined;
+          });
+      } else {
+        // Linux: Check for Heroic Games Launcher
+        return Promise.resolve('/usr/bin/heroic')
+          .then(heroicPath => fs.statAsync(heroicPath)
+            .then(() => {
+              this.mLauncherExecPath = heroicPath;
+              return heroicPath;
+            })
+            .catch(() => {
+              // Try flatpak installation
+              const flatpakPath = '/var/lib/flatpak/exports/bin/com.heroicgameslauncher.hgl';
+              return fs.statAsync(flatpakPath)
+                .then(() => {
+                  this.mLauncherExecPath = flatpakPath;
+                  return flatpakPath;
+                })
+                .catch(() => {
+                  log('info', 'Heroic games launcher not found');
+                  return undefined;
+                });
+            }));
       }
     };
 
@@ -145,11 +202,14 @@ class EpicGamesLauncher implements IGameStore {
   }
 
   private executable() {
-    // TODO: This probably won't work on *nix
-    //  test and fix.
-    return process.platform === 'win32'
-      ? 'EpicGamesLauncher.exe'
-      : 'EpicGamesLauncher';
+    if (isWindows()) {
+      return 'EpicGamesLauncher.exe';
+    } else if (isMacOS()) {
+      return 'Epic Games Launcher.app';
+    } else {
+      // Linux: Use Heroic Games Launcher as alternative
+      return 'heroic';
+    }
   }
 
   private parseManifests(): Promise<IGameStoreEntry[]> {
@@ -160,14 +220,26 @@ class EpicGamesLauncher implements IGameStore {
           return Promise.resolve([]);
         }
 
-        manifestsLocation = path.join(dataPath, 'Manifests');
-        return fs.readdirAsync(manifestsLocation);
+        if (isLinux()) {
+          // For Heroic Games Launcher on Linux, check for Epic games in the gog_store/installed.json
+          manifestsLocation = path.join(dataPath, 'store_cache', 'legendary_library.json');
+          return this.parseHeroicManifests(manifestsLocation);
+        } else {
+          // Windows and macOS use the standard Epic manifests
+          manifestsLocation = path.join(dataPath, 'Manifests');
+          return fs.readdirAsync(manifestsLocation);
+        }
       })
       .catch({ code: 'ENOENT' }, err => {
         log('info', 'Epic launcher manifests could not be found', err.code);
         return Promise.resolve([]);
       })
       .then(entries => {
+        if (isLinux()) {
+          // Already parsed in parseHeroicManifests
+          return entries;
+        }
+        
         const manifests = entries.filter(entry => entry.endsWith(ITEM_EXT));
         return Promise.map(manifests, manifest =>
           fs.readFileAsync(path.join(manifestsLocation, manifest), { encoding: 'utf8' })
@@ -204,9 +276,41 @@ class EpicGamesLauncher implements IGameStore {
         return Promise.resolve([]);
       });
   }
+
+  private parseHeroicManifests(manifestPath: string): Promise<IGameStoreEntry[]> {
+    return fs.readFileAsync(manifestPath, { encoding: 'utf8' })
+      .then(data => {
+        try {
+          const parsed = JSON.parse(data);
+          const games: IGameStoreEntry[] = [];
+          
+          // Heroic stores Epic games in a different format
+          if (Array.isArray(parsed)) {
+            for (const game of parsed) {
+              if (game.app_name && game.title && game.install_path) {
+                games.push({
+                  appid: game.app_name,
+                  name: game.title,
+                  gamePath: game.install_path,
+                  gameStoreId: STORE_ID
+                });
+              }
+            }
+          }
+          
+          return Promise.resolve(games);
+        } catch (err) {
+          log('error', 'Cannot parse Heroic Games manifest', err);
+          return Promise.resolve([]);
+        }
+      })
+      .catch(err => {
+        log('info', 'Heroic Games manifest not found', err);
+        return Promise.resolve([]);
+      });
+  }
 }
 
-const instance: IGameStore =
-  process.platform === 'win32' ?  new EpicGamesLauncher() : undefined;
+const instance: IGameStore = new EpicGamesLauncher();
 
 export default instance;

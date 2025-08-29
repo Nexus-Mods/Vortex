@@ -9,6 +9,7 @@ import { IErrorOptions } from '../../../types/IExtensionContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import { isLinux } from '../../../util/platform';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';
@@ -71,14 +72,14 @@ class Settings extends ComponentEx<IProps, {}> {
           <Toggle
             checked={associated}
             onToggle={this.associate}
-            disabled={process.platform === 'linux'}
+            disabled={isLinux()}
           >
             {t('Handle Mod Manager Download buttons on')} <a onClick={this.openNexus}>nexusmods.com</a> (nxm:// links)
           </Toggle>
           {
             // on linux this is handled by the desktop environment so you'd have to implement
             // separate solutions for kde, gnome, xfce, ...
-            (process.platform === 'linux')
+            isLinux()
             ? <HelpBlock><Alert bsStyle='info'>{t('Not supported on Linux')}</Alert></HelpBlock>
             : null
           }

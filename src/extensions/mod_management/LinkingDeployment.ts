@@ -6,6 +6,7 @@ import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
+import { isWindows } from '../../util/platform';
 import { activeGameId } from '../../util/selectors';
 import { truthy } from '../../util/util';
 
@@ -43,7 +44,7 @@ interface IDeploymentContext {
  */
 abstract class LinkingActivator implements IDeploymentMethod {
   public static OLD_TAG_NAME = '__delete_if_empty';
-  public static NEW_TAG_NAME = process.platform === 'win32'
+  public static NEW_TAG_NAME = isWindows()
     ? '__folder_managed_by_vortex'
     : '.__folder_managed_by_vortex';
 

@@ -10,7 +10,12 @@ import { IToDo } from './IToDo';
 
 import { TFunction } from 'i18next';
 import * as React from 'react';
-import * as winapi from 'winapi-bindings';
+
+import * as winapiT from 'winapi-bindings';
+import { isWindows } from '../../util/platform';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
+// Platform detection utilities
 
 const ONE_GB = 1024 * 1024 * 1024;
 const MIN_DISK_SPACE = 200 * ONE_GB;
@@ -28,7 +33,7 @@ function minDiskSpace(required: number, key: string) {
       try {
         freeSpace[key] = {
           path: checkPath,
-          free: winapi.GetDiskFreeSpaceEx(checkPath).freeToCaller,
+          free: winapi?.GetDiskFreeSpaceEx(checkPath).freeToCaller,
         };
       } catch (err) {
         return false;
@@ -89,7 +94,7 @@ function todos(api: IExtensionApi): IToDo[] {
       text: 'Downloads are on drive',
       value: (t: TFunction, props: any) => {
         try {
-          return winapi.GetVolumePathName(props.dlPath);
+          return winapi?.GetVolumePathName(props.dlPath);
         } catch (err) {
           err.dlPath = props.dlPath;
           throw err;
@@ -115,7 +120,7 @@ function todos(api: IExtensionApi): IToDo[] {
           if (props.instPath === undefined) {
             return t('<No staging folder>');
           }
-          return winapi.GetVolumePathName(props.instPath);
+          return winapi?.GetVolumePathName(props.instPath);
         } catch (err) {
           return t('<Invalid Drive>');
         }

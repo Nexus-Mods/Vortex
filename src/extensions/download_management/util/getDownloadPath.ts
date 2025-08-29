@@ -1,5 +1,6 @@
 import getVortexPath from '../../../util/getVortexPath';
 import makeCI from '../../../util/makeCaseInsensitive';
+import { isWindows } from '../../../util/platform';
 
 import * as os from 'os';
 import * as path from 'path';
@@ -27,7 +28,7 @@ function getDownloadPath(pattern: string, gameId?: string): string {
   // on windows a path of the form \foo\bar will be identified as absolute
   // because why would anything make sense on windows?
   if (!path.isAbsolute(result)
-      || ((process.platform === 'win32')
+      || (isWindows()
           && ((result[0] === '\\') && (result[1] !== '\\'))
               || (result[0] === '/') && (result[1] !== '/'))) {
     result = path.resolve(getVortexPath('userData'), result);

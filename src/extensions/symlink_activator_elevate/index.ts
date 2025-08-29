@@ -1,3 +1,8 @@
+import { isWindows } from '../../util/platform';
+import * as winapiT from 'winapi-bindings';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+const winapiRemote: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+
 /* eslint-disable */
 import { clearUIBlocker, setUIBlocker } from '../../actions';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
@@ -34,7 +39,6 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
-import * as winapi from 'winapi-bindings';
 import { enableUserSymlinks } from './actions';
 
 const TASK_NAME = 'Vortex Symlink Deployment';
@@ -42,21 +46,21 @@ const SCRIPT_NAME = 'vortexSymlinkService.js';
 const IPC_ID = 'vortex_elevate_symlink';
 
 function monitorConsent(onDisappeared: () => void): () => void {
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     // on non-windows platforms we don't need to do any of this.
     return;
   }
 
   const doCheck = () => {
-    const consentExe = winapi.GetProcessList().find(proc => proc.exeFile === 'consent.exe');
+    const consentExe = winapi?.GetProcessList().find(proc => proc.exeFile === 'consent.exe');
     if (consentExe === undefined) {
       // no consent.exe, assume it finished
       // still, wait a bit longer before doing anything so the "success" code has a chance to run
       nextCheck = setTimeout(onDisappeared, 5000);
     } else {
       // consent exe still running, bring its window to front and reschedule test
-      const windows = winapi.GetProcessWindowList(consentExe.processID);
-      windows.forEach(win => winapi.SetForegroundWindow(win));
+      const windows = winapi?.GetProcessWindowList(consentExe.processID);
+      windows.forEach(win => winapi?.SetForegroundWindow(win));
 
       nextCheck = setTimeout(doCheck, 1000);
     }
@@ -215,7 +219,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId?: string): IUnavailableReason {
-    if (process.platform !== 'win32') {
+    if (!isWindows()) {
       return { description: t => t('Elevation not required on non-windows systems') };
     }
     if (gameId === undefined) {
@@ -504,7 +508,7 @@ class DeploymentMethod extends LinkingDeployment {
 
       if (useTask) {
         try {
-          winapi.RunTask(TASK_NAME);
+          winapi?.RunTask(TASK_NAME);
         } catch (err) {
           this.api.showErrorNotification('Failed to deploy using symlinks',
             'You have enabled the workaround for symlink deployment without elevation '
@@ -592,7 +596,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private isUnsupportedGame(gameId: string): boolean {
-    const unsupportedGames = (process.platform === 'win32')
+    const unsupportedGames = isWindows()
       ? ['nomanssky', 'stateofdecay', 'factorio']
       : ['nomanssky', 'stateofdecay'];
 
@@ -702,7 +706,6 @@ function installTask(scriptPath: string) {
     : '';
 
   return runElevated(ipcPath, (ipc, req) => {
-    const winapiRemote: typeof winapi = req('winapi-bindings');
     const osRemote: typeof os = req('os');
     try {
       winapiRemote.CreateTask(taskName, {
@@ -771,7 +774,7 @@ function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
 
 function tasksSupported() {
   try {
-    winapi.GetTasks();
+    winapi?.GetTasks();
     return null;
   } catch (err) {
     log('info', 'windows tasks api failed', err.message);
@@ -780,11 +783,11 @@ function tasksSupported() {
 }
 
 function findTask() {
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     return undefined;
   }
   try {
-    return winapi.GetTasks().find(task => task.Name === TASK_NAME);
+    return winapi?.GetTasks().find(task => task.Name === TASK_NAME);
   } catch (err) {
     log('warn', 'failed to list windows tasks', err.message);
     return undefined;
@@ -808,7 +811,6 @@ function removeTask(): Promise<void> {
   const taskName = TASK_NAME;
 
   return runElevated(ipcPath, (ipc, req) => {
-    const winapiRemote: typeof winapi = req('winapi-bindings');
     winapiRemote.DeleteTask(taskName);
     ipc.sendMessage({ message: 'quit' });
   }, { taskName })
@@ -870,7 +872,7 @@ function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Pro
 }
 
 function migrate(api: IExtensionApi, oldVersion: string) {
-  if (process.platform === 'win32'
+  if (isWindows()
       && semver.satisfies(oldVersion, '>=1.2.0  <1.2.10')
       && (findTask() !== undefined)) {
     api.sendNotification({
@@ -888,7 +890,7 @@ const localState: { symlinkRight: boolean } = makeReactive({
 });
 
 function giveSymlinkRight(enable: boolean) {
-  const sid = winapi.GetUserSID();
+  const sid = winapi?.GetUserSID();
 
   const ipcPath = `ipc_${shortid()}`;
 
@@ -911,7 +913,6 @@ function giveSymlinkRight(enable: boolean) {
   });
 
   runElevated(ipcPath, (ipc, req) => {
-    const winapiRemote: typeof winapi = req('winapi-bindings');
     ipc.sendMessage({
       message: 'log', payload: {
         level: 'info', message: `will ${enable ? 'enable' : 'disable'} privilege`,
@@ -957,7 +958,7 @@ function init(context: IExtensionContextEx): boolean {
   const method = new DeploymentMethod(context.api);
   context.registerDeploymentMethod(method);
 
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     context.registerSettings('Workarounds', Settings, () => ({
       supported: tasksSupported(),
       localState,
@@ -970,8 +971,8 @@ function init(context: IExtensionContextEx): boolean {
   context.once(() => {
     method.initEvents(context.api);
 
-    if (process.platform === 'win32') {
-      const privileges: winapi.Privilege[] = winapi.CheckYourPrivilege();
+    if (isWindows()) {
+      const privileges: any[] = winapi?.CheckYourPrivilege() || [];
       localState.symlinkRight = privileges.includes('SeCreateSymbolicLinkPrivilege');
 
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];

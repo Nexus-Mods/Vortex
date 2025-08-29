@@ -9,13 +9,22 @@ const path = require('path');
 const rimraf = require('rimraf');
 const vm = require('vm');
 
+// Platform detection utilities
+function isWindows() {
+  return process.platform === 'win32';
+}
+
+function isMacOS() {
+  return process.platform === 'darwin';
+}
+
 const projectGroups = JSON.parse(fs.readFileSync('./BuildSubprojects.json'));
 
 const packageJSON = JSON.parse(fs.readFileSync('./package.json'));
 
-const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npmcli = isWindows() ? 'npm.cmd' : 'npm';
 
-const yarncli = process.platform === 'win32' ? 'yarn.cmd' : 'yarn';
+const yarncli = isWindows() ? 'yarn.cmd' : 'yarn';
 
 const useYarn = true;
 
@@ -108,7 +117,9 @@ function npm(command, args, options, out) {
   if (!useYarn && (command === 'add')) {
     command = 'install';
   }
-  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out);
+  // Remove --mutex option on macOS as it causes issues with rsync
+  const mutexArgs = isMacOS() ? [] : ['--mutex', 'file'];
+  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, ...mutexArgs], options, out);
 }
 
 function changes(basePath, patterns, force) {

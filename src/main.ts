@@ -4,6 +4,7 @@
 
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
+import { isWindows, isMacOS } from './util/platform';
 
 import { app, dialog, Menu, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
@@ -80,7 +81,7 @@ if (process.env.NODE_ENV !== 'development') {
   rebuildRequire();
 }
 
-if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
+if (isWindows() && (process.env.NODE_ENV !== 'development')) {
   // On windows dlls may be loaded from directories in the path variable
   // (which I don't know why you'd ever want that) so I filter path quite aggressively here
   // to prevent dynamically loaded dlls to be loaded from unexpected locations.
@@ -106,14 +107,14 @@ if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) 
 
 // Produce english error messages (windows only atm), otherwise they don't get
 // grouped correctly when reported through our feedback system
-import * as winapiT from 'winapi-bindings';
-
-try {
-  // tslint:disable-next-line:no-var-requires
-  const winapi: typeof winapiT = require('winapi-bindings');
-  winapi?.SetProcessPreferredUILanguages?.(['en-US']);
-} catch (err) {
-  // nop
+if (isWindows()) {
+  try {
+    // tslint:disable-next-line:no-var-requires
+    const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
+    winapi?.SetProcessPreferredUILanguages?.(['en-US']);
+  } catch (err) {
+    // nop
+  }
 }
 
 import {} from './util/requireRebuild';
@@ -179,7 +180,7 @@ async function main(): Promise<void> {
   app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
   app.commandLine.appendSwitch('disable-features', 'UseEcoQoSForBackgroundProcess');
 
-  if (process.platform === 'darwin') {
+  if (isMacOS()) {
     const template: MenuItemConstructorOptions[] = [
       {
         label: app.name,
@@ -314,7 +315,7 @@ async function main(): Promise<void> {
   }
 
   /* allow application controlled scaling
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     app.commandLine.appendSwitch('high-dpi-support', 'true');
     app.commandLine.appendSwitch('force-device-scale-factor', '1');
   }

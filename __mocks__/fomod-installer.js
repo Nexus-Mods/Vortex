@@ -23,5 +23,23 @@ module.exports = {
       steps: [],
       requiredFiles: []
     });
+  },
+
+  // Mock the createIPC function
+  createIPC: (options) => {
+    // Return a mock IPC object
+    return Promise.resolve({
+      pid: 12345,
+      connectionId: 'mock-connection-id',
+      kill: () => Promise.resolve(),
+      send: () => Promise.resolve(),
+      close: () => Promise.resolve()
+    });
+  },
+
+  // Mock the killProcess function
+  killProcess: (pid) => {
+    // Return a mock success response
+    return Promise.resolve(true);
   }
 };

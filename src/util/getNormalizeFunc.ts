@@ -4,6 +4,7 @@ import Promise from 'bluebird';
 import * as fsOrig from 'fs-extra';
 import * as path from 'path';
 import { restackErr } from './util';
+import { isWindows } from './platform';
 
 export type Normalize = (input: string) => string;
 
@@ -35,12 +36,12 @@ export interface INormalizeParameters {
 
 function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolean> {
   if (testPath === undefined) {
-    return Promise.resolve(process.platform !== 'win32');
+    return Promise.resolve(!isWindows());
   }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
     // on windows, assume case insensitive, everywhere else: case sensitive
-    return Promise.resolve(process.platform !== 'win32');
+    return Promise.resolve(!isWindows());
   } else {
     return isCaseSensitive(parentPath);
   }
@@ -106,7 +107,7 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
         ? (input: string) => input
         : genNormalizeCase();
 
-      if ((parameters['separators'] !== false) && (process.platform === 'win32')) {
+      if ((parameters['separators'] !== false) && isWindows()) {
         funcOut = genNormalizeSeparator(funcOut);
       }
       if (parameters['unicode'] !== false) {

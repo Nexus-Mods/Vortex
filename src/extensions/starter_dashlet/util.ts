@@ -6,6 +6,7 @@ import * as fs from '../../util/fs';
 import path from 'path';
 import extractExeIcon from '../../util/exeIcon';
 import { ProcessCanceled } from '../../util/CustomErrors';
+import { isWindows } from '../../util/platform';
 
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IEditStarterInfo } from './types';
@@ -70,7 +71,7 @@ const setJumpList = makeRemoteCallSync('set-jump-list', (electron, window, categ
 });
 
 export function updateJumpList(starters: IStarterInfo[]) {
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     return;
   }
 

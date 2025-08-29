@@ -3,7 +3,7 @@ import { log } from '../../util/log';
 import settingsReducer from './reducers';
 import SettingsUpdate from './SettingsUpdate';
 
-import setupAutoUpdater from './autoupdater';
+import './autoupdater';
 
 import {ipcRenderer} from 'electron';
 
@@ -17,7 +17,7 @@ function init(context: IExtensionContext): boolean {
       if (context.api.getState().app.installType === 'regular' ||
         process.env.NODE_ENV === 'development'
       ) {
-        setupAutoUpdater(context.api);
+        // setupAutoUpdater(context.api); // Removed - now handled by side-effect import
       }
     } catch (err) {
       log('error', 'failed to check for update', err.message);

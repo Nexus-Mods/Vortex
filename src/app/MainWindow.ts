@@ -293,6 +293,17 @@ class MainWindow {
                                          Math.floor(screenArea.width * 0.8)));
     const height = Math.max(MIN_HEIGHT, getSafe(windowMetrics, ['size', 'height'],
                                                 Math.floor(screenArea.height * 0.8)));
+    
+    // Set the appropriate icon based on platform
+    let iconPath: string;
+    if (process.platform === 'darwin') {
+      iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.icns');
+    } else if (process.platform === 'win32') {
+      iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.ico');
+    } else {
+      iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
+    }
+    
     return {
       width,
       height,
@@ -306,6 +317,7 @@ class MainWindow {
       show: false,
       title: 'Vortex',
       titleBarStyle: windowMetrics?.customTitlebar === true ? 'hidden' : 'default',
+      icon: iconPath,
       webPreferences: {
         nodeIntegration: true,
         nodeIntegrationInWorker: true,

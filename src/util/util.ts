@@ -5,6 +5,7 @@ import { TimeoutError } from './CustomErrors';
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
+import { isWindows } from './platform';
 
 import Bluebird from 'bluebird';
 import { spawn } from 'child_process';
@@ -318,7 +319,7 @@ export function getAllPropertyNames(obj: object): string[] {
  */
 export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
-    normalize = (input) => process.platform === 'win32'
+    normalize = (input) => isWindows()
       ? path.normalize(input.toUpperCase())
       : path.normalize(input);
   }
@@ -337,7 +338,7 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
 
 export function isReservedDirectory(dirPath: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
-    normalize = (input) => process.platform === 'win32'
+    normalize = (input) => isWindows()
       ? path.normalize(input.toUpperCase())
       : path.normalize(input);
   }
@@ -461,7 +462,7 @@ export function delay(timeoutMS: number): Bluebird<void> {
 /**
  * characters invalid in a file path
  */
-const INVALID_FILEPATH_CHARACTERS = process.platform === 'win32'
+const INVALID_FILEPATH_CHARACTERS = isWindows()
   ? ['/', '?', '*', ':', '|', '"', '<', '>']
   : [];
 
@@ -472,7 +473,7 @@ const INVALID_FILENAME_CHARACTERS = [].concat(INVALID_FILEPATH_CHARACTERS, path.
 
 const INVALID_FILENAME_RE = new RegExp(`[${escapeRE(INVALID_FILENAME_CHARACTERS.join(''))}]`, 'g');
 
-const RESERVED_NAMES = new Set(process.platform === 'win32'
+const RESERVED_NAMES = new Set(isWindows()
   ? [
     'CON', 'PRN', 'AUX', 'NUL',
     'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
@@ -488,7 +489,7 @@ export function isFilenameValid(input: string): boolean {
   if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return false;
   }
-  if ((process.platform === 'win32')
+  if (isWindows()
     && (input.endsWith(' ') || input.endsWith('.'))) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
@@ -498,7 +499,7 @@ export function isFilenameValid(input: string): boolean {
 }
 
 function isDriveLetter(input: string): boolean {
-  return (process.platform === 'win32')
+  return isWindows()
     && (input.length === 2)
     && (input[1] === ':');
 }
@@ -513,7 +514,7 @@ export function sanitizeFilename(input: string): string {
   if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return path.join(path.dirname(input), '_reserved_' + path.basename(input));
   }
-  if ((process.platform === 'win32')
+  if (isWindows()
     && (input.endsWith(' ') || input.endsWith('.'))) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
@@ -535,7 +536,7 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   }
 
   // On Windows, only allow absolute paths starting with drive letter or UNC
-  if (process.platform === 'win32' && input.startsWith('\\') && !input.startsWith('\\\\')) {
+  if (isWindows() && input.startsWith('\\') && !input.startsWith('\\\\')) {
     return false;
   }
 
@@ -543,7 +544,7 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   const rawSegments = input.split(/[\\/]/);
   for (const segment of rawSegments) {
     // Skip empty segments and drive letters
-    if (segment === '' || (process.platform === 'win32' && isDriveLetter(segment))) {
+    if (segment === '' || (isWindows() && isDriveLetter(segment))) {
       continue;
     }
     // Allow . and .. for relative paths
@@ -551,7 +552,7 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
       continue;
     }
     // Check for reserved names on Windows
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       const upperSegment = segment.toUpperCase();
       if (RESERVED_NAMES.has(upperSegment) || RESERVED_NAMES.has(upperSegment.split('.')[0])) {
         return false;
@@ -564,7 +565,7 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   }
 
   // Handle UNC paths on Windows
-  const isUNC = process.platform === 'win32' && input.startsWith('\\\\');
+  const isUNC = isWindows() && input.startsWith('\\\\');
   if (isUNC) {
     // UNC path must have at least \\server\share
     const segments = input.slice(2).split(/[\\/]/);
@@ -580,7 +581,7 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   let segments = input.replace(trimTrailingSep, '').split(path.sep);
   
   // Handle drive letter specially for Windows
-  const hasDriveLetter = process.platform === 'win32' && isDriveLetter(segments[0]);
+  const hasDriveLetter = isWindows() && isDriveLetter(segments[0]);
   
   // For non-relative paths, reject paths containing .. segments
   if (!allowRelative && segments.some(segment => segment === '..')) {
@@ -862,7 +863,9 @@ export enum Section {
  */
 export enum Campaign {
   BuyPremium = 'buy_premium',
-  GeneralNavigation = 'general_navigation'
+  GeneralNavigation = 'general_navigation',
+  ViewCollection = 'view_collection',
+  ViewCollectionAsCurator = 'view_collection_as_curator'
 }
 
 /**
@@ -883,10 +886,15 @@ export enum Content {
   SettingsDownloadAd = 'settings_download_ad'
 }
 
+export enum Source {
+  CollectionsAd = 'collections_ad'
+}
+
 export interface INexusURLOptions {
   section?: Section;
   content?: Content;
   campaign?: Campaign | string;
+  source?: Source | string;
   parameters?: string[];
 }
 

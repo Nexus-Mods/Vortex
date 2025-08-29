@@ -1,5 +1,6 @@
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
+import { isWindows, isLinux } from '../../../util/platform';
 import { deBOM, truthy } from '../../../util/util';
 
 import Promise from 'bluebird';
@@ -12,7 +13,7 @@ import * as path from 'path';
  */
 function chromePath(): Promise<string> {
   const appPath = getVortexPath('appData');
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     const userData = process.env.LOCALAPPDATA !== undefined
       ? path.join(process.env.LOCALAPPDATA, 'Google', 'Chrome', 'User Data')
       : path.resolve(appPath, '..', 'Local', 'Google', 'Chrome', 'User Data');
@@ -32,7 +33,7 @@ function chromePath(): Promise<string> {
         ? Promise.resolve(path.join(userData, 'Default', 'Preferences'))
         : Promise.reject(err));
   } else {
-    return Promise.resolve((process.platform === 'linux')
+    return Promise.resolve(isLinux()
       ? path.resolve(appPath, 'google-chrome', 'Local State')
       : path.resolve(appPath, 'Google', 'Chrome', 'Local State'));
   }

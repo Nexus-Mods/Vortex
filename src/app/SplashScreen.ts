@@ -21,7 +21,13 @@ class SplashScreen {
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
             try {
-              this.mWindow.webContents.send('fade-out');
+              this.mWindow.webContents.executeJavaScript(`
+                const splash = document.querySelector('.splash-image');
+                if (splash) {
+                  splash.style.transition = 'opacity 500ms ease-in-out';
+                  splash.style.opacity = '0';
+                }
+              `);
             } catch (err) {
               log('warn', 'failed to fade out splash screen', err.message);
             }
@@ -46,7 +52,7 @@ class SplashScreen {
         log('warn', 'splash screen taking awfully long');
         resolve?.();
         resolve = undefined;
-      }, 1000);
+      }, 30000);
 
       const onReady = () => {
         clearTimeout(timeout);
@@ -62,8 +68,8 @@ class SplashScreen {
         height: 240,
         transparent: !disableGPU,
         */
-        width: 475,
-        height: 166,
+        width: 476,
+        height: 167,
         transparent: false,
         show: false,
         resizable: false,
@@ -84,10 +90,18 @@ class SplashScreen {
 
       this.mWindow.once('ready-to-show', onReady);
 
-      this.mWindow.loadURL(
-        pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href
-        + `?disableGPU=${disableGPU ? 1 : 0}`);
-      // this.mWindow.webContents.openDevTools();
+      const splashUrl = pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href;
+      this.mWindow.loadURL(splashUrl);
+      
+      // Add disable-gpu class to body if GPU is disabled
+      if (disableGPU) {
+        this.mWindow.webContents.once('dom-ready', () => {
+          this.mWindow.webContents.executeJavaScript(`
+            document.body.classList.add('disable-gpu');
+          `);
+        });
+      }
+      this.mWindow.webContents.openDevTools();
     });
   }
 

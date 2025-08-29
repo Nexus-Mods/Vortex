@@ -20,8 +20,10 @@ import { fallbackPurge } from './util/activationStore';
 import { resolveInstallPath } from './util/getInstallPath';
 
 import * as winapiT from 'winapi-bindings';
+import { isWindows } from '../../util/platform';
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
 
-const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
+// Platform detection utilities
 
 export const STAGING_DIR_TAG = '__vortex_staging_folder';
 
@@ -135,7 +137,7 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
 
   let partitionExists = true;
   try {
-    winapi.GetVolumePathName(instPath);
+    winapi?.GetVolumePathName(instPath);
   } catch (err) {
     // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
     //  the only way for this error to be reported at this point is when

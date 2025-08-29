@@ -10,6 +10,15 @@ const { spawn } = require('child_process');
 const prebuildRC = require('prebuild-install/rc');
 const prebuildUtil = require('prebuild-install/util');
 
+// Platform detection utilities
+function isWindows() {
+  return process.platform === 'win32';
+}
+
+function isMacOS() {
+  return process.platform === 'darwin';
+}
+
 const packageManager = 'yarn';
 
 // verify these modules are installed
@@ -20,7 +29,7 @@ const verifyModules = [
 ];
 
 // Only verify Windows-specific modules on Windows
-if (process.platform === 'win32') {
+if (isWindows()) {
   verifyModules.push(
     ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
     ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
@@ -36,7 +45,7 @@ async function verifyModulesInstalled() {
   console.log('checking native modules');
   for (const module of verifyModules) {
     // Skip verification if mock exists on macOS
-    if (process.platform === 'darwin') {
+    if (isMacOS()) {
       const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
       try {
         await fs.stat(mockPath);
@@ -46,12 +55,18 @@ async function verifyModulesInstalled() {
         // No mock found, proceed with verification
       }
     }
+    
+    // Skip fomod-installer verification on non-Windows platforms
+    if (module[0] === 'fomod-installer' && !isWindows()) {
+      console.log(`Skipping ${module[0]} verification on ${process.platform} (Windows-only module)`);
+      continue;
+    }
     const modPath = path.join(__dirname, 'node_modules', module[0], module[1]);
     try {
       await fs.stat(modPath);
     } catch (err) {
       console.log('missing native module', modPath);
-      const pkgcli = process.platform === 'win32' ? `${packageManager}.cmd` : packageManager;
+      const pkgcli = isWindows() ? `${packageManager}.cmd` : packageManager;
       await new Promise(resolve => {
         const proc = spawn(pkgcli, ['install'], { shell: true, cwd: path.join(__dirname, 'node_modules', module[0]) });
         proc.on('exit', resolve);

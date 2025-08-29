@@ -2,7 +2,22 @@ import * as fs from '../../../util/fs';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import * as winapi from 'winapi-bindings';
+
+// Platform detection utilities
+function isWindows(): boolean {
+  
+}
+
+function isMacOS(): boolean {
+  
+}
+
+function isLinux(): boolean {
+  
+}
+
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
+import { isWindows, isMacOS, isLinux } from '../../../util/platform';
 
 const KNOWN_RELEASES = [
   { release: 528449, version: '4.8.0' },
@@ -43,7 +58,7 @@ const REQUIRED_ASSEMBLIES = [
 
 function getRegValue(key: string, expectedType: string): any {
   try {
-    const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+    const res = winapi?.RegGetValue?.('HKEY_LOCAL_MACHINE',
                                    'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full',
                                    key);
     if ((res === undefined) || (res.type !== expectedType)) {

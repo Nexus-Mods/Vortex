@@ -24,6 +24,7 @@ import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
 import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { isWindows } from '../../util/platform';
 
 import { batchDispatch } from '../../util/util';
 
@@ -183,7 +184,7 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
 
 function searchDepth(files: string[]): number {
   return files.reduce((prev, filePath) => {
-    const len = process.platform === 'win32'
+    const len = isWindows()
       ? filePath.split(/[/\\]/).length
       : filePath.split(path.sep).length;
     return Math.max(prev, len);

@@ -1,5 +1,6 @@
 import makeRemoteCall from './electronRemote';
 import * as fs from './fs';
+import { isWindows } from './platform';
 
 const efi = makeRemoteCall('extract-file-icon',
     (electron, content, exePath: string, iconPath: string) => {
@@ -16,7 +17,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void> {
   // Vortex 1.6.0
 
   /*
-  if (process.platform === 'win32') {
+  if (isWindows()) {
     return new Promise((resolve, reject) => {
       iconExtract.extractIconToFile(exePath, destPath, error => {
         if (error !== null) {

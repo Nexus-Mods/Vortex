@@ -5,6 +5,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
+import { isWindows } from '../../../util/platform';
 import { getSafe } from '../../../util/storeHelper';
 
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -191,7 +192,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       res.push({ icon: 'edit', title: 'Edit', action: this.startEditing });
       res.push({ icon: 'clone', title: 'Clone', action: this.cloneProfile });
     }
-    if (available && process.platform === 'win32') {
+    if (available && isWindows()) {
       res.push({ icon: 'savegame', title: 'Add Shortcut', action: this.createShortcut });
     }
     res.push({ icon: 'remove', title: 'Remove', action: this.removeProfile });

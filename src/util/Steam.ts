@@ -2,12 +2,13 @@ import Promise from 'bluebird';
 
 import * as fs from './fs';
 import { log } from './log';
+import { isWindows } from './platform';
 import { getSafeCI } from './storeHelper';
 
 import * as  fsOG from 'fs/promises';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
-import * as winapi from 'winapi-bindings';
+const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from '../types/api';
 
 import opn from './opn';
@@ -18,7 +19,7 @@ import getVortexPath from './getVortexPath';
 
 const STORE_ID = 'steam';
 const STORE_NAME = 'Steam';
-const STEAM_EXEC = process.platform === 'win32' ? 'Steam.exe' : 'steam.sh';
+const STEAM_EXEC = isWindows() ? 'Steam.exe' : 'steam.sh';
 const STORE_PRIORITY = 40;
 
 export interface ISteamEntry extends IGameStoreEntry {
@@ -52,7 +53,7 @@ class Steam implements IGameStore {
   private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       // windows
       try {
         const steamPath =

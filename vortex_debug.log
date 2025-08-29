@@ -1,0 +1,4 @@
+yarn run v1.22.5
+$ cross-env NODE_ENV=development electron .
+logging started
+Done in 3.88s.

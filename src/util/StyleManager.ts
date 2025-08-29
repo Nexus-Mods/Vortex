@@ -4,6 +4,7 @@ import Debouncer from './Debouncer';
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import {log} from './log';
+import { getCurrentPlatform } from './platform';
 import { sanitizeCSSId } from './util';
 
 import Promise from 'bluebird';
@@ -93,7 +94,7 @@ if (ipcMain !== undefined) {
 
     /*
     process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
-      `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
+      `${getCurrentPlatform()}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
     */
     const sass: typeof sassT = require('sass');
 
@@ -142,18 +143,33 @@ class StyleManager {
   private mSetQueue: Promise<void> = Promise.resolve();
 
   constructor(api: IExtensionApi) {
+    // Initialize core stylesheets with full paths to assets directory
+    const assetsPath = getVortexPath('assets_unpacked');
+    log('debug', 'StyleManager constructor - initializing core stylesheets with assets path', {
+      assetsPath
+    });
+    
     this.mPartials = [
-      { key: '__functions',  file: 'functions' },
-      { key: '__variables',  file: 'variables' },
+      { key: '__functions',  file: path.join(assetsPath, 'css', 'functions.scss') },
+      { key: '__variables',  file: path.join(assetsPath, 'css', 'variables.scss') },
       { key: 'variables',    file: undefined },
-      { key: '__details',    file: 'details' },
+      { key: '__details',    file: path.join(assetsPath, 'css', 'details.scss') },
       { key: 'details',      file: undefined },
-      { key: '__thirdparty', file: 'thirdparty' },
-      { key: '__desktop',    file: 'desktop' },
-      { key: '__style',      file: 'style' },
+      { key: '__thirdparty', file: path.join(assetsPath, 'css', 'thirdparty.scss') },
+      { key: '__desktop',    file: path.join(assetsPath, 'css', 'desktop.scss') },
+      { key: '__style',      file: path.join(assetsPath, 'css', 'style.scss') },
       { key: 'style',        file: undefined },
     ];
-
+    
+    log('debug', 'StyleManager constructor - initialized mPartials with full paths', {
+      partials: this.mPartials
+    });
+    
+    log('debug', 'StyleManager initialized with partials', { 
+      partials: this.mPartials,
+      assetsPath: getVortexPath('assets_unpacked')
+    });
+  
     this.mRenderDebouncer = new Debouncer(() => {
       return this.render()
         .catch(err => {
@@ -164,27 +180,49 @@ class StyleManager {
     }, StyleManager.RENDER_DELAY, true);
 
     ipcRenderer.on('__renderSASS_result', (evt, err: Error, css: string) => {
-      log('info', 'css result', { err: err?.message });
+      log('debug', 'StyleManager IPC __renderSASS_result - received SASS compilation result', { 
+        hasError: !!err,
+        errorMessage: err?.message,
+        cssLength: css?.length || 0,
+        cssPreview: css?.substring(0, 100) || 'empty',
+        expectingResult: !!this.mExpectingResult
+      });
+      
       if (this.mExpectingResult === undefined) {
-        log('warn', 'unexpected sass render result');
+        log('warn', 'StyleManager IPC __renderSASS_result - unexpected sass render result, no pending promise');
         return;
       }
 
       if (err !== null) {
+        log('error', 'StyleManager IPC __renderSASS_result - SASS compilation failed', {
+          error: err.message,
+          stack: err.stack
+        });
         this.mExpectingResult.reject(err);
       } else {
+        log('debug', 'StyleManager IPC __renderSASS_result - SASS compilation successful, resolving promise');
         this.mExpectingResult.resolve(css);
       }
       this.mExpectingResult = undefined;
     });
 
     ipcRenderer.on('__renderSASS_update', (evt, err: Error, css: string) => {
-      log('info', 'css updated', { err: err?.message });
+      log('debug', 'StyleManager IPC __renderSASS_update - received SASS update', { 
+        hasError: !!err,
+        errorMessage: err?.message,
+        cssLength: css?.length || 0,
+        cssPreview: css?.substring(0, 100) || 'empty'
+      });
+      
       if (err !== null) {
         // logging as warning because we don't know if this will be a problem
         // but it may lead to a messed up look
-        log('warn', 'css render failed', err.message);
+        log('warn', 'StyleManager IPC __renderSASS_update - css render failed', {
+          error: err.message,
+          stack: err.stack
+        });
       } else {
+        log('debug', 'StyleManager IPC __renderSASS_update - applying updated CSS');
         this.applyCSS(css);
       }
     });
@@ -221,7 +259,13 @@ class StyleManager {
    * @param {string} filePath path of the corresponding stylesheet file
    */
   public setSheet(key: string, filePath: string): void {
-    log('debug', 'setting stylesheet', { key, filePath });
+    log('debug', 'StyleManager setSheet - setting stylesheet', { 
+      key, 
+      filePath,
+      isAbsolute: path.isAbsolute(filePath || ''),
+      extension: path.extname(filePath || ''),
+      currentPartials: this.mPartials.length
+    });
     try {
       const statProm = () => (filePath === undefined)
         ? Promise.resolve<void>(undefined)
@@ -233,20 +277,49 @@ class StyleManager {
         .then(() => statProm())
         .then(() => {
           const idx = this.mPartials.findIndex(partial => partial.key === key);
+          const oldPartial = idx !== -1 ? this.mPartials[idx] : null;
+          
           if (idx !== -1) {
             this.mPartials[idx] = { key, file: filePath };
+            log('debug', 'StyleManager setSheet - replaced existing partial', {
+              key,
+              oldFile: oldPartial?.file,
+              newFile: filePath,
+              index: idx
+            });
           } else {
             this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
+            log('debug', 'StyleManager setSheet - added new partial', {
+              key,
+              filePath,
+              insertIndex: this.mPartials.length - 3,
+              totalPartials: this.mPartials.length
+            });
           }
+          
+          log('debug', 'StyleManager setSheet - updated partials array', {
+            allPartials: this.mPartials,
+            autoRefresh: this.mAutoRefresh
+          });
+          
           if (this.mAutoRefresh) {
             this.mRenderDebouncer.schedule(undefined);
+            log('debug', 'StyleManager setSheet - scheduled render due to auto refresh');
           }
         })
         .catch(err => {
-          log('warn', 'stylesheet can\'t be read', err.message);
+          log('warn', 'StyleManager setSheet - stylesheet can\'t be read', {
+            key,
+            filePath,
+            error: err.message
+          });
         });
     } catch (err) {
-      log('warn', 'stylesheet can\'t be read', { key, path: filePath, err: err.message });
+      log('warn', 'StyleManager setSheet - exception during setSheet', { 
+        key, 
+        path: filePath, 
+        err: err.message 
+      });
     }
   }
 
@@ -264,17 +337,28 @@ class StyleManager {
   }
 
   private render(): Promise<void> {
-    const stylesheets: string[] = this.mPartials
-      .filter(partial => partial.file !== undefined)
+    const filteredPartials = this.mPartials.filter(partial => partial.file !== undefined);
+    const stylesheets: string[] = filteredPartials
       .map(partial => path.isAbsolute(partial.file)
         ? asarUnpacked(partial.file)
         : partial.file);
+
+    log('debug', 'StyleManager render - processing stylesheets', {
+      allPartials: this.mPartials,
+      filteredPartials: filteredPartials,
+      finalStylesheets: stylesheets,
+      excludedPartials: this.mPartials.filter(partial => partial.file === undefined)
+    });
 
     return new Promise<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send('__renderSASS', stylesheets);
     })
       .then((css: string) => {
+        log('debug', 'StyleManager render - received CSS', {
+          cssLength: css?.length || 0,
+          cssPreview: css?.substring(0, 200) || 'empty'
+        });
         this.applyCSS(css);
       });
   }
@@ -286,15 +370,32 @@ class StyleManager {
     style.innerHTML = css;
     const head = document.getElementsByTagName('head')[0];
     let found = false;
+    
+    log('debug', 'StyleManager applyCSS - injecting CSS', {
+      cssLength: css?.length || 0,
+      cssContent: css || 'empty',
+      existingThemeElements: Array.from(head.children).filter(el => el.id === 'theme').length
+    });
+    
     for (let i = 0; i < head.children.length && !found; ++i) {
       if (head.children.item(i).id === 'theme') {
         head.replaceChild(style, head.children.item(i));
         found = true;
+        log('debug', 'StyleManager applyCSS - replaced existing theme element');
       }
     }
     if (!found) {
       head.appendChild(style);
+      log('debug', 'StyleManager applyCSS - appended new theme element');
     }
+    
+    // Verify injection
+    const injectedElement = document.getElementById('theme');
+    log('debug', 'StyleManager applyCSS - verification', {
+      elementExists: !!injectedElement,
+      elementContent: injectedElement?.innerHTML?.substring(0, 200) || 'none',
+      totalHeadChildren: head.children.length
+    });
   }
 }
 

@@ -70,7 +70,7 @@
   },
   "mac": {
     "target": ["dmg", "zip"],
-    "icon": "assets/images/vortex.png",
+    "icon": "assets/images/vortex.icns",
     "category": "public.app-category.games",
     "darkModeSupport": true,
     "hardenedRuntime": true,
