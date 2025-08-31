@@ -73,8 +73,7 @@ class Settings extends ComponentEx<IProps, {}> {
             onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Handle')}{' '}<DownloadButton/>{t('buttons on')}{' '}
-            {<a onClick={this.openNexus}>NexusMods.com</a>}
+            {t('Handle Mod Manager Download buttons on')} <a onClick={this.openNexus}>nexusmods.com</a> (nxm:// links)
           </Toggle>
           {
             // on linux this is handled by the desktop environment so you'd have to implement
