@@ -456,7 +456,7 @@ export class DownloadObserver {
       }
     };
 
-    if (['init', 'started', 'paused'].includes(download.state)) {
+    if (['init', 'started', 'paused', 'failed'].includes(download.state)) {
       // need to cancel the download
       if (!this.mManager.stop(downloadId)) {
         // error case, for some reason the manager didn't know about this download, maybe some
