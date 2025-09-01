@@ -44,10 +44,10 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'move_activator', 'Move deployment (Experimental!)',
-        'Deploys mods by actually moving files to the destination directory.',
-        false,
-        api);
+      'move_activator', 'Move deployment (Experimental!)',
+      'Deploys mods by actually moving files to the destination directory.',
+      false,
+      api);
   }
 
   public detailedDescription(t: TFunction): string {
@@ -78,8 +78,8 @@ class DeploymentMethod extends LinkingDeployment {
 
     if ((game.details?.supportsMoveActivator === false)
       || (game.compatible?.moveActivator === false)) {
-    return { description: t => t('Game doesn\'t support the move deployment method') };
-  }
+      return { description: t => t('Game doesn\'t support the move deployment method') };
+    }
 
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
@@ -114,10 +114,10 @@ class DeploymentMethod extends LinkingDeployment {
             }
             return t('Please go to Settings->Mods and set the mod staging folder to be on '
               + 'the same drive as the game ({{gameVolume}}).', {
-                replace: {
-                  gameVolume: displayPath,
-                },
-              });
+              replace: {
+                gameVolume: displayPath,
+              },
+            });
           },
           fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
@@ -151,9 +151,9 @@ class DeploymentMethod extends LinkingDeployment {
       { label: 'Cancel' },
       { label: 'Continue' },
     ])
-    .then(result => result.action === 'Cancel'
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve());
+      .then(result => result.action === 'Cancel'
+        ? Promise.reject(new UserCanceled())
+        : Promise.resolve());
   }
 
   public finalize(gameId: string,
@@ -186,7 +186,7 @@ class DeploymentMethod extends LinkingDeployment {
       entries.forEach(entry => {
         if (!entry.isDirectory && (path.extname(entry.filePath) === LNK_EXT)) {
           const relPath: string = path.relative(sourcePath,
-            entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
+                                                entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
           const normPath = this.normalize(relPath);
           if ((this.context.newDeployment[normPath] !== undefined)
               && (this.context.newDeployment[normPath].source === sourceName)) {
@@ -209,12 +209,12 @@ class DeploymentMethod extends LinkingDeployment {
 
     // find lnk files in our mods directory
     return turbowalk(installationPath,
-      entries => {
-        links = links.concat(entries.filter(entry => path.extname(entry.filePath) === LNK_EXT));
-      },
-      {
-        details: true,
-      })
+                     entries => {
+                       links = links.concat(entries.filter(entry => path.extname(entry.filePath) === LNK_EXT));
+                     },
+                     {
+                       details: true,
+                     })
       .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
   }
 
@@ -225,7 +225,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
     const basePath = path.dirname(linkPath);
     return this.ensureDir(basePath)
-        .then(() => this.createLink(sourcePath, linkPath));
+      .then(() => this.createLink(sourcePath, linkPath));
   }
 
   protected unlinkFile(linkPath: string, sourcePath: string): Promise<void> {
@@ -318,8 +318,8 @@ class DeploymentMethod extends LinkingDeployment {
               // if the game was moved the links shouldn't point to a valid location,
               // if the staging folder was moved we should have purged
               : (err.code === 'EXDEV')
-              ? fs.moveAsync(dat.target, outPath)
-              : Promise.reject(err))
+                ? fs.moveAsync(dat.target, outPath)
+                : Promise.reject(err))
             .then(() => fs.removeAsync(linkPath));
         } catch (err) {
           log('error', 'invalid link', { linkPath, data });

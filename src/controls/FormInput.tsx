@@ -68,7 +68,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { className, clearable, emptyIcon, groupClass, id, label, min, max, maxLength,
-            placeholder, readOnly, style, type, validate } = this.props;
+      placeholder, readOnly, style, type, validate } = this.props;
     const { cachedValue } = this.state;
     const classes = ['form-input-container'];
     if (className !== undefined) {

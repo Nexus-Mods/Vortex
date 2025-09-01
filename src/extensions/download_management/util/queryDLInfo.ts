@@ -103,7 +103,7 @@ class MetadataLookupQueue {
 }
 
 function queryInfoInternal(api: IExtensionApi, dlId: string,
-                   ignoreCache: boolean): Bluebird<void> {
+                           ignoreCache: boolean): Bluebird<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
@@ -157,77 +157,77 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
   });
 
   return Bluebird.resolve(Promise.race([lookupPromise, timeoutPromise]))
-  .then((modInfo: ILookupResult[]) => {
-    const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
-    const timeLookupFinished = Date.now();
-    log('debug', 'mod meta lookup finished', {
-      dlId,
-      gameId,
-      fileMD5: dl.fileMD5,
-      timeLookupFinished,
-      timeTaken: timeLookupFinished - timeNow,
-    });
-    if (match !== undefined) {
-      const info = match.value;
+    .then((modInfo: ILookupResult[]) => {
+      const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+      const timeLookupFinished = Date.now();
+      log('debug', 'mod meta lookup finished', {
+        dlId,
+        gameId,
+        fileMD5: dl.fileMD5,
+        timeLookupFinished,
+        timeTaken: timeLookupFinished - timeNow,
+      });
+      if (match !== undefined) {
+        const info = match.value;
 
-      let metaGameId = info.gameId;
-      if (info.domainName !== undefined) {
-        metaGameId = convertNXMIdReverse(knownGames, info.domainName);
-      }
+        let metaGameId = info.gameId;
+        if (info.domainName !== undefined) {
+          metaGameId = convertNXMIdReverse(knownGames, info.domainName);
+        }
 
-      const dlNow = api.getState().persistent.downloads.files[dlId];
+        const dlNow = api.getState().persistent.downloads.files[dlId];
 
-      const setInfo = (key: string, value: any) => {
-        if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
-      };
+        const setInfo = (key: string, value: any) => {
+          if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
+        };
 
-      setInfo('meta', info);
+        setInfo('meta', info);
 
-      try {
-        const nxmUrl = new NXMUrl(info.sourceURI);
+        try {
+          const nxmUrl = new NXMUrl(info.sourceURI);
         // if the download already has a file id (because we downloaded from nexus)
         // and what we downloaded doesn't match the md5 lookup, the server probably gave us
         // incorrect data, so ignore all of it
-        if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
+          if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
             && (dlNow?.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
-          return Promise.resolve();
-        }
+            return Promise.resolve();
+          }
 
-        setInfo('source', 'nexus');
-        setInfo('nexus.ids.gameId', nxmUrl.gameId);
-        setInfo('nexus.ids.fileId', nxmUrl.fileId);
-        setInfo('nexus.ids.modId', nxmUrl.modId);
-        metaGameId = convertNXMIdReverse(knownGames, nxmUrl.gameId);
-      } catch (err) {
+          setInfo('source', 'nexus');
+          setInfo('nexus.ids.gameId', nxmUrl.gameId);
+          setInfo('nexus.ids.fileId', nxmUrl.fileId);
+          setInfo('nexus.ids.modId', nxmUrl.modId);
+          metaGameId = convertNXMIdReverse(knownGames, nxmUrl.gameId);
+        } catch (err) {
         // failed to parse the uri as an nxm link - that's not an error in this case, if
         // the meta server wasn't nexus mods this is to be expected
-        if (dlNow?.modInfo?.source === undefined) {
-          setInfo('source', 'unknown');
+          if (dlNow?.modInfo?.source === undefined) {
+            setInfo('source', 'unknown');
+          }
         }
-      }
-      if (gameId !== metaGameId) {
+        if (gameId !== metaGameId) {
         // Run game assignment asynchronously without blocking metadata lookup completion
         // Pass extra parameter to indicate this is from metadata lookup
-        api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId], true)
-          .catch(err => {
-            log('warn', 'failed to set download games', { dlId, gameId, metaGameId, error: err.message });
-          });
+          api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId], true)
+            .catch(err => {
+              log('warn', 'failed to set download games', { dlId, gameId, metaGameId, error: err.message });
+            });
+        }
+        return Promise.resolve();
       }
-      return Promise.resolve();
-    }
-  })
-  .catch(err => {
-    log('warn', 'failed to look up mod meta info', { message: err.message });
-  })
-  .finally(() => {
+    })
+    .catch(err => {
+      log('warn', 'failed to look up mod meta info', { message: err.message });
+    })
+    .finally(() => {
     // Defer the batch dispatch to prevent blocking the metadata lookup completion
-    if (actions.length > 0) {
-      setImmediate(() => {
-        batchDispatch(api.store, actions);
-      });
-    }
-    log('debug', 'done querying info', { dlId });
-  });
+      if (actions.length > 0) {
+        setImmediate(() => {
+          batchDispatch(api.store, actions);
+        });
+      }
+      log('debug', 'done querying info', { dlId });
+    });
 }
 
 // Public interface that uses the queue

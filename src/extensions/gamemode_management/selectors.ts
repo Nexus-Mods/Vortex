@@ -21,7 +21,7 @@ function discovered(state: IState): { [id: string]: IDiscoveryResult } {
 export const currentGame =
   createSelector(knownGames, activeGameId, (games, currentGameMode) =>
     games.find(game => game.id === currentGameMode),
-    );
+  );
 
 export const gameById =
   createCachedSelector(knownGames, (state: IState, gameId: string) => gameId, (games, gameId) =>
@@ -41,8 +41,8 @@ export function currentGameDiscovery(state: any): IDiscoveryResult {
 
 export const discoveryByGame =
   createCachedSelector(discovered,
-    (state: IState, gameId: string) => gameId,
-    (discoveredIn, gameId) => discoveredIn[gameId],
+                       (state: IState, gameId: string) => gameId,
+                       (discoveredIn, gameId) => discoveredIn[gameId],
   )((state, gameId) => gameId);
 
 export function gameName(state: any, gameId: string): string {
@@ -50,13 +50,13 @@ export function gameName(state: any, gameId: string): string {
     return 'Tools & Extensions';
   }
   const fromDiscovery = getSafe(
-      state, ['settings', 'gameMode', 'discovered', gameId, 'name'], undefined);
+    state, ['settings', 'gameMode', 'discovered', gameId, 'name'], undefined);
   if (fromDiscovery !== undefined) {
     return fromDiscovery;
   }
 
   const known = getSafe(state, ['session', 'gameMode', 'known'], [] as IGameStored[])
-                    .find(game => game.id === gameId);
+    .find(game => game.id === gameId);
   if (known !== undefined) {
     return known.name;
   } else {

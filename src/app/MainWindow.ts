@@ -109,45 +109,45 @@ class MainWindow {
       this.mWindow.webContents.openDevTools();
     }
     this.mWindow.webContents.on('console-message',
-      (evt: Electron.Event, level: number, message: string) => {
-        if (level !== 2) {
+                                (evt: Electron.Event, level: number, message: string) => {
+                                  if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
           //   provide the other parameters of the message.
           //   That is actually a known issue in chrome but the chrome people don't seem to care too
           //   much and wait for a PR by the electron people but those have closed the issue. fun
-          log('info', message);
-        } else if (cancelTimer === undefined) {
+                                    log('info', message);
+                                  } else if (cancelTimer === undefined) {
           // if an error is logged by the renderer and the window isn't shown within a reasonable
           // time, it was probably something terminal.
           // this isn't ideal as we don't have a stack trace of the error message here
-          cancelTimer = setTimeout(() => {
-            if (!this.mShown) {
-              terminate({ message: 'Vortex failed to start', details: message },
-                        {}, true, 'renderer');
-            }
-          }, 15000);
-        }
-      });
+                                    cancelTimer = setTimeout(() => {
+                                      if (!this.mShown) {
+                                        terminate({ message: 'Vortex failed to start', details: message },
+                                                  {}, true, 'renderer');
+                                      }
+                                    }, 15000);
+                                  }
+                                });
 
     this.mWindow.webContents.on('render-process-gone',
-        (evt, details: Electron.RenderProcessGoneDetails) => {
-      log('error', 'render process gone', { exitCode: details.exitCode, reason: details.reason });
-      if (details.reason !== 'killed') {
-        store.dispatch(addNotification({
-          type: 'error',
-          message: 'Vortex restarted after a crash, sorry about that.',
-        }));
+                                (evt, details: Electron.RenderProcessGoneDetails) => {
+                                  log('error', 'render process gone', { exitCode: details.exitCode, reason: details.reason });
+                                  if (details.reason !== 'killed') {
+                                    store.dispatch(addNotification({
+                                      type: 'error',
+                                      message: 'Vortex restarted after a crash, sorry about that.',
+                                    }));
         // workaround for electron issue #19887
-        setImmediate(() => {
-          process.env.CRASH_REPORTING = (Math.random() > 0.5) ? 'vortex' : 'electron';
-          if (this.mWindow !== null) {
-            this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
-          } else {
-            process.exit();
-          }
-        });
-      }
-    });
+                                    setImmediate(() => {
+                                      process.env.CRASH_REPORTING = (Math.random() > 0.5) ? 'vortex' : 'electron';
+                                      if (this.mWindow !== null) {
+                                        this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+                                      } else {
+                                        process.exit();
+                                      }
+                                    });
+                                  }
+                                });
 
     this.mWindow.webContents.on('did-fail-load', (evt, code, description, url) => {
       log('error', 'failed to load page', { code, description, url });

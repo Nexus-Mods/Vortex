@@ -12,34 +12,34 @@ class Plugins extends DelegateBase {
   }
 
   public isActive =
-      (pluginName: string, callback: (err, res: boolean) => void) => {
-        try {
-          const state = this.api.store.getState();
+    (pluginName: string, callback: (err, res: boolean) => void) => {
+      try {
+        const state = this.api.store.getState();
 
-          const pluginList = state.session.plugins?.pluginList ?? {};
+        const pluginList = state.session.plugins?.pluginList ?? {};
 
-          const plugins = Object.keys(pluginList);
-          return callback(null, this.isEnabled(state, pluginList, plugins, pluginName));
-        } catch (err) {
-          return callback(err, false);
-        }
+        const plugins = Object.keys(pluginList);
+        return callback(null, this.isEnabled(state, pluginList, plugins, pluginName));
+      } catch (err) {
+        return callback(err, false);
       }
+    }
 
   public isPresent =
-      (pluginName: string, callback: (err, res: boolean) => void) => {
-        try {
-          const state = this.api.store.getState();
+    (pluginName: string, callback: (err, res: boolean) => void) => {
+      try {
+        const state = this.api.store.getState();
 
-          const plugins = Object.keys(
-            getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
-          const localName = plugins.find(plugin =>
-            plugin.toLowerCase() === pluginName.toLowerCase());
+        const plugins = Object.keys(
+          getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
+        const localName = plugins.find(plugin =>
+          plugin.toLowerCase() === pluginName.toLowerCase());
 
-          return callback(null, localName !== undefined);
-        } catch (err) {
-          return callback(err, false);
-        }
+        return callback(null, localName !== undefined);
+      } catch (err) {
+        return callback(err, false);
       }
+    }
 
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
     try {

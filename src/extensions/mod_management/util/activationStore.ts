@@ -57,7 +57,7 @@ function repairManifest(input: IDeploymentManifest): IDeploymentManifest {
       && (file.relPath !== undefined) && (file.relPath !== null)
       && (file.source !== undefined) && (file.source !== null)
       && (file.time !== undefined) && (file.time !== null)) {
-        prev.push(file);
+      prev.push(file);
     }
     return prev;
   }, [] as IDeployedFile[]);
@@ -110,13 +110,13 @@ export function purgeDeployedFiles(basePath: string,
           ? fs.unlinkAsync(fullPath)
           : Promise.resolve();
       })
-    .catch(err => {
-      if (err.code !== 'ENOENT') {
-        return Promise.reject(err);
-      } // otherwise ignore
-    });
+      .catch(err => {
+        if (err.code !== 'ENOENT') {
+          return Promise.reject(err);
+        } // otherwise ignore
+      });
   })
-  .then(() => undefined);
+    .then(() => undefined);
 }
 
 function queryPurgeTextSafe(t: TFunction) {
@@ -221,14 +221,14 @@ function getManifestImpl(api: IExtensionApi,
             { label: 'Cancel' },
             { label: 'Restore from backup' },
           ])
-          .then(result => {
-            if (result.action === 'Cancel') {
-              err.allowReport = false;
-              return Promise.reject(err);
-            } else {
-              return Promise.resolve(data);
-            }
-          }))
+            .then(result => {
+              if (result.action === 'Cancel') {
+                err.allowReport = false;
+                return Promise.reject(err);
+              } else {
+                return Promise.resolve(data);
+              }
+            }))
         .catch(backupErr => {
           err.message += '\nBackup couldn\'t be read: ' + backupErr.message;
           return Promise.reject(err);
@@ -251,27 +251,27 @@ export function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMeth
   const instanceId = state.app.instanceId;
 
   return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
-      .then(tagObject => {
-        let result: Promise<void>;
-        if (tagObject.files.length > 0) {
-          let safe = true;
-          if (tagObject.deploymentMethod !== undefined) {
-            const previousActivator = getActivator(tagObject.deploymentMethod);
-            if ((previousActivator !== undefined) && !previousActivator.isFallbackPurgeSafe) {
-              safe = false;
-            }
+    .then(tagObject => {
+      let result: Promise<void>;
+      if (tagObject.files.length > 0) {
+        let safe = true;
+        if (tagObject.deploymentMethod !== undefined) {
+          const previousActivator = getActivator(tagObject.deploymentMethod);
+          if ((previousActivator !== undefined) && !previousActivator.isFallbackPurgeSafe) {
+            safe = false;
           }
-          result = purgeDeployedFiles(deployPath, tagObject.files)
-              .then(() => saveActivation(gameId, modType, state.app.instanceId,
-                                         deployPath, stagingPath,
-                                         [], activator !== undefined ? activator.id : undefined))
-              .then(() => Promise.resolve());
-        } else {
-          result = Promise.resolve();
         }
-        return result;
-      })
-      .catch(err => Promise.reject(err));
+        result = purgeDeployedFiles(deployPath, tagObject.files)
+          .then(() => saveActivation(gameId, modType, state.app.instanceId,
+                                     deployPath, stagingPath,
+                                     [], activator !== undefined ? activator.id : undefined))
+          .then(() => Promise.resolve());
+      } else {
+        result = Promise.resolve();
+      }
+      return result;
+    })
+    .catch(err => Promise.reject(err));
 }
 
 /**
@@ -370,25 +370,25 @@ export function loadActivation(api: IExtensionApi, gameId: string, modType: stri
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
   return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
-      .then(tagObject => {
-        let result: Promise<IDeployedFile[]>;
-        if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
-          let safe = true;
-          if (tagObject.deploymentMethod !== undefined) {
-            const previousActivator = getActivator(tagObject.deploymentMethod);
-            if ((previousActivator !== undefined) && !previousActivator.isFallbackPurgeSafe) {
-              safe = false;
-            }
+    .then(tagObject => {
+      let result: Promise<IDeployedFile[]>;
+      if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
+        let safe = true;
+        if (tagObject.deploymentMethod !== undefined) {
+          const previousActivator = getActivator(tagObject.deploymentMethod);
+          if ((previousActivator !== undefined) && !previousActivator.isFallbackPurgeSafe) {
+            safe = false;
           }
-          result = queryPurge(api, deployPath, tagObject.files, safe)
-              .then(() => saveActivation(gameId, modType, state.app.instanceId, deployPath,
-                                         stagingPath, [], activator.id))
-              .then(() => Promise.resolve([]));
-        } else {
-          result = Promise.resolve(tagObject.files);
         }
-        return result;
-      });
+        result = queryPurge(api, deployPath, tagObject.files, safe)
+          .then(() => saveActivation(gameId, modType, state.app.instanceId, deployPath,
+                                     stagingPath, [], activator.id))
+          .then(() => Promise.resolve([]));
+      } else {
+        result = Promise.resolve(tagObject.files);
+      }
+      return result;
+    });
 }
 
 export function saveActivation(gameId: string, modType: string, instance: string,
@@ -441,6 +441,6 @@ export function saveActivation(gameId: string, modType: string, instance: string
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
     : writeFileAtomic(tagFilePath, dataJSON)
         // remove backup from previous Vortex versions
-        .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
-          .catch({ code: 'ENOENT' }, () => null));
+      .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
+        .catch({ code: 'ENOENT' }, () => null));
 }

@@ -28,7 +28,7 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
           api.showDialog('info', 'Invalid primary tool', {
             text: api.translate('The primary tool for {{game}} is no longer available.'
                               + ' Quick launch has reverted to the game\'s executable.',
-                                  { replace: { game: gameMode } }),
+                                { replace: { game: gameMode } }),
           }, [ { label: 'Close', action: () => dismiss() } ]),
         },
       ],
@@ -40,12 +40,12 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(undefined);
   }
   const primaryToolId = getSafe(state,
-    ['settings', 'interface', 'primaryTool', gameMode], undefined);
+                                ['settings', 'interface', 'primaryTool', gameMode], undefined);
 
   if (truthy(primaryToolId)) {
     // We have a primary tool defined - ensure it's still valid.
     const primaryTool = getSafe(state,
-      [ 'settings', 'gameMode', 'discovered', gameMode, 'tools', primaryToolId ], undefined);
+                                [ 'settings', 'gameMode', 'discovered', gameMode, 'tools', primaryToolId ], undefined);
     if ((primaryTool === undefined) || (!truthy(primaryTool.path))) {
       notifyInvalid();
       api.store.dispatch(setPrimaryTool(gameMode, undefined));
@@ -86,14 +86,14 @@ function init(context: IExtensionContext): boolean {
     toolsValidation(context.api, starters, gameMode);
 
   context.registerDashlet('Tools', 2, 2, 100, Tools, undefined,
-    () => ({
-      onGetValidTools,
-    }), {
-      closable: false,
-    });
+                          () => ({
+                            onGetValidTools,
+                          }), {
+                            closable: false,
+                          });
 
   context.registerTest('primary-tool', 'gamemode-activated',
-    () => testPrimaryTool(context.api));
+                       () => testPrimaryTool(context.api));
 
   context.once(() => {
     // Purging and deploying may change the tool state. We need to kick off

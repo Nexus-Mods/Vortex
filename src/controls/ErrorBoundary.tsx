@@ -123,10 +123,10 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
                 icon='close'
                 onClick={onHide}
               />)
-              : null}
+            : null}
         </Alert>
       </div>
-      ) : null;
+    ) : null;
   }
 
   private report = () => {
@@ -187,6 +187,6 @@ export function safeCallbacks<T, S>(
       ...props,
       safeCB: cachingSafeCB,
     },
-    props.children);
+                               props.children);
   };
 }

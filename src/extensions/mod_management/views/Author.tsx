@@ -100,11 +100,11 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
         {authorP}
         {' '}
         {
-        (mod.state === 'installed')
-          ? (
-            <IconButton icon='edit' tooltip={t('Edit')} onClick={startEdit} className='btn-embed' />
+          (mod.state === 'installed')
+            ? (
+              <IconButton icon='edit' tooltip={t('Edit')} onClick={startEdit} className='btn-embed' />
             )
-          : null
+            : null
         }
       </div>
     );

@@ -22,8 +22,8 @@ function queryDeploy(api: IExtensionApi): Promise<DeployResult> {
         + 'enabling/disabling, as well as newly set mod rules need to be deployed to take effect.[br][/br]'
         + 'You can skip this step, ignoring (but not reverting) newly made changes to mods and mod rules, '
         + 'or deploy now to commit the changes.', {
-          replace: { more: `[More id='more-deploy' name='${t('Deployment')}']${getText('deployment', t)}[/More]` }
-        })
+        replace: { more: `[More id='more-deploy' name='${t('Deployment')}']${getText('deployment', t)}[/More]` }
+      })
     }, [{ label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' }])
       .then((result) => {
         switch (result.action) {
@@ -67,7 +67,7 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
 }
 
 function preStartDeployHook(api: IExtensionApi, input: IRunParameters): Promise<IRunParameters> {
-   return (input.options.suggestDeploy === true)
+  return (input.options.suggestDeploy === true)
     ? checkDeploy(api).then(() => input)
     : Promise.resolve(input);
 }

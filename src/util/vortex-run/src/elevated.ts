@@ -152,6 +152,14 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequire) =>
         }
 
         try {
+          if (!isWindows()) {
+            return reject(new Error('Elevated execution is only supported on Windows'));
+          }
+          
+          if (!winapi) {
+            return reject(new Error('Windows API bindings not available'));
+          }
+          
           winapi.ShellExecuteEx({
             verb: 'runas',
             file: process.execPath,

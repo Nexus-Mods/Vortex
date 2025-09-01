@@ -111,11 +111,11 @@ function refreshMods(api: IExtensionApi, gameId: string,
                     { label: 'Ignore' },
                     { label: 'Delete' },
                   ])
-                  .then(deleteRes => {
-                    if (deleteRes.action === 'Delete') {
-                      return fs.removeAsync(fullPath + '.installing');
-                    }
-                  })));
+                    .then(deleteRes => {
+                      if (deleteRes.action === 'Delete') {
+                        return fs.removeAsync(fullPath + '.installing');
+                      }
+                    })));
           })
             .then(() => onRemoveMods(removedMods));
         } else {

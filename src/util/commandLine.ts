@@ -114,7 +114,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
  */
 function transformEpicArguments(argv: string[]):string[] {
 
-  var epicParameterSwaps = {
+  const epicParameterSwaps = {
     "-AUTH_LOGIN": "--epic-auth-login",
     "-AUTH_PASSWORD": "--epic-auth-password",
     "-AUTH_TYPE": "--epic-auth-type",
@@ -127,7 +127,7 @@ function transformEpicArguments(argv: string[]):string[] {
     "-epicsandboxid": "--epic-sandboxid",
   };
 
-  var resultArr = argv.map((element) => {
+  const resultArr = argv.map((element) => {
 
 
     for (const key in epicParameterSwaps) {

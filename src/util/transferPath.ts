@@ -183,8 +183,8 @@ export function transferPath(source: string,
       moveDown = isChildPath(dest, source, norm);
     })
     .then(() => Bluebird.join(fs.statAsync(source), fs.statAsync(dest),
-      (statOld: fs.Stats, statNew: fs.Stats) =>
-        Bluebird.resolve(statOld.dev === statNew.dev)))
+                              (statOld: fs.Stats, statNew: fs.Stats) =>
+                                Bluebird.resolve(statOld.dev === statNew.dev)))
     .then((sameVolume: boolean) => {
       func = sameVolume ? linkFile : fs.copyAsync;
       return Bluebird.resolve();
@@ -214,41 +214,41 @@ export function transferPath(source: string,
               ? Bluebird.resolve()
               : Bluebird.reject(err));
         })
-        .then(() => null))
-        .then(() => Bluebird.map(files, entry => {
-          const sourcePath = entry.filePath;
-          const destPath = path.join(dest, path.relative(source, entry.filePath));
+          .then(() => null))
+          .then(() => Bluebird.map(files, entry => {
+            const sourcePath = entry.filePath;
+            const destPath = path.join(dest, path.relative(source, entry.filePath));
 
-          return func(sourcePath, destPath, { showDialogCallback })
-            .catch(UserCanceled, () => {
-              isCancelled = true;
-              copyPromise = Bluebird.resolve();
-            })
+            return func(sourcePath, destPath, { showDialogCallback })
+              .catch(UserCanceled, () => {
+                isCancelled = true;
+                copyPromise = Bluebird.resolve();
+              })
+              .catch(err => {
+                if (['EXDEV', 'ENOTSUP', 'EISDIR'].indexOf(err.code) !== -1) {
+                  func = fs.copyAsync;
+                  return func(sourcePath, destPath, { showDialogCallback });
+                } else if (err.code === 'ENOENT') {
+                  return Bluebird.resolve();
+                } else {
+                  return Bluebird.reject(err);
+                }
+              })
+              .then(() => {
+                ++completed;
+                const perc = Math.floor((completed * 100) / count);
+                if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
+                  lastPerc = perc;
+                  lastProgress = Date.now();
+                  progress(sourcePath, destPath, perc);
+                }
+              });
+          })
+            .then(() => null)
             .catch(err => {
-              if (['EXDEV', 'ENOTSUP', 'EISDIR'].indexOf(err.code) !== -1) {
-                func = fs.copyAsync;
-                return func(sourcePath, destPath, { showDialogCallback });
-              } else if (err.code === 'ENOENT') {
-                return Bluebird.resolve();
-              } else {
-                return Bluebird.reject(err);
-              }
-            })
-            .then(() => {
-              ++completed;
-              const perc = Math.floor((completed * 100) / count);
-              if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
-                lastPerc = perc;
-                lastProgress = Date.now();
-                progress(sourcePath, destPath, perc);
-              }
-            });
-        })
-        .then(() => null)
-        .catch(err => {
-          exception = err;
-          return null;
-        }));
+              exception = err;
+              return null;
+            }));
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise.then(() => (exception !== undefined)
       ? Bluebird.reject(exception)
@@ -267,10 +267,10 @@ export function transferPath(source: string,
             //  We log the error and report an exception but expect the caller
             //  to resolve successfully and inform the user that we couldn't clean
             //  up properly.
-            log('error', 'Failed to remove source directory',
+          log('error', 'Failed to remove source directory',
               (err.stack !== undefined) ? err.stack : err);
 
-            return Promise.reject(new CleanupFailedException(err));
+          return Promise.reject(new CleanupFailedException(err));
         });
     });
 }
@@ -288,14 +288,14 @@ export function cleanFailedTransfer(dirPath: string): Bluebird<void> {
   return turbowalk(dirPath, entries => {
     files = files.concat(entries);
   }, { skipHidden: false, skipLinks: false, recurse: true })
-  .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
-    ? Bluebird.resolve()
-    : Bluebird.reject(err))
-  .then(() => {
-    files = files.sort((lhs, rhs) => rhs.filePath.length - lhs.filePath.length);
-    return Bluebird.each(files, file => fs.removeAsync(file.filePath));
-  })
-  .then(() => fs.removeAsync(dirPath));
+    .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
+      ? Bluebird.resolve()
+      : Bluebird.reject(err))
+    .then(() => {
+      files = files.sort((lhs, rhs) => rhs.filePath.length - lhs.filePath.length);
+      return Bluebird.each(files, file => fs.removeAsync(file.filePath));
+    })
+    .then(() => fs.removeAsync(dirPath));
 }
 
 function removeFolderTags(sourceDir: string) {
@@ -341,11 +341,11 @@ function removeOldDirectories(items: IEntry[] | string[]): Bluebird<void> {
   ).then(() => undefined);
 }
 
-  function exists(filePath: string): Bluebird<boolean> {
-    return fs.statAsync(filePath)
-      .then(() => true)
-      .catch(() => false);
-  }
+function exists(filePath: string): Bluebird<boolean> {
+  return fs.statAsync(filePath)
+    .then(() => true)
+    .catch(() => false);
+}
 
 function linkFile(source: string, dest: string, options?: any): Bluebird<void> {
   return fs.ensureDirAsync(path.dirname(dest))

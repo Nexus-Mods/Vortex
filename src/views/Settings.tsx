@@ -124,12 +124,12 @@ class Settings extends ComponentEx<IProps, {}> {
     return (
       <Panel key={idx}>
         <Panel.Body>
-        {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
-        <page.component
-          {...props}
-          startup={this.mStartupSettings}
-          changeStartup={this.changeStartup}
-        />
+          {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+          <page.component
+            {...props}
+            startup={this.mStartupSettings}
+            changeStartup={this.changeStartup}
+          />
         </Panel.Body>
       </Panel>
     );

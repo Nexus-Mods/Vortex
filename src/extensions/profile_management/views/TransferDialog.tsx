@@ -68,34 +68,34 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         {truthy(dialog)
           ? (
             <Modal.Body>
-            <div>
-              <FormControl.Static>
-                {t('From: {{source}}', { replace: { source: profiles[dialog.source].name } })}
-              </FormControl.Static>
-              <IconButton
-                id='btn-swap-profiles'
-                icon='swap'
-                tooltip={t('Swap profiles')}
-                onClick={this.swapProfiles}
-              />
-              <FormControl.Static>
-                {t('To: {{target}}', { replace: { target: profiles[dialog.target].name } })}
-              </FormControl.Static>
-            </div>
-            <Checkbox
-              checked={this.state.transferEnabledMods}
-              onChange={this.toggleTransferEnabled}
-            >
-              {t('Transfer Enabled Mods')}
-            </Checkbox>
-          </Modal.Body>
+              <div>
+                <FormControl.Static>
+                  {t('From: {{source}}', { replace: { source: profiles[dialog.source].name } })}
+                </FormControl.Static>
+                <IconButton
+                  id='btn-swap-profiles'
+                  icon='swap'
+                  tooltip={t('Swap profiles')}
+                  onClick={this.swapProfiles}
+                />
+                <FormControl.Static>
+                  {t('To: {{target}}', { replace: { target: profiles[dialog.target].name } })}
+                </FormControl.Static>
+              </div>
+              <Checkbox
+                checked={this.state.transferEnabledMods}
+                onChange={this.toggleTransferEnabled}
+              >
+                {t('Transfer Enabled Mods')}
+              </Checkbox>
+            </Modal.Body>
           ) : null}
         <Modal.Footer>
           <Button onClick={this.close}>{t('Cancel')}</Button>
           <Button onClick={this.apply}>{t('Transfer')}</Button>
         </Modal.Footer>
       </Modal>
-      );
+    );
   }
 
   private swapProfiles = () => {
@@ -113,7 +113,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { dialog } = this.state;
     Object.keys(mods || {}).forEach(modId => {
       onSetModEnabled(dialog.target, modId,
-        getSafe(profiles, [dialog.source, 'modState', modId, 'enabled'], false));
+                      getSafe(profiles, [dialog.source, 'modState', modId, 'enabled'], false));
     });
     this.close();
   }

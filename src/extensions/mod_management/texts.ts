@@ -4,7 +4,7 @@ function getText(id: string, t: TFunction) {
   switch (id) {
     case 'deployment':
       return t(
-          'When you install a mod through Vortex it is stored in a separate directory and has ' +
+        'When you install a mod through Vortex it is stored in a separate directory and has ' +
           'no immediate effect on the game. We call the process of actually placing the ' +
           'files into the game directory "deployment".\n\n' +
           'There are different methods available in Vortex to do this Deployment, the best ' +

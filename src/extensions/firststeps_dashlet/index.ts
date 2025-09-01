@@ -28,17 +28,17 @@ function init(context: IExtensionContext): boolean {
     const steps = state.settings.firststeps.steps;
 
     const visibleSteps = allTodos.filter(item => {
-        if (steps[item.id]) {
-          return false;
-        }
+      if (steps[item.id]) {
+        return false;
+      }
 
-        if (item.condition) {
-          const props = item.props ? item.props(state) : {};
-          return item.condition(props);
-        } else {
-          return true;
-        }
-      });
+      if (item.condition) {
+        const props = item.props ? item.props(state) : {};
+        return item.condition(props);
+      } else {
+        return true;
+      }
+    });
     return visibleSteps.length > 0;
   }, () => ({
     todos: [].concat(todos(context.api), extTodos),

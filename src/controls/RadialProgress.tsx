@@ -51,7 +51,7 @@ class RadialProgress extends React.Component<IProps, {}> {
 
     const classNames = ['radial', className];
 
-    let progressData = [...data]
+    const progressData = [...data]
     
     if (spin && progressData.length == 0) {
       // The normal progress has higher priority than the spin
@@ -129,7 +129,7 @@ class RadialProgress extends React.Component<IProps, {}> {
       .endAngle(2 * Math.PI)
       .innerRadius((item: IBar, idx: number, count: number) => inner(true, idx))
       .outerRadius((item: IBar, idx: number, count: number) => outer(true, idx));
-   }
+  }
 }
 
 export default RadialProgress as React.ComponentClass<IBaseProps>;

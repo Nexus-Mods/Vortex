@@ -68,7 +68,7 @@ function progress(props: { t: TFunction, download: IDownload }) {
             name='feedback-warning'
             tooltip={t('The download server doesn\'t support resuming downloads ')}
           />
-         ) : null}
+        ) : null}
       </div>
     );
   }
@@ -249,12 +249,12 @@ function createColumns(
           return null;
         }
         return fs.statAsync(path.join(downloadPath, attributes.localPath))
-        .then(stat => {
-          const id = Object.keys(downloads).find(key => downloads[key] === attributes);
-          onSetAttribute(id, stat.mtimeMs);
-          return Promise.resolve(stat.mtime);
-        })
-        .catch(() => undefined);
+          .then(stat => {
+            const id = Object.keys(downloads).find(key => downloads[key] === attributes);
+            onSetAttribute(id, stat.mtimeMs);
+            return Promise.resolve(stat.mtime);
+          })
+          .catch(() => undefined);
       },
       placement: 'both',
       isToggleable: true,

@@ -24,7 +24,7 @@ import surveySessionReducer from './reducers/surveys';
 import { setAnnouncements, setAvailableSurveys, setSuppressSurvey } from './actions';
 import AnnouncementDashlet from './AnnouncementDashlet';
 import { IAnnouncement, ISurveyInstance,
-  ParserError } from './types';
+         ParserError } from './types';
 
 import { matchesGameMode, matchesVersion } from './util';
 
@@ -66,7 +66,7 @@ function getHTTPData<T>(link: string): Bluebird<T[]> {
           } catch (err) {
             reject(new ParserError(res.statusCode, err.message, link, output));
           }
-      });
+        });
     }).on('error', (e) => {
       reject(e);
     }).end();
@@ -102,22 +102,22 @@ function updateSurveys(store: Redux.Store<IState>) {
   return ((DEBUG_MODE)
     ? readLocalSurveysFile()
     : getHTTPData<ISurveyInstance>(SURVEYS_LINK)).then((res) => {
-      if (!Array.isArray(res)) {
-        return Bluebird.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
-      }
+    if (!Array.isArray(res)) {
+      return Bluebird.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
+    }
 
       // Ugly but needed.
-      const validSurveys = res.filter(iter =>
-        (!!iter.endDate) && (!!iter.id) && (!!iter.link));
+    const validSurveys = res.filter(iter =>
+      (!!iter.endDate) && (!!iter.id) && (!!iter.link));
 
-      if (validSurveys.length !== res.length) {
-        log('debug', 'survey array contains invalid survey instances');
-      }
+    if (validSurveys.length !== res.length) {
+      log('debug', 'survey array contains invalid survey instances');
+    }
 
-      store.dispatch(setAvailableSurveys(validSurveys));
-      return Bluebird.resolve();
+    store.dispatch(setAvailableSurveys(validSurveys));
+    return Bluebird.resolve();
   })
-  .catch(err => log('warn', 'failed to retrieve list of surveys', err));
+    .catch(err => log('warn', 'failed to retrieve list of surveys', err));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -126,8 +126,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['persistent', 'surveys'], persistentReducer);
 
   context.registerDashlet('Announcements', 1, 3, 200, AnnouncementDashlet,
-    (state: IState) => true,
-  () => ({}), { closable: true });
+                          (state: IState) => true,
+                          () => ({}), { closable: true });
 
   context.once(() => {
     const store = context.api.store;
@@ -164,7 +164,7 @@ function showSurveyNotification(context) {
   });
 
   if (filtered.length > 0) {
-      context.api.sendNotification({
+    context.api.sendNotification({
       id: 'survey-notification',
       type: 'info',
       message: t('We could use your opinion on something...'),

@@ -102,11 +102,11 @@ export class DownloadObserver {
               (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
               (downloadId, callback?, options?) =>
-                  this.handleResumeDownload(downloadId, callback, options));
+                this.handleResumeDownload(downloadId, callback, options));
     events.on('start-download',
               (urls, modInfo, fileName?, callback?, redownload?, options?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, callback,
-                                           redownload, options));
+                this.handleStartDownload(urls, modInfo, fileName, callback,
+                                         redownload, options));
     // this is a bit of a hack that lets callers intercept a queued download that was not started
     // yet (e.g. it may be waiting to ensure the download dir exists)
     // for this to work the modInfo of the download has to contain a referenceTag corresponding to
@@ -270,9 +270,9 @@ export class DownloadObserver {
       if (callback !== undefined) {
         callback(new ProcessCanceled(
           'You need to select a game to manage before downloading this file'));
-        }
-        return;
       }
+      return;
+    }
     const downloadDomain = this.extractNxmDomain(urls[0]);
 
     // Convert nexus domain to internal game ID for proper path resolution
@@ -429,7 +429,7 @@ export class DownloadObserver {
           setImmediate(() => {
             pendingUpdate = false;
             progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                          urls, filePath, false);
+                           urls, filePath, false);
           });
         }
       } else if (small) {
@@ -563,8 +563,8 @@ export class DownloadObserver {
           if (download.state === 'failed') {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.enqueue(downloadId, download.urls,
-                path.basename(fullPath), this.genProgressCB(downloadId),
-                undefined, { redownload: 'replace' }))
+                                                path.basename(fullPath), this.genProgressCB(downloadId),
+                                                undefined, { redownload: 'replace' }))
               .then(res => {
                 log('debug', 'download finished (re-tried)', { file: res.filePath });
                 return this.handleDownloadFinished(downloadId, callback, res,
@@ -575,8 +575,8 @@ export class DownloadObserver {
           } else {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.resume(downloadId, fullPath, download.urls,
-                download.received, download.size, download.startTime, download.chunks,
-                this.genProgressCB(downloadId), extraInfo))
+                                               download.received, download.size, download.startTime, download.chunks,
+                                               this.genProgressCB(downloadId), extraInfo))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
                 return this.handleDownloadFinished(downloadId, callback, res,
@@ -610,7 +610,7 @@ export class DownloadObserver {
         return this.handleResumeDownload(downloadId, callback);
       } else {
         return this.handleStartDownload(download.urls, download.modInfo,
-          download.localPath, callback, 'never');
+                                        download.localPath, callback, 'never');
       }
     }
     log('debug', 'not resuming download', { id: downloadId, state: download.state })
@@ -638,10 +638,10 @@ export class DownloadObserver {
           callback(new TemporaryError('I/O Error'), downloadId);
         } else {
           showError(this.mApi.store.dispatch, 'Download failed',
-            'The download failed due to an I/O error (network or writing to disk). '
+                    'The download failed due to an I/O error (network or writing to disk). '
             + 'This is likely a temporary issue, please try resuming later.', {
-            allowReport: false,
-          });
+                      allowReport: false,
+                    });
         }  
       } else {
         return this.attemptResumeDownload(downloadId, callback);
@@ -654,13 +654,13 @@ export class DownloadObserver {
         callback(new TemporaryError('SSL Error'), downloadId);
       } else {
         showError(this.mApi.store.dispatch, 'Download failed',
-          'The download failed due to a https certificate error. '
+                  'The download failed due to a https certificate error. '
           + 'This is is usually caused by misconfigured or outdated '
           + 'AntiVirus, Firewall, VPN or proxy. '
           + 'You can try resuming the download to see if it was a temporary issue but also '
           + 'please check your network-related software for updates.', {
-          allowReport: false,
-        });
+                    allowReport: false,
+                  });
       }
     } else if (err instanceof TemporaryError) {
       this.handlePauseDownload(downloadId);
@@ -670,9 +670,9 @@ export class DownloadObserver {
           callback(err, downloadId);
         } else {
           showError(this.mApi.store.dispatch, 'Download failed',
-            err.message, {
-            allowReport: false,
-          });
+                    err.message, {
+                      allowReport: false,
+                    });
         }  
       } else {
         return this.attemptResumeDownload(downloadId, callback);

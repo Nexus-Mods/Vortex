@@ -17,56 +17,56 @@ const activators = (state: IState) => state.settings.mods.activator;
 const allNeedToDeploy = (state: IState) => state.persistent.deployment.needToDeploy;
 
 export const installPath = createSelector(installPathPattern, activeGameId,
-    (inPaths: { [gameId: string]: string }, inGameMode: string) => {
-      if (inGameMode === undefined) {
-        return undefined;
-      }
-      return getInstallPath(inPaths[inGameMode], inGameMode);
-    });
+                                          (inPaths: { [gameId: string]: string }, inGameMode: string) => {
+                                            if (inGameMode === undefined) {
+                                              return undefined;
+                                            }
+                                            return getInstallPath(inPaths[inGameMode], inGameMode);
+                                          });
 
 export const installPathForGame = createCachedSelector(
-    gameInstallPathPattern,
-    (state: IState, gameId: string) => gameId,
-    (inPath: string, gameId: string) =>
-      gameId !== undefined ? getInstallPath(inPath, gameId) : undefined,
-  )((state, gameId) => {
-    if (gameId === undefined) {
-      return undefined;
-    }
-    return gameId;
-  }, {
-    cacheObject: new RelaxedReselectCache(),
-  });
+  gameInstallPathPattern,
+  (state: IState, gameId: string) => gameId,
+  (inPath: string, gameId: string) =>
+    gameId !== undefined ? getInstallPath(inPath, gameId) : undefined,
+)((state, gameId) => {
+  if (gameId === undefined) {
+    return undefined;
+  }
+  return gameId;
+}, {
+  cacheObject: new RelaxedReselectCache(),
+});
 
 export const currentActivator = createSelector(activators, activeGameId,
-    (inActivators: { [gameId: string]: string }, inGameMode: string) => {
-      return inActivators[inGameMode];
-    });
+                                               (inActivators: { [gameId: string]: string }, inGameMode: string) => {
+                                                 return inActivators[inGameMode];
+                                               });
 
 export const activatorForGame = createCachedSelector(
-    activators, (state: IState, gameId: string) => gameId,
-    (inActivators: { [gameId: string]: string }, gameId: string) => inActivators[gameId],
-  )((state, gameId) => {
-      if (gameId === undefined) {
-        throw new Error('gameId can\'t be undefined');
-      }
-      return gameId;
-  });
+  activators, (state: IState, gameId: string) => gameId,
+  (inActivators: { [gameId: string]: string }, gameId: string) => inActivators[gameId],
+)((state, gameId) => {
+  if (gameId === undefined) {
+    throw new Error('gameId can\'t be undefined');
+  }
+  return gameId;
+});
 
 interface INeedToDeployMap {
   [gameId: string]: boolean;
 }
 
 export const needToDeploy = createSelector(
-    allNeedToDeploy,
-    activeGameId,
-    (inNeedToDeploy: INeedToDeployMap, inGameMode: string) => inNeedToDeploy[inGameMode]);
+  allNeedToDeploy,
+  activeGameId,
+  (inNeedToDeploy: INeedToDeployMap, inGameMode: string) => inNeedToDeploy[inGameMode]);
 
 export const needToDeployForGame = createCachedSelector(
-    allNeedToDeploy,
-    (state: IState, gameId: string) => gameId,
-    (inNeedToDeploy: INeedToDeployMap, inGameId: string) => inNeedToDeploy[inGameId])(
-      (state, gameId) => gameId);
+  allNeedToDeploy,
+  (state: IState, gameId: string) => gameId,
+  (inNeedToDeploy: INeedToDeployMap, inGameId: string) => inNeedToDeploy[inGameId])(
+  (state, gameId) => gameId);
 
 const emptyObj = {};
 

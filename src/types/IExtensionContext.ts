@@ -53,8 +53,8 @@ import { ThunkDispatch } from 'redux-thunk';
 import { INexusAPIExtension } from '../extensions/nexus_integration/types/INexusAPIExtension';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
-         IFileChange, ILookupResult, IModInfo, IQuery, InstructionType, IReference, InstallFunc,
-         ISupportedResult, ProgressDelegate };
+  IFileChange, ILookupResult, IModInfo, IQuery, InstructionType, IReference, InstallFunc,
+  ISupportedResult, ProgressDelegate };
 
 // tslint:disable-next-line:interface-name
 export interface ThunkStore<S> extends Redux.Store<S> {
@@ -810,7 +810,7 @@ export class VerifierDropParent extends Error {
 export type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
 
 export function addReducer<ActionT, StateT>(
-    action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT) {
+  action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT) {
   return {
     [action as any]: handler,
   };

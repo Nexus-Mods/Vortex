@@ -175,71 +175,71 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     return (
       <div className='login-content'>
         <Icon
-              className='nexus-header'
-              name='nexus-header'
-              svgStyle='#login-dialog path { fill: black }' />
+          className='nexus-header'
+          name='nexus-header'
+          svgStyle='#login-dialog path { fill: black }' />
         {
-        (visible && (oauthPending === undefined)) ?
-          <div>
-            <h2>{t('Log in or register on the Nexus Mods website')}</h2>
-            <p>{t('To access this content, please login to the Nexus Mods website.')}</p>
-            <p>{t('Click the button below to start the login/registration process.')}</p>
-            <Button tooltip={t('Start login')} onClick={this.login}>{t('Login')}</Button>
-          </div>
-        : loginId !== undefined ? [(
-          <LoginInProgress
-            key='login-in-progress'
-            t={t}
-            loginId={loginId}
-            onCopyToClipboard={() => this.copyToClipboard(oauthPending)}
-          />
-        ), (
-          <Button
-            key='login-press-authorise'
-            onClick={nop}
-            tooltip={t('Please click "Authorise" on the website')}
-            disabled={true}
-          >
+          (visible && (oauthPending === undefined)) ?
             <div>
-              <Spinner />
-              {t('Please click "Authorise" on the website')}
+              <h2>{t('Log in or register on the Nexus Mods website')}</h2>
+              <p>{t('To access this content, please login to the Nexus Mods website.')}</p>
+              <p>{t('Click the button below to start the login/registration process.')}</p>
+              <Button tooltip={t('Start login')} onClick={this.login}>{t('Login')}</Button>
             </div>
-          </Button>
-        ), (
-          <a
-            key='troubleshoot-button'
-            onClick={this.troubleshoot}
-          >
-            {t('Not working? Try manual login.')}
-          </a>
-        ),
-        ] : (
-        <div>
+            : loginId !== undefined ? [(
+              <LoginInProgress
+                key='login-in-progress'
+                t={t}
+                loginId={loginId}
+                onCopyToClipboard={() => this.copyToClipboard(oauthPending)}
+              />
+            ), (
+              <Button
+                key='login-press-authorise'
+                onClick={nop}
+                tooltip={t('Please click "Authorise" on the website')}
+                disabled={true}
+              >
+                <div>
+                  <Spinner />
+                  {t('Please click "Authorise" on the website')}
+                </div>
+              </Button>
+            ), (
+              <a
+                key='troubleshoot-button'
+                onClick={this.troubleshoot}
+              >
+                {t('Not working? Try manual login.')}
+              </a>
+            ),
+            ] : (
+              <div>
 
-        <h2>{t('Log in or register on the Nexus Mods website')}</h2>
+                <h2>{t('Log in or register on the Nexus Mods website')}</h2>
 
-        <p>{t('Look out for a browser window opening and log in/register if required.')}</p>
+                <p>{t('Look out for a browser window opening and log in/register if required.')}</p>
 
-        <div className='login-please-click'>
-          <Spinner />
-          <h4>{t('Please click "authorise" on the website')}</h4>
-        </div>
+                <div className='login-please-click'>
+                  <Spinner />
+                  <h4>{t('Please click "authorise" on the website')}</h4>
+                </div>
 
-        <h3>{t('Website didn\'t open?')}</h3>
+                <h3>{t('Website didn\'t open?')}</h3>
 
-        <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
+                <p>{t('Copy the following address into your browser window. We support Chrome, Safari, Firefox and Edge.')}</p>
 
-        <CopyClipboardInput inputValue={oauthPending} />
+                <CopyClipboardInput inputValue={oauthPending} />
 
-        <p>{t('Still not working?')} <a 
-          key='troubleshoot-button'
-          onClick={this.troubleshoot}>{t('Log in with token')}
-          </a>
-        </p>
+                <p>{t('Still not working?')} <a 
+                  key='troubleshoot-button'
+                  onClick={this.troubleshoot}>{t('Log in with token')}
+                </a>
+                </p>
 
-        </div>
+              </div>
 
-        )}
+            )}
       </div>
     );
   }
@@ -253,39 +253,39 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     return (
       <div className='login-content'>
         <Icon
-              className='nexus-header'
-              name='nexus-header'
-              svgStyle='#login-dialog path { fill: black }' />        
+          className='nexus-header'
+          name='nexus-header'
+          svgStyle='#login-dialog path { fill: black }' />        
 
         <h2>{t('Log in with token')}</h2>
 
         <ol style={{ textAlign: 'left' }}>
-        <li>
-        <p>{t('Copy the following address into your browser and log in/register if required (skip this step if you already have the token). We support Chrome, Safari, Firefox and Edge.')}</p>
+          <li>
+            <p>{t('Copy the following address into your browser and log in/register if required (skip this step if you already have the token). We support Chrome, Safari, Firefox and Edge.')}</p>
 
-        <CopyClipboardInput inputValue={oauthPending} />
+            <CopyClipboardInput inputValue={oauthPending} />
                   
-        </li>
-        <li>
-        <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
+          </li>
+          <li>
+            <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
      
-        <PlaceholderTextArea t={t} mModalRef={this.mModalRef} className='token-paste-textarea' onChange={this.updateAPIKey}/>
+            <PlaceholderTextArea t={t} mModalRef={this.mModalRef} className='token-paste-textarea' onChange={this.updateAPIKey}/>
 
-        </li>
+          </li>
         </ol>
 
-            <Button
-              tooltip={t('Save')}
-              onClick={this.applyKey}
+        <Button
+          tooltip={t('Save')}
+          onClick={this.applyKey}
               // disabled={!keyValid}
-            >
-              {t('Save')}
-            </Button>
+        >
+          {t('Save')}
+        </Button>
 
-            <div className='login-invalid-key-group' style={{visibility: invalidToken?'visible':'hidden'}}>
-            <p className='login-invalid-key-danger'>{t('Your token was not recognised.')}</p>
-              <p className='login-invalid-key-details'>{t('Please try again. Copy the token using the button on the website.')}</p>
-              </div>
+        <div className='login-invalid-key-group' style={{visibility: invalidToken?'visible':'hidden'}}>
+          <p className='login-invalid-key-danger'>{t('Your token was not recognised.')}</p>
+          <p className='login-invalid-key-details'>{t('Please try again. Copy the token using the button on the website.')}</p>
+        </div>
       </div>
     );
   }

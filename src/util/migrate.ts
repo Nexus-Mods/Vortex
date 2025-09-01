@@ -30,10 +30,10 @@ function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Pro
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
   return fs.ensureDirWritableAsync(defaultPath, () => Promise.resolve())
     .then(() => dialog.showOpenDialog(window, {
-        title: 'Select empty directory to store downloads',
-        properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
-        defaultPath,
-      }))
+      title: 'Select empty directory to store downloads',
+      properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
+      defaultPath,
+    }))
     .then(result => {
       const { filePaths } = result;
       if ((filePaths === undefined) || (filePaths.length === 0)) {
@@ -46,7 +46,7 @@ function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Pro
         .then(files => {
           if (files.length > 0) {
             dialog.showErrorBox('Invalid path selected',
-              'The directory needs to be empty');
+                                'The directory needs to be empty');
             return selectDirectory(window, defaultPathPattern);
           } else {
             return Promise.resolve(filePaths[0]);
@@ -57,13 +57,13 @@ function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Pro
 
 function transferPath(from: string, to: string): Promise<void> {
   return Promise.join(fs.statAsync(from), fs.statAsync(to),
-      (statOld: fs.Stats, statNew: fs.Stats) => Promise.resolve(statOld.dev === statNew.dev))
+                      (statOld: fs.Stats, statNew: fs.Stats) => Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
       const func = sameVolume ? fs.renameAsync : fs.copyAsync;
       return Promise.resolve(fs.readdirAsync(from))
         .map((fileName: string) =>
           func(path.join(from, fileName), path.join(to, fileName))
-          .catch(err => (err.code === 'EXDEV')
+            .catch(err => (err.code === 'EXDEV')
               // EXDEV implies we tried to rename when source and destination are
               // not in fact on the same volume. This is what comparing the stat.dev
               // was supposed to prevent.
@@ -79,12 +79,12 @@ function transferPath(from: string, to: string): Promise<void> {
 function dialogProm(window: BrowserWindow, type: string, title: string,
                     message: string, options: string[]): Promise<string> {
   return Promise.resolve(dialog.showMessageBox(window, {
-      type: type as ('none' | 'info' | 'error' | 'question' | 'warning'),
-      buttons: options,
-      title,
-      message,
-      noLink: true,
-    })).then(result => options[result.response]);
+    type: type as ('none' | 'info' | 'error' | 'question' | 'warning'),
+    buttons: options,
+    title,
+    message,
+    noLink: true,
+  })).then(result => options[result.response]);
 }
 
 function forceLogoutForOauth_1_9(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
@@ -130,13 +130,13 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
       return Promise.map(Object.keys(state.settings.gameMode.discovered),
-        gameId => {
-          const resolvedPath = path.join(downloadPath, gameId);
-          return fs.ensureDirAsync(resolvedPath)
-            .then(() => transferPath(
-              resolvePath('download', (state.settings.mods as any).paths, gameId),
-              resolvedPath));
-        })
+                         gameId => {
+                           const resolvedPath = path.join(downloadPath, gameId);
+                           return fs.ensureDirAsync(resolvedPath)
+                             .then(() => transferPath(
+                               resolvePath('download', (state.settings.mods as any).paths, gameId),
+                               resolvedPath));
+                         })
         .then(() => null);
     });
 }
@@ -156,7 +156,7 @@ function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState
       }))));
     return Promise.resolve();
   })
-  .then(() => null);
+    .then(() => null);
 }
 
 const migrations: IMigration[] = [
@@ -212,15 +212,15 @@ function queryMigration(window: BrowserWindow, migration: IMigration): Promise<b
 
 function queryContinue(window: BrowserWindow, err: Error): Promise<void> {
   return dialogProm(window,
-    'error',
-    'Migration failed',
-    'A migration step failed. You should quit now and resolve the cause of the issue.\n'
+                    'error',
+                    'Migration failed',
+                    'A migration step failed. You should quit now and resolve the cause of the issue.\n'
     + err.stack || err.message,
-    ['Ignore', 'Quit'],
+                    ['Ignore', 'Quit'],
   )
-  .then(selection => selection === 'Ignore'
-    ? Promise.resolve()
-    : Promise.reject(err));
+    .then(selection => selection === 'Ignore'
+      ? Promise.resolve()
+      : Promise.reject(err));
 }
 
 function migrate(store: Redux.Store<IState>, window: BrowserWindow): Promise<void> {
@@ -230,13 +230,13 @@ function migrate(store: Redux.Store<IState>, window: BrowserWindow): Promise<voi
     .filter(mig => semver.lt(oldVersion, mig.minVersion))
     .filter(mig => state.app.migrations.indexOf(mig.id) === -1);
   return Promise.each(neccessaryMigrations, migration =>
-      queryMigration(window, migration)
-        .then((proceed: boolean) => proceed ? migration.apply(window, store) : Promise.resolve())
-        .then(() => {
-          store.dispatch(completeMigration(migration.id));
-          return Promise.resolve();
-        })
-        .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(window, err)))
+    queryMigration(window, migration)
+      .then((proceed: boolean) => proceed ? migration.apply(window, store) : Promise.resolve())
+      .then(() => {
+        store.dispatch(completeMigration(migration.id));
+        return Promise.resolve();
+      })
+      .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(window, err)))
     .then(() => null);
 }
 

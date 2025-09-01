@@ -159,26 +159,26 @@ function importStateV1(importPath: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const leveldown: typeof leveldownT = require('leveldown');
     const db = levelup(encode(leveldown(importPath)),
-            { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err: Error) => {
-      if (err !== null) {
-        log('info', 'failed to open db', err);
-        reject(err);
-      } else {
-        const res = {};
-        db.createReadStream()
-          .on('data', data => {
-            if (data.key.startsWith('global_')) {
-              res[data.key.substr(7)] = JSON.parse(data.value);
-            }
-          })
-          .on('error', error => {
-            reject(error);
-          })
-          .on('end', () => {
-            resolve(res);
-          });
-      }
-    });
+                       { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err: Error) => {
+                         if (err !== null) {
+                           log('info', 'failed to open db', err);
+                           reject(err);
+                         } else {
+                           const res = {};
+                           db.createReadStream()
+                             .on('data', data => {
+                               if (data.key.startsWith('global_')) {
+                                 res[data.key.substr(7)] = JSON.parse(data.value);
+                               }
+                             })
+                             .on('error', error => {
+                               reject(error);
+                             })
+                             .on('end', () => {
+                               resolve(res);
+                             });
+                         }
+                       });
   });
 }
 
@@ -197,7 +197,7 @@ function exists(filePath: string): boolean {
 
 export function markImported(basePath: string): Promise<void> {
   return fs.writeFileAsync(
-      path.join(basePath, currentStatePath, IMPORTED_TAG), '')
+    path.join(basePath, currentStatePath, IMPORTED_TAG), '')
     .then(() => null);
 }
 
@@ -239,7 +239,7 @@ export function createFullStateBackup(backupName: string,
 
   return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
     .then(() => writeFileAtomic(backupFilePath,
-      serialized))
+                                serialized))
     .then(() => {
       log('info', 'state backup created', { ms: Date.now() - before, size: serialized.length });
       return backupFilePath;

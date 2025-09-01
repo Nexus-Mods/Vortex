@@ -86,7 +86,7 @@ export default function ToolEditDialog(props: IProps) {
   }, [handleChange, editTool, setEditTool]);
 
   const removeEnv = React.useCallback((key: string) => {
-    let newEnv = { ...editTool.environment };
+    const newEnv = { ...editTool.environment };
     delete newEnv[key];
     handleChange('environment', newEnv);
   }, [handleChange, editTool]);
@@ -208,17 +208,17 @@ export default function ToolEditDialog(props: IProps) {
               readOnly={editTool.isGame}
             />
           ) : (
-              <FormPathItem
-                t={t}
-                controlId='target'
-                label={t('Target')}
-                placeholder={exePathPlaceholder}
-                stateKey='exePath'
-                value={editTool.exePath}
-                onChangeValue={handleChangePath}
-                directory={false}
-              />
-            )
+            <FormPathItem
+              t={t}
+              controlId='target'
+              label={t('Target')}
+              placeholder={exePathPlaceholder}
+              stateKey='exePath'
+              value={editTool.exePath}
+              onChangeValue={handleChangePath}
+              directory={false}
+            />
+          )
           }
           <FormTextItem
             t={t}
@@ -231,17 +231,17 @@ export default function ToolEditDialog(props: IProps) {
           />
 
           <FormPathItem
-              t={t}
-              controlId='workingdir'
-              label={t('Start In')}
-              placeholder={(editTool.exePath !== undefined)
-                ? toDirname(editTool.exePath)
-                : t('Select the executable first')}
-              stateKey='workingDirectory'
-              value={editTool.workingDirectory}
-              onChangeValue={handleChange}
-              directory={true}
-              readOnly={editTool.isGame}
+            t={t}
+            controlId='workingdir'
+            label={t('Start In')}
+            placeholder={(editTool.exePath !== undefined)
+              ? toDirname(editTool.exePath)
+              : t('Select the executable first')}
+            stateKey='workingDirectory'
+            value={editTool.workingDirectory}
+            onChangeValue={handleChange}
+            directory={true}
+            readOnly={editTool.isGame}
           />
 
           <FormGroup

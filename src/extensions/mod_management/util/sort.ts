@@ -71,33 +71,33 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
     const effectiveGameId = mod.attributes?.downloadGame || gameId;
 
     return api.lookupModMeta({
-                fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
-                fileSize: getSafe(mod.attributes, ['fileSize'], undefined),
-                filePath,
-                gameId: effectiveGameId,
-              })
-        .catch(() => [])
-        .then((metaInfo: ILookupResult[]) => {
-          if ((metaInfo.length > 0) && (mod.attributes.fileMD5 === undefined)) {
-            api.store.dispatch(
-              setModAttribute(gameId, mod.id, 'fileMD5', metaInfo[0].value.fileMD5));
-          }
-          const rules = [].concat(
-            getSafe(metaInfo, [0, 'value', 'rules'], []),
-            mod.rules || []);
-          rules.forEach((rule: IRule) => {
-            const ref = findByRef(mods, rule.reference, { modId: mod.id, gameId });
-            if (ref !== undefined) {
-              ++numRules;
-              if (rule.type === 'before') {
-                dependencies.setEdge(mod.id, ref.id);
-              } else if (rule.type === 'after') {
-                dependencies.setEdge(ref.id, mod.id);
-              }
+      fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
+      fileSize: getSafe(mod.attributes, ['fileSize'], undefined),
+      filePath,
+      gameId: effectiveGameId,
+    })
+      .catch(() => [])
+      .then((metaInfo: ILookupResult[]) => {
+        if ((metaInfo.length > 0) && (mod.attributes.fileMD5 === undefined)) {
+          api.store.dispatch(
+            setModAttribute(gameId, mod.id, 'fileMD5', metaInfo[0].value.fileMD5));
+        }
+        const rules = [].concat(
+          getSafe(metaInfo, [0, 'value', 'rules'], []),
+          mod.rules || []);
+        rules.forEach((rule: IRule) => {
+          const ref = findByRef(mods, rule.reference, { modId: mod.id, gameId });
+          if (ref !== undefined) {
+            ++numRules;
+            if (rule.type === 'before') {
+              dependencies.setEdge(mod.id, ref.id);
+            } else if (rule.type === 'after') {
+              dependencies.setEdge(ref.id, mod.id);
             }
-          });
-          return Promise.resolve();
+          }
         });
+        return Promise.resolve();
+      });
   };
 
   mods.forEach(mod => { dependencies.setNode(mod.id); });

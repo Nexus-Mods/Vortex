@@ -30,8 +30,8 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
     const validation = value !== undefined ? this.validationState() : undefined;
     const validationState = validation === undefined
       ? undefined : validation === null
-      ? 'success'
-      : 'error';
+        ? 'success'
+        : 'error';
 
     return (
       <FormGroup
@@ -55,7 +55,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
         </Col>
         <FormFeedback />
       </FormGroup>
-      );
+    );
   }
 
   private validationState() {
@@ -79,7 +79,7 @@ export class FormCheckboxItem extends React.Component<IFormItemProps, {}> {
       <Checkbox value={value} onChange={this.onChangeValue} style={style}>
         {label}
       </Checkbox>
-      );
+    );
   }
   private onChangeValue = (evt) => {
     const { stateKey, onChangeValue } = this.props;
@@ -101,8 +101,8 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
     const validation = value !== undefined ? this.validationState() : undefined;
     const validationState = validation === undefined
       ? undefined : validation === null
-      ? 'success'
-      : 'error';
+        ? 'success'
+        : 'error';
 
     return (
       <FormGroup controlId={controlId} validationState={validationState} style={style}>
@@ -132,7 +132,7 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
           {validation ? <ControlLabel>{validation}</ControlLabel> : null}
         </Col>
       </FormGroup>
-      );
+    );
   }
 
   private validationState() {

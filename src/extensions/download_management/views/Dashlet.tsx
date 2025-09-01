@@ -46,32 +46,32 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     } else {
       content = (
         <div style={{ textAlign: '-webkit-center', position: 'relative', height: '100%' }} >
-            <RadialProgress
-              style={{ height: '100%' }}
-              totalRadius={100}
-              maxWidth={20}
-              offset={50}
-              data={progress}
-              gap={2}
-            />
+          <RadialProgress
+            style={{ height: '100%' }}
+            totalRadius={100}
+            maxWidth={20}
+            offset={50}
+            data={progress}
+            gap={2}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '100%', height: '100%',
+              display: 'inline-flex',
+            }}
+          >
             <div
               style={{
-                position: 'absolute',
-                top: 0, left: 0,
-                width: '100%', height: '100%',
-                display: 'inline-flex',
+                marginTop: 'auto',
+                marginBottom: 'auto',
+                width: '100%',
               }}
             >
-              <div
-                style={{
-                  marginTop: 'auto',
-                  marginBottom: 'auto',
-                  width: '100%',
-                }}
-              >
-                {bytesToString(speeds[speeds.length - 1] || 0)}/s
-              </div>
+              {bytesToString(speeds[speeds.length - 1] || 0)}/s
             </div>
+          </div>
         </div>
       );
     }

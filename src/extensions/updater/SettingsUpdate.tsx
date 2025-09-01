@@ -65,13 +65,13 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
     const renderDevelopmentAlert = () => {
       if(process.env.NODE_ENV === 'development')
-         return (
+        return (
           <div>
-          <ControlLabel>
-            <Alert>
-              {t('Vortex is running in development mode. Updates will be checked and downloaded but can\'t be installed.')}
-            </Alert>
-          </ControlLabel>
+            <ControlLabel>
+              <Alert>
+                {t('Vortex is running in development mode. Updates will be checked and downloaded but can\'t be installed.')}
+              </Alert>
+            </ControlLabel>
           </div>
         );
       return null;
@@ -79,13 +79,13 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
     const renderPreviewAlert = () => {
       if(updateChannel === 'next')
-         return (
+        return (
           <div>
-          <ControlLabel>
-            <Alert>
-              {t('Vortex is running in preview mode and using the hidden \'next\' update channel.')}
-            </Alert>
-          </ControlLabel>
+            <ControlLabel>
+              <Alert>
+                {t('Vortex is running in preview mode and using the hidden \'next\' update channel.')}
+              </Alert>
+            </ControlLabel>
           </div>
         );
       return null;
@@ -98,11 +98,11 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
       if(process.env.NODE_ENV !== 'development') {
         return (
           <div>
-          <ControlLabel>
-            <Alert>
-              {t('Vortex was installed through a third-party service which will take care of updating it.')}
-            </Alert>
-          </ControlLabel>
+            <ControlLabel>
+              <Alert>
+                {t('Vortex was installed through a third-party service which will take care of updating it.')}
+              </Alert>
+            </ControlLabel>
           </div>
         );
       }
@@ -113,7 +113,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
     // regular
     return (
-    <form>
+      <form>
         <FormGroup controlId='updateChannel'>
 
           { renderDevelopmentAlert() }
@@ -148,14 +148,14 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           { renderPreviewAlert() }
           
           <div>
-          <ControlLabel>
-            {updateChannel === 'none' ? (
-              <Alert key='manual-update-warning' bsStyle='warning'>
-                {t('Very old versions of Vortex will be locked out of network features eventually '
+            <ControlLabel>
+              {updateChannel === 'none' ? (
+                <Alert key='manual-update-warning' bsStyle='warning'>
+                  {t('Very old versions of Vortex will be locked out of network features eventually '
                   + 'so please do keep Vortex up-to-date.')}
-              </Alert>
-            ) : null}
-          </ControlLabel>
+                </Alert>
+              ) : null}
+            </ControlLabel>
           </div>
         </FormGroup>
       </form>
@@ -229,7 +229,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetUpdateChannel: (channel: UpdateChannel): void => {
-        dispatch(setUpdateChannel(channel));
+      dispatch(setUpdateChannel(channel));
     },
   };
 }

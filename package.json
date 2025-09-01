@@ -14,14 +14,14 @@
   "scripts": {
     "_assets_out": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js out && yarn run compile_themes",
     "_assets_app": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js app && yarn run compile_themes_app",
-    "compile_themes_app": "sass --style compressed src/stylesheets/style.scss > app/assets/css/style.css && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "compile_themes_app": "mkdir -p app/assets/css && sass --style compressed src/stylesheets/style.scss > app/assets/css/style.css && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cross-env SKIP_NATIVE_BUILD=1 PREBUILD_INSTALL_ONLY=1 cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn autoclean --force",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
     "subprojects_ci": "node BuildSubprojects.js app --noparallel",
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run compile_themes && yarn run build_api && yarn run subprojects",
-    "compile_themes": "sass --style compressed src/stylesheets/style.scss > out/assets/css/style.css && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "compile_themes": "mkdir -p out/assets/css && mkdir -p out/assets/images && sass --style compressed src/stylesheets/style.scss > out/assets/css/style.css && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css && cp -r assets/images/* out/assets/images/",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
@@ -230,7 +230,7 @@
     "fomod-installer": "file:vendor/fomod-installer-mac",
     "fs-extra": "^9.1.0",
     "fuzzball": "^1.3.0",
-    "glob": "file:./vendor/glob-shim",
+    "glob": "^11.0.3",
     "graphlib": "^2.1.7",
     "i18next": "^19.0.1",
     "i18next-fs-backend": "^2.6.0",
@@ -313,7 +313,7 @@
     "**/electron-redux": "file:vendor/electron-redux-compat",
     "**/fomod-installer": "file:vendor/fomod-installer-mac",
     "bsdiff-node": "file:./vendor/bsdiff-node-js",
-    "glob": "file:./vendor/glob-shim"
+    "glob": "^11.0.3"
   },
   "jest": {
     "testEnvironment": "jsdom",

@@ -39,10 +39,10 @@ function writeProgram(func: (...args: any[]) => any, moduleBase: string, args?: 
         let main = ${func.toString()};\n
         ${mainBody}\n
         const res = main(${args !== undefined
-          ? args.filter(arg => !(arg instanceof Function))
-                .map(arg => JSON.stringify(arg))
-                .join(', ') + ', require'
-          : 'require'});\n
+    ? args.filter(arg => !(arg instanceof Function))
+      .map(arg => JSON.stringify(arg))
+      .join(', ') + ', require'
+    : 'require'});\n
         if ((res !== undefined) && (res.then !== undefined)) {
           res.then(result => {
             postMessage(result, undefined);

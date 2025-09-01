@@ -19,7 +19,7 @@ export default function<T>(moduleId: string, basedir?: string) {
   };
 
   asyncRequire(moduleId, basedir)
-  .then(modIn => mod = modIn);
+    .then(modIn => mod = modIn);
 
   return (props) => {
     if (mod === undefined) {

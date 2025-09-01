@@ -21,6 +21,11 @@ module.exports = {
     "react",
     "@typescript-eslint"
   ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "rules": {
     // If you are reading this your are probably wondering why we got so many warnings
     // To put it simple, we used TSLint, and when we moved to ESLint we did not want to to auto fix all the errors

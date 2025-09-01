@@ -1,0 +1,90 @@
+// macOS Tahoe Theme Variables
+// Inspired by macOS Monterey/Ventura design language
+
+// Typography - San Francisco font family
+$theme-font-family-base: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$theme-font-family-headings: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+// Font weights following Apple's design guidelines
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Font sizes following macOS interface guidelines
+$font-size-base: 13px; // Standard macOS interface size
+$font-size-large: 15px;
+$font-size-small: 11px;
+$font-size-xs: 10px;
+
+// Line heights for optimal readability
+$line-height-base: 1.4;
+$line-height-headings: 1.2;
+
+// macOS color palette - Monterey/Ventura inspired
+$primary-color: #007AFF; // macOS blue
+$secondary-color: #5856D6; // macOS purple
+$success-color: #34C759; // macOS green
+$warning-color: #FF9500; // macOS orange
+$danger-color: #FF3B30; // macOS red
+
+// Background colors with translucency support
+$background-primary: rgba(28, 28, 30, 0.95); // Dark mode primary
+$background-secondary: rgba(44, 44, 46, 0.95); // Dark mode secondary
+$background-tertiary: rgba(58, 58, 60, 0.95); // Dark mode tertiary
+
+// Translucent materials (macOS vibrancy)
+$translucent-menu: rgba(30, 30, 30, 0.8);
+$translucent-sidebar: rgba(40, 40, 40, 0.85);
+$translucent-toolbar: rgba(50, 50, 50, 0.9);
+
+// Backdrop filter for vibrancy effect
+$backdrop-filter: blur(20px) saturate(180%);
+
+// Text colors
+$text-color: rgba(255, 255, 255, 0.85);
+$text-color-secondary: rgba(255, 255, 255, 0.65);
+$text-color-tertiary: rgba(255, 255, 255, 0.45);
+
+// Border and separator colors
+$border-color: rgba(255, 255, 255, 0.1);
+$separator-color: rgba(255, 255, 255, 0.08);
+
+// Focus ring color (macOS blue)
+$focus-ring-color: rgba(0, 122, 255, 0.4);
+
+// Border radius values
+$border-radius-small: 4px;
+$border-radius-medium: 6px;
+$border-radius-large: 8px;
+$border-radius-xl: 10px;
+
+// Spacing scale
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-xxl: 24px;
+
+// Layout dimensions
+$sidebar-width-expanded: 200px;
+$sidebar-width-compact: 48px;
+$toolbar-height: 52px;
+
+// Animation timing
+$transition-fast: 0.15s ease;
+$transition-medium: 0.25s ease;
+$transition-slow: 0.35s ease;
+
+// Additional variables for compatibility
+$font-size-sm: $font-size-small;
+$font-size-lg: $font-size-large;
+$transition-duration-fast: 0.15s;
+$transition-easing: ease;
+$spacing-small: $spacing-sm;
+
+// Hover colors
+$primary-color-hover: darken($primary-color, 10%);
+$danger-color-hover: darken($danger-color, 10%);

@@ -25,11 +25,11 @@ function getDriveList(api: IExtensionApi): Promise<string[]> {
     }
   } catch (err) {
     api.showErrorNotification('Failed to query list of system drives',
-      {
-        message: 'Vortex was not able to query the operating system for the list of system drives. '
+                              {
+                                message: 'Vortex was not able to query the operating system for the list of system drives. '
           + 'If this error persists, please configure the list manually.',
-        error: err,
-      }, { allowReport: false });
+                                error: err,
+                              }, { allowReport: false });
     return Promise.resolve(['C:']);
   }
 

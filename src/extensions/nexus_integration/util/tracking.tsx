@@ -33,14 +33,14 @@ class Tracking {
     }
 
     this.mApi.onStateChange(['persistent', 'nexus', 'userInfo'],
-      (oldUserInfo, newUserInfo) => {
-        if (newUserInfo === undefined) {
-          this.mTrackedMods = {};
-          this.mOnChanged?.();
-        } else {
-          this.fetch();
-        }
-    });
+                            (oldUserInfo, newUserInfo) => {
+                              if (newUserInfo === undefined) {
+                                this.mTrackedMods = {};
+                                this.mOnChanged?.();
+                              } else {
+                                this.fetch();
+                              }
+                            });
   }
 
   public attribute(): ITableAttribute {
@@ -162,18 +162,18 @@ class Tracking {
       }, {});
       this.mOnChanged?.();
     })
-    .catch(err => {
-      if (err instanceof ProcessCanceled) {
-        return;
-      }
-      const allowReport = !(err instanceof RateLimitError)
+      .catch(err => {
+        if (err instanceof ProcessCanceled) {
+          return;
+        }
+        const allowReport = !(err instanceof RateLimitError)
                         && !(err instanceof TimeoutError)
                         && !(err instanceof ProtocolError)
                         && !(err instanceof NexusError);
-      this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
-        allowReport,
+        this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
+          allowReport,
+        });
       });
-    });
   }
 
   private toggleTracked = (evt: React.MouseEvent<any>) => {
@@ -237,7 +237,7 @@ class Tracking {
         if (err['statusCode'] === 404) {
           // user isn't actually tracking the mod
           log('warn', 'mod tracking state out of sync between server and Vortex',
-            { game: nexusId, modId: nexusModId });
+              { game: nexusId, modId: nexusModId });
           this.mTrackedMods[nexusId]?.delete?.(nexusModId);
           this.mOnChanged?.();
         } else {

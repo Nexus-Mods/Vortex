@@ -21,7 +21,7 @@ function createCategoryDetailPath(categories: ICategoryDictionary, category: str
   if ((categories[category].parentCategory !== undefined)
       && !visited.has(categories[category].parentCategory)) {
     return createCategoryDetailPath(categories,
-      categories[category].parentCategory, categoryPath, hideTopLevel, visited);
+                                    categories[category].parentCategory, categoryPath, hideTopLevel, visited);
   } else {
     return categoryPath;
   }

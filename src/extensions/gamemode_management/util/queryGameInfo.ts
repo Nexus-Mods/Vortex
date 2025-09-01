@@ -24,19 +24,19 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
     }
     return Promise.resolve();
   })
-  .then(() => {
-    return {
-      size: {title: 'Space Used', value: totalSize, type: 'bytes'},
-      size_nolinks: {
-        title: 'Space Used (No Symlinks)',
-        value: sizeWithoutLinks,
-        type: 'bytes',
-      },
-    };
-  })
-  .catch(err => {
-    log('error', 'failed to query game info', { err: err.message });
-    return {};
-  });
+    .then(() => {
+      return {
+        size: {title: 'Space Used', value: totalSize, type: 'bytes'},
+        size_nolinks: {
+          title: 'Space Used (No Symlinks)',
+          value: sizeWithoutLinks,
+          type: 'bytes',
+        },
+      };
+    })
+    .catch(err => {
+      log('error', 'failed to query game info', { err: err.message });
+      return {};
+    });
 }
 export default queryGameInfo;

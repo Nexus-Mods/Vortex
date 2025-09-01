@@ -39,7 +39,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
       content: Content.DashboardDashletAd
-     }))
+    }))
       .catch(err => undefined);
   }
 }

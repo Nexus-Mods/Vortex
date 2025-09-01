@@ -38,7 +38,7 @@ function makeAddToHistory(api: IExtensionApi) {
       id: shortid(),
       timestamp: Date.now(),
     },
-      stacks[stack].size,
+                                 stacks[stack].size,
     ));
     debouncer.schedule();
   };

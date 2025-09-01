@@ -156,13 +156,13 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
   return Promise.all([readExtensionDir(bundledPath, true),
-                      readExtensionDir(extensionsPath, false)])
+    readExtensionDir(extensionsPath, false)])
     .then(extLists => [].concat(...extLists))
     .reduce((prev, value: { id: string, info: IExtension }) => {
       prev[value.id] = value.info;
       return prev;
     }, {})
-    ;
+  ;
 }
 
 export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boolean = false)
@@ -182,7 +182,7 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
     })
     .tap(extensions => writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)))
     .tapCatch(err => log('error', 'failed to download extension list', err));
-  }
+}
 
 function doFetchAvailableExtensions(forceDownload: boolean)
                                     : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
@@ -353,7 +353,7 @@ export function downloadFromNexus(api: IExtensionApi,
 
   log('debug', 'download from nexus', archiveFileName(ext));
   return api.emitAndAwait('nexus-download',
-    SITE_ID, ext.modId, ext.fileId, archiveFileName(ext), false);
+                          SITE_ID, ext.modId, ext.fileId, archiveFileName(ext), false);
 }
 
 export function downloadGithubRelease(api: IExtensionApi,
@@ -362,29 +362,29 @@ export function downloadGithubRelease(api: IExtensionApi,
   return new Promise<string[]>((resolve, reject) => {
     api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, archiveFileName(ext),
                     (err: Error, dlId: string) => {
-      if (err !== null) {
-        if (err instanceof AlreadyDownloaded) {
-          const state = api.getState();
-          const downloads = state.persistent.downloads.files;
-          const existingId = Object.keys(downloads).find(iter =>
-            downloads[iter].localPath === err.fileName);
+                      if (err !== null) {
+                        if (err instanceof AlreadyDownloaded) {
+                          const state = api.getState();
+                          const downloads = state.persistent.downloads.files;
+                          const existingId = Object.keys(downloads).find(iter =>
+                            downloads[iter].localPath === err.fileName);
 
-          return (existingId !== undefined)
-            ? resolve([existingId])
-            : reject(err);
-        }
-        return reject(err);
-      } else {
-        return resolve([dlId]);
-      }
-    }, 'always', { allowInstall: false });
+                          return (existingId !== undefined)
+                            ? resolve([existingId])
+                            : reject(err);
+                        }
+                        return reject(err);
+                      } else {
+                        return resolve([dlId]);
+                      }
+                    }, 'always', { allowInstall: false });
   })
-  .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
-    const state = api.getState();
-    const downloads = state.persistent.downloads.files;
-    const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
-    return [dlId];
-  });
+    .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
+      const state = api.getState();
+      const downloads = state.persistent.downloads.files;
+      const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
+      return [dlId];
+    });
 }
 
 export function downloadFile(url: string, outputPath: string): Promise<void> {
@@ -415,7 +415,7 @@ function downloadGithubRawRecursive(repo: string, source: string, destination: s
 
       return Promise.map(repoFiles, fileName => downloadFile(
         githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
-                     path.join(destination, fileName)))
+        path.join(destination, fileName)))
         .then(() => Promise.map(repoDirs, fileName => {
           const sourcePath = `${source}/${fileName}`;
           const outPath = path.join(destination, fileName);
@@ -484,7 +484,7 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
         readBaseDir(bundledPath),
         ...extDirs.map(extPath => readBaseDir(extPath)),
         readBaseDir(customPath),
-        );
+      );
     })
     .then(lists => [].concat(...lists));
 }

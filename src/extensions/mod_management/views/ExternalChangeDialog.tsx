@@ -185,10 +185,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {this.renderChangedSources(t('File content modified '
                     + '("Save" will apply the changed file from the game folder permanently, '
                     + '"Revert" will restore the original file from the staging folder)'),
-          'refchange', rc)}
+                                   'refchange', rc)}
         {this.renderChangedSources(t('Source files were deleted '
           + '("Save" will remove the corresponding files permanenly, "Revert" will restore them)'),
-          'srcdeleted', sd)}
+                                   'srcdeleted', sd)}
         {this.renderChangedSources(t('Links were deleted '
           + '("Save" will remove the corresponding source files permanently, '
           + '"Revert" will recreate the links)'), 'deleted', d)}
@@ -206,14 +206,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {this.renderChangedFile(t('File content modified '
                     + '("Save" will apply the changed file from the game folder permanently, '
                     + '"Revert" will restore the original file from the staging folder)'),
-          'refchange', refChanged)}
+                                'refchange', refChanged)}
         {this.renderChangedFile(t('Source files were deleted'
           + '("Save" will remove the files permanenly, "Revert" will restore them)'),
-          'srcdeleted', srcDeleted)}
+                                'srcdeleted', srcDeleted)}
         {this.renderChangedFile(t('Links were deleted'
           + '("Save" will delete the corresponding source files, '
           + '"Revert" will recreate the links)'),
-          'deleted', deleted)}
+                                'deleted', deleted)}
       </div>
     );
   }
@@ -233,12 +233,12 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {text}
         <p>{actions.map(action => (
           <>
-          <a
-            key={action.key}
-            onClick={this.setAll[type]}
-            href={'#' + action.key}
-          >{t(action.allText)}
-          </a><span className='link-action-seperator'>&nbsp; | &nbsp;</span>
+            <a
+              key={action.key}
+              onClick={this.setAll[type]}
+              href={'#' + action.key}
+            >{t(action.allText)}
+            </a><span className='link-action-seperator'>&nbsp; | &nbsp;</span>
           </>
         ))
         }</p>
@@ -408,7 +408,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             description:
               'Last time the stage file (the one in the mod staging folder) was modified',
             calc: (file: IFileEntry, t) => (file.sourceModified !== undefined)
-                                          ? file.sourceModified.toLocaleString() : '',
+              ? file.sourceModified.toLocaleString() : '',
             placement: 'table',
             edit: {},
           }, {
@@ -416,7 +416,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             name: 'Deployed file modified',
             description: 'Last time the deployed file (the one in the game folder) was modified',
             calc: (file: IFileEntry) => (file.destModified !== undefined)
-                                        ? file.destModified.toLocaleString() : '',
+              ? file.destModified.toLocaleString() : '',
             placement: 'table',
             edit: {},
           }, {
@@ -488,11 +488,11 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         { label: 'Back' },
         { label: 'Continue' },
       ])
-      .then(result => {
-        if (result.action === 'Continue') {
-          this.props.onClose(this.props.changes, false);
-        }
-      });
+        .then(result => {
+          if (result.action === 'Continue') {
+            this.props.onClose(this.props.changes, false);
+          }
+        });
     } else {
       this.props.onClose(this.props.changes, false);
     }

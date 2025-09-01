@@ -80,7 +80,7 @@ const initialState: IWelcomeScreenState = {
 };
 
 const welcomeScreenStateReducer = (state: IWelcomeScreenState, actions: IReducerAction<any>[]) => {
-  let newState = { ...state };
+  const newState = { ...state };
   for (const action of actions) {
     newState[action.type] = action.value;
   }
@@ -144,7 +144,7 @@ export default function Tools(props: IStarterProps) {
   const startTool = React.useCallback((info: StarterInfo) => {
     if (info?.exePath === undefined) {
       onShowError('Tool missing/misconfigured',
-        'Please ensure that the tool/game is configured correctly and try again', false);
+                  'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     context.api.events.emit('analytics-track-click-event', 'Tools', 'Manually ran tool');
@@ -395,9 +395,9 @@ function mapStateToProps(state: any): IConnectedProps {
   const res = {
     gameMode,
     addToTitleBar: getSafe(state,
-      ['settings', 'interface', 'tools', 'addToolsToTitleBar'], false),
+                           ['settings', 'interface', 'tools', 'addToolsToTitleBar'], false),
     toolsOrder: getSafe(state,
-      ['settings', 'interface', 'tools', 'order', gameMode], emptyArray),
+                        ['settings', 'interface', 'tools', 'order', gameMode], emptyArray),
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, ['settings', 'gameMode',

@@ -148,8 +148,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
             style={{ height: 32, width: 32 }}
           />
         ) : (
-            <Icon name='user' className='logout-avatar' />
-          )
+          <Icon name='user' className='logout-avatar' />
+        )
         }
       </tooltip.Button>
     );

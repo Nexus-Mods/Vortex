@@ -64,11 +64,11 @@ export function loadAllManifests(api: IExtensionApi,
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
   return Promise.reduce(modTypes, (prev, typeId) =>
-        loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, deploymentMethod)
-          .then(deployment => {
-            prev[typeId] = deployment;
-            return prev;
-          }), {});
+    loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, deploymentMethod)
+      .then(deployment => {
+        prev[typeId] = deployment;
+        return prev;
+      }), {});
 }
 
 export function purgeMods(api: IExtensionApi,
@@ -116,7 +116,7 @@ export function purgeMods(api: IExtensionApi,
             if (['ENOENT'].includes(err.code) && isUnmanaging) {
               const game = getGame(gameId);
               const discovery = getSafe(state,
-                ['settings', 'gameMode', 'discovered', gameId], undefined);
+                                        ['settings', 'gameMode', 'discovered', gameId], undefined);
               if ((game === undefined) || (discovery?.path === undefined)) {
                 return Promise.reject(err);
               }
@@ -153,7 +153,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
   }
 
   log('info', 'current deployment method is',
-    { method: getCurrentActivator(state, gameId, false)?.id });
+      { method: getCurrentActivator(state, gameId, false)?.id });
   if (activator === undefined) {
     activator = getCurrentActivator(state, gameId, false);
   }
@@ -228,8 +228,8 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       .tap(() => onProgress(75, 'Saving updated manifest'))
       // save (empty) activation
       .then(() => Promise.map(modTypes, typeId =>
-          saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
-                         [], activator.id)))
+        saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+                       [], activator.id)))
       // the deployment may be changed so on an exception we still need to update it
       .tapCatch(() => {
         if (lastDeployment === undefined) {
@@ -241,7 +241,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
           filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
             .then(files =>
               saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
-                files, activator.id)));
+                             files, activator.id)));
       })
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
@@ -321,7 +321,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       .tap(() => onProgress(50, 'Saving updated manifest'))
       // save (empty) activation
       .then(() => saveActivation(gameId, typeId, state.app.instanceId, modPath, stagingPath,
-                         [], activator.id))
+                                 [], activator.id))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge())

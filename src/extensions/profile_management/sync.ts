@@ -40,20 +40,20 @@ export function syncFromProfile(
   return Promise.map(sourceFiles, (filePath: string) => {
     const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
-    .catch(UserCanceled, () => {
-      log('warn', 'user canceled profile sync. That\'s not great...');
-    })
-    .catch(err => {
-      if (err.code === 'EPERM') {
-        onError('failed to sync from profile',
-                `${filePath} is write protected`, false);
-      } else if (err.code !== 'ENOENT') {
-        onError('failed to sync from profile', err);
-      }
-    });
+      .catch(UserCanceled, () => {
+        log('warn', 'user canceled profile sync. That\'s not great...');
+      })
+      .catch(err => {
+        if (err.code === 'EPERM') {
+          onError('failed to sync from profile',
+                  `${filePath} is write protected`, false);
+        } else if (err.code !== 'ENOENT') {
+          onError('failed to sync from profile', err);
+        }
+      });
   }).then(() => {
     log('debug', 'sync from profile complete');
   })
-  .catch(err =>
-    Promise.reject(new Error('failed from sync to profile: ' + err.message)));
+    .catch(err =>
+      Promise.reject(new Error('failed from sync to profile: ' + err.message)));
 }

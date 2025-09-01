@@ -4,10 +4,10 @@ import {} from './SettingsVortex';
 
 function init(context: IExtensionContext): boolean {
   context.registerSettings('Vortex',
-    LazyComponent(() => require('./SettingsVortex')),
-    undefined,
-    undefined,
-    50);
+                           LazyComponent(() => require('./SettingsVortex')),
+                           undefined,
+                           undefined,
+                           50);
 
   return true;
 }

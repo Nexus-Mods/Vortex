@@ -21,7 +21,7 @@ export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Promise<
   };
 
   const writeTag = () => fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
-    JSON.stringify(data), {  encoding: 'utf8' });
+                                           JSON.stringify(data), {  encoding: 'utf8' });
 
   return writeTag()
     .catch({ code: 'EISDIR' }, err => {
@@ -40,8 +40,8 @@ export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Promise<
         { label: 'Cancel' },
         { label: 'Proceed' },
       ]).then(res => (res.action === 'Proceed')
-          ? fs.removeAsync(path.join(tagPath, DOWNLOADS_DIR_TAG))
-          : Promise.reject(err))
+        ? fs.removeAsync(path.join(tagPath, DOWNLOADS_DIR_TAG))
+        : Promise.reject(err))
         .catch({ code: 'ENOENT' }, remErr => Promise.resolve())
         .then(() => writeTag())
         .catch(innerErr => Promise.reject(err));
@@ -81,22 +81,22 @@ function queryDownloadFolderInvalid(api: IExtensionApi,
     ]);
   }
   return api.showDialog('error', ' Downloads Folder missing!', {
-        text: 'Your downloads folder "{{path}}" is missing. This might happen because you '
+    text: 'Your downloads folder "{{path}}" is missing. This might happen because you '
             + 'deleted it or - if you have it on a removable drive - it is not currently '
             + 'connected.\nIf you continue now, a new downloads folder will be created but all '
             + 'your previous mod archives will be lost.\n\n'
             + 'If you have moved the folder or the drive letter changed, you can browse '
             + 'for the new location manually, but please be extra careful to select the right '
             + 'folder!',
-        message: err.message,
-        parameters: {
-          path: currentDownloadPath,
-        },
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ]);
+    message: err.message,
+    parameters: {
+      path: currentDownloadPath,
+    },
+  }, [
+    { label: 'Quit Vortex' },
+    { label: 'Reinitialize' },
+    { label: 'Browse...' },
+  ]);
 }
 
 function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
@@ -113,9 +113,9 @@ function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => (result.action === 'Cancel')
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve());
+          .then(result => (result.action === 'Cancel')
+            ? Promise.reject(new UserCanceled())
+            : Promise.resolve());
       }
       return Promise.resolve();
     })
@@ -127,9 +127,9 @@ function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void
         { label: 'Cancel' },
         { label: 'I\'m sure' },
       ])
-      .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve());
+        .then(result => result.action === 'Cancel'
+          ? Promise.reject(new UserCanceled())
+          : Promise.resolve());
     });
 }
 
@@ -165,53 +165,53 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
 
       return queryDownloadFolderInvalid(api, err, dirExists, currentDownloadPath)
         .then(result => {
-        if (result.action === 'Quit Vortex') {
-          getApplication().quit(0);
-          return Promise.reject(new UserCanceled());
-        } else if (result.action === 'Reinitialize') {
-          const id = shortid();
-          api.sendNotification({
-            id,
-            type: 'activity',
-            message: 'Cleaning downloads metadata',
-          });
-          return removeDownloadsMetadata(api)
-            .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve()))
-            .catch(() => {
-              api.showDialog('error', 'Downloads Folder missing!', {
-                bbcode: 'The downloads folder could not be created. '
+          if (result.action === 'Quit Vortex') {
+            getApplication().quit(0);
+            return Promise.reject(new UserCanceled());
+          } else if (result.action === 'Reinitialize') {
+            const id = shortid();
+            api.sendNotification({
+              id,
+              type: 'activity',
+              message: 'Cleaning downloads metadata',
+            });
+            return removeDownloadsMetadata(api)
+              .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve()))
+              .catch(() => {
+                api.showDialog('error', 'Downloads Folder missing!', {
+                  bbcode: 'The downloads folder could not be created. '
                       + 'You [b][color=red]have[/color][/b] to go to settings->downloads and '
                       + 'change it to a valid directory [b][color=red]before doing anything '
                       + 'else[/color][/b] or you will get further error messages.',
-              }, [
-                { label: 'Close' },
-              ]);
-              return Promise.reject(new ProcessCanceled(
-                'Failed to reinitialize download directory'));
-            })
-            .finally(() => {
-              api.dismissNotification(id);
-            });
-        } else if (result.action === 'Ignore') {
-          return Promise.resolve();
-        } else { // Browse...
-          return api.selectDir({
-            defaultPath: currentDownloadPath,
-            title: api.translate('Select downloads folder'),
-          }).then((selectedPath) => {
-            if (!truthy(selectedPath)) {
-              return Promise.reject(new UserCanceled());
-            }
-            return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
-              .then(() => {
-                currentDownloadPath = selectedPath;
-                api.store.dispatch(setDownloadPath(currentDownloadPath));
-                return Promise.resolve();
+                }, [
+                  { label: 'Close' },
+                ]);
+                return Promise.reject(new ProcessCanceled(
+                  'Failed to reinitialize download directory'));
+              })
+              .finally(() => {
+                api.dismissNotification(id);
               });
-          })
-          .catch(() => ensureDownloadsDirectory(api));
-        }
-      });
+          } else if (result.action === 'Ignore') {
+            return Promise.resolve();
+          } else { // Browse...
+            return api.selectDir({
+              defaultPath: currentDownloadPath,
+              title: api.translate('Select downloads folder'),
+            }).then((selectedPath) => {
+              if (!truthy(selectedPath)) {
+                return Promise.reject(new UserCanceled());
+              }
+              return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
+                .then(() => {
+                  currentDownloadPath = selectedPath;
+                  api.store.dispatch(setDownloadPath(currentDownloadPath));
+                  return Promise.resolve();
+                });
+            })
+              .catch(() => ensureDownloadsDirectory(api));
+          }
+        });
     })
-      .then(() => writeDownloadsTag(api, currentDownloadPath));
+    .then(() => writeDownloadsTag(api, currentDownloadPath));
 }

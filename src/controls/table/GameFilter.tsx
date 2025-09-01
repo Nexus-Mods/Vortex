@@ -41,7 +41,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
       value: '$',
     }].concat(games.slice()
       .concat({ id: SITE_ID, shortName: t(SITE_GAME_NAME), name: t(SITE_GAME_NAME),
-                extensionPath: null, requiredFiles: null, executable: null })
+        extensionPath: null, requiredFiles: null, executable: null })
       .sort((lhs, rhs) => compare(lhs, rhs, discovered))
       .map(game => ({
         label: game.shortName || translate(game.name),

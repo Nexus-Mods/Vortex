@@ -108,7 +108,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
         type: 'warning',
         message,
         actions: [ dialogAction ],
-    })),
+      })),
     onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }

@@ -92,45 +92,45 @@ export function copyFileAtomic(srcPath: string,
   let cleanup: () => void;
   let tmpPath: string;
   return new Promise((resolve, reject) => {
-           file({template: `${destPath}.XXXXXX.tmp`},
-                (err: any, genPath: string, fd: number,
-                 cleanupCB: () => void) => {
-                  if (err) {
-                    return reject(err);
-                  }
-                  cleanup = cleanupCB;
-                  tmpPath = genPath;
-                  resolve(fd);
-                });
-         })
-      .then((fd: number) => fs.closeAsync(fd))
-      .then(() => fs.copyAsync(srcPath, tmpPath))
-      .then(() => fs.unlinkAsync(destPath).catch((err) => {
-        if (err.code === 'EPERM') {
+    file({template: `${destPath}.XXXXXX.tmp`},
+         (err: any, genPath: string, fd: number,
+          cleanupCB: () => void) => {
+           if (err) {
+             return reject(err);
+           }
+           cleanup = cleanupCB;
+           tmpPath = genPath;
+           resolve(fd);
+         });
+  })
+    .then((fd: number) => fs.closeAsync(fd))
+    .then(() => fs.copyAsync(srcPath, tmpPath))
+    .then(() => fs.unlinkAsync(destPath).catch((err) => {
+      if (err.code === 'EPERM') {
           // if the file is currently in use, try a second time
           // 100ms later
-          log('debug', 'file locked, retrying delete', destPath);
-          return Promise.delay(100).then(() => fs.unlinkAsync(destPath));
-        } else if (err.code === 'ENOENT') {
+        log('debug', 'file locked, retrying delete', destPath);
+        return Promise.delay(100).then(() => fs.unlinkAsync(destPath));
+      } else if (err.code === 'ENOENT') {
           // file doesn't exist anyway? no problem
-          return Promise.resolve();
-        } else {
-          return Promise.reject(err);
-        }
-      }))
-      .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-      .then(() => (tmpPath !== undefined)
-          ? fs.renameAsync(tmpPath, destPath)
-          : Promise.resolve())
-      .catch(err => {
-        log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
-        if (cleanup !== undefined) {
-          try {
-            cleanup();
-          } catch (cleanupErr) {
-            log('error', 'failed to clean up temporary file', cleanupErr.message);
-          }
-        }
+        return Promise.resolve();
+      } else {
         return Promise.reject(err);
-      });
+      }
+    }))
+    .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+    .then(() => (tmpPath !== undefined)
+      ? fs.renameAsync(tmpPath, destPath)
+      : Promise.resolve())
+    .catch(err => {
+      log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
+      if (cleanup !== undefined) {
+        try {
+          cleanup();
+        } catch (cleanupErr) {
+          log('error', 'failed to clean up temporary file', cleanupErr.message);
+        }
+      }
+      return Promise.reject(err);
+    });
 }

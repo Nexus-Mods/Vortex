@@ -20,8 +20,8 @@ export const gameProfiles =
     createSelector(activeGameId, profilesBase,
                    (gameId: string, profiles: {[id: string]: IProfile}) => {
                      return Object.keys(profiles)
-                         .filter((id: string) => profiles[id].gameId === gameId)
-                         .map((id: string) => profiles[id]);
+                       .filter((id: string) => profiles[id].gameId === gameId)
+                       .map((id: string) => profiles[id]);
                    });
 
 export const activeProfile = (state): IProfile => {

@@ -58,21 +58,21 @@ class Description extends React.Component<IProps, IComponentState> {
             </a>
           )
           : !installed
-          ? (
-            <a
-              onClick={nop}
-              className='fake-link-disabled'
-              title={t('Description can only be changed for installed mods')}
-            >
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          )
-          :
-          (
-            <a onClick={this.editDescription}>
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          )
+            ? (
+              <a
+                onClick={nop}
+                className='fake-link-disabled'
+                title={t('Description can only be changed for installed mods')}
+              >
+                <Icon name='edit'/>{t('Edit Description')}
+              </a>
+            )
+            :
+            (
+              <a onClick={this.editDescription}>
+                <Icon name='edit'/>{t('Edit Description')}
+              </a>
+            )
         }
       </Popover>
     );

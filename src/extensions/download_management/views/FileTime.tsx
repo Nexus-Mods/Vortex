@@ -39,8 +39,8 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
     if ((nextProps.time === undefined)
       && ((this.props.downloadPath !== nextProps.downloadPath)
         || (this.props.download !== nextProps.download))) {
-        this.updateTime();
-      }
+      this.updateTime();
+    }
   }
 
   public render(): JSX.Element {
@@ -66,7 +66,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
   private updateTime() {
     const { download, downloadPath } = this.props;
     if ((download.localPath === undefined) || (downloadPath === undefined)) {
-        return null;
+      return null;
     } else {
       return fs.statAsync(path.join(downloadPath, download.localPath))
         .then((stat: fs.Stats) => {

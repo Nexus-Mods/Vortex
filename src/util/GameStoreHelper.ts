@@ -181,8 +181,8 @@ class GameStoreHelper {
       .then((gamestoreInstalled) => {
         if (!gamestoreInstalled) {
           api.showErrorNotification('Game store is not installed',
-            t('Please install/reinstall {{storeId}} to be able to launch this game store.',
-              { replace: { storeId: gameStoreId } }), { allowReport: false });
+                                    t('Please install/reinstall {{storeId}} to be able to launch this game store.',
+                                      { replace: { storeId: gameStoreId } }), { allowReport: false });
           return Bluebird.resolve();
         }
 
@@ -204,8 +204,8 @@ class GameStoreHelper {
               });
             }
             return Bluebird.resolve();
-        });
-    });
+          });
+      });
 
     const isGameStoreRunning = () => (!!gameStore.getGameStorePath)
       ? gameStore.getGameStorePath()
@@ -216,22 +216,22 @@ class GameStoreHelper {
       return isGameStoreRunning().then(res => (res)
         ? Bluebird.resolve()
         : new Bluebird((resolve, reject) => {
-        api.showDialog('info', api.translate('Game Store not Started'), {
-          text: api.translate('The game requires {{storeid}} to be running in parallel. '
+          api.showDialog('info', api.translate('Game Store not Started'), {
+            text: api.translate('The game requires {{storeid}} to be running in parallel. '
             + 'Vortex will now attempt to start up the store for you.',
-              { replace: { storeid: gameStoreId } }),
-        }, [
-          { label: 'Cancel', action: () => reject(new UserCanceled()) },
-          { label: 'Start Store', action: () => resolve() },
-        ]);
-      }));
+                                { replace: { storeid: gameStoreId } }),
+          }, [
+            { label: 'Cancel', action: () => reject(new UserCanceled()) },
+            { label: 'Start Store', action: () => resolve() },
+          ]);
+        }));
     };
 
     // Ask consent or start up the store directly.
     const startStore = () => (askConsent)
       ? askConsentDialog()
-          .then(() => launchStore())
-          .catch(err => Bluebird.resolve())
+        .then(() => launchStore())
+        .catch(err => Bluebird.resolve())
       : launchStore();
 
     // Start up the store.
@@ -277,17 +277,17 @@ class GameStoreHelper {
       message: 'Loading game stores...',
     });
     log('info', 'reloading game store games', stores.map(store => store.id)
-                                                    .join(', '));
+      .join(', '));
     return Bluebird.each(stores, (store: IGameStore) =>
       (store?.reloadGames !== undefined)
         ? store.reloadGames()
-            .catch(err => {
+          .catch(err => {
               // Game store was unable to reload its games
               //  we log this and jump to the next store.
-              err['gameStore'] = store.id;
-              log('error', 'gamestore failed to reload its games', err);
-              return Bluebird.resolve();
-            })
+            err['gameStore'] = store.id;
+            log('error', 'gamestore failed to reload its games', err);
+            return Bluebird.resolve();
+          })
         : Bluebird.resolve())
       .then(() => {
         this.mApi?.dismissNotification('gamestore-reload');

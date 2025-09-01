@@ -16,7 +16,7 @@ export const sessionReducer: IReducerSpec = {
       return setSafe(temp, [ 'loginId' ], payload);
     },
     [actions.setLoginError as any]: (state, payload) =>
-     setSafe(state, [ 'loginError' ], payload),
+      setSafe(state, [ 'loginError' ], payload),
     [actions.setLastUpdateCheck as any]: (state, payload) =>
       setSafe(state, ['lastUpdate', payload.gameId], {
         time: payload.time,

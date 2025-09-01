@@ -69,7 +69,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
             {Object.keys(sortedMods).map(this.renderModEntry)}
           </ListGroup>
         </div>
-    ) : this.renderPlaceholder();
+      ) : this.renderPlaceholder();
   }
 
   private renderLoadOrderEditInfo = () => {

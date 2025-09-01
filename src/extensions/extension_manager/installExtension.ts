@@ -266,71 +266,71 @@ function installExtension(api: IExtensionApi,
   let extName: string;
   return extractor.extractFull(archivePath, tempPath, {ssc: false},
                                () => undefined, () => undefined)
-      .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
-      .then(() => readExtensionInfo(tempPath, false, info))
+    .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
+    .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
       // is data we may only know at runtime (e.g. the modId)
-      .then(manifestInfo => {
-        fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
-        const res: { id: string, info: Partial<IExtension> } = {
-          id: manifestInfo.id,
-          info: fullInfo,
-        };
+    .then(manifestInfo => {
+      fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
+      const res: { id: string, info: Partial<IExtension> } = {
+        id: manifestInfo.id,
+        info: fullInfo,
+      };
 
-        if (res.info.type === undefined) {
-          res.info.type = type;
-        }
+      if (res.info.type === undefined) {
+        res.info.type = type;
+      }
 
-        return res;
+      return res;
+    })
+    .catch({ code: 'ENOENT' }, () => (info !== undefined)
+      ? Promise.resolve({
+        id: path.basename(archivePath, path.extname(archivePath)),
+        info,
       })
-      .catch({ code: 'ENOENT' }, () => (info !== undefined)
-        ? Promise.resolve({
-            id: path.basename(archivePath, path.extname(archivePath)),
-            info,
-          })
-        : Promise.reject(new Error('not an extension, info.json missing')))
-      .then(manifestInfo =>
+      : Promise.reject(new Error('not an extension, info.json missing')))
+    .then(manifestInfo =>
         // update the manifest on disc, in case we had new info from the caller
-        fs.writeFileAsync(path.join(tempPath, 'info.json'),
-                          JSON.stringify(manifestInfo.info, undefined, 2))
-          .then(() => manifestInfo))
-      .then((manifestInfo: { id: string, info: IExtension }) => {
-        extName = manifestInfo.id;
+      fs.writeFileAsync(path.join(tempPath, 'info.json'),
+                        JSON.stringify(manifestInfo.info, undefined, 2))
+        .then(() => manifestInfo))
+    .then((manifestInfo: { id: string, info: IExtension }) => {
+      extName = manifestInfo.id;
 
-        const dirName = sanitize(manifestInfo.id);
-        destPath = path.join(extensionsPath, dirName);
-        if (manifestInfo.info.type !== undefined) {
-          type = manifestInfo.info.type;
-        }
-        return removeOldVersion(api, manifestInfo.info);
-      })
+      const dirName = sanitize(manifestInfo.id);
+      destPath = path.join(extensionsPath, dirName);
+      if (manifestInfo.info.type !== undefined) {
+        type = manifestInfo.info.type;
+      }
+      return removeOldVersion(api, manifestInfo.info);
+    })
       // we don't actually expect the output directory to exist
-      .then(() => fs.removeAsync(destPath))
-      .then(() => fs.renameAsync(tempPath, destPath))
-      .then(() => {
-        if (type === 'translation') {
-          return fs.readdirAsync(destPath)
-            .map((entry: string) => fs.statAsync(path.join(destPath, entry))
-              .then(stat => ({ name: entry, stat })))
-            .then(() => null);
-        } else if (type === 'theme') {
-          return Promise.resolve();
-        } else {
+    .then(() => fs.removeAsync(destPath))
+    .then(() => fs.renameAsync(tempPath, destPath))
+    .then(() => {
+      if (type === 'translation') {
+        return fs.readdirAsync(destPath)
+          .map((entry: string) => fs.statAsync(path.join(destPath, entry))
+            .then(stat => ({ name: entry, stat })))
+          .then(() => null);
+      } else if (type === 'theme') {
+        return Promise.resolve();
+      } else {
           // don't install dependencies for extensions that are already loaded because
           // doing so could cause an exception
-          if (api.getLoadedExtensions().find(ext => ext.name === extName) === undefined) {
-            return installExtensionDependencies(api, destPath);
-          } else {
-            return Promise.resolve();
-          }
+        if (api.getLoadedExtensions().find(ext => ext.name === extName) === undefined) {
+          return installExtensionDependencies(api, destPath);
+        } else {
+          return Promise.resolve();
         }
-      })
-      .catch(DataInvalid, err =>
-        rimrafAsync(tempPath, { glob: false })
+      }
+    })
+    .catch(DataInvalid, err =>
+      rimrafAsync(tempPath, { glob: false })
         .then(() => api.showErrorNotification('Invalid Extension', err,
                                               { allowReport: false, message: archivePath })))
-      .catch(err =>
-        rimrafAsync(tempPath, { glob: false })
+    .catch(err =>
+      rimrafAsync(tempPath, { glob: false })
         .then(() => Promise.reject(err)));
 }
 

@@ -1,10 +1,10 @@
 // @ts-nocheck
 
 'use strict';
-var equal = require('ajv/lib/compile/equal');
-var validate = (function() {
-  var refVal = [];
-  var refVal1 = {
+const equal = require('ajv/lib/compile/equal');
+const validate = (function() {
+  const refVal = [];
+  const refVal1 = {
     "defaultProperties": [],
     "description": "static information about a tool associated with a game.\nThis info is used to discover such tools and to store that\ndata after discovery\nIt is also the base class for the IGame structure, representing\nthe games themselves",
     "properties": {
@@ -81,10 +81,10 @@ var validate = (function() {
   refVal[1] = refVal1;
   return function validate(data, dataPath, parentData, parentDataProperty, rootData) {
     'use strict';
-    var vErrors = null;
-    var errors = 0;
+    const vErrors = null;
+    const errors = 0;
     if ((data && typeof data === "object" && !Array.isArray(data))) {
-      var missing0;
+      let missing0;
       if (((data.executable === undefined) && (missing0 = '.executable')) || ((data.queryModPath === undefined) && (missing0 = '.queryModPath'))) {
         validate.errors = [{
           keyword: 'required',
@@ -97,7 +97,7 @@ var validate = (function() {
         }];
         return false;
       } else {
-        var errs__0 = errors;
+        const errs__0 = errors;
         var valid1 = true;
         if (data.contributed === undefined) {
           valid1 = true;
@@ -374,7 +374,7 @@ var validate = (function() {
                                             }];
                                             return false;
                                           }
-                                          var schema1 = validate.schema.properties.onStart.enum;
+                                          const schema1 = validate.schema.properties.onStart.enum;
                                           var valid1;
                                           valid1 = false;
                                           for (var i1 = 0; i1 < schema1.length; i1++)
@@ -575,9 +575,9 @@ var validate = (function() {
                                                                   var errs__1 = errors;
                                                                   var valid1;
                                                                   for (var i1 = 0; i1 < data1.length; i1++) {
-                                                                    var data2 = data1[i1];
+                                                                    const data2 = data1[i1];
                                                                     var errs_2 = errors;
-                                                                    var errs_3 = errors;
+                                                                    const errs_3 = errors;
                                                                     if ((data2 && typeof data2 === "object" && !Array.isArray(data2))) {
                                                                       var missing3;
                                                                       if (((data2.executable === undefined) && (missing3 = '.executable'))) {
@@ -592,7 +592,7 @@ var validate = (function() {
                                                                         }];
                                                                         return false;
                                                                       } else {
-                                                                        var errs__3 = errors;
+                                                                        const errs__3 = errors;
                                                                         var valid4 = true;
                                                                         if (data2.detach === undefined) {
                                                                           valid4 = true;
@@ -621,7 +621,7 @@ var validate = (function() {
                                                                             if ((data3 && typeof data3 === "object" && !Array.isArray(data3))) {
                                                                               var errs__4 = errors;
                                                                               var valid5 = true;
-                                                                              for (var key4 in data3) {
+                                                                              for (const key4 in data3) {
                                                                                 var errs_5 = errors;
                                                                                 if (typeof data3[key4] !== "string") {
                                                                                   validate.errors = [{
@@ -767,7 +767,7 @@ var validate = (function() {
                                                                                           }];
                                                                                           return false;
                                                                                         }
-                                                                                        var schema4 = refVal1.properties.onStart.enum;
+                                                                                        const schema4 = refVal1.properties.onStart.enum;
                                                                                         var valid4;
                                                                                         valid4 = false;
                                                                                         for (var i4 = 0; i4 < schema4.length; i4++)
@@ -962,7 +962,7 @@ var validate = (function() {
                                                                       }];
                                                                       return false;
                                                                     }
-                                                                    var valid3 = errors === errs_3;
+                                                                    const valid3 = errors === errs_3;
                                                                     var valid2 = errors === errs_2;
                                                                     if (!valid2) break;
                                                                   }

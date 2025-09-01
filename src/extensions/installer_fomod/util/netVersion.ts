@@ -59,8 +59,8 @@ const REQUIRED_ASSEMBLIES = [
 function getRegValue(key: string, expectedType: string): any {
   try {
     const res = winapi?.RegGetValue?.('HKEY_LOCAL_MACHINE',
-                                   'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full',
-                                   key);
+                                      'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full',
+                                      key);
     if ((res === undefined) || (res.type !== expectedType)) {
       return undefined;
     }

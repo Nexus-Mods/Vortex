@@ -28,7 +28,7 @@ export function reduxLogger() {
           actions[actions.length - 1].after = store.getState();
         }
         actions.push({ before: store.getState(),
-                       action });
+          action });
         if (actions.length > MAX_ENTRIES + BUFFER) {
           truncateActions();
         }

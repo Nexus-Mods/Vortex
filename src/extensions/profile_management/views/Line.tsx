@@ -22,9 +22,9 @@ const Line = (props: ILineProps) => {
   const boxHeight = Math.abs(target.y - source.y) + 4;
 
   const path = curved
-   ? `M ${source.x - left} ${source.y - top}
+    ? `M ${source.x - left} ${source.y - top}
   Q ${boxWidth} ${boxHeight / 2} ${target.x - left} ${target.y - top}`
-   : `M ${source.x - left} ${source.y - top} L ${target.x - left} ${target.y - top}`;
+    : `M ${source.x - left} ${source.y - top} L ${target.x - left} ${target.y - top}`;
 
   return (
     <svg

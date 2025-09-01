@@ -23,8 +23,8 @@ const identity = input => input;
 export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
 
 export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
-  (id: string, progress: number, message: string) => ({ id, progress, message }),
-  () => ({ forward: false, scope: 'local' }));
+                                                   (id: string, progress: number, message: string) => ({ id, progress, message }),
+                                                   () => ({ forward: false, scope: 'local' }));
 
 /**
  * dismiss a notification. Takes the id of the notification
@@ -37,10 +37,10 @@ export const stopNotification = safeCreateAction('STOP_NOTIFICATION', identity);
  * don't call this directly, use showDialog
  */
 export const addDialog = safeCreateAction(
-    'SHOW_MODAL_DIALOG',
-    (id: string, type: string, title: string, content: IDialogContent,
-     defaultAction: string, actions: string[]) =>
-        ({id, type, title, content, defaultAction, actions}));
+  'SHOW_MODAL_DIALOG',
+  (id: string, type: string, title: string, content: IDialogContent,
+   defaultAction: string, actions: string[]) =>
+    ({id, type, title, content, defaultAction, actions}));
 
 /**
  * dismiss the dialog being displayed
@@ -81,26 +81,26 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
 if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
              (event: any, notiId: string, action: number) => {
-    const func = notificationActions[notiId]?.[action];
-    let res = false;
-    if (func !== undefined) {
-      func(() => {
-        res = true;
-      });
-    }
+               const func = notificationActions[notiId]?.[action];
+               let res = false;
+               if (func !== undefined) {
+                 func(() => {
+                   res = true;
+                 });
+               }
 
-    event.returnValue = res;
-  });
+               event.returnValue = res;
+             });
 
   ipcMain.on('fire-dialog-action',
              (event: any, dialogId: string, action: string, input: any) => {
-    const func = DialogCallbacks.instance()[dialogId];
-    if (func !== undefined) {
-      func(action, input);
-      delete DialogCallbacks.instance()[dialogId];
-    }
-    event.returnValue = true;
-  });
+               const func = DialogCallbacks.instance()[dialogId];
+               if (func !== undefined) {
+                 func(action, input);
+                 delete DialogCallbacks.instance()[dialogId];
+               }
+               event.returnValue = true;
+             });
 }
 
 let suppressNotification: (id: string) => boolean = () => false;
@@ -153,7 +153,7 @@ export function addNotification(notification: INotification) {
       return new Promise((resolve) => {
         timers[noti.id] = setTimeout(() =>
           resolve()
-          , noti.displayMS);
+        , noti.displayMS);
       }).then(() => {
         dispatch(dismissNotification(noti.id));
       });

@@ -100,7 +100,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
             <Button onClick={this.expand}>
               {t('{{ count }} More', { count: collapsed - 1 })}
             </Button>
-           ) : null}
+          ) : null}
           {id !== undefined
             ? this.renderExtraOptions()
             : null}
@@ -121,9 +121,9 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
 
     return (
       <Dropdown
-          id={`notification-${params.id}-extra`}
-          className='notification-extra-options'
-          ref={this.menuRef}
+        id={`notification-${params.id}-extra`}
+        className='notification-extra-options'
+        ref={this.menuRef}
       >
         <Dropdown.Toggle onClick={this.open}>
           <Icon name='settings'/>

@@ -40,7 +40,7 @@ export function removeMods(api: IExtensionApi, gameId: string, modIds: string[])
   };
 
   return toPromise(cb =>
-      api.events.emit('remove-mods', gameId, modIds, cb, { progressCB }))
+    api.events.emit('remove-mods', gameId, modIds, cb, { progressCB }))
     .then(() => {
       api.events.emit('mods-enabled', modIds, false, gameId);
     })

@@ -104,7 +104,7 @@ function todos(api: IExtensionApi): IToDo[] {
         openSettingsPage('Download');
         api.events.emit('analytics-track-click-event', 'Dashboard', 'Download drive');
         api.highlightControl('#settings-tab-pane-Download #download-path-form', 5000,
-          api.translate('You can change the download location here'));
+                             api.translate('You can change the download location here'));
       },
       condition: minDiskSpace(MIN_DISK_SPACE, 'dlPath'),
     },
@@ -129,7 +129,7 @@ function todos(api: IExtensionApi): IToDo[] {
         openSettingsPage('Mods');
         api.events.emit('analytics-track-click-event', 'Dashboard', 'Staged drive');
         api.highlightControl('#settings-tab-pane-Mods #install-path-form', 5000,
-          api.translate('You can change the mod staging location here'));
+                             api.translate('You can change the mod staging location here'));
       },
       condition: minDiskSpace(MIN_DISK_SPACE, 'instPath'),
     },

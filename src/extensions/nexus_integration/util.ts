@@ -279,10 +279,10 @@ export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: E
     // set state to url
     api.store.dispatch(setOauthPending(url));
   })
-  .catch(err => {
-    err.stack = stackErr.stack;
-    callback(err);
-  });
+    .catch(err => {
+      err.stack = stackErr.stack;
+      callback(err);
+    });
 }
 
 export function oauthCallback(api: IExtensionApi, code: string, state?: string) {
@@ -372,23 +372,23 @@ function startDownloadCollection(api: IExtensionApi,
     })
     .then(downloadUrls => {
       return toPromise<string>(cb => api.events.emit('start-download',
-        (downloadUrls ?? []).map(iter => iter.URI), {
-        game: gameId,
-        source: 'nexus',
-        name: revisionInfo.collection?.name,
-        referenceTag,
-        nexus: {
-          ids: {
-            gameId: pageId,
-            collectionId: revisionInfo.collectionId,
-            revisionId: revisionInfo.id,
-            collectionSlug: url.collectionSlug,
-            revisionNumber: revisionInfo.revisionNumber ?? url.revisionNumber,
-          },
-          revisionInfo,
-        },
-      }, (revisionInfo as any).file_name, cb, undefined, { allowInstall: false }))
-      .catch(err => Promise.reject(contextify(err)));
+                                                     (downloadUrls ?? []).map(iter => iter.URI), {
+                                                       game: gameId,
+                                                       source: 'nexus',
+                                                       name: revisionInfo.collection?.name,
+                                                       referenceTag,
+                                                       nexus: {
+                                                         ids: {
+                                                           gameId: pageId,
+                                                           collectionId: revisionInfo.collectionId,
+                                                           revisionId: revisionInfo.id,
+                                                           collectionSlug: url.collectionSlug,
+                                                           revisionNumber: revisionInfo.revisionNumber ?? url.revisionNumber,
+                                                         },
+                                                         revisionInfo,
+                                                       },
+                                                     }, (revisionInfo as any).file_name, cb, undefined, { allowInstall: false }))
+        .catch(err => Promise.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId))
     .catch(err => {
@@ -399,12 +399,12 @@ function startDownloadCollection(api: IExtensionApi,
       }
       if (err.code === 'NOT_FOUND') {
         api.showErrorNotification('Failed to download collection',
-          'The collection was not found. This usually happens when you try to download '
+                                  'The collection was not found. This usually happens when you try to download '
           + 'an unpublished collection.', { allowReport: false });
       } else if (!(err instanceof UserCanceled)) {
         api.showErrorNotification('Failed to download collection', err, {
-        allowReport: !(err instanceof ProcessCanceled),
-      });
+          allowReport: !(err instanceof ProcessCanceled),
+        });
       }
       return null;
     });
@@ -437,36 +437,36 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
 export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, fileId: number): Promise<IRemoteInfo> {
   // Define the GraphQL query for file information
   const fileQuery: Partial<IModFileQuery> = {
-        categoryId: true,
-        count: true,
-        date: true,
-        description: true,
-        fileId: true,
-        mod: {
-          author: true,
-          category: true,
-          game: {
-            id: true,
-            domainName: true,
-          },
-          gameId: true,
-          id: true,
-          modCategory: {
-            id: true,
-            name: true,
-          },
-          pictureUrl: true,
-          status: true,
-          uid: true,
-        },
-        modId: true,
+    categoryId: true,
+    count: true,
+    date: true,
+    description: true,
+    fileId: true,
+    mod: {
+      author: true,
+      category: true,
+      game: {
+        id: true,
+        domainName: true,
+      },
+      gameId: true,
+      id: true,
+      modCategory: {
+        id: true,
         name: true,
-        primary: true,
-        size: true,
-        uid: true,
-        uri: true,
-        version: true,
-      } as any; 
+      },
+      pictureUrl: true,
+      status: true,
+      uid: true,
+    },
+    modId: true,
+    name: true,
+    primary: true,
+    size: true,
+    uid: true,
+    uri: true,
+    version: true,
+  } as any; 
   // const query: Partial<IModFileQuery> = {
   //   name: true,
   //   categoryId: true,
@@ -598,7 +598,7 @@ export function getCollectionInfo(nexus: Nexus,
   }
 
   return Promise.resolve(
-      nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
+    nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
     .then(revision => ({ revisionInfo: revision }))
     .catch(err => {
       err['collectionSlug'] = collectionSlug;
@@ -639,11 +639,11 @@ function startDownloadMod(api: IExtensionApi,
             fileInfo,
           },
         },
-        fileName ?? nexusFileInfo.file_name,
-        (err, downloadId) => (truthy(err)
-          ? reject(contextify(err))
-          : resolve(downloadId)),
-        redownload, { allowInstall });
+                        fileName ?? nexusFileInfo.file_name,
+                        (err, downloadId) => (truthy(err)
+                          ? reject(contextify(err))
+                          : resolve(downloadId)),
+                        redownload, { allowInstall });
       });
     })
     .tap(() => {
@@ -673,12 +673,12 @@ function startDownloadMod(api: IExtensionApi,
             {
               title: 'Install All', action: dismiss => {
                 api.events.emit('start-install-download', downloadId, undefined,
-                  (err: any, id: string) => {
-                    if (err) {
-                      processInstallError(api, err,
-                        downloadId, fileName ?? nexusFileInfo.file_name);
-                    }
-                  });
+                                (err: any, id: string) => {
+                                  if (err) {
+                                    processInstallError(api, err,
+                                                        downloadId, fileName ?? nexusFileInfo.file_name);
+                                  }
+                                });
                 dismiss();
               },
             },
@@ -715,10 +715,10 @@ function startDownloadMod(api: IExtensionApi,
             ? t('You need to be logged in to Nexus Mods.')
             : t('The link was not created for this account ({{ userName }}). You have to be logged '
                 + 'into nexusmods.com with the same account that you use in Vortex.', {
-            replace: {
-              userName,
-            },
-          }),
+              replace: {
+                userName,
+              },
+            }),
           localize: {
             message: false,
           },
@@ -739,7 +739,7 @@ function startDownloadMod(api: IExtensionApi,
         }
         showError(api.store.dispatch, 'Download failed', detail, { allowReport });
       } else if (err.statusCode >= 400) {
-          api.showErrorNotification('Download failed', err, { allowReport: false });
+        api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof HTTPError) {
         api.showErrorNotification('Download failed', {
           error: err,
@@ -920,7 +920,7 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
       delete detail.noReport;
     }
     showError(api.store.dispatch, `An error occurred endorsing a ${type}`, detail,
-      { allowReport });
+              { allowReport });
   }
 }
 
@@ -975,7 +975,7 @@ function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: strin
   endorseCollection(nexus, nexusGameId(game), nexusCollectionId, endorsedStatus)
     .then((result: { success: boolean, endorsement: { status: string } }) => {
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed',
-        convertCollectionEndorseStatus(result.endorsement.status)));
+                                     convertCollectionEndorseStatus(result.endorsement.status)));
     })
     .catch((err: Error | NexusError) => {
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
@@ -1123,33 +1123,33 @@ function filterByUpdateList(store: Redux.Store<any>,
         prev[iterGameId] = entries;
         return prev;
       }), {})
-      .then((updateLists: IUpdateMap) => {
-        const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
+    .then((updateLists: IUpdateMap) => {
+      const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
 
-        Object.keys(updateLists).forEach(iterGameId => {
-          updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
-            prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
-                                          (entry as any).latest_mod_activity) * 1000;
-            return prev;
-          }, {});
-        });
+      Object.keys(updateLists).forEach(iterGameId => {
+        updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
+          prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
+                                        (entry as any).latest_mod_activity) * 1000;
+          return prev;
+        }, {});
+      });
 
-        const now = Date.now();
+      const now = Date.now();
 
-        return input.filter(mod => {
-          const modGameId = getGameId(mod);
-          if (updateMap[modGameId] === undefined) {
+      return input.filter(mod => {
+        const modGameId = getGameId(mod);
+        if (updateMap[modGameId] === undefined) {
             // the game hasn't been checked for updates for so long we can't fetch an update range
             // long enough
-            return true;
-          }
-          const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
+          return true;
+        }
+        const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
           // check anything for updates that is either in the update list and has been updated as
           // well as anything that has last been checked before the range of the update list
-          return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
+        return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
               || ((now - lastUpdate) > 28 * ONE_DAY);
-        });
       });
+    });
 }
 
 export function checkForCollectionUpdates(store: Redux.Store<any>,
@@ -1180,9 +1180,9 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         if ((currentRevision?.id !== mod.attributes?.revisionId)
             && (currentRevision?.revisionNumber !== undefined)) {
           store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
-            currentRevision.revisionNumber));
+                                         currentRevision.revisionNumber));
           store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
-            currentRevision.revisionNumber.toString()));
+                                         currentRevision.revisionNumber.toString()));
         }
         return undefined;
       })
@@ -1192,10 +1192,10 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         return `${nameLink}:<br/>${err.message}`;
       });
   }))
-  .then(messages => ({
-    errorMessages: messages,
-    updatedIds: collectionIds,
-  }));
+    .then(messages => ({
+      errorMessages: messages,
+      updatedIds: collectionIds,
+    }));
 }
 
 function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
@@ -1203,8 +1203,8 @@ function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
                             forceFull: boolean | 'silent', now: number) {
   return filterByUpdateList(store, nexus, gameId, modsList)
     .then((filteredMods: IMod[]) => checkForModUpdatesImpl(store, nexus,
-      gameId, modsList, filteredMods,
-      forceFull, now));
+                                                           gameId, modsList, filteredMods,
+                                                           forceFull, now));
 }
 
 function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
@@ -1226,10 +1226,10 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
   progress();
   if (forceFull) {
     log('info', '[update check] forcing full update check (nexus)',
-      { count: modsList.length });
+        { count: modsList.length });
   } else {
     log('info', '[update check] optimized update check (nexus)',
-      { count: filteredMods.length, of: modsList.length });
+        { count: filteredMods.length, of: modsList.length });
   }
 
   const updatedIds: string[] = [];
@@ -1249,7 +1249,7 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
     return checkModVersion(store, nexus, gameId, mod)
       .then(() => {
         const modNew = getSafe(store.getState(),
-          ['persistent', 'mods', gameId, mod.id], undefined);
+                               ['persistent', 'mods', gameId, mod.id], undefined);
 
         const newestVerChanged =
           getSafe(modNew, newWerP, undefined) !== getSafe(mod, newWerP, undefined);
@@ -1343,7 +1343,7 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
       errorMessages: messages,
       updatedIds,
     }))
-    ;
+  ;
 }
 
 export function checkModVersionsImpl(
@@ -1440,7 +1440,7 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
 }
 
 function getUserInfo(api: IExtensionApi,
-                        nexus: Nexus,
+                     nexus: Nexus,
                         /*userInfo: IValidateKeyResponse*/)
                         : Promise<boolean> {
 
@@ -1476,7 +1476,7 @@ function getUserInfo(api: IExtensionApi,
 
       
   } else {
-      log('warn', 'updateUserInfo() not logged in');
+    log('warn', 'updateUserInfo() not logged in');
   }
   
   /*
@@ -1531,12 +1531,12 @@ export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any):
   // could be from nexus_integration once() or from when the credentials are updated in state
 
   return Promise.resolve(nexus.setOAuthCredentials({
-      fingerprint: credentials.fingerprint,
-      refreshToken: credentials.refreshToken,
-      token: credentials.token,
-    }, {
-      id: OAUTH_CLIENT_ID,
-    }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
+    fingerprint: credentials.fingerprint,
+    refreshToken: credentials.refreshToken,
+    token: credentials.token,
+  }, {
+    id: OAUTH_CLIENT_ID,
+  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
   ))
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
@@ -1611,15 +1611,15 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       api.showErrorNotification(err.code === 'ESOCKETTIMEDOUT'
         ? 'Connection to nexusmods.com timed out, please check your internet connection'
         : 'Failed to log in',
-        err, {
-          actions: [{
-            title: 'Retry',
-            action: dismiss => {
-              updateKey(api, nexus, key);
-              dismiss();
-            },
-          }],
-        });
+                                err, {
+                                  actions: [{
+                                    title: 'Retry',
+                                    action: dismiss => {
+                                      updateKey(api, nexus, key);
+                                      dismiss();
+                                    },
+                                  }],
+                                });
       api.store.dispatch(setUserInfo(undefined));
       api.events.emit('did-login', err);
       return false;
@@ -1638,7 +1638,7 @@ function cachePath() {
 export function retrieveNexusGames(nexus: Nexus) {
   return fs.readFileAsync(cachePath(), { encoding: 'utf8' })
     .then(cacheData => {
-      nexusGamesCache = JSON.parse(cacheData);;
+      nexusGamesCache = JSON.parse(cacheData);
     })
     .catch(() => {
       // ignore missing cache

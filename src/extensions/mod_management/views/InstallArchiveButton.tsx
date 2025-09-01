@@ -47,60 +47,60 @@ class InstallButton extends ComponentEx<IProps, {}> {
     };
 
     this.context.api.selectFile(options)
-    .then(result => {
-      const { api } = this.context;
-      if (result !== undefined) {
-        if (this.props.copyOnIFF) {
-          api.events.emit('import-downloads', [result], (dlIds: string[]) => {
-            dlIds.forEach(dlId => {
-              api.events.emit('start-install-download', dlId);
+      .then(result => {
+        const { api } = this.context;
+        if (result !== undefined) {
+          if (this.props.copyOnIFF) {
+            api.events.emit('import-downloads', [result], (dlIds: string[]) => {
+              dlIds.forEach(dlId => {
+                api.events.emit('start-install-download', dlId);
+              });
             });
-          });
-        } else {
-          api.events.emit('start-install', result, (error, id: string) => {
-            if (error) {
-              return;
-            }
-            const state = api.getState();
-            const gameId = activeGameId(state);
-            return Promise.all([fileMD5(result), fs.statAsync(result)])
-              .then(res => api.lookupModMeta({
-                fileMD5: res[0],
-                filePath: result,
-                gameId,
-                fileSize: res[1].size,
-              }, false))
-            .then((modInfo) => {
-              const match = metaLookupMatch(modInfo, result, gameId);
-              if (match !== undefined) {
-                const actions = [];
-                const info = match.value;
-                const setInfo = (key: string, value: any) => {
-                  if (value !== undefined) {
-                    actions.push(setModAttribute(gameId, id, key, value));
-                  }
-                };
-                try {
-                  const nxmUrl = new NXMUrl(info.sourceURI);
-                  setInfo('source', 'nexus');
-                  setInfo('description', info.details.description);
-                  setInfo('category', info.details.category);
-                  setInfo('downloadGame', nxmUrl.gameId);
-                  setInfo('fileId', nxmUrl.fileId);
-                  setInfo('modId', nxmUrl.modId);
-                  batchDispatch(api.store, actions);
-                } catch (err) {
-                  setInfo('source', 'unknown');
-                }
+          } else {
+            api.events.emit('start-install', result, (error, id: string) => {
+              if (error) {
+                return;
               }
-            })
-            .catch(err => {
-              log('warn', 'failed to look up mod meta info', { message: err.message });
+              const state = api.getState();
+              const gameId = activeGameId(state);
+              return Promise.all([fileMD5(result), fs.statAsync(result)])
+                .then(res => api.lookupModMeta({
+                  fileMD5: res[0],
+                  filePath: result,
+                  gameId,
+                  fileSize: res[1].size,
+                }, false))
+                .then((modInfo) => {
+                  const match = metaLookupMatch(modInfo, result, gameId);
+                  if (match !== undefined) {
+                    const actions = [];
+                    const info = match.value;
+                    const setInfo = (key: string, value: any) => {
+                      if (value !== undefined) {
+                        actions.push(setModAttribute(gameId, id, key, value));
+                      }
+                    };
+                    try {
+                      const nxmUrl = new NXMUrl(info.sourceURI);
+                      setInfo('source', 'nexus');
+                      setInfo('description', info.details.description);
+                      setInfo('category', info.details.category);
+                      setInfo('downloadGame', nxmUrl.gameId);
+                      setInfo('fileId', nxmUrl.fileId);
+                      setInfo('modId', nxmUrl.modId);
+                      batchDispatch(api.store, actions);
+                    } catch (err) {
+                      setInfo('source', 'unknown');
+                    }
+                  }
+                })
+                .catch(err => {
+                  log('warn', 'failed to look up mod meta info', { message: err.message });
+                });
             });
-          });
+          }
         }
-      }
-    });
+      });
   }
 }
 

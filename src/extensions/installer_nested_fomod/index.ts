@@ -42,10 +42,10 @@ function install(api: IExtensionApi,
 
 function init(context: IExtensionContext): boolean {
   context.registerInstaller(
-      'nested_fomod', 0, testSupported,
-      (files: string[], destinationPath: string, gameId: string,
-       progress: ProgressDelegate, choicesIn?: any, unattended?: boolean) =>
-          install(context.api, files, destinationPath, gameId, choicesIn, unattended, progress));
+    'nested_fomod', 0, testSupported,
+    (files: string[], destinationPath: string, gameId: string,
+     progress: ProgressDelegate, choicesIn?: any, unattended?: boolean) =>
+      install(context.api, files, destinationPath, gameId, choicesIn, unattended, progress));
 
   return true;
 }

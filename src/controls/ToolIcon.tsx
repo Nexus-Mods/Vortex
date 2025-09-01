@@ -55,11 +55,11 @@ const ToolIcon = (props: IToolIconProps) => {
       {props.isPrimary ? <div className='primary-star'>★</div> : null}
       {props.valid && props.t
         ? <IconButton
-            icon='launch-simple'
-            tooltip={props.item.name}
-            onClick={props.onRun}
-            className='run-tool'
-          />
+          icon='launch-simple'
+          tooltip={props.item.name}
+          onClick={props.onRun}
+          className='run-tool'
+        />
         : null}
       {props.children}
     </div>

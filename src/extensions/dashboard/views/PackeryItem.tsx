@@ -127,30 +127,30 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
         onContextMenu={this.onContext}
       >
         <Resizable
-            ref={this.setResizableRef}
-            defaultSize={FULL_SIZE}
-            minWidth={resizing ? this.mMinWidth / 2 : undefined}
-            minHeight={resizing ? this.mMinHeight / 2 : undefined}
-            maxWidth={resizing ? 3 * this.mCellWidth : undefined}
-            maxHeight={resizing ? 6 * this.mCellHeight : undefined}
-            onResizeStart={this.resizeStart}
-            onResizeStop={this.resizeEnd}
-            onResize={this.resizeCallback}
-            enable={editable ? undefined : emptyObject}
-            handleComponent={handleComponent}
+          ref={this.setResizableRef}
+          defaultSize={FULL_SIZE}
+          minWidth={resizing ? this.mMinWidth / 2 : undefined}
+          minHeight={resizing ? this.mMinHeight / 2 : undefined}
+          maxWidth={resizing ? 3 * this.mCellWidth : undefined}
+          maxHeight={resizing ? 6 * this.mCellHeight : undefined}
+          onResizeStart={this.resizeStart}
+          onResizeStop={this.resizeEnd}
+          onResize={this.resizeCallback}
+          enable={editable ? undefined : emptyObject}
+          handleComponent={handleComponent}
         >
           {this.props.children}
           <div key='drag-handle' className='drag-handle'/>
           <div className='packery-buttons'>
-          {(editable && closable) ? (
-            <Button
-              className='dashlet-close-button'
-              onClick={this.dismissWidget}
-            >
-              <Icon name='close' />
-            </Button>
-          ) : null}
-        </div>
+            {(editable && closable) ? (
+              <Button
+                className='dashlet-close-button'
+                onClick={this.dismissWidget}
+              >
+                <Icon name='close' />
+              </Button>
+            ) : null}
+          </div>
         </Resizable>
       </div>
     );

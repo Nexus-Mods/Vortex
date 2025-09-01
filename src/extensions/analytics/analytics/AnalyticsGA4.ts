@@ -45,11 +45,11 @@ class AnalyticsGA4 {
     });*/
     
 
-      for (const key in userProperties) {
-        this.ga4track.setUserProperty(key, userProperties[key]);
-      }
-
+    for (const key in userProperties) {
+      this.ga4track.setUserProperty(key, userProperties[key]);
     }
+
+  }
 
   /**
    * Get Google Analytics Measurement ID from env based on a users current update channel
@@ -60,11 +60,11 @@ class AnalyticsGA4 {
 
     switch(updateChannel) {
       case 'stable':
-      return GA4_STABLE_MEASUREMENT_ID      
+        return GA4_STABLE_MEASUREMENT_ID      
       case 'beta':
-      return GA4_BETA_MEASUREMENT_ID      
+        return GA4_BETA_MEASUREMENT_ID      
       case 'next':
-      return GA4_NEXT_MEASUREMENT_ID
+        return GA4_NEXT_MEASUREMENT_ID
       default:
         return GA4_STABLE_MEASUREMENT_ID 
     }
@@ -114,16 +114,16 @@ class AnalyticsGA4 {
    * @param key 
    * @param value 
    */
-    public trackSettingsEvent(key:string, value: string | number | boolean) {
+  public trackSettingsEvent(key:string, value: string | number | boolean) {
 
     // send empty page_view as we don't need it for these events and if we dont, it'll always send a default 'Vortex'
-      this.ga4track.trackEvent('settings', {
-        key: key,
-        value: value,  
-        page_title: '',
-        page_location: '' 
-      });
-    }
+    this.ga4track.trackEvent('settings', {
+      key: key,
+      value: value,  
+      page_title: '',
+      page_location: '' 
+    });
+  }
 
   /**
    * 

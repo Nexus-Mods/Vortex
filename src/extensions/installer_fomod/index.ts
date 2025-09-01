@@ -567,22 +567,22 @@ class ConnectionIPC {
                                  retry: boolean = false)
                                  : Promise<ConnectionIPC> {
       // Generate unique connection ID for this installation
-      const connectionId = shortid();
+    const connectionId = shortid();
 
       // Increase max listeners to handle concurrent FOMOD installations
       // Each installation adds exit listeners, and with parallel installations
       // we can exceed the default limit of 10
-      const currentMaxListeners = process.getMaxListeners();
-      if (currentMaxListeners < 50) {
-        process.setMaxListeners(50);
-        log('debug', 'Increased process max listeners for FOMOD installations', {
-          previous: currentMaxListeners,
-          new: 50,
-          connectionId
-        });
-      }
+    const currentMaxListeners = process.getMaxListeners();
+    if (currentMaxListeners < 50) {
+      process.setMaxListeners(50);
+      log('debug', 'Increased process max listeners for FOMOD installations', {
+        previous: currentMaxListeners,
+        new: 50,
+        connectionId
+      });
+    }
 
-      let onResolve: () => void;
+    let onResolve: () => void;
     let onReject: (err: Error) => void;
     const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;

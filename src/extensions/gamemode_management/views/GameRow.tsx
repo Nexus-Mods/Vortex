@@ -43,7 +43,7 @@ class GameRow extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { t, active, container, discovery,
-            game, getBounds, onRefreshGameInfo, type } = this.props;
+      game, getBounds, onRefreshGameInfo, type } = this.props;
 
     if (game === undefined) {
       return null;

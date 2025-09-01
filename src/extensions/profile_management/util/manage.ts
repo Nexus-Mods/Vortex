@@ -41,7 +41,7 @@ async function removeProfileImpl(api: IExtensionApi, profile: IProfile) {
     .catch(err => (err.code === 'ENOENT')
       ? doRemoveProfile() // Profile path is already missing, that's fine.
       : api.showErrorNotification('Failed to remove profile',
-        err, { allowReport: err.code !== 'EPERM' }));
+                                  err, { allowReport: err.code !== 'EPERM' }));
 
 }
 

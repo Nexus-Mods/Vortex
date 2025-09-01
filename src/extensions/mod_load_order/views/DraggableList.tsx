@@ -2,8 +2,8 @@ import Promise from 'bluebird';
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
-  DragSourceConnector, DragSourceMonitor, DragSourceSpec,
-  DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
+         DragSourceConnector, DragSourceMonitor, DragSourceSpec,
+         DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
 
 import * as ReactDOM from 'react-dom';
 
@@ -48,8 +48,8 @@ class DraggableItem extends React.Component<IItemProps, {}> {
   public render(): JSX.Element {
     const { isDragging, item, isLocked } = this.props;
     const classNames = [].concat(isLocked ? 'locked' : undefined,
-                                !!item.external ? 'external' : undefined,
-                                isDragging ? 'dragging' : undefined);
+                                 !!item.external ? 'external' : undefined,
+                                 isDragging ? 'dragging' : undefined);
 
     return (
       <this.props.itemRenderer
@@ -140,8 +140,8 @@ const entryTarget: DropTargetSpec<IItemProps> = {
 };
 
 const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
-    DragSource(DND_TYPE, entrySource, collectDrag)(
-      DraggableItem)) as React.ComponentClass<IItemBaseProps>;
+  DragSource(DND_TYPE, entrySource, collectDrag)(
+    DraggableItem)) as React.ComponentClass<IItemBaseProps>;
 
 interface IBaseProps {
   id: string;
@@ -213,7 +213,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
                 apply={this.apply}
                 isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
               />
-            {this.renderContextMenu(item)}
+              {this.renderContextMenu(item)}
             </div>
           ))}
         </ListGroup>
@@ -282,7 +282,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
           instanceId={item.id}
         />
       )
-    : null;
+      : null;
   }
 
   private onHide = () => {

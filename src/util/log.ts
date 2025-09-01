@@ -44,7 +44,7 @@ if ((process as any).type === 'renderer') {
       ipcRenderer.send('log-message', level, message,
                        meta !== undefined ? JSON.stringify(meta, valueReplacer()) : undefined);
       callback(null);
-  };
+    };
 
   // tslint:disable-next-line:no-var-requires
   logger = require('winston');
@@ -68,16 +68,16 @@ if ((process as any).type === 'renderer') {
   const { ipcMain } = require('electron');
   if (ipcMain !== undefined) {
     ipcMain.on('log-message',
-      (event, level: LogLevel, message: string, metadataSer?: string) => {
-        try {
-          const metadata = (metadataSer !== undefined)
-            ? JSON.parse(metadataSer)
-            : undefined;
-          logger.log(level, message, metadata);
-        } catch (e) {
+               (event, level: LogLevel, message: string, metadataSer?: string) => {
+                 try {
+                   const metadata = (metadataSer !== undefined)
+                     ? JSON.parse(metadataSer)
+                     : undefined;
+                   logger.log(level, message, metadata);
+                 } catch (e) {
           // failed to log, what am I supposed to do now?
-        }
-      });
+                 }
+               });
   } // otherwise we're not in electron
   // TODO: very weird issue, getting an EPIPE error if log is called before setupLogging
   //   unless we do a console.log first.
@@ -101,9 +101,9 @@ export function setLogPath(basePath: string) {
     maxFiles: 5,
     tailable: true,
     timestamp: () => new Date().toISOString(),
-      formatter: (options: any) => {
-        return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
-      }
+    formatter: (options: any) => {
+      return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+    }
   });
 }
 
@@ -127,9 +127,9 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
       maxFiles: 5,
       tailable: true,
       timestamp: () => new Date().toISOString(),
-        formatter: (options: any) => {
-          return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
-        }
+      formatter: (options: any) => {
+        return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+      }
     });
 
     // if we are using console (development enviorment) then add back a new console transport with better logging format

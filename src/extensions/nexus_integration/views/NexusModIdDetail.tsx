@@ -19,7 +19,7 @@ function validateNum(value: string): ValidationState {
   return !truthy(value)
       || isNaN(Number(value))
       || (parseInt(value, 10) < 1)
-      ? 'error' : 'success';
+    ? 'error' : 'success';
 }
 
 interface IInputProps {
@@ -86,8 +86,8 @@ function saveFileId(dispatch: Redux.Dispatch<any>, isDownload: boolean,
 
 function NexusModIdDetail(props: IProps) {
   const { t, activeGameId, archiveId, fileHash, fileName, isDownload, modId,
-          nexusFileId, nexusModId,
-          onCheckForUpdate, onOpenURL, onUpdateByMD5 } = props;
+    nexusFileId, nexusModId,
+    onCheckForUpdate, onOpenURL, onUpdateByMD5 } = props;
 
   const [edit, setEdit] = React.useState(false);
   const [modIdTemp, setModId] = React.useState(nexusModId);
@@ -266,8 +266,8 @@ function NexusModIdDetail(props: IProps) {
     const valid: true | string = !nexusModId
       ? t('No mod id') as string
       : !nexusFileId
-      ? t('No file id') as string
-      : true;
+        ? t('No file id') as string
+        : true;
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

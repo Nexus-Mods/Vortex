@@ -75,8 +75,8 @@ class SpeedCalculator {
       for (let i = 0; i < time - this.mMeasureTime; ++i) {
         this.mTimeSlices.shift();
         Object.keys(this.mCounters)
-            .forEach(
-                counterId => { this.mCounters[counterId].timeSlices.shift(); });
+          .forEach(
+            counterId => { this.mCounters[counterId].timeSlices.shift(); });
       }
     }
     this.mMeasureTime = time;

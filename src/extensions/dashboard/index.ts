@@ -20,7 +20,7 @@ function registerDashlet(title: string,
   const fixed = options !== undefined ? options.fixed || false : false;
   const closable = options !== undefined ? options.closable : true;
   dashlets.push({ title, position, width, height, component, isVisible, props,
-                  fixed, closable });
+    fixed, closable });
 }
 
 function init(context: IExtensionContext): boolean {

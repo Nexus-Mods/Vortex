@@ -118,8 +118,8 @@ class GOGGalaxy implements IGameStore {
           try {
             // Try to find GOG Galaxy in registry
             const gogLauncher = winapi?.RegGetValue?.('HKEY_LOCAL_MACHINE',
-              'SOFTWARE\\WOW6432Node\\GOG.com\\GalaxyClient\\paths',
-              'client');
+                                                      'SOFTWARE\\WOW6432Node\\GOG.com\\GalaxyClient\\paths',
+                                                      'client');
             const val = gogLauncher.value;
             this.mLauncherExecPath = path.join(val.toString(), 'GalaxyClient.exe');
             return Promise.resolve(this.mLauncherExecPath);
@@ -232,8 +232,8 @@ class GOGGalaxy implements IGameStore {
 
                   return (!!gamePath && !!name && !!appid)
                     ? fs.statAsync(gamePath)
-                        .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
-                        .catch(() => Promise.resolve(undefined))
+                      .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
+                      .catch(() => Promise.resolve(undefined))
                     : Promise.resolve(undefined);
                 } catch (err) {
                   log('error', 'Cannot parse GOG Galaxy game info', err);

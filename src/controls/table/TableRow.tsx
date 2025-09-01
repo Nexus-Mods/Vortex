@@ -340,7 +340,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
   public render(): JSX.Element | JSX.Element[] {
     const { data, domRef, inlines, group, grouped, highlighted, id, onClick,
-            rowClasses, selected } = this.props;
+      rowClasses, selected } = this.props;
 
     const classes = rowClasses;
 

@@ -106,27 +106,27 @@ if (ipcMain !== undefined) {
         data: sassIndex,
         outputStyle: isDevel ? 'expanded' : 'compressed',
       },
-        (err, output) => {
-          log('info', 'sass compiled in', `${Date.now() - started}ms`);
-          if (evt.sender?.isDestroyed()) {
-            return;
-          }
-          if (err !== null) {
+                  (err, output) => {
+                    log('info', 'sass compiled in', `${Date.now() - started}ms`);
+                    if (evt.sender?.isDestroyed()) {
+                      return;
+                    }
+                    if (err !== null) {
             // the error has its own class and its message is missing relevant information
-            evt.sender.send(replyEvent, new Error(err.formatted));
-          } else {
+                      evt.sender.send(replyEvent, new Error(err.formatted));
+                    } else {
             // remove utf8-bom if it's there
-            const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
-              ? output.css.slice(3)
-              : output.css;
-            evt.sender.send(replyEvent, null, css.toString());
-            fs.writeFileAsync(cachePath(), JSON.stringify({
-              stylesheets,
-              css: css.toString(),
-            }), { encoding: 'utf8' })
-              .catch(() => null);
-          }
-        });
+                      const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
+                        ? output.css.slice(3)
+                        : output.css;
+                      evt.sender.send(replyEvent, null, css.toString());
+                      fs.writeFileAsync(cachePath(), JSON.stringify({
+                        stylesheets,
+                        css: css.toString(),
+                      }), { encoding: 'utf8' })
+                        .catch(() => null);
+                    }
+                  });
     }, requested ? 0 : 2000);
   };
 
@@ -270,9 +270,9 @@ class StyleManager {
       const statProm = () => (filePath === undefined)
         ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
-        ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
+          ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
             .then(() => null)
-        : fs.statAsync(filePath).then(() => null);
+          : fs.statAsync(filePath).then(() => null);
       this.mSetQueue = this.mSetQueue
         .then(() => statProm())
         .then(() => {

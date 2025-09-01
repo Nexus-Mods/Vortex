@@ -291,8 +291,8 @@ export function removeValue<T>(state: T, path: Array<(string | number)>, value: 
  * @returns {T}
  */
 export function removeValueIf<T extends object>(
-    state: T, path: Array<(string | number)>,
-    predicate: (element: any) => boolean): T {
+  state: T, path: Array<(string | number)>,
+  predicate: (element: any) => boolean): T {
   return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
 }
 
@@ -317,7 +317,7 @@ export function rehydrate<T extends object>(
   path: string[],
   replace: boolean,
   defaults: any,
-  ): T {
+): T {
   const inState = getSafe(inbound, path, undefined);
 
   return (inState !== undefined)
@@ -357,15 +357,15 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
     return Promise.resolve(res || fallback);
   } else {
     return waitUntil(() => {
-             knownGames =
+      knownGames =
                  getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
-             return (knownGames !== null) && (knownGames !== undefined);
-           })
-        .then(() => {
-          const gameMode = activeGameId(store.getState());
+      return (knownGames !== null) && (knownGames !== undefined);
+    })
+      .then(() => {
+        const gameMode = activeGameId(store.getState());
 
-          const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
-          return Promise.resolve(res || fallback);
-        });
+        const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+        return Promise.resolve(res || fallback);
+      });
   }
 }

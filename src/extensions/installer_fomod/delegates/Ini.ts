@@ -22,37 +22,37 @@ class Ini extends DelegateBase {
     this.gameId = gameId;
     this.gameInfo =
         getSafe(api.store.getState(), ['session', 'gameMode', 'known'], [])
-            .find((game) => game.id === gameId);
+          .find((game) => game.id === gameId);
     this.parser = new IniParser(new WinapiFormat());
   }
 
   public getIniString = (selectedFile: string, iniSection: string, iniKey: string,
                          callback: (err, res: string) => void) => {
-        log('debug', 'GetIniString called');
+    log('debug', 'GetIniString called');
 
-        let iniValue: string;
-        let baseIniFile = getIniFilePath(this.gameInfo.id);
+    let iniValue: string;
+    let baseIniFile = getIniFilePath(this.gameInfo.id);
 
-        if (!isNullOrWhitespace(selectedFile)) {
-          baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);
-        }
+    if (!isNullOrWhitespace(selectedFile)) {
+      baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);
+    }
 
-        this.parser.read(baseIniFile)
-            .then((iniFile: IniFile<any>) => {
-              Object.keys(iniFile.data)
-                  .forEach((key: string) => {
-                    if (iniSection === key) {
-                      Object.keys(iniFile.data[key])
-                          .forEach((subkey: string) => {
-                            if (iniKey === subkey) {
-                              iniValue = iniFile.data[key][subkey];
-                            }
-                          });
-                    }
-                  });
-            })
-            .then(() => Promise.resolve(callback(null, iniValue)));
-      }
+    this.parser.read(baseIniFile)
+      .then((iniFile: IniFile<any>) => {
+        Object.keys(iniFile.data)
+          .forEach((key: string) => {
+            if (iniSection === key) {
+              Object.keys(iniFile.data[key])
+                .forEach((subkey: string) => {
+                  if (iniKey === subkey) {
+                    iniValue = iniFile.data[key][subkey];
+                  }
+                });
+            }
+          });
+      })
+      .then(() => Promise.resolve(callback(null, iniValue)));
+  }
 
   public getIniInt = (selectedFile: string, iniSection: string, iniKey: string,
                       callback: (err, res: number) => void) => {

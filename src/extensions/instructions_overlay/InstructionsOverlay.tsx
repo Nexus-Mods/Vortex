@@ -110,7 +110,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
     abortDrag.current = new AbortController();
     // capture makes it so that the container receives the event, not the draggable icon
     container.addEventListener('mousemove', trackMouse,
-      { capture: true, signal: abortDrag.current.signal });
+                               { capture: true, signal: abortDrag.current.signal });
     // only trigger endDrag once, this way we don't have to remove it manually
     container.addEventListener('mouseup', endDrag, { once: true });
     trackMouse(evt as any);

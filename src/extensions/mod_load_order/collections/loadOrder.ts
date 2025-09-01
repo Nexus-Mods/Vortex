@@ -28,7 +28,7 @@ export async function generate(api: types.IExtensionApi,
   }
 
   const loadOrder: ILoadOrder = util.getSafe(state,
-    ['persistent', 'loadOrder', profileId], undefined);
+                                             ['persistent', 'loadOrder', profileId], undefined);
   if (loadOrder === undefined) {
     // This is theoretically "fine" - the user may have simply
     //  downloaded the mods and immediately created the collection

@@ -48,7 +48,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
                         - new Date(lhs.date).getTime());
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
-          {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+        {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
       </Dashlet>      
     );
   }
@@ -153,7 +153,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
       <FlexLayout type='row' className='announcement-description'>
         
         <ReactMarkdown allowedElements={['p', 'a', 'em', 'strong']} unwrapDisallowed={true} >
-            {announcement.description}
+          {announcement.description}
         </ReactMarkdown>       
       </FlexLayout>
     );
@@ -163,12 +163,12 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return (
       <div className='announcements-container'>
         {
-        filtered.map((announcement, id) => (
-          <div className='announcement-entry' key={id}>
-            {this.generateExtraPanel(announcement)}
-            {this.generateDescription(announcement)}
-          </div>
-        ))
+          filtered.map((announcement, id) => (
+            <div className='announcement-entry' key={id}>
+              {this.generateExtraPanel(announcement)}
+              {this.generateDescription(announcement)}
+            </div>
+          ))
         }
       </div>
     );
@@ -185,5 +185,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
 connect(mapStateToProps)(
-    translate(['common'])(
-      AnnouncementDashlet));
+  translate(['common'])(
+    AnnouncementDashlet));

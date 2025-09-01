@@ -10,10 +10,10 @@ const settingsReducer: IReducerSpec = {
   reducers: {
     [actions.addMetaserver as any]:
     (state, payload) => setSafe(state, ['servers', payload.id], {
-        url: payload.url,
-        cacheDurationSec: payload.cacheDurationSec || 86400,
-        priority: Object.keys(state.servers).length,
-      }),
+      url: payload.url,
+      cacheDurationSec: payload.cacheDurationSec || 86400,
+      priority: Object.keys(state.servers).length,
+    }),
     [actions.removeMetaserver as any]:
         (state, payload) => deleteOrNop(state, ['servers', payload.id]),
     [actions.setPriorities as any]:

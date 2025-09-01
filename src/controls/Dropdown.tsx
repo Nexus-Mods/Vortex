@@ -53,12 +53,12 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
     const filt = this.mOpen
       ? this.props.children
       : React.Children.map(this.props.children,
-          child => (child as any).props.bsRole === 'menu' ? <DummyMenu /> : child);
+                           child => (child as any).props.bsRole === 'menu' ? <DummyMenu /> : child);
     return (
       <Dropdown dropup={this.state.up} onToggle={this.onToggle} {...relayProps}>
         {filt}
       </Dropdown>
-      );
+    );
   }
 
   private get bounds(): DOMRect {

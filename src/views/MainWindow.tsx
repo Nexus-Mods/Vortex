@@ -212,7 +212,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.state.hidpi !== nextState.hidpi
       || this.state.focused !== nextState.focused
       || this.state.menuOpen !== nextState.menuOpen
-      ;
+    ;
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -224,7 +224,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, uiBlockers, visibleDialog } = this.props;
+      nextProfileId, uiBlockers, visibleDialog } = this.props;
     const { focused, hidpi, menuOpen } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
@@ -296,7 +296,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='center-content' style={{ flexDirection: 'column' }}>
           <h4>{
             t('Switching to Profile: {{name}}',
-            { replace: { name: profile?.name ?? t('None') } })
+              { replace: { name: profile?.name ?? t('None') } })
           }</h4>
           {control}
         </div>
@@ -347,7 +347,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar, updateChannel, version } = this.props;
-    let parsedVersion = semver.parse(version);
+    const parsedVersion = semver.parse(version);
     const prerelease = parsedVersion?.prerelease[0] ?? 'stable';
     const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
 
@@ -366,7 +366,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           <div className='toolbar-version'>
 
             {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
-            <Icon name='conflict'></Icon>
+              <Icon name='conflict'></Icon>
               <div className='toolbar-version-text'>Staging</div>
             </div> : null}
 
@@ -510,7 +510,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.sidebarRef = ref;
     if (this.sidebarRef !== null) {
       this.sidebarRef.setAttribute('style',
-        'min-width: ' + ref.getBoundingClientRect().width + 'px');
+                                   'min-width: ' + ref.getBoundingClientRect().width + 'px');
     }
   }
 
@@ -627,7 +627,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         this.sidebarTimer = setTimeout(() => {
           this.sidebarTimer = undefined;
           this.sidebarRef?.setAttribute?.('style',
-            'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
+                                          'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
         }, 500);
       }
     }

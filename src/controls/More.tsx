@@ -77,7 +77,7 @@ class More extends ComponentEx<IProps, IComponentState> {
         </div>
       );
 
-    let pCounter = 0;
+    const pCounter = 0;
     const popover = (
       <Popover id={`popover-${id}`} className='more-popover' title={name}>
         

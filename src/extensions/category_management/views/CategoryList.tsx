@@ -133,7 +133,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t } = this.props;
     const { expandedTreeData, searchString, searchFocusIndex,
-            searchFoundCount } = this.state;
+      searchFoundCount } = this.state;
 
     return (
       <div className='categories-dialog'>
@@ -181,20 +181,20 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             onClick={this.selectNextMatch}
           />
         </div>
-          <SortableTree
-            treeData={expandedTreeData}
-            onChange={nop}
-            onVisibilityToggle={this.toggleVisibility}
-            canDrop={this.canDrop}
-            onMoveNode={this.moveNode}
-            style={{ height: '95%' }}
-            searchMethod={this.searchMethod}
-            searchQuery={searchString}
-            searchFocusOffset={searchFocusIndex}
-            searchFinishCallback={this.searchFinishCallback}
-            getNodeKey={this.getNodeKey}
-            generateNodeProps={this.generateNodeProps}
-          />
+        <SortableTree
+          treeData={expandedTreeData}
+          onChange={nop}
+          onVisibilityToggle={this.toggleVisibility}
+          canDrop={this.canDrop}
+          onMoveNode={this.moveNode}
+          style={{ height: '95%' }}
+          searchMethod={this.searchMethod}
+          searchQuery={searchString}
+          searchFocusOffset={searchFocusIndex}
+          searchFinishCallback={this.searchFinishCallback}
+          getNodeKey={this.getNodeKey}
+          generateNodeProps={this.generateNodeProps}
+        />
       </div>
     );
   }
@@ -242,7 +242,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       copy.children = this.applyExpand(copy.children, showEmpty, expanded, categories);
       return copy;
     })
-    .filter(obj => obj !== undefined)
+      .filter(obj => obj !== undefined)
     ;
   }
 
@@ -266,7 +266,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
     try {
       const newTree: ICategoriesTree[] = createTreeDataObject(t, categories, mods,
-        (a, b) => categories[a].name.localeCompare(categories[b].name));
+                                                              (a, b) => categories[a].name.localeCompare(categories[b].name));
 
       const newOrder = (base: ICategoriesTree[]): string[] => {
         return [].concat(...base.map(node =>
@@ -305,7 +305,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       input: [{ id: 'newCategory', value: category.name, label: 'Category' }],
       condition: this.validateCategoryDialog,
     }, [ { label: 'Cancel' }, { label: 'Rename' } ])
-    .then((result: IDialogResult) => {
+      .then((result: IDialogResult) => {
         if (result.action === 'Rename') {
           onRenameCategory(gameMode, categoryId, result.input.newCategory);
         }
@@ -327,27 +327,27 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       ],
       condition: this.validateCategoryDialog,
     }, [{ label: 'Cancel' }, { label: 'Add' }])
-    .then((result: IDialogResult) => {
-      if (result.action === 'Add') {
-        onSetCategory(gameMode, result.input.newCategoryId, {
-          name: result.input.newCategory,
-          parentCategory: parentId,
-          order: 0,
-        });
-      }
-    });
+      .then((result: IDialogResult) => {
+        if (result.action === 'Add') {
+          onSetCategory(gameMode, result.input.newCategoryId, {
+            name: result.input.newCategory,
+            parentCategory: parentId,
+            order: 0,
+          });
+        }
+      });
   }
 
   private hasEmptyInput = (input: IInput): IConditionResult => {
     const { t } = this.props;
     return input.value === ''
       ? {
-          id: input.id,
-          actions: ['Add', 'Rename'],
-          errorText: t('{{label}} cannot be empty.', {
-            replace: { label: input.label ? input.label : 'Field' },
-          }),
-        }
+        id: input.id,
+        actions: ['Add', 'Rename'],
+        errorText: t('{{label}} cannot be empty.', {
+          replace: { label: input.label ? input.label : 'Field' },
+        }),
+      }
       : undefined;
   }
 
@@ -355,8 +355,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const { t, categories } = this.props;
     return categories[input.value] !== undefined
       ? { id: input.id,
-          actions: ['Add'],
-          errorText: t('ID already used.') }
+        actions: ['Add'],
+        errorText: t('ID already used.') }
       : undefined;
   }
 
@@ -522,14 +522,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private toggleVisibility =
     (args: {treeData: ICategoriesTree[], node: ICategoriesTree, expanded: boolean}) => {
-    if (args.expanded) {
-      this.nextState.expanded.push(args.node.categoryId);
-    } else {
-      this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
-    }
+      if (args.expanded) {
+        this.nextState.expanded.push(args.node.categoryId);
+      } else {
+        this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
+      }
 
-    this.updateExpandedTreeData(this.props.categories);
-  }
+      this.updateExpandedTreeData(this.props.categories);
+    }
 
   private canDrop = (data: OnDragPreviousAndNextLocation & NodeData) => {
     const { nextPath, node } = data;

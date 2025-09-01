@@ -26,10 +26,10 @@ class DeploymendMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator', 'Symlink Deployment',
-        'Deploys mods by setting symlinks in the destination directory.',
-        true,
-        api);
+      'symlink_activator', 'Symlink Deployment',
+      'Deploys mods by setting symlinks in the destination directory.',
+      true,
+      api);
   }
 
   public detailedDescription(t: TFunction): string {
@@ -114,7 +114,7 @@ class DeploymendMethod extends LinkingDeployment {
         // unexpected error code
         res = {
           description: t => t('Filesystem doesn\'t support symbolic links. Error: "{{error}}"',
-            { replace: { error: err.message } }),
+                              { replace: { error: err.message } }),
         };
       }
     }
@@ -141,23 +141,23 @@ class DeploymendMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
-        .then(() => fs.symlinkAsync(sourcePath, linkPath)
-            .catch(err => (err.code !== 'EEXIST')
-                ? Promise.reject(err)
-                : fs.removeAsync(linkPath)
-                  .then(() => fs.symlinkAsync(sourcePath, linkPath))));
+      .then(() => fs.symlinkAsync(sourcePath, linkPath)
+        .catch(err => (err.code !== 'EEXIST')
+          ? Promise.reject(err)
+          : fs.removeAsync(linkPath)
+            .then(() => fs.symlinkAsync(sourcePath, linkPath))));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
     return fs.lstatAsync(linkPath)
-    .then(stats => {
-      if (stats.isSymbolicLink()) {
-        return fs.removeAsync(linkPath);
-      } else {
+      .then(stats => {
+        if (stats.isSymbolicLink()) {
+          return fs.removeAsync(linkPath);
+        } else {
         // should we report the attempt to remove a non-link as an error?
-        log('warn', 'attempt to unlink a file that\'s not a link', { linkPath });
-      }
-    });
+          log('warn', 'attempt to unlink a file that\'s not a link', { linkPath });
+        }
+      });
   }
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
@@ -203,9 +203,9 @@ class DeploymendMethod extends LinkingDeployment {
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
     return fs.readlinkAsync(linkPath)
-    .then(symlinkPath => symlinkPath === sourcePath)
+      .then(symlinkPath => symlinkPath === sourcePath)
     // readlink throws an "unknown" error if the file is no link at all. Super helpful
-    .catch(() => false);
+      .catch(() => false);
   }
 
   protected canRestore(): boolean {

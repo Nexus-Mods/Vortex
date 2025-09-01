@@ -109,7 +109,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     const items = filtered.slice()
       .reduce((prev: INotification[], notification: INotification) =>
-            this.groupNotifications(prev, notification, collapsed), [])
+        this.groupNotifications(prev, notification, collapsed), [])
       .sort(inverseSort)
       .map(notification => this.renderNotification(notification, collapsed));
 

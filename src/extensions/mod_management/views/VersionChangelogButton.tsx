@@ -61,18 +61,18 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         <div
           style={{ maxHeight: 500, overflowY: 'auto' }}
         >
-        <FormGroup>
-          <ControlLabel>{t('Current Version')}</ControlLabel>
-          <div key='dialog-form-changelog' className='mod-changelog'>
-            {this.renderChangelog(changelog)}
-          </div>
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>{t('Newest Version')}</ControlLabel>
-          <div key='dialog-form-newestChangelog' className='mod-changelog'>
-            {this.renderChangelog(newestChangelog)}
-          </div>
-        </FormGroup>
+          <FormGroup>
+            <ControlLabel>{t('Current Version')}</ControlLabel>
+            <div key='dialog-form-changelog' className='mod-changelog'>
+              {this.renderChangelog(changelog)}
+            </div>
+          </FormGroup>
+          <FormGroup>
+            <ControlLabel>{t('Newest Version')}</ControlLabel>
+            <div key='dialog-form-newestChangelog' className='mod-changelog'>
+              {this.renderChangelog(newestChangelog)}
+            </div>
+          </FormGroup>
         </div>
       </Popover>
     );

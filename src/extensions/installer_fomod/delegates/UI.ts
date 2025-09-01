@@ -269,7 +269,7 @@ class UI extends DelegateBase {
       callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed',
-        err);
+                err);
       callback(err);
     }
   }
@@ -282,11 +282,11 @@ class UI extends DelegateBase {
         msg += '\n' + parameters.details;
       }
       this.api.showErrorNotification(parameters.title, parameters.details ?? undefined,
-        { isHTML: true, allowReport: false, message: parameters.message });
+                                     { isHTML: true, allowReport: false, message: parameters.message });
       callback(null);
     } catch (err) {
       showError(this.api.store.dispatch,
-        'Failed to display error message from installer', err);
+                'Failed to display error message from installer', err);
       callback(err);
     }
   }

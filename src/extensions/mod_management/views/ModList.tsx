@@ -190,9 +190,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         title: 'Remove',
         action: this.removeSelected,
         condition: instanceId => (typeof(instanceId) === 'string')
-            ? (['downloaded', 'installed']
-                .indexOf(this.state.modsWithState[instanceId].state) !== -1)
-            : true,
+          ? (['downloaded', 'installed']
+            .indexOf(this.state.modsWithState[instanceId].state) !== -1)
+          : true,
         hotKey: { code: 46 },
         // remove is usually the default option for the menu, please put stuff above
         // it only if it really makes more sense as the default
@@ -291,13 +291,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ENABLED_TIME(() => this.context.api.locale()),
       DOWNLOAD_TIME(() => this.context.api),
     ]
-    .map((attr, idx) => ({ ...attr, position: (idx + 1) * 10 }));
+      .map((attr, idx) => ({ ...attr, position: (idx + 1) * 10 }));
 
     this.mUpdateDebouncer = new Debouncer((newProps) => {
-        this.updateModsWithState(newProps)
-          .then(() => null);
-        return null;
-      }, 500);
+      this.updateModsWithState(newProps)
+        .then(() => null);
+      return null;
+    }, 500);
 
     this.initState({
       modsWithState: {},
@@ -309,7 +309,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.mIsMounted = true;
     this.updateModsWithState(this.props)
-    .then(() => this.forceUpdate());
+      .then(() => this.forceUpdate());
   }
 
   public setBoundsRef = ref => {
@@ -902,13 +902,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
     const modPath = path.join(stagingFolder, mod.installationPath);
     return calculateFolderSize(modPath)
-    .then((totalSize) => {
-      api.store.dispatch(setModAttribute(this.props.gameMode, mod.id, 'modSize', totalSize));
-      return Promise.resolve();
-    })
-    .catch(err => {
-      return Promise.resolve();
-    });
+      .then((totalSize) => {
+        api.store.dispatch(setModAttribute(this.props.gameMode, mod.id, 'modSize', totalSize));
+        return Promise.resolve();
+      })
+      .catch(err => {
+        return Promise.resolve();
+      });
   }
 
   private updateModsWithState(newProps: IProps): Promise<void> {
@@ -952,7 +952,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           download: newProps.downloads[archiveId],
           meta: newProps.downloads[archiveId]?.modInfo?.meta,
         }, undefined)
-        .then(info => ({ archiveId, info }));
+          .then(info => ({ archiveId, info }));
       } else {
         return Promise.resolve(undefined);
       }
@@ -1021,26 +1021,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       // selected "not installed"
       if (modsWithState[modId].state !== 'downloaded') {
         return removeMods(this.context.api, gameMode, [modId])
-        .then(() => null)
-        .catch(UserCanceled, () => null)
-        .catch(ProcessCanceled, err => {
-          this.context.api.sendNotification({
-            id: 'cant-remove-mod',
-            type: 'warning',
-            title: 'Failed to remove "{{modName}}"',
-            message: err.message,
-            replace: {
-              modName: modName(modsWithState[modId]),
-            },
-          });
-        })
-        .catch(err => {
+          .then(() => null)
+          .catch(UserCanceled, () => null)
+          .catch(ProcessCanceled, err => {
+            this.context.api.sendNotification({
+              id: 'cant-remove-mod',
+              type: 'warning',
+              title: 'Failed to remove "{{modName}}"',
+              message: err.message,
+              replace: {
+                modName: modName(modsWithState[modId]),
+              },
+            });
+          })
+          .catch(err => {
           // Activation store can potentially provide an err.allowReport value
           //  if/when the manifest is corrupted - we're going to suppress the
           //  report button for that use case.
-          this.context.api.showErrorNotification('Failed to set mod to uninstalled', err,
-            { allowReport: (err?.allowReport !== false) });
-        });
+            this.context.api.showErrorNotification('Failed to set mod to uninstalled', err,
+                                                   { allowReport: (err?.allowReport !== false) });
+          });
       }
     } else if (modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
@@ -1157,18 +1157,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       { label: 'Cancel' },
       { label: 'Save' },
     ])
-    .then(result => {
-      if (result.action === 'Save') {
-        let description = result.input['description'];
-        const endShort = description.indexOf('\n\n');
-        if (endShort !== -1) {
-          this.props.onSetModAttribute(gameMode, modId, 'shortDescription',
-                                       description.substring(0, endShort));
+      .then(result => {
+        if (result.action === 'Save') {
+          let description = result.input['description'];
+          const endShort = description.indexOf('\n\n');
+          if (endShort !== -1) {
+            this.props.onSetModAttribute(gameMode, modId, 'shortDescription',
+                                         description.substring(0, endShort));
+          }
+          description = description.replace(/\n/g, '<br/>');
+          this.props.onSetModAttribute(gameMode, modId, 'description', description);
         }
-        description = description.replace(/\n/g, '<br/>');
-        this.props.onSetModAttribute(gameMode, modId, 'description', description);
-      }
-    });
+      });
   }
 
   private setModsEnabled(modIds: string[], enabled: boolean) {
@@ -1230,7 +1230,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       existing.add(modId);
       Object.keys(this.state.modsWithState)
         .filter(iter =>
-            !existing.has(iter)
+          !existing.has(iter)
             && this.state.modsWithState[iter]?.attributes?.modId?.toString?.() === repoModId)
         .forEach(iter => {
           candidates.push({ mod: this.state.modsWithState[iter], enabled: false });
@@ -1261,29 +1261,29 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       { label: 'Cancel' },
       { label: 'Remove Selected' },
     ])
-    .then(result => {
-      if (result.action === 'Remove Selected') {
-        const removeArchives = result.input['mods-and-archive'];
-        const idsToRemove = Object.keys(result.input)
-          .filter(key => key.startsWith('_'))
-          .filter(key => result.input[key] === true)
-          .map(key => key.slice(1));
+      .then(result => {
+        if (result.action === 'Remove Selected') {
+          const removeArchives = result.input['mods-and-archive'];
+          const idsToRemove = Object.keys(result.input)
+            .filter(key => key.startsWith('_'))
+            .filter(key => result.input[key] === true)
+            .map(key => key.slice(1));
 
-        return this.removeSelectedImpl(idsToRemove, true, removeArchives);
-      }
-    })
-    .catch(ProcessCanceled, err => {
-      this.context.api.sendNotification({
-        id: 'cant-remove-mod',
-        type: 'warning',
-        title: 'Failed to remove mods',
-        message: err.message,
+          return this.removeSelectedImpl(idsToRemove, true, removeArchives);
+        }
+      })
+      .catch(ProcessCanceled, err => {
+        this.context.api.sendNotification({
+          id: 'cant-remove-mod',
+          type: 'warning',
+          title: 'Failed to remove mods',
+          message: err.message,
+        });
+      })
+      .catch(UserCanceled, () => null)
+      .catch(err => {
+        this.context.api.showErrorNotification('Failed to remove selected mods', err);
       });
-    })
-    .catch(UserCanceled, () => null)
-    .catch(err => {
-      this.context.api.showErrorNotification('Failed to remove selected mods', err);
-    });
 
     return true;
   }
@@ -1304,9 +1304,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .map(key => this.state.modsWithState[key].archiveId);
 
     return (doRemoveMods
-        ? removeMods(this.context.api, gameMode, wereInstalled)
-          .then(() => onRemoveMods(gameMode, wereInstalled))
-        : Promise.resolve())
+      ? removeMods(this.context.api, gameMode, wereInstalled)
+        .then(() => onRemoveMods(gameMode, wereInstalled))
+      : Promise.resolve())
       .then(() => {
         if (removeArchives) {
           archiveIds.forEach(archiveId => {
@@ -1345,7 +1345,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           allArchives = false;
         }
         return name;
-    });
+      });
 
     const checkboxes = allArchives
       ? [ { id: 'archive', text: t('Delete Archive'), value: true } ]
@@ -1439,7 +1439,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               allowAutoEnable: false,
             };
             return toPromise(cb => this.context.api.events.emit('start-install-download',
-                mods[modId].archiveId, installOpts, cb))
+                                                                mods[modId].archiveId, installOpts, cb))
               .catch(err => {
                 if (err instanceof UserCanceled) {
                   return;
@@ -1459,19 +1459,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
             }
           });
-        });
+      });
     } else if (mods[modIds] !== undefined) {
       const choices = getSafe(mods[modIds], ['attributes', 'installerChoices'], undefined);
       this.context.api.events.emit('start-install-download', mods[modIds].archiveId,
                                    { choices, allowAutoEnable: false }, (err) => {
-        if (err === null) {
-          if (modState[modIds].enabled) {
+                                     if (err === null) {
+                                       if (modState[modIds].enabled) {
             // reinstalling an enabled mod automatically enables the new one so we also need
             // to trigger this event
-            this.context.api.events.emit('mods-enabled', [modIds], true, gameMode);
-          }
-        }
-      });
+                                         this.context.api.events.emit('mods-enabled', [modIds], true, gameMode);
+                                       }
+                                     }
+                                   });
     }
   }
 

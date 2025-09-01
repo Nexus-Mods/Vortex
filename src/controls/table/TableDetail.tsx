@@ -127,7 +127,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
           <ControlLabel title={preT(t, attribute.description)}>
             {preT(t, attribute.name)}{helpIcon}
           </ControlLabel>
-         ) : null }
+        ) : null }
         {content}
       </FormGroup>
     ) : null;
@@ -399,7 +399,7 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
       }
     } else {
       log('error', 'attempt to change an attribute for multiple rows that doesn\'t support it',
-        { rowIds, attribute, value });
+          { rowIds, attribute, value });
     }
   }
 }

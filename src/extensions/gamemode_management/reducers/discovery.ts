@@ -20,14 +20,14 @@ export const discoveryReducer: IReducerSpec = {
     },
     [discoveryProgress as any]: (state, payload) => state.phases[payload.idx] !== undefined
       ? update(state, {
-          running: {$set: true},
-          phases: {
-            [payload.idx]: {
-              progress: {$set: payload.percent},
-              directory: {$set: payload.directory},
-            },
+        running: {$set: true},
+        phases: {
+          [payload.idx]: {
+            progress: {$set: payload.percent},
+            directory: {$set: payload.directory},
           },
-        })
+        },
+      })
       : state,
     [discoveryFinished as any]:
         (state, payload) => update(state,

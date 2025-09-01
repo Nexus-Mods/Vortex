@@ -146,16 +146,16 @@ class Icon extends React.Component<IIconProps, {}> {
   private setIcon(props: IIconProps) {
     const set = props.set || 'icons';
     props.getSet(set)
-    .then(requiredSet => {
-      if (debugMissingIcons
+      .then(requiredSet => {
+        if (debugMissingIcons
           && (requiredSet !== null)
           && !requiredSet.has('icon-' + props.name)
           && !debugReported.has(props.name)) {
         // tslint:disable-next-line:no-console
-        console.trace('icon missing', props.name);
-        debugReported.add(props.name);
-      }
-    });
+          console.trace('icon missing', props.name);
+          debugReported.add(props.name);
+        }
+      });
 
     if (props.rotate && (props.rotateId !== undefined) && (this.mCurrentSize === undefined)) {
       this.mCurrentSize = Icon.sCache[props.rotateId];

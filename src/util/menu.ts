@@ -32,7 +32,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       id: 'zoom-factor-changed',
       type: 'info',
       message: extensions.getApi().translate('Zoom: {{factor}}%',
-        { replace: { factor: Math.floor(factor * 100) } }),
+                                             { replace: { factor: Math.floor(factor * 100) } }),
       noDismiss: true,
       displayMS: 2000,
       localize: {
@@ -61,32 +61,32 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
     // main pages
     extensions.apply('registerMainPage',
-      (icon: string, title: string, element: any, options: IMainPageOptions) => {
-        if ((options.visible === undefined) || options.visible()) {
-          let accelerator = options.hotkeyRaw !== undefined ? options.hotkeyRaw :
-            options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined;
+                     (icon: string, title: string, element: any, options: IMainPageOptions) => {
+                       if ((options.visible === undefined) || options.visible()) {
+                         let accelerator = options.hotkeyRaw !== undefined ? options.hotkeyRaw :
+                           options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined;
 
-          if (options.hotkey !== undefined) {
-            if (alreadyAssigned.has(options.hotkey)) {
-              log('warn', 'hotkey already used', { icon, title, options });
-              accelerator = undefined;
-            } else {
-              alreadyAssigned.add(options.hotkey);
-            }
-          }
+                         if (options.hotkey !== undefined) {
+                           if (alreadyAssigned.has(options.hotkey)) {
+                             log('warn', 'hotkey already used', { icon, title, options });
+                             accelerator = undefined;
+                           } else {
+                             alreadyAssigned.add(options.hotkey);
+                           }
+                         }
 
-          viewMenu.push({
-            label: title,
-            visible: true,
-            accelerator,
-            click(item, focusedWindow) {
-              if ((options.visible === undefined) || options.visible()) {
-                extensions.getApi().events.emit('show-main-page', options.id || title);
-              }
-            },
-          });
-        }
-      });
+                         viewMenu.push({
+                           label: title,
+                           visible: true,
+                           accelerator,
+                           click(item, focusedWindow) {
+                             if ((options.visible === undefined) || options.visible()) {
+                               extensions.getApi().events.emit('show-main-page', options.id || title);
+                             }
+                           },
+                         });
+                       }
+                     });
 
     viewMenu.push({
       label: 'Settings',

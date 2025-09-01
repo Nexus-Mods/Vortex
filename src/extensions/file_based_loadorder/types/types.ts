@@ -228,8 +228,8 @@ export class LoadOrderValidationError extends Error {
 
   public get loadOrderEntryNames(): string {
     const lo = this.mLoadOrder.filter(entry => !!entry)
-                              .map(entry => entry.name)
-                              .join('\n');
+      .map(entry => entry.name)
+      .join('\n');
     return lo;
   }
 }

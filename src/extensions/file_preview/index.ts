@@ -89,11 +89,11 @@ function init(context: IExtensionContext) {
         }, [
           { label: 'Continue' },
         ])
-        .then(() => {
-          if (cb !== undefined) {
-            cb(null);
-          }
-        });
+          .then(() => {
+            if (cb !== undefined) {
+              cb(null);
+            }
+          });
       },
     );
   });

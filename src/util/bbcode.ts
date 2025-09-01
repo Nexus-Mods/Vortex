@@ -55,8 +55,8 @@ fullParser.registerTag('style', StyleTag);
 const stripParser = new bbcode.Parser();
 stripParser.registerTag('br', BrTag);
 ['size', 'email', 'font', 'link', 'url', 'spoiler',
- 'font', 'youtube', 'line', 'heading', 'svg', 'b', 'u', 'style']
- .forEach(tag => stripParser.registerTag(tag, IdentityTag));
+  'font', 'youtube', 'line', 'heading', 'svg', 'b', 'u', 'style']
+  .forEach(tag => stripParser.registerTag(tag, IdentityTag));
 
 let convertDiv: HTMLDivElement;
 
@@ -70,8 +70,8 @@ function transformSymbol(fullMatch, symbol: string): string {
 
 export function preProcess(input: string): string {
   return input
-      .replace(/<br *\/?>/g, '[br][/br]')
-      .replace(/(&[^;]+;)/g, transformSymbol);
+    .replace(/<br *\/?>/g, '[br][/br]')
+    .replace(/(&[^;]+;)/g, transformSymbol);
 }
 
 function renderBBCode(input: string, context?: any): React.ReactChild[] {
@@ -92,9 +92,9 @@ export function stripBBCode(input: string): string {
   }
 
   return stripParser.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
-      .replace(/(&[^;]+;)/g, transformSymbol))
-      .filter(line => typeof(line) === 'string')
-      .join('');
+    .replace(/(&[^;]+;)/g, transformSymbol))
+    .filter(line => typeof(line) === 'string')
+    .join('');
 }
 
 export function bbcodeToHTML(input: string): string {

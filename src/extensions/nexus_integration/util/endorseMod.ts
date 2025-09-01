@@ -23,7 +23,7 @@ function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
   }
 
   return Promise.resolve(nexus.endorseMod(nexusModId, version, endorseStatus as any, gameId))
-      .then(result => result.status);
+    .then(result => result.status);
 }
 
 function endorseCollection(nexus: NexusT, gameId: string, collectionId: number,

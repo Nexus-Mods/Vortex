@@ -73,7 +73,7 @@ class Settings extends ComponentEx<IProps, {}> {
           {(supported !== null) ? (
             <Alert>
               {t('This feature doesn\'t seem to be supported on your system: {{reason}}', {
-                 replace: { reason: supported }})}
+                replace: { reason: supported }})}
             </Alert>
           ) : null}
         </FormGroup>
@@ -99,11 +99,11 @@ class Settings extends ComponentEx<IProps, {}> {
       { label: 'Cancel' },
       { label: enabled ? 'Give Privilege' : 'Remove Privilege' },
     ])
-    .then(result => {
-      if (result.action !== 'Cancel') {
-        onSymlinksPrivilege(enabled);
-      }
-    });
+      .then(result => {
+        if (result.action !== 'Cancel') {
+          onSymlinksPrivilege(enabled);
+        }
+      });
   }
 
   private toggle = (enabled: boolean) => {
@@ -126,11 +126,11 @@ class Settings extends ComponentEx<IProps, {}> {
         { label: 'Cancel' },
         { label: 'Create Task' },
       ])
-      .then((result: IDialogResult) => {
-        if (result.action === 'Create Task') {
-          onEnableUserSymlinks(enabled);
-        }
-      });
+        .then((result: IDialogResult) => {
+          if (result.action === 'Create Task') {
+            onEnableUserSymlinks(enabled);
+          }
+        });
     } else {
       onEnableUserSymlinks(enabled);
     }

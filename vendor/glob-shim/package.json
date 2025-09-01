@@ -1,9 +1,0 @@
-{
-  "name": "glob",
-  "version": "7.2.3-shim",
-  "description": "Glob shim for macOS build to avoid native dependencies",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "license": "MIT",
-  "engines": { "node": ">=16" }
-}

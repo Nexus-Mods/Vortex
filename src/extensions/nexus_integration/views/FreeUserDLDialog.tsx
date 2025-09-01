@@ -199,11 +199,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       </Modal.Header>
       <Modal.Body>
         <NewFreeDownloadModal 
-        fileInfo={fileInfo} 
-        t={t} 
-        openModPage={openModPage} 
-        goPremium={goPremium} 
-        onDownload={download} />
+          fileInfo={fileInfo} 
+          t={t} 
+          openModPage={openModPage} 
+          goPremium={goPremium} 
+          onDownload={download} />
       </Modal.Body>
       <Modal.Footer>
         <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>

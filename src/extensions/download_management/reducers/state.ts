@@ -177,8 +177,8 @@ export const stateReducer: IReducerSpec = {
       }
 
       return setSafe(state,
-        ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
-        payload.value);
+                     ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
+                     payload.value);
     },
     [action.mergeDownloadModInfo as any]: (state, payload) => {
       const { id, value } = payload;
@@ -190,13 +190,13 @@ export const stateReducer: IReducerSpec = {
       }
 
       return setSafe(state,
-        ['files', id, 'modInfo'],
-        _.merge(state.files[id]?.modInfo || {}, value));
+                     ['files', id, 'modInfo'],
+                     _.merge(state.files[id]?.modInfo || {}, value));
     },
     [action.setDownloadInstalled as any]: (state, payload) =>
       setSafe(state,
-        ['files', payload.id, 'installed'],
-        { gameId: payload.gameId, modId: payload.modId }),
+              ['files', payload.id, 'installed'],
+              { gameId: payload.gameId, modId: payload.modId }),
     [action.setCompatibleGames as any]: (state, payload) =>
       setSafe(state, ['files', payload.id, 'game'], payload.games),
   },
@@ -236,9 +236,9 @@ export const stateReducer: IReducerSpec = {
               repair: input => {
                 if (input !== undefined) {
                   return [input];
-                 } else {
+                } else {
                   throw new VerifierDropParent();
-                 }
+                }
               },
             },
           },

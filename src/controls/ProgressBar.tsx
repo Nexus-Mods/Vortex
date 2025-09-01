@@ -40,7 +40,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
 
   public render(): JSX.Element {
     const { className, labelLeft, labelRight, showPercentage, showTimeLeft,
-            style, now } = this.props;
+      style, now } = this.props;
 
     const min = this.props.min || 0;
     const max = this.props.max || 100;

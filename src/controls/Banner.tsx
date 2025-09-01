@@ -88,7 +88,7 @@ function registerBanner(instanceGroup: string,
                         group: string,
                         component: React.ComponentClass<any>,
                         options: IBannerOptions,
-                        ): IBannerDefinition {
+): IBannerDefinition {
   if (instanceGroup === group) {
     return { component, options };
   } else {
@@ -111,7 +111,7 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
         }, {});
       }
       return prev;
-  }, {});
+    }, {});
   if (!_.isEqual(lastBannerProps, bannerProps)) {
     lastBannerProps = bannerProps;
   }

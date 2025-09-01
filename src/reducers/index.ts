@@ -164,7 +164,7 @@ function hydrateRed(
   statePath: string,
   replace: boolean,
   querySanitize: (errors: string[]) => Decision,
-  ) {
+) {
   const pathArray = statePath.split('.').slice(1);
 
   if (ele.verifiers !== undefined) {
@@ -172,13 +172,13 @@ function hydrateRed(
     const errors: string[] = [];
     let moreCount = 0;
     const sanitized = verify(statePath, ele.verifiers, input, ele.defaults,
-                              (error: string) => {
-      if (errors.length < 10) {
-        errors.push(error);
-      } else {
-        ++moreCount;
-      }
-    });
+                             (error: string) => {
+                               if (errors.length < 10) {
+                                 errors.push(error);
+                               } else {
+                                 ++moreCount;
+                               }
+                             });
     if (sanitized !== input) {
       if (moreCount > 0) {
         errors.push(`... ${moreCount} more errors ...`);
@@ -199,7 +199,7 @@ function hydrateRed(
         }
         fs.ensureDirSync(backupPath);
         fs.writeFileSync(path.join(backupPath, `backup_${backupTime}.json`),
-                          JSON.stringify(backupData, undefined, 2));
+                         JSON.stringify(backupData, undefined, 2));
         payload = setSafe(payload, pathArray, sanitized);
       } else if (decision === Decision.QUIT) {
         app.exit();

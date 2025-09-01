@@ -49,7 +49,7 @@ function getCategoryChoices(state: IState) {
 function undefSort(lhs: any, rhs: any) {
   return (lhs !== undefined)
     ? 1 : (rhs !== undefined)
-            ? -1 : 0;
+      ? -1 : 0;
 }
 
 function modNameSort(lhs: IModWithState, rhs: IModWithState,
@@ -126,7 +126,7 @@ function init(context: IExtensionContext): boolean {
               setDownloadModInfo(row.id, 'custom.category', newValue));
           } else {
             context.api.store.dispatch(
-                setModAttribute(gameMode, row.id, 'category', newValue));
+              setModAttribute(gameMode, row.id, 'category', newValue));
           }
         });
       },
@@ -139,17 +139,17 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
     context.api.onStateChange(['settings', 'tables', 'mods'],
-      (oldState, newState) => {
-        const newSortDirection =
+                              (oldState, newState) => {
+                                const newSortDirection =
           getSafe(newState, ['attributes', 'category', 'sortDirection'], 'none');
 
-        const oldSortDirection =
+                                const oldSortDirection =
           getSafe(oldState, ['attributes', 'category', 'sortDirection'], 'none');
 
-        if (newSortDirection !== oldSortDirection) {
-          sortDirection = newSortDirection;
-        }
-    });
+                                if (newSortDirection !== oldSortDirection) {
+                                  sortDirection = newSortDirection;
+                                }
+                              });
     try {
       context.api.events.on('update-categories', (gameId, categories, isUpdate) => {
         if (isUpdate) {
@@ -161,7 +161,7 @@ function init(context: IExtensionContext): boolean {
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
         const categories: ICategoriesTree[] = getSafe(store.getState(),
-          ['persistent', 'categories', gameMode], undefined);
+                                                      ['persistent', 'categories', gameMode], undefined);
         if (categories === undefined && isLoggedIn(store.getState())) {
           context.api.events.emit('retrieve-category-list', false, {});
         } else if (categories !== undefined && categories.length === 0) {

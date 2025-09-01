@@ -235,7 +235,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const { starter } = this.state;
     if (starter?.exePath === undefined) {
       onShowError('Tool missing/misconfigured',
-        'Please ensure that the tool/game is configured correctly and try again', false);
+                  'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     this.context.api.events.emit('analytics-track-click-event', 'Header', 'Play game');
@@ -279,8 +279,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         try {
           if (truthy(discoveredTools[primaryTool].path)) {
             return new StarterInfo(game, gameDiscovery,
-              game !== undefined ? game.supportedTools[primaryTool] : undefined,
-              discoveredTools[primaryTool]);
+                                   game !== undefined ? game.supportedTools[primaryTool] : undefined,
+                                   discoveredTools[primaryTool]);
           } else {
             // Annoying, but a valid issue where for some reason the tool's
             //  path has been manually deleted by the user OR is undefined.
@@ -306,7 +306,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     game: currentGame(state),
     gameDiscovery: currentGameDiscovery(state),
     discoveredTools: getSafe(state, [ 'settings', 'gameMode',
-                                      'discovered', gameMode, 'tools' ], {}),
+      'discovered', gameMode, 'tools' ], {}),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
 

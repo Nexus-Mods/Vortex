@@ -95,7 +95,7 @@ export function quickDiscoveryTools(gameId: string,
       return Bluebird.resolve();
     }
   })
-  .then(() => null);
+    .then(() => null);
 }
 
 function updateManuallyConfigured(discoveredGames: {[id: string]: IDiscoveryResult},
@@ -347,55 +347,55 @@ function walk(searchPath: string,
   let seenDirectories: number = 0;
   let isTL = true;
   return turbowalk(searchPath, entries => {
-      let doneCount = 0;
-      let lastCompleted;
-      entries.forEach(entry => {
-        if (entry.isTerminator) {
-          if (seenTL.has(entry.filePath)) {
-            ++processedTL;
+    let doneCount = 0;
+    let lastCompleted;
+    entries.forEach(entry => {
+      if (entry.isTerminator) {
+        if (seenTL.has(entry.filePath)) {
+          ++processedTL;
             // 80% of previous estimate plus a bit more than 20% of new estimate.
             // this will estimate a bit more than it mathematically should,
             // so the progress doesn't hang at 100%
-            const estPerTL = seenDirectories / processedTL;
-            estimatedDirectories = (
-              Math.max(estimatedDirectories, seenDirectories) * 0.8 +
+          const estPerTL = seenDirectories / processedTL;
+          estimatedDirectories = (
+            Math.max(estimatedDirectories, seenDirectories) * 0.8 +
               estPerTL * seenTL.size * 0.202
-            );
-            log('debug', 'updated estimate',
-                { searchPath, estimatedDirectories, seenDirectories,
-                  topLevelTotal: seenTL.size, processedTL });
-            if (progress) {
-              progress.setStepCount(estimatedDirectories);
-            }
+          );
+          log('debug', 'updated estimate',
+              { searchPath, estimatedDirectories, seenDirectories,
+                topLevelTotal: seenTL.size, processedTL });
+          if (progress) {
+            progress.setStepCount(estimatedDirectories);
           }
-          ++doneCount;
-          lastCompleted = entry.filePath;
-        } else if (entry.isDirectory) {
-          ++seenDirectories;
-          if (isTL) {
-            if (path.relative(searchPath, entry.filePath).indexOf(path.sep) !==
+        }
+        ++doneCount;
+        lastCompleted = entry.filePath;
+      } else if (entry.isDirectory) {
+        ++seenDirectories;
+        if (isTL) {
+          if (path.relative(searchPath, entry.filePath).indexOf(path.sep) !==
                 -1) {
-              isTL = false;
-            } else {
-              seenTL.add(entry.filePath);
-            }
+            isTL = false;
+          } else {
+            seenTL.add(entry.filePath);
           }
-        } else if (matchList.has(normalize(path.basename(entry.filePath)))) {
-          log('info', 'potential match', entry.filePath);
+        }
+      } else if (matchList.has(normalize(path.basename(entry.filePath)))) {
+        log('info', 'potential match', entry.filePath);
           // notify that a searched file was found. If the CB says so
           // we stop looking at this directory
-          resultCB(entry.filePath);
-        }
-      });
-      if (progress) {
-        // count number of directories to be used as the step counter in the progress bar
-        if (estimatedDirectories < seenDirectories) {
-          estimatedDirectories = seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
-          progress.setStepCount(estimatedDirectories);
-        }
-        progress.completed(lastCompleted, doneCount);
+        resultCB(entry.filePath);
       }
-    }, { terminators: true })
+    });
+    if (progress) {
+        // count number of directories to be used as the step counter in the progress bar
+      if (estimatedDirectories < seenDirectories) {
+        estimatedDirectories = seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
+        progress.setStepCount(estimatedDirectories);
+      }
+      progress.completed(lastCompleted, doneCount);
+    }
+  }, { terminators: true })
     .then(() => seenDirectories);
 }
 
@@ -404,10 +404,10 @@ function verifyToolDir(tool: ITool, testPath: string): Bluebird<void> {
     // our fs overload would try to acquire access to the directory if it's locked, which
     // is not something we want at this point because we don't even know yet if the user
     // wants to manage the game at all.
-    (fileName: string) => fsExtra.stat(path.join(testPath, fileName))
-      .catch(err => {
-        return Bluebird.reject(err);
-      }))
+                            (fileName: string) => fsExtra.stat(path.join(testPath, fileName))
+                              .catch(err => {
+                                return Bluebird.reject(err);
+                              }))
     .then(() => undefined);
 }
 
@@ -428,7 +428,7 @@ export function assertToolDir(tool: ITool, testPath: string)
         return testPath;
       } else {
         log('error', 'failed to verify game directory',
-          { testPath, error: err.message });
+            { testPath, error: err.message });
       }
       return Bluebird.reject(err);
     });
@@ -478,8 +478,8 @@ function autoGenIcon(application: ITool, exePath: string, gameId: string): Blueb
   const iconPath = StarterInfo.toolIconRW(gameId, application.id);
   return (application.logo === 'auto')
     ? fs.ensureDirWritableAsync(path.dirname(iconPath), () => Bluebird.resolve())
-        .then(() => fs.statAsync(iconPath).then(() => null))
-        .catch(() => extractExeIcon(exePath, iconPath))
+      .then(() => fs.statAsync(iconPath).then(() => null))
+      .catch(() => extractExeIcon(exePath, iconPath))
       .catch(err => log('warn', 'failed to fetch exe icon', err.message))
     : Bluebird.resolve();
 }
@@ -552,7 +552,7 @@ function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
   for (const match of matches) {
     const testPath: string = filePath.substring(0, filePath.length - match.fileName.length);
     testApplicationDirValid(match.application, testPath, match.gameId,
-      discoveredGames, onDiscoveredGame, onDiscoveredTool, normalize);
+                            discoveredGames, onDiscoveredGame, onDiscoveredTool, normalize);
   }
   return false;
 }
@@ -569,11 +569,11 @@ function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
  * @returns {Bluebird<any[]>}
  */
 export function searchDiscovery(
-    knownGames: IGame[], discoveredGames: {[id: string]: IDiscoveryResult},
-    searchPaths: string[], onDiscoveredGame: DiscoveredCB,
-    onDiscoveredTool: DiscoveredToolCB,
-    onError: (title: string, message: string) => void,
-    progressCB: (idx: number, percent: number, label: string) => void): Bluebird<any> {
+  knownGames: IGame[], discoveredGames: {[id: string]: IDiscoveryResult},
+  searchPaths: string[], onDiscoveredGame: DiscoveredCB,
+  onDiscoveredTool: DiscoveredToolCB,
+  onError: (title: string, message: string) => void,
+  progressCB: (idx: number, percent: number, label: string) => void): Bluebird<any> {
 
   let totalRead = 0;
 
@@ -607,7 +607,7 @@ export function searchDiscovery(
             }
             // and its tools
             files.push.apply(files,
-              toolFilesForGame(knownGame, getSafe(discoveredGame, ['tools'], {}), normalize));
+                             toolFilesForGame(knownGame, getSafe(discoveredGame, ['tools'], {}), normalize));
           }, []);
 
           // retrieve only the basenames of required files because the walk only ever looks
@@ -627,7 +627,7 @@ export function searchDiscovery(
           log('error', 'game search failed', { error: err.message, searchPath });
           return (err.code === 'ENOENT')
             ? Bluebird.resolve(
-                onError('A search path doesn\'t exist or is not connected', searchPath))
+              onError('A search path doesn\'t exist or is not connected', searchPath))
             : Bluebird.resolve(onError(err.message, searchPath));
         })
         .then(() => {

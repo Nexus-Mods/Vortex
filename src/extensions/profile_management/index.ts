@@ -226,24 +226,24 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   const watchdog = setInterval(() => {
     if ((Date.now() - lastProgress) > STUCK_TIMEOUT) {
       api.store.dispatch(setProgress('profile', 'deploying',
-                  api.translate('Stuck? Please check your vortex.log file.'), 0));
+                                     api.translate('Stuck? Please check your vortex.log file.'), 0));
     }
   }, 1000);
 
   return new Promise((resolve, reject) => {
     api.events.emit('deploy-mods', onceCB((err: Error) => {
-        clearInterval(watchdog);
-        if (err === null) {
-          resolve();
-        } else {
-          reject(err);
-        }
-      }), profileId,
-      (text: string, percent: number) => {
-        lastProgress = Date.now();
-        api.store.dispatch(
-          setProgress('profile', 'deploying', text, percent));
-      });
+      clearInterval(watchdog);
+      if (err === null) {
+        resolve();
+      } else {
+        reject(err);
+      }
+    }), profileId,
+                    (text: string, percent: number) => {
+                      lastProgress = Date.now();
+                      api.store.dispatch(
+                        setProgress('profile', 'deploying', text, percent));
+                    });
   });
 }
 
@@ -312,17 +312,17 @@ function genOnProfileChange(api: IExtensionApi,
         const game = getGame(gameId);
         if (game === undefined) {
           showError(store.dispatch,
-            'Game no longer supported, please install the game extension',
-            undefined, { message: profile.gameId, allowReport: false });
+                    'Game no longer supported, please install the game extension',
+                    undefined, { message: profile.gameId, allowReport: false });
           return Promise.reject(new ProcessCanceled('Game no longer supported'));
         }
 
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         if ((discovery?.path === undefined)) {
           showError(store.dispatch,
-            'Game is no longer discoverable, please go to the games page and scan for, or '
+                    'Game is no longer discoverable, please go to the games page and scan for, or '
           + 'manually select the game folder.',
-            profile.gameId, { allowReport: false });
+                    profile.gameId, { allowReport: false });
           return Promise.reject(new ProcessCanceled('Game no longer discovered'));
         }
       }
@@ -401,11 +401,11 @@ function genOnProfileChange(api: IExtensionApi,
       })
       .catch(ProcessCanceled, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
-          { allowReport: false });
+                  { allowReport: false });
       })
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
-          { allowReport: false });
+                  { allowReport: false });
       })
       .catch(CorruptActiveProfile, (err) => {
         // AFAICT the only way for this error to pop up is when upgrading from
@@ -444,10 +444,10 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
     .catch(err => {
       const instPath = installPathForGame(api.store.getState(), gameId);
       api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
-        err, {
-        allowReport: false,
-        message: instPath,
-      });
+                                err, {
+                                  allowReport: false,
+                                  message: instPath,
+                                });
     });
 }
 
@@ -588,7 +588,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
     })
     .catch(err => {
       this.context.api.showErrorNotification('Failed to remove profile',
-        err, { allowReport: err.code !== 'EPERM' });
+                                             err, { allowReport: err.code !== 'EPERM' });
     });
 }
 
@@ -636,35 +636,35 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
     { label: 'Cancel' },
     { label: 'Delete profiles' },
   ])
-  .then(result => {
-    if (result.action === 'Delete profiles') {
-      return purgeMods(api, gameId, true)
-        .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
-          modId => removeMod(api, gameId, modId)))
-        .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
-        .then(() => Promise.resolve())
-        .catch(UserCanceled, () => Promise.resolve())
-        .catch(err => {
-          const isSetupError = (err instanceof NoDeployment) || (err instanceof TemporaryError);
-          if (isSetupError) {
-            api.showDialog('error', 'Failed to purge', {
-              text: 'Failed to purge mods deployed for this game. To ensure there are no '
+    .then(result => {
+      if (result.action === 'Delete profiles') {
+        return purgeMods(api, gameId, true)
+          .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
+                                  modId => removeMod(api, gameId, modId)))
+          .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
+          .then(() => Promise.resolve())
+          .catch(UserCanceled, () => Promise.resolve())
+          .catch(err => {
+            const isSetupError = (err instanceof NoDeployment) || (err instanceof TemporaryError);
+            if (isSetupError) {
+              api.showDialog('error', 'Failed to purge', {
+                text: 'Failed to purge mods deployed for this game. To ensure there are no '
                   + 'leftovers before Vortex stops managing the game, please solve any '
                   + 'setup problems for the game first.',
-            }, [
-              { label: 'Close' },
-            ]);
-            return;
-          } else {
-            api.showErrorNotification('Failed to stop managing game', err, {
-              allowReport: !(err instanceof ProcessCanceled),
-            });
-          }
-        });
-    } else {
-      return Promise.resolve();
-    }
-  });
+              }, [
+                { label: 'Close' },
+              ]);
+              return;
+            } else {
+              api.showErrorNotification('Failed to stop managing game', err, {
+                allowReport: !(err instanceof ProcessCanceled),
+              });
+            }
+          });
+      } else {
+        return Promise.resolve();
+      }
+    });
 }
 
 function addDescriptionFeature() {
@@ -693,7 +693,7 @@ function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
   }, [
     { label: 'Cancel' },
   ])
-  .then(() => Promise.reject(new UserCanceled()));
+    .then(() => Promise.reject(new UserCanceled()));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -712,29 +712,29 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-unmanaged-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Manage',
-    (instanceIds: string[]) => {
-      const gameId = instanceIds[0];
+                         (instanceIds: string[]) => {
+                           const gameId = instanceIds[0];
 
-      context.api.events.emit(
-        'analytics-track-event', 'Games', 'Start managing', gameId,
-      );
+                           context.api.events.emit(
+                             'analytics-track-event', 'Games', 'Start managing', gameId,
+                           );
 
-      context.api.emitAndAwait('discover-game', gameId)
-        .then(() => checkOverridden(context.api, gameId))
-        .then(() => {
-          const state = context.api.getState();
-          const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
-            ? manageGameDiscovered
-            : manageGameUndiscovered;
+                           context.api.emitAndAwait('discover-game', gameId)
+                             .then(() => checkOverridden(context.api, gameId))
+                             .then(() => {
+                               const state = context.api.getState();
+                               const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
+                                 ? manageGameDiscovered
+                                 : manageGameUndiscovered;
 
-          manageFunc(context.api, gameId);
-        })
-        .catch(err => {
-          if (!(err instanceof UserCanceled)) {
-            context.api.showErrorNotification('Failed to manage game', err);
-          }
-        });
-  });
+                               manageFunc(context.api, gameId);
+                             })
+                             .catch(err => {
+                               if (!(err instanceof UserCanceled)) {
+                                 context.api.showErrorNotification('Failed to manage game', err);
+                               }
+                             });
+                         });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
     noCollapse: true,
@@ -775,7 +775,7 @@ function init(context: IExtensionContext): boolean {
         }
       });
   }, (instanceIds: string[]) =>
-      activeGameId(context.api.getState()) !== instanceIds[0],
+    activeGameId(context.api.getState()) !== instanceIds[0],
   );
 
   context.registerProfileFile =
@@ -787,8 +787,8 @@ function init(context: IExtensionContext): boolean {
     };
 
   context.registerAction('game-managed-buttons', 150, 'delete', {},
-    context.api.translate('Stop Managing'),
-    (instanceIds: string[]) => { unmanageGame(context.api, instanceIds[0]); });
+                         context.api.translate('Stop Managing'),
+                         (instanceIds: string[]) => { unmanageGame(context.api, instanceIds[0]); });
 
   context.registerProfileFeature =
       (featureId: string, type: string, icon: string, label: string, description: string,
@@ -844,66 +844,66 @@ function init(context: IExtensionContext): boolean {
     let finishProfileSwitch: () => void;
 
     context.api.onStateChange(
-        ['settings', 'profiles', 'nextProfileId'],
-        genOnProfileChange(context.api, (callback: () => void) => finishProfileSwitch = callback));
+      ['settings', 'profiles', 'nextProfileId'],
+      genOnProfileChange(context.api, (callback: () => void) => finishProfileSwitch = callback));
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
-      (prev: string, current: string) => {
-        context.api.events.emit('profile-did-change', current);
-        if (finishProfileSwitch !== undefined) {
-          finishProfileSwitch();
-        }
-      });
+                              (prev: string, current: string) => {
+                                context.api.events.emit('profile-did-change', current);
+                                if (finishProfileSwitch !== undefined) {
+                                  finishProfileSwitch();
+                                }
+                              });
 
     let first = true;
     context.api.onStateChange(['session', 'gameMode', 'known'],
-      (prev: IGameStored[], current: IGameStored[]) => {
+                              (prev: IGameStored[], current: IGameStored[]) => {
         // known games should only be set once but better safe than sorry
-        if (!first) {
-          return;
-        }
-        first = false;
-        const state: IState = store.getState();
-        const { commandLine } = state.session.base;
-        if (commandLine.profile !== undefined) {
-          const profile: IProfile = getSafe(state,
-            ['persistent', 'profiles', commandLine.profile], undefined);
+                                if (!first) {
+                                  return;
+                                }
+                                first = false;
+                                const state: IState = store.getState();
+                                const { commandLine } = state.session.base;
+                                if (commandLine.profile !== undefined) {
+                                  const profile: IProfile = getSafe(state,
+                                                                    ['persistent', 'profiles', commandLine.profile], undefined);
 
-          if (profile !== undefined) {
-            context.api.store.dispatch(setNextProfile(profile.id));
-          } else {
-            log('warn', 'profile cmdline argument detected - but profile is missing',
-              commandLine.profile);
-          }
-        } else if (commandLine.game !== undefined) {
+                                  if (profile !== undefined) {
+                                    context.api.store.dispatch(setNextProfile(profile.id));
+                                  } else {
+                                    log('warn', 'profile cmdline argument detected - but profile is missing',
+                                        commandLine.profile);
+                                  }
+                                } else if (commandLine.game !== undefined) {
           // the game specified on the command line may be a game id or an extension
           // name, because at the time we download an extension we don't actually know
           // the game id yet.
 
-          readExtensions(false)
-            .then((extensions: { [extId: string]: IExtension }) => {
-              const extPathLookup = Object.values(extensions)
-                .reduce((prevExt, ext) => {
-                  if (ext.path !== undefined) {
-                    prevExt[ext.path] = ext.name;
-                  }
-                  return prevExt;
-                }, {});
+                                  readExtensions(false)
+                                    .then((extensions: { [extId: string]: IExtension }) => {
+                                      const extPathLookup = Object.values(extensions)
+                                        .reduce((prevExt, ext) => {
+                                          if (ext.path !== undefined) {
+                                            prevExt[ext.path] = ext.name;
+                                          }
+                                          return prevExt;
+                                        }, {});
 
-              const game = current.find(iter =>
-                (iter.id === commandLine.game)
+                                      const game = current.find(iter =>
+                                        (iter.id === commandLine.game)
                 || (extPathLookup[iter.extensionPath] === commandLine.game));
 
-              if (game !== undefined) {
-                manageGame(context.api, game.id);
-              } else {
-                log('warn', 'game specified on command line not found', {
-                  game: commandLine.game,
-                });
-              }
-            });
-        }
-      });
+                                      if (game !== undefined) {
+                                        manageGame(context.api, game.id);
+                                      } else {
+                                        log('warn', 'game specified on command line not found', {
+                                          game: commandLine.game,
+                                        });
+                                      }
+                                    });
+                                }
+                              });
 
     context.api.onStateChange(
       ['persistent', 'profiles'],
@@ -939,26 +939,26 @@ function init(context: IExtensionContext): boolean {
 
       const initProfile = activeProfile(state);
       refreshProfile(store, initProfile, 'import')
-          .then(() => {
-            const { commandLine } = state.session.base;
-            if ((initProfile !== undefined)
+        .then(() => {
+          const { commandLine } = state.session.base;
+          if ((initProfile !== undefined)
                 && (commandLine?.profile === undefined)
                 && (commandLine?.game === undefined)) {
-              context.api.events.emit('profile-did-change', initProfile.id);
-            }
-            return null;
-          })
-          .catch((err: Error) => {
-            if (!(err instanceof UserCanceled)) {
-              const allowReport = !(err instanceof CorruptActiveProfile);
-              showError(store.dispatch, 'Failed to set profile', err, { allowReport });
-            }
-            store.dispatch(setCurrentProfile(undefined, undefined));
-            store.dispatch(setNextProfile(undefined));
-            if (finishProfileSwitch !== undefined) {
-              finishProfileSwitch();
-            }
-          });
+            context.api.events.emit('profile-did-change', initProfile.id);
+          }
+          return null;
+        })
+        .catch((err: Error) => {
+          if (!(err instanceof UserCanceled)) {
+            const allowReport = !(err instanceof CorruptActiveProfile);
+            showError(store.dispatch, 'Failed to set profile', err, { allowReport });
+          }
+          store.dispatch(setCurrentProfile(undefined, undefined));
+          store.dispatch(setNextProfile(undefined));
+          if (finishProfileSwitch !== undefined) {
+            finishProfileSwitch();
+          }
+        });
 
       const { activeProfileId, nextProfileId } = state.settings.profiles;
       if (nextProfileId !== activeProfileId) {

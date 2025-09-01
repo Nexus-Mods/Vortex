@@ -79,32 +79,32 @@ class FileAssembler {
     // then open it again
     return this.mQueue(() =>
       closeFD()
-      .catch({ code: 'EBADF' }, () => null)
-      .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
-      .then(() => fs.renameAsync(this.mFileName, resolved))
-      .then(() => fs.openAsync(resolved, 'r+'))
-      .then(fd => {
-        this.mFD = fd;
-        this.mFileName = resolved;
-        return Promise.resolve();
-      })
-      .catch(err => {
-        if (err instanceof ProcessCanceled) {
+        .catch({ code: 'EBADF' }, () => null)
+        .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
+        .then(() => fs.renameAsync(this.mFileName, resolved))
+        .then(() => fs.openAsync(resolved, 'r+'))
+        .then(fd => {
+          this.mFD = fd;
+          this.mFileName = resolved;
+          return Promise.resolve();
+        })
+        .catch(err => {
+          if (err instanceof ProcessCanceled) {
           // This would only happen if we have closed the
           //  file in one of the queue's previous iterations.
-          log('warn', 'attempt to rename closed file', this.mFileName);
-          return Promise.reject(err);
-        }
+            log('warn', 'attempt to rename closed file', this.mFileName);
+            return Promise.reject(err);
+          }
 
         // in case of error, re-open the original file name so we can continue writing,
         // only  then rethrow the exception
-        return fs.openAsync(this.mFileName, 'r+')
-          .then(fd => {
-            this.mFD = fd;
-          })
-          .then(() => Promise.reject(err));
-      }),
-      false);
+          return fs.openAsync(this.mFileName, 'r+')
+            .then(fd => {
+              this.mFD = fd;
+            })
+            .then(() => Promise.reject(err));
+        }),
+                       false);
   }
 
   public addChunk(offset: number, data: Buffer): Promise<boolean> {
@@ -113,39 +113,39 @@ class FileAssembler {
       ((this.mFD === undefined)
         ? Promise.reject(new ProcessCanceled('file already closed'))
         : this.writeAsync(data, offset))
-      .then(({ bytesWritten, buffer }) => {
-        this.mWritten += bytesWritten;
-        const now = Date.now();
-        if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
+        .then(({ bytesWritten, buffer }) => {
+          this.mWritten += bytesWritten;
+          const now = Date.now();
+          if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
             || (now - this.mLastFlushedTime > FileAssembler.MIN_FLUSH_TIME)) {
-          this.mLastFlushedSize = this.mWritten;
-          this.mLastFlushedTime = now;
-          synced = true;
-          return fs.fsyncAsync(this.mFD)
-            .catch({ code: 'EBADF' }, () => {
+            this.mLastFlushedSize = this.mWritten;
+            this.mLastFlushedTime = now;
+            synced = true;
+            return fs.fsyncAsync(this.mFD)
+              .catch({ code: 'EBADF' }, () => {
               // if we log this we may be generating thousands of log messages
-            })
-            .then(() => bytesWritten);
-        } else {
-          return Promise.resolve(bytesWritten);
-        }
-      })
-      .then((bytesWritten: number) => (bytesWritten !== data.length)
+              })
+              .then(() => bytesWritten);
+          } else {
+            return Promise.resolve(bytesWritten);
+          }
+        })
+        .then((bytesWritten: number) => (bytesWritten !== data.length)
           ? Promise.reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
           : Promise.resolve(synced))
-      .catch({ code: 'ENOSPC' }, () => {
-        (dialog.showMessageBoxSync(getVisibleWindow(), {
-          type: 'warning',
-          title: 'Disk is full',
-          message: 'Download can\'t continue because disk is full, '
+        .catch({ code: 'ENOSPC' }, () => {
+          (dialog.showMessageBoxSync(getVisibleWindow(), {
+            type: 'warning',
+            title: 'Disk is full',
+            message: 'Download can\'t continue because disk is full, '
                   + 'please free some some space and retry.',
-          buttons: ['Cancel', 'Retry'],
-          defaultId: 1,
-          noLink: true,
-        }) === 1)
-          ? this.addChunk(offset, data)
-          : Promise.reject(new UserCanceled());
-      })
+            buttons: ['Cancel', 'Retry'],
+            defaultId: 1,
+            noLink: true,
+          }) === 1)
+            ? this.addChunk(offset, data)
+            : Promise.reject(new UserCanceled());
+        })
     , false);
   }
 

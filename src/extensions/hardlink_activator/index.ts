@@ -37,10 +37,10 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink Deployment',
-        'Deploys mods by setting hard links in the destination directory.',
-        true,
-        api);
+      'hardlink_activator', 'Hardlink Deployment',
+      'Deploys mods by setting hard links in the destination directory.',
+      true,
+      api);
   }
 
   public detailedDescription(t: TFunction): string {
@@ -114,10 +114,10 @@ class DeploymentMethod extends LinkingDeployment {
             }
             return t('Please go to Settings->Mods and set the mod staging folder to be on '
               + 'the same drive as the game ({{gameVolume}}).', {
-                replace: {
-                  gameVolume: displayPath,
-                },
-              });
+              replace: {
+                gameVolume: displayPath,
+              },
+            });
           },
           fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
@@ -204,22 +204,22 @@ class DeploymentMethod extends LinkingDeployment {
     } else {
       this.mInstallationFiles = new Set<number>();
       installEntryProm = turbowalk(installationPath,
-        entries => {
-          if (this.mInstallationFiles === undefined) {
+                                   entries => {
+                                     if (this.mInstallationFiles === undefined) {
             // don't know when this would be necessary but apparently
             // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
-            return;
-          }
-          entries.forEach(entry => {
-            if (entry.linkCount > 1) {
-              this.mInstallationFiles.add(entry.id);
-            }
-          });
-        },
-        {
-          details: true,
-          skipHidden: false,
-        })
+                                       return;
+                                     }
+                                     entries.forEach(entry => {
+                                       if (entry.linkCount > 1) {
+                                         this.mInstallationFiles.add(entry.id);
+                                       }
+                                     });
+                                   },
+                                   {
+                                     details: true,
+                                     skipHidden: false,
+                                   })
         .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
           ? Promise.resolve()
           : Promise.reject(err))
@@ -239,19 +239,19 @@ class DeploymentMethod extends LinkingDeployment {
       return turbowalk(dataPath, entries => {
         queue = queue
           .then(() => Promise.map(entries,
-            entry => {
-              if ((entry.linkCount > 1) && inos.has(entry.id)) {
-                ++purged;
-                if ((purged % 1000) === 0) {
-                  onProgress?.(purged, total);
-                }
-                return fs.unlinkAsync(entry.filePath)
-                  .catch(err =>
-                    log('warn', 'failed to remove', entry.filePath));
-              } else {
-                return Promise.resolve();
-              }
-            })
+                                  entry => {
+                                    if ((entry.linkCount > 1) && inos.has(entry.id)) {
+                                      ++purged;
+                                      if ((purged % 1000) === 0) {
+                                        onProgress?.(purged, total);
+                                      }
+                                      return fs.unlinkAsync(entry.filePath)
+                                        .catch(err =>
+                                          log('warn', 'failed to remove', entry.filePath));
+                                    } else {
+                                      return Promise.resolve();
+                                    }
+                                  })
             .then(() => undefined));
       }, { details: true, skipHidden: false })
         .then(() => queue);
@@ -261,10 +261,10 @@ class DeploymentMethod extends LinkingDeployment {
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
-        .catch(err => (err.code !== 'EEXIST')
-          ? Promise.reject(err)
-          : fs.removeAsync(linkPath)
-            .then(() => fs.linkAsync(sourcePath, linkPath)));
+      .catch(err => (err.code !== 'EEXIST')
+        ? Promise.reject(err)
+        : fs.removeAsync(linkPath)
+          .then(() => fs.linkAsync(sourcePath, linkPath)));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
@@ -282,7 +282,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then(linkStats => linkStats.nlink === 1
         ? Promise.resolve(false)
         : fs.lstatAsync(sourcePath)
-            .then(sourceStats => linkStats.ino === sourceStats.ino))
+          .then(sourceStats => linkStats.ino === sourceStats.ino))
       .catch(err => (err.code === 'ENOENT')
         ? Promise.resolve(false)
         : Promise.reject(err));

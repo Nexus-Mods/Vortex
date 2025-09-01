@@ -9,7 +9,7 @@ import { setAssociatedWithNXMURLs } from '../actions/settings';
 export const settingsReducer: IReducerSpec = {
   reducers: {
     [setAssociatedWithNXMURLs as any]: (state, payload) =>
-     setSafe(state, [ 'associateNXM' ], payload),
+      setSafe(state, [ 'associateNXM' ], payload),
   },
   defaults: {
     associateNXM: undefined,

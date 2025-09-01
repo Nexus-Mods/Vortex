@@ -6,6 +6,14 @@ jest.mock('process', () => ({
   platform: 'win32',
 }));
 
+// Mock the platform module to return Windows for consistent testing
+jest.mock('../src/util/platform', () => ({
+  isWindows: () => true,
+  isMacOS: () => false,
+  isLinux: () => false,
+  getCurrentPlatform: () => 'win32',
+}));
+
 describe('objDiff', () => {
   it('finds added entries', () => {
     const res = util.objDiff({ old: 'a' }, { old: 'a', new: 'b' });

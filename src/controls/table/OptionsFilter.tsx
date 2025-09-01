@@ -38,7 +38,7 @@ function OptionsFilterComponent(props: IProps & IBoundProps) {
 
   const changeFilter = React.useCallback((newFilter: { value: any, label: string }) => {
     onSetFilter(attributeId,
-      ((newFilter !== undefined) && (newFilter !== null)) ? newFilter.value : undefined);
+                ((newFilter !== undefined) && (newFilter !== null)) ? newFilter.value : undefined);
   }, [attributeId, onSetFilter]);
 
   const updateOptions = React.useCallback(() => {

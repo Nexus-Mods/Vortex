@@ -362,30 +362,30 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       // nop
     } else if ((err instanceof DataInvalid)
                || (err instanceof URIError)) {
-       this.props.onShowError(title, err, undefined, false);
+      this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof DownloadIsHTML) {
       if (resume) {
         this.props.onShowError(title,
-          'Sorry, the download link is no longer valid. '
+                               'Sorry, the download link is no longer valid. '
           + 'Please restart the download.',
-          undefined, false);
+                               undefined, false);
       } // else nop
     } else if (((err.HTTPStatus !== undefined)
                 && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1))
                || (err.message === 'No download urls')) {
       this.props.onShowError(title,
-        'Sorry, the download link is no longer valid. '
+                             'Sorry, the download link is no longer valid. '
         + 'Please restart the download.',
-        undefined, false);
+                             undefined, false);
     } else if (err instanceof TemporaryError) {
       this.props.onShowError(title,
-        'Downloading failed due to an I/O error (either '
+                             'Downloading failed due to an I/O error (either '
         + 'network or disk access). This is very likely a '
         + 'temporary problem, please try resuming at a later time.',
-        undefined, false);
+                             undefined, false);
     } else if (err.code === 'ERR_SSL_WRONG_VERSION_NUMBER') {
       this.props.onShowError(title,
-        'Vortex is pre-configured to meet the minimum required security protocol version '
+                             'Vortex is pre-configured to meet the minimum required security protocol version '
           + 'when connecting to the Nexus Mods servers. This error signifies that somewhere along the '
           + 'network infrastructure your computer uses to connect to the servers, there '
           + 'was a security protocol version mismatch, which can only happen if the infrastructure is using '
@@ -393,62 +393,62 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           + 'sure they support the latest security protocols (TLS 1.2 at a minimum). '
           + 'If the issue persists - please contact our web development team directly as we '
           + '(Vortex support) cannot assist you in this matter.',
-        undefined, false);
+                             undefined, false);
     } else if (err.message.match(/Protocol .* not supported/) !== null) {
       this.context.api.showErrorNotification(title,
-        err.message, {
-        allowReport: false,
-      });
+                                             err.message, {
+                                               allowReport: false,
+                                             });
     } else if (err.code === 'EPROTO') {
       log('error', title, err.message);
       this.context.api.showErrorNotification(title,
-        'The download failed due to a SSL protocol error. Protocol errors '
+                                             'The download failed due to a SSL protocol error. Protocol errors '
           + 'are generally due to a connectivity issue between your system and '
           + 'the Nexus Mods servers (usually a temporary issue). If this is '
           + 'happening consistently throughout an extensive period of time, '
           + 'please report this to the Nexus Mods web team or support@nexusmods.com '
           + '(NOT Vortex support).',
-        { allowReport: false });
+                                             { allowReport: false });
     } else if (err.code === 'CERT_HAS_EXPIRED') {
       this.context.api.showErrorNotification(title,
-        'The download failed due to an SSL certificate expiring. The Nexus Mods certificate '
+                                             'The download failed due to an SSL certificate expiring. The Nexus Mods certificate '
           + 'is renewed regularly weeks or months before expiration and is not the '
           + 'cause of this error. Please review the infrastructure (VPN, Proxy, etc) '
           + 'through which you are connecting to our servers and try again. Please '
           + 'note that some AntiVirus companies hijack the certificate chain as part of their '
           + '"protection" suite - which could also cause this error if their certificate expired',
-        { allowReport: false });
+                                             { allowReport: false });
     } else if (err.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
       this.context.api.showErrorNotification(title,
-        'Nexus Mods does not use self-signed certificates. This error signifies that '
+                                             'Nexus Mods does not use self-signed certificates. This error signifies that '
           + 'your network connection seems to be proxied, either by malware or '
           + 'a badly developed firewall, AV, VPN, http proxy; causing valid SSL '
           + 'certificates to not be recognized. Please review your system and its '
           + 'network connection before trying again.', { allowReport: false });
     } else if (err['code'] === 'ERR_UNESCAPED_CHARACTERS') {
       this.context.api.showErrorNotification(title,
-        err.message, {
-        allowReport: false,
-        message: 'Invalid URL',
-      });
+                                             err.message, {
+                                               allowReport: false,
+                                               message: 'Invalid URL',
+                                             });
     } else if (err.code === 'ECONNRESET') {
       this.props.onShowError(title,
-        'Server closed the connection, please '
+                             'Server closed the connection, please '
         + 'check your internet connection',
-        undefined, false);
+                             undefined, false);
     } else if (err.code === 'ETIMEDOUT') {
       this.props.onShowError(title,
-        'Connection timed out, please check '
+                             'Connection timed out, please check '
         + 'your internet connection',
-        undefined, false);
+                             undefined, false);
     } else if (err.code === 'ENOSPC') {
       this.props.onShowError(title, 'The disk is full', undefined, false);
     } else if (err.code === 'EBADF') {
       this.props.onShowError(title,
-        'Failed to write to disk. If you use a removable media or '
+                             'Failed to write to disk. If you use a removable media or '
         + 'a network drive, the connection may be unstable. '
         + 'Please try resuming once you checked.',
-        undefined, false);
+                             undefined, false);
     } else if (err.code === 'Z_DATA_ERROR') {
       // this indicates the server didn't send gzipped data even though we requested that.
       // This was only observerd when resuming downloads from beatmods.com. It may be their
@@ -462,9 +462,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         undefined, false);
     } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
       this.props.onShowError(title,
-        'Network communication error (SSL payload corrupted). '
+                             'Network communication error (SSL payload corrupted). '
         + 'This is likely a temporary issue, please try again later.',
-        undefined, false);
+                             undefined, false);
     } else {
       err['attachLogOnReport'] = true;
       this.props.onShowError(title, err);
@@ -504,19 +504,19 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     const downloadNames = downloadIds
       .filter(downloadId => this.getDownload(downloadId) !== undefined)
       .map((downloadId: string) => (
-      this.getDownload(downloadId).localPath
-    ));
+        this.getDownload(downloadId).localPath
+      ));
 
     onShowDialog('question', 'Confirm Deletion', {
       text: t('Do you really want to delete this archive?',
-        { count: downloadIds.length, replace: { count: downloadIds.length } }),
+              { count: downloadIds.length, replace: { count: downloadIds.length } }),
       message: downloadNames.join('\n'),
       options: {
         translated: true,
       },
     }, [
-        { label: 'Cancel' },
-        { label: 'Delete', action: () => downloadIds.forEach(removeId) },
+      { label: 'Cancel' },
+      { label: 'Delete', action: () => downloadIds.forEach(removeId) },
     ]);
   }
 
@@ -532,7 +532,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     const paused = downloadIds.filter(dlId => this.getDownload(dlId)?.state === 'paused');
     const nonPaused = downloadIds.filter(dlId => this.getDownload(dlId)?.state !== 'paused');
     paused.forEach(dlId => onFinishDownload(dlId, 'failed',
-      t('Download was canceled by the user')));
+                                            t('Download was canceled by the user')));
     if (nonPaused.length > 0) {
       this.remove(nonPaused);
     }
@@ -590,7 +590,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         const err = new Error(`Cannot find download path for ${downloadGame[0]}`);
         err['download'] = download;
         this.props.onShowError('Failed to open archive', err,
-          undefined, true, attachments);
+                               undefined, true, attachments);
         return;
       }
 
@@ -611,10 +611,10 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     if (download.state === 'failed') {
       const actions = [
-            { label: 'Delete',
-              action: () => this.context.api.events.emit('remove-download', downloadId) },
-            { label: 'Close' },
-        ];
+        { label: 'Delete',
+          action: () => this.context.api.events.emit('remove-download', downloadId) },
+        { label: 'Close' },
+      ];
       if ((download.failCause !== undefined) && (download.failCause.htmlFile !== undefined)) {
         onShowDialog('error', 'Download failed', {
           htmlFile: download.failCause.htmlFile,
@@ -632,9 +632,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       onShowDialog('error', 'Received website', {
         message: t('The url lead to this website, maybe it contains a redirection?'),
       }, [
-          { label: 'Delete',
-            action: () => this.context.api.events.emit('remove-download', downloadId) },
-          { label: 'Close' },
+        { label: 'Delete',
+          action: () => this.context.api.events.emit('remove-download', downloadId) },
+        { label: 'Close' },
       ]);
     }
   }
@@ -672,7 +672,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       return;
     }
     const url = path.join('www.nexusmods.com', ids.gameId,
-      'mods', ids.modId.toString()) + `?tab=files&file_id=${ids.fileId}&nmm=1`;
+                          'mods', ids.modId.toString()) + `?tab=files&file_id=${ids.fileId}&nmm=1`;
     opn(url).catch(err => null);
     return;
   }
@@ -680,9 +680,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
-        (err: Error) => {
-          this.reportDownloadError(err, false);
-        }));
+                                                          (err: Error) => {
+                                                            this.reportDownloadError(err, false);
+                                                          }));
     } else {
       this.context.api.events.emit('import-downloads', dlPaths);
     }
@@ -717,5 +717,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'])(DownloadView));
+connect(mapStateToProps, mapDispatchToProps)(
+  translate(['common'])(DownloadView));

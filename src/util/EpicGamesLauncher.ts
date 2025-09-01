@@ -42,8 +42,8 @@ class EpicGamesLauncher implements IGameStore {
       try {
         // We find the launcher's dataPath
         const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-          'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
-          'AppDataPath');
+                                                'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
+                                                'AppDataPath');
         return Promise.resolve(epicDataPath.value as string);
       } catch (err) {
         log('info', 'Epic games launcher not found', { error: err.message });
@@ -114,7 +114,7 @@ class EpicGamesLauncher implements IGameStore {
       .then(entries => entries.find(matcher))
       .then(entry => (entry === undefined)
         ? Promise.reject(
-            new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
+          new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
         : Promise.resolve(entry));
   }
 
@@ -151,8 +151,8 @@ class EpicGamesLauncher implements IGameStore {
       if (isWindows()) {
         try {
           const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-            'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
-            '(Default)');
+                                                  'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
+                                                  '(Default)');
           const val = epicLauncher.value;
           this.mLauncherExecPath = val.toString().split(',')[0];
           return Promise.resolve(this.mLauncherExecPath);
@@ -257,18 +257,18 @@ class EpicGamesLauncher implements IGameStore {
                 //  game entry is actually valid.
                 return (!!gamePath && !!name && !!appid && !!gameExec)
                   ? fs.statSilentAsync(path.join(gamePath, gameExec))
-                      .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
-                      .catch(() => Promise.resolve(undefined))
+                    .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
+                    .catch(() => Promise.resolve(undefined))
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
                 return Promise.resolve(undefined);
               }
-        })
-        .catch(err => {
-          log('error', 'Cannot read Epic Games manifest', err);
-          return Promise.resolve(undefined);
-        }));
+            })
+            .catch(err => {
+              log('error', 'Cannot read Epic Games manifest', err);
+              return Promise.resolve(undefined);
+            }));
       })
       .then((games) => games.filter(game => game !== undefined))
       .catch(err => {

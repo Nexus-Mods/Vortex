@@ -69,29 +69,29 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       // no longer have to ignore if development now that we have tag information as part of the package.json version
       // this code hasn't changed, but we only show the date now next to version and not the changelog or tag
 
-      github.releases()
-        .then(releases => {
-          if (this.mMounted) {
-            try {
-              const thisVersion = 'v' + this.mVersion;
-              const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
-              if (thisRelease !== undefined) {
-                this.nextState.releaseDate = new Date(thisRelease.published_at);
-                this.nextState.changelog = thisRelease.body;
-                this.nextState.tag = thisRelease.prerelease ? 'Beta' : undefined;
-              } else {
+    github.releases()
+      .then(releases => {
+        if (this.mMounted) {
+          try {
+            const thisVersion = 'v' + this.mVersion;
+            const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
+            if (thisRelease !== undefined) {
+              this.nextState.releaseDate = new Date(thisRelease.published_at);
+              this.nextState.changelog = thisRelease.body;
+              this.nextState.tag = thisRelease.prerelease ? 'Beta' : undefined;
+            } else {
                 // no release found on github, so it's packaged but not distributed properly yet
                 // this could be on the mystery Next repo for testing
-                this.nextState.tag = 'Preview';
-              }
-            } catch (err) {
-              log('warn', 'Failed to parse release info', err.message);
+              this.nextState.tag = 'Preview';
             }
+          } catch (err) {
+            log('warn', 'Failed to parse release info', err.message);
           }
-        })
-        .catch(err => {
-          log('warn', 'Failed to look up current Vortex releases', err.message);
-        });
+        }
+      })
+      .catch(err => {
+        log('warn', 'Failed to look up current Vortex releases', err.message);
+      });
     
   }
 
@@ -119,10 +119,10 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
         </ReactMarkdown>
       ) : (
         <div className='third-party-box'><div><h4>{t('Third-party libraries')}</h4></div>
-        <div className='about-panel'>
-          {moduleList.map(this.renderModule)}
+          <div className='about-panel'>
+            {moduleList.map(this.renderModule)}
+          </div>
         </div>
-      </div>
       );
 
     const PanelX: any = Panel;
@@ -186,7 +186,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       }
       if (err !== null) {
         this.nextState.licenseText = t('Missing license {{licenseFile}}',
-          { replace: { licenseFile } });
+                                       { replace: { licenseFile } });
       } else {
         this.nextState.licenseText = licenseText.toString();
       }
@@ -203,7 +203,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
           className='license-text'
           disallowedElements={['link']}
         >
-        {licenseText || ''}
+          {licenseText || ''}
         </ReactMarkdown>
       );
     return (

@@ -24,7 +24,7 @@ function sanitizeKnownMessages(input: string): string {
     .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, '$1')
     .replace(/.*(Cipher functions:OPENSSL_internal).*/, '$1')
     .replace(/\\\\?\\.*(\\Vortex\\resources)/i, '$1')
-    ;
+  ;
 }
 
 // remove stack lines that are known to contain information that doesn't distinguish the issue
@@ -33,7 +33,7 @@ function removeKnownVariable(input: string): string {
   return input
     .replace(/HResult: [0-9\-]*/, '')
     .replace(/[0-9]+:error:[0-9a-f]+:(SSL routines:OPENSSL_internal):.*/, '$1')
-    ;
+  ;
 }
 
 // replace "at foobar [as somename]" by "at somename"

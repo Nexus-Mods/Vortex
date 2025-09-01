@@ -103,7 +103,7 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     .filter((filePath: string) => knownArchiveExt(filePath))
     .filter((filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
-      .then(stat => !stat.isDirectory()).catch(() => false))
+        .then(stat => !stat.isDirectory()).catch(() => false))
     .then((downloadNames: string[]) => {
       const dlsNormalized = downloadNames.map(normalize);
       const addedDLs = downloadNames.filter((name: string, idx: number) =>
@@ -236,7 +236,7 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
     currentWatch = fs.watch(downloadPath, {}, onChange) as fs.FSWatcher;
     currentWatch.on('error', error => {
       // these may happen when the download path gets moved.
-        log('warn', 'failed to watch mod directory', { downloadPath, error });
+      log('warn', 'failed to watch mod directory', { downloadPath, error });
     });
   } catch (err) {
     api.showErrorNotification('Can\'t watch the download directory for changes', err, {
@@ -275,53 +275,53 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
   let downloadChangeHandler: (evt: string, fileName: string) => void;
   return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
-      .then(normalize => {
-        nameIdMap = Object.keys(downloads).reduce((prev, value) => {
-          if (downloads[value].localPath !== undefined) {
-            prev[normalize(downloads[value].localPath)] = value;
-          }
-          return prev;
-        }, {});
+    .then(normalize => {
+      nameIdMap = Object.keys(downloads).reduce((prev, value) => {
+        if (downloads[value].localPath !== undefined) {
+          prev[normalize(downloads[value].localPath)] = value;
+        }
+        return prev;
+      }, {});
 
-        downloadChangeHandler =
+      downloadChangeHandler =
           genDownloadChangeHandler(api, currentDownloadPath, gameId, nameIdMap, normalize);
 
-        const knownDLs =
+      const knownDLs =
           Object.keys(downloads)
             .filter(dlId => getDownloadGames(downloads[dlId])[0] === gameId)
             .map(dlId => normalize(downloads[dlId].localPath || ''));
 
-        return refreshDownloads(currentDownloadPath, knownDLs, normalize,
-          (fileName: string) =>
-            fs.statAsync(path.join(currentDownloadPath, fileName))
-              .then((stats: fs.Stats) => {
-                const dlId = shortid();
-                log('debug', 'registering previously unknown archive', fileName);
-                store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-                nameIdMap[normalize(fileName)] = dlId;
-              }),
-          (fileName: string) => {
+      return refreshDownloads(currentDownloadPath, knownDLs, normalize,
+                              (fileName: string) =>
+                                fs.statAsync(path.join(currentDownloadPath, fileName))
+                                  .then((stats: fs.Stats) => {
+                                    const dlId = shortid();
+                                    log('debug', 'registering previously unknown archive', fileName);
+                                    store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+                                    nameIdMap[normalize(fileName)] = dlId;
+                                  }),
+                              (fileName: string) => {
             // the fileName here is already normalized
-            api.store.dispatch(removeDownload(nameIdMap[fileName]));
-            return Promise.resolve();
-          },
-          () => new Promise((resolve, reject) => {
-            api.showDialog('question', 'Access Denied', {
-              text: 'The download directory is not writable to your user account.\n'
+                                api.store.dispatch(removeDownload(nameIdMap[fileName]));
+                                return Promise.resolve();
+                              },
+                              () => new Promise((resolve, reject) => {
+                                api.showDialog('question', 'Access Denied', {
+                                  text: 'The download directory is not writable to your user account.\n'
                 + 'If you have admin rights on this system, Vortex can change the permissions '
                 + 'to allow it write access.',
-            }, [
-                { label: 'Cancel', action: () => reject(new UserCanceled()) },
-                { label: 'Allow access', action: () => resolve() },
-              ]);
-          }))
-          .catch(UserCanceled, () => null)
-          .catch(err => {
-            api.showErrorNotification('Failed to refresh download directory', err, {
-              allowReport: err.code !== 'EPERM',
-            });
+                                }, [
+                                  { label: 'Cancel', action: () => reject(new UserCanceled()) },
+                                  { label: 'Allow access', action: () => resolve() },
+                                ]);
+                              }))
+        .catch(UserCanceled, () => null)
+        .catch(err => {
+          api.showErrorNotification('Failed to refresh download directory', err, {
+            allowReport: err.code !== 'EPERM',
           });
-      })
+        });
+    })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
@@ -330,7 +330,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
     .then(() => checkDownloadsWithMissingMeta(api))
     .catch(err => {
       api.showErrorNotification('Failed to read downloads directory',
-          err, { allowReport: err.code !== 'ENOENT' });
+                                err, { allowReport: err.code !== 'ENOENT' });
     });
 }
 
@@ -351,7 +351,7 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
           message: err.message,
         }, [{ label: 'Retry', action: () => resolve() }]);
       })
-      .then(() => testDownloadPath(api));
+        .then(() => testDownloadPath(api));
     });
 }
 
@@ -382,9 +382,9 @@ function queryReplace(api: IExtensionApi, destination: string) {
     { label: 'Cancel' },
     { label: 'Replace' },
   ])
-  .then(result => (result.action === 'Cancel')
-    ? Promise.reject(new UserCanceled())
-    : removeArchive(api.store, destination));
+    .then(result => (result.action === 'Cancel')
+      ? Promise.reject(new UserCanceled())
+      : removeArchive(api.store, destination));
 }
 
 function processInstallError(api: IExtensionApi,
@@ -614,7 +614,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
         .finally(() => {
           api.dismissNotification('transfer-cleanup');
         })
-        ;
+      ;
     }),
   };
 
@@ -829,11 +829,11 @@ function processCommandline(api: IExtensionApi) {
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
-    ], (downloads: { [dlId: string]: IDownload }) => {
-      const count = Object.keys(downloads ?? {}).filter(
-        id => ['init', 'started', 'paused'].includes(downloads[id].state)).length;
-      return count > 0 ? count : undefined;
-    });
+  ], (downloads: { [dlId: string]: IDownload }) => {
+    const count = Object.keys(downloads ?? {}).filter(
+      id => ['init', 'started', 'paused'].includes(downloads[id].state)).length;
+    return count > 0 ? count : undefined;
+  });
 
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['persistent', 'transactions'], transactionsReducer);
@@ -874,9 +874,9 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
+                         (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
+                         (instanceIds: string[]) => { queryInfo(context.api, instanceIds, true); }, queryCondition);
 
   context.registerAttributeExtractor(100, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
@@ -916,10 +916,10 @@ function init(context: IExtensionContextExt): boolean {
     shutdownPending,
     activeDownloads: selectors.activeDownloads(context.api.getState()),
     toggleShutdown: () => toggleShutdown(context.api),
-    }), () => isWindows());
+  }), () => isWindows());
 
   context.registerTest('verify-downloads-transfers', 'gamemode-activated',
-    () => checkPendingTransfer(context.api));
+                       () => checkPendingTransfer(context.api));
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;
@@ -938,19 +938,19 @@ function init(context: IExtensionContextExt): boolean {
     context.api.registerProtocol('http', false, (url, install) => {
       context.api.events.emit('start-download', [url], {}, undefined,
                               (err: Error, dlId: string) => {
-        if (install && (err === null)) {
-          context.api.events.emit('start-install-download', dlId);
-        }
-      });
+                                if (install && (err === null)) {
+                                  context.api.events.emit('start-install-download', dlId);
+                                }
+                              });
     });
 
     context.api.registerProtocol('https', false, (url, install) => {
       context.api.events.emit('start-download', [url], {}, undefined,
                               (err: Error, dlId: string) => {
-          if (install && (err === null)) {
-            context.api.events.emit('start-install-download', dlId);
-          }
-        });
+                                if (install && (err === null)) {
+                                  context.api.events.emit('start-install-download', dlId);
+                                }
+                              });
     });
 
     context.api.events.on('will-move-downloads', () => {
@@ -968,52 +968,52 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.onStateChange(['persistent', 'downloads', 'files'],
-        (prev: { [dlId: string]: IDownload }, cur: { [dlId: string]: IDownload }) => {
+                              (prev: { [dlId: string]: IDownload }, cur: { [dlId: string]: IDownload }) => {
       // when files are added without mod info, query the meta database
-      const added = _.difference(Object.keys(cur), Object.keys(prev));
-      const filtered = added.filter(
-        dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
+                                const added = _.difference(Object.keys(cur), Object.keys(prev));
+                                const filtered = added.filter(
+                                  dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
 
-      const state: IState = context.api.store.getState();
+                                const state: IState = context.api.store.getState();
 
-      updateShutdown(selectors.activeDownloads(state));
+                                updateShutdown(selectors.activeDownloads(state));
 
-      Promise.map(filtered, dlId => {
-        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
-        if (cur[dlId].localPath === undefined) {
+                                Promise.map(filtered, dlId => {
+                                  const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+                                  if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
-          log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
-          return Promise.resolve();
-        }
-        context.api.lookupModMeta({
-          filePath: path.join(downloadPath, cur[dlId].localPath),
-          gameId: convertGameIdReverse(knownGames(context.api.getState()), cur[dlId].game[0]),
-        })
-          .then(result => {
-            if (result.length > 0) {
-              const info = result[0].value;
-              store.dispatch(setDownloadModInfo(dlId, 'meta', info));
-            }
-          })
-          .catch(err => {
-            log('warn', 'failed to look up mod info', err);
-          });
-      })
-      .catch(() => null)
-      .then(() => null);
-      return null;
-    });
+                                    log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
+                                    return Promise.resolve();
+                                  }
+                                  context.api.lookupModMeta({
+                                    filePath: path.join(downloadPath, cur[dlId].localPath),
+                                    gameId: convertGameIdReverse(knownGames(context.api.getState()), cur[dlId].game[0]),
+                                  })
+                                    .then(result => {
+                                      if (result.length > 0) {
+                                        const info = result[0].value;
+                                        store.dispatch(setDownloadModInfo(dlId, 'meta', info));
+                                      }
+                                    })
+                                    .catch(err => {
+                                      log('warn', 'failed to look up mod info', err);
+                                    });
+                                })
+                                  .catch(() => null)
+                                  .then(() => null);
+                                return null;
+                              });
 
     context.api.events.on('gamemode-activated', genGameModeActivated(context.api));
 
     context.api.events.on('filehash-calculated',
-      (filePath: string, md5Hash: string, fileSize: number) => {
-        log('debug', 'file hash calculated',
-          { fileName: path.basename(filePath), md5Hash, fileSize });
-        context.api.store.dispatch(setDownloadHashByFile(path.basename(filePath),
-                                   md5Hash, fileSize));
-      });
+                          (filePath: string, md5Hash: string, fileSize: number) => {
+                            log('debug', 'file hash calculated',
+                                { fileName: path.basename(filePath), md5Hash, fileSize });
+                            context.api.store.dispatch(setDownloadHashByFile(path.basename(filePath),
+                                                                             md5Hash, fileSize));
+                          });
 
     context.api.events.on('enable-download-watch', (enabled: boolean) => {
       watchEnabled = enabled;
@@ -1024,7 +1024,7 @@ function init(context: IExtensionContextExt): boolean {
         .then(() => {
           if (callback !== undefined) {
             callback(null);
-           }
+          }
         })
         .catch(err => {
           if (callback !== undefined) {
@@ -1072,9 +1072,9 @@ function init(context: IExtensionContextExt): boolean {
       }, 500, true);
 
       context.api.onStateChange<number>(['settings', 'downloads', 'maxParallelDownloads'],
-        (old, newValue: number) => {
-          maxWorkersDebouncer.schedule(undefined, newValue);
-        });
+                                        (old, newValue: number) => {
+                                          maxWorkersDebouncer.schedule(undefined, newValue);
+                                        });
 
       const state = context.api.getState();
 
@@ -1083,24 +1083,24 @@ function init(context: IExtensionContextExt): boolean {
         : 1;
 
       manager = new DownloadManagerImpl(
-          selectors.downloadPath(store.getState()),
-          maxParallelDownloads,
-          store.getState().settings.downloads.maxChunks, (speed: number) => {
-            if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+        selectors.downloadPath(store.getState()),
+        maxParallelDownloads,
+        store.getState().settings.downloads.maxChunks, (speed: number) => {
+          if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
               // this first call is only applied in the renderer for performance reasons
-              store.dispatch(setDownloadSpeed(Math.round(speed)));
+            store.dispatch(setDownloadSpeed(Math.round(speed)));
               // this schedules the main progress to be updated
-              speedsDebouncer.schedule();
-              if (powerTimer !== undefined) {
-                clearTimeout(powerTimer);
-              }
-              if (powerBlockerId === undefined) {
-                powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
-              }
-              powerTimer = setTimeout(stopTimer, 60000);
+            speedsDebouncer.schedule();
+            if (powerTimer !== undefined) {
+              clearTimeout(powerTimer);
             }
-          }, `Nexus Client v2.${getApplication().version}`, protocolHandlers,
-          () => context.api.getState().settings.downloads.maxBandwidth * 8);
+            if (powerBlockerId === undefined) {
+              powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
+            }
+            powerTimer = setTimeout(stopTimer, 60000);
+          }
+        }, `Nexus Client v2.${getApplication().version}`, protocolHandlers,
+        () => context.api.getState().settings.downloads.maxBandwidth * 8);
       manager.setFileExistsCB(fileName => {
         return context.api.showDialog('question', 'File already exists', {
           text: 'You\'ve already downloaded the file "{{fileName}}", do you want to '

@@ -22,8 +22,8 @@ function init(context: IExtensionContext): boolean {
 
   // not yet ready to make these official parts of the api
   context.registerAPI('showOverlay',
-    (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) =>
-      context.api.store.dispatch(showOverlay(id, title, content, pos, options)), { minArguments: 3 });
+                      (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) =>
+                        context.api.store.dispatch(showOverlay(id, title, content, pos, options)), { minArguments: 3 });
 
   context.registerAPI('dismissOverlay', (id: string) => {
     onClose(id);

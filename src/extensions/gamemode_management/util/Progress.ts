@@ -73,10 +73,10 @@ class Progress {
 
   private currentProgress() {
     const newProgress = Math.min(
-        Math.max(this.mBaseValue +
+      Math.max(this.mBaseValue +
                      (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
-                 this.mLastProgress),
-        this.mMagnitude);
+               this.mLastProgress),
+      this.mMagnitude);
     this.mLastProgress = newProgress;
     return newProgress;
   }

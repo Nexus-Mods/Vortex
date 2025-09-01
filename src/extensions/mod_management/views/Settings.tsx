@@ -270,8 +270,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
     return withContext('Transferring Staging', `from ${oldPath} to ${newPath}`,
-      () => fs.statAsync(oldPath)
-      .catch(err => {
+                       () => fs.statAsync(oldPath)
+                         .catch(err => {
         // The initial mods staging folder is missing! - this may be a valid case if:
         //  1. HDD or removable media is faulty or has become unseated and is
         //  no longer detectable by the OS.
@@ -281,16 +281,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Currently we have confirmed that the error code will be set to "UNKNOWN"
         //  for all these cases, but we may have to add other error codes if different
         //  error cases pop up.
-        log('warn', 'Transfer failed - missing source directory', err);
-        return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
-          ? Promise.resolve(undefined)
-          : Promise.reject(err);
-      })
-      .then(stats => {
-        const queryReset = (stats !== undefined)
-          ? Promise.resolve(false)
-          : onShowDialog('question', 'Missing staging folder', {
-            bbcode: 'Vortex is unable to find your current mods staging folder. '
+                           log('warn', 'Transfer failed - missing source directory', err);
+                           return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
+                             ? Promise.resolve(undefined)
+                             : Promise.reject(err);
+                         })
+                         .then(stats => {
+                           const queryReset = (stats !== undefined)
+                             ? Promise.resolve(false)
+                             : onShowDialog('question', 'Missing staging folder', {
+                               bbcode: 'Vortex is unable to find your current mods staging folder. '
               + 'This can happen when: <br />'
               + '1. You or an external application removed this folder.<br />'
               + '2. Your HDD/removable drive became faulty or unseated.<br />'
@@ -301,38 +301,38 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               + 'Alternatively, if you want to force Vortex to "re-initialize" your staging '
               + 'folder at the destination you have chosen, Vortex can do this for you but '
               + 'note that the folder will be empty as nothing will be transferred inside it!',
-          },
-            [
-              { label: 'Cancel' },
-              { label: 'Reinitialize' },
-            ])
-            .then(result => (result.action === 'Cancel')
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve(true));
+                             },
+                                            [
+                                              { label: 'Cancel' },
+                                              { label: 'Reinitialize' },
+                                            ])
+                               .then(result => (result.action === 'Cancel')
+                                 ? Promise.reject(new UserCanceled())
+                                 : Promise.resolve(true));
 
-        return queryReset
-          .then((didReset) => {
-            onSetTransfer(gameMode, newPath);
-            return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
-              log('debug', 'transfer staging', { from, to });
-              if (progress > this.state.progress) {
-                this.nextState.progress = progress;
-              }
-              if ((this.state.progressFile !== from)
+                           return queryReset
+                             .then((didReset) => {
+                               onSetTransfer(gameMode, newPath);
+                               return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+                                 log('debug', 'transfer staging', { from, to });
+                                 if (progress > this.state.progress) {
+                                   this.nextState.progress = progress;
+                                 }
+                                 if ((this.state.progressFile !== from)
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
-                this.nextState.progressFile = path.basename(from);
-              }
-            })
-            .catch({ code: 'ENOENT' }, (err) => didReset
-              ? Promise.resolve()
-              : Promise.reject(err));
-          });
-      }));
+                                   this.nextState.progressFile = path.basename(from);
+                                 }
+                               })
+                                 .catch({ code: 'ENOENT' }, (err) => didReset
+                                   ? Promise.resolve()
+                                   : Promise.reject(err));
+                             });
+                         }));
   }
 
   private applyPaths = (normalize: (input: string) => string) => {
     const { t, discovery, gameMode, onSetInstallPath,
-            onShowDialog, onShowError, onSetTransfer } = this.props;
+      onShowDialog, onShowError, onSetTransfer } = this.props;
 
     if ((discovery === undefined) || (discovery.path === undefined)) {
       return onShowDialog('error', 'Not discovered', {
@@ -361,7 +361,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (isReservedDirectory(newInstallPath)) {
       return onShowDialog('error', 'Invalid path selected', {
-                  text: 'You have selected an invalid location for your staging folder '
+        text: 'You have selected an invalid location for your staging folder '
                   + 'It would become impossible for Vortex to move your staging folder '
                   + 'anywhere else without attempting to move the entire contents of the '
                   + 'selected directory alongside it.',
@@ -370,7 +370,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (isChildPath(newInstallPath, vortexPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
-                text: 'You can not put mods into the vortex application directory. '
+        text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
       }, [ { label: 'Close' } ]);
@@ -378,7 +378,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (isChildPath(newInstallPath, discovery.path, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
-                text: 'You can not put mods into the game directory. '
+        text: 'You can not put mods into the game directory. '
                   + 'This directory is under the control of the game '
                   + '(and potentially Steam or similar) '
                   + 'so your mods might be deleted or moved or otherwise damaged by '
@@ -390,7 +390,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (isChildPath(oldInstallPath, newInstallPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
-                text: 'You can\'t change the staging folder to be the parent of the old folder. '
+        text: 'You can\'t change the staging folder to be the parent of the old folder. '
                     + 'This is because the new staging folder has to be empty and it isn\'t '
                     + 'empty if it contains the current staging folder.\n\n'
                     + 'If your current staging folder is "{USERDATA}\\{game}\\mods\\foobar"\n'
@@ -451,7 +451,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + 'your chosen destination!<br />'
             + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
             + 'Old staging folder: [url]{{thePath}}[/url]',
-            { replace: { thePath: oldInstallPath } }),
+                    { replace: { thePath: oldInstallPath } }),
         }, [ { label: 'Close', action: () => Promise.resolve() } ]);
 
         if (!(err.errorObject instanceof UserCanceled)) {
@@ -461,11 +461,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
-        'This functionality is currently unavailable for your operating system!',
-        false))
+                    'This functionality is currently unavailable for your operating system!',
+                    false))
       .catch(NotFound, () =>
         onShowError('Invalid destination',
-        'The destination partition you selected is invalid - please choose a different '
+                    'The destination partition you selected is invalid - please choose a different '
       + 'destination', false))
       .catch((err) => {
         if (err !== null) {
@@ -482,7 +482,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             //  this is not a bug in Vortex but rather a hardware/networking
             //  issue (depending on the user's setup).
             onShowError('File operations interrupted',
-              'Input/Output file operations have been interrupted. This is not a bug in Vortex, '
+                        'Input/Output file operations have been interrupted. This is not a bug in Vortex, '
             + 'but rather a problem with your environment!<br /><br />'
             + 'Possible reasons behind this issue:<br />'
             + '1. Your HDD/Removable drive has become unseated during transfer.<br />'
@@ -492,15 +492,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + 'which is blocking Vortex from completing its operations.<br />'
             + '4. A faulty HDD/Removable drive.<br /><br />'
             + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
-            false, true);
+                        false, true);
           } else if ((err.code === 'UNKNOWN') && (err?.['nativeCode'] === 1392)) {
             // The file or directory is corrupted and unreadable.
             onShowError('Failed to move directories',
-              t('Vortex has encountered a corrupted and unreadable file/directory '
+                        t('Vortex has encountered a corrupted and unreadable file/directory '
               + 'and is unable to complete the transfer. Vortex was attempting '
               + 'to move the following file/directory: "{{culprit}}" when your operating system '
               + 'raised the error. Please test your environment and try again once you\'ve confirmed it\'s fixed.',
-            { replace: { culprit: err.path } }), false);
+                          { replace: { culprit: err.path } }), false);
           } else {
             onShowError('Failed to move directories', err, !(err instanceof ProcessCanceled));
           }
@@ -569,7 +569,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               });
           }
         })
-        ;
+      ;
     }
     // ensure the destination directories are empty
     return queue.then(() => new Promise((resolve, reject) => {
@@ -644,9 +644,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => result.action === 'Cancel'
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve()))
+          .then(result => result.action === 'Cancel'
+            ? Promise.reject(new UserCanceled())
+            : Promise.resolve()))
       .then(() => {
         onSetActivator(gameMode, currentActivator);
       })
@@ -683,9 +683,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       const splitInp = input.split(path.sep);
       return splitInp.length > 1
         ? true
-          : ((splitInp[0].length === 2) && (splitInp[0][1] === ':'))
-            ? false
-            : true;
+        : ((splitInp[0].length === 2) && (splitInp[0][1] === ':'))
+          ? false
+          : true;
     } else {
       // Currently not imposing any restrictions on non-windows platforms.
       return true;
@@ -789,7 +789,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 placeholder={label}
                 onChange={this.changePathEvt}
                 onKeyPress={(this.pathsChanged() && (validationState.state !== 'error'))
-                             ? this.keyPressEvt : null}
+                  ? this.keyPressEvt : null}
               />
               <InputGroup.Button className='inset-btn'>
                 <Button

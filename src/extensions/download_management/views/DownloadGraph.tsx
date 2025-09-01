@@ -52,7 +52,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     }
     const maxRounded = this.byteRound(maxData);
     const ticks = [0, this.byteRound(maxRounded / 3),
-                   this.byteRound((maxRounded * 2) / 3), maxRounded];
+      this.byteRound((maxRounded * 2) / 3), maxRounded];
 
     const { Area, AreaChart, CartesianGrid, Label, ReferenceLine, YAxis } = recharts;
 

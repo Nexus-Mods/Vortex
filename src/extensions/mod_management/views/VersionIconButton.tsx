@@ -107,21 +107,21 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     if ((state === 'update') || (state === 'bug-update')) {
       if (mod.attributes?.collectionId !== undefined) {
         this.context.api.events.emit('collection-update',
-          downloadGame, mod.attributes?.collectionSlug, newestVersion,
-          mod.attributes?.source, mod.id);
+                                     downloadGame, mod.attributes?.collectionSlug, newestVersion,
+                                     mod.attributes?.source, mod.id);
       } else {
         this.context.api.events.emit('mod-update',
-          downloadGame, mod.attributes?.modId, newestFileId, mod.attributes?.source);
+                                     downloadGame, mod.attributes?.modId, newestFileId, mod.attributes?.source);
       }
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       if (mod.attributes?.collectionId !== undefined) {
         this.context.api.events.emit('open-collection-page',
-          downloadGame,
-          mod.attributes?.collectionSlug, mod.attributes?.revisionNumber,
-          mod.attributes?.source);
+                                     downloadGame,
+                                     mod.attributes?.collectionSlug, mod.attributes?.revisionNumber,
+                                     mod.attributes?.source);
       } else {
         this.context.api.events.emit('open-mod-page',
-          downloadGame, mod.attributes?.modId, mod.attributes?.source);
+                                     downloadGame, mod.attributes?.modId, mod.attributes?.source);
       }
     }
   }

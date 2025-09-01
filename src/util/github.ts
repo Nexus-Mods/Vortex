@@ -125,44 +125,44 @@ class GitHub {
     const stackErr = new Error();
 
     return new Promise((resolve, reject) => {
-        const relUrl = url.parse(`${baseUrl}/${request}`);
-        const options: https.RequestOptions = {
-          ..._.pick(relUrl, ['port', 'hostname', 'path']),
-          headers: {
-            'User-Agent': GitHub.USER_AGENT,
-          },
-        };
+      const relUrl = url.parse(`${baseUrl}/${request}`);
+      const options: https.RequestOptions = {
+        ..._.pick(relUrl, ['port', 'hostname', 'path']),
+        headers: {
+          'User-Agent': GitHub.USER_AGENT,
+        },
+      };
 
-        https.get(options, res => {
-          res.setEncoding('utf-8');
-          const callsRemaining = parseInt(res.headers['x-ratelimit-remaining'] as string, 10);
-          if ((res.statusCode === 403) && (callsRemaining === 0)) {
-            const resetDate = parseInt(res.headers['x-ratelimit-reset'] as string, 10) * 1000;
-            log('info', 'GitHub rate limit exceeded',
+      https.get(options, res => {
+        res.setEncoding('utf-8');
+        const callsRemaining = parseInt(res.headers['x-ratelimit-remaining'] as string, 10);
+        if ((res.statusCode === 403) && (callsRemaining === 0)) {
+          const resetDate = parseInt(res.headers['x-ratelimit-reset'] as string, 10) * 1000;
+          log('info', 'GitHub rate limit exceeded',
               { reset_at: (new Date(resetDate)).toString() });
-            this.mRatelimitReset = resetDate;
-            return reject(new RateLimitExceeded());
-          }
+          this.mRatelimitReset = resetDate;
+          return reject(new RateLimitExceeded());
+        }
 
-          let output = '';
-          res
-            .on('data', data => output += data)
-            .on('end', () => {
-              try {
-                return resolve(JSON.parse(output));
-              } catch (parseErr) {
-                const message = output.split('\n')[0];
-                const error = new Error(message);
-                error.stack = stackErr.stack;
-                reject(error);
-              }
-            });
+        let output = '';
+        res
+          .on('data', data => output += data)
+          .on('end', () => {
+            try {
+              return resolve(JSON.parse(output));
+            } catch (parseErr) {
+              const message = output.split('\n')[0];
+              const error = new Error(message);
+              error.stack = stackErr.stack;
+              reject(error);
+            }
+          });
+      })
+        .on('error', err => {
+          reject(err);
         })
-          .on('error', err => {
-            reject(err);
-          })
-          .end();
-      });
+        .end();
+    });
   }
 
   private queryReleases(): Promise<IGitHubRelease[]> {

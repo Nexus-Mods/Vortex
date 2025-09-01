@@ -36,12 +36,12 @@ function openDB(dbPath: string): Promise<levelup.LevelUp> {
   return new Promise<levelup.LevelUp>((resolve, reject) => {
     const leveldown: typeof leveldownT = require('leveldown');
     const db = levelup.default(encode(leveldown(dbPath)),
-                     { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve(db);
-    });
+                               { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err) => {
+                                 if (err !== null) {
+                                   return reject(err);
+                                 }
+                                 return resolve(db);
+                               });
   });
 }
 

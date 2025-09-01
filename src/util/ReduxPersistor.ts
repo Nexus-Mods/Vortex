@@ -57,35 +57,35 @@ class ReduxPersistor<T> {
 
   public insertPersistor(hive: string, persistor: IPersistor): Promise<void> {
     return this.resetData(hive, persistor)
-        .then(() => {
-          this.mPersistors[hive] = persistor;
-          persistor.setResetCallback(() => this.resetData(hive, persistor));
-        });
+      .then(() => {
+        this.mPersistors[hive] = persistor;
+        persistor.setResetCallback(() => this.resetData(hive, persistor));
+      });
   }
 
   private resetData(hive: string, persistor: IPersistor): Promise<void> {
     const kvProm: Promise<Array<{ key: PersistorKey, value: string }>> =
       (persistor.getAllKVs !== undefined)
-      ? persistor.getAllKVs()
-        .map((kv: { key: PersistorKey, value: string }) =>
-          ({ key: kv.key, value: this.deserialize(kv.value) }))
-      : persistor.getAllKeys()
-      .then(keys =>
-        Promise.map(keys, key => persistor.getItem(key)
-          .then(value => ({ key, value: this.deserialize(value) }))
-          .catch(err => {
-            if (err.name === 'NotFoundError') {
+        ? persistor.getAllKVs()
+          .map((kv: { key: PersistorKey, value: string }) =>
+            ({ key: kv.key, value: this.deserialize(kv.value) }))
+        : persistor.getAllKeys()
+          .then(keys =>
+            Promise.map(keys, key => persistor.getItem(key)
+              .then(value => ({ key, value: this.deserialize(value) }))
+              .catch(err => {
+                if (err.name === 'NotFoundError') {
               // Not sure how this happens, it's ultra-rare. Since we're expecting
               // getAllKeys to return only exising keys, one not existing during this get
               // just means it shouldn't have been returned in the first place.
               // The more worrying part is: If getAllKeys may return keys that don't exist,
               // may it be missing keys that do? Why is this happening in the first place?
-              log('error', 'key missing from database', { key });
-              return Promise.resolve(undefined);
-            }
-            return Promise.reject(err);
-          })))
-      .filter(kvPair => kvPair !== undefined);
+                  log('error', 'key missing from database', { key });
+                  return Promise.resolve(undefined);
+                }
+                return Promise.reject(err);
+              })))
+          .filter(kvPair => kvPair !== undefined);
 
     return kvProm
       .then(kvPairs => {
@@ -193,17 +193,17 @@ class ReduxPersistor<T> {
         const newkeys = Object.keys(newState);
 
         return Promise.mapSeries(oldkeys,
-          key => (newState[key] === undefined)
+                                 key => (newState[key] === undefined)
               // keys that exist in oldState but not newState
-            ? this.remove(persistor, [].concat(statePath, key), oldState[key])
+                                   ? this.remove(persistor, [].concat(statePath, key), oldState[key])
               // keys that exist in both
-            : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
+                                   : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
           .then(() => Promise.mapSeries(newkeys,
-            key => ((oldState[key] === undefined) && (newState[key] !== undefined))
+                                        key => ((oldState[key] === undefined) && (newState[key] !== undefined))
               // keys that exist in newState but not oldState
-              ? this.add(persistor, [].concat(statePath, key), newState[key])
+                                          ? this.add(persistor, [].concat(statePath, key), newState[key])
               // keys that exist in both - already handled above
-              : Promise.resolve()))
+                                          : Promise.resolve()))
           .then(() => undefined);
       } else {
         return (newState !== undefined)
@@ -218,7 +218,7 @@ class ReduxPersistor<T> {
   private remove(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
     return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
-          this.remove(persistor, [].concat(statePath, key), state[key]))
+        this.remove(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.removeItem(statePath);
   }
@@ -229,7 +229,7 @@ class ReduxPersistor<T> {
     }
     return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
-          this.add(persistor, [].concat(statePath, key), state[key]))
+        this.add(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));
   }

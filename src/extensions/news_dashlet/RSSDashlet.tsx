@@ -86,22 +86,22 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
       : url;
 
     rss(rssUrl)
-    .then(result => {
-      if (this.mMounted) {
-        this.setState({
-          messages: result.map(item => this.transformMessage(item))
-                          .filter(item => truthy(item)),
-          error: undefined,
-        });
-      }
-    })
-    .catch((err: Error) => {
-      if (this.mMounted) {
-        this.setState({
-          error: err.message,
-        });
-      }
-    });
+      .then(result => {
+        if (this.mMounted) {
+          this.setState({
+            messages: result.map(item => this.transformMessage(item))
+              .filter(item => truthy(item)),
+            error: undefined,
+          });
+        }
+      })
+      .catch((err: Error) => {
+        if (this.mMounted) {
+          this.setState({
+            error: err.message,
+          });
+        }
+      });
   }
 
   private transformMessage(input: IFeedMessage): IListItem {
@@ -155,4 +155,4 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default translate([ 'common' ])
-  (redConnect(mapStateToProps)(RSSDashlet)) as React.ComponentClass<{}>;
+(redConnect(mapStateToProps)(RSSDashlet)) as React.ComponentClass<{}>;

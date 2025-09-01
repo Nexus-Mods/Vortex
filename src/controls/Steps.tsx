@@ -31,7 +31,7 @@ class Steps extends React.Component<IProps, {}> {
           state: this.classByIdx(stepIdx, idx),
         }));
         return prev;
-    }, [] as any);
+      }, [] as any);
     return (<div className='steps' {..._.omit(this.props, ['step']) as any}>{newChildren}</div>);
   }
 
@@ -41,7 +41,7 @@ class Steps extends React.Component<IProps, {}> {
       : itemIdx === currentIdx
         ? 'current'
         : 'future';
-    }
+  }
 }
 
 export interface ISteps extends React.ComponentClass<IProps> {

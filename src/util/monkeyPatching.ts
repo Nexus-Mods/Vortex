@@ -36,58 +36,58 @@ function fallbackDateFormat(locales?: string | string[], options?: Intl.DateTime
 
 function applyMonkeyPatches() {
   monkeyPatch(Date, 'toLocaleString',
-    function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      try {
-        return orig.apply(this, [locales, options]);
-      } catch (err) {
-        if ((err instanceof RangeError)
+              function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+                try {
+                  return orig.apply(this, [locales, options]);
+                } catch (err) {
+                  if ((err instanceof RangeError)
             && (err.message.indexOf('Unsupported time zone specified') !== -1)) {
-          return fallbackDateFormat.apply(this, [locales, {
-            day: 'numeric', month: 'numeric', year: 'numeric',
-            hour: 'numeric', minute: 'numeric', second: 'numeric',
-            timeZoneName: 'short',
-            ...options,
-          }]);
-        } else {
-          throw err;
-        }
-      }
-    });
+                    return fallbackDateFormat.apply(this, [locales, {
+                      day: 'numeric', month: 'numeric', year: 'numeric',
+                      hour: 'numeric', minute: 'numeric', second: 'numeric',
+                      timeZoneName: 'short',
+                      ...options,
+                    }]);
+                  } else {
+                    throw err;
+                  }
+                }
+              });
 
   monkeyPatch(Date, 'toLocaleDateString',
-    function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      try {
-        return orig.apply(this, [locales, options]);
-      } catch (err) {
-        if ((err instanceof RangeError)
+              function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+                try {
+                  return orig.apply(this, [locales, options]);
+                } catch (err) {
+                  if ((err instanceof RangeError)
             && (err.message.indexOf('Unsupported time zone specified') !== -1)) {
-          return fallbackDateFormat.apply(this, [locales, {
-            day: 'numeric', month: 'numeric', year: 'numeric',
-            ...options,
-          }]);
-        } else {
-          throw err;
-        }
-      }
-  });
+                    return fallbackDateFormat.apply(this, [locales, {
+                      day: 'numeric', month: 'numeric', year: 'numeric',
+                      ...options,
+                    }]);
+                  } else {
+                    throw err;
+                  }
+                }
+              });
 
   monkeyPatch(Date, 'toLocaleTimeString',
-    function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      try {
-        return orig.apply(this, [locales, options]);
-      } catch (err) {
-        if ((err instanceof RangeError)
+              function(orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+                try {
+                  return orig.apply(this, [locales, options]);
+                } catch (err) {
+                  if ((err instanceof RangeError)
             && (err.message.indexOf('Unsupported time zone specified') !== -1)) {
-          return fallbackDateFormat.apply(this, [locales, {
-            hour: 'numeric', minute: 'numeric', second: 'numeric',
-            timeZoneName: 'short',
-            ...options,
-          }]);
-        } else {
-          throw err;
-        }
-      }
-  });
+                    return fallbackDateFormat.apply(this, [locales, {
+                      hour: 'numeric', minute: 'numeric', second: 'numeric',
+                      timeZoneName: 'short',
+                      ...options,
+                    }]);
+                  } else {
+                    throw err;
+                  }
+                }
+              });
 
   const path: typeof pathT = require('path');
   const oldJoin = path.join;

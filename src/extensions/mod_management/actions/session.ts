@@ -17,10 +17,10 @@ export interface IDeploymentProblem {
  * sets the updating mods flag
  */
 export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
-  (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));
+                                                (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));
 
 export const setDeploymentProblem = safeCreateAction('SET_DEPLOYMENT_PROBLEM',
-  (errors: IDeploymentProblem[]) => errors);
+                                                     (errors: IDeploymentProblem[]) => errors);
 
 /**
  * stores info about files that were changed outside the control of Vortex. The user
@@ -29,7 +29,7 @@ export const setDeploymentProblem = safeCreateAction('SET_DEPLOYMENT_PROBLEM',
 export const setExternalChanges = safeCreateAction('SET_EXTERNAL_CHANGES', entries => entries);
 
 export const setExternalChangeAction = safeCreateAction('SET_EXTERNAL_CHANGE_ACTION',
-  (filePaths: string[], action: string) => ({ filePaths, action }));
+                                                        (filePaths: string[], action: string) => ({ filePaths, action }));
 
 let curResolve;
 let curReject;
@@ -45,7 +45,7 @@ export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }
           entries.push(changeToEntry(typeId, fileChange)));
       });
       dispatch(setExternalChanges(entries));
-  });
+    });
 }
 
 export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean) {

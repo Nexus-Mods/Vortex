@@ -167,8 +167,8 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
       + 'permissions or is locked by another process.';
 
   const buttons = [
-      'Cancel',
-      'Retry',
+    'Cancel',
+    'Retry',
   ];
 
   if (processes.length === 0) {
@@ -388,7 +388,7 @@ function errorHandler(error: NodeJS.ErrnoException,
                       options?: IErrorHandlerOptions): PromiseBB<void> {
   augmentError(error);
   const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
-                     stackErr, showDialogCallback, options);
+                              stackErr, showDialogCallback, options);
 
   // trying to narrow down #6404
   if (repProm === undefined) {
@@ -523,14 +523,14 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
       } else {
         return (['ENOENT'].indexOf(err.code) !== -1)
           ? mkdirRecursive(path.dirname(dir))
-              .then(() => PromiseBB.resolve(fs.mkdir(dir)))
-              .then(() => {
-                created.push(dir);
-                return onDirCreatedCB(dir);
-              })
-              .catch(err2 => (err2.code === 'EEXIST')
-                ? PromiseBB.resolve()
-                : PromiseBB.reject(err2))
+            .then(() => PromiseBB.resolve(fs.mkdir(dir)))
+            .then(() => {
+              created.push(dir);
+              return onDirCreatedCB(dir);
+            })
+            .catch(err2 => (err2.code === 'EEXIST')
+              ? PromiseBB.resolve()
+              : PromiseBB.reject(err2))
           : PromiseBB.reject(err);
       }
     });
@@ -543,17 +543,17 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 
 function selfCopyCheck(src: string, dest: string) {
   return PromiseBB.all([(fs.stat as any)(src, { bigint: true }),
-                        (fs.stat as any)(dest, { bigint: true })
-    .catch(err => {
-      return err.code === 'ENOENT'
-        ? Promise.resolve({})
-        : Promise.reject(err);
-    }),
+    (fs.stat as any)(dest, { bigint: true })
+      .catch(err => {
+        return err.code === 'ENOENT'
+          ? Promise.resolve({})
+          : Promise.reject(err);
+      }),
   ])
     .then((stats: fs.BigIntStats[]) => (stats[0].ino === stats[1].ino)
-        ? PromiseBB.reject(new Error(
-          `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
-        : PromiseBB.resolve());
+      ? PromiseBB.reject(new Error(
+        `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
+      : PromiseBB.resolve());
 }
 
 function nextName(input: string): string {
@@ -604,11 +604,11 @@ type CopyOptionsEx = fs.CopyOptions & {
 };
 
 function copyInt(
-    src: string,
-    dest: string,
-    options: CopyOptionsEx,
-    stackErr: Error,
-    tries: number) {
+  src: string,
+  dest: string,
+  options: CopyOptionsEx,
+  stackErr: Error,
+  tries: number) {
   return simfail(() => PromiseBB.resolve(fs.copy(src, dest, options)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options?.showDialogCallback,
@@ -617,21 +617,21 @@ function copyInt(
 }
 
 export function linkAsync(
-    src: string, dest: string,
-    options?: ILinkFileOptions): PromiseBB<void> {
+  src: string, dest: string,
+  options?: ILinkFileOptions): PromiseBB<void> {
   const stackErr = new Error();
   return linkInt(src, dest, stackErr, NUM_RETRIES, options)
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
 function linkInt(
-    src: string, dest: string,
-    stackErr: Error, tries: number,
-    options?: ILinkFileOptions): PromiseBB<void> {
+  src: string, dest: string,
+  stackErr: Error, tries: number,
+  options?: ILinkFileOptions): PromiseBB<void> {
   return simfail(() => PromiseBB.resolve(fs.link(src, dest)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries,
-                  (options !== undefined) ? options.showDialogCallback : undefined)
+                   (options !== undefined) ? options.showDialogCallback : undefined)
         .then(() => linkInt(src, dest, stackErr, tries - 1, options)));
 }
 
@@ -648,7 +648,7 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number,
   return simfail(() => PromiseBB.resolve(fs.unlink(filePath)))
     .catch((err: NodeJS.ErrnoException) => {
       const handle = () => errorHandler(err, stackErr, tries, options.showDialogCallback)
-          .then(() => unlinkInt(filePath, stackErr, tries - 1, options));
+        .then(() => unlinkInt(filePath, stackErr, tries - 1, options));
 
       if (err.code === 'ENOENT') {
         // don't mind if a file we wanted deleted was already gone
@@ -707,8 +707,8 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<vo
         // don't mind if a file we wanted deleted was already gone
         return PromiseBB.resolve();
       } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-          return PromiseBB.delay(RETRY_DELAY_MS)
-            .then(() => rmdirInt(dirPath, stackErr, tries - 1));
+        return PromiseBB.delay(RETRY_DELAY_MS)
+          .then(() => rmdirInt(dirPath, stackErr, tries - 1));
       }
       throw restackErr(err, stackErr);
     });
@@ -790,7 +790,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
               log('error', 'elevated process failed', data.error);
             }
           } else {
-          log('warn', 'got unexpected ipc message', JSON.stringify(data));
+            log('warn', 'got unexpected ipc message', JSON.stringify(data));
           }
         })
         .on('end', () => {
@@ -807,7 +807,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
           }
         });
     })
-    .listen(path.join('\\\\?\\pipe', ipcPath));
+      .listen(path.join('\\\\?\\pipe', ipcPath));
     vortexRun.runElevated(ipcPath, func, parameters)
       .catch(err => {
         if ((err.code === 5)
@@ -820,11 +820,11 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
         }
       });
   })
-  .finally(() => {
-    if (server !== undefined) {
-      server.close();
-    }
-  });
+    .finally(() => {
+      if (server !== undefined) {
+        server.close();
+      }
+    });
 }
 
 export function ensureDirWritableAsync(dirPath: string,
@@ -868,37 +868,37 @@ export function ensureDirWritableAsync(dirPath: string,
               // recurse upwards in the directory tree if necessary
               const ensureAndAllow = (targetPath, allowRecurse) => {
                 return fs.ensureDir(targetPath)
-                .catch(elevatedErr => {
-                  const parentPath = path.dirname(targetPath);
-                  if (['EPERM', 'ENOENT'].includes(elevatedErr.code)
+                  .catch(elevatedErr => {
+                    const parentPath = path.dirname(targetPath);
+                    if (['EPERM', 'ENOENT'].includes(elevatedErr.code)
                       && (parentPath !== targetPath)
                       && allowRecurse) {
-                    return ensureAndAllow(parentPath, true)
-                      .then(() => ensureAndAllow(targetPath, false));
-                  } else if (elevatedErr.code === 'EEXIST') {
+                      return ensureAndAllow(parentPath, true)
+                        .then(() => ensureAndAllow(targetPath, false));
+                    } else if (elevatedErr.code === 'EEXIST') {
                     // Directory already exists - that's fine.
                     //  Theoretically fs.ensureDir shouldn't be throwing EEXIST
                     //  errors, but we've seen this happen on multiple occassions.
-                    return Promise.resolve();
-                  } else {
-                    return Promise.reject(elevatedErr);
-                  }
-                })
-                .then(() => allowDir(targetPath));
+                      return Promise.resolve();
+                    } else {
+                      return Promise.reject(elevatedErr);
+                    }
+                  })
+                  .then(() => allowDir(targetPath));
               };
               return ensureAndAllow(dirPath, true);
             }, { dirPath, userId })
             // if elevation fails, rethrow the original error, not the failure to elevate
-            .catch(elevatedErr => {
-              if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
-                return Promise.reject(new UserCanceled());
-              }
+              .catch(elevatedErr => {
+                if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+                  return Promise.reject(new UserCanceled());
+                }
               // if elevation failed, return the original error because the one from
               // elevate, while interesting as well, would make error handling too complicated
-              log('error', 'failed to acquire permission', elevatedErr.message);
+                log('error', 'failed to acquire permission', elevatedErr.message);
 
-              return PromiseBB.reject(restackErr(err, stackErr));
-            });
+                return PromiseBB.reject(restackErr(err, stackErr));
+              });
           });
       } else {
         return PromiseBB.reject(restackErr(err, stackErr));
@@ -931,7 +931,7 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
   return (stat.uid !== process.getuid())
     ? (!hasGroupPermissions) || (hasGroupPermissions && (stat.gid !== process.getgid()))
       ? PromiseBB.resolve(fs.chown(filePath, process.getuid(), stat.gid))
-          .catch(err => PromiseBB.reject(err))
+        .catch(err => PromiseBB.reject(err))
       : PromiseBB.resolve()
     : PromiseBB.resolve();
 }
@@ -939,10 +939,10 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
 export function changeFileAttributes(filePath: string,
                                      wantedAttributes: number,
                                      stat: fs.Stats): PromiseBB<void> {
-    return this.changeFileOwnership(filePath, stat)
-      .then(() => {
-        const finalAttributes = stat.mode | wantedAttributes;
-        return PromiseBB.resolve(fs.chmod(filePath, finalAttributes));
+  return this.changeFileOwnership(filePath, stat)
+    .then(() => {
+      const finalAttributes = stat.mode | wantedAttributes;
+      return PromiseBB.resolve(fs.chmod(filePath, finalAttributes));
     })
     .catch(ProcessCanceled, () => PromiseBB.resolve())
     .catch(err => PromiseBB.reject(err));
@@ -974,19 +974,19 @@ function raiseUACDialog<T>(t: TFunction,
                            filePath: string): PromiseBB<T> {
   let fileToAccess = filePath !== undefined ? filePath : err.path;
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), {
-      title: 'Access denied (2)',
-      message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
+    title: 'Access denied (2)',
+    message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
         + 'If your account has admin rights Vortex can unlock the file for you. '
         + 'Windows will show an UAC dialog.',
-        { replace: { fileName: fileToAccess } }),
-      buttons: [
-        'Cancel',
-        'Retry',
-        'Give permission',
-      ],
-      noLink: true,
-      type: 'warning',
-    });
+               { replace: { fileName: fileToAccess } }),
+    buttons: [
+      'Cancel',
+      'Retry',
+      'Give permission',
+    ],
+    noLink: true,
+    type: 'warning',
+  });
   if (choice === 1) { // Retry
     return forcePerm(t, op, filePath);
   } else if (choice === 2) { // Give Permission

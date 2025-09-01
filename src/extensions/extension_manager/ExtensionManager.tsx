@@ -189,7 +189,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                           {t('Find more')}
                         </Button>
                       </div>
-                      </FlexLayout.Flex>
+                    </FlexLayout.Flex>
                     <FlexLayout.Flex>
                       <Dropzone
                         accept={['files']}
@@ -222,27 +222,27 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     log('info', 'installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
       ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
-          .then(() => { success = true; })
-          .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err,
-                                                   { allowReport: false });
-          }))
+        .then(() => { success = true; })
+        .catch(err => {
+          this.context.api.showErrorNotification('Failed to install extension', err,
+                                                 { allowReport: false });
+        }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
-          const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-          installExtension(this.context.api, dlPath)
-          .then(() => {
-            success = true;
-          })
-          .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err,
-                                                   { allowReport: false });
-          })
-          .finally(() => {
-            resolve();
-          });
-        });
+                                       const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
+                                       installExtension(this.context.api, dlPath)
+                                         .then(() => {
+                                           success = true;
+                                         })
+                                         .catch(err => {
+                                           this.context.api.showErrorNotification('Failed to install extension', err,
+                                                                                  { allowReport: false });
+                                         })
+                                         .finally(() => {
+                                           resolve();
+                                         });
+                                     });
       }));
     prop.then(() => {
       if (success) {
@@ -324,6 +324,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      ExtensionManager));
+translate(['common'])(
+  connect(mapStateToProps, mapDispatchToProps)(
+    ExtensionManager));

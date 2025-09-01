@@ -67,7 +67,7 @@ export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
     const { attributeId, onSetFilter } = this.props;
     this.currentValue = evt.currentTarget.value;
     onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
+                { comparison: this.currentComparison, value: this.currentValue });
   }
 
   private toggleDirection = (evt) => {
@@ -80,7 +80,7 @@ export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
       options[(options.indexOf(filt.comparison) + 1) % options.length] as any;
 
     onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
+                { comparison: this.currentComparison, value: this.currentValue });
   }
 }
 

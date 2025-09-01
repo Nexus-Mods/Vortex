@@ -20,7 +20,7 @@ export function decodeSystemError(err: Error, filePath: string): IDecoded {
       rethrowAs: 'EBUSY',
     };
   } else if ([21, 59, 67, 483, 793, 1005, 1006,
-              1127, 1392, 1920, 6800].includes(code)) {
+    1127, 1392, 1920, 6800].includes(code)) {
     return {
       title: `I/O Error (${code})`,
       message: 'Accessing "{{filePath}}" failed with an error that indicates '

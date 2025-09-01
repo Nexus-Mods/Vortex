@@ -460,7 +460,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       : pushSafe(newState, ['invalidGroups'], groupId);
 
     events.emit(`fomod-installer-select-${activeInstanceId}`,
-      installerState.installSteps[installerState.currentStep].id, groupId, plugins);
+                installerState.installSteps[installerState.currentStep].id, groupId, plugins);
     this.setState(newState);
   }
 

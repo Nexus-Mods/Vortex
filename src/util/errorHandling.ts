@@ -237,7 +237,7 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
     .then(attachment => {
       const { type, error, labels, token, reportProcess, sourceProcess, context } = reportInfo;
       return sendReport(type, error, context, labels, token,
-        reportProcess, sourceProcess, attachment);
+                        reportProcess, sourceProcess, attachment);
     });
 }
 
@@ -412,7 +412,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     // if the crash occurs before the application is ready, the dialog module can't be
     // used (except for this function)
     dialog.showErrorBox('An unrecoverable error occurred',
-      error.message + '\n' + error.details +
+                        error.message + '\n' + error.details +
       '\nIf you think this is a bug, please report it to the ' +
       'issue tracker (github)');
   }
@@ -500,7 +500,7 @@ export function toError(input: any, title?: string,
       const flatErr = flatten(input);
 
       let attributes = Object.keys(flatErr || {})
-          .filter(key => key[0].toUpperCase() === key[0]);
+        .filter(key => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
@@ -510,8 +510,8 @@ export function toError(input: any, title?: string,
       }
 
       const details = attributes.length === 0 ? undefined : attributes
-          .map(key => key + ':\t' + input[key])
-          .join('\n');
+        .map(key => key + ':\t' + input[key])
+        .join('\n');
 
       return {message, title, subtitle, stack, details};
     }

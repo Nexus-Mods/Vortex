@@ -140,7 +140,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discoveredGames, extensions, extensionsInstalled, knownGames,
-            pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
+      pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
     const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
@@ -166,7 +166,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue))
       ? knownGames
       : knownGames.filter((game: IGameStored) =>
-          !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
+        !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
 
     const profileGames = new Set<string>(
       Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
@@ -196,7 +196,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       executable: undefined,
       contributed: ext.author,
     }))
-    .filter(ext => showHidden || !getAttr(discoveredGames, ext.id, { hidden: false }).hidden));
+      .filter(ext => showHidden || !getAttr(discoveredGames, ext.id, { hidden: false }).hidden));
 
     Object.keys(discoveredGames).forEach(gameId => {
       if (knownGames.find(game => game.id === gameId) === undefined) {
@@ -217,7 +217,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       managedGameList.filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortManaged));
     const filteredUnmanaged =
         unmanagedGameList
-        .filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortUnmanaged));
+          .filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortUnmanaged));
 
     const titleManaged = t('Managed ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
@@ -461,8 +461,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           .sort((lhs, rhs) => rhs.ratio - lhs.ratio);
 
         this.mNameLookup[input] = (sorted.length > 0)
-           ? sorted[0].item.name
-           : input;
+          ? sorted[0].item.name
+          : input;
       }
     }
 

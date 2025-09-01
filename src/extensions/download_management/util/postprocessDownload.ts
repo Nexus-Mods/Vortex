@@ -29,7 +29,7 @@ export function finalizeDownload(api: IExtensionApi, id: string,
       }
       return Promise.reject(err);
     })
-    .then((result: IHashResult) => {;
+    .then((result: IHashResult) => {
       const batched = [
         setDownloadHashByFile(path.basename(filePath), result.md5sum, result.numBytes),
         finishDownload(id, 'finished', undefined)

@@ -175,7 +175,7 @@ function dataToFile(id, input: any) {
           log('error', 'failed to write attachment data to file', { error: innerErr.message });
           return reject(innerErr);
         })
-        ;
+      ;
     });
   });
 }
@@ -377,9 +377,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
         label: 'Report',
         action: () => bundleAttachment(options)
           .then(attachmentBundle => sendReport('error',
-            toError(details, title, options, sourceErr.stack),
-            context, ['error'], '', process.type, undefined,
-            attachmentBundle))
+                                               toError(details, title, options, sourceErr.stack),
+                                               context, ['error'], '', process.type, undefined,
+                                               attachmentBundle))
           .then(response => {
             if (response?.github_issue !== undefined) {
               const { issue_number } = response.github_issue;
@@ -410,11 +410,11 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     replace: options.replace,
     actions: details !== undefined ? [
       ...(options.actions ?? []), {
-      title: 'More',
-      action: (dismiss: () => void) => {
-        dispatch(showDialog('error', 'Error', content, actions));
-      },
-    }] : [],
+        title: 'More',
+        action: (dismiss: () => void) => {
+          dispatch(showDialog('error', 'Error', content, actions));
+        },
+      }] : [],
   }));
 }
 
@@ -582,9 +582,9 @@ export function prettifyNodeErrorMessage(err: any,
       allowReport: false,
     };
   } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE',
-              'SELF_SIGNED_CERT_IN_CHAIN',
-              'ERR_SSL_WRONG_VERSION_NUMBER',
-              'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'].includes(err.code)
+    'SELF_SIGNED_CERT_IN_CHAIN',
+    'ERR_SSL_WRONG_VERSION_NUMBER',
+    'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'].includes(err.code)
              || (err.function === 'OPENSSL_internal')) {
     return {
       message: 'Encountered an invalid SSL certificate. If this happens on a network connection '
@@ -650,7 +650,7 @@ export function prettifyNodeErrorMessage(err: any,
 
 const HIDE_ATTRIBUTES = new Set(
   ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport',
-   'extensionName', 'name']);
+    'extensionName', 'name']);
 
 interface ICustomErrorType {
   message?: string;
@@ -685,7 +685,7 @@ function renderCustomError(err: any) {
   }
 
   let attributes = Object.keys(err || {})
-      .filter(key => key[0].toUpperCase() === key[0]);
+    .filter(key => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
     attributes = Object.keys(err || {})
       .filter(key => !isPrivateField(key)
@@ -694,8 +694,8 @@ function renderCustomError(err: any) {
   if (attributes.length > 0) {
     const old = res.message;
     res.message = attributes
-        .map(key => key + ':\t' + err[key])
-        .join('\n');
+      .map(key => key + ':\t' + err[key])
+      .join('\n');
     if (old !== undefined) {
       res.message = old + '\n' + res.message;
     }
@@ -795,7 +795,7 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
     delete flatErr['allowReport'];
 
     let attributes = Object.keys(flatErr || {})
-        .filter(key => key[0].toUpperCase() === key[0]);
+      .filter(key => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
       attributes = Object.keys(flatErr || {})
         .filter(key => !isPrivateField(key) && !HIDE_ATTRIBUTES.has(key));
@@ -803,8 +803,8 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
     if (attributes.length > 0) {
       const old = errMessage.message;
       errMessage.message = attributes
-          .map(key => key + ':\t' + flatErr[key])
-          .join('\n');
+        .map(key => key + ':\t' + flatErr[key])
+        .join('\n');
       if (old !== undefined) {
         errMessage.message = old + '\n' + errMessage.message;
       }

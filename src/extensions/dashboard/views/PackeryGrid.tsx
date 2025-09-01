@@ -95,11 +95,11 @@ class Packery extends React.Component<IProps, {}> {
     return (
       <div id={id} ref={this.refContainer}>
         {React.Children.map(children,
-          (child: React.ReactElement<any>) => React.cloneElement(child, {
-            totalWidth,
-            packery: this.mPackery,
-            onUpdateLayout: this.onUpdateLayout,
-          }))}
+                            (child: React.ReactElement<any>) => React.cloneElement(child, {
+                              totalWidth,
+                              packery: this.mPackery,
+                              onUpdateLayout: this.onUpdateLayout,
+                            }))}
       </div>
     );
   }

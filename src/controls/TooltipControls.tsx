@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
-  Overlay, OverlayTrigger, Popover,
+         Overlay, OverlayTrigger, Popover,
 } from 'react-bootstrap';
 
 export interface ITooltipProps {
@@ -67,7 +67,7 @@ export interface IIconButtonExtraProps {
 }
 
 const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'hollow', 'border', 'inverse',
-                               'flip', 'rotate', 'rotateId', 'vertical', 'set']);
+  'flip', 'rotate', 'rotateId', 'vertical', 'set']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
@@ -150,7 +150,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
     const relayProps = { ...this.props };
 
     ['buttonType', 'tooltip', 'offTooltip', 'placement',
-     'onIcon', 'offIcon', 'state'].forEach((prop) => {
+      'onIcon', 'offIcon', 'state'].forEach((prop) => {
       delete relayProps[prop];
     });
 

@@ -222,7 +222,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(t(content.bbcode,
                     { replace: content.parameters, count: content.parameters?.count }),
-            content.options?.bbcodeContext)}
+                  content.options?.bbcodeContext)}
         </div>
       ) });
     }
@@ -232,7 +232,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <div key='dialog-content-markdown' className='dialog-content-markdown'>
           <ReactMarkdown>
             {t(content.md,
-              { replace: content.parameters, count: content.parameters?.count })}
+               { replace: content.parameters, count: content.parameters?.count })}
           </ReactMarkdown>
         </div>
       ) });
@@ -240,7 +240,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.message !== undefined) {
       const wrap = ((content.options !== undefined) && (content.options.wrap === true))
-                 ? 'on' : 'off';
+        ? 'on' : 'off';
       const ctrl = (
         <textarea
           key='dialog-content-message'
@@ -258,7 +258,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           >
             {ctrl}
           </Collapse>
-          ) });
+        ) });
       } else {
         controls.push({ id: 'message', control: ctrl });
       }
@@ -284,9 +284,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.input !== undefined) {
       controls.push({ id: 'input', control: (
-      <div key='dialog-form-content' className='dialog-content-input'>
-        {content.input.map(this.renderInput)}
-      </div>
+        <div key='dialog-form-content' className='dialog-content-input'>
+          {content.input.map(this.renderInput)}
+        </div>
       ) });
     }
 
@@ -381,8 +381,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     const validationState = valRes !== undefined
-        ? (valRes.length !== 0) ? 'error' : 'success'
-        : null;
+      ? (valRes.length !== 0) ? 'error' : 'success'
+      : null;
 
     let effectiveType = input.type || 'text';
     if (input.type === 'multiline') {
@@ -391,22 +391,22 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <FormGroup key={input.id} validationState={validationState}>
-      { input.label ? (
-        <ControlLabel>{t(input.label)}</ControlLabel>
-      ) : null }
-      <FormControl
-        id={`dialoginput-${input.id}`}
-        componentClass={(input.type === 'multiline') ? 'textarea' : undefined}
-        type={effectiveType}
-        value={input.value || ''}
-        label={input.label}
-        placeholder={input.placeholder}
-        onChange={this.changeInput}
-        ref={idx === 0 ? this.focusMe : undefined}
-      />
-      {((valRes !== undefined) && (valRes.length !== 0))
-        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
-        : null}
+        { input.label ? (
+          <ControlLabel>{t(input.label)}</ControlLabel>
+        ) : null }
+        <FormControl
+          id={`dialoginput-${input.id}`}
+          componentClass={(input.type === 'multiline') ? 'textarea' : undefined}
+          type={effectiveType}
+          value={input.value || ''}
+          label={input.label}
+          placeholder={input.placeholder}
+          onChange={this.changeInput}
+          ref={idx === 0 ? this.focusMe : undefined}
+        />
+        {((valRes !== undefined) && (valRes.length !== 0))
+          ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
+          : null}
       </FormGroup>
     );
   }
@@ -457,14 +457,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const content = 
     <div>{
       checkbox.subText !== undefined
-      ? (
-      <>
-        <div className='choice-maintext'>{t(checkbox.text)}</div>
-        <div className='choice-subtext'>{t(checkbox.subText)}</div>
-      </> )           
-      : 
-      (<div className='choice-text'>{t(checkbox.text)}</div>)
-      }
+        ? (
+          <>
+            <div className='choice-maintext'>{t(checkbox.text)}</div>
+            <div className='choice-subtext'>{t(checkbox.subText)}</div>
+          </> )           
+        : 
+        (<div className='choice-text'>{t(checkbox.text)}</div>)
+    }
     </div>
 
     return (
@@ -581,7 +581,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const newChoices = dialogState.choices.map((choice: ICheckbox) => ({
       ...choice,
       value: false,
-     }));
+    }));
     newChoices[idx].value = true;
 
     let newState = update(this.state, {
@@ -612,7 +612,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onDismiss={this.dismiss}
         isDisabled={isDisabled}
       />
-      );
+    );
   }
 
   private iconForType(type: DialogType) {

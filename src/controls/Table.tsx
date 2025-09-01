@@ -163,13 +163,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mVisibleDetails = detail;
     this.mVisibleInlines = inline;
     this.updateCalculatedValues(props)
-    .then(didRun => {
-      if (didRun) {
-        this.refreshSorted(this.mNextUpdateState);
-        this.updateSelection(this.mNextUpdateState);
-      }
-      return null;
-    });
+      .then(didRun => {
+        if (didRun) {
+          this.refreshSorted(this.mNextUpdateState);
+          this.updateSelection(this.mNextUpdateState);
+        }
+        return null;
+      });
 
     this.mHeaderUpdateDebouncer = new Debouncer(() => {
       this.updateColumnWidth();
@@ -219,7 +219,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mVisibleInlines = inline;
 
       if (Object.keys(newProps.attributeState).find(id =>
-            (this.props.attributeState[id] === undefined)
+        (this.props.attributeState[id] === undefined)
             || (this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled))) {
         const columnToggles = this.columnToggles(newProps);
         this.updateState(update(this.mNextState, {
@@ -320,12 +320,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               {this.renderHeader(false)}
             </Table>
           </div>
-          )}
+        )}
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails()}
           </div>
-          )}
+        )}
       </div>
     );
   }
@@ -350,7 +350,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           <TR className='table-pinned' domRef={this.setPinnedRef}>
             <TD colSpan={this.mVisibleAttributes.length + 1}>
               {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
-                { replace: { shown: filteredLength, hidden: totalLength } })}
+                 { replace: { shown: filteredLength, hidden: totalLength } })}
               <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
             </TD>
           </TR>
@@ -438,7 +438,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 onCollapseAll={this.collapseAll}
               />
             ),
-              ...rows.map(rowId => this.renderRow(rowId, sortAttribute, group.id)),
+            ...rows.map(rowId => this.renderRow(rowId, sortAttribute, group.id)),
             ];
           })}
         </TBody>
@@ -492,7 +492,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }, 2000);
       } else {
         log('warn', 'failed to scroll to item',
-          { id, tableId: this.props.tableId, error: err.message });
+            { id, tableId: this.props.tableId, error: err.message });
       }
     }
   }
@@ -531,22 +531,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
         return prev;
       }, [])).sort((lhs: any, rhs: any) => {
-        if (compare === undefined) {
-          const desc = (sortAttribute !== undefined)
+      if (compare === undefined) {
+        const desc = (sortAttribute !== undefined)
                     && (sortAttribute.id === groupAttribute.id)
                     && (attributeState[sortAttribute.id]?.sortDirection === 'desc');
 
-          if (typeof(lhs) === 'number') {
-            compare = desc ? (l, r) => r - l : (l, r) => l - r;
-          } else {
-            compare = desc
-              ? (l, r) => r.toString().toLowerCase().localeCompare(l.toString().toLowerCase())
-              : (l, r) => l.toString().toLowerCase().localeCompare(r.toString().toLowerCase());
-          }
+        if (typeof(lhs) === 'number') {
+          compare = desc ? (l, r) => r - l : (l, r) => l - r;
+        } else {
+          compare = desc
+            ? (l, r) => r.toString().toLowerCase().localeCompare(l.toString().toLowerCase())
+            : (l, r) => l.toString().toLowerCase().localeCompare(r.toString().toLowerCase());
         }
+      }
 
-        return compare(lhs, rhs);
-      });
+      return compare(lhs, rhs);
+    });
     if (arrays) {
       groupOptions.push(EMPTY_ID);
     }
@@ -660,23 +660,23 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return (
       <TH className={`table-${tableId} header-action`}>
         <div>
-        {hasActions ? <div className='header-action-label'>{t('Actions')}</div> : null}
-        {
-          columnToggles.length > 0 ? (
-            <IconBar
-              id={`${tableId}-tableactions`}
-              group={`${tableId}-action-icons-multi`}
-              className='table-actions'
-              staticElements={columnToggles}
-              collapse='force'
-              icon='settings'
-              t={t}
-            />
-          ) : null
-        }
+          {hasActions ? <div className='header-action-label'>{t('Actions')}</div> : null}
+          {
+            columnToggles.length > 0 ? (
+              <IconBar
+                id={`${tableId}-tableactions`}
+                group={`${tableId}-action-icons-multi`}
+                className='table-actions'
+                staticElements={columnToggles}
+                collapse='force'
+                icon='settings'
+                t={t}
+              />
+            ) : null
+          }
         </div>
       </TH>
-      );
+    );
   }
 
   private isSortColumn(attributeState: IAttributeState) {
@@ -780,7 +780,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               t={t}
               onSetFilter={this.setFilter}
             />
-         ) : null }
+          ) : null }
         </HeaderCell>
       );
     } else {
@@ -1183,49 +1183,49 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               error: err.message,
             });
           })
-          ;
+        ;
+      })
+        .then(() => {
+          if (Object.keys(delta).length > 0) {
+            delta.__id = rowId;
+            if (newValues[rowId] === undefined) {
+              newValues[rowId] = delta;
+            } else {
+              newValues = update(newValues, { [rowId]: { $merge: delta } });
+            }
+          }
+        });
+    })
+      .then(() => Promise.map(Object.keys(oldState.data), rowId => {
+        if (data[rowId] === undefined) {
+          delete newValues[rowId];
+        }
+      }))
+      .then(() =>
+      // once everything is recalculated, update the cache
+        new Promise<void>((resolve, reject) => {
+          this.updateState(update(this.mNextState, {
+            calculatedValues: { $set: newValues },
+          }), () => resolve());
+        }))
+      .then(() => {
+        const { rowState } = this.state;
+        return this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
       })
       .then(() => {
-        if (Object.keys(delta).length > 0) {
-          delta.__id = rowId;
-          if (newValues[rowId] === undefined) {
-            newValues[rowId] = delta;
-          } else {
-            newValues = update(newValues, { [rowId]: { $merge: delta } });
-          }
-        }
-      });
-    })
-    .then(() => Promise.map(Object.keys(oldState.data), rowId => {
-      if (data[rowId] === undefined) {
-        delete newValues[rowId];
-      }
-    }))
-    .then(() =>
-      // once everything is recalculated, update the cache
-      new Promise<void>((resolve, reject) => {
-        this.updateState(update(this.mNextState, {
-          calculatedValues: { $set: newValues },
-        }), () => resolve());
-      }))
-    .then(() => {
-      const { rowState } = this.state;
-      return this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
-    })
-    .then(() => {
-      this.mUpdateInProgress = false;
-      this.mLastUpdateState = props;
-      if (this.mNextUpdateState !== this.mLastUpdateState) {
+        this.mUpdateInProgress = false;
+        this.mLastUpdateState = props;
+        if (this.mNextUpdateState !== this.mLastUpdateState) {
         // another update was queued while this was active
-        return this.updateCalculatedValues(this.mNextUpdateState);
-      } else {
-        return Promise.resolve(Array.from(changedColumns));
-      }
-    })
-    .catch(err => {
-      this.mUpdateInProgress = false;
-      return Promise.reject(err);
-    });
+          return this.updateCalculatedValues(this.mNextUpdateState);
+        } else {
+          return Promise.resolve(Array.from(changedColumns));
+        }
+      })
+      .catch(err => {
+        this.mUpdateInProgress = false;
+        return Promise.reject(err);
+      });
   }
 
   private updateSelection(props: IProps) {
@@ -1283,8 +1283,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const value = attribute.filter.raw !== false
           ? attribute.filter.raw === true
             ? (dataId === '$')
-            ? data[rowId]
-            : data[rowId][dataId]
+              ? data[rowId]
+              : data[rowId][dataId]
             : (data[rowId][attribute.filter.raw] || {})[dataId]
           : calculatedValues[rowId][dataId];
 
@@ -1293,7 +1293,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                                        this.context.api.store.getState());
       }) === undefined);
     })
-    .forEach(key => result[key] = data[key]);
+      .forEach(key => result[key] = data[key]);
     return result;
   }
 
@@ -1360,8 +1360,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const res = (sortAttribute.sortFuncRaw !== undefined)
               || ((calculatedValues[lhsId][sortAttribute.id] !== undefined)
                   && (calculatedValues[rhsId][sortAttribute.id] !== undefined))
-          ? sortFunction(lhsId, rhsId)
-          : undefCompare(lhsId, rhsId);
+        ? sortFunction(lhsId, rhsId)
+        : undefCompare(lhsId, rhsId);
 
       return (descending) ? res * -1 : res;
     });
@@ -1386,8 +1386,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.isSortColumn(attributeState[attribute.id]));
 
     const valFunc = (rowId: string) => typeof(groupAttribute.isGroupable) === 'function'
-            ? groupAttribute.isGroupable(data[rowId], t)
-            : calculatedValues[rowId]?.[groupAttribute.id] || '';
+      ? groupAttribute.isGroupable(data[rowId], t)
+      : calculatedValues[rowId]?.[groupAttribute.id] || '';
 
     const groupOptions = this.getGroupOptions(this.props, sortedRows, sortAttribute,
                                               groupAttribute, valFunc);
@@ -1487,9 +1487,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private selectOnly(rowId: string, groupId: string, click: boolean) {
     const rowState = {};
     Object.keys(this.state.rowState)
-    .forEach(iterId => {
-      rowState[iterId] = { selected: { $set: false } };
-    });
+      .forEach(iterId => {
+        rowState[iterId] = { selected: { $set: false } };
+      });
     rowState[rowId] = (this.state.rowState[rowId] === undefined)
       ? { $set: { selected: true } }
       : { selected: { $set: true } };
@@ -1518,12 +1518,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const wasSelected = getSafe(this.state.rowState, [rowId, 'selected'], undefined);
     if (!wasSelected) {
       const rowState = wasSelected === undefined
-            ? { $set: { selected: true } }
-            : { selected: { $set: !wasSelected } };
+        ? { $set: { selected: true } }
+        : { selected: { $set: !wasSelected } };
       this.updateState(update(this.mNextState, {
         lastSelected: { $set: { rowId, groupId } },
         rowState: { [rowId]: rowState },
-        }), this.onRowStateChanged);
+      }), this.onRowStateChanged);
     } else {
       this.updateState(update(this.mNextState, {
         rowState: { [rowId]: { selected: { $set: !wasSelected } } },
@@ -1764,7 +1764,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
 }
 
 function registerTableAttribute(
-    instanceGroup: string, group: string, attribute: ITableAttribute) {
+  instanceGroup: string, group: string, attribute: ITableAttribute) {
   if (instanceGroup === group) {
     return attribute;
   } else {

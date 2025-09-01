@@ -80,8 +80,8 @@ class Settings extends ComponentEx<IProps, {}> {
             // on linux this is handled by the desktop environment so you'd have to implement
             // separate solutions for kde, gnome, xfce, ...
             isLinux()
-            ? <HelpBlock><Alert bsStyle='info'>{t('Not supported on Linux')}</Alert></HelpBlock>
-            : null
+              ? <HelpBlock><Alert bsStyle='info'>{t('Not supported on Linux')}</Alert></HelpBlock>
+              : null
           }
           <div style={{ marginTop: 15 }}>
             {t('Fix Nexus Mods links in Chrome '
@@ -114,37 +114,37 @@ class Settings extends ComponentEx<IProps, {}> {
             + '[color="red"]IMPORTANT: You may have to repeat this step after '
             + 'clearing the cache inside chrome![/color]',
     }, [
-        { label: 'Cancel' },
-        {
-          label: 'Continue', action: () => {
-            chromeAllowScheme('nxm')
-              .then((changed: boolean) => {
-                if (changed) {
-                  onDialog('success', 'Success', {
-                    text: 'Fix was applied.',
-                  }, [ { label: 'Close' } ]);
-                } else {
-                  onDialog('info', 'Nothing Changed', {
-                    text: 'No change was necessary.',
-                  }, [ { label: 'Close' } ]);
-                }
-              })
-              .catch(err => {
-                if (err.code === 'ENOENT') {
-                  onShowError(
-                    'Failed to fix NXM handling in Chrome',
-                    'Could not determine the chrome preferences file to fix. '
+      { label: 'Cancel' },
+      {
+        label: 'Continue', action: () => {
+          chromeAllowScheme('nxm')
+            .then((changed: boolean) => {
+              if (changed) {
+                onDialog('success', 'Success', {
+                  text: 'Fix was applied.',
+                }, [ { label: 'Close' } ]);
+              } else {
+                onDialog('info', 'Nothing Changed', {
+                  text: 'No change was necessary.',
+                }, [ { label: 'Close' } ]);
+              }
+            })
+            .catch(err => {
+              if (err.code === 'ENOENT') {
+                onShowError(
+                  'Failed to fix NXM handling in Chrome',
+                  'Could not determine the chrome preferences file to fix. '
                     + 'Please read the help text for this fix and apply '
                     + 'it manually.',
-                    { allowReport: false },
-                  );
-                } else {
-                  onShowError('Failed to fix NXM handling in Chrome. ', err,
-                              { allowReport: false });
-                }
-              });
-          },
+                  { allowReport: false },
+                );
+              } else {
+                onShowError('Failed to fix NXM handling in Chrome. ', err,
+                            { allowReport: false });
+              }
+            });
         },
+      },
     ]);
   }
 

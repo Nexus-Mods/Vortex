@@ -15,47 +15,47 @@ class GlobalNotifications {
 
   constructor(api: IExtensionApi) {
     api.onStateChange([ 'session', 'notifications', 'global_notifications' ],
-      (oldState, newState) => {
-      this.mKnownNotifications = newState;
+                      (oldState, newState) => {
+                        this.mKnownNotifications = newState;
 
-      let currentNotification: INotification;
+                        let currentNotification: INotification;
 
-      if (this.mCurrentId !== undefined) {
-        currentNotification = this.mKnownNotifications.find(
-          (notification: INotification) => notification.id === this.mCurrentId);
-        if (currentNotification === undefined) {
-          log('debug', 'notification no longer exists', this.mCurrentId);
+                        if (this.mCurrentId !== undefined) {
+                          currentNotification = this.mKnownNotifications.find(
+                            (notification: INotification) => notification.id === this.mCurrentId);
+                          if (currentNotification === undefined) {
+                            log('debug', 'notification no longer exists', this.mCurrentId);
           // notification no longer exists
-          this.mCurrentId = undefined;
-        }
-      }
+                            this.mCurrentId = undefined;
+                          }
+                        }
 
       // close notification if it was dismissed
-      if ((this.mCurrentId === undefined) && (this.mCurrentNotification !== undefined)) {
-        log('debug', 'close notification',
-            { id: this.mCurrentNotification.tag, name: this.mCurrentNotification.body });
-        this.mCurrentNotification.close();
-        this.mCurrentNotification = undefined;
-      } else if ((this.mCurrentNotification !== undefined) &&
+                        if ((this.mCurrentId === undefined) && (this.mCurrentNotification !== undefined)) {
+                          log('debug', 'close notification',
+                              { id: this.mCurrentNotification.tag, name: this.mCurrentNotification.body });
+                          this.mCurrentNotification.close();
+                          this.mCurrentNotification = undefined;
+                        } else if ((this.mCurrentNotification !== undefined) &&
                  (currentNotification.message !== this.mCurrentNotification.body)) {
-        log('debug', 'replace notification', { id: this.mCurrentId });
-        this.mCurrentNotification.close();
-        this.mCurrentNotification = undefined;
-        this.showNotification(currentNotification);
-      } else {
-        currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
-        if ((currentNotification !== undefined)
+                          log('debug', 'replace notification', { id: this.mCurrentId });
+                          this.mCurrentNotification.close();
+                          this.mCurrentNotification = undefined;
+                          this.showNotification(currentNotification);
+                        } else {
+                          currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
+                          if ((currentNotification !== undefined)
             && (this.mCurrentId !== currentNotification.id)
             && (this.mIsEnabled())) {
-          log('debug', 'new notification', { id: currentNotification.id });
+                            log('debug', 'new notification', { id: currentNotification.id });
           // using the js Notification api shows an application id and I'm not sure if I can/how to
           // get rid of it. The electron api works fine for the moment
           // this.showNotification(currentNotification);
-          api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
-          this.mCurrentId = currentNotification.id;
-        }
-      }
-    });
+                            api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
+                            this.mCurrentId = currentNotification.id;
+                          }
+                        }
+                      });
 
     const state: IState = api.store.getState();
     this.mIsEnabled = () => state.settings.interface.desktopNotifications;

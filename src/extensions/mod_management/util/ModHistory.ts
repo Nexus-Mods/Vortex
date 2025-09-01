@@ -132,7 +132,7 @@ class ModHistory implements IHistoryStack {
           describe: evt => api.translate('Revert to {{ from }}', { replace: {
             ...evt.data,
             from: shorten(api.translate, evt.data.from),
-           } }),
+          } }),
           possible: evt => {
             const state = api.getState();
             const { attribute, id, to } = evt.data;
@@ -158,90 +158,90 @@ class ModHistory implements IHistoryStack {
       this.mApi.ext.addToHistory;
 
     this.mApi.onStateChange<typeof state.persistent.profiles>(['persistent', 'profiles'],
-      (prev, current) => {
-        Object.keys(current).forEach(profileId => {
-          if (prev[profileId] !== current[profileId]) {
-            this.triggerEnabledEvents(prev[profileId], current[profileId]);
-          }
-        });
-    });
+                                                              (prev, current) => {
+                                                                Object.keys(current).forEach(profileId => {
+                                                                  if (prev[profileId] !== current[profileId]) {
+                                                                    this.triggerEnabledEvents(prev[profileId], current[profileId]);
+                                                                  }
+                                                                });
+                                                              });
 
     this.mApi.onStateChange<typeof state.persistent.mods>(['persistent', 'mods'],
-      (prev, current) => {
-        if (addToHistory === undefined) {
-          return;
-        }
+                                                          (prev, current) => {
+                                                            if (addToHistory === undefined) {
+                                                              return;
+                                                            }
 
-        Object.keys(current).forEach(gameId => {
-          if (prev[gameId] !== current[gameId]) {
-            Object.keys(current[gameId]).forEach(modId => {
-              const prevMod = prev[gameId]?.[modId];
-              const currentMod = current[gameId]?.[modId];
-              if (prevMod === currentMod) {
-                return;
-              }
+                                                            Object.keys(current).forEach(gameId => {
+                                                              if (prev[gameId] !== current[gameId]) {
+                                                                Object.keys(current[gameId]).forEach(modId => {
+                                                                  const prevMod = prev[gameId]?.[modId];
+                                                                  const currentMod = current[gameId]?.[modId];
+                                                                  if (prevMod === currentMod) {
+                                                                    return;
+                                                                  }
 
-              if ((prevMod?.state !== currentMod?.state) && (currentMod?.state === 'installed')) {
-                addToHistory('mods', {
-                  type: 'mod-installed',
-                  gameId,
-                  data: {
-                    id: modId,
-                    name: modName(currentMod),
-                  },
-                });
-              }
+                                                                  if ((prevMod?.state !== currentMod?.state) && (currentMod?.state === 'installed')) {
+                                                                    addToHistory('mods', {
+                                                                      type: 'mod-installed',
+                                                                      gameId,
+                                                                      data: {
+                                                                        id: modId,
+                                                                        name: modName(currentMod),
+                                                                      },
+                                                                    });
+                                                                  }
 
-              if ((prevMod?.state === currentMod?.state) && (currentMod?.state === 'installed')) {
+                                                                  if ((prevMod?.state === currentMod?.state) && (currentMod?.state === 'installed')) {
                 // only tracking attribute changes for installed mods, not
                 // for the ones set during installation
-                const prevAttributes = prevMod?.attributes;
-                const currentAttributes = currentMod?.attributes;
+                                                                    const prevAttributes = prevMod?.attributes;
+                                                                    const currentAttributes = currentMod?.attributes;
 
-                if (prevAttributes !== currentAttributes) {
-                  Object.keys(currentAttributes)
-                    .forEach(attr => {
-                      if (HIDDEN_ATTRIBUTES.includes(attr)) {
-                        return;
-                      }
+                                                                    if (prevAttributes !== currentAttributes) {
+                                                                      Object.keys(currentAttributes)
+                                                                        .forEach(attr => {
+                                                                          if (HIDDEN_ATTRIBUTES.includes(attr)) {
+                                                                            return;
+                                                                          }
                       // only track attribute _changes_, not initialization, if there was nothing
                       // set before
-                      if ((prevAttributes[attr] !== undefined)
+                                                                          if ((prevAttributes[attr] !== undefined)
                           && (currentAttributes[attr] !== prevAttributes[attr])) {
-                        addToHistory('mods', {
-                          type: 'mod-attribute-changed',
-                          gameId,
-                          data: {
-                            id: modId,
-                            name: modName(currentMod),
-                            attribute: attr,
-                            from: prevAttributes[attr],
-                            to: currentAttributes[attr],
-                          },
-                        });
-                      }
-                    });
-                }
-              }
-            });
-            Object.keys(prev[gameId] ?? {}).forEach(modId => {
-              const oldState = prev[gameId]?.[modId]?.state;
+                                                                            addToHistory('mods', {
+                                                                              type: 'mod-attribute-changed',
+                                                                              gameId,
+                                                                              data: {
+                                                                                id: modId,
+                                                                                name: modName(currentMod),
+                                                                                attribute: attr,
+                                                                                from: prevAttributes[attr],
+                                                                                to: currentAttributes[attr],
+                                                                              },
+                                                                            });
+                                                                          }
+                                                                        });
+                                                                    }
+                                                                  }
+                                                                });
+                                                                Object.keys(prev[gameId] ?? {}).forEach(modId => {
+                                                                  const oldState = prev[gameId]?.[modId]?.state;
 
-              if ((current[gameId]?.[modId] === undefined)
+                                                                  if ((current[gameId]?.[modId] === undefined)
                   && (oldState === 'installed')) {
-                addToHistory('mods', {
-                  type: 'mod-uninstalled',
-                  gameId,
-                  data: {
-                    id: modId,
-                    name: modName(prev[gameId][modId]),
-                  },
-                });
-              }
-            });
-          }
-        });
-    });
+                                                                    addToHistory('mods', {
+                                                                      type: 'mod-uninstalled',
+                                                                      gameId,
+                                                                      data: {
+                                                                        id: modId,
+                                                                        name: modName(prev[gameId][modId]),
+                                                                      },
+                                                                    });
+                                                                  }
+                                                                });
+                                                              }
+                                                            });
+                                                          });
 
     this.mApi.onAsync('will-deploy', async (profileId: string) => {
       const profile = profileById(this.mApi.getState(), profileId);

@@ -115,7 +115,7 @@ function makeRebuildFunc(orig) {
       `--dist-url=${headerURL}`,
       '--build-from-source',
       */
-     'install',
+      'install',
     ];
     const spawnOptions: SpawnSyncOptions = {
       cwd: modulePath,

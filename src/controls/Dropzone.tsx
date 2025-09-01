@@ -163,8 +163,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
 
     try {
       evt.dataTransfer.dropEffect = this.state.dropActive === 'url'
-          ? 'link'
-          : 'copy';
+        ? 'link'
+        : 'copy';
     } catch (err) {
       // continue regardless of error
     }
@@ -228,7 +228,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         }],
         condition: this.validateURL,
       }, [ { label: 'Cancel' }, { label: 'Download', default: true } ])
-      .then(result => {
+        .then(result => {
           if (result.action === 'Download') {
             let inputUrl = result.input.url;
             if (!truthy(url.parse(inputUrl).protocol)) {
@@ -254,12 +254,12 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     return (input.value === undefined) || ((input.value === ''))
       ? {
-          id: input.id || 'url',
-          actions: ['Download'],
-          errorText: t('{{label}} cannot be empty.', {
-            replace: { label: input.label ? input.label : 'Field' },
-          }),
-        }
+        id: input.id || 'url',
+        actions: ['Download'],
+        errorText: t('{{label}} cannot be empty.', {
+          replace: { label: input.label ? input.label : 'Field' },
+        }),
+      }
       : undefined;
   }
 

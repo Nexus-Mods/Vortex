@@ -48,7 +48,7 @@ function walk(target: string,
         }
       });
       return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
-                         walk(subDir, callback))));
+        walk(subDir, callback))));
     })
     .catch(err => {
       if ((opt.ignoreErrors !== undefined)

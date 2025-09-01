@@ -40,7 +40,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const filtered = newProps.loadOrder.filter(entry => (collection !== undefined)
       ? isValidMod(mods[entry.modId]) && (isModInCollection(collection, mods[entry.modId]))
       : isValidMod(mods[entry.modId]))
-    .map(entry => entry.modId);
+      .map(entry => entry.modId);
     if (filtered !== prevState.filteredModIds) {
       return { filteredModIds: filtered };
     }
@@ -63,7 +63,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
         <div style={{ overflow: 'auto' }}>
           <h4>{t('Load Order')}</h4>
           <p>
-          {t('This is a snapshot of the load order information that '
+            {t('This is a snapshot of the load order information that '
            + 'will be exported with this collection.')}
           </p>
           {this.renderLoadOrderEditInfo()}
@@ -71,7 +71,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
             {loadOrder.map(this.renderModEntry)}
           </ListGroup>
         </div>
-    ) : this.renderPlaceholder();
+      ) : this.renderPlaceholder();
   }
 
   public componentDidMount() {
@@ -92,7 +92,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     try {
       const gameEntry = findGameEntry(this.props.gameId);
       this.nextState.loadOrder = await genCollectionLoadOrder(this.context.api,
-        gameEntry, this.props.mods, this.props.profile.id, this.props.collection);
+                                                              gameEntry, this.props.mods, this.props.profile.id, this.props.collection);
     } catch (err) {
       this.context.api.showErrorNotification('Failed to read load order', err, {
         allowReport: false });

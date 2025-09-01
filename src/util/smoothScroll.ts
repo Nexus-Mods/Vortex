@@ -32,10 +32,10 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
     let timer: number;
 
     scrollJobs[element.id] = () => {
-        canceled = true;
-        window.cancelAnimationFrame(timer);
-        scrollJobs[element.id] = undefined;
-        resolve(false);
+      canceled = true;
+      window.cancelAnimationFrame(timer);
+      scrollJobs[element.id] = undefined;
+      resolve(false);
     };
 
     const tick = () => {

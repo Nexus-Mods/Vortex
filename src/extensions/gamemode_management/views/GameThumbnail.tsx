@@ -67,7 +67,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     //  the supported type suggests that the game has been removed from the machine.
     const modCount = ((profile !== undefined) && (type !== 'undiscovered'))
       ? countIf(Object.keys(profile.modState || {}),
-          id => profile.modState[id].enabled && (mods[id] !== undefined))
+                id => profile.modState[id].enabled && (mods[id] !== undefined))
       : undefined;
 
     const nameParts = game.name.split('\t');
@@ -113,8 +113,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           {type !== 'launcher' ? (
             game.contributed ? (
               <div className='game-thumbnail-tags' title={game.contributed ? t('Contributed by {{name}}', { replace: { name: game.contributed } }) : null}>
-              {game.contributed ? ('Community') : null}
-            </div>
+                {game.contributed ? ('Community') : null}
+              </div>
             ) : null 
           ) : null}
         </Panel.Body>
@@ -248,4 +248,4 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
 }
 
 export default
-  connect(mapStateToProps)(GameThumbnail);
+connect(mapStateToProps)(GameThumbnail);

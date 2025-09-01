@@ -139,7 +139,7 @@ class ServerRow extends React.Component<RowProps, {}> {
             </Button>
           </ListGroupItem>
         </div>
-        )));
+      )));
   }
   private removeServer = () => {
     const {serverId, onRemoveMetaserver} = this.props;
@@ -197,19 +197,19 @@ class ServerList extends React.Component<IListProps, IListState> {
 
     return (
       <div>
-      <ListGroup>
-        {sorted.map(this.renderServer)}
-        <ListGroupItem>
-          <InputButton
-            id='input-add-metaserver'
-            key='input-add-metaserver'
-            groupId='settings-buttons'
-            icon='add'
-            tooltip={t('Add a Metaserver')}
-            onConfirmed={onAddMetaserver}
-          />
-        </ListGroupItem>
-      </ListGroup>
+        <ListGroup>
+          {sorted.map(this.renderServer)}
+          <ListGroupItem>
+            <InputButton
+              id='input-add-metaserver'
+              key='input-add-metaserver'
+              groupId='settings-buttons'
+              icon='add'
+              tooltip={t('Add a Metaserver')}
+              onConfirmed={onAddMetaserver}
+            />
+          </ListGroupItem>
+        </ListGroup>
       </div>
     );
   }
@@ -246,7 +246,7 @@ class ServerList extends React.Component<IListProps, IListState> {
   private handleHover = (sourceId: string, targetId: string, bottomHalf: boolean) => {
     if ((sourceId !== targetId) && (targetId !== undefined)) {
       this.setState(setSafe(this.state, ['orderedServers', sourceId, 'priority'],
-        this.state.orderedServers[targetId].priority + (bottomHalf ? 1 : -1)));
+                            this.state.orderedServers[targetId].priority + (bottomHalf ? 1 : -1)));
     }
   }
 
@@ -275,7 +275,7 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
 
   public render(): JSX.Element {
     const { t, metaservers, onAddMetaserver,
-            onRemoveMetaserver, onSetMetaserverPriority } = this.props;
+      onRemoveMetaserver, onSetMetaserverPriority } = this.props;
 
     return (
       <form>

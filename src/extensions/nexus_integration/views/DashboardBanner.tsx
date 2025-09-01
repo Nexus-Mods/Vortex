@@ -150,6 +150,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'])(
-      DashboardBanner));
+connect(mapStateToProps, mapDispatchToProps)(
+  translate(['common'])(
+    DashboardBanner));

@@ -77,13 +77,13 @@ async function resetToManifest(api: IExtensionApi) {
 
     const dialogResult: IDialogResult = await api.showDialog(
       'question', 'Reset to last deployment', {
-      text: 'This will enable all mods that were enabled for '
+        text: 'This will enable all mods that were enabled for '
         + 'the last deployment and disable all that weren\'t. '
         + 'It doesn\'t revert anything else like mod order rules.',
-    }, [
-      { label: 'Cancel' },
-      { label: 'Continue', default: true },
-    ]);
+      }, [
+        { label: 'Cancel' },
+        { label: 'Continue', default: true },
+      ]);
 
     if (dialogResult.action === 'Cancel') {
       return;

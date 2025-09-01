@@ -62,7 +62,7 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
       // if they are all the same file, it's case insensitive
       return Promise.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()],
-        file => Promise.resolve(fsOrig.stat(path.join(testPath, file))).reflect());
+                         file => Promise.resolve(fsOrig.stat(path.join(testPath, file))).reflect());
     })
     .then((stats: Array<Promise.Inspection<fsOrig.Stats>>) => {
       if (stats === null) {

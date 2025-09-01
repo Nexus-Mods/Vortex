@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import {removeValue} from '../../../util/storeHelper';
 import { deleteOrNop, getSafe,
-  merge, pushSafe, removeValueIf, setSafe } from '../../../util/storeHelper';
+         merge, pushSafe, removeValueIf, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/mods';
 import {IMod} from '../types/IMod';

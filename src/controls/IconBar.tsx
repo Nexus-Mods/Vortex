@@ -199,7 +199,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   public render(): JSX.Element {
     const { actions, collapse, icon, id, groupByIcon,
-            orientation, className, style } = this.props;
+      orientation, className, style } = this.props;
 
     const classes: string[] = [];
     if (className) {
@@ -307,33 +307,33 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderMenuItem =
     (icon: IActionDefinitionEx, index: number) => {
-    const { t, instanceId } = this.props;
+      const { t, instanceId } = this.props;
 
-    const id = `${instanceId || '1'}_${index}`;
+      const id = `${instanceId || '1'}_${index}`;
 
-    if ((icon.icon === null) && (icon.component === undefined)) {
-      return (
-        <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {t(icon.title, { ns: icon.options?.namespace })}
-        </MenuItem>
-      );
+      if ((icon.icon === null) && (icon.component === undefined)) {
+        return (
+          <MenuItem className='menu-separator-line' key={id} disabled={true}>
+            {t(icon.title, { ns: icon.options?.namespace })}
+          </MenuItem>
+        );
+      }
+
+      if (icon.icon !== undefined) {
+        return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} t={t} />;
+      } else {
+        return (
+          <MenuItem
+            key={id}
+            eventKey={id}
+            disabled={icon.show !== true}
+            title={genTooltip(t, icon.show)}
+          >
+            {this.renderCustomIcon(id, icon)}
+          </MenuItem>
+        );
+      }
     }
-
-    if (icon.icon !== undefined) {
-      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} t={t} />;
-    } else {
-      return (
-        <MenuItem
-          key={id}
-          eventKey={id}
-          disabled={icon.show !== true}
-          title={genTooltip(t, icon.show)}
-        >
-          {this.renderCustomIcon(id, icon)}
-        </MenuItem>
-      );
-    }
-  }
 
   private renderIcon = (icon: IActionDefinitionEx, index: number) => {
     if ((icon.icon === null) && (icon.component === undefined)) {

@@ -8,10 +8,10 @@ import format from 'string-template';
 export type PathKey = 'base' | 'download' | 'install';
 
 export const pathDefaults = {
-    base: path.join('{USERDATA}', '{GAME}'),
-    download: path.join('{base}', 'downloads'),
-    install: path.join('{base}', 'mods'),
-  };
+  base: path.join('{USERDATA}', '{GAME}'),
+  download: path.join('{base}', 'downloads'),
+  install: path.join('{base}', 'mods'),
+};
 
 function resolvePath(key: PathKey, paths: {[gameId: string]: any},
                      gameMode: string): string {

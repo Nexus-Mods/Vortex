@@ -1,0 +1,12 @@
+[
+  [
+    {
+      "type": "build-copy",
+      "name": "local-gamesettings",
+      "path": "extensions/local-gamesettings",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
+    }
+  ]
+]

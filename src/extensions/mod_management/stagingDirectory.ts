@@ -97,22 +97,22 @@ function queryStagingFolderInvalid(api: IExtensionApi,
     ]);
   }
   return api.showDialog('error', 'Mod Staging Folder missing!', {
-      text: 'Your mod staging folder "{{path}}" is missing. This might happen because you '
+    text: 'Your mod staging folder "{{path}}" is missing. This might happen because you '
         + 'deleted it or - if you have it on a removable drive - it is not currently '
         + 'connected.\nIf you continue now, a new staging folder will be created but all '
         + 'your previously managed mods will be lost.\n\n'
         + 'If you have moved the folder or the drive letter changed, you can browse '
         + 'for the new location manually, but please be extra careful to select the right '
         + 'folder!',
-      message: instPath,
-      parameters: {
-        path: instPath,
-      },
-    }, [
-      { label: 'Quit Vortex' },
-      { label: 'Reinitialize' },
-      { label: 'Browse...' },
-    ]);
+    message: instPath,
+    parameters: {
+      path: instPath,
+    },
+  }, [
+    { label: 'Quit Vortex' },
+    { label: 'Reinitialize' },
+    { label: 'Browse...' },
+  ]);
 }
 
 async function ensureStagingDirectoryImpl(api: IExtensionApi,

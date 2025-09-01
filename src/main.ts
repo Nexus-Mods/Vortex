@@ -28,7 +28,7 @@ const earlyErrHandler = (error) => {
       + 'If the issue persists, please create a thread in our support forum for further assistance.');
   } else {
     dialog.showErrorBox('Unhandled error',
-      'Vortex failed to start up. This is usually caused by foreign software (e.g. Anti Virus) '
+                        'Vortex failed to start up. This is usually caused by foreign software (e.g. Anti Virus) '
       + 'interfering.\n\n' + error.stack);
   }
   app.exit(1);
@@ -158,7 +158,7 @@ async function firstTimeInit() {
 
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
-  let mainArgs = commandLine(process.argv, false);
+  const mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
       .then(() => {
@@ -251,11 +251,11 @@ async function main(): Promise<void> {
       stdio: 'inherit',
       detached: true,
     })
-    .on('error', err => {
+      .on('error', err => {
       // TODO: In practice we have practically no information about what we're running
       //       at this point
-      dialog.showErrorBox('Failed to run script', err.message);
-    });
+        dialog.showErrorBox('Failed to run script', err.message);
+      });
     // quit this process, the new one is detached
     app.quit();
     return;

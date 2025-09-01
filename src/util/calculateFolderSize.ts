@@ -15,8 +15,8 @@ function calculateFolderSize(dirPath: string): Bluebird<number> {
   };
   return walk(dirPath, (iter, stats) =>
     onIter(dirPath, iter, stats), { ignoreErrors: true })
-      .then(() => Bluebird.resolve(totalSize))
-      .catch(err => Bluebird.reject(err));
+    .then(() => Bluebird.resolve(totalSize))
+    .catch(err => Bluebird.reject(err));
 }
 
 export default calculateFolderSize;

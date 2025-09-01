@@ -4,18 +4,18 @@ import * as path from 'path';
 import { makeRemoteCallSync } from './electronRemote';
 
 const getElectronPath = (electron !== undefined) ?  makeRemoteCallSync('get-electron-path',
-  (electronIn, webContents, id: string) => {
+                                                                       (electronIn, webContents, id: string) => {
     // bit of a hack to roll getPath and getAppPath into a single call
-    if (id === '__app') {
-      return electronIn.app.getAppPath();
-    }
-    return electronIn.app.getPath(id as any);
-}) : (id: string) => os.tmpdir();
+                                                                         if (id === '__app') {
+                                                                           return electronIn.app.getAppPath();
+                                                                         }
+                                                                         return electronIn.app.getPath(id as any);
+                                                                       }) : (id: string) => os.tmpdir();
 
 const setElectronPath = makeRemoteCallSync('set-electron-path',
-  (electronIn, webContents, id: string, value: string) => {
-    electronIn.app.setPath(id as any, value);
-});
+                                           (electronIn, webContents, id: string, value: string) => {
+                                             electronIn.app.setPath(id as any, value);
+                                           });
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
                     | 'bundledPlugins' | 'locales' | 'package' | 'package_unpacked' | 'application'

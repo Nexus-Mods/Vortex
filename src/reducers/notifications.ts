@@ -40,7 +40,7 @@ export const notificationsReducer: IReducerSpec = {
     },
     [actions.stopNotification as any]: (state, payload) => {
       return removeValueIf(removeValueIf(state, ['notifications'], (noti) => noti.id === payload),
-        ['global_notifications'], (noti) => noti.id === payload);
+                           ['global_notifications'], (noti) => noti.id === payload);
     },
     [actions.addDialog as any]: (state, payload) => {
       return update(state, { dialogs: { $unshift: [payload] } });

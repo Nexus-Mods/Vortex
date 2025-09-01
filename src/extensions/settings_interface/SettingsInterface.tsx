@@ -111,9 +111,9 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { t, autoDeployment, autoEnable, autoInstall, autoStart, currentLanguage,
-            customTitlebar, desktopNotifications, foregroundDL, languages, profilesVisible,
-            hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
-            suppressedNotifications } = this.props;
+      customTitlebar, desktopNotifications, foregroundDL, languages, profilesVisible,
+      hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
+      suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -291,7 +291,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
             <Button onClick={this.resetSuppression}>{t('Reset suppressed notifications')}</Button>
             {' '}
             {t('({{count}} notification is being suppressed)',
-              { replace: { count: numSuppressed } })}
+               { replace: { count: numSuppressed } })}
           </div>
         </FormGroup>
         {restartNotification}
@@ -345,10 +345,10 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
         value={language.key}
         data-ext={ext.name}
       >
-      {this.languageName(language)}
-      {(ext.modId !== undefined)
-        ? ` (${t('Extension')} by ${ext['author'] || 'unknown author'})`
-        : null}
+        {this.languageName(language)}
+        {(ext.modId !== undefined)
+          ? ` (${t('Extension')} by ${ext['author'] || 'unknown author'})`
+          : null}
       </option>
     );
   }
@@ -513,8 +513,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 const SettingsInterfaceMapped = translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      SettingsInterfaceImpl));
+  connect(mapStateToProps, mapDispatchToProps)(
+    SettingsInterfaceImpl));
 
 function isValidLanguageCode(langId: string) {
   if (!truthy(langId)) {
@@ -540,7 +540,7 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
   return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
     .map((file: string) => path.basename(file))
     .tap(files => local = files),
-    translationExts.map(ext => ext.language))
+                      translationExts.map(ext => ext.language))
     .then(fileLists => Array.from(new Set([].concat(...fileLists))))
     .filter((langId: string) => isValidLanguageCode(langId))
     .then(files => {

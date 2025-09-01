@@ -178,12 +178,12 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     );
 
     const btn = (
-        <Button
-          onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
-          data-value={actions[defaultIdx].title}
-        >
-          {title}
-        </Button>
+      <Button
+        onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
+        data-value={actions[defaultIdx].title}
+      >
+        {title}
+      </Button>
     );
 
     if (rest.length === 0) {
@@ -225,33 +225,33 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
 
   private renderMenuItem =
     (action: IActionDefinitionEx, index: number) => {
-    const { t, instanceId } = this.props;
+      const { t, instanceId } = this.props;
 
-    const id = `${instanceId || '1'}_${index}`;
+      const id = `${instanceId || '1'}_${index}`;
 
-    if ((action.icon === null) && (action.component === undefined)) {
-      return (
-        <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {t(action.title)}
-        </MenuItem>
-      );
+      if ((action.icon === null) && (action.component === undefined)) {
+        return (
+          <MenuItem className='menu-separator-line' key={id} disabled={true}>
+            {t(action.title)}
+          </MenuItem>
+        );
+      }
+
+      if (action.icon !== undefined) {
+        return <MenuAction t={t} key={id} id={id} action={action} instanceId={instanceId} />;
+      } else {
+        return (
+          <MenuItem
+            key={id}
+            eventKey={id}
+            disabled={action.show !== true}
+            title={genTooltip(action.show)}
+          >
+            {this.renderCustomIcon(id, action)}
+          </MenuItem>
+        );
+      }
     }
-
-    if (action.icon !== undefined) {
-      return <MenuAction t={t} key={id} id={id} action={action} instanceId={instanceId} />;
-    } else {
-      return (
-        <MenuItem
-          key={id}
-          eventKey={id}
-          disabled={action.show !== true}
-          title={genTooltip(action.show)}
-        >
-          {this.renderCustomIcon(id, action)}
-        </MenuItem>
-      );
-    }
-  }
 
   private renderCustomIcon(id: string, action: IActionDefinition) {
     // custom case. the caller can pass properties via the props() function and by

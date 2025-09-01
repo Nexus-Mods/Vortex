@@ -41,10 +41,10 @@ function init(context: IExtensionContext): boolean {
     let haveSetChannel = false;
     // check for update when the user changes the update channel
     context.api.onStateChange(['settings', 'update', 'channel'],
-      (oldChannel: string, newChannel: string) => {
-        ipcRenderer.send('set-update-channel', newChannel, true);
-        haveSetChannel = true;
-    });
+                              (oldChannel: string, newChannel: string) => {
+                                ipcRenderer.send('set-update-channel', newChannel, true);
+                                haveSetChannel = true;
+                              });
     // unless the user changes the update channel before,
     // check for update in 5 seconds
     setTimeout(() => {

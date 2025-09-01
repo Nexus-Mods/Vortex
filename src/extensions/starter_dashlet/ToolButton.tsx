@@ -26,7 +26,7 @@ export interface IToolButtonProps {
 
 function ToolButton(props: IToolButtonProps) {
   const { t, counter, item, primary, running, onRun,
-          onMakePrimary, onRemove, onEdit, valid } = props;
+    onMakePrimary, onRemove, onEdit, valid } = props;
 
   let imageSrc;
   const starter = item as StarterInfo;
@@ -90,7 +90,7 @@ function ToolButton(props: IToolButtonProps) {
       if (hoveredOverItem.id !== props.item.id) {
         props.onMoveItem(hoveredOverItem.id, props.item.id);
       }
-  }});
+    }});
   return (
     <>
       <div ref={dropRef} className={classes.join(' ')}>

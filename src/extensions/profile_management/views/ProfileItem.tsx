@@ -93,7 +93,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     const enabledMods = Object.keys(modState).reduce(
       (prev: number, key: string): number => {
         return (modState[key]?.enabled) && (mods[key] !== undefined) ? prev + 1 : prev;
-    }, 0);
+      }, 0);
 
     // TODO: not using ListGroupItem because it puts the content into
     //       <p>-tags so it doesn't support 'complex' content
@@ -237,26 +237,26 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
   private changeImage = () => {
     this.context.api.selectFile({ filters: [{ name: 'Image', extensions: ['jpg', 'gif', 'png'] }] })
-    .then(file => {
-      if (file === undefined) {
-        return;
-      }
-      const img = nativeImage.createFromPath(file);
+      .then(file => {
+        if (file === undefined) {
+          return;
+        }
+        const img = nativeImage.createFromPath(file);
       // TODO: could resize here to save some disc space
-      fs.writeFileAsync(this.imagePath, img.toPNG())
-        .then(() => {
-          this.setHasProfileImage(true);
-        })
-        .catch(err => {
-          log('warn', 'failed to get path for profile image', { profile: this.props.profile });
-        });
-    });
+        fs.writeFileAsync(this.imagePath, img.toPNG())
+          .then(() => {
+            this.setHasProfileImage(true);
+          })
+          .catch(err => {
+            log('warn', 'failed to get path for profile image', { profile: this.props.profile });
+          });
+      });
   }
 
   private setHasProfileImage(hasImage: boolean) {
     if (this.mMounted) {
-        this.nextState.hasProfileImage = hasImage;
-        this.nextState.counter++;
+      this.nextState.hasProfileImage = hasImage;
+      this.nextState.counter++;
     }
   }
 

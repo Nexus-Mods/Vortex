@@ -80,13 +80,13 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           {profile === undefined ? t('Create a new profile') : t('Edit profile')}
           <ListGroupItem key={profileId}>
             <div className='inline-form'>
-            {inputControl}
-            <Button bsStyle='primary' id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
-              {t('Save')}
-            </Button>
-            <Button bsStyle='secondary' id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
-              {t('Cancel')}
-            </Button>
+              {inputControl}
+              <Button bsStyle='primary' id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
+                {t('Save')}
+              </Button>
+              <Button bsStyle='secondary' id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
+                {t('Cancel')}
+              </Button>
             </div>
             <div>
               {features.map(this.renderFeature)}

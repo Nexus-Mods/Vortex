@@ -51,70 +51,70 @@ export class Context extends DelegateBase {
   }
 
   public getAppVersion =
-      (dummy: any, callback: (err, res: string) => void) => {
-        log('debug', 'getAppVersion called');
-        return callback(null, getApplication().version);
-      }
+    (dummy: any, callback: (err, res: string) => void) => {
+      log('debug', 'getAppVersion called');
+      return callback(null, getApplication().version);
+    }
 
   public getCurrentGameVersion =
-      (dummy: any, callback: (err, res: string) => void) => {
-        log('debug', 'getCurrentGameVersion called');
-        this.gameInfo.getInstalledVersion(this.gameDiscovery)
-          .then(version => {
+    (dummy: any, callback: (err, res: string) => void) => {
+      log('debug', 'getCurrentGameVersion called');
+      this.gameInfo.getInstalledVersion(this.gameDiscovery)
+        .then(version => {
             // the fomod installer does not support release tags
-            callback(null, version.split(/\-+/)[0]);
-          })
-          .catch(err => {
-            callback(err, null);
-          });
-      }
+          callback(null, version.split(/\-+/)[0]);
+        })
+        .catch(err => {
+          callback(err, null);
+        });
+    }
 
   public getExtenderVersion =
-      (extender: string, callback: (err, res: string) => void) => {
-        log('debug', 'getExtenderVersion called');
-        this.gameInfo.getInstalledVersion(this.gameDiscovery)
-          .then(version => {
+    (extender: string, callback: (err, res: string) => void) => {
+      log('debug', 'getExtenderVersion called');
+      this.gameInfo.getInstalledVersion(this.gameDiscovery)
+        .then(version => {
             // the fomod installer does not support release tags
-            callback(null, version.split(/\-+/)[0]);
-          })
-          .catch(err => {
-            callback(err, null);
-          });
-      }
+          callback(null, version.split(/\-+/)[0]);
+        })
+        .catch(err => {
+          callback(err, null);
+        });
+    }
 
   public isExtenderPresent =
-      (par: any, callback: (err, res: boolean) => void) => {
-        log('debug', 'isExtenderPresent called');
-        const extender = extenderForGame(this.gameId);
-        if (extender === undefined) {
-          return callback(null, false);
-        }
+    (par: any, callback: (err, res: boolean) => void) => {
+      log('debug', 'isExtenderPresent called');
+      const extender = extenderForGame(this.gameId);
+      if (extender === undefined) {
+        return callback(null, false);
+      }
 
-        const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
-        fs.statAsync(sePath)
+      const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
+      fs.statAsync(sePath)
         .then(() => callback(null, true))
         .catch(() => callback(null, false));
-      }
+    }
 
   public checkIfFileExists =
-      (fileName: string, callback: (err, res: boolean) => void) => {
-        log('debug', 'checkIfFileExists called', util.inspect(fileName));
+    (fileName: string, callback: (err, res: boolean) => void) => {
+      log('debug', 'checkIfFileExists called', util.inspect(fileName));
 
-        const fullPath = this.resolveFilePath(fileName);
-        fs.statAsync(fullPath)
-          .then(() => callback(null, true))
-          .catch(() => callback(null, false));
-      }
+      const fullPath = this.resolveFilePath(fileName);
+      fs.statAsync(fullPath)
+        .then(() => callback(null, true))
+        .catch(() => callback(null, false));
+    }
 
   public getExistingDataFile =
-      (fileName: string, callback: (err, res: any) => void) => {
-        log('debug', 'getExistingDataFile called', util.inspect(fileName));
-        const fullPath = this.resolveFilePath(fileName);
+    (fileName: string, callback: (err, res: any) => void) => {
+      log('debug', 'getExistingDataFile called', util.inspect(fileName));
+      const fullPath = this.resolveFilePath(fileName);
 
-        fs.readFileAsync(fullPath)
-          .then(data => callback(null, data))
-          .catch(err => callback(err, null));
-      }
+      fs.readFileAsync(fullPath)
+        .then(data => callback(null, data))
+        .catch(err => callback(err, null));
+    }
 
   public getExistingDataFileList =
     (basePath: string, pattern: string, recursive: boolean,
@@ -129,7 +129,7 @@ export class Context extends DelegateBase {
       this.readDir(fullPath, recursive, filterFunc)
         .then((fileList) => callback(null, fileList))
         .catch(err => callback(err, null));
-  }
+    }
 
   private resolveFilePath(filePath: string): string {
     let modPath = this.gameInfo.queryModPath(this.gameDiscovery.path);
@@ -155,7 +155,7 @@ export class Context extends DelegateBase {
           // for the _expected_ behavior
           .map(iter => iter.filePath));
     }, { recurse })
-    .then(() => fileList);
+      .then(() => fileList);
   }
 }
 

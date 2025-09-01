@@ -35,7 +35,7 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
     const { t, discoveredGames, gameMode, lastActiveProfile, knownGames, profiles } = this.props;
 
     const lastManaged = (id: string) => getSafe(profiles,
-      [getSafe(lastActiveProfile, [id], undefined), 'lastActivated'], 0);
+                                                [getSafe(lastActiveProfile, [id], undefined), 'lastActivated'], 0);
 
     const games: IGameStored[] = knownGames
       .filter(game => (game.id !== gameMode)

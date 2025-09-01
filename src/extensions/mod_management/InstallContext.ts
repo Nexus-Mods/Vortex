@@ -153,17 +153,17 @@ class InstallContext implements IInstallContext {
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
     Promise.delay(50)
-    .then(() => {
-      if (!this.mDidReportError) {
-        this.mDidReportError = true;
-        const noti = this.outcomeNotification(
+      .then(() => {
+        if (!this.mDidReportError) {
+          this.mDidReportError = true;
+          const noti = this.outcomeNotification(
             this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
             mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
-        if (noti !== null) {
-          this.mAddNotification(noti);
+          if (noti !== null) {
+            this.mAddNotification(noti);
+          }
         }
-      }
-    });
+      });
   }
 
   public setProgress(phase: string, percent?: number) {

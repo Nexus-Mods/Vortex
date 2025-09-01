@@ -199,33 +199,33 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     }
     const popover = (
       <Popover id={`popover-${profile.id}`} style={{ maxWidth: 500 }}>
-      {popoverBlocks}
-    </Popover>
+        {popoverBlocks}
+      </Popover>
     );
 
     const connectorIcon = connectDragSource((
-        <div style={{ display: 'inline-block' }}>
-          <tooltip.IconButton
-            id={`btn-meta-data-${profile.id}`}
-            disabled={disabled}
-            className={classes.join(' ')}
-            key={`rules-${profile.id}`}
-            tooltip={t('Drag to another profile to transfer settings.')}
-            icon='connection'
-            ref={this.setRef}
-            onClick={this.toggleOverlay}
-          />
-          <Overlay
-            show={this.state.showOverlay}
-            onHide={this.hideOverlay}
-            placement='left'
-            rootClose={true}
-            target={this.mRef as any}
-          >
-            {popover}
-          </Overlay>
-        </div>
-        ));
+      <div style={{ display: 'inline-block' }}>
+        <tooltip.IconButton
+          id={`btn-meta-data-${profile.id}`}
+          disabled={disabled}
+          className={classes.join(' ')}
+          key={`rules-${profile.id}`}
+          tooltip={t('Drag to another profile to transfer settings.')}
+          icon='connection'
+          ref={this.setRef}
+          onClick={this.toggleOverlay}
+        />
+        <Overlay
+          show={this.state.showOverlay}
+          onHide={this.hideOverlay}
+          placement='left'
+          rootClose={true}
+          target={this.mRef as any}
+        >
+          {popover}
+        </Overlay>
+      </div>
+    ));
 
     return connectDropTarget((
       <div style={{ textAlign: 'center', display: 'inline-block' }}>
@@ -271,5 +271,5 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
-      TransferIconDrag);
+connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
+  TransferIconDrag);

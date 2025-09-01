@@ -64,14 +64,14 @@ function checkStagingGame(api: IExtensionApi, gameId: string, manifestGameId: st
       { label: 'Cancel' },
       { label: 'Purge' },
     ])
-    .then(result => {
-      if (result.action === 'Cancel') {
-        return Promise.reject(new UserCanceled());
-      } else {
-        return purgeMods(api, manifestGameId)
-          .then(() => true);
-      }
-    });
+      .then(result => {
+        if (result.action === 'Cancel') {
+          return Promise.reject(new UserCanceled());
+        } else {
+          return purgeMods(api, manifestGameId)
+            .then(() => true);
+        }
+      });
   } else {
     return Promise.resolve(false);
   }
@@ -85,8 +85,8 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
 
   // manifestPath can be undefined if the manifest is older
   return ((manifestPath !== undefined)
-          ? getNormalizeFunc(manifestPath)
-          : Promise.resolve(undefined))
+    ? getNormalizeFunc(manifestPath)
+    : Promise.resolve(undefined))
     .then(normalize => {
       if ((manifestPath !== undefined)
           && (normalize(manifestPath) !== normalize(configuredPath))) {
@@ -169,24 +169,24 @@ function purgeOldMethod(api: IExtensionApi,
             && (normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath))
             && oldActivator.isFallbackPurgeSafe) {
             log('warn', 'using manifest-based purge because deployment path changed',
-              { from: manifests[typeId].targetPath, to: modPaths[typeId] });
+                { from: manifests[typeId].targetPath, to: modPaths[typeId] });
             return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
           } else {
             return oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
           }
         })
-        ;
+      ;
     }))
     // save (empty) activation
     .then(() => Promise.map(Object.keys(modPaths), typeId =>
       saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId],
-        stagingPath, [], oldActivator.id)))
+                     stagingPath, [], oldActivator.id)))
     .then(() => undefined)
     .finally(() => oldActivator.postPurge())
     .catch(ProcessCanceled, () => Promise.resolve())
     .catch(TemporaryError, err =>
       api.showErrorNotification('Purge failed, please try again',
-        err.message, { allowReport: false }))
+                                err.message, { allowReport: false }))
     .catch(err => api.showErrorNotification('Purge failed', err, {
       allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
     }));
@@ -216,7 +216,7 @@ export async function updateDeploymentMethod(api: IExtensionApi, profile: IProfi
 }
 
 export function onGameModeActivated(
-    api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
+  api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   // TODO: This function is a monster and needs to be refactored desperately, unfortunately
   //   it's also sensitive code
   const store = api.store;
@@ -231,7 +231,7 @@ export function onGameModeActivated(
   if (gameId !== newGame) {
     // this should never happen
     api.showErrorNotification('Event was triggered with incorrect parameter',
-      new Error(`game id mismatch "${newGame}" vs "${gameId}"`));
+                              new Error(`game id mismatch "${newGame}" vs "${gameId}"`));
   }
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
@@ -437,13 +437,13 @@ export function onPathsChanged(api: IExtensionApi,
     const knownMods = state.persistent.mods[gameMode];
     refreshMods(api, gameMode, installPath(state), knownMods || {}, (mod: IMod) =>
       store.dispatch(addMod(gameMode, mod))
-      , (modNames: string[]) => {
-        modNames.forEach((name: string) => {
-          if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-            store.dispatch(removeMod(gameMode, name));
-          }
-        });
-      })
+    , (modNames: string[]) => {
+      modNames.forEach((name: string) => {
+        if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
+          store.dispatch(removeMod(gameMode, name));
+        }
+      });
+    })
       .then(() => updateDeploymentMethod(api, profile))
       .catch((err: Error) => {
         showError(store.dispatch, 'Failed to refresh mods', err, {
@@ -519,7 +519,7 @@ function undeploy(api: IExtensionApi,
   const modTypes = Object.keys(modPaths);
 
   log('debug', 'undeploying single mod',
-    { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
+      { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
 
   const activatorId: string =
     getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
@@ -568,11 +568,11 @@ function undeploy(api: IExtensionApi,
         saveActivation(gameMode, typeId, state.app.instanceId, deployPath,
                        stagingPath, newActivation, activator.id));
   }))
-  .finally(() => {
-    log('debug', 'done undeploying single mod',
-      { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
-  })
-  .then(() => Promise.resolve());
+    .finally(() => {
+      log('debug', 'done undeploying single mod',
+          { game: gameMode, modIds: mods.map(mod => mod.id).join(', ') });
+    })
+    .then(() => Promise.resolve());
 }
 
 function undeployMods(api: IExtensionApi,
@@ -678,27 +678,27 @@ export function onRemoveMods(api: IExtensionApi,
   api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id), options)
     .then(() => undeployMods(api, activators, gameId, removeMods))
     .then(() => Promise.mapSeries(removeMods,
-        (mod: IMod, idx: number, length: number) => {
-      options?.progressCB?.(idx, length, modName(mod));
-      const forwardOptions = { ...(options || {}), modData: { ...mod } };
-      return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
-      .then(() => {
-        if (truthy(mod) && truthy(mod.installationPath)) {
-          const fullModPath = path.join(installationPath, mod.installationPath);
-          log('debug', 'removing files for mod',
-              { game: gameId, mod: mod.id });
-          return fs.removeAsync(fullModPath)
-            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
-        store.dispatch(removeMod(gameId, mod.id));
-        return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
-      });
-    }))
+                                  (mod: IMod, idx: number, length: number) => {
+                                    options?.progressCB?.(idx, length, modName(mod));
+                                    const forwardOptions = { ...(options || {}), modData: { ...mod } };
+                                    return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
+                                      .then(() => {
+                                        if (truthy(mod) && truthy(mod.installationPath)) {
+                                          const fullModPath = path.join(installationPath, mod.installationPath);
+                                          log('debug', 'removing files for mod',
+                                              { game: gameId, mod: mod.id });
+                                          return fs.removeAsync(fullModPath)
+                                            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
+                                            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+                                        } else {
+                                          return Promise.resolve();
+                                        }
+                                      })
+                                      .then(() => {
+                                        store.dispatch(removeMod(gameId, mod.id));
+                                        return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
+                                      });
+                                  }))
     .then(() => {
       if (callback !== undefined) {
         callback(null);
@@ -709,7 +709,7 @@ export function onRemoveMods(api: IExtensionApi,
         callback(err);
       } else {
         api.showErrorNotification('Failed to undeploy mod, please try again',
-          err.message, { allowReport: false });
+                                  err.message, { allowReport: false });
       }
     })
     .catch(ProcessCanceled, (err) => {
@@ -760,19 +760,19 @@ export function onAddMod(api: IExtensionApi, gameId: string,
 
   store.dispatch(addMod(gameId, mod));
   fs.ensureDirAsync(path.join(installationPath, mod.installationPath))
-  .then(() => {
-    callback(null);
-  })
-  .catch(err => {
-    callback(err);
-  });
+    .then(() => {
+      callback(null);
+    })
+    .catch(err => {
+      callback(err);
+    });
 }
 
 export async function onStartInstallDownload(api: IExtensionApi,
-                                       installManager: InstallManager,
-                                       downloadId: string,
-                                       options: IInstallOptions,
-                                       callback?: (error, id: string) => void) {
+                                             installManager: InstallManager,
+                                             downloadId: string,
+                                             options: IInstallOptions,
+                                             callback?: (error, id: string) => void) {
   const store = api.store;
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -781,12 +781,12 @@ export async function onStartInstallDownload(api: IExtensionApi,
       callback(new DataInvalid('Unknown Download'), undefined);
     } else {
       api.showErrorNotification('Unknown Download',
-        'Vortex attempted to install a mod archive which is no longer available '
+                                'Vortex attempted to install a mod archive which is no longer available '
         + 'in its internal state - this usually happens if the archive was scheduled '
         + 'to be installed but was removed before the installation was able to start. '
         + 'Given that the archive is gone, information such as file name, mod name, etc is not '
         + 'available either - sorry.',
-      { allowReport: false });
+                                { allowReport: false });
     }
     return Promise.resolve();
   }
@@ -798,9 +798,9 @@ export async function onStartInstallDownload(api: IExtensionApi,
       callback(new DataInvalid(message), undefined);
     } else {
       api.showErrorNotification('Download Not Ready',
-        'The download must be completely finished before installation can begin. '
+                                'The download must be completely finished before installation can begin. '
         + `Current state: ${download.state}`,
-        { allowReport: false });
+                                { allowReport: false });
     }
     return Promise.resolve();
   }
@@ -815,9 +815,9 @@ export async function onStartInstallDownload(api: IExtensionApi,
   if (!truthy(download.localPath)) {
     api.events.emit('refresh-downloads', convertedGameId, () => {
       api.showErrorNotification('Download invalid',
-        'Sorry, the meta data for this download is incomplete. Vortex has '
+                                'Sorry, the meta data for this download is incomplete. Vortex has '
         + 'tried to refresh it, please try again.',
-        { allowReport: false });
+                                { allowReport: false });
     });
     return Promise.resolve();
   }
@@ -849,9 +849,9 @@ export async function onStartInstallDownload(api: IExtensionApi,
       callback(new DataInvalid(message), undefined);
     } else {
       api.showErrorNotification('Download File Locked',
-        'The download file is still being processed or is locked by another process. '
+                                'The download file is still being processed or is locked by another process. '
         + 'Please wait a moment and try again.',
-        { allowReport: false });
+                                { allowReport: false });
     }
     return;
   }
@@ -859,7 +859,7 @@ export async function onStartInstallDownload(api: IExtensionApi,
   const allowAutoDeploy = options.allowAutoEnable !== false;
   const { enable } = state.settings.automation;
   installManager.install(downloadId, fullPath, download.game, api,
-    { download, choices: options.choices }, true, enable && allowAutoDeploy,
-    callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
+                         { download, choices: options.choices }, true, enable && allowAutoDeploy,
+                         callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
   return;
 }

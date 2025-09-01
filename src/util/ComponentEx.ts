@@ -101,8 +101,8 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
     if (!(key in this.mSubProxies) || (obj[key] !== this.mSubProxies[key].obj)) {
       this.mSubProxies[key] = {
         proxy: new Proxy(obj[key],
-          new StateProxyHandler(this.mComponent, null, this,
-                                [].concat(this.mPath, key), this.mDelayed)),
+                         new StateProxyHandler(this.mComponent, null, this,
+                                               [].concat(this.mPath, key), this.mDelayed)),
         obj: obj[key],
       };
     }
@@ -124,7 +124,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
  * @template S
  */
 export class ComponentEx<P, S extends object>
-    extends React.Component<P & Partial<WithTranslation>, S> {
+  extends React.Component<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
@@ -145,7 +145,7 @@ export class ComponentEx<P, S extends object>
 }
 
 export class PureComponentEx<P, S extends object>
-    extends React.PureComponent<P & Partial<WithTranslation>, S> {
+  extends React.PureComponent<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,

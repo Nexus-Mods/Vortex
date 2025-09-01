@@ -15,7 +15,7 @@ import { DNDContainer, MainPage } from '../../../views/api';
 import { setGameLoadOrderRendererOptions } from '../actions/settings';
 
 import { IGameLoadOrderEntry, IItemRendererOptions, ILoadOrder,
-  ILoadOrderDisplayItem, SortType, UpdateType } from '../types/types';
+         ILoadOrderDisplayItem, SortType, UpdateType } from '../types/types';
 
 import DraggableList from './DraggableList';
 
@@ -323,7 +323,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   //  one that the game extension provided - assign the default item renderer.
   private getItemRenderer() {
     const { getGameEntry, profile, onSetLoadOrderRendererOptions,
-            itemRendererOptions } = this.props;
+      itemRendererOptions } = this.props;
     const { itemRenderer } = this.state;
 
     if (profile === undefined) {
@@ -385,39 +385,39 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       : enabled.sort((lhs, rhs) => loadOrder[rhs.id].pos - loadOrder[lhs.id].pos);
     return (!!sorted)
       ? (
-      <MainPage>
-        <MainPage.Header>
-          <IconBar
-            group='generic-load-order-icons'
-            staticElements={this.mStaticButtons}
-            className='menubar'
-            t={t}
-          />
-        </MainPage.Header>
-        <MainPage.Body>
-          <Panel>
-            <PanelX.Body>
-              <DNDContainer style={{ height: '100%' }}>
-                <FlexLayout type='row'>
-                  <FlexLayout.Flex>
-                    <DraggableList
-                      id='mod-loadorder-draggable-list'
-                      itemRenderer={itemRenderer}
-                      loadOrder={loadOrder}
-                      items={sorted}
-                      apply={this.onApply}
-                    />
-                  </FlexLayout.Flex>
-                  <FlexLayout.Flex>
-                    {infoPanel}
-                  </FlexLayout.Flex>
-                </FlexLayout>
-              </DNDContainer>
-            </PanelX.Body>
-          </Panel>
-        </MainPage.Body>
-      </MainPage>
-    ) : null;
+        <MainPage>
+          <MainPage.Header>
+            <IconBar
+              group='generic-load-order-icons'
+              staticElements={this.mStaticButtons}
+              className='menubar'
+              t={t}
+            />
+          </MainPage.Header>
+          <MainPage.Body>
+            <Panel>
+              <PanelX.Body>
+                <DNDContainer style={{ height: '100%' }}>
+                  <FlexLayout type='row'>
+                    <FlexLayout.Flex>
+                      <DraggableList
+                        id='mod-loadorder-draggable-list'
+                        itemRenderer={itemRenderer}
+                        loadOrder={loadOrder}
+                        items={sorted}
+                        apply={this.onApply}
+                      />
+                    </FlexLayout.Flex>
+                    <FlexLayout.Flex>
+                      {infoPanel}
+                    </FlexLayout.Flex>
+                  </FlexLayout>
+                </DNDContainer>
+              </PanelX.Body>
+            </Panel>
+          </MainPage.Body>
+        </MainPage>
+      ) : null;
   }
 
   private onApply = (ordered: ILoadOrderDisplayItem[]) => {
@@ -521,7 +521,7 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
   if (!!profile?.gameId) {
     loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], empty);
     itemRendererOptions = util.getSafe(state,
-      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultOpts);
+                                       ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultOpts);
   }
 
   return {

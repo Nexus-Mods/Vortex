@@ -2,11 +2,11 @@
 // optimize these away
 let toolPath: string = `${Math.random()}`;
 // tslint:disable-next-line:prefer-const
-let toolCWD: string = `${Math.random()}`;
+const toolCWD: string = `${Math.random()}`;
 // tslint:disable-next-line:prefer-const
-let parameters: string[] = [`${Math.random()}`];
+const parameters: string[] = [`${Math.random()}`];
 // tslint:disable-next-line:prefer-const
-let environment: any = { foobar: Math.random() };
+const environment: any = { foobar: Math.random() };
 
 function runElevatedCustomTool(ipcClient, req: NodeRequire): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -22,9 +22,9 @@ function runElevatedCustomTool(ipcClient, req: NodeRequire): Promise<void> {
       }
 
       const execOptions = {
-          cwd: toolCWD,
-          env: { ...process.env, ...environment },
-        };
+        cwd: toolCWD,
+        env: { ...process.env, ...environment },
+      };
 
       toolPath = toolPath.replace(/\\/g, '\\\\');
       emit('log', {

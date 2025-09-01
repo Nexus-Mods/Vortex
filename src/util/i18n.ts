@@ -154,7 +154,7 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
   }
   i18nObj.use(MultiBackend as any)
     .use(initReactI18next)
-    ;
+  ;
 
   return Bluebird.resolve(i18nObj.init(
     {

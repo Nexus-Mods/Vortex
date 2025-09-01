@@ -131,5 +131,5 @@ function mapPropsToState(state: IState) {
 }
 
 export default
-  connect(mapPropsToState)(
-    withTranslation(['common'])(HistoryDialog as any));
+connect(mapPropsToState)(
+  withTranslation(['common'])(HistoryDialog as any));

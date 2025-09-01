@@ -25,4 +25,4 @@ class DefaultInfoPanel extends ComponentEx<IProps, {}> {
 }
 
 export default withTranslation(['common'])
-  ((DefaultInfoPanel) as any) as React.ComponentClass<{infoText: string}>;
+((DefaultInfoPanel) as any) as React.ComponentClass<{infoText: string}>;

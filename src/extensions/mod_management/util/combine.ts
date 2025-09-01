@@ -45,7 +45,7 @@ async function combineMods(api: IExtensionApi, gameId: string, modIds: string[])
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act =>
-        allTypesSupported(act, state, gameId, Array.from(modTypes)).errors.length === 0);
+      allTypesSupported(act, state, gameId, Array.from(modTypes)).errors.length === 0);
 
   if (activator === undefined) {
     return api.showDialog('error', 'Combining these mods not possible', {

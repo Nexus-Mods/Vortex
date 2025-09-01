@@ -88,12 +88,12 @@ class Application {
     }
 
     if (['net::ERR_CONNECTION_RESET',
-         'net::ERR_CONNECTION_ABORTED',
-         'net::ERR_ABORTED',
-         'net::ERR_CONTENT_LENGTH_MISMATCH',
-         'net::ERR_SSL_PROTOCOL_ERROR',
-         'net::ERR_HTTP2_PROTOCOL_ERROR',
-         'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)
+      'net::ERR_CONNECTION_ABORTED',
+      'net::ERR_ABORTED',
+      'net::ERR_CONTENT_LENGTH_MISMATCH',
+      'net::ERR_SSL_PROTOCOL_ERROR',
+      'net::ERR_HTTP2_PROTOCOL_ERROR',
+      'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].includes(error.message)
         || ['ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(error.code)) {
       log('warn', 'network error unhandled', error.stack);
       return true;
@@ -257,8 +257,8 @@ class Application {
       }
 
       const vortexPath = process.env.NODE_ENV === 'development'
-          ? 'vortex_devel'
-          : 'vortex';
+        ? 'vortex_devel'
+        : 'vortex';
 
       // if userData specified, use it
       let userData = args.userData
@@ -324,32 +324,32 @@ class Application {
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
     return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
-        .catch(() => null)
-        .tap(() => {
-          log('info', '--------------------------');
-          log('info', 'Vortex Version', getApplication().version);
-          log('info', 'Parameters', process.argv.join(' '));
-        })
-        .then(() => this.testUserEnvironment())
-        .then(() => this.validateFiles())
-        .then(() => (args?.startMinimized === true)
-          ? Promise.resolve(undefined)
-          : this.startSplash())
+      .catch(() => null)
+      .tap(() => {
+        log('info', '--------------------------');
+        log('info', 'Vortex Version', getApplication().version);
+        log('info', 'Parameters', process.argv.join(' '));
+      })
+      .then(() => this.testUserEnvironment())
+      .then(() => this.validateFiles())
+      .then(() => (args?.startMinimized === true)
+        ? Promise.resolve(undefined)
+        : this.startSplash())
         // start initialization
-        .tap(splashIn => (splashIn !== undefined)
-          ? log('debug', 'showing splash screen')
-          : log('debug', 'starting without splash screen'))
-        .then(splashIn => {
-          splash = splashIn;
-          return this.createStore(args.restore, args.merge)
-            .catch(DataInvalid, err => {
-              log('error', 'store data invalid', err.message);
-              dialog.showMessageBox(getVisibleWindow(), {
-                type: 'error',
-                buttons: ['Continue'],
-                title: 'Error',
-                message: 'Data corrupted',
-                detail: 'The application state which contains things like your Vortex '
+      .tap(splashIn => (splashIn !== undefined)
+        ? log('debug', 'showing splash screen')
+        : log('debug', 'starting without splash screen'))
+      .then(splashIn => {
+        splash = splashIn;
+        return this.createStore(args.restore, args.merge)
+          .catch(DataInvalid, err => {
+            log('error', 'store data invalid', err.message);
+            dialog.showMessageBox(getVisibleWindow(), {
+              type: 'error',
+              buttons: ['Continue'],
+              title: 'Error',
+              message: 'Data corrupted',
+              detail: 'The application state which contains things like your Vortex '
                       + 'settings, meta data about mods and other important data is '
                       + 'corrupted and can\'t be read. This could be a result of '
                       + 'hard disk corruption, a power outage or something similar. '
@@ -358,109 +358,109 @@ class Application {
                       + 'on are ok before you deploy anything. '
                       + 'If not, you can go to settings->workarounds and restore a backup '
                       + 'which shouldn\'t lose you more than an hour of progress.',
-              })
+            })
               .then(() => this.createStore(args.restore, args.merge, true));
-            });
-        })
-        .tap(() => log('debug', 'checking admin rights'))
-        .then(() => this.warnAdmin())
-        .tap(() => log('debug', 'checking how Vortex was installed'))
-        .then(() => this.identifyInstallType())
-        .tap(() => log('debug', 'checking if migration is required'))
-        .then(() => this.checkUpgrade())
-        .tap(() => log('debug', 'setting up error handlers'))
-        .then(() => {
+          });
+      })
+      .tap(() => log('debug', 'checking admin rights'))
+      .then(() => this.warnAdmin())
+      .tap(() => log('debug', 'checking how Vortex was installed'))
+      .then(() => this.identifyInstallType())
+      .tap(() => log('debug', 'checking if migration is required'))
+      .then(() => this.checkUpgrade())
+      .tap(() => log('debug', 'setting up error handlers'))
+      .then(() => {
           // as soon as we have a store, install an extended error handler that has
           // access to application state
-          const handleError = this.genHandleError();
-          process.removeAllListeners('uncaughtException');
-          process.removeAllListeners('unhandledRejection');
-          process.on('uncaughtException', handleError);
-          process.on('unhandledRejection', handleError);
-        })
-        .then(() => {
-          this.mStore.dispatch(setCommandLine(args));
-        })
-        .then(() => this.initDevel())
-        .tap(() => log('debug', 'starting user interface'))
-        .then(() => {
-          this.setupContextMenu();
-          return Promise.resolve();
-        })
-        .then(() => this.startUi())
-        .tap(() => log('debug', 'setting up tray icon'))
-        .then(() => this.createTray())
+        const handleError = this.genHandleError();
+        process.removeAllListeners('uncaughtException');
+        process.removeAllListeners('unhandledRejection');
+        process.on('uncaughtException', handleError);
+        process.on('unhandledRejection', handleError);
+      })
+      .then(() => {
+        this.mStore.dispatch(setCommandLine(args));
+      })
+      .then(() => this.initDevel())
+      .tap(() => log('debug', 'starting user interface'))
+      .then(() => {
+        this.setupContextMenu();
+        return Promise.resolve();
+      })
+      .then(() => this.startUi())
+      .tap(() => log('debug', 'setting up tray icon'))
+      .then(() => this.createTray())
         // end initialization
-        .tap(() => {
-          if (splash !== undefined) {
-            log('debug', 'removing splash screen');
-          }
-        })
-        .then(() => {
-          this.connectTrayAndWindow();
-          return (splash !== undefined)
-            ? splash.fadeOut()
-            : Promise.resolve();
-        })
-        .tapCatch((err) => log('debug', 'quitting with exception', err.message))
-        .catch(UserCanceled, () => app.exit())
-        .catch(ProcessCanceled, () => {
-          app.quit();
-        })
-        .catch(DocumentsPathMissing, () =>
-          dialog.showMessageBox(getVisibleWindow(), {
-            type: 'error',
-            buttons: ['Close', 'More info'],
-            defaultId: 1,
-            title: 'Error',
-            message: 'Startup failed',
-            detail: 'Your "My Documents" folder is missing or is '
+      .tap(() => {
+        if (splash !== undefined) {
+          log('debug', 'removing splash screen');
+        }
+      })
+      .then(() => {
+        this.connectTrayAndWindow();
+        return (splash !== undefined)
+          ? splash.fadeOut()
+          : Promise.resolve();
+      })
+      .tapCatch((err) => log('debug', 'quitting with exception', err.message))
+      .catch(UserCanceled, () => app.exit())
+      .catch(ProcessCanceled, () => {
+        app.quit();
+      })
+      .catch(DocumentsPathMissing, () =>
+        dialog.showMessageBox(getVisibleWindow(), {
+          type: 'error',
+          buttons: ['Close', 'More info'],
+          defaultId: 1,
+          title: 'Error',
+          message: 'Startup failed',
+          detail: 'Your "My Documents" folder is missing or is '
               + 'misconfigured. Please ensure that the folder is properly '
               + 'configured and accessible, then try again.',
-          }).then(response => {
-            if (response.response === 1) {
-              shell.openExternal(
-                `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`);
-            }
-            app.quit();
-          }))
-        .catch(DatabaseLocked, () => {
-          dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
-            + 'If you can\'t see it, please check the task manager.');
+        }).then(response => {
+          if (response.response === 1) {
+            shell.openExternal(
+              `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`);
+          }
           app.quit();
-        })
-        .catch({ code: 'ENOSPC' }, () => {
-          dialog.showErrorBox('Startup failed', 'Your system drive is full. '
+        }))
+      .catch(DatabaseLocked, () => {
+        dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
+            + 'If you can\'t see it, please check the task manager.');
+        app.quit();
+      })
+      .catch({ code: 'ENOSPC' }, () => {
+        dialog.showErrorBox('Startup failed', 'Your system drive is full. '
             + 'You should always ensure your system drive has some space free (ideally '
             + 'at least 10% of the total capacity, especially on SSDs). '
             + 'Vortex can\'t start until you have freed up some space.');
-          app.quit();
-        })
-        .catch((err) => {
-          try {
-            if (err instanceof Error) {
-              const pretty = prettifyNodeErrorMessage(err);
-              const details = pretty.message
-                .replace(/{{ *([a-zA-Z]+) *}}/g, (m, key) => pretty.replace?.[key] || key);
-              terminate({
-                message: 'Startup failed',
-                details,
-                code: pretty.code,
-                stack: err.stack,
-              }, this.mStore !== undefined ? this.mStore.getState() : {},
-                pretty.allowReport);
-            } else {
-              terminate({
-                message: 'Startup failed',
-                details: err.message,
-                stack: err.stack,
-              }, this.mStore !== undefined ? this.mStore.getState() : {});
-            }
-          } catch (err) {
-            // nop
+        app.quit();
+      })
+      .catch((err) => {
+        try {
+          if (err instanceof Error) {
+            const pretty = prettifyNodeErrorMessage(err);
+            const details = pretty.message
+              .replace(/{{ *([a-zA-Z]+) *}}/g, (m, key) => pretty.replace?.[key] || key);
+            terminate({
+              message: 'Startup failed',
+              details,
+              code: pretty.code,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {},
+                      pretty.allowReport);
+          } else {
+            terminate({
+              message: 'Startup failed',
+              details: err.message,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {});
           }
-        })
-        .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
+        } catch (err) {
+            // nop
+        }
+      })
+      .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
   }
 
   private isUACEnabled(): Promise<boolean> {
@@ -471,8 +471,8 @@ class Application {
     const getSystemPolicyValue = (key: string) => {
       try {
         const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-          'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
-          key);
+                                       'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+                                       key);
         return Promise.resolve({ key, type: res.type, value: res.value});
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
@@ -484,7 +484,7 @@ class Application {
     };
 
     return Promise.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
-                        getSystemPolicyValue('ConsentPromptBehaviorUser')])
+      getSystemPolicyValue('ConsentPromptBehaviorUser')])
       .then(res => {
         res.forEach(value => {
           if (value !== undefined) {
@@ -543,29 +543,29 @@ class Application {
           return Promise.resolve();
         }
         return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
-            title: 'Admin rights detected',
-            message:
+          title: 'Admin rights detected',
+          message:
               `Vortex has detected that it is being run with administrator rights. It is strongly 
               advised to not run any application with admin rights as adverse effects may include 
               permission issues or even security risks. Continue at your own risk`
               + (!uacEnabled
-                  ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
+                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
                   operating system.  We strongly recommend you re-enable these to avoid file permissions 
                   issues and potential security risks.`
-                  : ''),
-            buttons: [
-              'Quit',
-              'Ignore',
-            ],
-            noLink: true,
-          }).then(result => {
-            if (result.response === 0) {
-              app.quit();
-            } else {
-              this.mStore.dispatch(setWarnedAdmin(1));
-              return Promise.resolve();
-            }
-          }));
+                : ''),
+          buttons: [
+            'Quit',
+            'Ignore',
+          ],
+          noLink: true,
+        }).then(result => {
+          if (result.response === 0) {
+            app.quit();
+          } else {
+            this.mStore.dispatch(setWarnedAdmin(1));
+            return Promise.resolve();
+          }
+        }));
       });
   }
 
@@ -771,9 +771,9 @@ class Application {
       });
 
     const deleteBackups = () => Promise.map(backups, backupName =>
-          fs.removeAsync(path.join(backupPath, backupName))
-            .catch(() => undefined))
-          .then(() => null);
+      fs.removeAsync(path.join(backupPath, backupName))
+        .catch(() => undefined))
+      .then(() => null);
 
     // storing the last version that ran in the startup.json settings file.
     // We have that same information in the leveldb store but what if we need
@@ -831,7 +831,7 @@ class Application {
             path.join(dataPath, currentStatePath),
             undefined,
             repair ?? false,
-            )
+          )
             .then(levelPersistor => {
               this.mLevelPersistors.push(levelPersistor);
             });
@@ -876,14 +876,14 @@ class Application {
         // this way we risk not importing but since the old state is still there, that
         // can be repaired
         return oldState !== undefined ?
-                   markImported(this.mBasePath)
-                       .then(() => {
-                         newStore.dispatch({
-                           type: '__hydrate',
-                           payload: oldState,
-                         });
-                       }) :
-                   Promise.resolve();
+          markImported(this.mBasePath)
+            .then(() => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: oldState,
+              });
+            }) :
+          Promise.resolve();
       })
       .then(() => {
         log('debug', 'updating state backups');
@@ -1026,7 +1026,7 @@ class Application {
   private sanityCheckCB = (err: StateError) => {
     err['attachLogOnReport'] = true;
     showError(this.mStore.dispatch,
-      'An invalid state change was prevented, this was probably caused by a bug', err);
+              'An invalid state change was prevented, this was probably caused by a bug', err);
   }
 
   private initDevel(): Promise<void> {
@@ -1100,15 +1100,15 @@ class Application {
             noLink: true,
             buttons: ['Quit', 'Ignore'],
           })
-          .then(dialogReturn => {
-            const { response } = dialogReturn;
-            if (response === 0) {
-              app.quit();
-            } else {
-              disableErrorReport();
-              return Promise.resolve();
-            }
-          });
+            .then(dialogReturn => {
+              const { response } = dialogReturn;
+              if (response === 0) {
+                app.quit();
+              } else {
+                disableErrorReport();
+                return Promise.resolve();
+              }
+            });
         } else {
           return Promise.resolve();
         }
@@ -1134,7 +1134,7 @@ class Application {
           // TODO: this instructions aren't very correct because we know Vortex doesn't have
           // a UI and needs to be shut down from the task manager
           dialog.showErrorBox('Vortex unresponsive',
-            'Vortex appears to be frozen, please close Vortex and try again');
+                              'Vortex appears to be frozen, please close Vortex and try again');
         }
       });
     } else {

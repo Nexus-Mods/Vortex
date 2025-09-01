@@ -15,33 +15,14 @@ class SplashScreen {
     // ensure the splash screen remains visible
     this.mWindow.setAlwaysOnTop(true);
 
-    // don't fade out immediately, otherwise the it looks odd
-    // as the main window appears at the same time
+    // Close splash screen immediately without fade animation
     return Promise.delay(200)
-        .then(() => {
-          if (!this.mWindow.isDestroyed()) {
-            try {
-              this.mWindow.webContents.executeJavaScript(`
-                const splash = document.querySelector('.splash-image');
-                if (splash) {
-                  splash.style.transition = 'opacity 500ms ease-in-out';
-                  splash.style.opacity = '0';
-                }
-              `);
-            } catch (err) {
-              log('warn', 'failed to fade out splash screen', err.message);
-            }
-          }
-        })
-        // wait for the fade out animation to finish before destroying
-        // the window
-        .then(() => Promise.delay(500))
-        .then(() => {
-          if (!this.mWindow.isDestroyed()) {
-            this.mWindow.close();
-          }
-          this.mWindow = null;
-        });
+      .then(() => {
+        if (!this.mWindow.isDestroyed()) {
+          this.mWindow.close();
+        }
+        this.mWindow = null;
+      });
   }
 
   public create(disableGPU: boolean): Promise<void> {
@@ -91,17 +72,38 @@ class SplashScreen {
       this.mWindow.once('ready-to-show', onReady);
 
       const splashUrl = pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href;
+      log('debug', 'loading splash screen from', splashUrl);
       this.mWindow.loadURL(splashUrl);
       
-      // Add disable-gpu class to body if GPU is disabled
-      if (disableGPU) {
-        this.mWindow.webContents.once('dom-ready', () => {
+      // Add debug logging and disable-gpu class handling
+      this.mWindow.webContents.once('dom-ready', () => {
+        log('debug', 'splash screen DOM ready');
+        
+        if (disableGPU) {
           this.mWindow.webContents.executeJavaScript(`
             document.body.classList.add('disable-gpu');
           `);
-        });
-      }
-      this.mWindow.webContents.openDevTools();
+        }
+        
+        // Check if images are loading correctly
+        this.mWindow.webContents.executeJavaScript(`
+          const splashElement = document.querySelector('.splash-image');
+          if (splashElement) {
+            const computedStyle = window.getComputedStyle(splashElement);
+            const backgroundImage = computedStyle.backgroundImage;
+            console.log('Splash background image:', backgroundImage);
+            
+            // Test if image exists
+            const img = new Image();
+            img.onload = () => console.log('Splash image loaded successfully');
+            img.onerror = () => console.log('Splash image failed to load');
+            img.src = './assets/images/splash.png';
+          } else {
+            console.log('Splash element not found');
+          }
+        `).catch(err => log('warn', 'failed to execute splash debug script', err.message));
+      });
+      // this.mWindow.webContents.openDevTools(); // Commented out to prevent dev tools from showing
     });
   }
 

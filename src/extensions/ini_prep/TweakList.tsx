@@ -57,7 +57,7 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
       <ListGroupItem className='listitem-tweak'>
         <Toggle checked={enabled} onToggle={this.toggle}>{match[1]}</Toggle>
       </ListGroupItem>
-      );
+    );
   }
 
   private toggle = (enabled: boolean) => {
@@ -94,7 +94,7 @@ class TweakList extends ComponentEx<IProps, {}> {
         enabled={isEnabled}
         onToggle={this.toggle}
       />
-      );
+    );
   }
 
   private toggle = (fileName: string, enabled: boolean) => {

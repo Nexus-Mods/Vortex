@@ -132,15 +132,15 @@ function registerAction(instanceGroup: string,
                         titleOrProps?: string | (() => any),
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
                         condition?: () => boolean | string,
-                        ): any {
+): any {
   if (instanceGroup === group) {
     const options = { ...optionsIn, namespace: extInfo.namespace };
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
-               position, action: actionOrCondition, options, condition };
+        position, action: actionOrCondition, options, condition };
     } else {
       return { type: 'ext', component: iconOrComponent, props: titleOrProps,
-               position, condition: actionOrCondition, options };
+        position, condition: actionOrCondition, options };
     }
   } else {
     return undefined;

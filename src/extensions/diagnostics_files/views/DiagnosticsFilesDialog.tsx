@@ -222,7 +222,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
             id={`report-log-${sessionIdx}`}
             onClick={this.reportLog}
           >
-          {t('Report')}
+            {t('Report')}
           </Button>
         ) : null}
       </FlexLayout>
@@ -342,4 +342,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 
 export default translate(['common'])(
   connect<IConnectedProps, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)
-    (DiagnosticsFilesDialog)) as React.ComponentClass<IBaseProps>;
+  (DiagnosticsFilesDialog)) as React.ComponentClass<IBaseProps>;

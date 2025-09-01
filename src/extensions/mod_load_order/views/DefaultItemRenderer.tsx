@@ -6,7 +6,7 @@ import * as url from 'url';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
 import { IItemRendererOptions, ILoadOrder, ILoadOrderDisplayItem,
-  ILoadOrderEntry } from '../types/types';
+         ILoadOrderEntry } from '../types/types';
 
 import { Icon } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
@@ -68,10 +68,10 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
   private renderExternalBanner(): JSX.Element {
     const { t } = this.props;
     return (
-    <div className='load-order-unmanaged-banner'>
-      <span>{t('Not managed by Vortex')}</span>
-      <Icon className='external-caution-logo' name='feedback-warning'/>
-    </div>
+      <div className='load-order-unmanaged-banner'>
+        <span>{t('Not managed by Vortex')}</span>
+        <Icon className='external-caution-logo' name='feedback-warning'/>
+      </div>
     );
   }
 
@@ -171,7 +171,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
     loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], empty),
     modState: getSafe(profile, ['modState'], empty),
     itemRendererOptions: getSafe(state,
-      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultRendererOpts),
+                                 ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultRendererOpts),
   };
 }
 

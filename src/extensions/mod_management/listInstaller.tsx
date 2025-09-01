@@ -43,7 +43,7 @@ function makeListInstaller(extractList: IFileListItem[],
 
   // TODO: this is awkward. We expect the entire list to use the same checksum algorithm
   if (extractList.find(iter =>
-        (iter.md5 !== undefined) || (iter.xxh64 === undefined)) === undefined) {
+    (iter.md5 !== undefined) || (iter.xxh64 === undefined)) === undefined) {
     lookupFunc = makeXXHash64();
     idxId = 'xxh64';
   }
@@ -59,16 +59,16 @@ function makeListInstaller(extractList: IFileListItem[],
         // build lookup table of the existing files on disk md5 -> source path
         return Promise.reduce(files.filter(relPath => !relPath.endsWith(path.sep)),
                               (prev, relPath, idx, length) => {
-          return lookupFunc(path.join(basePath, relPath))
-            .then(checksum => {
-              if (Math.floor((idx * 10) / length) > prog) {
-                prog = Math.floor((idx * 10) / length);
-                progressDelegate(prog * 10);
-              }
-              prev[checksum] = relPath;
-              return prev;
-            });
-          }, {})
+                                return lookupFunc(path.join(basePath, relPath))
+                                  .then(checksum => {
+                                    if (Math.floor((idx * 10) / length) > prog) {
+                                      prog = Math.floor((idx * 10) / length);
+                                      progressDelegate(prog * 10);
+                                    }
+                                    prev[checksum] = relPath;
+                                    return prev;
+                                  });
+                              }, {})
           .then(lookup => {
             // for each item in the extract list, look up the source path vial
             // the lookup table, then create the copy instruction.

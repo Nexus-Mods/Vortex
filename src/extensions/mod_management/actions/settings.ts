@@ -7,10 +7,10 @@ import { InstallPathMode } from '../../../types/api';
  * change the mod install path. Supports placeholders
  */
 export const setInstallPath = safeCreateAction('SET_MOD_INSTALL_PATH',
-  (gameId: string, path: string) => ({ gameId, path }));
+                                               (gameId: string, path: string) => ({ gameId, path }));
 
 export const setInstallPathMode = safeCreateAction('SET_MOD_INSTALL_PATH_MODE',
-  (mode: InstallPathMode) => mode);
+                                                   (mode: InstallPathMode) => mode);
 
 export const setSuggestInstallPathDirectory = safeCreateAction(
   'SET_SUGGEST_INSTALL_PATH_DIRECTORY',
@@ -20,13 +20,13 @@ export const setSuggestInstallPathDirectory = safeCreateAction(
  * sets the activator to use for this game
  */
 export const setActivator = safeCreateAction('SET_ACTIVATOR',
-  (gameId: string, activatorId: string) => ({ gameId, activatorId }));
+                                             (gameId: string, activatorId: string) => ({ gameId, activatorId }));
 
 export const setShowModDropzone = safeCreateAction('SET_SHOW_MOD_DROPZONE',
-  show => show);
+                                                   show => show);
 
 export const setConfirmPurge = safeCreateAction('SET_CONFIRM_PURGE',
-  (confirm: boolean) => confirm);
+                                                (confirm: boolean) => confirm);
 
 export const setCleanupOnDeploy = safeCreateAction('SET_CLEANUP_ON_DEPLOY',
-  (cleanup: boolean) => cleanup);
+                                                   (cleanup: boolean) => cleanup);

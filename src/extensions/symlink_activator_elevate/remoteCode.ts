@@ -27,10 +27,10 @@ export function remoteCode(ipcClient, req) {
       'link-file': (payload) => {
         const { source, destination, num } = payload;
         return doFS(() => fs.symlink(source, destination))
-            .catch(err => (err.code !== 'EEXIST')
-              ? Promise.reject(err)
-              : doFS(() => fs.unlink(destination))
-                .then(() => doFS(() => fs.symlink(source, destination))))
+          .catch(err => (err.code !== 'EEXIST')
+            ? Promise.reject(err)
+            : doFS(() => fs.unlink(destination))
+              .then(() => doFS(() => fs.symlink(source, destination))))
           .then(() => {
             emit('log', {
               level: 'debug',

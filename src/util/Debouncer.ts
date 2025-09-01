@@ -158,17 +158,17 @@ class Debouncer {
     if (prom?.['then'] !== undefined) {
       this.mRunning = true;
       prom['then'](() => this.invokeCallbacks(callbacks, null))
-          .catch((err: Error) => this.invokeCallbacks(callbacks, err))
-          .finally(() => {
-            this.mRunning = false;
-            if (this.mReschedule === 'immediately') {
-              this.mReschedule = 'no';
-              this.run();
-            } else if (this.mReschedule === 'yes') {
-              this.mReschedule = 'no';
-              this.reschedule();
-            }
-          });
+        .catch((err: Error) => this.invokeCallbacks(callbacks, err))
+        .finally(() => {
+          this.mRunning = false;
+          if (this.mReschedule === 'immediately') {
+            this.mReschedule = 'no';
+            this.run();
+          } else if (this.mReschedule === 'yes') {
+            this.mReschedule = 'no';
+            this.reschedule();
+          }
+        });
     } else {
       this.invokeCallbacks(callbacks, prom as Error);
     }

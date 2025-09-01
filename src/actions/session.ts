@@ -13,45 +13,45 @@ const uiOnlyMeta = (process.type === 'renderer')
  * group will be hidden). the itemId can be undefined to hide them all.
  */
 export const displayGroup = safeCreateAction('DISPLAY_GROUP',
-  (groupId: string, itemId: string) => ({ groupId, itemId }));
+                                             (groupId: string, itemId: string) => ({ groupId, itemId }));
 
 export const setDialogVisible = safeCreateAction('SET_DIALOG_VISIBLE',
-  (dialogId: string) => ({ dialogId }));
+                                                 (dialogId: string) => ({ dialogId }));
 
 export const setSettingsPage = safeCreateAction('SET_SETTINGS_PAGE',
-  (pageId: string) => ({ pageId }));
+                                                (pageId: string) => ({ pageId }));
 
 export const setOpenMainPage = safeCreateAction('SET_OPEN_MAINPAGE',
-  (page: string, secondary: boolean) => ({ page, secondary }));
+                                                (page: string, secondary: boolean) => ({ page, secondary }));
 
 export const startActivity = safeCreateAction('START_ACTIVITY',
-  (group: string, activityId: string) => ({ group, activityId }),
-  uiOnlyMeta);
+                                              (group: string, activityId: string) => ({ group, activityId }),
+                                              uiOnlyMeta);
 
 export const stopActivity = safeCreateAction('STOP_ACTIVITY',
-  (group: string, activityId: string) => ({ group, activityId }),
-  uiOnlyMeta);
+                                             (group: string, activityId: string) => ({ group, activityId }),
+                                             uiOnlyMeta);
 
 export const setProgress = safeCreateAction('SET_PROGRESS',
-  (group: string, progressId: string, text: string, percent: number) =>
-    ({ group, progressId, text, percent }));
+                                            (group: string, progressId: string, text: string, percent: number) =>
+                                              ({ group, progressId, text, percent }));
 
 export const setToolRunning = safeCreateAction('SET_TOOL_RUNNING',
-  (exePath: string, started: number, exclusive: boolean) => ({ exePath, started, exclusive }));
+                                               (exePath: string, started: number, exclusive: boolean) => ({ exePath, started, exclusive }));
 
 export const setToolPid = safeCreateAction('SET_TOOL_RUNNING',
-  (exePath: string, pid: number, exclusive: boolean) => ({ exePath, pid, exclusive }));
+                                           (exePath: string, pid: number, exclusive: boolean) => ({ exePath, pid, exclusive }));
 
 export const setToolStopped = safeCreateAction('SET_TOOL_STOPPED',
-  (exePath: string) => ({ exePath }));
+                                               (exePath: string) => ({ exePath }));
 
 export const setExtensionLoadFailures =
   safeCreateAction('SET_EXT_LOAD_FAILURES', failures => failures);
 
 export const setUIBlocker =
   safeCreateAction('SET_UI_BLOCKER',
-  (id: string, icon: string, description: string, mayCancel: boolean) =>
-  ({ id, icon, description, mayCancel }));
+                   (id: string, icon: string, description: string, mayCancel: boolean) =>
+                     ({ id, icon, description, mayCancel }));
 
 export const clearUIBlocker = safeCreateAction('CLEAR_UI_BLOCKER', (id: string) => id);
 

@@ -23,7 +23,7 @@ export interface IToolbarIconProps {
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
     const { className, id, text, tooltip, icon, iconSet, pulse, spin,
-            stroke, hollow, disabled} = this.props;
+      stroke, hollow, disabled} = this.props;
     const placement = this.props.placement || 'bottom';
     return (
       <Button
@@ -43,7 +43,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
             stroke={stroke}
             hollow={hollow}
           />
-         ) : null}
+        ) : null}
         {text !== undefined ? <div className='button-text'>{text}</div> : null}
         {this.props.children}
       </Button>

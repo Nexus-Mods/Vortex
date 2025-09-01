@@ -141,9 +141,9 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: game.id,
     toolsOrder: getSafe(state,
-      ['settings', 'interface', 'tools', 'order', game.id], []),
+                        ['settings', 'interface', 'tools', 'order', game.id], []),
     discoveredTools: getSafe(state,
-      ['settings', 'gameMode', 'discovered', game.id, 'tools'], emptyObj),
+                             ['settings', 'gameMode', 'discovered', game.id, 'tools'], emptyObj),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', game.id], undefined),
   };
 }

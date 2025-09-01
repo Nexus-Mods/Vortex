@@ -16,8 +16,8 @@ function toWordExp(input: string): string {
 }
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
-      'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
-      'strings', 'trees', 'asi', 'tools', 'calientetools'];
+  'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
+  'strings', 'trees', 'asi', 'tools', 'calientetools'];
 
 const gamebryoPatterns: string[] = [
   '[^/]*\\.esp$',
@@ -43,51 +43,51 @@ function stopPatterns(gameMode: string) {
     case 'skyrimse': return [].concat(uniPatterns, gamebryoPatterns,
                                       ['skse'].map(toWordExp));
     case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
-                                 'usershader', 'usertexture'].map(toWordExp).concat(uniPatterns);
+      'usershader', 'usertexture'].map(toWordExp).concat(uniPatterns);
     case 'stateofdecay': return ['characters', 'dialog', 'Entities', 'languages',
-                                  'levels', 'libs', 'objects', 'scripts',
-                                   'sounds'].map(toWordExp).concat(uniPatterns);
+      'levels', 'libs', 'objects', 'scripts',
+      'sounds'].map(toWordExp).concat(uniPatterns);
     case 'witcher2': return ['abilities', 'characters', 'combat', 'cutscenes',
-                              'engine', 'environment', 'environment_levels', 'fx',
-                              'game', 'globals', 'items', 'junk', 'levels', 'reactions',
-                              'speedtree', 'templates', 'tests'].map(toWordExp).concat(uniPatterns);
+      'engine', 'environment', 'environment_levels', 'fx',
+      'game', 'globals', 'items', 'junk', 'levels', 'reactions',
+      'speedtree', 'templates', 'tests'].map(toWordExp).concat(uniPatterns);
     case 'kingdomcomedeliverance':
       return ['[^/]*\\.pak$'].concat(['mod.manifest'].map(toWordExp), uniPatterns);
     case 'pillarsofeternity2':
       return ['manifest.json', 'thumb.png', 'localized', 'conversations', 'atlases'].map(toWordExp);
     case 'vampirebloodlines':
       return ['[^/]*\\.vpk$'].concat(['cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials',
-              'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
-              'vdata'].map(toWordExp));
+        'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
+        'vdata'].map(toWordExp));
     case 'sekiro':
       return ['action', 'Artwork_MiniSoundtrack', 'chr', 'cutscene', 'event', 'facegen', 'font',
-              'map', 'menu', 'movie', 'msg', 'mtd', 'obj', 'other', 'param', 'parts', 'script',
-              'sfx', 'shader', 'sound'].map(toWordExp);
+        'map', 'menu', 'movie', 'msg', 'mtd', 'obj', 'other', 'param', 'parts', 'script',
+        'sfx', 'shader', 'sound'].map(toWordExp);
     case 'darkestdungeon':
       return ['audio', 'campaign', 'colours', 'curios', 'cursors', 'dlc', 'dungeons',
-              'effects', 'fe_flow', 'fonts', 'fx', 'heroes', 'inventory', 'loading_screen',
-              'localization', 'loot', 'maps', 'modes', 'monsters', 'overlays', 'panels',
-              'props', 'raid', 'raid_results', 'scripts', 'scrolls', 'shaders', 'shared',
-              'trinkets', 'upgrades', 'video'].map(toWordExp);
+        'effects', 'fe_flow', 'fonts', 'fx', 'heroes', 'inventory', 'loading_screen',
+        'localization', 'loot', 'maps', 'modes', 'monsters', 'overlays', 'panels',
+        'props', 'raid', 'raid_results', 'scripts', 'scrolls', 'shaders', 'shared',
+        'trinkets', 'upgrades', 'video'].map(toWordExp);
     case 'bladeandsorcery':
       return ['Brains', 'Collisions', 'Containers', 'Creatures', 'CreatureTables', 'Damagers',
-              'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
-              'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
-              'Waves'].map(toWordExp);
+        'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
+        'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
+        'Waves'].map(toWordExp);
     case 'shadowrunreturns':
       return ['data', 'project.cpack.txt', 'project.cpack.bytes'].map(toWordExp);
     case 'neverwinter':
       return ['ambient', 'database', 'development', 'dmvault', 'hak',
-              'localvault', 'logs', 'modules', 'movies', 'music', 'nwsync', 'override', 'portraits',
-              'servervault', 'tempclient', 'tlk'].map(toWordExp);
+        'localvault', 'logs', 'modules', 'movies', 'music', 'nwsync', 'override', 'portraits',
+        'servervault', 'tempclient', 'tlk'].map(toWordExp);
     case 'neverwinter2':
       return ['ambient', 'ambient_X1', 'ambient_X2', 'Campaigns', 'data', 'database', 'dmvault',
-              'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
-              'override', 'patch', 'portraits', 'pwc', 'saves', 'servervault', 'texturepacks',
-              'tlk', 'ui'].map(toWordExp);
+        'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
+        'override', 'patch', 'portraits', 'pwc', 'saves', 'servervault', 'texturepacks',
+        'tlk', 'ui'].map(toWordExp);
     case 'daggerfallunity':
       return ['factions', 'fonts', 'mods', 'questpacks', 'quests', 'soundfonts', 'spellicons',
-              'tables', 'text', 'textures'].map(toWordExp);
+        'tables', 'text', 'textures'].map(toWordExp);
     case 'thesims4':
       return ['[^/]*\\.package$', '[^/]*\\.ts4script$', '[^/]*\\.py[co]?$'];
     default: return [].concat(uniPatterns);

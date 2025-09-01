@@ -31,7 +31,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
     .then((logFileNames: string[]) => {
       logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
       return Promise.mapSeries(logFileNames, (logFileName: string) =>
-                              fs.readFileAsync(path.join(logPath, logFileName), 'utf8'));
+        fs.readFileAsync(path.join(logPath, logFileName), 'utf8'));
     })
     .then((data: string[]) => data.join('\n'))
     .then((text: string) => {
@@ -45,12 +45,12 @@ export function loadVortexLogs(): Promise<ISession[]> {
           .filter(line => line !== undefined);
 
         return ((logElements.length > 1) ?
-                    {
-                      from: new Date(Date.parse(logElements[0].time)),
-                      to: new Date(Date.parse(logElements[logElements.length - 1].time)),
-                      logs: logElements,
-                    } :
-                    undefined) as ISession;
+          {
+            from: new Date(Date.parse(logElements[0].time)),
+            to: new Date(Date.parse(logElements[logElements.length - 1].time)),
+            logs: logElements,
+          } :
+          undefined) as ISession;
       });
     })
     .filter((session: ISession) => session !== undefined);

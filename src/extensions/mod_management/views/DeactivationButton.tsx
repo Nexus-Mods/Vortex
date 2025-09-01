@@ -124,16 +124,16 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       { label: 'Cancel' },
       { label: 'Continue' },
     ])
-    .then(result => {
-      if (result.action === 'Cancel') {
-        return Promise.reject(new UserCanceled());
-      } else {
-        if (result.input.confirm_purge) {
-          onSetConfirmPurge(false);
+      .then(result => {
+        if (result.action === 'Cancel') {
+          return Promise.reject(new UserCanceled());
+        } else {
+          if (result.input.confirm_purge) {
+            onSetConfirmPurge(false);
+          }
+          return Promise.resolve();
         }
-        return Promise.resolve();
-      }
-    });
+      });
   }
 }
 
@@ -164,7 +164,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
         type: 'warning',
         message,
         actions: [ dialogAction ],
-    })),
+      })),
     onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }

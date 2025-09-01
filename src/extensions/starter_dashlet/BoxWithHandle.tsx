@@ -42,7 +42,7 @@ export const BoxWithHandle: FC<IProps> = (props: IProps) => {
     },
   })
 
-const dragDropRef = drag(dropRef(ref))
+  const dragDropRef = drag(dropRef(ref))
   const children = Array.isArray(props.children)
     ? props.children : [props.children];
   return (

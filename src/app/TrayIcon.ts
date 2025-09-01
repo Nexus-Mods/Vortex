@@ -80,7 +80,7 @@ class TrayIcon {
       ]));
 
       this.mApi.events.on('show-balloon',
-        (title: string, content: string) => this.showNotification(title, content));
+                          (title: string, content: string) => this.showNotification(title, content));
       this.mInitialized = true;
       log('debug', 'Tray icon initialized successfully');
     } catch (err) {

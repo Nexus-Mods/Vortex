@@ -57,7 +57,7 @@ function registerDynDiv(instanceGroup: string,
                         group: string,
                         component: React.ComponentClass<any>,
                         options: IDynDivOptions,
-                        ): IDynDivDefinition {
+): IDynDivDefinition {
   if (instanceGroup === group) {
     return { component, options };
   } else {

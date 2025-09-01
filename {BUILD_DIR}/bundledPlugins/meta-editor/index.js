@@ -568,6 +568,16 @@ module.exports = require("semver");
 
 /***/ }),
 
+/***/ "url":
+/*!**********************!*\
+  !*** external "url" ***!
+  \**********************/
+/***/ ((module) => {
+
+module.exports = require("url");
+
+/***/ }),
+
 /***/ "util":
 /*!***********************!*\
   !*** external "util" ***!
@@ -585,16 +595,6 @@ module.exports = require("util");
 /***/ ((module) => {
 
 module.exports = require("vortex-api");
-
-/***/ }),
-
-/***/ "url":
-/*!**********************!*\
-  !*** external "url" ***!
-  \**********************/
-/***/ ((module) => {
-
-module.exports = require("url");
 
 /***/ })
 

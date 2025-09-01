@@ -103,7 +103,7 @@ class Steam implements IGameStore {
           cwd: path.dirname(execInfo.execPath),
           suggestDeploy: true,
           shell: true,
-      }));
+        }));
   }
 
   public getPosixPath(appInfo: any) {
@@ -286,7 +286,7 @@ class Steam implements IGameStore {
                   return { obj: parse(manifestData.toString()), name };
                 } catch (err) {
                   log('warn', 'failed to parse steam manifest',
-                    { name, error: err.message });
+                      { name, error: err.message });
                   return undefined;
                 }
               })
@@ -313,7 +313,7 @@ class Steam implements IGameStore {
                   };
                 } catch (err) {
                   log('warn', 'failed to parse steam manifest',
-                    { name, error: err.message });
+                      { name, error: err.message });
                   return undefined;
                 }
               })

@@ -157,7 +157,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
       if (reason.errors.length === 0) {
         // the failure no longer applies? Hrmm...
         log('warn', 'The reason the deployment method was unavailable was apparently temporary',
-          { reason: method.description });
+            { reason: method.description });
         onClear();
       } else if (reason.errors[0].fixCallback !== undefined) {
         onClear();
@@ -171,7 +171,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
                  + 'affecting it.',
         });
         log('warn', 'The reason the deployment method is unavailable changed',
-          { before: method.description, after: reason.errors[0].description(t) });
+            { before: method.description, after: reason.errors[0].description(t) });
       }
     } else {
       const discovery = currentGameDiscovery(state);

@@ -77,20 +77,20 @@ class ConcurrencyLimiter {
             this.mNext = () => resolve(true);
           }
         })
-        .then((queued: boolean) => {
+          .then((queued: boolean) => {
           // once the queue is ticked, reset mNext in case there
           // is nothing else queued, then process the actual promise
-          if (queued) {
-            this.mNext = undefined;
-          }
-          this.process(cb, tries)
-            .then(outerResolve)
-            .catch(outerReject)
-            .then(() => null);
+            if (queued) {
+              this.mNext = undefined;
+            }
+            this.process(cb, tries)
+              .then(outerResolve)
+              .catch(outerReject)
+              .then(() => null);
           // this resolves immediately, so the next promise in the queue
           // gets paused
-          return Promise.resolve();
-        }));
+            return Promise.resolve();
+          }));
     });
   }
 }

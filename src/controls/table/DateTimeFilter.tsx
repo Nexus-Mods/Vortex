@@ -48,26 +48,26 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
     const locale = this.context.api.locale();
 
     return (
-        <InputGroup className='datetime-filter'>
-          <InputGroup.Addon className='group-addon-btn'>
-            <Button
-              id='btn-date-direction'
-              className='btn-embed'
-              onClick={this.toggleDirection}
-              tooltip={currentComparison.tooltip}
-            >
-              {currentComparison.symbol}
-            </Button>
-          </InputGroup.Addon>
-          <ReactDatePicker
-            selected={truthy(filt.value) ? new Date(filt.value) : null}
-            onChange={this.changeFilter}
-            locale={getLocale(locale)}
-            dateFormat={getDateFormat(locale)}
-            isClearable={true}
-            className='datetime-picker'
-          />
-        </InputGroup>
+      <InputGroup className='datetime-filter'>
+        <InputGroup.Addon className='group-addon-btn'>
+          <Button
+            id='btn-date-direction'
+            className='btn-embed'
+            onClick={this.toggleDirection}
+            tooltip={currentComparison.tooltip}
+          >
+            {currentComparison.symbol}
+          </Button>
+        </InputGroup.Addon>
+        <ReactDatePicker
+          selected={truthy(filt.value) ? new Date(filt.value) : null}
+          onChange={this.changeFilter}
+          locale={getLocale(locale)}
+          dateFormat={getDateFormat(locale)}
+          isClearable={true}
+          className='datetime-picker'
+        />
+      </InputGroup>
     );
   }
 
@@ -80,7 +80,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
     const { attributeId, onSetFilter } = this.props;
     this.currentValue = date;
     onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
+                { comparison: this.currentComparison, value: this.currentValue });
   }
 
   private toggleDirection = (evt) => {
@@ -93,7 +93,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
       options[(options.indexOf(filt.comparison) + 1) % options.length] as any;
 
     onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
+                { comparison: this.currentComparison, value: this.currentValue });
   }
 }
 

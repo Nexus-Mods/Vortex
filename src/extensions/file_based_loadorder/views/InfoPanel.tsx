@@ -68,6 +68,6 @@ class InfoPanel extends ComponentEx<IProps, {}> {
 }
 
 export default withTranslation(['common'])
-  ((InfoPanel) as any) as React.ComponentClass<{
+((InfoPanel) as any) as React.ComponentClass<{
     validationError: LoadOrderValidationError,
     info: string | React.ComponentType<{}>}>;

@@ -74,19 +74,19 @@ function doBrowse(api: IExtensionApi, navUrl: string,
     instructions += t('This window will close as soon as you click a valid download link');
     api.store.dispatch(showURL(navUrl, instructions, subscriptionId, skippable));
   })
-  .catch(err => {
-    if (err instanceof UserCanceled) {
-      if (skippable) {
-        return 'err:' + (err.skipped ? 'skip' : 'cancel');
-      } else {
-        return null;
+    .catch(err => {
+      if (err instanceof UserCanceled) {
+        if (skippable) {
+          return 'err:' + (err.skipped ? 'skip' : 'cancel');
+        } else {
+          return null;
+        }
       }
-    }
-    api.showErrorNotification('Failed to download via browser', err);
-  })
-  .finally(() => {
-    unsubscribeAll(subscriptionId);
-  });
+      api.showErrorNotification('Failed to download via browser', err);
+    })
+    .finally(() => {
+      unsubscribeAll(subscriptionId);
+    });
 }
 
 function init(context: IExtensionContext): boolean {
@@ -106,34 +106,34 @@ function init(context: IExtensionContext): boolean {
     // the browser closes as soon as a downloadable link was clicked and returns that
     // url
     context.api.onAsync('browse-for-download',
-      (navUrl: string, instructions: string, skippable?: boolean) => {
-        return enqueue(() =>
-          doBrowse(context.api, navUrl, instructions, shortid(), skippable ?? false), false);
-      });
+                        (navUrl: string, instructions: string, skippable?: boolean) => {
+                          return enqueue(() =>
+                            doBrowse(context.api, navUrl, instructions, shortid(), skippable ?? false), false);
+                        });
 
     ipcRenderer.on('received-url',
-        (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
-      if (url.parse(dlUrl).pathname === null) {
+                   (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
+                     if (url.parse(dlUrl).pathname === null) {
         // invalid url, not touching this
-        return;
-      }
-      if (dlUrl.startsWith('blob:')) {
-        dlUrl += '|' + fileName;
-      }
-      if (lastURL !== undefined) {
-        dlUrl += '<' + lastURL;
-      }
-      const state: IState = context.api.store.getState();
-      const { subscriber } = state.session.browser;
-      if (subscriber !== undefined) {
-        const res = triggerEvent(subscriber, 'download-url', dlUrl);
-        if (res === 'close') {
-          context.api.store.dispatch(closeBrowser());
-        }
-      } else {
-        context.api.events.emit('start-download-url', dlUrl);
-      }
-    });
+                       return;
+                     }
+                     if (dlUrl.startsWith('blob:')) {
+                       dlUrl += '|' + fileName;
+                     }
+                     if (lastURL !== undefined) {
+                       dlUrl += '<' + lastURL;
+                     }
+                     const state: IState = context.api.store.getState();
+                     const { subscriber } = state.session.browser;
+                     if (subscriber !== undefined) {
+                       const res = triggerEvent(subscriber, 'download-url', dlUrl);
+                       if (res === 'close') {
+                         context.api.store.dispatch(closeBrowser());
+                       }
+                     } else {
+                       context.api.events.emit('start-download-url', dlUrl);
+                     }
+                   });
   });
 
   return true;
