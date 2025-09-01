@@ -166,7 +166,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   const download = React.useCallback(() => {
     onDownload(urls[0]);
-  }, [onCancel, urls]);
+  }, [onDownload, urls]);
 
   const skip = React.useCallback(() => {
     onSkip(urls[0]);
@@ -202,7 +202,8 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
         fileInfo={fileInfo} 
         t={t} 
         openModPage={openModPage} 
-        goPremium={goPremium} />
+        goPremium={goPremium} 
+        onDownload={download} />
       </Modal.Body>
       <Modal.Footer>
         <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>
