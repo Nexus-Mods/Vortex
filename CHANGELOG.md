@@ -25,6 +25,10 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
    - Fixed FOMOD installer action and reducer tests to match new instance-based architecture
    - Added missing utility functions to vortex-api mock for feedback reducer tests
    - These changes enable Mac port development without affecting Windows test behavior
+ - **build**: Optimized BuildSubprojects.js script to reduce build time and output duplication
+   - Modified script to only run second build pass when first pass has failures
+   - Added skip emoji (⏭️) to platform-specific module skipping messages for better visual clarity
+   - Eliminates duplicate build output when all modules build successfully on first attempt
  - **collections**: Added collection install tracking for Nexus API use
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when SMAPI installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))

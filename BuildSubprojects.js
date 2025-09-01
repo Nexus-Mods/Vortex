@@ -42,8 +42,10 @@ class Unchanged extends Error {
 }
 
 class ConditionNotMet extends Error {
-  constructor() {
-    super('Condition not met');
+  constructor(project, condition) {
+    super('condition not met');
+    this.project = project;
+    this.condition = condition;
   }
 }
 class ProcessFeedback {
@@ -144,6 +146,7 @@ function format(fmt, parameters) {
 }
 
 function processModule(project, buildType, feedback) {
+  const start = Date.now();
   let options = {};
   let modulePath;
   if (buildType !== 'out') {
@@ -161,7 +164,11 @@ function processModule(project, buildType, feedback) {
 
   return build
     .then(() => rimrafAsync(modulePath))
-    .then(() => npm('add', [project.module], options, feedback));
+    .then(() => npm('add', [project.module], options, feedback))
+    .then(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      return { elapsed };
+    });
 }
 
 async function updateSourceMap(filePath) {
@@ -190,7 +197,8 @@ function processCustom(project, buildType, feedback, noparallel) {
 
   }
   res = res.then(() => {
-    console.log(project.path, 'took', (Date.now() - start) / 1000, 's');
+    const elapsed = (Date.now() - start) / 1000;
+    return { elapsed };
   })
   return res;
 }
@@ -205,7 +213,7 @@ function evalCondition(condition, context) {
 
 function processProject(project, buildType, feedback, noparallel) {
   if (!evalCondition(project.condition, { buildType })) {
-    return Promise.reject(new ConditionNotMet());
+    return Promise.reject(new ConditionNotMet(project, project.condition));
   }
   if (project.type === 'install-module') {
     return processModule(project, buildType, feedback);
@@ -215,7 +223,7 @@ function processProject(project, buildType, feedback, noparallel) {
   //   return processRebuild(project, buildType, feedback);
   }
   if (project.type.startsWith('_')) {
-    return Promise.resolve();
+    return Promise.resolve(null);
   }
   return Promise.reject(new Error('invalid project descriptor ' + project.toString()));
 }
@@ -246,7 +254,8 @@ function main(args) {
 
   // the projects file contains groups of projects
   // each group is processed in parallel
-  return Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
+  return Promise.each(projectGroups, (projects) => {
+    return Promise.map(projects, (project) => {
     if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.VORTEX_VARIANT !== project.variant)) {
       return Promise.resolve();
     }
@@ -258,27 +267,53 @@ function main(args) {
           }
           return processProject(project, buildType, feedback, args.noparallel);
         })
-        .then(() => {
+        .then((result) => {
+          const platformName = process.platform === 'win32' ? 'Windows' : 
+                              process.platform === 'darwin' ? 'macOS' : 
+                              process.platform === 'linux' ? 'Linux' : process.platform;
+          if (result && result.elapsed) {
+            console.log(`Successfully built extension "${project.name}" in ${result.elapsed} s - compatible with ${platformName} ✅`);
+          } else {
+            console.log(`Successfully built "${project.name}" - compatible with ${platformName} ✅`);
+          }
           buildState[project.name] = Date.now();
           return fsP.writeFile(buildStateName, JSON.stringify(buildState, undefined, 2));
         })
         .catch((err) => {
           if (err instanceof Unchanged) {
             console.log('nothing to do', project.name);
+            return Promise.resolve();
           } else if (err instanceof ConditionNotMet) {
-            console.log('condition wasn\'t met', project.name);
+            const targetPlatform = err.condition?.includes('win32') ? 'Windows' : 
+                                 err.condition?.includes('darwin') ? 'macOS' : 
+                                 err.condition?.includes('linux') ? 'Linux' : 'unknown';
+            const currentPlatform = process.platform === 'win32' ? 'Windows' : 
+                                  process.platform === 'darwin' ? 'macOS' : 
+                                  process.platform === 'linux' ? 'Linux' : process.platform;
+            console.log(`⏭️ Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
+            return Promise.resolve();
           } else {
             console.error('failed ', project.name, err);
             failed = true;
+            return Promise.resolve();
           }
         })
         ;
-  }, { concurrency: 1 }))
+    });
+  }, { concurrency: 1 })
   .then(() => failed ? 1 : 0);
 }
 
 const args = minimist(process.argv.slice(2));
 main(args)
-  // just run a second time, to repeat all failed builds
-  .then(() => main(args))
+  .then(firstRunResult => {
+    // only run a second time if there were failures in the first run
+    if (firstRunResult === 1) {
+      console.log('\nRetrying failed builds...');
+      return main(args);
+    } else {
+      console.log('\nAll builds completed successfully on first run.');
+      return firstRunResult;
+    }
+  })
   .then(res => process.exit(res));

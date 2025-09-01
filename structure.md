@@ -47,6 +47,7 @@
 # Utility scripts
 - bootstrap.ps1: Automatically installs the tools required to build Vortex, checks out the repo, starts a development build
 - updateLicenses.js: Update list of included third-party modules and their licenses, gets displayed on the About screen.
+- BuildSubprojects.js: Builds all bundled extensions defined in BuildSubprojects.json. Features conditional retry mechanism that only runs second build pass if first pass has failures, reducing build time and eliminating duplicate output for successful builds.
 
 # Scripts used as part of the install/build process
 - checkPackages.js: Verifies there are no discrepancies between the two package.json files
