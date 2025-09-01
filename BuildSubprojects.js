@@ -36,8 +36,8 @@ const rimrafAsync = Promise.promisify(rimraf);
 const globAsync = Promise.promisify(glob.glob);
 
 class Unchanged extends Error {
-  constructor() {
-    super('No changes');
+  constructor(message = 'No changes') {
+    super(message);
   }
 }
 
@@ -128,15 +128,62 @@ function changes(basePath, patterns, force) {
   if ((patterns === undefined) || force) {
     return Promise.resolve();
   }
-  // glob all the patterns, then map all the files to their last modified time,
-  // then get the newest of those modified times
-  return Promise.reduce(patterns,
-                        (total, pattern) =>
-                            globAsync(path.join(basePath, pattern), globOptions)
-                                .then((files) => [].concat(total, files)),
-                        [])
-      .map((filePath) => fsP.stat(filePath).then((stat) => stat.mtime.getTime()))
-      .then((fileTimes) => Math.max(...fileTimes));
+
+  // Use a more reliable approach with fs.readdir instead of glob
+  const getAllFiles = (dir, patterns) => {
+    const files = [];
+    try {
+      const items = fs.readdirSync(dir, { withFileTypes: true });
+      for (const item of items) {
+        const fullPath = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          files.push(...getAllFiles(fullPath, patterns));
+        } else {
+          // Check if file matches any pattern
+          const relativePath = path.relative(basePath, fullPath);
+          for (const pattern of patterns) {
+            if (pattern.includes('**')) {
+              // Simple wildcard matching for TypeScript files
+              if (pattern.includes('*.ts') && fullPath.endsWith('.ts')) {
+                files.push(fullPath);
+                break;
+              }
+              if (pattern.includes('*.tsx') && fullPath.endsWith('.tsx')) {
+                files.push(fullPath);
+                break;
+              }
+            } else if (relativePath === pattern || item.name === pattern) {
+              files.push(fullPath);
+              break;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      // Directory doesn't exist or can't be read
+    }
+    return files;
+  };
+
+  try {
+    const allFiles = getAllFiles(basePath, patterns);
+    if (allFiles.length === 0) {
+      return Promise.resolve();
+    }
+
+    const fileTimes = allFiles.map(filePath => {
+      try {
+        const stat = fs.statSync(filePath);
+        return stat.mtime.getTime();
+      } catch (err) {
+        return 0;
+      }
+    });
+
+    return Promise.resolve(Math.max(...fileTimes));
+  } catch (err) {
+    return Promise.resolve();
+  }
 }
 
 function format(fmt, parameters) {
@@ -237,6 +284,7 @@ function main(args) {
   const globalFeedback = new ProcessFeedback('global');
 
   const buildType = args._[0];
+  const targetProject = args._[1]; // Optional project name filter
 
   process.env.TARGET_ENV = (buildType === 'app')
     ? 'production' : 'development';
@@ -256,6 +304,10 @@ function main(args) {
   // each group is processed in parallel
   return Promise.each(projectGroups, (projects) => {
     return Promise.map(projects, (project) => {
+    // Filter by target project if specified
+    if (targetProject && project.name !== targetProject) {
+      return Promise.resolve();
+    }
     if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.VORTEX_VARIANT !== project.variant)) {
       return Promise.resolve();
     }
@@ -263,7 +315,8 @@ function main(args) {
     return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
-            return Promise.reject(new Unchanged());
+            const platform = process.platform === 'win32' ? 'Windows' : process.platform === 'darwin' ? 'macOS' : 'Linux';
+            return Promise.reject(new Unchanged(`Extension "${project.name}" is already up-to-date and compatible with ${platform}, no rebuild needed (use -f to force rebuild)`));
           }
           return processProject(project, buildType, feedback, args.noparallel);
         })
@@ -281,7 +334,7 @@ function main(args) {
         })
         .catch((err) => {
           if (err instanceof Unchanged) {
-            console.log('nothing to do', project.name);
+            console.log(`✅ ${err.message}`);
             return Promise.resolve();
           } else if (err instanceof ConditionNotMet) {
             const targetPlatform = err.condition?.includes('win32') ? 'Windows' : 
@@ -290,7 +343,7 @@ function main(args) {
             const currentPlatform = process.platform === 'win32' ? 'Windows' : 
                                   process.platform === 'darwin' ? 'macOS' : 
                                   process.platform === 'linux' ? 'Linux' : process.platform;
-            console.log(`⏭️ Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
+            console.log(`⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
             return Promise.resolve();
           } else {
             console.error('failed ', project.name, err);
