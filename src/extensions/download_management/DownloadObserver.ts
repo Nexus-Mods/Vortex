@@ -116,7 +116,7 @@ export class DownloadObserver {
           this.handleRemoveDownload(dlId);
         });
         if (newValue?.isPremium === true) {
-          manager.setMaxConcurrentDownloads(state.settings.downloads.maxParallelDownloads);
+          manager.setMaxConcurrentDownloads(10);
         } else {
           manager.setMaxConcurrentDownloads(1);
         }
@@ -456,7 +456,7 @@ export class DownloadObserver {
       }
     };
 
-    if (['init', 'started'].includes(download.state)) {
+    if (['init', 'started', 'paused'].includes(download.state)) {
       // need to cancel the download
       if (!this.mManager.stop(downloadId)) {
         // error case, for some reason the manager didn't know about this download, maybe some
