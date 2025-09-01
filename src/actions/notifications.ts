@@ -139,7 +139,7 @@ export function addNotification(notification: INotification) {
     }
     noti.updatedTime = Math.floor(Date.now() / 1000) * 1000;
 
-    notificationActions[noti.id] = noti.actions === undefined
+    notificationActions[noti.id] = noti.actions == null
       ? []
       : noti.actions.map(action => action.action);
 

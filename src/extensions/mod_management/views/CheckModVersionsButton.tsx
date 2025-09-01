@@ -70,7 +70,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
             this.updateAll(modIds)
           },
         },
-      ] : null,
+      ] : undefined,
     })
   }
   
@@ -90,13 +90,13 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
   private checkForUpdatesAndInstall = () => {
     return this.dispatchCheckModsVersionEvent(true)
-      .then((detected) => {
+      .then((_) => {
         const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
           const mod = this.props.mods[modId];
           const state = updateState(mod.attributes);
-          return state === 'update';
+          return state === 'update' && mod.type !== 'collection';
         });
-        return Array.from(new Set<string>([].concat(outdatedModIds, detected)));
+        return Array.from(new Set<string>([].concat(outdatedModIds)));
       })
       .then((modIds: string[]) => {
         this.raiseUpdateAllNotification(modIds);
