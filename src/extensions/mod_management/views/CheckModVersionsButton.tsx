@@ -72,14 +72,17 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     }
   }
 
+
   private raiseUpdateAllNotification = (modIds: string[]) => {
+
+    const message = modIds.length === 0
+      ? "All mods up to date"
+      : `${modIds.length} mod update${modIds.length === 1 ? '' : 's'} available`;
+
     this.context.api.sendNotification({
       type: 'success',
-      message: 'Check for mod updates complete ({{count}} update/s found)',
-      replace: {
-        count: modIds.length,
-      },
-      actions: modIds.length > 0 ? [
+      message: message,
+      actions: this.props.isPremium && modIds.length > 0 ? [
         {
           title: 'Update All',
           action: (dismiss) => {
@@ -87,12 +90,13 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
             this.updateAll(modIds)
           },
         },
-      ] : null,
+      ] : undefined,
+      displayMS: modIds.length === 0 ? 5000 : undefined,
     })
   }
 
   private dispatchCheckModsVersionEvent = async (force: boolean): Promise<string[]> => {
-    const { mods, gameMode} = this.props;
+    const { mods, gameMode } = this.props;
     try {
       const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, mods, force);
       const modIds = modIdsResults
