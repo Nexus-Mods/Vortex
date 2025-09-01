@@ -1,5 +1,4 @@
 import { ButtonType } from '../../../controls/IconBar';
-import ToolbarDropdown from '../../../controls/ToolbarDropdown';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
@@ -10,6 +9,7 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IMod } from '../types/IMod';
 
 import * as React from 'react';
+import updateState from '../util/modUpdateState';
 
 export type IModWithState = IMod & IProfileMod;
 
@@ -21,6 +21,7 @@ interface IConnectedProps {
   mods: { [modId: string]: IMod };
   gameMode: string;
   updateRunning: boolean;
+  isPremium: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -41,45 +42,27 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
       );
     } else {
       const id = 'check-mod-updates-button';
-
       return (
-        <ToolbarDropdown
-          t={t}
-          key={id}
+        <ToolbarIcon
           id={id}
-          instanceId={[]}
-          icons={[
-            {
-              icon: 'refresh',
-              title: 'Check for Updates (Optimized)',
-              action: () => this.checkForUpdates(),
-              default: true,
-            }, {
-              icon: 'refresh',
-              title: 'Check for Updates (Full)',
-              action: () => this.checkForUpdates(true),
-            },
-            {
-              icon: 'download',
-              title: 'Check for Updates (Apply All Updates)',
-              action: () => this.dispatchCheckModsVersionEvent(true)
-                .then((modIds: string[]) => this.updateAll(modIds)),
-            }
-          ]}
-          orientation={'horizontal'}
+          icon='refresh'
+          text={t('Check for Updates')}
+          onClick={this.checkForUpdatesAndInstall}
         />
       );
     }
   }
 
+  
   private raiseUpdateAllNotification = (modIds: string[]) => {
     this.context.api.sendNotification({
+      id: 'check-mods-version-complete',
       type: 'success',
-      message: 'Check for mod updates complete ({{count}} update/s found)',
+      message: 'Check for mod updates complete ({{count}} update/s outstanding)',
       replace: {
         count: modIds.length,
       },
-      actions: modIds.length > 0 ? [
+      actions: this.props.isPremium && modIds.length > 0 ? [
         {
           title: 'Update All',
           action: (dismiss) => {
@@ -87,10 +70,10 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
             this.updateAll(modIds)
           },
         },
-      ] : null,
+      ] : undefined,
     })
   }
-
+  
   private dispatchCheckModsVersionEvent = async (force: boolean): Promise<string[]> => {
     const { mods, gameMode} = this.props;
     try {
@@ -105,8 +88,16 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     }
   }
 
-  private checkForUpdates = (force: boolean = false) => {
-    this.dispatchCheckModsVersionEvent(force)
+  private checkForUpdatesAndInstall = () => {
+    return this.dispatchCheckModsVersionEvent(true)
+      .then((_) => {
+        const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
+          const mod = this.props.mods[modId];
+          const state = updateState(mod.attributes);
+          return state === 'update' && mod.type !== 'collection';
+        });
+        return Array.from(new Set<string>([].concat(outdatedModIds)));
+      })
       .then((modIds: string[]) => {
         this.raiseUpdateAllNotification(modIds);
       });
@@ -114,7 +105,21 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
   private updateAll = (modIds: string[]) => {
     const { gameMode } = this.props;
-    this.context.api.events.emit('mods-update', gameMode, modIds);
+    const updateAble = modIds.filter(modId => {
+      const mod = this.props.mods[modId];
+      const state = updateState(mod.attributes);
+      return state === 'update' && mod.type !== 'collection';
+    });
+    if (updateAble.length < modIds.length) {
+      this.context.api.sendNotification({
+        id: 'check-mods-version-partial',
+        type: 'info',
+        message: 'Some mods could not be updated automatically.',
+      });
+    }
+    if (updateAble.length > 0) {
+      this.context.api.events.emit('mods-update', gameMode, updateAble);
+    }
   }
 }
 
@@ -126,6 +131,7 @@ function mapStateToProps(state: any): IConnectedProps {
     mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObject),
     gameMode,
     updateRunning: getSafe(state, ['session', 'mods', 'updatingMods', gameMode], false),
+    isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
   };
 }
 
