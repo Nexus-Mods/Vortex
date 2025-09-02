@@ -1606,7 +1606,7 @@ function init(context: IExtensionContextExt): boolean {
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
       return Promise.resolve();
-    } this 
+    } 
     context.api.events.emit('refresh-user-info');
     return Promise.resolve();
   }, 3000, true, false);
