@@ -1603,17 +1603,13 @@ function init(context: IExtensionContextExt): boolean {
 
 
   userInfoDebouncer = new Debouncer(() => {
-
-    //console.log('userinfodevbouncer debouncer');
-
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
       return Promise.resolve();
-    }
-
+    } 
     context.api.events.emit('refresh-user-info');
     return Promise.resolve();
-  }, 1000, true, true);
+  }, 3000, true, false);
 
   context.registerAction('global-icons', 100, 'nexus', {}, 'Refresh User Info', () => {
     log('info', 'Refresh User Info global menu item clicked');
