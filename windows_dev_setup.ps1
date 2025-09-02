@@ -235,23 +235,47 @@ function Install-CMake {
 function Install-VisualStudioBuildTools {
     Write-Log "Installing/Modifying Visual Studio 2022 Build Tools"
     
-    # Check if Build Tools are already installed
+    # Check if Build Tools are already installed using vswhere
     $buildToolsInstalled = $false
+    $buildToolsPath = $null
     $installerPath = $null
     
-    # Check via winget first
-    try {
-        $wingetList = winget list --id Microsoft.VisualStudio.2022.BuildTools --accept-source-agreements 2>&1 | Out-String
-        if ($wingetList -match "Microsoft.VisualStudio.2022.BuildTools") {
-            $buildToolsInstalled = $true
-            Write-Log "Build Tools detected via winget" "SUCCESS"
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    
+    if (Test-Path $vswhere) {
+        try {
+            # Query for Build Tools installations
+            $buildToolsInstances = & $vswhere -products Microsoft.VisualStudio.Product.BuildTools -format json 2>$null | ConvertFrom-Json
+            
+            if ($buildToolsInstances -and $buildToolsInstances.Count -gt 0) {
+                $buildToolsInstalled = $true
+                $buildToolsPath = $buildToolsInstances[0].installationPath
+                Write-Log "Build Tools detected via vswhere at: $buildToolsPath" "SUCCESS"
+                
+                # Get installed components for logging
+                try {
+                    $installedComponents = & $vswhere -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Workload.VCTools -format json 2>$null | ConvertFrom-Json
+                    if ($installedComponents -and $installedComponents.Count -gt 0) {
+                        Write-Log "VCTools workload already present" "SUCCESS"
+                    }
+                }
+                catch { }
+            }
+            else {
+                Write-Log "No Build Tools installations found via vswhere"
+            }
+        }
+        catch {
+            Write-Log "vswhere query failed: $($_.Exception.Message)" "WARN"
         }
     }
-    catch { }
+    else {
+        Write-Log "vswhere not found at expected location" "WARN"
+    }
     
-    # Check via file system if winget detection failed
+    # Fallback to file system check if vswhere failed
     if (-not $buildToolsInstalled) {
-        # Try to find Build Tools installation
+        Write-Log "Falling back to file system detection"
         $buildToolsPaths = @(
             "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools",
             "C:\Program Files\Microsoft Visual Studio\2022\BuildTools"
@@ -259,7 +283,8 @@ function Install-VisualStudioBuildTools {
         foreach ($path in $buildToolsPaths) {
             if (Test-Path "$path\MSBuild\Current\Bin\MSBuild.exe") {
                 $buildToolsInstalled = $true
-                Write-Log "Build Tools detected at: $path" "SUCCESS"
+                $buildToolsPath = $path
+                Write-Log "Build Tools detected via fallback at: $path" "SUCCESS"
                 break
             }
         }
@@ -276,10 +301,10 @@ function Install-VisualStudioBuildTools {
     if ($buildToolsInstalled) {
         Write-Log "Build Tools already installed, modifying installation to ensure required components" "SUCCESS"
         
-        # Find the vs_buildtools.exe installer
+        # Find the vs_buildtools.exe installer or use generic vs_installer
         $possibleInstallers = @(
-            "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\vs_buildtools.exe",
-            "${env:ProgramFiles}\Microsoft Visual Studio\2022\BuildTools\vs_buildtools.exe"
+            "$buildToolsPath\vs_buildtools.exe",
+            "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
         )
         
         foreach ($installer in $possibleInstallers) {
@@ -289,40 +314,12 @@ function Install-VisualStudioBuildTools {
             }
         }
         
-        # If we can't find the specific installer, try the generic vs_installer
-        if (-not $installerPath) {
-            $genericInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-            if (Test-Path $genericInstaller) {
-                $installerPath = $genericInstaller
-            }
-        }
-        
         if ($installerPath) {
             Write-Log "Using installer: $installerPath"
             
             # Build modify command arguments
             $modifyArgs = @("modify", "--installPath")
-            
-            # Find the actual installation path
-            $buildToolsPath = $null
-            $searchPaths = @(
-                "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools",
-                "C:\Program Files\Microsoft Visual Studio\2022\BuildTools"
-            )
-            
-            foreach ($path in $searchPaths) {
-                if (Test-Path "$path\MSBuild\Current\Bin\MSBuild.exe") {
-                    $buildToolsPath = $path
-                    break
-                }
-            }
-            
-            if ($buildToolsPath) {
-                $modifyArgs += "`"$buildToolsPath`""
-            } else {
-                # Fallback to default path
-                $modifyArgs += "`"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`""
-            }
+            $modifyArgs += "`"$buildToolsPath`""
             
             # Add components
             foreach ($component in $components) {
@@ -370,7 +367,6 @@ function Install-VisualStudioBuildTools {
     
     Write-Log "Visual Studio 2022 Build Tools installation/modification completed" "SUCCESS"
 }
-
 function Repair-NVMSettings {
     Write-Log "Checking and repairing NVM settings"
     
