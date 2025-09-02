@@ -232,30 +232,143 @@ function Install-CMake {
     $version = (cmake --version | Select-Object -First 1)
     Write-Log "CMake installed successfully: $version" "SUCCESS"
 }
-
 function Install-VisualStudioBuildTools {
-    Write-Log "Installing Visual Studio 2022 Build Tools"
+    Write-Log "Installing/Modifying Visual Studio 2022 Build Tools"
     
-    $components = @(
-        "--add", "Microsoft.VisualStudio.Workload.VCTools",
-        "--includeRecommended",
-        "--add", "Microsoft.NetCore.Component.Runtime.6.0",
-        "--add", "Microsoft.NetCore.Component.SDK",
-        "--add", "Microsoft.VisualStudio.Component.VC.ATL",
-        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.$WindowsSDKVer",
-        "--remove", "Microsoft.VisualStudio.Component.VC.CMake.Project"
-    )
+    # Check if Build Tools are already installed
+    $buildToolsInstalled = $false
+    $installerPath = $null
     
-    $installArgs = @("--passive", "--wait", "--norestart") + $components
-    $overrideArgs = $installArgs -join ' '
-
-    Write-Log "Visual Studio 2022 Build Tools installation arguments: $overrideArgs"
+    # Check via winget first
+    try {
+        $wingetList = winget list --id Microsoft.VisualStudio.2022.BuildTools --accept-source-agreements 2>&1 | Out-String
+        if ($wingetList -match "Microsoft.VisualStudio.2022.BuildTools") {
+            $buildToolsInstalled = $true
+            Write-Log "Build Tools detected via winget" "SUCCESS"
+        }
+    }
+    catch { }
     
-    Invoke-WithRetry -Operation "Visual Studio Build Tools installation" -ScriptBlock {
-        winget install --id Microsoft.VisualStudio.2022.BuildTools -e --accept-package-agreements --accept-source-agreements --override $overrideArgs
+    # Check via file system if winget detection failed
+    if (-not $buildToolsInstalled) {
+        # Try to find Build Tools installation
+        $buildToolsPaths = @(
+            "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools",
+            "C:\Program Files\Microsoft Visual Studio\2022\BuildTools"
+        )
+        foreach ($path in $buildToolsPaths) {
+            if (Test-Path "$path\MSBuild\Current\Bin\MSBuild.exe") {
+                $buildToolsInstalled = $true
+                Write-Log "Build Tools detected at: $path" "SUCCESS"
+                break
+            }
+        }
     }
     
-    Write-Log "Visual Studio 2022 Build Tools installation completed" "SUCCESS"
+    $components = @(
+        "Microsoft.VisualStudio.Workload.VCTools",
+        "Microsoft.NetCore.Component.Runtime.6.0",
+        "Microsoft.NetCore.Component.SDK",
+        "Microsoft.VisualStudio.Component.VC.ATL",
+        "Microsoft.VisualStudio.Component.Windows10SDK.$WindowsSDKVer"
+    )
+    
+    if ($buildToolsInstalled) {
+        Write-Log "Build Tools already installed, modifying installation to ensure required components" "SUCCESS"
+        
+        # Find the vs_buildtools.exe installer
+        $possibleInstallers = @(
+            "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\vs_buildtools.exe",
+            "${env:ProgramFiles}\Microsoft Visual Studio\2022\BuildTools\vs_buildtools.exe"
+        )
+        
+        foreach ($installer in $possibleInstallers) {
+            if (Test-Path $installer) {
+                $installerPath = $installer
+                break
+            }
+        }
+        
+        # If we can't find the specific installer, try the generic vs_installer
+        if (-not $installerPath) {
+            $genericInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+            if (Test-Path $genericInstaller) {
+                $installerPath = $genericInstaller
+            }
+        }
+        
+        if ($installerPath) {
+            Write-Log "Using installer: $installerPath"
+            
+            # Build modify command arguments
+            $modifyArgs = @("modify", "--installPath")
+            
+            # Find the actual installation path
+            $buildToolsPath = $null
+            $searchPaths = @(
+                "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools",
+                "C:\Program Files\Microsoft Visual Studio\2022\BuildTools"
+            )
+            
+            foreach ($path in $searchPaths) {
+                if (Test-Path "$path\MSBuild\Current\Bin\MSBuild.exe") {
+                    $buildToolsPath = $path
+                    break
+                }
+            }
+            
+            if ($buildToolsPath) {
+                $modifyArgs += "`"$buildToolsPath`""
+            } else {
+                # Fallback to default path
+                $modifyArgs += "`"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`""
+            }
+            
+            # Add components
+            foreach ($component in $components) {
+                $modifyArgs += "--add"
+                $modifyArgs += $component
+            }
+            
+            $modifyArgs += @("--includeRecommended", "--passive", "--norestart")
+            
+            Write-Log "Modify command: $installerPath $($modifyArgs -join ' ')"
+            
+            Invoke-WithRetry -Operation "Visual Studio Build Tools modification" -ScriptBlock {
+                Write-Log "Executing: $installerPath $($modifyArgs -join ' ')"
+                $process = Start-Process -FilePath $installerPath -ArgumentList $modifyArgs -Wait -PassThru -NoNewWindow
+                Write-Log "Installer exit code: $($process.ExitCode)"
+                if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {  # 3010 = success but reboot required
+                    throw "Installer failed with exit code: $($process.ExitCode)"
+                }
+            }
+        } else {
+            Write-Log "Could not find VS installer, components may already be installed or manual verification needed" "WARN"
+        }
+    } else {
+        Write-Log "Installing fresh Visual Studio 2022 Build Tools"
+        
+        # Fresh installation using winget
+        $installArgs = @("--passive", "--norestart")
+        
+        foreach ($component in $components) {
+            $installArgs += "--add"
+            $installArgs += $component
+        }
+        
+        $installArgs += "--includeRecommended"
+        $installArgs += "--remove"
+        $installArgs += "Microsoft.VisualStudio.Component.VC.CMake.Project"
+        
+        $overrideArgs = $installArgs -join ' '
+        Write-Log "Fresh install arguments: $overrideArgs"
+        
+        Invoke-WithRetry -Operation "Visual Studio Build Tools installation" -ScriptBlock {
+            winget install --id Microsoft.VisualStudio.2022.BuildTools -e --accept-package-agreements --accept-source-agreements --override $overrideArgs
+        }
+    }
+    
+    Write-Log "Visual Studio 2022 Build Tools installation/modification completed" "SUCCESS"
 }
 
 function Repair-NVMSettings {
