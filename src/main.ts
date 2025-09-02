@@ -101,8 +101,21 @@ if (isWindows() && (process.env.NODE_ENV !== 'development')) {
   };
 
   process.env['PATH_ORIG'] = process.env['PATH'].slice(0);
-  process.env['PATH'] = process.env['PATH'].split(';')
-    .filter(pathFilter).join(';');
+  process.env['PATH'] = process.env['PATH'].split(path.delimiter)
+    .filter(pathFilter).join(path.delimiter);
+} else if (isMacOS() && (process.env.NODE_ENV !== 'development')) {
+  // On macOS, we may want to filter certain paths for security reasons
+  // This is less critical than on Windows but still good practice
+  const pathFilter = (envPath: string): boolean => {
+    // Filter out potentially unsafe paths on macOS
+    return !envPath.includes('/tmp/') 
+        && !envPath.startsWith('/var/tmp/')
+        && !envPath.includes('/.Trash/');
+  };
+
+  process.env['PATH_ORIG'] = process.env['PATH'].slice(0);
+  process.env['PATH'] = process.env['PATH'].split(path.delimiter)
+    .filter(pathFilter).join(path.delimiter);
 }
 
 // Produce english error messages (windows only atm), otherwise they don't get

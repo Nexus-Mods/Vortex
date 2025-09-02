@@ -117,9 +117,13 @@ const localAppData = (() => {
 export function setVortexPath(id: AppPath, value: string | (() => string)) {
   cache[id] = value;
   if (typeof value === 'string') {
-    setElectronPath(id, value);
+    // Ensure the path is absolute before calling setElectronPath
+    const absolutePath = path.isAbsolute(value) ? value : path.resolve(value);
+    setElectronPath(id, absolutePath);
   } else {
-    setElectronPath(id, value());
+    const resolvedValue = value();
+    const absolutePath = path.isAbsolute(resolvedValue) ? resolvedValue : path.resolve(resolvedValue);
+    setElectronPath(id, absolutePath);
   }
 }
 

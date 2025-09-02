@@ -50,6 +50,15 @@
       ]
     },
     {
+      "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/bootstrap/",
+      "outPath": "assets/css",
+      "skipPaths": 4,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
       "srcPath": "src/index.dev.html",
       "outPath": "",
       "rename": "index.html",

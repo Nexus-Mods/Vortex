@@ -18,7 +18,8 @@
     "typeRoots": [
       "./types",
       "./node_modules/@types"
-    ]
+    ],
+    "types": ["node", "react", "react-dom"]
   },
   "files": [
     "typings.custom/index.d.ts",

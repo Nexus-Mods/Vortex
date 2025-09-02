@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 //== Base Colors
 
 // setting dark-theme to true inverts the gray colors
@@ -132,4 +134,45 @@ $badge-bg:                    $gray !default;
 $badge-border-radius:         10px !default;
 $badge-font-weight:           bold !default;
 $badge-line-height:           1 !default;
-$badge-border-radius:         .25em !default;
+
+//== Line Heights
+$line-height-base:            1.5;
+$line-height-computed:        math.floor(($font-size-base * $line-height-base));
+
+//== Bootstrap State Variables
+$state-success-text:          $brand-success;
+$state-success-bg:            lighten($brand-success, 50%);
+$state-success-border:        $brand-success;
+
+$state-info-text:             $brand-info;
+$state-info-bg:               lighten($brand-info, 50%);
+$state-info-border:           $brand-info;
+
+$state-warning-text:          $brand-warning;
+$state-warning-bg:            lighten($brand-warning, 50%);
+$state-warning-border:        $brand-warning;
+
+$state-danger-text:           $brand-danger;
+$state-danger-bg:             lighten($brand-danger, 50%);
+$state-danger-border:         $brand-danger;
+
+//== Alert Variables
+$alert-padding:               15px;
+$alert-border-radius:         $border-radius-base;
+$alert-link-font-weight:      bold;
+
+$alert-success-bg:            $state-success-bg;
+$alert-success-text:          $state-success-text;
+$alert-success-border:        $state-success-border;
+
+$alert-info-bg:               $state-info-bg;
+$alert-info-text:             $state-info-text;
+$alert-info-border:           $state-info-border;
+
+$alert-warning-bg:            $state-warning-bg;
+$alert-warning-text:          $state-warning-text;
+$alert-warning-border:        $state-warning-border;
+
+$alert-danger-bg:             $state-danger-bg;
+$alert-danger-text:           $state-danger-text;
+$alert-danger-border:         $state-danger-border;

@@ -17,12 +17,9 @@ import Promise from 'bluebird';
 import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
-import rimraf from 'rimraf';
 import * as vortexRunT from 'vortex-run';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
-
-const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
 
 class ContextProxyHandler implements ProxyHandler<any> {
   private mDependencies: string[] = [];
@@ -325,13 +322,23 @@ function installExtension(api: IExtensionApi,
         }
       }
     })
-    .catch(DataInvalid, err =>
-      rimrafAsync(tempPath, { glob: false })
-        .then(() => api.showErrorNotification('Invalid Extension', err,
-                                              { allowReport: false, message: archivePath })))
-    .catch(err =>
-      rimrafAsync(tempPath, { glob: false })
-        .then(() => Promise.reject(err)));
+    .catch(DataInvalid, err => {
+      try {
+        fs.removeSync(tempPath);
+      } catch (removeErr) {
+        // Ignore removal errors
+      }
+      return api.showErrorNotification('Invalid Extension', err,
+                                        { allowReport: false, message: archivePath });
+    })
+    .catch(err => {
+      try {
+        fs.removeSync(tempPath);
+      } catch (removeErr) {
+        // Ignore removal errors
+      }
+      return Promise.reject(err);
+    });
 }
 
 export default installExtension;

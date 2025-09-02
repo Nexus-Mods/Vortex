@@ -70,7 +70,12 @@ module.exports = {
             options: {
               sourceMap: true,
               sassOptions: {
-                outputStyle: 'compressed'
+                outputStyle: 'compressed',
+                includePaths: [
+                  './src/stylesheets',
+                  './src/stylesheets/bootstrap',
+                  './node_modules'
+                ]
               }
             }
           }

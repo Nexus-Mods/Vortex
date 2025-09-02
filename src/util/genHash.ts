@@ -4,7 +4,10 @@ import { IError } from '../types/IError';
 function removeFileNames(input: string): string {
   return input
     .replace(/(at [^\(]*)\(.*\)$/, '$1')
-    .replace(/at [A-Z]:\\.*\\([^\\]*)/, 'at $1');
+    // Windows path pattern: C:\path\to\file
+    .replace(/at [A-Z]:\\.*\\([^\\]*)/, 'at $1')
+    // Unix/macOS path pattern: /path/to/file
+    .replace(/at \/.*\/([^\/]*)/, 'at $1');
 }
 
 // remove everything in quotes to get file names and such out of the error message
@@ -23,7 +26,10 @@ function sanitizeKnownMessages(input: string): string {
     .replace(/.*(contains invalid WIN32 path characters.)/, '... $1')
     .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, '$1')
     .replace(/.*(Cipher functions:OPENSSL_internal).*/, '$1')
+    // Windows path pattern: \\?\...\Vortex\resources
     .replace(/\\\\?\\.*(\\Vortex\\resources)/i, '$1')
+    // Unix/macOS path pattern: /...../Vortex/resources
+    .replace(/\/.*(\/Vortex\/resources)/i, '$1')
   ;
 }
 

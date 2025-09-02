@@ -1,0 +1,8 @@
+@use "sass:math";
+
+$test-value: 20px;
+$result: math.div($test-value, 2);
+
+.test {
+  width: $result;
+}

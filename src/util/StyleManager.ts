@@ -329,7 +329,6 @@ class StyleManager {
         if (err !== null) {
           return reject(err);
         }
-        log('debug', 'style rendered successfully');
         resolve();
       });
     }));

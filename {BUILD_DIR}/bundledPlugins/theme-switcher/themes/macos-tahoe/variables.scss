@@ -85,6 +85,10 @@ $transition-duration-fast: 0.15s;
 $transition-easing: ease;
 $spacing-small: $spacing-sm;
 
+// Font family compatibility mappings
+$font-family-headings: $theme-font-family-headings;
+$font-family-base: $theme-font-family-base;
+
 // Hover colors
 $primary-color-hover: darken($primary-color, 10%);
 $danger-color-hover: darken($danger-color, 10%);

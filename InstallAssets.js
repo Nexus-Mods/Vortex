@@ -3,13 +3,74 @@
 const Promise = require('bluebird');
 const fs = require('fs-extra');
 const path = require('path');
-const globModule = require('glob');
-const glob = typeof globModule === 'function' ? globModule : globModule.glob;
+// Removed glob dependency - using native Node.js fs operations
 const exec = require('child_process').exec;
 
 const data = require('./InstallAssets.json');
 
-const globOptions = { matchBase: true, globstar: true };
+// Native file system operations don't need glob options
+
+// Helper function for recursive directory walking
+function walkDir(dir, suffix, results) {
+  if (!fs.existsSync(dir)) return;
+  
+  const items = fs.readdirSync(dir);
+  for (const item of items) {
+    const fullPath = path.join(dir, item);
+    const stat = fs.statSync(fullPath);
+    
+    if (stat.isDirectory()) {
+      walkDir(fullPath, suffix, results);
+    } else {
+      // Handle both exact suffix matching and wildcard patterns
+      if (suffix === '') {
+        results.push(fullPath);
+      } else if (suffix.includes('*')) {
+        // Convert wildcard pattern to regex
+        const regexPattern = suffix.replace(/\*/g, '.*');
+        const regex = new RegExp(regexPattern + '$');
+        if (regex.test(path.basename(fullPath))) {
+          results.push(fullPath);
+        }
+      } else if (fullPath.endsWith(suffix)) {
+        results.push(fullPath);
+      }
+    }
+  }
+}
+
+// Function to expand wildcard paths using native fs
+function expandWildcardPath(pattern) {
+  const results = [];
+  
+  // Handle different wildcard patterns
+  if (pattern.includes('**')) {
+    // Recursive directory traversal
+    const basePath = pattern.split('**')[0];
+    const suffix = pattern.split('**')[1] || '';
+    
+    // Clean up the suffix - remove leading slash and handle .extension properly
+    const cleanSuffix = suffix.startsWith('/') ? suffix.substring(1) : suffix;
+    
+    walkDir(basePath, cleanSuffix, results);
+  } else if (pattern.includes('*')) {
+    // Single level wildcard
+    const basePath = path.dirname(pattern);
+    const fileName = path.basename(pattern);
+    
+    if (fs.existsSync(basePath)) {
+      const items = fs.readdirSync(basePath);
+      for (const item of items) {
+        const fullPath = path.join(basePath, item);
+        if (fileName === '*' || item.match(fileName.replace(/\*/g, '.*'))) {
+          results.push(fullPath);
+        }
+      }
+    }
+  }
+  
+  return results;
+}
 
 if (process.argv.length < 3) {
   process.exit(1);
@@ -22,7 +83,7 @@ let copies = -1;
 let status = 0;
 
 // run other, independend commands concurrently to speed things up.
-for (let spawn of data.spawn) {
+for (const spawn of data.spawn) {
   if (spawn.target.indexOf(tgt) === -1) {
     continue;
   }
@@ -75,13 +136,28 @@ Promise.mapSeries(data.copy, file => {
   }
 
   return new Promise((resolve, reject) => {
-    glob(file.srcPath, globOptions, (globErr, files) => {
-      copies = copies === -1 ? files.length : copies += files.length;
-      if (globErr !== null) {
-        reject(new Error('glob failed: ' + globErr));
+    // Handle different path patterns
+    if (file.srcPath.includes('*')) {
+      // For wildcard patterns, we need to expand them
+      const basePath = file.srcPath.split('*')[0];
+      const pattern = file.srcPath.split('*')[1] || '';
+      
+      if (fs.existsSync(basePath)) {
+        const files = expandWildcardPath(file.srcPath);
+        copies = copies === -1 ? files.length : copies += files.length;
+        resolve(files);
+      } else {
+        resolve([]);
       }
-      resolve(files);
-    });
+    } else {
+      // For direct file paths
+      if (fs.existsSync(file.srcPath)) {
+        copies = copies === -1 ? 1 : copies += 1;
+        resolve([file.srcPath]);
+      } else {
+        resolve([]);
+      }
+    }
   })
     .then(files => Promise.map(files, (globResult) => {
       let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));

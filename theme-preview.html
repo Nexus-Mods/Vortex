@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex macOS Tahoe Theme Preview - Full UI Emulation</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            letter-spacing: -0.003em;
+            min-height: 100vh;
+        }
+        
+        .theme-preview {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Accurate Vortex Main Window Layout */
+        #main-window-content {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: transparent;
+            --content-right-margin: 8px;
+            --content-bottom-margin: 12px;
+            padding-right: var(--content-right-margin);
+            padding-bottom: var(--content-bottom-margin);
+        }
+        
+        .flex-layout-row {
+            display: flex;
+            flex: 1;
+            gap: 0;
+        }
+        
+        /* Sidebar styling with positioning controls */
+        #main-nav-sidebar {
+            background: rgba(28, 28, 30, 0.75);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            margin: 16px;
+            margin-right: 8px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.35),
+                0 2px 16px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            /* Positioning adjustments - editable via controls */
+            --sidebar-top-offset: 2px;
+            --sidebar-bottom-margin: 8px;
+            position: relative;
+            top: var(--sidebar-top-offset);
+            height: calc(100vh - 110px - var(--sidebar-top-offset) - var(--sidebar-bottom-margin));
+            flex: 0 0 auto;
+        }
+        
+        .sidebar-nav {
+            padding: 12px;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: all 0.15s ease;
+            background: transparent;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+            color: rgba(255, 255, 255, 0.95);
+        }
+        
+        .nav-item.active {
+            background: rgba(0, 122, 255, 0.15);
+            color: #007AFF;
+            box-shadow: 0 2px 7px rgba(0, 122, 255, 0.2);
+        }
+        
+        /* Main content area - Dashboard */
+        .main-content {
+            flex: 1;
+            padding: 16px;
+            padding-left: 16px;
+            overflow-y: auto;
+            background: transparent;
+        }
+        
+        /* Vortex Toolbar Structure */
+        #main-toolbar {
+            background: transparent;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            margin-left: 80px; /* Space for macOS traffic lights */
+            margin-right: 16px;
+            margin-top: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+            font-size: 13px;
+            -webkit-font-smoothing: antialiased;
+            z-index: 1000;
+        }
+        
+        /* QuickLauncher Component */
+        .quicklauncher {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quicklauncher-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .quicklauncher-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+            color: rgba(255, 255, 255, 0.95);
+        }
+        
+        /* Banner Component */
+        .banner {
+            flex: 1 1 auto;
+            padding: 0 16px;
+            min-width: 400px;
+        }
+        
+        .nexus-main-banner {
+            background: rgba(0, 122, 255, 0.12);
+            border: 1px solid rgba(0, 122, 255, 0.25);
+            border-radius: 8px;
+            padding: 6px 12px;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            height: 28px;
+        }
+        
+        .banner-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+        
+        .banner-button {
+            background: rgba(0, 122, 255, 0.9);
+            border: 1px solid rgba(0, 122, 255, 1);
+            color: white;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            height: 20px;
+            min-width: 50px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .banner-button:hover {
+            background: rgba(0, 122, 255, 1);
+            transform: translateY(-0.5px);
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        /* Toolbar Right Section */
+        .main-toolbar-right {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 0;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .toolbar-version {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .application-icons-group {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .app-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.15s ease;
+        }
+        
+        .app-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Windows controls - hidden on macOS */
+        .window-controls {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        
+        /* macOS Traffic Light Buttons Space */
+        .traffic-lights-space {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 70px;
+            height: 20px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 1001;
+        }
+        
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 0.5px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .traffic-light.close {
+            background: #ff5f57;
+        }
+        
+        .traffic-light.minimize {
+            background: #ffbd2e;
+        }
+        
+        .traffic-light.maximize {
+            background: #28ca42;
+        }
+        
+        /* Dashboard Header */
+        .mainpage-header {
+            background: transparent;
+            border: none;
+            padding: 24px 0 24px 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            font-size: 27px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Dashlets Container */
+        .dynamic-dashlets {
+            background: transparent;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        /* Individual Dashlet */
+        .dashlet {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.15s ease;
+        }
+        
+        .dashlet:hover {
+            background: rgba(28, 28, 30, 0.75);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+        }
+        /* Controls panel for live editing */
+        .controls-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 2000;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .control-group input {
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+        }
+        
+        .control-group input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+        }
+        
+        .btn {
+            background: rgba(0, 122, 255, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin: 5px 0;
+        }
+        
+        .btn:hover {
+            background: #007AFF;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Responsive for smaller screens */
+        @media (max-width: 1200px) {
+            .controls-panel {
+                right: 10px;
+                top: 10px;
+                min-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-preview">
+        <!-- macOS Traffic Light Buttons -->
+        <div class="traffic-lights-space">
+            <div class="traffic-light close"></div>
+            <div class="traffic-light minimize"></div>
+            <div class="traffic-light maximize"></div>
+        </div>
+        
+        <!-- Main Window Content -->
+        <div id="main-window-content">
+            <!-- Vortex Toolbar -->
+            <header id="main-toolbar">
+                <!-- QuickLauncher -->
+                <div class="quicklauncher">
+                    <div class="quicklauncher-icon" title="Launch Game">▶</div>
+                    <div class="quicklauncher-icon" title="Game Settings">⚙</div>
+                </div>
+                
+                <!-- Banner -->
+                <div class="banner">
+                    <div class="nexus-main-banner">
+                        <div class="banner-text">Welcome to Vortex</div>
+                        <div class="banner-text">Manage your mods with ease</div>
+                        <button class="banner-button">Sign In</button>
+                    </div>
+                </div>
+                
+                <!-- Toolbar Right -->
+                <div class="main-toolbar-right">
+                    <div class="application-icons-group">
+                        <div class="app-icon" title="Notifications">🔔</div>
+                        <div class="app-icon" title="Help">?</div>
+                        <div class="app-icon" title="Settings">⚙</div>
+                    </div>
+                    <div class="toolbar-version">v1.11.5</div>
+                </div>
+                
+                <div class="window-controls">
+                    <!-- These should be hidden on macOS -->
+                    <button>−</button>
+                    <button>□</button>
+                    <button>×</button>
+                </div>
+            </header>
+            
+            <!-- Main Content Area -->
+            <div class="flex-layout-row">
+                <!-- Sidebar -->
+                <nav id="main-nav-sidebar">
+                    <div class="sidebar-nav">
+                        <a href="#" class="nav-item active">Dashboard</a>
+                        <a href="#" class="nav-item">Mods</a>
+                        <a href="#" class="nav-item">Downloads</a>
+                        <a href="#" class="nav-item">Plugins</a>
+                        <a href="#" class="nav-item">Settings</a>
+                        <a href="#" class="nav-item">Extensions</a>
+                        <a href="#" class="nav-item">Support</a>
+                    </div>
+                </nav>
+                
+                <!-- Main Dashboard Content -->
+                <main class="main-content">
+                    <div id="page-dashboard">
+                        <!-- Dashboard Header -->
+                        <div class="mainpage-header">
+                            Dashboard
+                        </div>
+                        
+                        <!-- Dynamic Dashlets -->
+                        <div class="dynamic-dashlets">
+                            <!-- Go Premium Dashlet -->
+                            <div class="dashlet dashlet-go-premium">
+                                <div class="premium-content">
+                                    <div class="premium-title">Get fast downloads with <span style="color: #ffeb3b;">premium</span></div>
+                                    <div class="premium-description">Upgrade to unlock uncapped download speeds, auto-install collections and no ads.</div>
+                                    <button class="premium-button">Go Premium →</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Starter Tools Dashlet -->
+                            <div class="dashlet dashlet-starter">
+                                <div class="dashlet-title">Starter Tools</div>
+                                <div class="starter-tools">
+                                    <div class="starter-tool">
+                                        <div class="tool-icon">🎮</div>
+                                        <div class="tool-name">Launch Game</div>
+                                    </div>
+                                    <div class="starter-tool">
+                                        <div class="tool-icon">🛠</div>
+                                        <div class="tool-name">Mod Organizer</div>
+                                    </div>
+                                    <div class="starter-tool">
+                                        <div class="tool-icon">⚙</div>
+                                        <div class="tool-name">Settings</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- News Dashlet -->
+                            <div class="dashlet dashlet-news">
+                                <div class="dashlet-title">Latest News</div>
+                                <div class="news-item">
+                                    <div class="news-title">Vortex Update Available</div>
+                                    <div class="news-summary">New features and improvements in the latest release</div>
+                                </div>
+                                <div class="news-item">
+                                    <div class="news-title">Mod Collection Featured</div>
+                                    <div class="news-summary">Discover new mod collections for your favorite games</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Controls Panel -->
+    <div class="controls-panel">
+        <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 600;">Enhanced Theme Controls</h3>
+        
+        <div class="control-group">
+            <label>Sidebar Top Offset (px)</label>
+            <input type="number" id="sidebarTop" value="2" min="-20" max="20">
+        </div>
+        
+        <div class="control-group">
+            <label>Sidebar Bottom Margin (px)</label>
+            <input type="number" id="sidebarBottom" value="8" min="0" max="50">
+        </div>
+        
+        <div class="control-group">
+            <label>Content Right Margin (px)</label>
+            <input type="number" id="contentRight" value="8" min="0" max="50">
+        </div>
+        
+        <div class="control-group">
+            <label>Content Bottom Margin (px)</label>
+            <input type="number" id="contentBottom" value="12" min="0" max="50">
+        </div>
+        
+        <button class="btn" onclick="resetDefaults()">Reset to Defaults</button>
+        <button class="btn btn-secondary" onclick="exportCSS()">Export CSS</button>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+            <p style="font-size: 11px; color: rgba(255, 255, 255, 0.6);">
+                Enhanced preview with accurate Vortex UI structure including toolbar, icons, and applets.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Live theme controls for enhanced preview
+        const sidebar = document.getElementById('main-nav-sidebar');
+        const mainContent = document.getElementById('main-window-content');
+        
+        function updateSidebarTop() {
+            const value = document.getElementById('sidebarTop').value;
+            sidebar.style.setProperty('--sidebar-top-offset', value + 'px');
+        }
+        
+        function updateSidebarBottom() {
+            const value = document.getElementById('sidebarBottom').value;
+            sidebar.style.setProperty('--sidebar-bottom-margin', value + 'px');
+        }
+        
+        function updateContentRight() {
+            const value = document.getElementById('contentRight').value;
+            mainContent.style.setProperty('--content-right-margin', value + 'px');
+        }
+        
+        function updateContentBottom() {
+            const value = document.getElementById('contentBottom').value;
+            mainContent.style.setProperty('--content-bottom-margin', value + 'px');
+        }
+        
+        // Event listeners for live updates
+        document.getElementById('sidebarTop').addEventListener('input', updateSidebarTop);
+        document.getElementById('sidebarBottom').addEventListener('input', updateSidebarBottom);
+        document.getElementById('contentRight').addEventListener('input', updateContentRight);
+        document.getElementById('contentBottom').addEventListener('input', updateContentBottom);
+        
+        function resetDefaults() {
+            document.getElementById('sidebarTop').value = 2;
+            document.getElementById('sidebarBottom').value = 8;
+            document.getElementById('contentRight').value = 8;
+            document.getElementById('contentBottom').value = 12;
+            updateSidebarTop();
+            updateSidebarBottom();
+            updateContentRight();
+            updateContentBottom();
+        }
+        
+        function exportCSS() {
+            const sidebarTop = document.getElementById('sidebarTop').value;
+            const sidebarBottom = document.getElementById('sidebarBottom').value;
+            const contentRight = document.getElementById('contentRight').value;
+            const contentBottom = document.getElementById('contentBottom').value;
+            
+            const css = `
+/* macOS Tahoe Theme - Positioning Adjustments */
+#main-nav-sidebar {
+    position: relative !important;
+    top: ${sidebarTop}px !important;
+    margin-bottom: calc(#{$layout-margin-base} + ${sidebarBottom}px);
+    height: calc(100vh - #{$toolbar-height-expanded + $layout-margin-base * 6} - ${sidebarTop}px);
+}
+
+.main-content,
+.flex-layout-flex {
+    padding-right: calc(#{$layout-margin-base} + ${contentRight}px);
+    padding-bottom: calc(#{$layout-margin-base} + ${contentBottom}px);
+    margin-right: calc(#{$spacing-xs} + 4px);
+    margin-bottom: calc(#{$spacing-xs} + 4px);
+}
+            `;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(css).then(() => {
+                alert('CSS copied to clipboard!');
+            }).catch(() => {
+                // Fallback - show in alert
+                alert('CSS Code:\n\n' + css);
+            });
+        }
+        
+        // Initialize
+        updateSidebarTop();
+        updateSidebarBottom();
+        updateContentRight();
+        updateContentBottom();
+        
+        // Log current values for debugging
+        console.log('Enhanced Vortex Theme Preview Initialized');
+        console.log('Full UI emulation with toolbar, icons, and applets ready');
+        console.log('Sidebar positioning controls ready');
+    </script>
+</body>
+</html>

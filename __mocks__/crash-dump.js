@@ -1,7 +1,7 @@
 'use strict';
 
 // Mock implementation of crash-dump for macOS
-module.exports = {
+const crashDumpMock = {
   // Mock the initialize function
   initialize: () => {
     // No-op implementation for macOS
@@ -25,3 +25,7 @@ module.exports = {
     FullDump: 2,
   },
 };
+
+// Export both as default and named export for compatibility
+module.exports = crashDumpMock;
+module.exports.default = crashDumpMock;

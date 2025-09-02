@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 .dashlet {
   border: $border-width solid $border-color;
   background-color: $brand-menu;
@@ -272,7 +274,7 @@
 }
 
 .packery-item, .stamp, .fixed-item {
-  padding: floor(($half-gutter / 2));
+  padding: floor(math.div($half-gutter, 2));
   // overflow: hidden;
 
   .packery-buttons {

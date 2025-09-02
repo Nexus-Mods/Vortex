@@ -65,6 +65,7 @@
 - subprojects: run with `yarn subprojects` to build only bundled extensions
 - test: run with `yarn test` to execute test suite
 - start: run with `yarn start` to launch program in development mode
+- start with log: run with `yarn start --user-data /tmp/vortex-test-logs` to launch program in development mode with logging enabled
 - dist: run with `yarn dist` to create release installers (one-click and custom directory options)
 - ci: run with `yarn ci` to create unsigned release build
 
@@ -93,7 +94,7 @@
    ```bash
    yarn install
    ```
-   Note: Some Windows-specific native modules are marked as optional dependencies and will be skipped on macOS.
+   Note: Some Windows-specific native modules are marked as optional dependencies and will be skipped on macOS and Linux.
 
 3. Build the project:
    ```bash
