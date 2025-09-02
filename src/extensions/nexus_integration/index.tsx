@@ -1028,12 +1028,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
           allowReport: false,
         });
       });
-
-    // register when window is focussed to do a userinfo check?  
-    getApplication().window.on('focus', (event, win) => {
-      //console.log('browser-window-focus');         
-      //userInfoDebouncer.schedule();
-    })
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
@@ -1606,7 +1600,7 @@ function init(context: IExtensionContextExt): boolean {
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
       return Promise.resolve();
-    } 
+    }
     context.api.events.emit('refresh-user-info');
     return Promise.resolve();
   }, 3000, true, false);
