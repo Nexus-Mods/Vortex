@@ -81,6 +81,7 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 const isCI = process.env.CI === 'true';
+console.log('Is CI environment:', isCI);
 
 if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
   // On windows dlls may be loaded from directories in the path variable
@@ -177,8 +178,11 @@ async function main(): Promise<void> {
   console.log('Is CI environment:', !!process.env.CI);
 
 
+
+
   // Always disable GPU on CI
   if (mainArgs.disableGPU || isCI) {
+    console.log('Disabling GPU acceleration');
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--disable-software-rasterizer');
     app.commandLine.appendSwitch('--disable-gpu');
@@ -210,8 +214,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!isCI && !app.requestSingleInstanceLock()) {
+  // Skip single instance lock on CI
+  const singleInstanceLock = isCI ? true : app.requestSingleInstanceLock();
+  console.log('Single instance lock result:', singleInstanceLock, '(CI override:', isCI, ')');
 
+  if (!singleInstanceLock) {
+    console.log('Single instance lock failed, quitting...');
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--in-process-gpu');
     app.commandLine.appendSwitch('--disable-software-rasterizer');
