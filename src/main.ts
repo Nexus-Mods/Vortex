@@ -80,6 +80,8 @@ if (process.env.NODE_ENV !== 'development') {
   rebuildRequire();
 }
 
+const isCI = process.env.CI === 'true';
+
 if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
   // On windows dlls may be loaded from directories in the path variable
   // (which I don't know why you'd ever want that) so I filter path quite aggressively here
@@ -88,15 +90,15 @@ if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) 
   // "Browser Assistant" instead of our own.
 
   const userPath = (process.env.HOMEDRIVE || 'c:') + (process.env.HOMEPATH || '\\Users');
-  const programFiles = process.env.ProgramFiles ||  'C:\\Program Files';
+  const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
   const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
   const programData = process.env.ProgramData || 'C:\\ProgramData';
 
   const pathFilter = (envPath: string): boolean => {
     return !envPath.startsWith(userPath)
-        && !envPath.startsWith(programData)
-        && !envPath.startsWith(programFiles)
-        && !envPath.startsWith(programFilesX86);
+      && !envPath.startsWith(programData)
+      && !envPath.startsWith(programFiles)
+      && !envPath.startsWith(programFilesX86);
   };
 
   process.env['PATH_ORIG'] = process.env['PATH'].slice(0);
@@ -116,7 +118,7 @@ try {
   // nop
 }
 
-import {} from './util/requireRebuild';
+import { } from './util/requireRebuild';
 
 import Application from './app/Application';
 
@@ -125,7 +127,7 @@ import type { IPresetStep, IPresetStepCommandLine } from './types/IPreset';
 import commandLine, { relaunch } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
-import {} from './util/extensionRequire';
+import { } from './util/extensionRequire';
 
 // required for the side-effect!
 import './util/exeIcon';
@@ -170,7 +172,13 @@ async function main(): Promise<void> {
     + ` --max-http-header-size=${HTTP_HEADER_SIZE}`
     + ' --no-force-async-hooks-checks';
 
-  if (mainArgs.disableGPU) {
+  const lockResult = app.requestSingleInstanceLock();
+  console.log('Single instance lock result:', lockResult);
+  console.log('Is CI environment:', !!process.env.CI);
+
+
+  // Always disable GPU on CI
+  if (mainArgs.disableGPU || isCI) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--disable-software-rasterizer');
     app.commandLine.appendSwitch('--disable-gpu');
@@ -184,7 +192,7 @@ async function main(): Promise<void> {
     // Vortex here acts only as a trampoline (probably elevated) to start
     // some other process
     const cp: typeof child_processT = require('child_process');
-    cp.spawn(process.execPath, [ mainArgs.run ], {
+    cp.spawn(process.execPath, [mainArgs.run], {
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
@@ -192,17 +200,18 @@ async function main(): Promise<void> {
       stdio: 'inherit',
       detached: true,
     })
-    .on('error', err => {
-      // TODO: In practice we have practically no information about what we're running
-      //       at this point
-      dialog.showErrorBox('Failed to run script', err.message);
-    });
+      .on('error', err => {
+        // TODO: In practice we have practically no information about what we're running
+        //       at this point
+        dialog.showErrorBox('Failed to run script', err.message);
+      });
     // quit this process, the new one is detached
     app.quit();
     return;
   }
 
-  if (!app.requestSingleInstanceLock()) {
+  if (!isCI && !app.requestSingleInstanceLock()) {
+
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--in-process-gpu');
     app.commandLine.appendSwitch('--disable-software-rasterizer');
@@ -241,7 +250,7 @@ async function main(): Promise<void> {
   process.on('unhandledRejection', handleError);
 
   if ((process.env.NODE_ENV === 'development')
-      && (!app.commandLine.hasSwitch('remote-debugging-port'))) {
+    && (!app.commandLine.hasSwitch('remote-debugging-port'))) {
     app.commandLine.appendSwitch('remote-debugging-port', DEBUG_PORT);
   }
 

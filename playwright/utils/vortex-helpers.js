@@ -220,15 +220,23 @@ export async function launchVortex(testName = 'unknown-test') {
       '--disable-background-timer-throttling',
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding',
-      '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+      '--disable-features=TranslateUI,BlinkGenPropertyTrees,VizDisplayCompositor',
       '--disable-ipc-flooding-protection',
       '--disable-dev-shm-usage',
       '--no-sandbox',
       '--no-zygote',
-      '--single-process', // This might help with main process issues
       '--disable-extensions',
       '--disable-default-apps',
-      '--disable-background-mode'
+      '--disable-background-mode',
+      '--disable-accelerated-2d-canvas',
+      '--disable-accelerated-jpeg-decoding',  
+      '--disable-accelerated-mjpeg-decode',
+      '--disable-accelerated-video-decode',
+      '--disable-accelerated-video-encode',
+      '--disable-gpu-memory-buffer-compositor-resources',
+      '--disable-gpu-memory-buffer-video-frames',
+      '--use-gl=swiftshader-webgl', // Force software WebGL
+      '--use-angle=swiftshader'     // Force software ANGLE
     ]);
   }
   
