@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.15.0-beta.1 - 2025-09-01
+## 1.15.0-beta.1 - 2025-09-03
 
 - .NET 6 and MSVC 2022 are now bundled with the installer
 - Updated Premium branding
@@ -19,6 +19,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
 - **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
 - **collections**: Added API-based metrics endpoint usage
+- **collections**: Fixed error message for mismatched hashes when using replicate option. ([#18186](https://github.com/Nexus-Mods/Vortex/issues/18186))
 - **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
 - **stardewvalley**: Fixed configuration mod not applied when SMAPI installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
