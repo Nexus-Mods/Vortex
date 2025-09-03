@@ -70,7 +70,7 @@ import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
 import { VCREDIST_URL } from '../constants';
 import { fileMD5 } from 'vortexmt';
-import { setDownloadHashByFile } from '../actions';
+import * as fsVortex from '../util/fs'
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -1747,7 +1747,7 @@ class ExtensionManager {
     return promise
       .then(() => this.getModDB())
       .then(modDB => (fileSize !== 0) && (fileMD5 !== undefined)
-        ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
+        ? modDB.lookup(undefined, fileMD5, fileSize, detail.gameId)
         : [])
       .then((result: ILookupResult[]) => {
         const resultSorter = this.makeSorter(detail);
@@ -1828,13 +1828,16 @@ class ExtensionManager {
       }
     };
     return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
-      .then((result) => {
-        this.mApi.store.dispatch(setDownloadHashByFile(path.basename(filePath), result, lastProgress));
-        return Promise.resolve({
+      .then((result) => (lastProgress === 0)
+        ? fsVortex.statAsync(filePath).then(stats => stats.size).catch(() => 0)
+          .then(numBytes => Promise.resolve({
+            md5sum: result,
+            numBytes
+          }))
+        : Promise.resolve({
           md5sum: result,
           numBytes: lastProgress
-        });
-    });
+        }));
   }
 
   private openArchive = (archivePath: string,
