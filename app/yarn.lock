@@ -60,7 +60,7 @@
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#quota-modification":
   version "1.4.27"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/1f3c2aea7068cd4f4ff00ca8ea7756c8b7d423ba"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c6e38c35d55a0f46d3f0422b4a5412e3668eaf94"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -2608,8 +2608,8 @@ modify-filename@^1.1.0:
   integrity sha512-EickqnKq3kVVaZisYuCxhtKbZjInCuwgwZWyAmRIp1NTMhri7r3380/uqwrUHfaDiPzLVTuoNy4whX66bxPVog==
 
 modmeta-db@Nexus-Mods/modmeta-db#simplify-file-hash-query:
-  version "0.9.2"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/f97ff5404789890e66226f5e48f0159f64a63852"
+  version "0.9.3"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/da4b2609e6616eb361c900044dd191e27aab4709"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"
