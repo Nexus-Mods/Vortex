@@ -20,9 +20,9 @@ export class Core {
   }
 
   public detach() {
+    this.ui.detach();
     this.plugin.detach();
     this.ini.detach();
-    this.ui.detach();
     this.context.detach();
   }
 }

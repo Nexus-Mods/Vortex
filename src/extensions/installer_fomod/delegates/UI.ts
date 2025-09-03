@@ -208,6 +208,7 @@ class UI extends DelegateBase {
       .removeListener(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
       .removeListener(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
 
+    this.mContinueCB = this.mStateCB = this.mCancelCB = undefined;
     if (this.mInstanceId !== null) {
       log('debug', 'Detaching UI instance that had active dialog', {
         instanceId: this.mInstanceId,
