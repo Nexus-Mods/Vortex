@@ -36,6 +36,19 @@ jobs:
       env:
         ELECTRON_DISABLE_SECURITY_WARNINGS: true
         NODE_ENV: development
+        CI: true  # Triggers longer timeouts in your helper
+        DEBUG: pw:browser*,pw:api  # Verbose Playwright logging
+        PWDEBUG: 1  # Additional debug info
+        
+    # Capture screenshots even on success for debugging
+    - name: Take debug screenshot
+      if: always()
+      run: |
+        # List any screenshots that were created
+        if (Test-Path "playwright\run-*") { 
+          Get-ChildItem -Path "playwright\run-*" -Recurse -Include "*.png" | ForEach-Object { Write-Host $_.FullName }
+        }
+      shell: pwsh
     
     - uses: actions/upload-artifact@v4
       if: always()
