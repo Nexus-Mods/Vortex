@@ -23,6 +23,8 @@ import { Button, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { TailwindTest } from '../../../controls/TailwindTest';
+
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 const UPDATE_FREQUENCY_MS = 1000;
@@ -145,6 +147,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage id='page-dashboard' className={classes.join(' ')}>
+        <TailwindTest />
         <MainPage.Body
           style={{ display: 'flex', flexDirection: 'column' }}
         >
@@ -181,7 +184,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         <FlexLayout.Fixed>
           {t('Drag dashlets to rearrange and drag the borders to resize')}
         </FlexLayout.Fixed>
-        <FlexLayout.Flex/>
+        <FlexLayout.Flex />
         <FlexLayout.Fixed>
           <DropdownButton
             id='add-widget-button'
@@ -329,6 +332,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate([ 'common' ])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      Dashboard)) as React.ComponentClass<{}>;
+export default translate(['common'])(
+  connect(mapStateToProps, mapDispatchToProps)(
+    Dashboard)) as React.ComponentClass<{}>;

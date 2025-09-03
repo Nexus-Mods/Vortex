@@ -1,0 +1,7 @@
+@import "tailwindcss" prefix(tw);
+
+@theme {
+  /* Optional: Add custom theme variables */
+  --color-brand: #0066cc;
+  --color-success: #10b981;
+}
