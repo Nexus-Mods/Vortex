@@ -366,28 +366,24 @@ export class DownloadObserver {
       callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      // Defer download finalization to prevent blocking
-      setImmediate(() => {
-        finalizeDownload(this.mApi, id, res.filePath)
-          .then(() => {
-            const flattened = flatten(res.metaInfo ?? {});
-            const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
-            if (batchedActions.length > 0) {
-              util.batchDispatch(this.mApi.store.dispatch, batchedActions);
-            }
-            const state = this.mApi.getState();
-            if ((state.settings.automation?.install && (allowInstall === true))
-                || (allowInstall === 'force')
-                || (download.modInfo?.['startedAsUpdate'] === true)) {
-              this.mApi.events.emit('start-install-download', id);
-            }
+      finalizeDownload(this.mApi, id, res.filePath)
+        .then(() => {
+          const flattened = flatten(res.metaInfo ?? {});
+          const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
+          if (batchedActions.length > 0) {
+            util.batchDispatch(this.mApi.store.dispatch, batchedActions);
+          }
+          const state = this.mApi.getState();
+          if ((state.settings.automation?.install && (allowInstall === true))
+              || (allowInstall === 'force')
+              || (download.modInfo?.['startedAsUpdate'] === true)) {
+            this.mApi.events.emit('start-install-download', id);
+          }
 
-            callback?.(null, id);
-          })
-          .catch(err => callback?.(err, id))
-          .finally(() => onceFinished());
-      });
-      return Promise.resolve();
+          callback?.(null, id);
+        })
+        .catch(err => callback?.(err, id))
+        .finally(() => onceFinished());
     }
   }
 
