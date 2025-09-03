@@ -10,57 +10,121 @@ export async function waitForMainWindow(app) {
   
   console.log(`[${isCI ? 'CI' : 'LOCAL'}] Starting main window detection...`);
   
+  // Check if we're stuck on splash screen
+  let splashScreenDetected = false;
+  let foundMainWindow = false;
+  
   // First, find the main window
-  for (let attempts = 0; attempts < 30; attempts++) {
-    console.log(`Attempt ${attempts + 1}/30: Looking for main window...`);
+  for (let attempts = 0; attempts < (isCI ? 60 : 30) && !foundMainWindow; attempts++) {
+    console.log(`Attempt ${attempts + 1}/${isCI ? 60 : 30}: Looking for main window...`);
     const windows = app.windows();
     console.log(`Found ${windows.length} window(s)`);
     
-    if (windows.length > 1) {
-      for (const window of windows) {
-        try {
-          const windowInfo = await window.evaluate(() => ({
-            url: window.location.href,
-            width: window.outerWidth,
-            height: window.outerHeight
-          }));
-          
-          console.log(`Window info:`, windowInfo);
-          
-          if (windowInfo.url.includes('index.html') && 
-              windowInfo.width >= 1024 && 
-              windowInfo.height >= 700) {
-            mainWindow = window;
-            console.log('✓ Found main window!');
-            break;
-          }
-        } catch (error) {
-          console.log(`Error evaluating window: ${error.message}`);
-        }
-      }
-      if (mainWindow !== splashWindow) break;
-    } else if (windows.length === 1) {
+    // Capture all window information for debugging
+    for (let i = 0; i < windows.length; i++) {
       try {
-        const currentInfo = await windows[0].evaluate(() => ({
+        const windowInfo = await windows[i].evaluate(() => ({
           url: window.location.href,
           width: window.outerWidth,
-          height: window.outerHeight
+          height: window.outerHeight,
+          title: document.title,
+          readyState: document.readyState
         }));
         
-        console.log(`Single window info:`, currentInfo);
+        console.log(`Window ${i}:`, windowInfo);
         
-        if (currentInfo.url.includes('index.html') || 
-           (currentInfo.width >= 1024 && currentInfo.height >= 700)) {
-          mainWindow = windows[0];
-          console.log('✓ Using single window as main window!');
+        // Detect if we're on splash screen
+        if (windowInfo.url.includes('splash.html')) {
+          splashScreenDetected = true;
+          console.log('Splash screen detected, waiting for main app...');
+          
+          // After 30 attempts on splash, something is wrong
+          if (attempts > 30) {
+            console.log('App appears stuck on splash screen!');
+            
+            // Try to get main process logs/errors
+            try {
+              const logs = await app.evaluate(({ app }) => {
+                // Try to get any console output or errors
+                return {
+                  version: app.getVersion(),
+                  name: app.getName(),
+                  path: app.getAppPath()
+                };
+              });
+              console.log('Main process info:', logs);
+            } catch (error) {
+              console.log('Could not get main process info:', error.message);
+            }
+            
+            // Take a screenshot of the splash screen
+            await windows[i].screenshot({ path: `playwright/stuck-splash-${Date.now()}.png` });
+          }
+        }
+        
+        // Look for main window
+        if (windowInfo.url.includes('index.html') && 
+            windowInfo.width >= 1024 && 
+            windowInfo.height >= 700) {
+          mainWindow = windows[i];
+          foundMainWindow = true;
+          console.log('Found main window!');
           break;
         }
       } catch (error) {
-        console.log(`Error evaluating single window: ${error.message}`);
+        console.log(`Error evaluating window ${i}: ${error.message}`);
       }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // If we found main window, break out of the main loop
+    if (foundMainWindow) {
+      break;
+    }
+    
+    // If we've been on splash screen too long, try some recovery
+    if (splashScreenDetected && attempts > 40) {
+      console.log('Attempting to force main window creation...');
+      
+      // Try clicking on the splash screen (sometimes helps)
+      try {
+        await splashWindow.click('body');
+        console.log('Clicked splash screen');
+      } catch (error) {
+        console.log('Could not click splash screen:', error.message);
+      }
+      
+      // Try pressing Enter (sometimes splash screens wait for user input)
+      try {
+        await splashWindow.press('body', 'Enter');
+        console.log('Pressed Enter on splash screen');
+      } catch (error) {
+        console.log('Could not press Enter:', error.message);
+      }
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, isCI ? 2000 : 1000));
+  }
+  
+  // If we're still on splash screen, throw a helpful error
+  if (!foundMainWindow) {
+    try {
+      const currentUrl = await mainWindow.evaluate(() => location.href);
+      if (currentUrl.includes('splash.html')) {
+        const errorMsg = `App is stuck on splash screen after ${isCI ? 120 : 60} seconds. This usually means:
+1. Main Electron process crashed during startup
+2. Missing dependencies required for main app
+3. App is waiting for user data directory/permissions
+4. GPU/rendering issues preventing main window creation
+
+Check the GitHub Actions logs above for any electron startup errors.`;
+        
+        throw new Error(errorMsg);
+      }
+    } catch (evalError) {
+      console.log('Could not check current URL:', evalError.message);
+    }
+    
+    throw new Error('Could not find main window within timeout period');
   }
   
   console.log('Waiting for DOM content loaded...');
@@ -78,12 +142,14 @@ export async function waitForMainWindow(app) {
                                document.querySelector('[class*="App"], [class*="application"], [data-testid]') !== null;
       
       // Log current state for debugging
-      console.log('React check:', {
-        hasReact: !!hasReact,
-        childrenCount: document.body.children.length,
-        hasVortexContent,
-        bodyText: document.body.textContent.substring(0, 200)
-      });
+      if (typeof console !== 'undefined') {
+        console.log('React check:', {
+          hasReact: !!hasReact,
+          childrenCount: document.body.children.length,
+          hasVortexContent,
+          bodyText: document.body.textContent.substring(0, 200)
+        });
+      }
       
       return hasContent && (hasReact || hasVortexContent);
     }, { timeout: isCI ? 60000 : 40000 }); // Much longer timeout on CI
@@ -112,11 +178,13 @@ export async function waitForMainWindow(app) {
   await mainWindow.waitForFunction(() => {
     const buttons = document.querySelectorAll('button').length;
     const interactiveElements = document.querySelectorAll('input, select, textarea, [role="button"]').length;
-    console.log('Interactive elements:', { buttons, interactiveElements });
+    if (typeof console !== 'undefined') {
+      console.log('Interactive elements:', { buttons, interactiveElements });
+    }
     return buttons > 0 || interactiveElements > 0;
   }, { timeout: isCI ? 30000 : 15000 });
   
-  console.log('✓ Main window ready!');
+  console.log('Main window ready!');
   return mainWindow;
 }
 
