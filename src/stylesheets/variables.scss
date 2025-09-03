@@ -137,7 +137,7 @@ $badge-line-height:           1 !default;
 
 //== Line Heights
 $line-height-base:            1.5;
-$line-height-computed:        math.floor(($font-size-base * $line-height-base));
+$line-height-computed:        floor(($font-size-base * $line-height-base));
 
 //== Bootstrap State Variables
 $state-success-text:          $brand-success;
