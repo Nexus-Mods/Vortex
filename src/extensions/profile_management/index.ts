@@ -33,7 +33,7 @@ import onceCB from '../../util/onceCB';
 import presetManager from '../../util/PresetManager';
 import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { batchDispatch, truthy } from '../../util/util';
 
 import { IExtension } from '../extension_manager/types';
 import { readExtensions } from '../extension_manager/util';
@@ -77,15 +77,19 @@ function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promis
 
 function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
   const state: IState = store.getState();
+  const batched = [];
   Object.keys(profile.modState || {}).forEach(modId => {
     if (getSafe(state.persistent.mods, [profile.gameId, modId], undefined) === undefined) {
       log('debug', 'removing info of missing mod from profile', {
         profile: profile.id,
         game: profile.gameId,
         modId });
-      store.dispatch(forgetMod(profile.id, modId));
+      batched.push(forgetMod(profile.id, modId));
     }
   });
+  if (batched.length > 0) {
+    batchDispatch(store, batched);
+  }
 }
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
