@@ -1,15 +1,15 @@
 /* eslint-disable */
-import { addLocalDownload, removeDownload, setDownloadHashByFile,
-         setDownloadModInfo,
-         startActivity, stopActivity } from '../../actions';
+import {
+  addLocalDownload, removeDownload, setDownloadHashByFile,
+  setDownloadModInfo,
+  startActivity, stopActivity
+} from '../../actions';
 import { IConditionResult, IDialogContent, showDialog, dismissNotification } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
-import {IProfile, IState} from '../../types/IState';
+import { IProfile, IState } from '../../types/IState';
 import { getBatchContext, IBatchContext } from '../../util/BatchContext';
-import { fileMD5 } from '../../util/checksum';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
-import { dependencyToModInfo } from './util/dependencyToModInfo'
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -87,10 +87,14 @@ class DynamicDownloadConcurrencyLimiter {
   }
 }
 
-import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
-         UserCanceled } from '../../util/CustomErrors';
-import { createErrorReport, didIgnoreError,
-        isOutdated, withContext } from '../../util/errorHandling';
+import {
+  DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
+  UserCanceled
+} from '../../util/CustomErrors';
+import {
+  createErrorReport, didIgnoreError,
+  isOutdated, withContext
+} from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { TFunction } from '../../util/i18n';
@@ -116,10 +120,12 @@ import modName, { renderModReference } from '../mod_management/util/modName';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
 
-import {addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
-        setModAttributes,
-        setModType} from './actions/mods';
-import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
+import {
+  addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
+  setModAttributes,
+  setModType
+} from './actions/mods';
+import { Dependency, IDependency, IDependencyError, IModInfoEx } from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
 import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
@@ -250,7 +256,7 @@ class InstallManager {
   private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
 
   // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(3);
+  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(5);
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
@@ -411,11 +417,11 @@ class InstallManager {
   }
 
   public simulate(api: IExtensionApi, gameId: string,
-                  archivePath: string, tempPath: string,
-                  extractList?: IFileListItem[], unattended?: boolean,
-                  installChoices?: any,
-                  progress?: (entries: string[], percent: number) => void)
-                  : Bluebird<IInstallResult> {
+    archivePath: string, tempPath: string,
+    extractList?: IFileListItem[], unattended?: boolean,
+    installChoices?: any,
+    progress?: (entries: string[], percent: number) => void)
+    : Bluebird<IInstallResult> {
     // Create a dedicated Zip instance for this simulation to prevent conflicts
     const simulationZip = new Zip();
 
@@ -423,66 +429,66 @@ class InstallManager {
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
     } else {
-      extractProm = simulationZip.extractFull(archivePath, tempPath, {ssc: false},
-                                    progress,
-                                    () => this.queryPassword(api.store) as any)
-          .catch((err: Error) => this.isCritical(err.message)
-            ? Bluebird.reject(new ArchiveBrokenError(err.message))
-            : Bluebird.reject(err));
+      extractProm = simulationZip.extractFull(archivePath, tempPath, { ssc: false },
+        progress,
+        () => this.queryPassword(api.store) as any)
+        .catch((err: Error) => this.isCritical(err.message)
+          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          : Bluebird.reject(err));
     }
 
     const fileList: string[] = [];
 
     return extractProm
-        .then(({ code, errors }: {code: number, errors: string[] }) => {
-          log('debug', 'extraction completed');
-          if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
-            const critical = errors.find(this.isCritical);
-            if (critical !== undefined) {
-              return Bluebird.reject(new ArchiveBrokenError(critical));
-            }
-            return this.queryContinue(api, errors, archivePath);
+      .then(({ code, errors }: { code: number, errors: string[] }) => {
+        log('debug', 'extraction completed');
+        if (code !== 0) {
+          log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
+          const critical = errors.find(this.isCritical);
+          if (critical !== undefined) {
+            return Bluebird.reject(new ArchiveBrokenError(critical));
+          }
+          return this.queryContinue(api, errors, archivePath);
+        } else {
+          return Bluebird.resolve();
+        }
+      })
+      .then(() => walk(tempPath,
+        (iterPath, stats) => {
+          if (stats.isFile()) {
+            fileList.push(path.relative(tempPath, iterPath));
           } else {
-            return Bluebird.resolve();
+            // unfortunately we also have to pass directories because
+            // some mods contain empty directories to control stop-folder
+            // management...
+            fileList.push(path.relative(tempPath, iterPath) + path.sep);
           }
-        })
-        .then(() => walk(tempPath,
-                         (iterPath, stats) => {
-                           if (stats.isFile()) {
-                             fileList.push(path.relative(tempPath, iterPath));
-                           } else {
-                             // unfortunately we also have to pass directories because
-                             // some mods contain empty directories to control stop-folder
-                             // management...
-                             fileList.push(path.relative(tempPath, iterPath) + path.sep);
-                           }
-                           return Bluebird.resolve();
-                         }))
-        .then(() => {
-          if (truthy(extractList) && extractList.length > 0) {
-            return makeListInstaller(extractList, tempPath);
-          } else {
-            return this.getInstaller(fileList, gameId, archivePath);
-          }
-        })
-        .then(supportedInstaller => {
-          if (supportedInstaller === undefined) {
-            throw new Error('no installer supporting this file');
-          }
+          return Bluebird.resolve();
+        }))
+      .then(() => {
+        if (truthy(extractList) && extractList.length > 0) {
+          return makeListInstaller(extractList, tempPath);
+        } else {
+          return this.getInstaller(fileList, gameId, archivePath);
+        }
+      })
+      .then(supportedInstaller => {
+        if (supportedInstaller === undefined) {
+          throw new Error('no installer supporting this file');
+        }
 
-          const {installer, requiredFiles} = supportedInstaller;
+        const { installer, requiredFiles } = supportedInstaller;
 
-          return installer.install(
-              fileList, tempPath, gameId,
-              (perc: number) => {
-                log('info', 'progress', perc);
-                progress([], perc);
-              },
-              installChoices,
-              unattended,
-              archivePath);
-        });
+        return installer.install(
+          fileList, tempPath, gameId,
+          (perc: number) => {
+            log('info', 'progress', perc);
+            progress([], perc);
+          },
+          installChoices,
+          unattended,
+          archivePath);
+      });
 
   }
 
@@ -523,7 +529,7 @@ class InstallManager {
     fileList?: IFileListItem[],
     unattended?: boolean,
     forceInstaller?: string,
-    allowAutoDeploy?: boolean): void {  
+    allowAutoDeploy?: boolean): void {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const installId = shortid();
     const dummyArchiveId = archiveId || 'direct-install-' + shortid();
@@ -622,531 +628,532 @@ class InstallManager {
         let existingMod: IMod;
         // Start the installation process - the promise will resolve when callback is called
         const installationPromise = withContext('Installing', baseName, () => ((forceGameId !== undefined)
-        ? Bluebird.resolve(forceGameId)
-        : queryGameId(api.store, downloadGameIds, modId))
-      .then(async gameId => {
-        // Convert game ID from Nexus page ID to internal ID if necessary
-        const state = api.getState();
-        const games = knownGames(state);
-        const convertedGameId = convertGameIdReverse(games, gameId);
-        installGameId = convertedGameId || gameId; // Use converted ID or fallback to original
-        
-        if (installGameId === undefined) {
-          return Promise.reject(
-            new ProcessCanceled('You need to select a game before installing this mod'));
-        }
-        if (installGameId === 'site' && baseName.toLowerCase().includes('extension')) {
-          // Assumption here is that anything we try to install from the "Modding Tools"/"site" domain
-          //  that contains "extension" in its archive name is an extension... If a non-extension tool
-          //  contains "extension" in its archive name... well, that's not good but there's nothing we can
-          //  do without API providing a unique tag for us to identify Vortex extensions. (AFAIK we can't even query the existing tags from the website)
-          // Installation of non-Vortex tools with the extension basename will just install as a mod for
-          //  the current game which I guess should be fine.
-          return Promise.resolve(installGameId);
-        }
-        if (games.find(iter => iter.id === installGameId) === undefined) {
-          return Bluebird.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
-        }
-        if (installGameId !== currentProfile?.gameId) {
-          const installProfileId = lastActiveProfileForGame(state, installGameId);
-          installProfile = profileById(state, installProfileId);
-        }
-        // TODO make the download first functionality optional
-        await api.emitAndAwait('will-install-mod', installGameId, archiveId, modId, fullInfo);
-        return Bluebird.resolve(installGameId);
-      })
-      // calculate the md5 hash here so we can store it with the mod meta information later,
-      // otherwise we'd not remember the hash when installing from external file
-      .tap(() => {
-        // Check if we already have the hash from the download to avoid recalculation
-        const existingHash = getSafe(fullInfo, ['download', 'fileMD5'], undefined);
-        const existingSize = getSafe(fullInfo, ['download', 'size'], undefined);
-        if (existingHash && existingSize) {
-          log('info', 'Using existing hash from download, skipping recalculation', { 
-            archivePath: path.basename(archivePath), 
-            hash: existingHash,
-            size: existingSize 
-          });
-          archiveMD5 = existingHash;
-          archiveSize = existingSize;
-          return Promise.resolve();
-        }
+          ? Bluebird.resolve(forceGameId)
+          : queryGameId(api.store, downloadGameIds, modId))
+          .then(async gameId => {
+            // Convert game ID from Nexus page ID to internal ID if necessary
+            const state = api.getState();
+            const games = knownGames(state);
+            const convertedGameId = convertGameIdReverse(games, gameId);
+            installGameId = convertedGameId || gameId; // Use converted ID or fallback to original
 
-        // Only calculate hash if we don't have it
-        return api.genMd5Hash(archivePath).then(hash => {
-          archiveMD5 = hash.md5sum;
-          archiveSize = hash.numBytes;
-          try {
-            _.merge(fullInfo, {
-              download: {
-                fileMD5: archiveMD5,
-                size: archiveSize,
-              },
-            });
-          } catch (err) {
-            // no operation
-          }
-        });
-      })
-      .then(gameId => {
-        if (installGameId === 'site') {
-          // install an already-downloaded extension
-          return api.emitAndAwait('install-extension-from-download', archiveId)
-            .then(() => Bluebird.reject(new UserCanceled()));
-        }
-        const silent = unattended && allowAutoDeploy && enable;
-        installContext = new InstallContext(gameId, api, silent);
-        installContext.startIndicator(baseName);
-        let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
-        if (Array.isArray(dlGame)) {
-          dlGame = dlGame[0];
-        }
-
-        // TODO: remove this hack once fileHashes is optimized
-        const createKey = (hash: string, size?: number, gameId?: string) => {
-          let lookupKey = `${hash}`;
-          if (size !== undefined) {
-            lookupKey += ':' + size;
-            if (gameId !== undefined) {
-              lookupKey += ':' + gameId;
+            if (installGameId === undefined) {
+              return Promise.reject(
+                new ProcessCanceled('You need to select a game before installing this mod'));
             }
-          }
-          return lookupKey;
-        }
-        const lookupKey = createKey(archiveMD5, archiveSize, dlGame as any);
-        const modInfo = dependencyToModInfo(fullInfo, dlGame as any);
-        return Bluebird.resolve([{ key: lookupKey, value: modInfo }]);
-      })
-      .then((modInfo: ILookupResult[]) => {
-        log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
-        const match = metaLookupMatch(modInfo, path.basename(archivePath), installGameId);
-        if (match !== undefined) {
-          fullInfo.meta = match.value;
-        }
-
-        modId = this.deriveInstallName(baseName, fullInfo);
-        let testModId = modId;
-        // if the name is already taken, consult the user,
-        // repeat until user canceled, decided to replace the existing
-        // mod or provided a new, unused name
-
-        let variantCounter: number = 0;
-        let replacementChoice: ReplaceChoice = undefined;
-        const checkNameLoop = () => {
-          if (replacementChoice === 'replace') {
-            log('debug', '(nameloop) replacement choice "replace"', { testModId: testModId ?? '<undefined>' });
-            return Promise.resolve(testModId);
-          }
-          const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
-          const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
-          const existingIds = ((replacementChoice === 'variant')
-            ? modNameMatches
-            : Array.from(new Set([].concat(modNameMatches, variantMatches))))
-            .filter(_ => _ !== undefined);
-          if (existingIds.length === 0) {
-            log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
-            return Promise.resolve(testModId);
-          } else {
-            const installOptions: IInstallOptions = {
-              ...info,
-              unattended,
-              variantNumber: ++variantCounter,
-              fileList,
-            };
-            return this.queryUserReplace(api, existingIds, installGameId, installOptions)
-              .then((choice: IReplaceChoice) => {
-                if (choice.id === undefined) {
-                  log('error', '(nameloop) no valid id selection', { testModId, modNameMatches, variantMatches });
-                }
-                testModId = choice.id;
-                replacementChoice = choice.replaceChoice;
-                if (choice.enable) {
-                  enable = true;
-                }
-                setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
-                rules = choice.rules || [];
-                fullInfo.previous = choice.attributes;
-                return checkNameLoop();
+            if (installGameId === 'site' && baseName.toLowerCase().includes('extension')) {
+              // Assumption here is that anything we try to install from the "Modding Tools"/"site" domain
+              //  that contains "extension" in its archive name is an extension... If a non-extension tool
+              //  contains "extension" in its archive name... well, that's not good but there's nothing we can
+              //  do without API providing a unique tag for us to identify Vortex extensions. (AFAIK we can't even query the existing tags from the website)
+              // Installation of non-Vortex tools with the extension basename will just install as a mod for
+              //  the current game which I guess should be fine.
+              return Promise.resolve(installGameId);
+            }
+            if (games.find(iter => iter.id === installGameId) === undefined) {
+              return Bluebird.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
+            }
+            if (installGameId !== currentProfile?.gameId) {
+              const installProfileId = lastActiveProfileForGame(state, installGameId);
+              installProfile = profileById(state, installProfileId);
+            }
+            // TODO make the download first functionality optional
+            await api.emitAndAwait('will-install-mod', installGameId, archiveId, modId, fullInfo);
+            return Bluebird.resolve(installGameId);
+          })
+          // calculate the md5 hash here so we can store it with the mod meta information later,
+          // otherwise we'd not remember the hash when installing from external file
+          .tap(() => {
+            // Check if we already have the hash from the download to avoid recalculation
+            const existingHash = getSafe(fullInfo, ['download', 'fileMD5'], undefined);
+            const existingSize = getSafe(fullInfo, ['download', 'size'], undefined);
+            if (existingHash && existingSize) {
+              log('info', 'Using existing hash from download, skipping recalculation', {
+                archivePath: path.basename(archivePath),
+                hash: existingHash,
+                size: existingSize
               });
-          }
-        }
-        return checkNameLoop();
-      })
-      // TODO: this is only necessary to get at the fileId and the fileId isn't
-      //   even a particularly good way to discover conflicts
-      .then(newModId => {
-        if (newModId === undefined) {
-          // this shouldn't be possible, how would checkNameLoop return undefined?
-          const err = new Error('failed to generate mod id');
-          err['originalModId'] = modId;
-          err['archivePath'] = archivePath;
-          return Bluebird.reject(err);
-        }
-        modId = newModId;
-        log('debug', 'mod id for newly installed mod', { archivePath, modId });
-        return filterModInfo(fullInfo, undefined);
-      })
-      .then(modInfo => {
-        const fileId = modInfo.fileId ?? modInfo.revisionId;
-        const isCollection = modInfo.revisionId !== undefined;
+              archiveMD5 = existingHash;
+              archiveSize = existingSize;
+              return Promise.resolve();
+            }
 
-        existingMod = (fileId !== undefined)
-          ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
-          : undefined;
-
-        const mods = api.getState().persistent.mods[installGameId] ?? {};
-        const dependentRule: { [modId: string]: { owner: string, rule: IModRule } } =
-            Object.keys(mods)
-            .reduce((prev: { [modId: string]: { owner: string, rule: IModRule } }, iter) => {
-              const depRule = (mods[iter].rules ?? [])
-                .find(rule => (rule.type === 'requires')
-                           && testModReference(existingMod, rule.reference));
-              if (depRule !== undefined) {
-                prev[iter] = { owner: iter, rule: depRule };
+            // Only calculate hash if we don't have it
+            return api.genMd5Hash(archivePath).then(hash => {
+              archiveMD5 = hash.md5sum;
+              archiveSize = hash.numBytes;
+              try {
+                _.merge(fullInfo, {
+                  download: {
+                    fileMD5: archiveMD5,
+                    size: archiveSize,
+                  },
+                });
+              } catch (err) {
+                // no operation
               }
-              return prev;
-            }, {});
+            });
+          })
+          .then(gameId => {
+            if (installGameId === 'site') {
+              // install an already-downloaded extension
+              return api.emitAndAwait('install-extension-from-download', archiveId)
+                .then(() => Bluebird.reject(new UserCanceled()));
+            }
+            installContext = new InstallContext(gameId, api, unattended);
+            installContext.startIndicator(baseName);
+            let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
+            if (Array.isArray(dlGame)) {
+              dlGame = dlGame[0];
+            }
 
-        let broken: string[] = [];
-        if (truthy(archiveId)) {
-          const download = api.getState().persistent.downloads.files[archiveId];
-          if (download !== undefined) {
-            const lookup = lookupFromDownload(download);
-            broken = Object.keys(dependentRule)
-              .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
-                && !testModReference(lookup, dependentRule[iter].rule.reference)));
-          }
-        }
-        if (broken.length > 0) {
-          return this.queryIgnoreDependent(
-            api.store, installGameId, broken.map(id => dependentRule[id]));
-        } else {
-          return Bluebird.resolve();
-        }
-      })
-      .then(() => {
-        if ((existingMod !== undefined) && (fullInfo.choices === undefined)) {
-          fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
-        }
+            return api.lookupModMeta({ fileMD5: archiveMD5, fileSize: archiveSize, gameId: installGameId });
+          })
+          .then((modInfo: ILookupResult[]) => {
+            log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
+            const match = metaLookupMatch(modInfo, path.basename(archivePath), installGameId);
+            if (match !== undefined) {
+              fullInfo.meta = match.value;
+            }
 
-        if ((existingMod !== undefined) && (installProfile !== undefined)) {
-          const wasEnabled = getSafe(installProfile.modState, [existingMod.id, 'enabled'], false);
-          return this.userVersionChoice(existingMod, api.store)
-            .then((action: string) => {
-              if (action === INSTALL_ACTION) {
-                enable = enable || wasEnabled;
-                if (wasEnabled) {
-                  setModsEnabled(api, installProfile.id, [existingMod.id], false, {
-                    allowAutoDeploy,
-                    installed: true,
-                  });
-                }
-                rules = existingMod.rules || [];
-                overrides = existingMod.fileOverrides;
-                fullInfo.previous = existingMod.attributes;
-                return Bluebird.resolve();
-              } else if (action === REPLACE_ACTION) {
-                rules = existingMod.rules || [];
-                overrides = existingMod.fileOverrides;
-                fullInfo.previous = existingMod.attributes;
-                // we need to remove the old mod before continuing. This ensures
-                // the mod is deactivated and undeployed (so we're not leave dangling
-                // links) and it ensures we do a clean install of the mod
-                return new Bluebird<void>((resolve, reject) => {
-                  api.events.emit('remove-mod', installGameId, existingMod.id,
-                                  (error: Error) => {
-                    if (error !== null) {
-                      reject(error);
-                    } else {
-                      // use the same mod id as the old version so that all profiles
-                      // keep using it.
-                      modId = existingMod.id;
-                      enable = enable || wasEnabled;
-                      resolve();
+            modId = this.deriveInstallName(baseName, fullInfo);
+            let testModId = modId;
+            // if the name is already taken, consult the user,
+            // repeat until user canceled, decided to replace the existing
+            // mod or provided a new, unused name
+
+            let variantCounter: number = 0;
+            let replacementChoice: ReplaceChoice = undefined;
+            const checkNameLoop = () => {
+              if (replacementChoice === 'replace') {
+                log('debug', '(nameloop) replacement choice "replace"', { testModId: testModId ?? '<undefined>' });
+                return Promise.resolve(testModId);
+              }
+              const modNameMatches = this.checkModNameExists(testModId, api, installGameId);
+              const variantMatches = this.checkModVariantsExist(api, installGameId, archiveId);
+              const existingIds = ((replacementChoice === 'variant')
+                ? modNameMatches
+                : Array.from(new Set([].concat(modNameMatches, variantMatches))))
+                .filter(id => id !== undefined);
+              if (existingIds.length === 0) {
+                log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
+                return Promise.resolve(testModId);
+              } else {
+                const installOptions: IInstallOptions = {
+                  ...info,
+                  unattended,
+                  variantNumber: ++variantCounter,
+                  fileList,
+                };
+                return this.queryUserReplace(api, existingIds, installGameId, installOptions)
+                  .then((choice: IReplaceChoice) => {
+                    if (choice.id === undefined) {
+                      log('error', '(nameloop) no valid id selection', { testModId, modNameMatches, variantMatches });
                     }
-                  }, { willBeReplaced: true });
-                });
+                    testModId = choice.id;
+                    replacementChoice = choice.replaceChoice;
+                    if (choice.enable) {
+                      enable = true;
+                    }
+                    setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
+                    rules = choice.rules || [];
+                    fullInfo.previous = choice.attributes;
+                    return checkNameLoop();
+                  });
               }
-            });
-        } else {
-          return Bluebird.resolve();
-        }
-      })
-      .then(() => {
-        installContext.startInstallCB(modId, installGameId, archiveId);
+            }
+            return checkNameLoop();
+          })
+          // TODO: this is only necessary to get at the fileId and the fileId isn't
+          //   even a particularly good way to discover conflicts
+          .then(newModId => {
+            if (newModId === undefined) {
+              // this shouldn't be possible, how would checkNameLoop return undefined?
+              const err = new Error('failed to generate mod id');
+              err['originalModId'] = modId;
+              err['archivePath'] = archivePath;
+              return Bluebird.reject(err);
+            }
+            modId = newModId;
+            log('debug', 'mod id for newly installed mod', { archivePath, modId });
+            return filterModInfo(fullInfo, undefined);
+          })
+          .then(modInfo => {
+            const fileId = modInfo.fileId ?? modInfo.revisionId;
+            const isCollection = modInfo.revisionId !== undefined;
 
-        destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
-        log('info', 'installing to', { modId, destinationPath });
-        installContext.setInstallPathCB(modId, destinationPath);
-        tempPath = destinationPath + '.installing';
-        return this.installInner(api, archivePath,
-                                 tempPath, destinationPath, installGameId, installContext,
-                                 installationZip, forceInstaller, fullInfo.choices, fileList, unattended);
-      })
-      .then(result => {
-        const state: IState = api.store.getState();
+            existingMod = (fileId !== undefined)
+              ? this.findPreviousVersionMod(fileId, api.store, installGameId, isCollection)
+              : undefined;
 
-        if (getSafe(state, ['persistent', 'mods', installGameId, modId, 'type'], '') === '') {
-          return this.determineModType(installGameId, result.instructions)
-              .then(type => {
-                installContext.setModType(modId, type);
-                return result;
-              });
-        } else {
-          return Bluebird.resolve(result);
-        }
-      })
-      .then(async (result: { instructions: IInstruction[] }) => {
-        try {
-          const overrideFile = result.instructions.find(iter =>
-            iter.type === 'copy' && path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
-          if (!overrideFile) {
-            return result;
-          }
+            const mods = api.getState().persistent.mods[installGameId] ?? {};
+            const dependentRule: { [modId: string]: { owner: string, rule: IModRule } } =
+              Object.keys(mods)
+                .reduce((prev: { [modId: string]: { owner: string, rule: IModRule } }, iter) => {
+                  const depRule = (mods[iter].rules ?? [])
+                    .find(rule => (rule.type === 'requires')
+                      && testModReference(existingMod, rule.reference));
+                  if (depRule !== undefined) {
+                    prev[iter] = { owner: iter, rule: depRule };
+                  }
+                  return prev;
+                }, {});
 
-          // Remove the override instruction - we don't want to deploy this.
-          result.instructions = result.instructions.filter(iter => iter !== overrideFile);
-          const content = await fs.readFileAsync(path.join(tempPath, overrideFile.source), 'utf8');
-          const rawInstructions: IInstruction[] = JSON.parse(content);
+            let broken: string[] = [];
+            if (truthy(archiveId)) {
+              const download = api.getState().persistent.downloads.files[archiveId];
+              if (download !== undefined) {
+                const lookup = lookupFromDownload(download);
+                broken = Object.keys(dependentRule)
+                  .filter(iter => (!idOnlyRef(dependentRule[iter].rule.reference)
+                    && !testModReference(lookup, dependentRule[iter].rule.reference)));
+              }
+            }
+            if (broken.length > 0) {
+              return this.queryIgnoreDependent(
+                api.store, installGameId, broken.map(id => dependentRule[id]));
+            } else {
+              return Bluebird.resolve();
+            }
+          })
+          .then(() => {
+            if ((existingMod !== undefined) && (fullInfo.choices === undefined)) {
+              fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
+            }
 
-          // filter out any instructions that could potentially be malicious.
-          const overrideInstructions: IInstruction[] = rawInstructions.filter(iter => !['generatefile', 'unsupported', 'error'].includes(iter.type));
-          return { instructions: result.instructions, overrideInstructions };
-        } catch (err) {
-          log('warn', 'failed to read override instructions', err);
-          return result;
-        }
-      })
-      .then((result: {
-        instructions: IInstruction[],
-        overrideInstructions?: IInstruction[],
-      }) => this.processInstructions(api, installContext, archivePath, tempPath, destinationPath,
-                                               installGameId, modId, result,
-                                               fullInfo.choices, unattended))
-      .finally(() => {
-        if (tempPath !== undefined) {
-          log('debug', 'removing temporary path', tempPath);
-          return fs.removeAsync(tempPath);
-        } else {
-          return Bluebird.resolve();
-        }
-      })
-      .then(() => filterModInfo(fullInfo, destinationPath))
-      .then(modInfo => {
-        const state = api.getState();
-        const existingKeys =
-          Object.keys(state.persistent.mods[installGameId]?.[modId]?.attributes || {});
-        installContext.finishInstallCB('success', _.omit(modInfo, existingKeys));
-        (rules ?? []).forEach(rule => {
-          api.store.dispatch(addModRule(installGameId, modId, rule));
-        });
-        api.store.dispatch(setFileOverride(installGameId, modId, overrides));
-        if (installProfile !== undefined) {
-          if (enable) {
-            setModsEnabled(api, installProfile.id, [modId], true, {
-              allowAutoDeploy,
-              installed: true,
-            });
-          }
-          /*
-          if (processDependencies) {
-            log('info', 'process dependencies', { modId });
-            const mod: IMod = state.persistent.mods[installGameId]?.[modId];
-
-            this.installDependenciesImpl(api, currentProfile,
-                                         mod.id, modName(mod),
-                                         [].concat(modInfo.rules || [], mod.rules || []),
-                                         this.mGetInstallPath(installGameId))
-              .then(() => this.installRecommendationsImpl(
-                                         api, currentProfile,
-                                         mod.id, modName(mod),
-                                         [].concat(modInfo.rules || [], mod.rules || []),
-                                         this.mGetInstallPath(installGameId)));
-          }
-          */
-        }
-        this.setModSize(api, modId, installGameId);
-        promiseCallback?.(null, modId);
-        api.events.emit('did-install-mod', installGameId, archiveId, modId, modInfo);
-        return null;
-      })
-      .catch(err => {
-        // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
-        //   exceptions from extensions, hence we have to do the string check (last one)
-        const canceled = (err instanceof UserCanceled)
-                         || (err instanceof TemporaryError)
-                         || (err instanceof ProcessCanceled)
-                         || !truthy(err)
-                         || (err.message === 'Canceled')
-                         || (truthy(err.stack)
-                             && err.stack.startsWith('UserCanceled: canceled by user'));
-        let prom = destinationPath !== undefined
-          ? fs.removeAsync(destinationPath)
-            .catch(UserCanceled, () => null)
-            .catch(innerErr => {
-              installContext.reportError(
-                'Failed to clean up installation directory "{{destinationPath}}", '
-                + 'please close Vortex and remove it manually.',
-                innerErr, innerErr.code !== 'ENOTEMPTY', { destinationPath });
-            })
-          : Bluebird.resolve();
-
-        if (installContext !== undefined) {
-          const pretty = prettifyNodeErrorMessage(err);
-          // context doesn't have to be set if we canceled early
-          prom = prom.then(() => installContext.finishInstallCB(
-            canceled ? 'canceled' : 'failed',
-            undefined,
-            api.translate(pretty.message, { replace: pretty.replace })));
-        }
-
-        if (err === undefined) {
-          return prom.then(() => {
-            promiseCallback?.(new Error('unknown error'), null);
-          });
-        } else if (canceled) {
-          return prom.then(() => {
-            promiseCallback?.(err, null);
-          });
-        } else if (err instanceof ArchiveBrokenError) {
-          return prom
-            .then(() => {
-              callback?.(err, null);
-              if (installContext !== undefined) {
-                api.sendNotification({
-                  type: 'info',
-                  title: 'Installation failed, archive is damaged',
-                  message: path.basename(archivePath),
-                  actions: [
-                    { title: 'Delete', action: dismiss => {
-                      api.events.emit('remove-download', archiveId, dismiss); } },
-                    { title: 'Delete & Redownload', action: dismiss => {
-                      const state: IState = api.store.getState();
-                      const download = state.persistent.downloads.files[archiveId];
-                      api.events.emit('remove-download', archiveId, () => {
-                        dismiss();
-                        api.events.emit('start-download', download.urls, info.download,
-                          path.basename(archivePath));
+            if ((existingMod !== undefined) && (installProfile !== undefined)) {
+              const wasEnabled = getSafe(installProfile.modState, [existingMod.id, 'enabled'], false);
+              return this.userVersionChoice(existingMod, api.store)
+                .then((action: string) => {
+                  if (action === INSTALL_ACTION) {
+                    enable = enable || wasEnabled;
+                    if (wasEnabled) {
+                      setModsEnabled(api, installProfile.id, [existingMod.id], false, {
+                        allowAutoDeploy,
+                        installed: true,
                       });
-                      dismiss();
-                    } },
-                  ],
+                    }
+                    rules = existingMod.rules || [];
+                    overrides = existingMod.fileOverrides;
+                    fullInfo.previous = existingMod.attributes;
+                    return Bluebird.resolve();
+                  } else if (action === REPLACE_ACTION) {
+                    rules = existingMod.rules || [];
+                    overrides = existingMod.fileOverrides;
+                    fullInfo.previous = existingMod.attributes;
+                    // we need to remove the old mod before continuing. This ensures
+                    // the mod is deactivated and undeployed (so we're not leave dangling
+                    // links) and it ensures we do a clean install of the mod
+                    return new Bluebird<void>((resolve, reject) => {
+                      api.events.emit('remove-mod', installGameId, existingMod.id,
+                        (error: Error) => {
+                          if (error !== null) {
+                            reject(error);
+                          } else {
+                            // use the same mod id as the old version so that all profiles
+                            // keep using it.
+                            modId = existingMod.id;
+                            enable = enable || wasEnabled;
+                            resolve();
+                          }
+                        }, { willBeReplaced: true });
+                    });
+                  }
+                });
+            } else {
+              return Bluebird.resolve();
+            }
+          })
+          .then(() => {
+            installContext.startInstallCB(modId, installGameId, archiveId);
+
+            destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+            log('info', 'installing to', { modId, destinationPath });
+            installContext.setInstallPathCB(modId, destinationPath);
+            tempPath = destinationPath + '.installing';
+            return this.installInner(api, archivePath,
+              tempPath, destinationPath, installGameId, installContext,
+              installationZip, forceInstaller, fullInfo.choices, fileList, unattended);
+          })
+          .then(result => {
+            const state: IState = api.store.getState();
+
+            if (getSafe(state, ['persistent', 'mods', installGameId, modId, 'type'], '') === '') {
+              return this.determineModType(installGameId, result.instructions)
+                .then(type => {
+                  installContext.setModType(modId, type);
+                  return result;
+                });
+            } else {
+              return Bluebird.resolve(result);
+            }
+          })
+          .then(async (result: { instructions: IInstruction[] }) => {
+            try {
+              const overrideFile = result.instructions.find(iter =>
+                iter.type === 'copy' && path.basename(iter.source) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+              if (!overrideFile) {
+                return result;
+              }
+
+              // Remove the override instruction - we don't want to deploy this.
+              result.instructions = result.instructions.filter(iter => iter !== overrideFile);
+              const content = await fs.readFileAsync(path.join(tempPath, overrideFile.source), 'utf8');
+              const rawInstructions: IInstruction[] = JSON.parse(content);
+
+              // filter out any instructions that could potentially be malicious.
+              const overrideInstructions: IInstruction[] = rawInstructions.filter(iter => !['generatefile', 'unsupported', 'error'].includes(iter.type));
+              return { instructions: result.instructions, overrideInstructions };
+            } catch (err) {
+              log('warn', 'failed to read override instructions', err);
+              return result;
+            }
+          })
+          .then((result: {
+            instructions: IInstruction[],
+            overrideInstructions?: IInstruction[],
+          }) => {
+            const startTime = Date.now();
+            return this.processInstructions(api, installContext, archivePath, tempPath, destinationPath,
+              installGameId, modId, result,
+              fullInfo.choices, unattended)
+              .tap(() => {
+                const endTime = Date.now();
+                log('error', 'processed instructions', { installId: activeInstall.installId, duration: endTime - startTime });
+              });
+          })
+          .finally(() => {
+            if (tempPath !== undefined) {
+              log('debug', 'removing temporary path', tempPath);
+              return fs.removeAsync(tempPath);
+            } else {
+              return Bluebird.resolve();
+            }
+          })
+          .then(() => filterModInfo(fullInfo, destinationPath))
+          .then(modInfo => {
+            const state = api.getState();
+            const existingKeys =
+              Object.keys(state.persistent.mods[installGameId]?.[modId]?.attributes || {});
+            installContext.finishInstallCB('success', _.omit(modInfo, existingKeys));
+            (rules ?? []).forEach(rule => {
+              api.store.dispatch(addModRule(installGameId, modId, rule));
+            });
+            api.store.dispatch(setFileOverride(installGameId, modId, overrides));
+            if (installProfile !== undefined) {
+              if (enable) {
+                setModsEnabled(api, installProfile.id, [modId], true, {
+                  allowAutoDeploy,
+                  installed: true,
                 });
               }
-            });
-        } else if (err instanceof SetupError) {
-          return prom
-            .then(() => {
-              if (installContext !== undefined) {
-                installContext.reportError(
-                  'Installation failed',
-                  err,
-                  false, {
-                    installerPath: path.basename(archivePath),
-                    message: err.message,
-                  });
+              /*
+              if (processDependencies) {
+                log('info', 'process dependencies', { modId });
+                const mod: IMod = state.persistent.mods[installGameId]?.[modId];
+    
+                this.installDependenciesImpl(api, currentProfile,
+                                             mod.id, modName(mod),
+                                             [].concat(modInfo.rules || [], mod.rules || []),
+                                             this.mGetInstallPath(installGameId))
+                  .then(() => this.installRecommendationsImpl(
+                                             api, currentProfile,
+                                             mod.id, modName(mod),
+                                             [].concat(modInfo.rules || [], mod.rules || []),
+                                             this.mGetInstallPath(installGameId)));
               }
+              */
+            }
+            this.setModSize(api, modId, installGameId);
+            promiseCallback?.(null, modId);
+            api.events.emit('did-install-mod', installGameId, archiveId, modId, modInfo);
+            return null;
+          })
+          .catch(err => {
+            // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
+            //   exceptions from extensions, hence we have to do the string check (last one)
+            const canceled = (err instanceof UserCanceled)
+              || (err instanceof TemporaryError)
+              || (err instanceof ProcessCanceled)
+              || !truthy(err)
+              || (err.message === 'Canceled')
+              || (truthy(err.stack)
+                && err.stack.startsWith('UserCanceled: canceled by user'));
+            let prom = destinationPath !== undefined
+              ? fs.removeAsync(destinationPath)
+                .catch(UserCanceled, () => null)
+                .catch(innerErr => {
+                  installContext.reportError(
+                    'Failed to clean up installation directory "{{destinationPath}}", '
+                    + 'please close Vortex and remove it manually.',
+                    innerErr, innerErr.code !== 'ENOTEMPTY', { destinationPath });
+                })
+              : Bluebird.resolve();
+
+            if (installContext !== undefined) {
+              const pretty = prettifyNodeErrorMessage(err);
+              // context doesn't have to be set if we canceled early
+              prom = prom.then(() => installContext.finishInstallCB(
+                canceled ? 'canceled' : 'failed',
+                undefined,
+                api.translate(pretty.message, { replace: pretty.replace })));
+            }
+
+            if (err === undefined) {
+              return prom.then(() => {
+                promiseCallback?.(new Error('unknown error'), null);
+              });
+            } else if (canceled) {
+              return prom.then(() => {
+                promiseCallback?.(err, null);
+              });
+            } else if (err instanceof ArchiveBrokenError) {
+              return prom
+                .then(() => {
+                  callback?.(err, null);
+                  if (unattended) {
+                    return Promise.resolve();
+                  }
+                  if (installContext !== undefined) {
+                    api.sendNotification({
+                      type: 'info',
+                      title: 'Installation failed, archive is damaged',
+                      message: path.basename(archivePath),
+                      actions: [
+                        {
+                          title: 'Delete', action: dismiss => {
+                            api.events.emit('remove-download', archiveId, dismiss);
+                          }
+                        },
+                        {
+                          title: 'Delete & Redownload', action: dismiss => {
+                            const state: IState = api.store.getState();
+                            const download = state.persistent.downloads.files[archiveId];
+                            api.events.emit('remove-download', archiveId, () => {
+                              dismiss();
+                              api.events.emit('start-download', download.urls, info.download,
+                                path.basename(archivePath));
+                            });
+                            dismiss();
+                          }
+                        },
+                      ],
+                    });
+                  }
+                });
+            } else if (err instanceof SetupError) {
+              return prom
+                .then(() => {
+                  if (installContext !== undefined) {
+                    installContext.reportError(
+                      'Installation failed',
+                      err,
+                      false, {
+                      installerPath: path.basename(archivePath),
+                      message: err.message,
+                    });
+                  }
+                  callback?.(err, null);
+                });
+            } else if (err instanceof DataInvalid) {
+              return prom
+                .then(() => {
+                  if (installContext !== undefined) {
+                    installContext.reportError(
+                      'Installation failed',
+                      'The installer {{ installerPath }} is invalid and couldn\'t be '
+                      + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
+                      false, {
+                      installerPath: path.basename(archivePath),
+                      message: err.message,
+                    });
+                  }
+                  callback?.(err, null);
+                });
+            } else if (err['code'] === 'MODULE_NOT_FOUND') {
+              const location = err['requireStack'] !== undefined
+                ? ` (at ${err['requireStack'][0]})`
+                : '';
+              installContext.reportError('Installation failed',
+                'Module failed to load:\n{{message}}{{location}}\n\n'
+                + 'This usually indicates that the Vortex installation has been '
+                + 'corrupted or an external application (like an Anti-Virus) has interfered with '
+                + 'the loading of the module. '
+                + 'Please check whether your AV reported something and try reinstalling Vortex.',
+                false, {
+                location,
+                message: err.message.split('\n')[0],
+              });
               callback?.(err, null);
-            });
-        } else if (err instanceof DataInvalid) {
-          return prom
-            .then(() => {
-              if (installContext !== undefined) {
-                installContext.reportError(
-                  'Installation failed',
-                  'The installer {{ installerPath }} is invalid and couldn\'t be '
-                  + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
-                  false, {
-                    installerPath: path.basename(archivePath),
-                    message: err.message,
-                  });
-              }
-              callback?.(err, null);
-            });
-        } else if (err['code'] === 'MODULE_NOT_FOUND') {
-          const location = err['requireStack'] !== undefined
-            ? ` (at ${err['requireStack'][0]})`
-            : '';
-          installContext.reportError('Installation failed',
-            'Module failed to load:\n{{message}}{{location}}\n\n'
-            + 'This usually indicates that the Vortex installation has been '
-            + 'corrupted or an external application (like an Anti-Virus) has interfered with '
-            + 'the loading of the module. '
-            + 'Please check whether your AV reported something and try reinstalling Vortex.',
-            false, {
-              location,
-              message: err.message.split('\n')[0],
-            });
-          callback?.(err, null);
-        } else {
-          return prom
-            .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
-            .then((hashResult: IHashResult) => {
-              const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              let replace = {};
-              if (typeof err === 'string') {
-                err = 'The installer "{{ id }}" failed: {{ message }}';
-                replace = {
+            } else {
+              return prom
+                .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
+                .then((hashResult: IHashResult) => {
+                  const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+                  let replace = {};
+                  if (typeof err === 'string') {
+                    err = 'The installer "{{ id }}" failed: {{ message }}';
+                    replace = {
                       id,
                       message: err,
                     };
+                  }
+                  if (installContext !== undefined) {
+                    const browserAssistantMsg = 'The installer has failed due to an external 3rd '
+                      + 'party application you have installed on your system named '
+                      + '"Browser Assistant". This application inserts itself globally '
+                      + 'and breaks any other application that uses the same libraries as it does.\n\n'
+                      + 'To use Vortex, please uninstall "Browser Assistant".';
+                    const errorMessage = (typeof err === 'string') ? err : err.message;
+                    let allowReport: boolean;
+                    if (err.message.includes('No compatible .NET installation')) {
+                      allowReport = false;
+                    }
+                    (!this.isBrowserAssistantError(errorMessage))
+                      ? installContext.reportError('Installation failed', err, allowReport, replace)
+                      : installContext.reportError('Installation failed', browserAssistantMsg, false);
+                  }
+                  callback?.(err, modId);
+                });
+            }
+          })
+          .finally(() => {
+            if (installContext !== undefined) {
+              const state = api.store.getState();
+              const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+
+              const activeInstall = this.mActiveInstalls.get(installId);
+              const remainingActiveCount = this.mActiveInstalls.size;
+
+              log('debug', 'InstallManager: Cleaning up installation in finally block', {
+                installId,
+                modId: modId || 'unknown',
+                indicatorId: installContext?.['mIndicatorId'],
+                remainingActiveInstallations: remainingActiveCount,
+                installDuration: activeInstall ? Date.now() - activeInstall.startTime : 'unknown'
+              });
+
+              try {
+                installContext.stopIndicator(mod);
+                log('debug', 'InstallManager: stopIndicator completed successfully', {
+                  installId,
+                  modId: modId || 'unknown'
+                });
+              } catch (stopError) {
+                log('error', 'InstallManager: Error in stopIndicator during cleanup', {
+                  installId,
+                  modId: modId || 'unknown',
+                  error: stopError.message,
+                  stack: stopError.stack
+                });
               }
-              if (installContext !== undefined) {
-                const browserAssistantMsg = 'The installer has failed due to an external 3rd '
-                  + 'party application you have installed on your system named '
-                  + '"Browser Assistant". This application inserts itself globally '
-                  + 'and breaks any other application that uses the same libraries as it does.\n\n'
-                  + 'To use Vortex, please uninstall "Browser Assistant".';
-                const errorMessage = (typeof err === 'string') ? err : err.message;
-                let allowReport: boolean;
-                if (err.message.includes('No compatible .NET installation')) {
-                  allowReport = false;
-                }
-                (!this.isBrowserAssistantError(errorMessage))
-                  ? installContext.reportError('Installation failed', err, allowReport, replace)
-                  : installContext.reportError('Installation failed', browserAssistantMsg, false);
-              }
-              callback?.(err, modId);
-            });
-        }
-      })
-      .finally(() => {
-        if (installContext !== undefined) {
-          const state = api.store.getState();
-          const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
-
-          const activeInstall = this.mActiveInstalls.get(installId);
-          const remainingActiveCount = this.mActiveInstalls.size;
-
-          log('debug', 'InstallManager: Cleaning up installation in finally block', {
-            installId,
-            modId: modId || 'unknown',
-            indicatorId: installContext?.['mIndicatorId'],
-            remainingActiveInstallations: remainingActiveCount,
-            installDuration: activeInstall ? Date.now() - activeInstall.startTime : 'unknown'
-          });
-
-          try {
-            installContext.stopIndicator(mod);
-            log('debug', 'InstallManager: stopIndicator completed successfully', {
-              installId,
-              modId: modId || 'unknown'
-            });
-          } catch (stopError) {
-            log('error', 'InstallManager: Error in stopIndicator during cleanup', {
-              installId,
-              modId: modId || 'unknown',
-              error: stopError.message,
-              stack: stopError.stack
-            });
-          }
-        } else {
-          log('warn', 'InstallManager: installContext is undefined in finally block', {
-            installId,
-            modId: modId || 'unknown'
-          });
-        }
-      }));
+            } else {
+              log('warn', 'InstallManager: installContext is undefined in finally block', {
+                installId,
+                modId: modId || 'unknown'
+              });
+            }
+          }));
 
         // Handle the installationPromise completion/failure
         installationPromise
@@ -1200,7 +1207,7 @@ class InstallManager {
   }
 
   public installDependencies(api: IExtensionApi, profile: IProfile, gameId: string, modId: string,
-                             allowAutoDeploy: boolean): Bluebird<void> {
+    allowAutoDeploy: boolean): Bluebird<void> {
     const state: IState = api.store.getState();
     const mod: IMod = state.persistent.mods[gameId]?.[modId];
 
@@ -1211,7 +1218,7 @@ class InstallManager {
     this.repairRules(api, mod, gameId);
 
     const installPath = this.mGetInstallPath(gameId);
-    log('info', 'start installing dependencies');
+    log('info', 'start installing dependencies', { modId });
 
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.withDependenciesContext('install-dependencies', () =>
@@ -1220,16 +1227,16 @@ class InstallManager {
           api, profile, gameId, mod.id, modName(mod), rules,
           installPath, allowAutoDeploy))
         .finally(() => {
-          log('info', 'done installing dependencies');
+          log('info', 'done installing dependencies', { modId });
           api.store.dispatch(stopActivity('installing_dependencies', mod.id));
         }));
   }
 
   public installRecommendations(api: IExtensionApi,
-                                profile: IProfile,
-                                gameId: string,
-                                modId: string)
-                                : Bluebird<void> {
+    profile: IProfile,
+    gameId: string,
+    modId: string)
+    : Bluebird<void> {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', gameId, modId], undefined);
 
@@ -1240,7 +1247,7 @@ class InstallManager {
     this.repairRules(api, mod, gameId);
 
     const installPath = this.mGetInstallPath(gameId);
-    log('info', 'start installing recommendations');
+    log('info', 'start installing recommendations', { modId });
 
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.withDependenciesContext('install-recommendations', () =>
@@ -1249,15 +1256,27 @@ class InstallManager {
           api, profile, gameId, mod.id, modName(mod),
           rules, installPath, false))
         .finally(() => {
-          log('info', 'done installing recommendations');
+          log('info', 'done installing recommendations', { modId });
           api.store.dispatch(stopActivity('installing_dependencies', mod.id));
         })
     );
   }
 
   private augmentRules(api: IExtensionApi, gameId: string, mod: IMod): Bluebird<IRule[]> {
-    const rules = (mod.rules ?? []).slice();
-    return Bluebird.resolve(rules); // This should be calling the api.lookupmetadata function but it's not reliable
+    // const rules = (mod.rules ?? []).slice();
+    //if (mod.attributes === undefined) {
+    return Bluebird.resolve(mod.rules ?? []);
+    //}
+
+    // return api.lookupModMeta({
+    //   fileMD5: mod.attributes['fileMD5'],
+    //   fileSize: mod.attributes['fileSize'],
+    //   gameId,
+    // })
+    // .then(results => {
+    //   rules.push(...(results[0]?.value?.rules ?? []));
+    //   return Bluebird.resolve(rules);
+    // });
   }
 
   private withDependenciesContext<T>(contextName: string, func: () => Bluebird<T>): Bluebird<T> {
@@ -1277,8 +1296,8 @@ class InstallManager {
 
   private hasFuzzyReference(ref: IModReference): boolean {
     return (ref.fileExpression !== undefined)
-        || (ref.fileMD5 !== undefined)
-        || (ref.logicalFileName !== undefined);
+      || (ref.fileMD5 !== undefined)
+      || (ref.logicalFileName !== undefined);
   }
 
   private setModSize(api: IExtensionApi, modId: string, gameId: string): Bluebird<void> {
@@ -1291,32 +1310,37 @@ class InstallManager {
     }
     const modPath = path.join(stagingFolder, mod.installationPath);
     return calculateFolderSize(modPath)
-    .then((totalSize) => {
-      api.store.dispatch(setModAttribute(gameId, mod.id, 'modSize', totalSize));
-      return Bluebird.resolve();
-    })
-    .catch(err => {
-      log('debug', 'failed to calculate modSize', err);
-      return Bluebird.resolve();
-    });
+      .then((totalSize) => {
+        api.store.dispatch(setModAttribute(gameId, mod.id, 'modSize', totalSize));
+        return Bluebird.resolve();
+      })
+      .catch(err => {
+        log('debug', 'failed to calculate modSize', err);
+        return Bluebird.resolve();
+      });
   }
 
   /**
    * Clean up pending and active installations for a specific source mod
    */
-  private cleanupPendingInstalls(sourceModId: string): void {
+  private cleanupPendingInstalls(sourceModId: string, hard: boolean = false): void {
     // Clean up pending installs
-    const pendingKeysToRemove = Array.from(this.mPendingInstalls.keys()).filter(key => 
+    const pendingKeysToRemove = Array.from(this.mPendingInstalls.keys()).filter(key =>
       key.includes(sourceModId)
     );
     pendingKeysToRemove.forEach(key => this.mPendingInstalls.delete(key));
-    
+
     // Clean up active installs (for dependencies that might be installing for this source mod)
-    const activeKeysToRemove = Array.from(this.mActiveInstalls.keys()).filter(key => 
+    const activeKeysToRemove = Array.from(this.mActiveInstalls.keys()).filter(key =>
       key.includes(sourceModId)
     );
     activeKeysToRemove.forEach(key => this.mActiveInstalls.delete(key));
-    
+    if (hard) {
+      this.mMainInstallsLimit.clearQueue();
+      this.mDependencyInstallsLimit.clearQueue();
+      this.mInstallPhaseState.delete(sourceModId);
+    }
+
     log('debug', 'Cleaned up pending and active installations', {
       sourceModId,
       pendingRemoved: pendingKeysToRemove.length,
@@ -1325,12 +1349,44 @@ class InstallManager {
   }
 
   /**
-   * Queue an installation to run asynchronously without blocking downloads
+   * Queue an installation to run asynchronously without blocking downloads.
+   * Installers are gated by phase so higher phases won't start until lower phases finish.
    */
-  private queueInstallation(api: IExtensionApi, dep: IDependency, downloadId: string, 
-                           gameId: string, sourceModId: string, recommended: boolean): void {
+  private queueInstallation(api: IExtensionApi, dep: IDependency, downloadId: string,
+    gameId: string, sourceModId: string, recommended: boolean,
+    phase: number = 0): void {
+    this.ensurePhaseState(sourceModId);
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseNum = phase ?? 0;
+
+    const startTask = () => this.startQueuedInstallation(
+      api, dep, downloadId, gameId, sourceModId, recommended, phaseNum);
+
+    if (phaseState.allowedPhase === undefined) {
+      phaseState.allowedPhase = phaseNum;
+    }
+
+    const downloads = api.getState().persistent.downloads.files;
+    const download = downloads[downloadId];
+    if (phaseNum <= phaseState.allowedPhase && download?.state === 'finished' && download?.size !== 0) {
+      startTask();
+    } else {
+      const pending = phaseState.pendingByPhase.get(phaseNum) ?? [];
+      pending.push(startTask);
+      phaseState.pendingByPhase.set(phaseNum, pending);
+    }
+  }
+
+  // Starts a queued installation task and wires up phase accounting
+  private startQueuedInstallation(api: IExtensionApi, dep: IDependency, downloadId: string,
+    gameId: string, sourceModId: string, recommended: boolean,
+    phase: number): void {
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
     const installKey = `${dep.reference.tag || downloadId}_${Date.now()}`;
     this.mPendingInstalls.set(installKey, dep);
+
+    // Track active count for the phase
+    phaseState.activeByPhase.set(phase, (phaseState.activeByPhase.get(phase) ?? 0) + 1);
 
     // Process installation immediately in parallel using concurrency limiter
     this.mDependencyInstallsLimit.do(async () => {
@@ -1343,7 +1399,7 @@ class InstallManager {
         archivePath: '', // Will be updated when known
         modId: renderModReference(dep.reference),
         gameId,
-        callback: () => {}, // Dependencies use different completion mechanism
+        callback: () => { }, // Dependencies use different completion mechanism
         startTime,
         baseName: renderModReference(dep.reference)
       };
@@ -1361,7 +1417,7 @@ class InstallManager {
 
         // Verify download is still finished before installing
         const downloads = api.getState().persistent.downloads.files;
-        if (downloads[downloadId]?.state !== 'finished') {
+        if (downloads[downloadId]?.state !== 'finished' || downloads[downloadId]?.size === 0) {
           log('info', 'Download no longer finished, skipping installation', { downloadId });
           this.mActiveInstalls.delete(installKey);
           return;
@@ -1375,11 +1431,6 @@ class InstallManager {
           return;
         }
 
-        log('info', 'Processing queued installation in parallel', { 
-          downloadId, 
-          dependency: renderModReference(currentDep.reference) 
-        });
-
         const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
         const modId = await this.withInstructions(api,
           modName(sourceMod),
@@ -1387,9 +1438,9 @@ class InstallManager {
           currentDep.reference?.tag ?? downloadId,
           currentDep.extra?.['instructions'],
           recommended, () =>
-            this.installModAsync(currentDep.reference, api, downloadId,
-              { choices: currentDep.installerChoices, patches: currentDep.patches }, 
-              currentDep.fileList, gameId, true)
+          this.installModAsync(currentDep.reference, api, downloadId,
+            { choices: currentDep.installerChoices, patches: currentDep.patches },
+            currentDep.fileList, gameId, true)
         );
 
         if (modId) {
@@ -1406,7 +1457,7 @@ class InstallManager {
           // Enable the mod in any profile that has the source mod enabled
           const profiles = Object.values(api.getState().persistent.profiles)
             .filter(prof => (prof.gameId === gameId)
-                         && prof.modState?.[sourceModId]?.enabled);
+              && prof.modState?.[sourceModId]?.enabled);
           profiles.forEach(prof => {
             api.store.dispatch(setModEnabled(prof.id, modId, true));
           });
@@ -1429,6 +1480,10 @@ class InstallManager {
           remainingActiveInstalls: this.mActiveInstalls.size
         });
         // Don't rethrow to avoid crashing the concurrency limiter
+      } finally {
+        // Always decrement phase active counter and try to advance phases
+        phaseState.activeByPhase.set(phase, Math.max(0, (phaseState.activeByPhase.get(phase) ?? 1) - 1));
+        this.maybeAdvancePhase(sourceModId);
       }
     }).catch(err => {
       log('error', 'Critical error in parallel installation', {
@@ -1437,6 +1492,113 @@ class InstallManager {
         dependency: renderModReference(dep.reference)
       });
     });
+  }
+
+  // Map tracking phase gating per sourceMod/collection
+  private mInstallPhaseState: Map<string, {
+    allowedPhase?: number;
+    downloadsFinished: Set<number>;
+    pendingByPhase: Map<number, Array<() => void>>;
+    activeByPhase: Map<number, number>;
+    scheduledDeploy: Set<number>;
+    deployedPhases: Set<number>;
+  }> = new Map();
+
+  private ensurePhaseState(sourceModId: string) {
+    if (!this.mInstallPhaseState.has(sourceModId)) {
+      this.mInstallPhaseState.set(sourceModId, {
+        allowedPhase: undefined,
+        downloadsFinished: new Set<number>(),
+        pendingByPhase: new Map<number, Array<() => void>>(),
+        activeByPhase: new Map<number, number>(),
+        scheduledDeploy: new Set<number>(),
+        deployedPhases: new Set<number>(),
+      });
+    }
+  }
+
+  // Schedule a deploy once all installers for a specific phase have finished
+  private scheduleDeployOnPhaseSettled(api: IExtensionApi, sourceModId: string, phase: number) {
+    this.ensurePhaseState(sourceModId);
+    const state = this.mInstallPhaseState.get(sourceModId);
+    if (state.scheduledDeploy.has(phase)) {
+      return; // already scheduled
+    }
+    state.scheduledDeploy.add(phase);
+
+    const POLL_MS = 2000;
+    const poll = () => {
+      const curr = this.mInstallPhaseState.get(sourceModId);
+      if (!curr) { return; }
+      const active = curr.activeByPhase.get(phase) ?? 0;
+      const pending = (curr.pendingByPhase.get(phase) ?? []).length;
+      if ((active === 0) && (pending === 0)) {
+        toPromise(cb => api.events.emit('deploy-mods', cb))
+          .then(() => {
+            const st = this.mInstallPhaseState.get(sourceModId);
+            if (st) {
+              st.deployedPhases.add(phase);
+              this.maybeAdvancePhase(sourceModId);
+            }
+          })
+          .catch(err => log('warn', 'deploy-mods failed after phase settle', { sourceModId, phase, error: err?.message }));
+      } else {
+        setTimeout(poll, POLL_MS);
+      }
+    };
+    setTimeout(poll, POLL_MS);
+  }
+
+  // Called when downloads for a phase have been queued/processed
+  private markPhaseDownloadsFinished(sourceModId: string, phase: number) {
+    this.ensurePhaseState(sourceModId);
+    const state = this.mInstallPhaseState.get(sourceModId);
+    state.downloadsFinished.add(phase);
+
+    // Initialize allowed phase to the first finished phase if not set
+    if (state.allowedPhase === undefined) {
+      state.allowedPhase = phase;
+      this.startPendingForPhase(sourceModId, phase);
+    }
+
+    this.maybeAdvancePhase(sourceModId);
+  }
+
+  private startPendingForPhase(sourceModId: string, phase: number) {
+    const state = this.mInstallPhaseState.get(sourceModId);
+    const tasks = state.pendingByPhase.get(phase) ?? [];
+    if (tasks.length === 0) {
+      return;
+    }
+    // Drain queue for this phase
+    state.pendingByPhase.set(phase, []);
+    tasks.forEach(run => run());
+  }
+
+  private maybeAdvancePhase(sourceModId: string) {
+    const state = this.mInstallPhaseState.get(sourceModId);
+    if (state.allowedPhase === undefined) {
+      return;
+    }
+    // Try to advance through finished phases where there are no active installs
+    let curr = state.allowedPhase;
+    while (state.downloadsFinished.has(curr)
+      && (state.activeByPhase.get(curr) ?? 0) === 0
+      && (state.pendingByPhase.get(curr) ?? []).length === 0
+      && state.deployedPhases.has(curr)) {
+      // Start any pending installs for this phase (if not already started)
+      this.startPendingForPhase(sourceModId, curr);
+      // Move to next finished phase if any
+      const finished = Array.from(state.downloadsFinished).sort((a, b) => a - b);
+      const nextIdx = finished.findIndex(p => p === curr) + 1;
+      if (nextIdx < finished.length) {
+        curr = finished[nextIdx];
+        state.allowedPhase = curr;
+        this.startPendingForPhase(sourceModId, curr);
+        continue;
+      }
+      break;
+    }
   }
 
   /**
@@ -1451,8 +1613,8 @@ class InstallManager {
 
     (mod.rules || []).forEach(rule => {
       if ((rule.reference.id !== undefined)
-          && (mods[rule.reference.id] === undefined)
-          && this.hasFuzzyReference(rule.reference)) {
+        && (mods[rule.reference.id] === undefined)
+        && this.hasFuzzyReference(rule.reference)) {
         const newRule: IModRule = JSON.parse(JSON.stringify(rule));
         api.store.dispatch(removeModRule(gameId, mod.id, rule));
         delete newRule.reference.id;
@@ -1463,28 +1625,28 @@ class InstallManager {
 
   private isBrowserAssistantError(error: string): boolean {
     return (process.platform === 'win32')
-        && (error.indexOf('Roaming\\Browser Assistant') !== -1);
+      && (error.indexOf('Roaming\\Browser Assistant') !== -1);
   }
 
   private isCritical(error: string): boolean {
     return (error.indexOf('Unexpected end of archive') !== -1)
-        || (error.indexOf('ERROR: Data Error') !== -1)
-        // used to be "Can not", current 7z prints "Cannot"
-        || (error.indexOf('Cannot open the file as archive') !== -1)
-        || (error.indexOf('Can not open the file as archive') !== -1);
+      || (error.indexOf('ERROR: Data Error') !== -1)
+      // used to be "Can not", current 7z prints "Cannot"
+      || (error.indexOf('Cannot open the file as archive') !== -1)
+      || (error.indexOf('Can not open the file as archive') !== -1);
   }
 
   /**
    * find the right installer for the specified archive, then install
    */
   private installInner(api: IExtensionApi, archivePath: string,
-                       tempPath: string, destinationPath: string,
-                       gameId: string, installContext: IInstallContext,
-                       installationZip: Zip,
-                       forceInstaller?: string,
-                       installChoices?: any,
-                       extractList?: IFileListItem[],
-                       unattended?: boolean): Bluebird<IInstallResult> {
+    tempPath: string, destinationPath: string,
+    gameId: string, installContext: IInstallContext,
+    installationZip: Zip,
+    forceInstaller?: string,
+    installChoices?: any,
+    extractList?: IFileListItem[],
+    unattended?: boolean): Bluebird<IInstallResult> {
     const fileList: string[] = [];
     let phase = 'Extracting';
 
@@ -1499,144 +1661,144 @@ class InstallManager {
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
     } else {
-      extractProm = installationZip.extractFull(archivePath, tempPath, {ssc: false},
-                                    progress,
-                                    () => this.queryPassword(api.store) as any)
-          .catch((err: Error) => this.isCritical(err.message)
-            ? Bluebird.reject(new ArchiveBrokenError(err.message))
-            : Bluebird.reject(err));
+      extractProm = installationZip.extractFull(archivePath, tempPath, { ssc: false },
+        progress,
+        () => this.queryPassword(api.store) as any)
+        .catch((err: Error) => this.isCritical(err.message)
+          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          : Bluebird.reject(err));
       (extractProm as any).startTime = extractionStart;
     }
 
     return extractProm
-        .then(({ code, errors }: {code: number, errors: string[] }) => {
-          log('debug', 'extraction completed', {
-            archivePath: path.basename(archivePath),
-            extractionTimeMs: Date.now() - (extractProm as any).startTime
-          });
-          phase = 'Installing';
-          if (installContext !== undefined) {
-            installContext.setProgress('Installing');
+      .then(({ code, errors }: { code: number, errors: string[] }) => {
+        log('debug', 'extraction completed', {
+          archivePath: path.basename(archivePath),
+          extractionTimeMs: Date.now() - (extractProm as any).startTime
+        });
+        phase = 'Installing';
+        if (installContext !== undefined) {
+          installContext.setProgress('Installing');
+        }
+        if (code !== 0) {
+          log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
+          const critical = errors.find(this.isCritical);
+          if (critical !== undefined) {
+            return Bluebird.reject(new ArchiveBrokenError(critical));
           }
-          if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
-            const critical = errors.find(this.isCritical);
-            if (critical !== undefined) {
-              return Bluebird.reject(new ArchiveBrokenError(critical));
-            }
-            return this.queryContinue(api, errors, archivePath);
-          } else {
-            return Bluebird.resolve();
-          }
-        })
-        .catch(ArchiveBrokenError, err => {
-          if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
-            // hmm, it was supposed to support the file type though...
-            return Bluebird.reject(err);
-          }
+          return this.queryContinue(api, errors, archivePath);
+        } else {
+          return Bluebird.resolve();
+        }
+      })
+      .catch(ArchiveBrokenError, err => {
+        if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
+          // hmm, it was supposed to support the file type though...
+          return Bluebird.reject(err);
+        }
 
-          if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
-            // User just tried to install the staging/downloads folder tag file as a mod...
-            //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
-            return api.showDialog('question', 'Not a mod', {
-              text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
-                + 'This file is generated and used by Vortex internally and should not be installed '
-                + 'in this way.',
-              message: archivePath,
-            }, [
-                { label: 'Ok' },
-              ]).then(() => Bluebird.reject(new ProcessCanceled('Not a mod')));
-          }
-
-          // this is really a completely separate process from the "regular" mod installation
-          return api.showDialog('question', 'Not an archive', {
-            text: 'Vortex is designed to install mods from archives but this doesn\'t look '
-              + 'like one. Do you want to create a mod containing just this file?',
+        if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
+          // User just tried to install the staging/downloads folder tag file as a mod...
+          //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
+          return api.showDialog('question', 'Not a mod', {
+            text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
+              + 'This file is generated and used by Vortex internally and should not be installed '
+              + 'in this way.',
             message: archivePath,
           }, [
-              { label: 'Cancel' },
-              { label: 'Create Mod' },
-            ]).then(result => {
-              if (result.action === 'Cancel') {
-                return Bluebird.reject(new UserCanceled());
-              }
+            { label: 'Ok' },
+          ]).then(() => Bluebird.reject(new ProcessCanceled('Not a mod')));
+        }
 
-              return fs.ensureDirAsync(tempPath)
-                .then(() => fs.copyAsync(archivePath,
-                  path.join(tempPath, path.basename(archivePath))));
-            });
-        })
-        .then(() => walk(tempPath,
-                         (iterPath, stats) => {
-                           if (stats.isFile()) {
-                             fileList.push(path.relative(tempPath, iterPath));
-                           } else {
-                             // unfortunately we also have to pass directories because
-                             // some mods contain empty directories to control stop-folder
-                             // management...
-                             fileList.push(path.relative(tempPath, iterPath) + path.sep);
-                           }
-                           return Bluebird.resolve();
-                         }))
-        .finally(() => {
-          // process.noAsar = false;
-        })
-        .then(() => {
-          if (truthy(extractList) && extractList.length > 0) {
-            return makeListInstaller(extractList, tempPath);
-          } else if (forceInstaller === undefined) {
-            return this.getInstaller(fileList, gameId, archivePath);
-          } else {
-            const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
-            return forced.testSupported(fileList, gameId, archivePath)
-              .then((testResult: ISupportedResult) => {
-                if (!testResult.supported) {
-                  return undefined;
-                } else {
-                  return {
-                    installer: forced,
-                    requiredFiles: testResult.requiredFiles,
-                  };
-                }
-              });
-          }
-        })
-        .then(async supportedInstaller => {
-          if (supportedInstaller === undefined) {
-            throw new Error('no installer supporting this file');
+        // this is really a completely separate process from the "regular" mod installation
+        return api.showDialog('question', 'Not an archive', {
+          text: 'Vortex is designed to install mods from archives but this doesn\'t look '
+            + 'like one. Do you want to create a mod containing just this file?',
+          message: archivePath,
+        }, [
+          { label: 'Cancel' },
+          { label: 'Create Mod' },
+        ]).then(result => {
+          if (result.action === 'Cancel') {
+            return Bluebird.reject(new UserCanceled());
           }
 
-          const {installer, requiredFiles} = supportedInstaller;
-          log('debug', 'invoking installer',
-            { installer: installer.id, enforced: forceInstaller !== undefined });
-          const installerResult = await installer.install(
-            fileList, tempPath, gameId,
-            (perc: number) => {
-              log('info', 'progress', perc);
-              progress([], perc);
-            },
-            installChoices,
-            unattended,
-            archivePath
-          );
-          if (!installerResult.instructions) {
-            return installerResult;
-          }
-          const overrideInstructionsFilePresentInArchive = fileList.some(file =>
-            path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
-
-          const overrideCopyInstructionExists = installerResult.instructions.some(instr =>
-            instr.type === 'copy' && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
-
-          if (overrideInstructionsFilePresentInArchive && !overrideCopyInstructionExists) {
-            installerResult.instructions.push({
-              type: 'copy',
-              source: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
-              destination: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
-            });
-          }
-          return installerResult;
+          return fs.ensureDirAsync(tempPath)
+            .then(() => fs.copyAsync(archivePath,
+              path.join(tempPath, path.basename(archivePath))));
         });
+      })
+      .then(() => walk(tempPath,
+        (iterPath, stats) => {
+          if (stats.isFile()) {
+            fileList.push(path.relative(tempPath, iterPath));
+          } else {
+            // unfortunately we also have to pass directories because
+            // some mods contain empty directories to control stop-folder
+            // management...
+            fileList.push(path.relative(tempPath, iterPath) + path.sep);
+          }
+          return Bluebird.resolve();
+        }))
+      .finally(() => {
+        // process.noAsar = false;
+      })
+      .then(() => {
+        if (truthy(extractList) && extractList.length > 0) {
+          return makeListInstaller(extractList, tempPath);
+        } else if (forceInstaller === undefined) {
+          return this.getInstaller(fileList, gameId, archivePath);
+        } else {
+          const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
+          return forced.testSupported(fileList, gameId, archivePath)
+            .then((testResult: ISupportedResult) => {
+              if (!testResult.supported) {
+                return undefined;
+              } else {
+                return {
+                  installer: forced,
+                  requiredFiles: testResult.requiredFiles,
+                };
+              }
+            });
+        }
+      })
+      .then(async supportedInstaller => {
+        if (supportedInstaller === undefined) {
+          throw new Error('no installer supporting this file');
+        }
+
+        const { installer, requiredFiles } = supportedInstaller;
+        log('debug', 'invoking installer',
+          { installer: installer.id, enforced: forceInstaller !== undefined });
+        const installerResult = await installer.install(
+          fileList, tempPath, gameId,
+          (perc: number) => {
+            log('info', 'progress', perc);
+            progress([], perc);
+          },
+          installChoices,
+          unattended,
+          archivePath
+        );
+        if (!installerResult.instructions) {
+          return installerResult;
+        }
+        const overrideInstructionsFilePresentInArchive = fileList.some(file =>
+          path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+        const overrideCopyInstructionExists = installerResult.instructions.some(instr =>
+          instr.type === 'copy' && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+
+        if (overrideInstructionsFilePresentInArchive && !overrideCopyInstructionExists) {
+          installerResult.instructions.push({
+            type: 'copy',
+            source: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+            destination: VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
+          });
+        }
+        return installerResult;
+      });
   }
 
   private determineModType(gameId: string, installInstructions: IInstruction[]): Bluebird<string> {
@@ -1672,27 +1834,29 @@ class InstallManager {
   }
 
   private queryContinue(api: IExtensionApi,
-                        errors: string[],
-                        archivePath: string): Bluebird<void> {
+    errors: string[],
+    archivePath: string): Bluebird<void> {
     const terminal = errors.find(err => err.indexOf('Can not open the file as archive') !== -1);
 
     return new Bluebird<void>((resolve, reject) => {
       const actions = [
         { label: 'Cancel', action: () => reject(new UserCanceled()) },
-        { label: 'Delete', action: () => {
-          fs.removeAsync(archivePath)
-            .catch(err => api.showErrorNotification('Failed to remove archive', err,
-                                                    { allowReport: false }))
-            .finally(() => {
-              const { files } = api.getState().persistent.downloads;
-              const dlId = Object.keys(files)
-                .find(iter => files[iter].localPath === path.basename(archivePath));
-              if (dlId !== undefined) {
-                api.store.dispatch(removeDownload(dlId));
-              }
-              reject(new UserCanceled());
-            });
-        } },
+        {
+          label: 'Delete', action: () => {
+            fs.removeAsync(archivePath)
+              .catch(err => api.showErrorNotification('Failed to remove archive', err,
+                { allowReport: false }))
+              .finally(() => {
+                const { files } = api.getState().persistent.downloads;
+                const dlId = Object.keys(files)
+                  .find(iter => files[iter].localPath === path.basename(archivePath));
+                if (dlId !== undefined) {
+                  api.store.dispatch(removeDownload(dlId));
+                }
+                reject(new UserCanceled());
+              });
+          }
+        },
       ];
 
       if (!terminal) {
@@ -1700,7 +1864,7 @@ class InstallManager {
       }
 
       const title = api.translate('Archive damaged "{{archiveName}}"',
-                                  { replace: { archiveName: path.basename(archivePath) } });
+        { replace: { archiveName: path.basename(archivePath) } });
       api.store.dispatch(showDialog('error', title, {
         bbcode: api.translate('Encountered errors extracting this archive. Please verify this '
           + 'file was downloaded correctly.\n[list]{{ errors }}[/list]', {
@@ -1714,23 +1878,23 @@ class InstallManager {
   private queryPassword(store: ThunkStore<any>): Bluebird<string> {
     return new Bluebird<string>((resolve, reject) => {
       store
-          .dispatch(showDialog(
-              'info', 'Password Protected',
-              {
-                input: [{
-                  id: 'password',
-                  type: 'password',
-                  value: '',
-                  label: 'A password is required to extract this archive',
-                }],
-              }, [ { label: 'Cancel' }, { label: 'Continue' } ]))
-          .then((result: IDialogResult) => {
-            if (result.action === 'Continue') {
-              resolve(result.input['password']);
-            } else {
-              reject(new UserCanceled());
-            }
-          });
+        .dispatch(showDialog(
+          'info', 'Password Protected',
+          {
+            input: [{
+              id: 'password',
+              type: 'password',
+              value: '',
+              label: 'A password is required to extract this archive',
+            }],
+          }, [{ label: 'Cancel' }, { label: 'Continue' }]))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Continue') {
+            resolve(result.input['password']);
+          } else {
+            reject(new UserCanceled());
+          }
+        });
     });
   }
 
@@ -1756,11 +1920,11 @@ class InstallManager {
 
       return false;
     }).map(instr => {
-        return {
-          type: instr.type,
-          error: `invalid destination path: "${instr.destination}"`,
-        };
-      });
+      return {
+        type: instr.type,
+        error: `invalid destination path: "${instr.destination}"`,
+      };
+    });
 
     return [].concat(invalidDestinationErrors);
   }
@@ -1780,50 +1944,50 @@ class InstallManager {
     }
     const missing = unsupported.map(instruction => instruction.source);
     const makeReport = () =>
-        api.genMd5Hash(archivePath)
-            .catch(err => ({}))
-            .then(
-                (hashResult: IHashResult) => createErrorReport(
-                    'Installer failed',
-                    {
-                      message: 'The installer uses unimplemented functions',
-                      details:
-                          `Missing instructions: ${missing.join(', ')}\n` +
-                              `Installer name: ${path.basename(archivePath)}\n` +
-                              `MD5 checksum: ${hashResult.md5sum}\n`,
-                    }, {},
-                    ['installer'], api.store.getState()));
+      api.genMd5Hash(archivePath)
+        .catch(err => ({}))
+        .then(
+          (hashResult: IHashResult) => createErrorReport(
+            'Installer failed',
+            {
+              message: 'The installer uses unimplemented functions',
+              details:
+                `Missing instructions: ${missing.join(', ')}\n` +
+                `Installer name: ${path.basename(archivePath)}\n` +
+                `MD5 checksum: ${hashResult.md5sum}\n`,
+            }, {},
+            ['installer'], api.store.getState()));
     const showUnsupportedDialog = () => api.store.dispatch(showDialog(
-        'info', 'Installer unsupported',
-        {
-          message:
-              'This installer is (partially) unsupported as it\'s ' +
-              'using functionality that hasn\'t been implemented yet. ' +
-              'Please help us fix this by submitting an error report with a link to this mod.',
-        }, (isOutdated() || didIgnoreError()) ? [
-          { label: 'Close' },
-        ] : [
-          { label: 'Report', action: makeReport },
-          { label: 'Close' },
-        ]));
+      'info', 'Installer unsupported',
+      {
+        message:
+          'This installer is (partially) unsupported as it\'s ' +
+          'using functionality that hasn\'t been implemented yet. ' +
+          'Please help us fix this by submitting an error report with a link to this mod.',
+      }, (isOutdated() || didIgnoreError()) ? [
+        { label: 'Close' },
+      ] : [
+      { label: 'Report', action: makeReport },
+      { label: 'Close' },
+    ]));
 
     api.sendNotification({
       type: 'info',
       message: 'Installer unsupported',
-      actions: [{title: 'More', action: showUnsupportedDialog}],
+      actions: [{ title: 'More', action: showUnsupportedDialog }],
     });
   }
 
   private processMKDir(instructions: IInstruction[],
-                       destinationPath: string): Bluebird<void> {
+    destinationPath: string): Bluebird<void> {
     return Bluebird.each(instructions,
-                        instruction => fs.ensureDirAsync(path.join(
-                            destinationPath, instruction.destination)))
-        .then(() => undefined);
+      instruction => fs.ensureDirAsync(path.join(
+        destinationPath, instruction.destination)))
+      .then(() => undefined);
   }
 
   private processGenerateFiles(generatefile: IInstruction[],
-                               destinationPath: string): Bluebird<void> {
+    destinationPath: string): Bluebird<void> {
     return Bluebird.each(generatefile, gen => {
       const outputPath = path.join(destinationPath, gen.destination);
       return fs.ensureDirAsync(path.dirname(outputPath))
@@ -1833,9 +1997,9 @@ class InstallManager {
   }
 
   private processSubmodule(api: IExtensionApi, installContext: InstallContext, submodule: IInstruction[],
-                           destinationPath: string,
-                           gameId: string, modId: string,
-                           choices: any, unattended: boolean): Bluebird<void> {
+    destinationPath: string,
+    gameId: string, modId: string,
+    choices: any, unattended: boolean): Bluebird<void> {
     return Bluebird.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + shortid() + '.installing';
@@ -1845,8 +2009,8 @@ class InstallManager {
           { replace: { modName: path.basename(mod.path) } }));
         const submoduleZip = new Zip();
         return this.installInner(api, mod.path, tempPath, destinationPath,
-                                 gameId, subContext, submoduleZip, undefined,
-                                 choices, undefined, unattended)
+          gameId, subContext, submoduleZip, undefined,
+          choices, undefined, unattended)
           .then((resultInner) => this.processInstructions(
             api, installContext, mod.path, tempPath, destinationPath,
             gameId, modId, resultInner, choices, unattended))
@@ -1862,11 +2026,11 @@ class InstallManager {
             fs.removeAsync(tempPath);
           });
       })
-        .then(() => undefined);
+      .then(() => undefined);
   }
 
   private processAttribute(api: IExtensionApi, attribute: IInstruction[],
-                           gameId: string, modId: string): Bluebird<void> {
+    gameId: string, modId: string): Bluebird<void> {
     attribute.forEach(attr => {
       api.store.dispatch(setModAttribute(gameId, modId, attr.key, attr.value));
     });
@@ -1874,7 +2038,7 @@ class InstallManager {
   }
 
   private processEnableAllPlugins(api: IExtensionApi, enableAll: IInstruction[],
-                                  gameId: string, modId: string): Bluebird<void> {
+    gameId: string, modId: string): Bluebird<void> {
     if (enableAll.length > 0) {
       api.store.dispatch(setModAttribute(gameId, modId, 'enableallplugins', true));
     }
@@ -1882,7 +2046,7 @@ class InstallManager {
   }
 
   private processSetModType(api: IExtensionApi, installContext: InstallContext, types: IInstruction[],
-                            gameId: string, modId: string): Bluebird<void> {
+    gameId: string, modId: string): Bluebird<void> {
     if (types.length > 0) {
       const type = types[types.length - 1].value;
       installContext.setModType(modId, type);
@@ -1895,7 +2059,7 @@ class InstallManager {
   }
 
   private processRule(api: IExtensionApi, rules: IInstruction[],
-                      gameId: string, modId: string): void {
+    gameId: string, modId: string): void {
     const batched = rules.reduce((acc, rule) => {
       acc.push(addModRule(gameId, modId, rule.rule))
       return acc;
@@ -1904,45 +2068,45 @@ class InstallManager {
   }
 
   private processIniEdits(api: IExtensionApi,
-                          iniEdits: IInstruction[],
-                          destinationPath: string,
-                          gameId: string, modId: string): Bluebird<void> {
+    iniEdits: IInstruction[],
+    destinationPath: string,
+    gameId: string, modId: string): Bluebird<void> {
     if (iniEdits.length === 0) {
       return Bluebird.resolve();
     }
 
     const byDest: { [dest: string]: IInstruction[] } = iniEdits.reduce(
       (prev: { [dest: string]: IInstruction[] }, value) => {
-      setdefault(prev, value.destination, []).push(value);
-      return prev;
-    }, {});
+        setdefault(prev, value.destination, []).push(value);
+        return prev;
+      }, {});
 
     return fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH))
       .then(() => Bluebird.map(Object.keys(byDest), destination => {
-      const bySection: {[section: string]: IInstruction[]} =
+        const bySection: { [section: string]: IInstruction[] } =
           byDest[destination].reduce((prev: { [section: string]: IInstruction[] }, value) => {
             setdefault(prev, value.section, []).push(value);
             return prev;
           }, {});
 
-      const renderKV = (instruction: IInstruction): string =>
+        const renderKV = (instruction: IInstruction): string =>
           `${instruction.key} = ${instruction.value}`;
 
-      const renderSection = (section: string) => [
-        `[${section}]`,
-      ].concat(bySection[section].map(renderKV)).join(os.EOL);
+        const renderSection = (section: string) => [
+          `[${section}]`,
+        ].concat(bySection[section].map(renderKV)).join(os.EOL);
 
-      const content = Object.keys(bySection).map(renderSection).join(os.EOL);
+        const content = Object.keys(bySection).map(renderSection).join(os.EOL);
 
-      const basename = path.basename(destination, path.extname(destination));
-      const tweakId = `From Installer [${basename}].ini`;
-      api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true));
+        const basename = path.basename(destination, path.extname(destination));
+        const tweakId = `From Installer [${basename}].ini`;
+        api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true));
 
-      return fs.writeFileAsync(
-        path.join(destinationPath, INI_TWEAKS_PATH, tweakId),
-        content);
-    }))
-    .then(() => undefined);
+        return fs.writeFileAsync(
+          path.join(destinationPath, INI_TWEAKS_PATH, tweakId),
+          content);
+      }))
+      .then(() => undefined);
   }
 
   private modTypeExists = (gameId: string, modType: string): boolean => {
@@ -1956,10 +2120,10 @@ class InstallManager {
     return game.modTypes.some(type => type.typeId === modType);
   }
   private processInstructions(api: IExtensionApi, installContext: InstallContext, archivePath: string,
-                              tempPath: string, destinationPath: string,
-                              gameId: string, modId: string,
-                              result: { instructions: IInstruction[], overrideInstructions?: IInstruction[] },
-                              choices: any, unattended: boolean) {
+    tempPath: string, destinationPath: string,
+    gameId: string, modId: string,
+    result: { instructions: IInstruction[], overrideInstructions?: IInstruction[] },
+    choices: any, unattended: boolean) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
       // wrong. Not necessarily a "user canceled" but the error handling happened
@@ -1968,7 +2132,7 @@ class InstallManager {
     }
 
     if ((result.instructions === undefined) ||
-        (result.instructions.length === 0)) {
+      (result.instructions.length === 0)) {
       return Bluebird.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
@@ -2001,7 +2165,7 @@ class InstallManager {
     // Add instructions from result.overrideInstructions that are not already present in finalInstructions
     if (Array.isArray(result.overrideInstructions)) {
       const existingKeys = new Set(finalInstructions.map(instr => (instr.source ?? instr.type).toUpperCase()));
-        for (const instr of result.overrideInstructions) {
+      for (const instr of result.overrideInstructions) {
         const key = (instr.source ?? instr.type).toUpperCase();
         // For copy instructions, ensure no duplicate destinations
         if (instr.type === 'copy') {
@@ -2031,7 +2195,7 @@ class InstallManager {
       const error = (allowReport)
         ? 'Invalid installer instructions found for "{{ modId }}".'
         : 'Invalid installer instructions found for "{{ modId }}". Please inform '
-          + 'the game extension\'s developer - "{{ contributor }}", or the mod author.';
+        + 'the game extension\'s developer - "{{ contributor }}", or the mod author.';
       api.showErrorNotification('Invalid mod installer instructions', {
         invalid: '\n' + invalidInstructions.map(inval =>
           `(${inval.type}) - ${inval.error}`).join('\n'),
@@ -2054,19 +2218,19 @@ class InstallManager {
 
       if (fatal === undefined) {
         error += 'It\'s possible the mod works (partially) anyway. '
-        + 'Please note that NMM tends to ignore errors so just because NMM doesn\'t '
-        + 'report a problem with this installer doesn\'t mean it doesn\'t have any.';
+          + 'Please note that NMM tends to ignore errors so just because NMM doesn\'t '
+          + 'report a problem with this installer doesn\'t mean it doesn\'t have any.';
       }
 
       api.showErrorNotification('Installer reported errors',
         error + '\n{{ errors }}', {
-          replace: {
-            errors: instructionGroups.error.map(err => err.source).join('\n'),
-            modId,
-          },
-          allowReport: false,
-          message: modId,
-        });
+        replace: {
+          errors: instructionGroups.error.map(err => err.source).join('\n'),
+          modId,
+        },
+        allowReport: false,
+        message: modId,
+      });
       if (fatal !== undefined) {
         return Bluebird.reject(new ProcessCanceled('Installer script failed'));
       }
@@ -2078,17 +2242,17 @@ class InstallManager {
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
       .then(() => this.extractArchive(api, archivePath, tempPath, destinationPath,
-                                      instructionGroups.copy, gameId))
+        instructionGroups.copy, gameId))
       .then(() => this.processGenerateFiles(instructionGroups.generatefile,
-                                            destinationPath))
+        destinationPath))
       .then(() => this.processIniEdits(api, instructionGroups.iniedit, destinationPath,
-                                       gameId, modId))
+        gameId, modId))
       .then(() => this.processSubmodule(api, installContext, instructionGroups.submodule,
-                                        destinationPath, gameId, modId,
-                                        choices, unattended))
+        destinationPath, gameId, modId,
+        choices, unattended))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
-                                               gameId, modId))
+        gameId, modId))
       .then(() => this.processSetModType(api, installContext, instructionGroups.setmodtype, gameId, modId))
       .then(() => {
         this.processRule(api, instructionGroups.rule, gameId, modId);
@@ -2114,7 +2278,7 @@ class InstallManager {
   }
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
-                                 gameMode: string, isCollection: boolean): IMod {
+    gameMode: string, isCollection: boolean): IMod {
     const mods = store.getState().persistent.mods[gameMode] || {};
     // This is not great, but we need to differentiate between revisionIds and fileIds
     //  as it's perfectly possible for a collection's revision id to match a regular
@@ -2131,7 +2295,7 @@ class InstallManager {
       const currentFileId: number =
         mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
       if ((newestFileId !== currentFileId)
-          && (newestFileId === fileId)) {
+        && (newestFileId === fileId)) {
         mod = mods[key];
       }
     });
@@ -2140,8 +2304,8 @@ class InstallManager {
   }
 
   private queryIgnoreDependent(store: ThunkStore<any>, gameId: string,
-                               dependents: Array<{ owner: string, rule: IModRule }>)
-                               : Bluebird<void> {
+    dependents: Array<{ owner: string, rule: IModRule }>)
+    : Bluebird<void> {
     const batchKey = 'remember-ignore-dependent-action';
     let context = getBatchContext('install-mod', '', false);
     const handleAction = (action: string, remember: boolean) => {
@@ -2176,10 +2340,10 @@ class InstallManager {
         'question', 'Updating may break dependencies',
         {
           text:
-          'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
-          + 'be compatible (according to the dependency information). '
-          + 'If you continue we have to disable these dependencies, otherwise you\'ll '
-          + 'continually get warnings about it.',
+            'You\'re updating a mod that others depend upon and the update doesn\'t seem to '
+            + 'be compatible (according to the dependency information). '
+            + 'If you continue we have to disable these dependencies, otherwise you\'ll '
+            + 'continually get warnings about it.',
           options: { wrap: true },
           checkboxes: [{
             id: 'remember',
@@ -2227,29 +2391,29 @@ class InstallManager {
       ? Bluebird.resolve(REPLACE_ACTION)
       : new Bluebird<string>((resolve, reject) => {
         store.dispatch(showDialog(
-            'question', modName(oldMod),
-            {
-              text:
+          'question', modName(oldMod),
+          {
+            text:
               'An older version of this mod is already installed. '
               + 'You can replace the existing one - which will update all profiles - '
               + 'or install this one alongside it. In the latter case both versions '
               + 'will be available and only the active profile will be updated. ',
-              options: { wrap: true },
-              checkboxes: [{
-                id: 'remember',
-                value: false,
-                text: 'Remember my choice',
-              }]
-            },
-            [
-              { label: 'Cancel' },
-              { label: REPLACE_ACTION },
-              { label: INSTALL_ACTION },
-            ]))
+            options: { wrap: true },
+            checkboxes: [{
+              id: 'remember',
+              value: false,
+              text: 'Remember my choice',
+            }]
+          },
+          [
+            { label: 'Cancel' },
+            { label: REPLACE_ACTION },
+            { label: INSTALL_ACTION },
+          ]))
           .then((result: IDialogResult) =>
             handleAction(result.action, result.input.remember))
-              .then(resolve)
-              .catch(reject);
+          .then(resolve)
+          .catch(reject);
       });
   }
 
@@ -2316,17 +2480,17 @@ class InstallManager {
           { label: 'Cancel' },
           { label: 'Continue' },
         ])
-        .then(result => {
-          if (result.action === 'Cancel') {
-            context?.set?.('canceled', true);
-            return Bluebird.reject(new UserCanceled());
-          } else {
-            if (result.input.remember) {
-              context.set('variant-name', result.input.variant);
+          .then(result => {
+            if (result.action === 'Cancel') {
+              context?.set?.('canceled', true);
+              return Bluebird.reject(new UserCanceled());
+            } else {
+              if (result.input.remember) {
+                context.set('variant-name', result.input.variant);
+              }
+              return Bluebird.resolve(result.input.variant);
             }
-            return Bluebird.resolve(result.input.variant);
-          }
-        });
+          });
       };
 
       const mod = mods[0];
@@ -2359,9 +2523,9 @@ class InstallManager {
               value: false,
               text: 'Install as variant of the existing mod',
               subText: 'This will allow you to install variants of the same mod and easily '
-                     + 'switch between them from the version drop-down in the mods table. '
-                     + 'This can be useful if you want to install the same mod but with '
-                     + 'different options in different profiles.',
+                + 'switch between them from the version drop-down in the mods table. '
+                + 'This can be useful if you want to install the same mod but with '
+                + 'different options in different profiles.',
             },
           ],
           checkboxes: checkRoVRemember,
@@ -2396,7 +2560,7 @@ class InstallManager {
           }
         });
 
-        const queryVariantReplacement = () => api.showDialog('question', 'Select Variant to Replace',
+      const queryVariantReplacement = () => api.showDialog('question', 'Select Variant to Replace',
         {
           text: '"{{modName}}" has several variants installed - please choose which one to replace:',
           choices: modIds.map((id, idx) => {
@@ -2407,13 +2571,13 @@ class InstallManager {
               value: idx === 0,
               text: `modId: ${id}`,
               subText: api.translate('Version: {{version}}; InstallTime: {{installTime}}; Variant: {{variant}}',
-              {
-                replace: {
-                  version: getSafe(modAttributes, ['version'], 'Unknown'),
-                  installTime: new Date(getSafe(modAttributes, ['installTime'], 0)),
-                  variant: truthy(variant) ? variant : 'Not set',
-                }
-              }),
+                {
+                  replace: {
+                    version: getSafe(modAttributes, ['version'], 'Unknown'),
+                    installTime: new Date(getSafe(modAttributes, ['installTime'], 0)),
+                    variant: truthy(variant) ? variant : 'Not set',
+                  }
+                }),
             }
           }),
           parameters: {
@@ -2570,22 +2734,22 @@ class InstallManager {
     gameId: string,
     archivePath: string,
     offsetIn?: number,
-    ): Bluebird<ISupportedInstaller> {
+  ): Bluebird<ISupportedInstaller> {
     const offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Bluebird.resolve(undefined);
     }
     return Bluebird.resolve(this.mInstallers[offset].testSupported(fileList, gameId, archivePath))
       .then((testResult: ISupportedResult) => {
-          if (testResult === undefined) {
-            log('error', 'Buggy installer', this.mInstallers[offset].id);
-          }
-          return (testResult?.supported === true)
-            ? Bluebird.resolve({
-              installer: this.mInstallers[offset],
-              requiredFiles: testResult.requiredFiles,
-            })
-            : this.getInstaller(fileList, gameId, archivePath, offset + 1);
+        if (testResult === undefined) {
+          log('error', 'Buggy installer', this.mInstallers[offset].id);
+        }
+        return (testResult?.supported === true)
+          ? Bluebird.resolve({
+            installer: this.mInstallers[offset],
+            requiredFiles: testResult.requiredFiles,
+          })
+          : this.getInstaller(fileList, gameId, archivePath, offset + 1);
       });
   }
 
@@ -2606,14 +2770,14 @@ class InstallManager {
   }
 
   private downloadURL(api: IExtensionApi,
-                      lookupResult: IModInfoEx,
-                      wasCanceled: () => boolean,
-                      referenceTag?: string,
-                      campaign?: string,
-                      fileName?: string): Bluebird<string> {
+    lookupResult: IModInfoEx,
+    wasCanceled: () => boolean,
+    referenceTag?: string,
+    campaign?: string,
+    fileName?: string): Bluebird<string> {
     const call = (input: string | (() => Bluebird<string>)): Bluebird<string> =>
-      (input !== undefined) && (typeof(input) === 'function')
-      ? input() : Bluebird.resolve(input as string);
+      (input !== undefined) && (typeof (input) === 'function')
+        ? input() : Bluebird.resolve(input as string);
 
     let resolvedSource: string;
     let resolvedReferer: string;
@@ -2644,13 +2808,13 @@ class InstallManager {
               return resolve(id);
             } else if (error instanceof AlreadyDownloaded) {
               return resolve(error.downloadId);
-            } else if (error instanceof DownloadIsHTML){
+            } else if (error instanceof DownloadIsHTML) {
               // If this is a google drive link and the file exceeds the
               //  virus testing limit, Google will return an HTML page asking
               //  the user for consent to download the file. Lets try this using
               //  the browser extension.
               const instructions = `You are trying to download "${lookupResult.fileName}" from "${resolvedSource}".\n`
-                                 + 'Depending on the portal, you may be re-directed several times.';
+                + 'Depending on the portal, you may be re-directed several times.';
               const result: string[] = await api.emitAndAwait('browse-for-download', resolvedSource, instructions);
               if (result.length > 0) {
                 const newLookupRes = { ...lookupResult, sourceURI: result[0] };
@@ -2665,13 +2829,13 @@ class InstallManager {
           }, 'never', { allowInstall: false, allowOpenHTML: false })) {
           return reject(new Error('download manager not installed?'));
         }
-    }));
+      }));
   }
 
   private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
-                           pattern: string, referenceTag: string,
-                           wasCanceled: () => boolean, campaign: string,
-                           fileName?: string): Bluebird<string> {
+    pattern: string, referenceTag: string,
+    wasCanceled: () => boolean, campaign: string,
+    fileName?: string): Bluebird<string> {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
@@ -2679,7 +2843,7 @@ class InstallManager {
     }
 
     const gameId = convertGameIdReverse(knownGames(api.getState()),
-                                        lookupResult.domainName || lookupResult.gameId);
+      lookupResult.domainName || lookupResult.gameId);
 
     return api.emitAndAwait('start-download-update',
       lookupResult.source, gameId, modId, fileId, pattern, campaign, referenceTag)
@@ -2717,7 +2881,7 @@ class InstallManager {
       && isFuzzyVersion(requirement.versionMatch)) {
       // seems to be a fuzzy matcher so we may have to look for an update
       return this.downloadMatching(api, lookupResult, requirement.versionMatch,
-                                   referenceTag, wasCanceled, campaign, fileName)
+        referenceTag, wasCanceled, campaign, fileName)
         .catch(err => {
           if (err instanceof HTTPError) {
             // assuming the api failed because the mod had been archive, can still download
@@ -2748,9 +2912,9 @@ class InstallManager {
   }
 
   private applyExtraFromRule(api: IExtensionApi,
-                             gameId: string,
-                             modId: string,
-                             extra?: { [key: string]: any }) {
+    gameId: string,
+    modId: string,
+    extra?: { [key: string]: any }) {
     if (extra === undefined) {
       return;
     }
@@ -2793,28 +2957,16 @@ class InstallManager {
       attributes['fileList'] = extra.fileList;
     }
 
-    // if (extra.installerChoices !== undefined) {
-      // This actually masks a long standing bug and can barely be considered a fix.
-      //  Consider the following case:
-      //  1. User1 creates a fomod with a specific structure and uploads it to the site.
-      //  2. Curator uploads a collection and adds the fomod.
-      //  3. User2 downloads the collection - everything works fine.
-      //  4. User1 changes the fomod structure significantly (i.e. some installer steps become optional or removed entirely) and uploads his update to the site.
-      //  5. Curator downloads the update and uploads a new revision of his collection. Due to memoization functionality in the collections extension, the same fomod options as in the
-      //     first version of the mod are uploaded as part of the collection instead of the newer generated options.
-      //  6. User2 updates to the new revision of the collection, the install manager attempts to install the mod but will only generate instructions based on
-      //     the new fomod's structure, ommitting installer options that are not present in the new fomod.
-      //  7. User2 now has a correct installation of the mod which should work fine depending on the new fomod structure, but our installer option comparisons will fail
-      //     making it impossible for the collection to be considered fully installed/complete.
-      // attributes['installerChoices'] = extra.installerChoices;
-    //}
+    if (extra.installerChoices !== undefined) {
+      attributes['installerChoices'] = extra.installerChoices;
+    }
 
     api.store.dispatch(setModAttributes(gameId, modId, attributes));
   }
 
   private dropUnfulfilled(api: IExtensionApi, dep: IDependency,
-                          gameId: string, sourceModId: string,
-                          recommended: boolean) {
+    gameId: string, sourceModId: string,
+    recommended: boolean) {
     log('info', 'ignoring unfulfillable rule', { gameId, sourceModId, dep });
     if (recommended) {
       // not ignoring recommended dependencies because what would be the point?
@@ -2856,13 +3008,13 @@ class InstallManager {
   }
 
   private doInstallDependenciesPhase(api: IExtensionApi,
-                                     dependencies: IDependency[],
-                                     gameId: string,
-                                     sourceModId: string,
-                                     recommended: boolean,
-                                     downloadAndInstall: (dep: IDependency) => Bluebird<string>,
-                                     abort: AbortController)
-                                     : Bluebird<IDependency[]> {
+    dependencies: IDependency[],
+    gameId: string,
+    sourceModId: string,
+    recommended: boolean,
+    doDownload: (dep: IDependency) => Bluebird<{ updatedDep: IDependency, downloadId: string }>,
+    abort: AbortController)
+    : Bluebird<IDependency[]> {
     const res: Bluebird<IDependency[]> = Bluebird.map(dependencies, async (dep: IDependency) => {
       if (abort.signal.aborted) {
         return Bluebird.reject(new UserCanceled());
@@ -2874,21 +3026,24 @@ class InstallManager {
 
       const alreadyInstalled = dep.mod !== undefined;
 
-      return downloadAndInstall(dep)
-        .then((modId: string) => {
-          if (modId != null) {
-            log('info', 'installed as dependency', { modId });
+      return doDownload(dep)
+        .then(({ updatedDep, downloadId }) => {
+          const modId = updatedDep.mod?.id;
+          if (modId == null) {
+            // installation has been queued within doDownload, return
+            //  the updated dependency so that the downloads can keep going.
+            return Bluebird.resolve(updatedDep);
           }
+          log('info', 'installed as dependency', { modId });
 
           if (!alreadyInstalled) {
-            api.store.dispatch(
-              setModAttribute(gameId, modId, 'installedAsDependency', true));
+            api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
           }
 
           // enable the mod in any profile that has the source mod enabled
           const profiles = Object.values(api.getState().persistent.profiles)
             .filter(prof => (prof.gameId === gameId)
-                         && prof.modState?.[sourceModId]?.enabled);
+              && prof.modState?.[sourceModId]?.enabled);
           profiles.forEach(prof => {
             api.store.dispatch(setModEnabled(prof.id, modId, true));
           });
@@ -2897,7 +3052,8 @@ class InstallManager {
             ...dep.extra,
             fileList: dep.fileList ?? dep.extra?.fileList,
             installerChoices: dep.installerChoices,
-            patches: dep.patches ?? dep.extra?.patches, });
+            patches: dep.patches ?? dep.extra?.patches,
+          });
 
           const mods = api.store.getState().persistent.mods[gameId];
           return { ...dep, mod: mods[modId] };
@@ -2934,10 +3090,10 @@ class InstallManager {
           api.showErrorNotification('Failed to install dependency',
             'The direct download URL for this file is not valid or didn\'t lead to a file. '
             + 'This may be a setup error in the dependency or the file has been moved.', {
-              allowReport: false,
-              id: `failed-install-dependency-${refName}`,
-              message: refName,
-            });
+            allowReport: false,
+            id: `failed-install-dependency-${refName}`,
+            message: refName,
+          });
           return Bluebird.resolve(undefined);
         })
         .catch(NotFound, err => {
@@ -2965,9 +3121,8 @@ class InstallManager {
             api.showErrorNotification(
               'Download failed',
               'The download ended prematurely or was corrupted. You\'ll have to restart it.', {
-                allowReport: false,
-              }
-            );
+              allowReport: false,
+            });
           } else if ([403, 404, 410].includes(err['statusCode'])) {
             api.showErrorNotification(
               'Failed to install dependency',
@@ -3049,11 +3204,11 @@ class InstallManager {
   }
 
   private doInstallDependencies(api: IExtensionApi,
-                                gameId: string,
-                                sourceModId: string,
-                                dependencies: IDependency[],
-                                recommended: boolean,
-                                silent: boolean): Bluebird<IDependency[]> {
+    gameId: string,
+    sourceModId: string,
+    dependencies: IDependency[],
+    recommended: boolean,
+    silent: boolean): Bluebird<IDependency[]> {
     const state: IState = api.getState();
     let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
 
@@ -3084,6 +3239,8 @@ class InstallManager {
         }
       });
       queuedDownloads = [];
+
+      this.cleanupPendingInstalls(sourceModId, true);
     };
 
     const queueDownload = (dep: IDependency): Bluebird<string> => {
@@ -3094,17 +3251,17 @@ class InstallManager {
         return abort.signal.aborted
           ? Bluebird.reject(new UserCanceled(false))
           : this.downloadDependencyAsync(
-              dep.reference,
-              api,
-              dep.lookupResults[0].value,
-              () => abort.signal.aborted,
-              dep.extra?.fileName)
-              .then(dlId => {
-                const idx = queuedDownloads.indexOf(dep.reference);
-                queuedDownloads.splice(idx, 1);
-                return dlId;
-              })
-              .catch(err => {
+            dep.reference,
+            api,
+            dep.lookupResults[0].value,
+            () => abort.signal.aborted,
+            dep.extra?.fileName)
+            .then(dlId => {
+              const idx = queuedDownloads.indexOf(dep.reference);
+              queuedDownloads.splice(idx, 1);
+              return dlId;
+            })
+            .catch(err => {
               const idx = queuedDownloads.indexOf(dep.reference);
               queuedDownloads.splice(idx, 1);
 
@@ -3185,7 +3342,7 @@ class InstallManager {
 
               return Bluebird.reject(err);
             });
-        });
+      });
     };
 
     const resumeDownload = (dep: IDependency): Bluebird<string> => {
@@ -3240,31 +3397,31 @@ class InstallManager {
       );
     };
 
-    const installDownload = (dep: IDependency, downloadId: string) : Bluebird<string> => {
+    const installDownload = (dep: IDependency, downloadId: string): Bluebird<string> => {
       return new Bluebird<string>((resolve, reject) => {
         return this.mDependencyInstallsLimit.do(async () => {
           return abort.signal.aborted
             ? reject(new UserCanceled(false))
             : this.withInstructions(api,
-                                modName(sourceMod),
-                                renderModReference(dep.reference),
-                                dep.reference?.tag ?? downloadId,
-                                dep.extra?.['instructions'],
-                                recommended, () =>
-            this.installModAsync(dep.reference, api, downloadId,
-              { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
-              gameId, silent)).then(res => resolve(res))
-            .catch(err => {
-              if (err instanceof UserCanceled) {
-                err.skipped = true;
-              }
-              return reject(err);
-            });
+              modName(sourceMod),
+              renderModReference(dep.reference),
+              dep.reference?.tag ?? downloadId,
+              dep.extra?.['instructions'],
+              recommended, () =>
+              this.installModAsync(dep.reference, api, downloadId,
+                { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
+                gameId, silent)).then(res => resolve(res))
+              .catch(err => {
+                if (err instanceof UserCanceled) {
+                  err.skipped = true;
+                }
+                return reject(err);
+              });
         })
       });
     };
 
-    const doDownload = (dep: IDependency) => {
+    const doDownload = (dep: IDependency): Bluebird<{ updatedDep: IDependency, downloadId: string }> => {
       let dlPromise = Bluebird.resolve(dep.download);
 
       if ((dep.download === undefined) || (downloads[dep.download] === undefined)) {
@@ -3280,7 +3437,7 @@ class InstallManager {
           }
           dlPromise = fs.statAsync(targetPath)
             .then(() => Object.keys(downloads)
-                .find(dlId => downloads[dlId].localPath === fileName))
+              .find(dlId => downloads[dlId].localPath === fileName))
             .catch(err => new Bluebird((resolve, reject) => {
               api.events.emit('import-downloads',
                 [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
@@ -3292,7 +3449,7 @@ class InstallManager {
                   } else {
                     resolve();
                   }
-              }, true);
+                }, true);
             }));
         } else {
           // Always allow downloads to be queued - installations will be deferred if needed
@@ -3346,8 +3503,8 @@ class InstallManager {
           }
 
           if ((dep.reference.tag !== undefined)
-              && (downloads[downloadId].modInfo?.referenceTag !== undefined)
-              && (downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag)) {
+            && (downloads[downloadId].modInfo?.referenceTag !== undefined)
+            && (downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag)) {
             // we can't change the tag on the download because that might break
             // dependencies on the other mod
             // instead we update the rule in the collection. This has to happen immediately,
@@ -3366,83 +3523,38 @@ class InstallManager {
             log('info', 'downloaded as dependency', { dependency: dep.reference.logicalFileName, downloadId });
           }
 
-          let queryWrongMD5 = () => Bluebird.resolve();
-          if ((dep.mod === undefined)
-              && (dep.reference?.versionMatch !== undefined)
-              && !isFuzzyVersion(dep.reference.versionMatch)
-              && (dep.lookupResults.length > 0)
-              && (dep.lookupResults.find(res => res.value.fileMD5 !== undefined) !== undefined)
-              && (dep.lookupResults.find(res => res.value.fileMD5 === downloads[downloadId].fileMD5)) === undefined) {
-            log('info', 'mismatch md5', {
-              expected: dep.lookupResults[0].value.fileMD5,
-              got: downloads[downloadId].fileMD5,
-            });
-            queryWrongMD5 = () => api.showDialog('question', 'Unrecognized file {{reference}}', {
-              text: 'The file "{{fileName}}" that was just downloaded for dependency "{{reference}}" '
-                  + 'is not the exact file expected. This might not be an issue if the mod has been '
-                  + 'updated or repackaged by the author.\n'
-                  + 'If you selected this file yourself and you think you may have chosen the wrong one, '
-                  + 'please click "Retry". '
-                  + 'Otherwise, please continue and keep an eye open for error messages regarding this mod.',
-              parameters: {
-                fileName: downloads[downloadId].localPath,
-                reference: renderModReference(dep.reference, dep.mod),
-              },
-            }, [
-              { label: 'Retry' },
-              { label: 'Use file anyway' },
-            ])
-            .then(result => (result.action === 'Retry')
-              ? Bluebird.reject(new ProcessCanceled('retry invalid download'))
-              : Bluebird.resolve());
-          }
-
           return (dep.mod == null)
-            ? queryWrongMD5()
-                .then(() => {
-                  if (collectionsInstallWhileDownloading && !!dep) {
-                    // Queue installation without blocking the download pipeline
-                    this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended);
+            ? Bluebird.resolve()
+              .then(() => {
+                // Queue installation without blocking the download pipeline; respect dependency phase
+                const phaseNum = dep.phase ?? 0;
+                this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended, phaseNum);
+                return Bluebird.resolve({ updatedDep: dep, downloadId });
+              })
+              .catch(err => {
+                if (dep['reresolveDownloadHint'] === undefined) {
+                  return Bluebird.reject(err);
+                }
+                const newState = api.getState();
+                const download = newState.persistent.downloads.files[downloadId];
 
-                    // Return immediately to allow downloads to continue
-                    log('info', 'Queued installation while download continues', { 
-                      downloadId, 
-                      dependency: renderModReference(dep.reference) 
-                    });
-                    return Bluebird.resolve(downloadId);
-                  } else {
-                    // Defer installation - just return the download ID for later processing
-                    log('info', 'Deferring installation until download is complete', {
-                      downloadId,
-                      dependency: renderModReference(dep.reference)
-                    });
-                    return Bluebird.resolve(downloadId);
-                  }
-                })
-                .catch(err => {
-                  if (dep['reresolveDownloadHint'] === undefined) {
-                    return Bluebird.reject(err);
-                  }
-                  const newState = api.getState();
-                  const download = newState.persistent.downloads.files[downloadId];
+                let removeProm = Bluebird.resolve();
+                if (download !== undefined) {
+                  // Convert download game ID from Nexus domain ID to internal ID for path resolution
+                  const games = knownGames(newState);
+                  const convertedGameId = convertGameIdReverse(games, download.game[0]);
+                  const pathGameId = convertedGameId || download.game[0];
 
-                  let removeProm = Bluebird.resolve();
-                  if (download !== undefined) {
-                    // Convert download game ID from Nexus domain ID to internal ID for path resolution
-                    const games = knownGames(newState);
-                    const convertedGameId = convertGameIdReverse(games, download.game[0]);
-                    const pathGameId = convertedGameId || download.game[0];
+                  const fullPath: string =
+                    path.join(downloadPathForGame(newState, pathGameId), download.localPath);
+                  removeProm = fs.removeAsync(fullPath);
+                }
 
-                    const fullPath: string =
-                      path.join(downloadPathForGame(newState, pathGameId), download.localPath);
-                    removeProm = fs.removeAsync(fullPath);
-                  }
-
-                  return removeProm
-                    .then(() => dep['reresolveDownloadHint']())
-                    .then(() => doDownload(dep));
-                })
-            : Bluebird.resolve(dep.mod.id);
+                return removeProm
+                  .then(() => dep['reresolveDownloadHint']())
+                  .then(() => doDownload(dep));
+              })
+            : Bluebird.resolve({ updatedDep: dep, downloadId });
         });
     };
 
@@ -3456,116 +3568,66 @@ class InstallManager {
 
     const phaseList = Object.values(phases);
 
-    const findDownloadId = (dep: IDependency) => {
-      return Object.keys(downloads).find(dlId => downloads[dlId].modInfo?.referenceTag === dep?.reference?.tag);
-    }
     const res: Bluebird<IDependency[]> = Bluebird.reduce(phaseList,
       (prev: IDependency[], depList: IDependency[], idx: number) => {
         if (depList.length === 0) {
           return prev;
         }
         return this.doInstallDependenciesPhase(api, depList, gameId, sourceModId,
-                                               recommended,
-                                               doDownload, abort)
-          .then(async (updated: IDependency[]) => {
-            // When collectionsInstallWhileDownloading is false, we process installations at the end
-            // When it's true, installations happen during download so we just resolve
-            if (collectionsInstallWhileDownloading) {
-              return Promise.resolve(updated);
-            } else {
-              // Process deferred installations for dependencies that have completed downloads
-              return new Promise<IDependency[]>(async (resolve, reject) => {
-                const sorted = ([...updated]).sort((a, b) => (a?.reference?.fileSize ?? 0) - (b?.reference?.fileSize ?? 0)).filter(dep => !!dep);
-                try {
-                  log('info', 'Processing deferred installations for completed downloads', { 
-                    count: sorted.length 
-                  });
-
-                  // Install all dependencies that have completed downloads
-                  const installResults = await Promise.all(sorted.map(async dep => {
-                    // Skip if mod is already installed
-                    if (dep.mod !== undefined) {
-                      log('debug', 'Dependency already installed, skipping', {
-                        modId: dep.mod.id,
-                        dependency: renderModReference(dep.reference)
-                      });
-                      return dep;
-                    }
-
-                    const downloadId = findDownloadId(dep) || dep.download;
-                    if (downloadId) {
-                      const currentDownloads = api.getState().persistent.downloads.files;
-                      if (currentDownloads[downloadId]?.state === 'finished') {
-                        // For deferred installations, we can install immediately since downloads are complete
-                        try {
-                          const modId = await installDownload(dep, downloadId);
-                          if (modId) {
-                            log('info', 'Successfully installed deferred dependency', { 
-                              downloadId, 
-                              modId,
-                              dependency: renderModReference(dep.reference) 
-                            });
-                            // Get the full mod object from state
-                            const mods = api.store.getState().persistent.mods[gameId];
-                            return { ...dep, mod: mods[modId] };
-                          } else {
-                            log('warn', 'Installation returned null modId', { 
-                              downloadId,
-                              dependency: renderModReference(dep.reference) 
-                            });
-                            return dep;
-                          }
-                        } catch (err) {
-                          log('warn', 'Failed to install deferred dependency', {
-                            downloadId,
-                            error: err.message,
-                            dependency: renderModReference(dep.reference)
-                          });
-                          return dep; // Return original dep if installation failed
-                        }
-                      } else {
-                        log('info', 'Download not finished, skipping installation', {
-                          downloadId,
-                          state: currentDownloads[downloadId]?.state,
-                          dependency: renderModReference(dep.reference)
-                        });
-                        return dep; // Return original dep if download not finished
-                      }
-                    } else {
-                      log('debug', 'No download ID found for dependency', {
-                        dependency: renderModReference(dep.reference)
-                      });
-                      return dep;
-                    }
-                  }));
-
-                  return resolve(installResults);
-                } catch (err) {
-                  log('error', 'Error processing deferred installations', { error: err.message });
-                  return reject(err);
-                }
-              });
-            }
+          recommended,
+          doDownload, abort)
+          .then((updated: IDependency[]) => {
+            // Mark this phase's downloads as finished to allow its installers to run,
+            // but do not wait for installations to complete before proceeding to next phase.
+            const phaseNum = depList[0]?.phase ?? 0;
+            this.markPhaseDownloadsFinished(sourceModId, phaseNum);
+            return updated;
           })
           .then((updated: IDependency[]) => {
-            if (idx === phaseList.length - 1) {
-              return Bluebird.resolve(updated);
-            }
-            return toPromise(cb => api.events.emit('deploy-mods', cb))
-              .then(() => updated);
+            // Schedule a deploy for this phase once its installers settle; don't block download progression
+            const phaseNum = depList[0]?.phase ?? 0;
+            this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum);
+            return updated;
           })
           .then((updated: IDependency[]) => [].concat(prev, updated));
-    }, []);
+      }, []);
 
     this.mDependencyInstalls[sourceModId] = () => {
       abort.abort();
     };
 
-    return Bluebird.resolve(res);
+    return Bluebird.resolve(res)
+      // After all phases have queued downloads and phase-gated installers, wait outside reducer
+      .then((deps: IDependency[]) => {
+        const POLL_MS = 500; // quick poll; we avoid a long timeout here
+        const waitForSettled = (): Bluebird<void> => new Bluebird<void>((resolve) => {
+          const phaseState = this.mInstallPhaseState.get(sourceModId);
+          if (!phaseState) { return resolve(); }
+          const allowed = phaseState.allowedPhase ?? 0;
+          const active = phaseState.activeByPhase.get(allowed) ?? 0;
+          const pending = (phaseState.pendingByPhase.get(allowed) ?? []).length;
+          if ((active === 0) && (pending === 0)) {
+            resolve();
+          } else {
+            setTimeout(() => resolve(waitForSettled()), POLL_MS);
+          }
+        });
+
+        return waitForSettled().then(() => deps);
+      })
+      .then((deps: IDependency[]) => {
+        // Refresh dependency entries with installed mods if any finished during wait
+        const modsState = api.getState().persistent.mods[gameId] ?? {};
+        return Promise.all(deps.map(dep => dep?.mod ? dep : ({ ...dep, mod: findModByRef(dep.reference, modsState) } as IDependency)));
+      })
+      .finally(() => {
+        // Soft cleanup of phase gating state at the end
+        this.mInstallPhaseState.delete(sourceModId);
+      });
   }
 
   private updateModRule(api: IExtensionApi, gameId: string, sourceModId: string,
-                        dep: IDependency, reference: IModReference, recommended: boolean) {
+    dep: IDependency, reference: IModReference, recommended: boolean) {
     const state: IState = api.store.getState();
     const rules: IModRule[] =
       getSafe(state.persistent.mods, [gameId, sourceModId, 'rules'], []);
@@ -3587,7 +3649,7 @@ class InstallManager {
   }
 
   private updateRules(api: IExtensionApi, gameId: string, sourceModId: string,
-                      dependencies: IDependency[], recommended: boolean): Bluebird<void> {
+    dependencies: IDependency[], recommended: boolean): Bluebird<void> {
     dependencies.forEach(dep => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
@@ -3600,12 +3662,12 @@ class InstallManager {
   }
 
   private doInstallDependencyList(api: IExtensionApi,
-                                  profile: IProfile,
-                                  gameId: string,
-                                  modId: string,
-                                  name: string,
-                                  dependencies: IDependency[],
-                                  silent: boolean) {
+    profile: IProfile,
+    gameId: string,
+    modId: string,
+    name: string,
+    dependencies: IDependency[],
+    silent: boolean) {
     if (dependencies.length === 0) {
       return Bluebird.resolve();
     }
@@ -3666,10 +3728,10 @@ class InstallManager {
   }
 
   private showMemoDialog(api: IExtensionApi,
-                         context: IBatchContext,
-                         name: string,
-                         success: IDependency[],
-                         error: IDependencyError[]): Bluebird<IDialogResult> {
+    context: IBatchContext,
+    name: string,
+    success: IDependency[],
+    error: IDependencyError[]): Bluebird<IDialogResult> {
     const remember = context.get<boolean>('remember', null);
 
     if (truthy(remember)) {
@@ -3718,7 +3780,7 @@ class InstallManager {
       if (error.length > 0) {
         bbcode += '[color=red]'
           + t('{{modName}} has unsolved dependencies that could not be found automatically. ',
-              { replace: { modName: name } })
+            { replace: { modName: name } })
           + t('Please install them manually') + ':<br/>'
           + '{{errors}}'
           + '[/color]';
@@ -3763,14 +3825,14 @@ class InstallManager {
   }
 
   private installDependenciesImpl(api: IExtensionApi,
-                                  profile: IProfile,
-                                  gameId: string,
-                                  modId: string,
-                                  name: string,
-                                  rules: IModRule[],
-                                  installPath: string,
-                                  silent: boolean)
-                                  : Bluebird<void> {
+    profile: IProfile,
+    gameId: string,
+    modId: string,
+    name: string,
+    rules: IModRule[],
+    installPath: string,
+    silent: boolean)
+    : Bluebird<void> {
     const filteredRules = (rules ?? []).filter(
       (rule: IModRule) => ['recommends', 'requires'].includes(rule.type)
         && !rule.ignored);
@@ -3784,53 +3846,53 @@ class InstallManager {
 
     let canceled = false;
     api.events.emit('will-install-dependencies', gameId, modId, false, () => { canceled = true; });
-      if (canceled) {
-        return Bluebird.resolve();
-      }
+    if (canceled) {
+      return Bluebird.resolve();
+    }
 
-      let lastProgress = -1;
+    let lastProgress = -1;
 
-      const progress = silent ? nop : (perc: number) => {
-        // rounded to steps of 5%
-        const newProgress = Math.round(perc * 20) * 5;
-        if (newProgress !== lastProgress) {
-          lastProgress = newProgress;
-          api.sendNotification({
-            id: notificationId,
-            type: 'activity',
-            title: 'Checking dependencies',
-            message: 'Resolving dependencies',
-            progress: newProgress,
-          });
-        }
-      };
-
-      progress(0);
-      api.store.dispatch(startActivity('dependencies', 'gathering'));
-
-      log('debug', 'installing dependencies', { modId, name });
-      return gatherDependencies(filteredRules, api, false, progress)
-        .then((dependencies: IDependency[]) => {
-          api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          api.dismissNotification(notificationId);
-          return this.doInstallDependencyList(
-            api, profile, gameId, modId, name, dependencies, silent);
-        })
-        .catch((err) => {
-          api.dismissNotification(notificationId);
-          api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          if (!(err instanceof UserCanceled) && !(err instanceof NotFound)) {
-            api.showErrorNotification('Failed to check dependencies', err);
-          } else if (err instanceof NotFound) {
-            api.showErrorNotification('Failed to check dependencies',
-              'A mod dependency could not be found. This is usually caused by '
-            + 'a temporary networking issue. Please try again later.', { allowReport: false });
-          }
-        })
-        .finally(() => {
-          log('debug', 'done installing dependencies', { gameId, modId });
-          api.events.emit('did-install-dependencies', gameId, modId, false);
+    const progress = silent ? nop : (perc: number) => {
+      // rounded to steps of 5%
+      const newProgress = Math.round(perc * 20) * 5;
+      if (newProgress !== lastProgress) {
+        lastProgress = newProgress;
+        api.sendNotification({
+          id: notificationId,
+          type: 'activity',
+          title: 'Checking dependencies',
+          message: 'Resolving dependencies',
+          progress: newProgress,
         });
+      }
+    };
+
+    progress(0);
+    api.store.dispatch(startActivity('dependencies', 'gathering'));
+
+    log('debug', 'installing dependencies', { modId, name });
+    return gatherDependencies(filteredRules, api, false, progress)
+      .then((dependencies: IDependency[]) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
+        api.dismissNotification(notificationId);
+        return this.doInstallDependencyList(
+          api, profile, gameId, modId, name, dependencies, silent);
+      })
+      .catch((err) => {
+        api.dismissNotification(notificationId);
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
+        if (!(err instanceof UserCanceled) && !(err instanceof NotFound)) {
+          api.showErrorNotification('Failed to check dependencies', err);
+        } else if (err instanceof NotFound) {
+          api.showErrorNotification('Failed to check dependencies',
+            'A mod dependency could not be found. This is usually caused by '
+            + 'a temporary networking issue. Please try again later.', { allowReport: false });
+        }
+      })
+      .finally(() => {
+        log('debug', 'done installing dependencies', { gameId, modId });
+        api.events.emit('did-install-dependencies', gameId, modId, false);
+      });
   }
 
   private installRecommendationsQueryMain(
@@ -3924,14 +3986,14 @@ class InstallManager {
   }
 
   private installRecommendationsImpl(api: IExtensionApi,
-                                     profile: IProfile,
-                                     gameId: string,
-                                     modId: string,
-                                     name: string,
-                                     rules: IRule[],
-                                     installPath: string,
-                                     silent: boolean)
-                                     : Bluebird<void> {
+    profile: IProfile,
+    gameId: string,
+    modId: string,
+    name: string,
+    rules: IRule[],
+    installPath: string,
+    silent: boolean)
+    : Bluebird<void> {
     const filteredRules = (rules ?? []).filter(
       (rule: IModRule) => ['recommends', 'requires'].includes(rule.type)
         && !rule.ignored);
@@ -3943,61 +4005,61 @@ class InstallManager {
     const notificationId = `${installPath}_activity`;
 
     let canceled = false;
-      api.events.emit('will-install-dependencies', gameId, modId, true, () => { canceled = true; });
-      if (canceled) {
-        return Bluebird.resolve();
-      }
+    api.events.emit('will-install-dependencies', gameId, modId, true, () => { canceled = true; });
+    if (canceled) {
+      return Bluebird.resolve();
+    }
 
-      api.sendNotification({
-        id: notificationId,
-        type: 'activity',
-        message: 'Checking dependencies',
-      });
-      api.store.dispatch(startActivity('dependencies', 'gathering'));
-      return gatherDependencies(filteredRules, api, true, undefined)
-        .then((dependencies: Dependency[]) => {
-          api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          if (dependencies.length === 0) {
-            return Bluebird.resolve();
-          }
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: 'Checking dependencies',
+    });
+    api.store.dispatch(startActivity('dependencies', 'gathering'));
+    return gatherDependencies(filteredRules, api, true, undefined)
+      .then((dependencies: Dependency[]) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
+        if (dependencies.length === 0) {
+          return Bluebird.resolve();
+        }
 
-          interface IDependencySplit {
-            success: IDependency[];
-            existing: IDependency[];
-            error: IDependencyError[];
-          }
-          const { success, existing, error } = dependencies.reduce(
-            (prev: IDependencySplit, dep: Dependency) => {
-              if (dep['error'] !== undefined) {
-                prev.error.push(dep as IDependencyError);
+        interface IDependencySplit {
+          success: IDependency[];
+          existing: IDependency[];
+          error: IDependencyError[];
+        }
+        const { success, existing, error } = dependencies.reduce(
+          (prev: IDependencySplit, dep: Dependency) => {
+            if (dep['error'] !== undefined) {
+              prev.error.push(dep as IDependencyError);
+            } else {
+              const { mod } = dep as IDependency;
+              if ((mod === undefined)
+                || !getSafe(profile?.modState, [mod.id, 'enabled'], false)) {
+                prev.success.push(dep as IDependency);
               } else {
-                const { mod } = dep as IDependency;
-                if ((mod === undefined)
-                  || !getSafe(profile?.modState, [mod.id, 'enabled'], false)) {
-                  prev.success.push(dep as IDependency);
-                } else {
-                  prev.existing.push(dep as IDependency);
-                }
+                prev.existing.push(dep as IDependency);
               }
-              return prev;
-            }, { success: [], existing: [], error: [] });
+            }
+            return prev;
+          }, { success: [], existing: [], error: [] });
 
-          // all recommendations already installed
-          if ((success.length === 0) && (error.length === 0)) {
-            return Bluebird.resolve();
-          }
+        // all recommendations already installed
+        if ((success.length === 0) && (error.length === 0)) {
+          return Bluebird.resolve();
+        }
 
-          const state: IState = api.store.getState();
-          const downloads = state.persistent.downloads.files;
+        const state: IState = api.store.getState();
+        const downloads = state.persistent.downloads.files;
 
-          const context = getBatchContext('install-recommendations', '', true);
-          context.set<number>('num-instructions',
-            success.filter(succ => succ.extra?.['instructions'] !== undefined).length);
-          const remember = context.get<boolean>('remember', null);
-          let queryProm: Bluebird<IDependency[]> = Bluebird.resolve(success);
+        const context = getBatchContext('install-recommendations', '', true);
+        context.set<number>('num-instructions',
+          success.filter(succ => succ.extra?.['instructions'] !== undefined).length);
+        const remember = context.get<boolean>('remember', null);
+        let queryProm: Bluebird<IDependency[]> = Bluebird.resolve(success);
 
-          if (!silent || (error.length > 0)) {
-            queryProm = this.installRecommendationsQueryMain(api, name, success, error, remember)
+        if (!silent || (error.length > 0)) {
+          queryProm = this.installRecommendationsQueryMain(api, name, success, error, remember)
             .then(result => {
               if (result.action === 'Skip') {
                 if (result.input?.remember) {
@@ -4022,85 +4084,85 @@ class InstallManager {
                   })
               }
             });
-          }
+        }
 
-          return queryProm.then(result => {
-            return this.doInstallDependencies(
-              api,
-              gameId,
-              modId,
-              result,
-              true, silent)
-              .then(updated => this.updateRules(api, gameId, modId,
-                [].concat(existing, updated), true));
-          });
-        })
-        .catch((err) => {
-          api.store.dispatch(stopActivity('dependencies', 'gathering'));
-          if (!(err instanceof UserCanceled)) {
-            api.showErrorNotification('Failed to check dependencies', err);
-          }
-        })
-        .finally(() => {
-          api.dismissNotification(notificationId);
-          api.events.emit('did-install-dependencies', gameId, modId, true);
+        return queryProm.then(result => {
+          return this.doInstallDependencies(
+            api,
+            gameId,
+            modId,
+            result,
+            true, silent)
+            .then(updated => this.updateRules(api, gameId, modId,
+              [].concat(existing, updated), true));
         });
+      })
+      .catch((err) => {
+        api.store.dispatch(stopActivity('dependencies', 'gathering'));
+        if (!(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to check dependencies', err);
+        }
+      })
+      .finally(() => {
+        api.dismissNotification(notificationId);
+        api.events.emit('did-install-dependencies', gameId, modId, true);
+      });
   }
 
   private withInstructions<T>(api: IExtensionApi,
-                              sourceName: string,
-                              title: string,
-                              id: string,
-                              instructions: string,
-                              recommendations: boolean,
-                              cb: () => Bluebird<T>)
-                              : Bluebird<T> {
+    sourceName: string,
+    title: string,
+    id: string,
+    instructions: string,
+    recommendations: boolean,
+    cb: () => Bluebird<T>)
+    : Bluebird<T> {
     if (!truthy(instructions)) {
       return cb();
     }
 
     if (recommendations) {
       return Bluebird.resolve((async () => {
-          const context = getBatchContext('install-recommendations', '');
-          let action = context.get<string>('remember-instructions');
-          const remaining = context.get<number>('num-instructions') - 1;
+        const context = getBatchContext('install-recommendations', '');
+        let action = context.get<string>('remember-instructions');
+        const remaining = context.get<number>('num-instructions') - 1;
 
-          if ((action === null) || (action === undefined)) {
-            let checkboxes: ICheckbox[];
-            if (remaining > 0) {
-              checkboxes = [
-                {
-                  id: 'remember',
-                  value: false,
-                  text: 'Do this for all remaining instructions ({{remaining}} more)'
-                },
-              ];
-            }
-            const result = await api.showDialog('info', title, {
-              md: instructions,
-              checkboxes,
-              parameters: {
-                remaining,
+        if ((action === null) || (action === undefined)) {
+          let checkboxes: ICheckbox[];
+          if (remaining > 0) {
+            checkboxes = [
+              {
+                id: 'remember',
+                value: false,
+                text: 'Do this for all remaining instructions ({{remaining}} more)'
               },
-            }, [
-              { label: 'Skip' },
-              { label: 'Install' },
-            ]);
-
-            if (result.input['remember']) {
-              context.set('remember-instructions', result.action);
-            }
-            action = result.action;
+            ];
           }
+          const result = await api.showDialog('info', title, {
+            md: instructions,
+            checkboxes,
+            parameters: {
+              remaining,
+            },
+          }, [
+            { label: 'Skip' },
+            { label: 'Install' },
+          ]);
 
-          context.set<number>('num-instructions', remaining);
-
-          if (action === 'Install') {
-            return cb();
-          } else {
-            return Bluebird.reject(new UserCanceled(true));
+          if (result.input['remember']) {
+            context.set('remember-instructions', result.action);
           }
-        })());
+          action = result.action;
+        }
+
+        context.set<number>('num-instructions', remaining);
+
+        if (action === 'Install') {
+          return cb();
+        } else {
+          return Bluebird.reject(new UserCanceled(true));
+        }
+      })());
     } else {
       api.ext.showOverlay?.(`install-instructions-${id}`, title, instructions, undefined, {
         id,
@@ -4111,12 +4173,12 @@ class InstallManager {
   }
 
   private installModAsync(requirement: IReference,
-                          api: IExtensionApi,
-                          downloadId: string,
-                          modInfo?: any,
-                          fileList?: IFileListItem[],
-                          forceGameId?: string,
-                          silent?: boolean): Bluebird<string> {
+    api: IExtensionApi,
+    downloadId: string,
+    modInfo?: any,
+    fileList?: IFileListItem[],
+    forceGameId?: string,
+    silent?: boolean): Bluebird<string> {
     return new Bluebird<string>(async (resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -4162,29 +4224,86 @@ class InstallManager {
     });
   }
 
-  private fixDestination(source: string, destination: string): Bluebird<string> {
-    // if the source is an existing file an the destination is an existing directory,
-    // copyAsync or renameAsync will not work, they expect the destination to be the
-    // name of the output file.
-    return fs.statAsync(source)
-      .then(sourceStat => sourceStat.isDirectory()
-        ? Bluebird.resolve(destination)
-        : fs.statAsync(destination)
-          .then(destStat => destStat.isDirectory()
-            ? path.join(destination, path.basename(source))
-            : destination))
-      .catch(() => Bluebird.resolve(destination));
-  }
+  /**
+   * extract an archive
+   *
+   * @export
+   * @param {string} archivePath path to the archive file
+   * @param {string} destinationPath path to install to
+   */
+  private async extractArchive(
+    api: IExtensionApi,
+    archivePath: string,
+    tempPath: string,
+    destinationPath: string,
+    copies: IInstruction[],
+    gameId: string): Promise<void> {
+    const now = Date.now();
+    // Strategy:
+    //  - dedupe and pre-create parent directories once
+    //  - link files in parallel with a bounded concurrency
+    //  - if link fails (different fs, permission) fallback to copying
+    //  - unlink sources in parallel after successful transfers
+    const sorted = copies.slice().sort((a, b) => a.destination.length - b.destination.length);
+    const dirs = new Set<string>();
+    const jobs: Array<{ src: string; dst: string; rel: string }> = [];
+    const missingFiles = new Set<string>();
 
-  private transferFile(source: string, destination: string, move: boolean): Bluebird<void> {
-    return fs.ensureDirAsync(path.dirname(destination))
-      .then(() => this.fixDestination(source, destination))
-      .then(fixedDest => move
-        ? fs.renameAsync(source, fixedDest)
-          .catch(err => (['EXDEV', 'EEXIST'].includes(err.code))
-            ? fs.copyAsync(source, fixedDest, { noSelfCopy: true })
-            : Bluebird.reject(err))
-        : fs.copyAsync(source, fixedDest, { noSelfCopy: true }));
+    for (const copy of sorted) {
+      const src = path.join(tempPath, copy.source);
+      const dst = path.join(destinationPath, copy.destination);
+      dirs.add(path.dirname(dst));
+      jobs.push({ src, dst, rel: copy.destination });
+    }
+
+    const cpuCount = (os && os.cpus) ? Math.max(1, os.cpus().length) : 1;
+    const dirConcurrency = Math.min(64, Math.max(4, cpuCount * 2));
+    const ioConcurrency = Math.min(256, Math.max(8, cpuCount * 8));
+
+    try {
+      // create parent directories
+      await Bluebird.map(Array.from(dirs), d => fs.ensureDirAsync(d), { concurrency: dirConcurrency });
+
+      // perform hard links in parallel; fallback to copy on failure
+      await Bluebird.map(jobs, async job => {
+        try {
+          await fs.linkAsync(job.src, job.dst);
+        } catch (err) {
+          if (err.code === 'ENOENT') {
+            // source file does not exist; skip
+            missingFiles.add(job.src);
+            return;
+          }
+          // common reasons: EXDEV (cross-device), EPERM/EACCES -> fallback to copy
+          if (err && (err.code === 'EXDEV' || err.code === 'EPERM' || err.code === 'EACCES' || err.code === 'ENOTSUP')) {
+            // copyAsync wraps efficient platform copy where available
+            await fs.copyAsync(job.src, job.dst, { noSelfCopy: true });
+          } else if (err && err.code === 'EEXIST') {
+            // destination exists; try overwrite by copying
+            await fs.copyAsync(job.src, job.dst, { noSelfCopy: true });
+          } else {
+            throw err;
+          }
+        }
+      }, { concurrency: ioConcurrency });
+
+      // remove the temporary source files in parallel
+      await Bluebird.map(jobs, job => fs.unlinkAsync(job.src).catch(err => Bluebird.resolve()), { concurrency: ioConcurrency });
+      if (missingFiles.size > 0) {
+        api.showErrorNotification(api.translate('Invalid installer'),
+          api.translate('The installer in "{{name}}" tried to install files that were '
+            + 'not part of the archive.\n This can be due to an invalid mod or an invalid game extension installer.\n'
+            + 'Please report this to the mod author and/or the game extension developer.',
+            { replace: { name: path.basename(archivePath) } })
+          + '\n\n' + Array.from(missingFiles).map(name => '- ' + name).join('\n')
+          , { allowReport: false });
+      }
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    } finally {
+      log('error', 'extraction completed', { duration: Date.now() - now, archivePath, instructions: copies.length });
+    }
   }
 
   /**
@@ -4194,111 +4313,225 @@ class InstallManager {
    * @param {string} archivePath path to the archive file
    * @param {string} destinationPath path to install to
    */
-  private extractArchive(
-    api: IExtensionApi,
-    archivePath: string,
-    tempPath: string,
-    destinationPath: string,
-    copies: IInstruction[],
-    gameId: string): Bluebird<void> {
-    let normalize: Normalize;
+  // private extractArchive(
+  //   api: IExtensionApi,
+  //   archivePath: string,
+  //   tempPath: string,
+  //   destinationPath: string,
+  //   copies: IInstruction[],
+  //   gameId: string): Bluebird<void> {
+  //   let normalize: Normalize;
 
-    const dlPath = downloadPathForGame(api.getState(), gameId);
+  //   const dlPath = downloadPathForGame(api.getState(), gameId);
 
-    const missingFiles: string[] = [];
-    return fs.ensureDirAsync(destinationPath)
-        .then(() => getNormalizeFunc(destinationPath))
-        .then((normalizeFunc: Normalize) => {
-          normalize = normalizeFunc;
-        })
-        .then(() => {
-          interface IDest {
-            dest: string;
-            section: string;
-          }
-          const sourceMap: {[src: string]: IDest[]} =
-              copies.reduce((prev: { [src: string]: IDest[] }, copy) => {
-                setdefault(prev, copy.source, [])
-                  .push({ dest:  copy.destination, section: copy.section });
-                return prev;
-              }, {});
-          return Bluebird.map(Object.keys(sourceMap), srcRel => {
-            const sourcePath = path.join(tempPath, srcRel);
-            const destinations = sourceMap[srcRel];
+  // const missingFiles: string[] = [];
+  // // Collect actions to batch-dispatch and md5 tasks to process in background
+  // const addDownloadActions: any[] = [];
+  // const md5Tasks: Array<{ file: string, fileSize: number }> = [];
+  // // Collect transferred download paths to stat later in parallel
+  // const transferredDownloads: Array<{ destPath: string, rel: string }> = [];
+  // const now = Date.now();
+  // return fs.ensureDirAsync(destinationPath)
+  //       .then(() => getNormalizeFunc(destinationPath))
+  //       .then((normalizeFunc: Normalize) => {
+  //         normalize = normalizeFunc;
+  //       })
+  //       .then(() => {
+  //         interface IDest {
+  //           dest: string;
+  //           section: string;
+  //         }
+  //         const sourceMap: {[src: string]: IDest[]} =
+  //             copies.reduce((prev: { [src: string]: IDest[] }, copy) => {
+  //               setdefault(prev, copy.source, [])
+  //                 .push({ dest:  copy.destination, section: copy.section });
+  //               return prev;
+  //             }, {});
+  //         return Bluebird.map(Object.keys(sourceMap), srcRel => {
+  //           const sourcePath = path.join(tempPath, srcRel);
+  //           const destinations = sourceMap[srcRel];
 
-            // First destination uses rename (move), subsequent ones use copy
-            return Bluebird.mapSeries(destinations, (dest, idx, len) => {
-              // 'download' is currently the only supported section
-              const destPath = (dest.section === 'download')
-                ? path.join(dlPath, dest.dest)
-                : path.join(destinationPath, dest.dest);
+  //           // Stat source once and run per-destination logic with that hint
+  //           return fs.statAsync(sourcePath)
+  //             .catch(() => ({ isDirectory: () => false }))
+  //             .then((sourceStat: any) => {
+  //               const sourceIsDir = !!(sourceStat && sourceStat.isDirectory && sourceStat.isDirectory());
 
-              return ((dest.section === 'download')
-                ? fs.statAsync(destPath)
-                  .then(() => false)
-                  .catch(err => (err.code === 'ENOENT')
-                    ? this.transferFile(sourcePath, destPath, idx === len - 1)
-                      .then(() => true)
-                    : Bluebird.reject(err))
-                : this.transferFile(sourcePath, destPath, idx === len - 1)
-                  .then(() => true)
-              )
-                .then(transferred => {
-                  if ((dest.section === 'download') && transferred) {
-                    const archiveId = shortid();
-                    let fileSize: number;
-                    return fs.statAsync(destPath)
-                      .then(stat => {
-                        fileSize = stat.size;
-                        api.store.dispatch(
-                          addLocalDownload(archiveId, gameId, dest.dest, fileSize));
-                        // Calculate MD5 asynchronously to avoid blocking
-                        setImmediate(() => {
-                          fileMD5(destPath)
-                            .then(md5 => {
-                              api.store.dispatch(setDownloadHashByFile(dest.dest, md5, fileSize));
-                            })
-                            .catch(err => {
-                              log('warn', 'Failed to calculate MD5 for downloaded file', {
-                                file: dest.dest,
-                                error: err.message
-                              });
-                            });
-                        });
+  //               // Pre-create parent directories for all destinations to avoid repeated ensureDir
+  //               const parentDirs = destinations.map(dest => {
+  //                 const destPath = (dest.section === 'download')
+  //                   ? path.join(dlPath, dest.dest)
+  //                   : path.join(destinationPath, dest.dest);
+  //                 return path.dirname(destPath);
+  //               }).filter((v, i, a) => a.indexOf(v) === i);
 
-                        return Promise.resolve();
-                      });
-                  } else {
-                    return Bluebird.resolve();
-                  }
-                })
-                .catch(err => {
-                  if (err.code === 'ENOENT') {
-                    missingFiles.push(srcRel);
-                  } else if (err.code === 'EPERM') {
-                    return this.transferFile(sourcePath, destPath, false);
-                  } else {
-                    return Bluebird.reject(err);
-                  }
-                });
-            });
-          }, { concurrency: 10 });
-        })
-        .then(() => {
-          if (missingFiles.length > 0) {
-            api.showErrorNotification(api.translate('Invalid installer'),
-              api.translate('The installer in "{{name}}" tried to install files that were '
-                            + 'not part of the archive.\nThis is a bug in the mod, please '
-                            + 'report it to the mod author.\n'
-                            + 'Please note: NMM silently ignores this kind of errors so you '
-                            + 'might get this message for mods that appear to install '
-                            + 'fine with NMM. The mod will likely work, at least partially.',
-                          { replace: {name: path.basename(archivePath)} })
-              + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
-            , { allowReport: false });
-          }
-        });
-  }
+  //               return Bluebird.map(parentDirs, dir => fs.ensureDirAsync(dir), { concurrency: 10 })
+  //                 .then(() => {
+
+  //                   const handleSingle = (dest: IDest) => {
+  //             const destPath = (dest.section === 'download')
+  //               ? path.join(dlPath, dest.dest)
+  //               : path.join(destinationPath, dest.dest);
+
+  //             const attemptTransfer = () => {
+  //               if (dest.== 'download') {
+  //                 return this.transferFile(sourcePath, destPath, true, sourceIsDir)
+  //                   .then(() => true)
+  //                   .catch(err => {
+  //                     if (err && (err.code === 'EEXIST' || err.code === 'EPERM')) {
+  //                       if (err.code === 'EPERM') {
+  //                         return this.transferFile(sourcePath, destPath, false, sourceIsDir)
+  //                           .then(() => true)
+  //                           .catch(innerErr => Bluebird.reject(innerErr));
+  //                       }
+  //                       return false;
+  //                     }
+  //                     if (err && err.code === 'ENOENT') {
+  //                       return Bluebird.reject(err);
+  //                     }
+  //                     return Bluebird.reject(err);
+  //                   });
+  //               }
+  //               return this.transferFile(sourcePath, destPath, true, sourceIsDir).then(() => true);
+  //             };
+
+  //                 return attemptTransfer()
+  //               .then(transferred => {
+  //                 if ((dest.== 'download') && transferred) {
+  //                   transferredDownloads.push({ destPath, rel: dest.dest });
+  //                 }
+  //                 return Bluebird.resolve();
+  //               })
+  //               .catch(err => {
+  //                 if (err && err.code === 'ENOENT') {
+  //                   missingFiles.push(srcRel);
+  //                   return Bluebird.resolve();
+  //                 } else if (err && err.code === 'EPERM') {
+  //                   return this.transferFile(sourcePath, destPath, false);
+  //                 } else {
+  //                   return Bluebird.reject(err);
+  //                 }
+  //               });
+  //                   };
+
+  //                   if (destinations.length === 1) {
+  //                     return handleSingle(destinations[0]);
+  //                   }
+
+  //                   const nonMove = destinations.slice(0, -1);
+  //                   const moveDest = destinations[destinations.length - 1];
+  //                   const copyConcurrency = 10;
+
+  //                   return Bluebird.map(nonMove, dest => {
+  //             const destPath = (dest.section === 'download')
+  //               ? path.join(dlPath, dest.dest)
+  //               : path.join(destinationPath, dest.dest);
+
+  //                     return this.transferFile(sourcePath, destPath, false, sourceIsDir)
+  //               .then(() => {
+  //                 if (dest.section === 'download') {
+  //                   transferredDownloads.push({ destPath, rel: dest.dest });
+  //                 }
+  //                 return Bluebird.resolve();
+  //               })
+  //               .catch(err => {
+  //                 if (err && (err.code === 'EEXIST' || err.code === 'EPERM')) {
+  //                   if (err.code === 'EPERM') {
+  //                             return this.transferFile(sourcePath, destPath, false)
+  //                               .then(() => Bluebird.resolve())
+  //                               .catch(innerErr => Bluebird.reject(innerErr));
+  //                   }
+  //                   return Bluebird.resolve();
+  //                 }
+  //                 if (err && err.code === 'ENOENT') {
+  //                   return Bluebird.reject(err);
+  //                 }
+  //                 return Bluebird.reject(err);
+  //               });
+  //                   }, { concurrency: copyConcurrency })
+  //                     .then(() => handleSingle(moveDest));
+  //                 });
+  //             });
+  //         }, { concurrency: 10 });
+  //       })
+  //       .then(() => {
+  //         // Stat transferred downloads in parallel (bounded) to collect sizes
+  //         if (transferredDownloads.length > 0) {
+  //           const statConcurrency = 10;
+  //           return Bluebird.map(transferredDownloads, entry =>
+  //             fs.statAsync(entry.destPath)
+  //               .then(stat => {
+  //                 const fileSize = stat.size;
+  //                 const archiveId = shortid();
+  //                 addDownloadActions.push(addLocalDownload(archiveId, gameId, entry.rel, fileSize));
+  //                 md5Tasks.push({ file: entry.rel, fileSize });
+  //                 return Bluebird.resolve();
+  //               })
+  //           , { concurrency: statConcurrency })
+  //           .then(() => {
+  //             // Batch-dispatch collected addLocalDownload actions to reduce store thrash
+  //             if (addDownloadActions.length > 0) {
+  //               batchDispatch(api.store, addDownloadActions);
+  //             }
+
+  //             // Start background MD5 processing with limited concurrency. Do not block
+  //             // the extract operation on MD5 work; just log errors.
+  //             if (md5Tasks.length > 0) {
+  //               Bluebird.map(md5Tasks, task =>
+  //                 api.genMd5Hash(task.file)
+  //                   .then(result => api.store.dispatch(setDownloadHashByFile(task.file, result.md5sum, task.fileSize)))
+  //                   .catch(err => log('warn', 'Failed to calculate MD5 for downloaded file', { file: task.file, error: err?.message || err }))
+  //               , { concurrency: 10 })
+  //               .catch(() => { /* swallow background errors */ });
+  //             }
+
+  //             if (missingFiles.length > 0) {
+  //               api.showErrorNotification(api.translate('Invalid installer'),
+  //                 api.translate('The installer in "{{name}}" tried to install files that were '
+  //                               + 'not part of the archive.\nThis is a bug in the mod, please '
+  //                               + 'report it to the mod author.\n'
+  //                               + 'Please note: NMM silently ignores this kind of errors so you '
+  //                               + 'might get this message for mods that appear to install '
+  //                               + 'fine with NMM. The mod will likely work, at least partially.',
+  //                             { replace: {name: path.basename(archivePath)} })
+  //                 + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
+  //               , { allowReport: false });
+  //             }
+  //             return Bluebird.resolve();
+  //           });
+  //         }
+
+  //         // No transferred downloads to stat; still need to dispatch any actions and schedule md5
+  //         if (addDownloadActions.length > 0) {
+  //           batchDispatch(api.store, addDownloadActions);
+  //         }
+  //         if (md5Tasks.length > 0) {
+  //           Bluebird.map(md5Tasks, task =>
+  //             api.genMd5Hash(task.file)
+  //               .then(result => api.store.dispatch(setDownloadHashByFile(task.file, result.md5sum, task.fileSize)))
+  //               .catch(err => log('warn', 'Failed to calculate MD5 for downloaded file', { file: task.file, error: err?.message || err }))
+  //           , { concurrency: 10 })
+  //           .catch(() => { /* swallow background errors */ });
+  //         }
+
+  //         if (missingFiles.length > 0) {
+  //           api.showErrorNotification(api.translate('Invalid installer'),
+  //             api.translate('The installer in "{{name}}" tried to install files that were '
+  //                           + 'not part of the archive.\nThis is a bug in the mod, please '
+  //                           + 'report it to the mod author.\n'
+  //                           + 'Please note: NMM silently ignores this kind of errors so you '
+  //                           + 'might get this message for mods that appear to install '
+  //                           + 'fine with NMM. The mod will likely work, at least partially.',
+  //                         { replace: {name: path.basename(archivePath)} })
+  //             + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
+  //           , { allowReport: false });
+  //         }
+  //         return Bluebird.resolve();
+  //       }).finally(() => {
+  //         const duration = Date.now() - now;
+  //         log('error', 'extraction finished', { duration, archivePath, totalInstructions: copies.length });
+  //       });
+  // }
 }
 
 export default InstallManager;
