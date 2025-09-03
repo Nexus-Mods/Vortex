@@ -306,11 +306,8 @@ class InstallManager {
       // Clear the dependency installs map
       this.mDependencyInstalls = {};
       
-      // Reset dependency queue
-      this.mDependencyQueue = makeQueue<void>();
-      
       // Reset concurrency limiters
-      this.mDependencyDownloadsLimit = new ConcurrencyLimiter(10);
+      this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
       this.mDependencyInstallsLimit = new ConcurrencyLimiter(3);
 
       return Bluebird.resolve();
