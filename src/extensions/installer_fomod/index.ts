@@ -64,29 +64,59 @@ interface IActiveProcess {
 const activeProcessesByConnection = new Map<string, IActiveProcess>();
 let exitHandlerRegistered = false;
 
+// Track exit listeners added by createIPC to prevent accumulation
+const exitListenersByConnection = new Map<string, () => void>();
+
+// Function to check and log current listener status for debugging
+function checkListenerStatus(context: string = 'manual check') {
+  const currentListenerCount = process.listenerCount('exit');
+  const trackedListenerCount = exitListenersByConnection.size;
+  const activeProcessCount = activeProcessesByConnection.size;
+
+  log('debug', 'Process exit listener status check', {
+    context,
+    totalExitListeners: currentListenerCount,
+    trackedListeners: trackedListenerCount,
+    activeProcesses: activeProcessCount,
+    untracked: currentListenerCount - trackedListenerCount - (exitHandlerRegistered ? 3 : 0) // 3 for our global handlers
+  });
+
+  return {
+    totalExitListeners: currentListenerCount,
+    trackedListeners: trackedListenerCount,
+    activeProcesses: activeProcessCount
+  };
+}
+
 // Global cleanup function to kill all active processes
 function cleanupAllProcesses() {
   log('info', 'Cleaning up all FOMOD installer processes', {
-    count: activeProcessesByConnection.size
+    count: activeProcessesByConnection.size,
+    exitListeners: exitListenersByConnection.size
   });
 
-  activeProcessesByConnection.forEach((proc, connectionId) => {
+  for (const connectionId of Array.from(activeProcessesByConnection.keys())) {
     try {
-      log('debug', 'Cleaning up process for connection', {
-        connectionId,
-        pid: proc.pid
-      });
-      killProcess(proc.pid);
+      log('debug', 'Aggressive cleanup: unregistering process for connection', { connectionId });
+      unregisterProcess(connectionId);
     } catch (err) {
-      log('warn', 'Failed to kill process', {
-        connectionId,
-        pid: proc.pid,
-        error: err.message
-      });
+      log('warn', 'Failed to unregister process during cleanup', { connectionId, error: err.message });
     }
-  });
+  }
+
+  // As a fallback, forcibly remove any remaining listeners
+  for (const [connectionId, listener] of Array.from(exitListenersByConnection.entries())) {
+    try {
+      (process as any).removeListener('exit', listener);
+      log('debug', 'Aggressive cleanup: forcibly removed lingering exit listener', { connectionId });
+    } catch (err) {
+      log('warn', 'Failed to forcibly remove lingering exit listener', { connectionId, error: err.message });
+    }
+    exitListenersByConnection.delete(connectionId);
+  }
 
   activeProcessesByConnection.clear();
+  exitListenersByConnection.clear();
 }
 
 // Register global exit handler only once
@@ -122,6 +152,22 @@ function ensureExitHandler() {
 function registerProcess(connectionId: string, pid: number, killCallback?: () => void) {
   ensureExitHandler();
 
+  // Always remove any existing process and exit listener for this connection first (deduplication)
+  if (activeProcessesByConnection.has(connectionId)) {
+    log('debug', 'Deduplicating: unregistering previous process for connection', { connectionId });
+    unregisterProcess(connectionId);
+  }
+  if (exitListenersByConnection.has(connectionId)) {
+    const oldListener = exitListenersByConnection.get(connectionId);
+    try {
+      (process as any).removeListener('exit', oldListener);
+      log('debug', 'Deduplicating: removed previous exit listener for connection', { connectionId });
+    } catch (err) {
+      log('warn', 'Failed to remove previous exit listener during deduplication', { connectionId, error: err.message });
+    }
+    exitListenersByConnection.delete(connectionId);
+  }
+
   const processInfo: IActiveProcess = {
     pid,
     connectionId,
@@ -137,13 +183,26 @@ function registerProcess(connectionId: string, pid: number, killCallback?: () =>
   });
 }
 
-// Function to unregister a process for a specific connection
 function unregisterProcess(connectionId: string) {
+  // Remove any exit listeners that were added for this connection
+  if (exitListenersByConnection.has(connectionId)) {
+    const exitListener = exitListenersByConnection.get(connectionId);
+    try {
+      (process as any).removeListener('exit', exitListener);
+      log('debug', 'Removed exit listener for connection', { connectionId });
+    } catch (err) {
+      log('warn', 'Failed to remove exit listener', { connectionId, error: err.message });
+    }
+    exitListenersByConnection.delete(connectionId);
+  }
+
+  // Remove the process from tracking
   const removed = activeProcessesByConnection.delete(connectionId);
   if (removed) {
     log('debug', 'Unregistered process for connection', {
       connectionId,
-      remainingProcesses: activeProcessesByConnection.size
+      remainingProcesses: activeProcessesByConnection.size,
+      remainingExitListeners: exitListenersByConnection.size
     });
   }
 }
@@ -316,30 +375,6 @@ function transformError(err: any): Error {
 
   return result;
 }
-
-// function processAttributes(input: any, modPath: string): Bluebird<any> {
-//   if (modPath === undefined) {
-//     return Bluebird.resolve({});
-//   }
-//   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
-//     .then((data: Buffer) => {
-//       let offset = 0;
-//       let encoding: BufferEncoding = 'utf8';
-//       if (data.readUInt16LE(0) === 0xFEFF) {
-//         encoding = 'utf16le';
-//         offset = 2;
-//       } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
-//         offset = 3;
-//       }
-//       const parser = new DOMParser();
-//       const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
-//       const name: Element = xmlDoc.querySelector('fomod Name');
-//       return truthy(name)
-//         ? Bluebird.resolve({ customFileName: name.childNodes[0].nodeValue })
-//         : Bluebird.resolve({});
-//     })
-//     .catch(() => Bluebird.resolve({}));
-// }
 
 function spawnAsync(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -532,7 +567,7 @@ function createSocket(options: ICreateSocketOptions)
         server.listen(pipePath, () => {
           try {
             if (options.useAppContainer) {
-              winapi?.GrantAppContainer?.(CONTAINER_NAME, pipePath, 'named_pipe', ['all_access']);
+              winapi?.GrantAppContainer?.(`${CONTAINER_NAME}_${options.pipeId}`, pipePath, 'named_pipe', ['all_access']);
             }
           } catch (err) {
             log('error', 'Failed to allow access to pipe', { pipePath, message: err.message });
@@ -565,23 +600,25 @@ class ConnectionIPC {
   public static async bindDirect(securityLevel: SecurityLevel,
                                  retry: boolean = false)
                                  : Promise<ConnectionIPC> {
-      // Generate unique connection ID for this installation
-      const connectionId = shortid();
+    // checkListenerStatus('before new FOMOD connection');
 
-      // Increase max listeners to handle concurrent FOMOD installations
-      // Each installation adds exit listeners, and with parallel installations
-      // we can exceed the default limit of 10
-      const currentMaxListeners = process.getMaxListeners();
-      if (currentMaxListeners < 50) {
-        process.setMaxListeners(50);
-        log('debug', 'Increased process max listeners for FOMOD installations', {
-          previous: currentMaxListeners,
-          new: 50,
-          connectionId
-        });
-      }
+    // Generate unique connection ID for this installation
+    const connectionId = shortid();
 
-      let onResolve: () => void;
+    // Increase max listeners to handle concurrent FOMOD installations
+    // Each installation adds exit listeners, and with parallel installations
+    // we can exceed the default limit of 10
+    const currentMaxListeners = process.getMaxListeners();
+    if (currentMaxListeners < 50) {
+      process.setMaxListeners(50);
+      log('debug', 'Increased process max listeners for FOMOD installations', {
+        previous: currentMaxListeners,
+        new: 50,
+        connectionId
+      });
+    }
+
+    let onResolve: () => void;
     let onReject: (err: Error) => void;
     const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;
@@ -843,20 +880,37 @@ class ConnectionIPC {
             ipcId,
             securityLevel: SecurityLevel[securityLevel],
             connectionId,
-            containerName: securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
-            currentWorkingDir: process.cwd(),
+            containerName: securityLevel === SecurityLevel.Sandbox ? `${CONTAINER_NAME}_${pipeId}` : undefined,
             executableEnv: {
               DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: process.env['DOTNET_SYSTEM_GLOBALIZATION_INVARIANT'],
               TEMP: process.env['TEMP']
             }
           });
 
+          // Track the number of exit listeners before createIPC
+          const listenerCountBefore = process.listenerCount('exit');
+
           pid = await createIPC(
             pipe, ipcId, onExit, onStdout,
-            securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined,
+            securityLevel === SecurityLevel.Sandbox ? `${CONTAINER_NAME}_${pipeId}` : undefined,
             false);
             // securityLevel === SecurityLevel.LowIntegrity);
           log('debug', 'FOMOD IPC connection created successfully', { pid, connectionId });
+
+          const listenerCountAfter = process.listenerCount('exit');
+          if (listenerCountAfter > listenerCountBefore) {
+            log('debug', 'createIPC added exit listeners', {
+              before: listenerCountBefore,
+              after: listenerCountAfter,
+              added: listenerCountAfter - listenerCountBefore,
+              connectionId
+            });
+            const allListeners = (process as any).listeners('exit');
+            if (allListeners.length > 0) {
+              const newListener = allListeners[allListeners.length - 1];
+              exitListenersByConnection.set(connectionId, newListener);
+            }
+          }
 
           // Register the process with our management system
           registerProcess(connectionId, pid, () => {
@@ -871,8 +925,10 @@ class ConnectionIPC {
             pipe,
             ipcId,
             stack: ipcErr.stack,
-            containerName: securityLevel === SecurityLevel.Sandbox ? CONTAINER_NAME : undefined
+            containerName: securityLevel === SecurityLevel.Sandbox ? `${CONTAINER_NAME}_${pipeId}` : undefined
           });
+
+          killProcessForConnection(connectionId);
 
           // Enhanced error reporting for common issues
           if (ipcErr.message.includes('ENOENT') || ipcErr.message.includes('file not found')) {
@@ -949,6 +1005,21 @@ class ConnectionIPC {
     socket.out.on('drain', (hadError) => {
       this.mOnDrained.forEach(cb => cb());
       this.mOnDrained = [];
+    });
+
+    // Ensure we catch errors on the outbound socket so EPIPE and similar don't
+    //  become uncaught exceptions in the renderer process. On error we log and
+    //  interrupt the connection to trigger proper cleanup.
+    socket.out.on('error', (err: Error) => {
+      log('warn', 'ipc outbound socket error', {
+        error: err?.message ?? err,
+        connectionId: this.mConnectionId,
+      });
+      try {
+        this.interrupt(err);
+      } catch (e) {
+        // swallow any error during interrupt to avoid bubbling
+      }
     });
 
     socket.in.on('close', async () => {
@@ -1040,17 +1111,34 @@ class ConnectionIPC {
     unregisterProcess(this.mConnectionId);
 
     const currentListenerCount = process.listenerCount('exit');
+    const trackedListenerCount = exitListenersByConnection.size;
+
     if (currentListenerCount > 20) {
       log('warn', 'High number of process exit listeners detected', {
         count: currentListenerCount,
+        trackedListeners: trackedListenerCount,
+        activeProcesses: activeProcessesByConnection.size,
         connectionId: this.mConnectionId
       });
     }
     try {
-      await toPromise(cb => this.mSocket.out.end(cb));
+      // Only call end if the socket is writable and not destroyed
+      if (this.mSocket?.out && !this.mSocket.out.destroyed && this.mSocket.out.writable) {
+        await toPromise(cb => {
+          try {
+            this.mSocket.out.end(cb);
+          } catch (e) {
+            // Some streams may already be destroyed; ignore that specific error
+            if (e && e.message && e.message.includes('Cannot call end after a stream was destroyed')) {
+              return cb();
+            }
+            return cb(e);
+          }
+        });
+      }
     } catch (err) {
       log('warn', 'failed to close connection to fomod installer process', {
-        error: err.message,
+        error: err?.message ?? err,
         connectionId: this.mConnectionId
       });
     }
@@ -1087,11 +1175,38 @@ class ConnectionIPC {
       },
     }, jsonReplace);
 
-    const written = this.mSocket.out.write(outData + '\uFFFF');
-    if (!written) {
-      await new Promise<void>(resolve => {
-        this.mOnDrained.push(resolve);
-      });
+    try {
+      if (!this.mSocket?.out || this.mSocket.out.destroyed || !this.mSocket.out.writable) {
+        throw new Error('socket not writable');
+      }
+
+      const written = this.mSocket.out.write(outData + '\uFFFF');
+      if (!written) {
+        await new Promise<void>(resolve => {
+          this.mOnDrained.push(resolve);
+        });
+      }
+    } catch (e) {
+      // Clean up the awaiting reply and any delegate we registered for this id
+      try {
+        if (this.mAwaitedReplies[id] !== undefined) {
+          try {
+            this.mAwaitedReplies[id].reject(e);
+          } catch (err) {
+            // no-op
+          }
+          delete this.mAwaitedReplies[id];
+        }
+        if (this.mDelegates[id] !== undefined) {
+          delete this.mDelegates[id];
+        }
+      } catch (err) {
+        // no-op
+      }
+
+      // Let the callers decide how to proceed without this becoming an unrecoverable exception.
+      log('debug', 'ipc write failed (ignored)', { error: e?.message, connectionId: this.mConnectionId });
+      return res;
     }
 
     return res;
@@ -1210,6 +1325,12 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
     log('debug', '[installer] test supported result', JSON.stringify(res));
     return res;
   } catch (err) {
+    if (err.message.includes('socket') && securityLevel !== 0) {
+      if (connection) {
+        connection.quit();
+      }
+      return testSupportedScripted(securityLevel - 1, files);
+    }
     throw transformError(err);
   } finally {
     // Clean up the isolated connection
@@ -1303,7 +1424,7 @@ function init(context: IExtensionContext): boolean {
       log('info', 'granting app container access to',
           { scriptPath, grant: winapi?.GrantAppContainer !== undefined });
       winapi?.GrantAppContainer?.(
-        CONTAINER_NAME, scriptPath, 'file_object', ['generic_read', 'list_directory']);
+        `${CONTAINER_NAME}_${instanceId}`, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     }
     context.api.store.dispatch(setInstallerDataPath(instanceId, scriptPath));
 
@@ -1395,9 +1516,11 @@ function init(context: IExtensionContext): boolean {
             // already received an error message about that.
             return invoke(SecurityLevel.Regular, INSTALLER_TRIES, ...args);
           } else if (err instanceof InstallerFailedException) {
-            console.log('installer failed', err.code);
+            log('error', 'installer failed', err.code);
             if ([0, 1].includes(err.code) && (tries > 0)) {
-              return invoke(securityLevel, tries - 1, ...args);
+              // Probably due to sandboxing issues, retrying without sandbox
+              log('info', 'retrying without security sandbox', { error: err.message });
+              return invoke(SecurityLevel.Regular, tries - 1, ...args);
             } else if ([0xC0000005, 0xC0000096, 0xC000041D, 0xCFFFFFFFFF].includes(err.code)) {
               context.api.sendNotification({
                 type: 'error',
@@ -1430,13 +1553,7 @@ function init(context: IExtensionContext): boolean {
             const archivePath = (func === 'test' ? args[2] : args[6]) ?? '';
 
             if ((func === 'install') && err.message.includes(args[1])) {
-              context.api.sendNotification({
-                id: 'failed-to-setup-sandbox',
-                type: 'warning',
-                title: 'Vortex was not able to run the installer in a secure sandbox. This is likely a misconfiguration '
-                      + 'in your setup or a bug in windows.',
-                message: path.basename(archivePath),
-              });
+              log('debug', 'Failed to setup sandbox:', { error: err.message, archivePath });
               return toBlue(cb)(SecurityLevel.Regular, ...args);
             }
             const dialogId = shortid();
@@ -1550,13 +1667,58 @@ function init(context: IExtensionContext): boolean {
           return Promise.reject(err);
         });
 
+    // Track sandbox permission failures to temporarily disable sandbox mode
+    let sandboxFailureCount = 0;
+    let lastSandboxFailure = 0;
+    const SANDBOX_FAILURE_THRESHOLD = 3;
+    const SANDBOX_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
     return (...args: any[]) => {
       const state = context.api.getState();
-      // TODO: if it was working we'd want to use the low integrity mode as the alternative
-      const securityLevel = osSupportsAppContainer && state.settings.mods.installerSandbox
-        ? SecurityLevel.Sandbox : SecurityLevel.Regular;
+      const now = Date.now();
+      
+      // Reset failure count if enough time has passed
+      if (now - lastSandboxFailure > SANDBOX_COOLDOWN_MS) {
+        sandboxFailureCount = 0;
+      }
+      
+      // Determine security level - temporarily disable sandbox if too many failures
+      let securityLevel: SecurityLevel;
+      if (osSupportsAppContainer && state.settings.mods.installerSandbox && sandboxFailureCount < SANDBOX_FAILURE_THRESHOLD) {
+        securityLevel = SecurityLevel.Sandbox;
+      } else {
+        securityLevel = SecurityLevel.Regular;
+        if (sandboxFailureCount >= SANDBOX_FAILURE_THRESHOLD) {
+          log('info', 'Temporarily using regular security due to repeated sandbox failures', { 
+            failureCount: sandboxFailureCount,
+            cooldownUntil: new Date(lastSandboxFailure + SANDBOX_COOLDOWN_MS)
+          });
+        }
+      }
 
-      return invoke(securityLevel, INSTALLER_TRIES, ...args);
+      const originalInvoke = invoke;
+      const wrappedInvoke = (sl: SecurityLevel, tries: number, ...invokeArgs: any[]) => {
+        return originalInvoke(sl, tries, ...invokeArgs)
+          .catch(err => {
+            // Track sandbox permission failures
+            if (err instanceof InstallerFailedException && 
+                err.code === 1 && 
+                sl === SecurityLevel.Sandbox && 
+                err.message?.includes('Failed to grant permissions')) {
+              sandboxFailureCount++;
+              lastSandboxFailure = now;
+              log('warn', 'Sandbox permission failure detected', { 
+                failureCount: sandboxFailureCount,
+                threshold: SANDBOX_FAILURE_THRESHOLD
+              });
+            }
+            throw err;
+          });
+      };
+
+      // Temporarily replace invoke with our wrapper
+      const result = wrappedInvoke(securityLevel, INSTALLER_TRIES, ...args);
+      return result;
     };
   }
 
