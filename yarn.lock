@@ -6272,7 +6272,7 @@ fn.name@1.x.x:
 
 fomod-installer@Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup:
   version "0.8.0"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/18201eafaefd4219a8f881547a2f8e80e1a71b16"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/4ffdaa4ac95ad390889ea5be9b7d512831678e1e"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
