@@ -12,7 +12,7 @@ import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { sum, toPromise, truthy } from '../../util/util';
+import { batchDispatch, sum, toPromise, truthy } from '../../util/util';
 
 import {
   addLocalDownload,
@@ -244,24 +244,27 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
   }
 }
 
-function updateDownloadPath(api: IExtensionApi, gameId?: string) {
-  const { store } = api;
-
-  const state: IState = store.getState();
-
+function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
+  const state: IState = api.store.getState();
+  gameId = gameId || selectors.activeGameId(state);
+  if (!gameId) {
+    return Promise.resolve();
+  }
+  const downloadPath = selectors.downloadPathForGame(state, gameId);
   let downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
 
-  // workaround to avoid duplicate entries in the download list. These should not
-  // exist, the following block should do nothing
-  Object.keys(downloads)
-    .filter(dlId => (downloads[dlId].state === 'finished')
-                    && !truthy(downloads[dlId].localPath))
-    .forEach(dlId => {
-      api.store.dispatch(removeDownload(dlId));
-    });
+  const invalid = Object.keys(downloads)
+    .filter(dlId => (['finished', 'paused'].includes(downloads[dlId].state))
+      && (!truthy(downloads[dlId].localPath) || downloads[dlId].size === 0));
+  const batched = [];
+  return Promise.all(invalid.map(async dlId => {
+    await fs.removeAsync(path.join(downloadPath, downloads[dlId].localPath)).catch(() => null);
+    batched.push(removeDownload(dlId));
+  })).then(() => batchDispatch(api.store, batched));
+}
 
-  downloads = state.persistent.downloads.files;
-
+function updateDownloadPath(api: IExtensionApi, gameId?: string) {
+  const state: IState = api.store.getState();
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
     if (gameId === undefined) {
@@ -271,56 +274,58 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
 
   let nameIdMap: {[name: string]: string} = {};
-
+  let downloads = {};
   let downloadChangeHandler: (evt: string, fileName: string) => void;
-  return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
-      .then(normalize => {
-        nameIdMap = Object.keys(downloads).reduce((prev, value) => {
-          if (downloads[value].localPath !== undefined) {
-            prev[normalize(downloads[value].localPath)] = value;
-          }
-          return prev;
-        }, {});
+  return (removeInvalidDownloads(api, gameId) as any)
+    .then(() => getNormalizeFunc(currentDownloadPath, {separators: false, relative: false}))
+    .then(normalize => {
+      downloads = api.getState().persistent.downloads.files;
+      nameIdMap = Object.keys(downloads).reduce((prev, value) => {
+        if (downloads[value].localPath !== undefined) {
+          prev[normalize(downloads[value].localPath)] = value;
+        }
+        return prev;
+      }, {});
 
-        downloadChangeHandler =
-          genDownloadChangeHandler(api, currentDownloadPath, gameId, nameIdMap, normalize);
+      downloadChangeHandler =
+        genDownloadChangeHandler(api, currentDownloadPath, gameId, nameIdMap, normalize);
 
-        const knownDLs =
-          Object.keys(downloads)
-            .filter(dlId => getDownloadGames(downloads[dlId])[0] === gameId)
-            .map(dlId => normalize(downloads[dlId].localPath || ''));
+      const knownDLs =
+        Object.keys(downloads)
+          .filter(dlId => getDownloadGames(downloads[dlId])[0] === gameId)
+          .map(dlId => normalize(downloads[dlId].localPath || ''));
 
-        return refreshDownloads(currentDownloadPath, knownDLs, normalize,
-          (fileName: string) =>
-            fs.statAsync(path.join(currentDownloadPath, fileName))
-              .then((stats: fs.Stats) => {
-                const dlId = shortid();
-                log('debug', 'registering previously unknown archive', fileName);
-                store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-                nameIdMap[normalize(fileName)] = dlId;
-              }),
-          (fileName: string) => {
-            // the fileName here is already normalized
-            api.store.dispatch(removeDownload(nameIdMap[fileName]));
-            return Promise.resolve();
-          },
-          () => new Promise((resolve, reject) => {
-            api.showDialog('question', 'Access Denied', {
-              text: 'The download directory is not writable to your user account.\n'
-                + 'If you have admin rights on this system, Vortex can change the permissions '
-                + 'to allow it write access.',
-            }, [
-                { label: 'Cancel', action: () => reject(new UserCanceled()) },
-                { label: 'Allow access', action: () => resolve() },
-              ]);
-          }))
-          .catch(UserCanceled, () => null)
-          .catch(err => {
-            api.showErrorNotification('Failed to refresh download directory', err, {
-              allowReport: err.code !== 'EPERM',
-            });
+      return refreshDownloads(currentDownloadPath, knownDLs, normalize,
+        (fileName: string) =>
+          fs.statAsync(path.join(currentDownloadPath, fileName))
+            .then((stats: fs.Stats) => {
+              const dlId = shortid();
+              log('debug', 'registering previously unknown archive', fileName);
+              api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+              nameIdMap[normalize(fileName)] = dlId;
+            }),
+        (fileName: string) => {
+          // the fileName here is already normalized
+          api.store.dispatch(removeDownload(nameIdMap[fileName]));
+          return Promise.resolve();
+        },
+        () => new Promise((resolve, reject) => {
+          api.showDialog('question', 'Access Denied', {
+            text: 'The download directory is not writable to your user account.\n'
+              + 'If you have admin rights on this system, Vortex can change the permissions '
+              + 'to allow it write access.',
+          }, [
+              { label: 'Cancel', action: () => reject(new UserCanceled()) },
+              { label: 'Allow access', action: () => resolve() },
+            ]);
+        }))
+        .catch(UserCanceled, () => null)
+        .catch(err => {
+          api.showErrorNotification('Failed to refresh download directory', err, {
+            allowReport: err.code !== 'EPERM',
           });
-      })
+        });
+    })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
