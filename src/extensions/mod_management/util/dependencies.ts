@@ -324,7 +324,13 @@ async function gatherDependenciesGraph(
   if (!download) {
     log('debug', 'no download found', { ref: rule.reference.logicalFileName });
   }
-
+  if (rule.reference.fileMD5 !== undefined) {
+    api.lookupModMeta({
+      fileMD5: rule.reference.fileMD5,
+      gameId: rule.reference.gameId,
+      fileSize: rule.reference.fileSize,
+    });
+  }
   const modReference: IModReference = {
     ...rule.reference,
     fileList: rule.fileList,
@@ -336,7 +342,7 @@ async function gatherDependenciesGraph(
   let urlFromHint: IBrowserResult | undefined;
   let lookupResults = [];
 
-  const limit = new ConcurrencyLimiter(10);
+  const limit = new ConcurrencyLimiter(20);
 
   try {
     if (!download) {
