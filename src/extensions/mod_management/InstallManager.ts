@@ -1361,14 +1361,22 @@ class InstallManager {
 
     const startTask = () => this.startQueuedInstallation(
       api, dep, downloadId, gameId, sourceModId, recommended, phaseNum);
+    const collectionsInstallWhileDownloading = getSafe(api.getState(), ['settings', 'downloads', 'collectionsInstallWhileDownloading'], false);
 
-    if (phaseState.allowedPhase === undefined) {
+    // Only initialize allowedPhase early if we are allowed to run installers alongside downloads
+    if (collectionsInstallWhileDownloading && (phaseState.allowedPhase === undefined)) {
       phaseState.allowedPhase = phaseNum;
     }
 
     const downloads = api.getState().persistent.downloads.files;
     const download = downloads[downloadId];
-    if (phaseNum <= phaseState.allowedPhase && download?.state === 'finished' && download?.size !== 0) {
+    const canStartNow = collectionsInstallWhileDownloading
+      ? (phaseNum <= (phaseState.allowedPhase ?? Number.NEGATIVE_INFINITY))
+      : ((phaseState.allowedPhase !== undefined)
+          && (phaseNum <= phaseState.allowedPhase)
+          && phaseState.downloadsFinished.has(phaseNum));
+
+    if (canStartNow && download?.state === 'finished' && download?.size !== 0) {
       startTask();
     } else {
       const pending = phaseState.pendingByPhase.get(phaseNum) ?? [];
@@ -1556,7 +1564,7 @@ class InstallManager {
     state.downloadsFinished.add(phase);
 
     // Initialize allowed phase to the first finished phase if not set
-    if (state.allowedPhase === undefined) {
+  if (state.allowedPhase === undefined) {
       state.allowedPhase = phase;
       this.startPendingForPhase(sourceModId, phase);
     }
