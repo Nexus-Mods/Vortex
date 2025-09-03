@@ -126,7 +126,6 @@ class Application {
     this.mArgs = args;
 
     ipcMain.on('show-window', () => this.showMainWindow(args?.startMinimized));
-    process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 1.5).toString();
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
     this.mBasePath = app.getPath('userData');
