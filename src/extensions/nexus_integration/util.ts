@@ -52,12 +52,6 @@ import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
 import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
-<<<<<<< HEAD
-import { getPageURL } from './util/sso';
-import transformUserInfo from './util/transformUserInfo';
-import Debouncer from '../../util/Debouncer';
-=======
->>>>>>> master
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
