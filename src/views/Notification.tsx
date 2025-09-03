@@ -60,7 +60,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
     const { t, collapsed, onDismiss, onExpand, onTriggerAction } = this.props;
     const { actions, id, message, noDismiss, progress, title, type } = this.props.params;
 
-    if ((message === undefined) && (title === undefined) || type === 'silent') {
+    if ((message === undefined) && (title === undefined)) {
       return null;
     }
 
