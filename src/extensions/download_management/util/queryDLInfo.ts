@@ -1,5 +1,4 @@
 import Bluebird from 'bluebird';
-import * as path from 'path';
 import { Action } from 'redux';
 import { IExtensionApi, ILookupResult } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
@@ -26,8 +25,16 @@ class MetadataLookupQueue {
   private static instance: MetadataLookupQueue;
   private queue: IMetadataRequest[] = [];
   private running: number = 0;
-  private readonly maxConcurrent: number = 8; // TODO: change this once the fileHashes query is more efficient
+  private readonly maxConcurrent: number = 50;
   private recentLookups: Set<string> = new Set();
+  private queueIsProcessing: boolean = false;
+  private constructor() {
+    setInterval(async () => {
+      this.queueIsProcessing = true;
+      await this.processQueue();
+      this.queueIsProcessing = false;
+    }, 500);
+  }
 
   public static getInstance(): MetadataLookupQueue {
     if (!MetadataLookupQueue.instance) {
@@ -58,7 +65,6 @@ class MetadataLookupQueue {
       });
     });
 
-    this.processQueue();
     return Promise.all(promises).then(() => undefined);
   }
 
@@ -67,33 +73,31 @@ class MetadataLookupQueue {
       return;
     }
 
-    const request = this.queue.shift();
-    if (!request) {
-      return;
-    }
+    while (this.running < this.maxConcurrent && this.queue.length > 0) {
+      const request = this.queue.shift();
+      if (!request) {
+        return;
+      }
 
-    this.running++;
+      this.running++;
 
-    log('debug', 'starting metadata lookup', { 
-      dlId: request.dlId, 
-      running: this.running, 
-      queueLength: this.queue.length 
-    });
-
-    try {
-      await this.executeQueryInfo(request.api, request.dlId, request.ignoreCache);
-      request.resolve();
-    } catch (error) {
-      log('warn', 'metadata lookup failed', { dlId: request.dlId, error: error.message });
-      request.reject(error);
-    } finally {
-      this.running--;
-      log('debug', 'metadata lookup completed', {
-        dlId: request.dlId,
-        running: this.running,
-        queueLength: this.queue.length
+      log('debug', 'starting metadata lookup', { 
+        dlId: request.dlId, 
+        running: this.running, 
+        queueLength: this.queue.length 
       });
-      this.processQueue();
+
+      this.executeQueryInfo(request.api, request.dlId, request.ignoreCache)
+        .then(() => {
+          request.resolve();
+        })
+        .catch(err => {
+          log('warn', 'metadata lookup failed', { dlId: request.dlId, error: err.message });
+          request.reject(err);
+        })
+        .finally(() => {
+          this.running--;
+        });
     }
   }
 
@@ -116,118 +120,104 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
     return Bluebird.resolve();
   }
 
-  if (!dl.fileMD5) {
+  if (!dl.fileMD5 || dl.size === 0) {
     log('debug', 'skipping metadata lookup - no MD5 hash available', { dlId });
     return Bluebird.resolve();
   }
 
   const gameMode = activeGameId(state);
   const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
-  const downloadPath = downloadPathForGame(state, gameId);
-  if ((downloadPath === undefined) || (dl.localPath === undefined)) {
+  if (dl.localPath === undefined) {
     // almost certainly dl.localPath is undefined with a bugged download
     return Bluebird.resolve();
   }
   log('info', 'lookup mod meta info', { dlId, md5: dl.fileMD5 });
-  // note: this may happen in addition to and in parallel to a separate mod meta lookup
-  //   triggered by the file being added to application state, but that should be fine because
-  //   the mod meta information is cached locally, as is the md5 hash if it's not available here
-  //   yet, so no work should be done redundantly
-  const timeNow = Date.now();
 
+  let metaGameId = convertNXMIdReverse(knownGames, gameId);
   // Add timeout to prevent slow metadata lookups from blocking new downloads
   const lookupPromise = api.lookupModMeta({
     fileMD5: dl.fileMD5,
-    filePath: undefined,
-    gameId,
+    gameId: metaGameId,
     fileSize: dl.size,
-  }, ignoreCache);
-
-  const timeoutMs = 5000;
-  // Apply timeout - if metadata lookup takes longer than 5 seconds, continue without it
-  const timeoutPromise = new Promise<ILookupResult[]>((resolve) => {
-    setTimeout(() => {
-      log('warn', 'metadata lookup timed out, continuing without metadata', {
-        dlId,
-        timeoutMs,
-        md5: dl.fileMD5
-      });
-      resolve([]);
-    }, timeoutMs);
+  }, ignoreCache).tap(() => {
+    log('info', 'metadata lookup completed', { md5: dl.fileMD5 });
   });
 
-  return Bluebird.resolve(Promise.race([lookupPromise, timeoutPromise]))
-  .then((modInfo: ILookupResult[]) => {
-    const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
-    const timeLookupFinished = Date.now();
-    log('debug', 'mod meta lookup finished', {
-      dlId,
-      gameId,
-      fileMD5: dl.fileMD5,
-      timeLookupFinished,
-      timeTaken: timeLookupFinished - timeNow,
-    });
-    if (match !== undefined) {
-      const info = match.value;
+  // const timeoutMs = 2000;
+  // // Apply timeout - if metadata lookup takes longer than 5 seconds, continue without it
+  // const timeoutPromise = new Promise<ILookupResult[]>((resolve) => {
+  //   setTimeout(() => {
+  //     log('warn', 'metadata lookup timed out, continuing without metadata', {
+  //       dlId,
+  //       timeoutMs,
+  //       md5: dl.fileMD5
+  //     });
+  //     resolve([]);
+  //   }, timeoutMs);
+  // });
 
-      let metaGameId = info.gameId;
-      if (info.domainName !== undefined) {
-        metaGameId = convertNXMIdReverse(knownGames, info.domainName);
-      }
+  const setInfo = (key: string, value: any) => {
+    if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
+  };
 
-      const dlNow = api.getState().persistent.downloads.files[dlId];
+  return lookupPromise
+    .then((modInfo: ILookupResult[]) => {
+      const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+      if (match !== undefined) {
+        const info = match.value;
 
-      const setInfo = (key: string, value: any) => {
-        if (value !== undefined) { actions.push(setDownloadModInfo(dlId, key, value)); }
-      };
-
-      setInfo('meta', info);
-
-      try {
-        const nxmUrl = new NXMUrl(info.sourceURI);
-        // if the download already has a file id (because we downloaded from nexus)
-        // and what we downloaded doesn't match the md5 lookup, the server probably gave us
-        // incorrect data, so ignore all of it
-        if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
-            && (dlNow?.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
-          return Promise.resolve();
+        metaGameId = info.gameId;
+        if (info.domainName !== undefined) {
+          metaGameId = convertNXMIdReverse(knownGames, info.domainName);
         }
 
-        setInfo('source', 'nexus');
-        setInfo('nexus.ids.gameId', nxmUrl.gameId);
-        setInfo('nexus.ids.fileId', nxmUrl.fileId);
-        setInfo('nexus.ids.modId', nxmUrl.modId);
-        metaGameId = convertNXMIdReverse(knownGames, nxmUrl.gameId);
-      } catch (err) {
-        // failed to parse the uri as an nxm link - that's not an error in this case, if
-        // the meta server wasn't nexus mods this is to be expected
-        if (dlNow?.modInfo?.source === undefined) {
-          setInfo('source', 'unknown');
+        const dlNow = api.getState().persistent.downloads.files[dlId];
+
+        setInfo('meta', info);
+
+        try {
+          const nxmUrl = new NXMUrl(info.sourceURI);
+          // if the download already has a file id (because we downloaded from nexus)
+          // and what we downloaded doesn't match the md5 lookup, the server probably gave us
+          // incorrect data, so ignore all of it
+          if ((dlNow?.modInfo?.nexus?.ids?.fileId !== undefined)
+              && (dlNow?.modInfo?.nexus?.ids?.fileId !== nxmUrl.fileId)) {
+            return Promise.resolve();
+          }
+
+          setInfo('source', 'nexus');
+          setInfo('nexus.ids.gameId', nxmUrl.gameId);
+          setInfo('nexus.ids.fileId', nxmUrl.fileId);
+          setInfo('nexus.ids.modId', nxmUrl.modId);
+          metaGameId = convertNXMIdReverse(knownGames, nxmUrl.gameId);
+        } catch (err) {
+          // failed to parse the uri as an nxm link - that's not an error in this case, if
+          // the meta server wasn't nexus mods this is to be expected
+          if (dlNow?.modInfo?.source === undefined) {
+            setInfo('source', 'unknown');
+          }
         }
+        if (gameId !== metaGameId) {
+          // Run game assignment asynchronously without blocking metadata lookup completion
+          // Pass extra parameter to indicate this is from metadata lookup
+          return api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId], true)
+            .catch(err => {
+              log('warn', 'failed to set download games', { dlId, gameId, metaGameId, error: err.message });
+            });
+        }
+      } else {
+        return Bluebird.resolve();
       }
-      if (gameId !== metaGameId) {
-        // Run game assignment asynchronously without blocking metadata lookup completion
-        // Pass extra parameter to indicate this is from metadata lookup
-        api.emitAndAwait('set-download-games', dlId, [metaGameId, gameId], true)
-          .catch(err => {
-            log('warn', 'failed to set download games', { dlId, gameId, metaGameId, error: err.message });
-          });
-      }
-      return Promise.resolve();
-    }
-  })
-  .catch(err => {
-    log('warn', 'failed to look up mod meta info', { message: err.message });
-  })
-  .finally(() => {
-    // Defer the batch dispatch to prevent blocking the metadata lookup completion
-    if (actions.length > 0) {
-      setImmediate(() => {
+    })
+    .catch(err => {
+      log('warn', 'failed to look up mod meta info', { message: err.message });
+    })
+    .finally(() => {
+      // Defer the batch dispatch to prevent blocking the metadata lookup completion
+      if (actions.length > 0) {
         batchDispatch(api.store, actions);
-      });
-    }
-    log('debug', 'done querying info', { dlId });
-  });
+      }
+    });
 }
 
 // Public interface that uses the queue
