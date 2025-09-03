@@ -677,28 +677,36 @@ export function onRemoveMods(api: IExtensionApi,
 
   api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id), options)
     .then(() => undeployMods(api, activators, gameId, removeMods))
-    .then(() => Promise.mapSeries(removeMods,
-        (mod: IMod, idx: number, length: number) => {
-      options?.progressCB?.(idx, length, modName(mod));
-      const forwardOptions = { ...(options || {}), modData: { ...mod } };
-      return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
-      .then(() => {
-        if (truthy(mod) && truthy(mod.installationPath)) {
-          const fullModPath = path.join(installationPath, mod.installationPath);
-          log('debug', 'removing files for mod',
-              { game: gameId, mod: mod.id });
-          return fs.removeAsync(fullModPath)
-            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
-        } else {
-          return Promise.resolve();
+    .then(() => {
+      let completedCount = 0;
+      const totalCount = removeMods.length;
+      let batched = [];
+      return Promise.map(removeMods, async (mod: IMod) => {
+        const forwardOptions = { ...(options || {}), modData: { ...mod } };
+        try {
+          await api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions);
+          if (truthy(mod) && truthy(mod.installationPath)) {
+            const fullModPath = path.join(installationPath, mod.installationPath);
+            log('debug', 'removing files for mod', { game: gameId, mod: mod.id });
+            await fs.removeAsync(fullModPath)
+              .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+          }
+          await api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
+
+          batched.push(removeMod(gameId, mod.id));
+          if (batched.length >= 10 || completedCount + 1 === totalCount) {
+            batchDispatch(store, batched);
+            batched = [];
+          }
+
+          // Update progress after successful removal
+          completedCount++;
+          options?.progressCB?.(completedCount, totalCount, modName(mod));
+        } catch (error) {
+          log('error', 'Failed to remove mod', { game: gameId, mod: mod.id, error: error.message });
         }
-      })
-      .then(() => {
-        store.dispatch(removeMod(gameId, mod.id));
-        return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
-      });
-    }))
+      }, { concurrency: 5 });
+    })
     .then(() => {
       if (callback !== undefined) {
         callback(null);
