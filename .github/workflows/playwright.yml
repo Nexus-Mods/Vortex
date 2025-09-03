@@ -37,8 +37,10 @@ jobs:
         ELECTRON_DISABLE_SECURITY_WARNINGS: true
         NODE_ENV: development
         CI: true  # Triggers longer timeouts in your helper
-        DEBUG: pw:browser*,pw:api  # Verbose Playwright logging
+        DEBUG: pw:browser*,pw:api,electron*  # Added electron debugging
         PWDEBUG: 1  # Additional debug info
+        ELECTRON_ENABLE_LOGGING: true  # Enable electron console logging
+        ELECTRON_IS_DEV: 0  # Disable dev tools auto-open
         
     # Capture screenshots even on success for debugging
     - name: Take debug screenshot
