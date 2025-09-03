@@ -1442,7 +1442,7 @@ function init(context: IExtensionContext): boolean {
       const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
       const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId];
 
-      const choices = (dialogState === undefined)
+      const choices = (dialogState?.installSteps === undefined)
         ? undefined
         : dialogState.installSteps.map(step => {
           const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
