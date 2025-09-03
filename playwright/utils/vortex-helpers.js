@@ -189,8 +189,7 @@ Check the GitHub Actions logs above for any electron startup errors.`;
 }
 
 export async function launchVortex(testName = 'unknown-test') {
-
-    // Initialize session and reset counter if needed
+  // Initialize session and reset counter if needed
   initializeTestSession();
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
@@ -207,16 +206,50 @@ export async function launchVortex(testName = 'unknown-test') {
     ? path.join(process.cwd(), 'node_modules', '.bin', 'electron.cmd')
     : path.join(process.cwd(), 'node_modules', '.bin', 'electron');
   
+  const isCI = !!process.env.CI;
+  
+  // Base args
+  let args = ['.', path.join(process.cwd(), 'out', 'main.js')];
+  
+  // Add CI-specific flags to force headless behavior
+  if (isCI) {
+    args = args.concat([
+      '--disable-gpu',
+      '--disable-gpu-sandbox', 
+      '--disable-software-rasterizer',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+      '--disable-ipc-flooding-protection',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      '--no-zygote',
+      '--single-process', // This might help with main process issues
+      '--disable-extensions',
+      '--disable-default-apps',
+      '--disable-background-mode'
+    ]);
+  }
+  
+  console.log(`Launching Electron with args: ${args.join(' ')}`);
+  
   const app = await electron.launch({ 
     executablePath: electronPath,
-    args: ['.', path.join(process.cwd(), 'out', 'main.js')],
+    args: args,
     env: {
       ...process.env,
       NODE_ENV: 'development',
       START_DEVTOOLS: 'false',
-      ELECTRON_DISABLE_SECURITY_WARNINGS: 'true'
+      ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+      // Force headless mode flags
+      ...(isCI && {
+        DISPLAY: process.env.DISPLAY || ':99',
+        ELECTRON_RUN_AS_NODE: undefined, // Ensure we don't run as Node.js
+        ELECTRON_NO_ATTACH_CONSOLE: '1'
+      })
     },
-    timeout: 30000
+    timeout: 45000 // Increased timeout for CI
   });
   
   const mainWindow = await waitForMainWindow(app);
