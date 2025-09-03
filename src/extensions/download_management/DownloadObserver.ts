@@ -366,7 +366,7 @@ export class DownloadObserver {
       callback?.(new Error('html result'), id);
       return onceFinished();
     } else {
-      finalizeDownload(this.mApi, id, res.filePath)
+      return finalizeDownload(this.mApi, id, res.filePath)
         .then(() => {
           const flattened = flatten(res.metaInfo ?? {});
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
