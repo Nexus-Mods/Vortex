@@ -1760,9 +1760,9 @@
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.8.0.tgz#4210deb771ee3912964f14a15ddfb5ff877e70b9"
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
-"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#quota-modification":
-  version "1.4.27"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c6e38c35d55a0f46d3f0422b4a5412e3668eaf94"
+"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
+  version "1.4.28"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/170ba592fba4c92abd1f05dd952476d7a7dc421d"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
