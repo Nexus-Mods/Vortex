@@ -56,3 +56,10 @@ tools/stackmap/*.vsix
 changelog_*.txt
 eslint.log
 log.txt
+
+# playright stuff
+playwright/playwright-report/
+playwright/run-*
+playwright/test-results/
+
+playwright/.test-session

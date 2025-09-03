@@ -34,7 +34,7 @@ import { jsonRequest } from '../../util/network';
 import opn from '../../util/opn';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { toPromise, truthy } from '../../util/util';
+import { batchDispatch, toPromise, truthy } from '../../util/util';
 import { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
@@ -52,9 +52,12 @@ import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
 import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
+<<<<<<< HEAD
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
 import Debouncer from '../../util/Debouncer';
+=======
+>>>>>>> master
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -563,6 +566,7 @@ export function getCollectionInfo(nexus: Nexus,
     adultContent: true,
     id: true,
     collection: {
+      viewerIsBlocked: true,
       category: {
         id: true,
         name: true,
@@ -859,7 +863,7 @@ export function processErrorMessage(err: NexusError): IRequestError {
   }
 }
 
-export function resolveGraphError(t: TFunction, err: Error): string {
+export function resolveGraphError(t: TFunction, isLoggedIn: boolean, err: Error): string {
   if (err.message === 'You must provide a version') {
     // is this still reported in this way?
     return t('You can\'t endorse a mod that has no version set.');
@@ -870,7 +874,9 @@ export function resolveGraphError(t: TFunction, err: Error): string {
     TOO_SOON_AFTER_DOWNLOAD: 'You have to wait {{waitingTime}} after downloading before you can endorse/rate things.',
     IS_OWN_MOD: 'You can\'t endorse your own mods.',
     IS_OWN_CONTENT: 'You can\'t endorse your own content.',
-    UNAUTHORIZED: 'You have to be logged in to vote.',
+    UNAUTHORIZED: (isLoggedIn)
+      ? 'You cannot interact with this collection because you have been blocked by the curator.'
+      : 'You have to be logged in to vote.'
   }[err['code']];
 
   return msg;
@@ -880,7 +886,8 @@ const IGNORE_ERRORS = ['ENOENT', 'EPROTO', 'ECONNRESET', 'ECONNABORTED', 'ETIMED
 
 function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
                             gameId: string, modId: number, version?: string) {
-  const expectedError = resolveGraphError(api.translate, err);
+  const loggedIn = isLoggedIn(api.getState());
+  const expectedError = resolveGraphError(api.translate, loggedIn, err);
   if (expectedError !== undefined) {
     api.sendNotification({
       type: 'info',
@@ -1162,6 +1169,7 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
 
   return Promise.all(collectionIds.map(modId => {
     const query: Partial<ICollectionQuery> = {
+      viewerIsBlocked: true,
       revisions: {
         revisionNumber: true,
         id: true,
@@ -1176,14 +1184,13 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
           .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber)
           [0];
 
-        store.dispatch(setModAttribute(gameId, modId, 'lastUpdateTime', Date.now()));
+        const batched = [setModAttribute(gameId, modId, 'lastUpdateTime', Date.now())];
         if ((currentRevision?.id !== mod.attributes?.revisionId)
             && (currentRevision?.revisionNumber !== undefined)) {
-          store.dispatch(setModAttribute(gameId, modId, 'newestFileId',
-            currentRevision.revisionNumber));
-          store.dispatch(setModAttribute(gameId, modId, 'newestVersion',
-            currentRevision.revisionNumber.toString()));
+          batched.push(setModAttribute(gameId, modId, 'newestFileId', currentRevision.revisionNumber));
+          batched.push(setModAttribute(gameId, modId, 'newestVersion', currentRevision.revisionNumber.toString()));
         }
+        batchDispatch(store, batched);
         return undefined;
       })
       .catch(err => {
@@ -1318,26 +1325,26 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
       log('info', '[update check] done');
       tStore.dispatch(dismissNotification('check-update-progress'));
       // if forceFull is 'silent' we show no notifications
-      if (forceFull === true) {
-        if (updatesMissed.length === 0) {
-          tStore.dispatch(addNotification({
-            id: 'check-update-progress',
-            type: 'info',
-            message: 'Full update check found no updates that the regular check didn\'t.',
-          }));
-        } else {
-          tStore.dispatch(addNotification({
-            id: 'check-update-progress',
-            type: 'info',
-            message:
-              'Full update found {{count}} updates that the regular check would have missed. '
-              + 'Please send in a feedback with your log attached to help debug the cause.',
-            replace: {
-              count: updatesMissed.length,
-            },
-          }));
-        }
-      }
+      // if (forceFull === true) {
+      //   if (updatesMissed.length === 0) {
+      //     tStore.dispatch(addNotification({
+      //       id: 'check-update-progress',
+      //       type: 'info',
+      //       message: 'Full update check found no updates that the regular check didn\'t.',
+      //     }));
+      //   } else {
+      //     tStore.dispatch(addNotification({
+      //       id: 'check-update-progress',
+      //       type: 'info',
+      //       message:
+      //         'Full update found {{count}} updates that the regular check would have missed. '
+      //         + 'Please send in a feedback with your log attached to help debug the cause.',
+      //       replace: {
+      //         count: updatesMissed.length,
+      //       },
+      //     }));
+      //   }
+      // }
     })
     .then((messages: string[]) => ({
       errorMessages: messages,

@@ -86,7 +86,7 @@ function NexusId(props: INexusIdProps) {
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
 export type TrackMod = (gameId: string, modId: string, track: boolean) => void;
-
+const noOp = () => null;
 function createEndorsedIcon(store: Redux.Store<any>,
                             mod: IMod,
                             onEndorse: EndorseMod,
@@ -122,6 +122,13 @@ function createEndorsedIcon(store: Redux.Store<any>,
     endorsed = undefined;
   }
 
+  let endorseFunc = onEndorse;
+  if (mod.attributes?.collectionId) {
+    const collectionInfo = store.getState().persistent.collections.collections?.[mod.attributes.collectionId]?.info;
+    endorsed = collectionInfo?.viewerIsBlocked ? 'Blocked' : endorsed;
+    endorseFunc = noOp;
+  }
+
   const gameId = getSafe(mod.attributes, ['downloadGame'], undefined)
                || activeGameId(store.getState());
   if (endorsed !== undefined) {
@@ -131,7 +138,7 @@ function createEndorsedIcon(store: Redux.Store<any>,
         t={t}
         gameId={gameId}
         modId={mod.id}
-        onEndorseMod={onEndorse}
+        onEndorseMod={endorseFunc}
       />
     );
   }
