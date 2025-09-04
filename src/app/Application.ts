@@ -215,9 +215,6 @@ class Application {
   }
 
   private setupAppEvents(args: IParameters) {
-    // Add CI detection
-    const isCI = process.env.CI === 'true';
-    console.log('Is CI environment:', isCI);
 
     app.on('window-all-closed', () => {
       log('info', 'Vortex closing');
