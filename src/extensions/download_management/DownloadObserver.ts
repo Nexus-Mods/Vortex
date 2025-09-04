@@ -546,9 +546,12 @@ export class DownloadObserver {
         return;
       }
 
+      const knownGames = selectors.knownGames(this.mApi.store.getState());
+
       if (['paused', 'failed'].includes(download.state)) {
         const gameMode = getDownloadGames(download)[0];
-        const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
+        const convertedId = convertGameIdReverse(knownGames, gameMode);
+        const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), convertedId);
 
         const fullPath = path.join(downloadPath, download.localPath);
         this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
