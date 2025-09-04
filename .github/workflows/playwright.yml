@@ -36,6 +36,21 @@ jobs:
       env:
         ELECTRON_DISABLE_SECURITY_WARNINGS: true
         NODE_ENV: development
+        CI: true  # Triggers longer timeouts in your helper
+        DEBUG: pw:browser*,pw:api,electron*  # Added electron debugging
+        PWDEBUG: 1  # Additional debug info
+        ELECTRON_ENABLE_LOGGING: true  # Enable electron console logging
+        ELECTRON_IS_DEV: 0  # Disable dev tools auto-open
+        
+    # Capture screenshots even on success for debugging
+    - name: Take debug screenshot
+      if: always()
+      run: |
+        # List any screenshots that were created
+        if (Test-Path "playwright\run-*") { 
+          Get-ChildItem -Path "playwright\run-*" -Recurse -Include "*.png" | ForEach-Object { Write-Host $_.FullName }
+        }
+      shell: pwsh
     
     - uses: actions/upload-artifact@v4
       if: always()
