@@ -1,7 +1,8 @@
 /**
  * entry point for the main process
  */
-
+import os from 'os';
+process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 2).toString();
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 

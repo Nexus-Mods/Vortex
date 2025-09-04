@@ -45,7 +45,7 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import Promise from 'bluebird';
-import { ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ComplexActionCreator } from 'redux-act';
@@ -616,6 +616,14 @@ export interface IExtensionApi {
    * with that id and setting it to undefined removes it
    */
   addMetaServer: (id: string, server: IServer) => void;
+
+  /**
+   * generate an md5 hash for the specified file
+   * @param filePath the path to the file
+   * @param progressFunc optional function to report progress
+   * @returns a promise resolving to the md5 hash result
+   */
+  genMd5Hash: (filePath: string, progressFunc?: (progress: number, total: number) => void) => Promise<IHashResult>;
 
   /**
    * find meta information about a mod
