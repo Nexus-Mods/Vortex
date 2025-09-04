@@ -39,7 +39,6 @@ import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
-import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
 import { withBatchContext } from '../../util/BatchContext';
@@ -672,7 +671,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           }
         }
 
-        return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
+        return startDownload(api, nexus, urlParsed.toString(), 'never', undefined, false, false, referenceTag)
           .then(dlId => ({ error: null, dlId }))
           .catch(err => ({ error: err }));
       })
@@ -684,7 +683,8 @@ export function onDownloadUpdate(api: IExtensionApi,
           if (campaign !== undefined) {
             urlParsed.searchParams.set('campaign', campaign);
           }
-          return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
+
+          return startDownload(api, nexus, urlParsed.toString(), 'never', undefined, false, false, referenceTag)
             .then(dlId => ({ error: null, dlId }))
             .catch(innerErr => ({ error: innerErr }));
         } else {
