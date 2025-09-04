@@ -9,7 +9,7 @@ import { log } from '../../util/log';
 import { calcDuration, showError } from '../../util/message';
 import { upload } from '../../util/network';
 import opn from '../../util/opn';
-import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, toPromise, truthy } from '../../util/util';
 
@@ -22,7 +22,7 @@ import { IModListItem } from '../news_dashlet/types';
 
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
-import { nexusGameId, toNXMId } from './util/convertGameId';
+import { nexusGameId, toNXMId, convertGameIdReverse } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
@@ -83,9 +83,13 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
           return Promise.resolve();
         }
 
-        const metaGameId = Array.isArray(download.game) && download.game.length > 0
+        const rawGame = Array.isArray(download.game) && download.game.length > 0
             ? download.game[0]
             : activeGameId(api.store.getState());
+        // Ensure we use the internal game id for lookups and domain conversion
+        const metaGameId = rawGame
+          ? (convertGameIdReverse(knownGames(api.store.getState()), rawGame) || rawGame)
+          : rawGame;
 
         const gameDomain = nexusGameId(gameById(state, metaGameId), metaGameId);
 
