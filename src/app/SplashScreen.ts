@@ -85,8 +85,8 @@ class SplashScreen {
       this.mWindow.once('ready-to-show', onReady);
 
       this.mWindow.loadURL(
-        pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href);
-        //+ `?disableGPU=${disableGPU ? 1 : 0}`);
+        pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href
+        + `?disableGPU=${disableGPU ? 1 : 0}`);
       // this.mWindow.webContents.openDevTools();
     });
   }
