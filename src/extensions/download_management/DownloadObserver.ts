@@ -214,7 +214,7 @@ export class DownloadObserver {
   }
 
   private extractNxmDomain(url: string): string | undefined {
-    const match = url.match(/^nxm:\/\/([^\/]+)/);
+    const match = url.toString().match(/^nxm:\/\/([^\/]+)/);
     return match ? match[1] : undefined;
   }
 
@@ -281,7 +281,7 @@ export class DownloadObserver {
 
     const downloadOptions = this.getExtraDlOptions(modInfo ?? {}, redownload);
 
-    const urlIn = urls[0].split('<')[0];
+    const urlIn = urls[0].toString().split('<')[0];
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
