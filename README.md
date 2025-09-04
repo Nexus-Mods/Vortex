@@ -51,19 +51,214 @@ Additional information on Vortex and guides can be found in the [Vortex Wiki](ht
 
 ## Development
 
-To start development on Vortex, please use this mostly automated method to download and install all dependencies, clone the [Vortex](https://github.com/Nexus-Mods/Vortex) repo from GitHub and then build it so it can be run from source. Most dependencies are installed using [Scoop](https://scoop.sh).
+The `windows-dev-setup.ps1` PowerShell script automatically sets up a complete Windows development environment for building the [Vortex](https://github.com/Nexus-Mods/Vortex) project. It installs all required tools and dependencies, then clones and prepares the repository.
 
-- Start a powershell by clicking the Start button and typing `powershell`.
-- Run `Invoke-WebRequest "https://raw.githubusercontent.com/Nexus-Mods/Vortex/master/bootstrap.ps1" -OutFile bootstrap.ps1` to fetch the bootstrap script
-- By default, this script will build Vortex in `C:\build\vortex`. If you wish for it to be located somewhere else, edit the script to change the build directory before running it.
-- You will more than likely need to allow scripts to be run. This can be set using `Set-ExecutionPolicy Unrestricted` but a powershell with admin access is required. 
-- Run the script (`.\bootstrap.ps1`)
+### What This Script Does
 
-### Decisions
+The script installs and configures the following development tools:
+
+- **Git** - Version control system
+- **Python 3.10** - Required for native module compilation  
+- **CMake** - Build system generator
+- **Visual Studio 2022 Build Tools** - C++ compiler and Windows SDK
+- **NVM for Windows** - Node.js version manager
+- **Node.js 18.20.4** - JavaScript runtime (via NVM)
+- **Yarn 1.x** - Package manager for Node.js
+- **Repository Setup** - Clones Vortex repo to `C:\vortex\Vortex`
+
+### Prerequisites
+
+- Windows 10/11
+- PowerShell 5.1 or later
+- Administrator privileges
+- **winget** (App Installer from Microsoft Store)
+
+### How to Use
+
+1. **Download the script** (`windows_dev_setup.ps1`)
+
+2. **Open PowerShell as Administrator**
+   - Press `Win + X`, then press `A`
+   - Or right-click Start button → "Windows PowerShell (Admin)"
+
+3. **Allow script execution** (if needed):
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+   ```
+
+4. **Run the script**:
+   ```powershell
+   .\windows_dev_setup.ps1
+   ```
+
+5. **Wait for completion** - The script will show colored progress logs
+
+6. **Start developing**:
+   ```powershell
+   cd C:\vortex\Vortex
+   yarn install
+   ```
+
+### Smart Installation Logic
+
+The script intelligently handles existing installations:
+
+- **Fresh Install**: Uses winget for new installations
+- **Existing Tools**: Detects and updates/modifies existing installations
+- **Visual Studio Build Tools**: Uses `vswhere` to detect existing installations and only adds missing components
+- **NVM**: Repairs broken configurations and activates Node.js 18.20.4
+
+### Common Issues & Solutions
+
+#### 1. "winget not found" Error
+
+**Problem**: App Installer is not installed or outdated
+
+**Solution**: 
+- Install "App Installer" from Microsoft Store
+- Or download from: https://aka.ms/getwinget
+
+#### 2. Script Execution Policy Blocked
+
+**Problem**: PowerShell blocks unsigned scripts
+
+**Solution**:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+```
+
+#### 3. Visual Studio Build Tools Installation Hangs
+
+**Problem**: VS installer UI appears or process hangs
+
+**Solution**:
+- Close any open VS installer windows
+- Restart PowerShell as Administrator
+- Run script again (it will detect and modify existing installation)
+
+#### 4. NVM "settings.txt" Errors
+
+**Problem**: NVM configuration is corrupted or missing
+
+**Solution**: The script automatically repairs NVM settings, but if issues persist:
+```powershell
+# Manual fix
+Remove-Item "$env:APPDATA\nvm\settings.txt" -Force
+# Re-run the script
+```
+
+#### 5. Node.js Version Mismatch
+
+**Problem**: Wrong Node.js version active after installation
+
+**Solution**:
+```powershell
+nvm use 18.20.4
+# Or manually:
+nvm list
+nvm use [correct-version]
+```
+
+#### 6. Path Issues / Commands Not Found
+
+**Problem**: Newly installed tools not in PATH
+
+**Solution**: 
+- Restart PowerShell completely
+- Or manually refresh environment:
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+```
+
+#### 7. node-gyp Compilation Failures
+
+**Problem**: Native modules fail to build
+
+**Solution**: The script configures this automatically, but if issues persist:
+```powershell
+npm config set msvs_version 2022
+npm config set python python3.10
+```
+
+#### 8. Git Clone Failures
+
+**Problem**: Network issues or authentication problems
+
+**Solution**:
+- Check internet connection
+- For private repos, set up SSH keys or personal access tokens
+- Re-run script (it will update existing clone)
+
+#### 9. Permission Denied Errors
+
+**Problem**: Insufficient privileges
+
+**Solution**:
+- Ensure PowerShell is running as Administrator
+- Check Windows Defender isn't blocking installations
+- Temporarily disable antivirus if needed
+
+#### 10. Disk Space Issues
+
+**Problem**: Insufficient disk space for installations
+
+**Solution**:
+- Free up at least 5GB of disk space
+- Visual Studio Build Tools alone requires ~3GB
+
+### What Gets Installed Where
+
+- **Git**: `C:\Program Files\Git`
+- **Python 3.10**: `C:\Users\[User]\AppData\Local\Programs\Python\Python310`
+- **CMake**: `C:\Program Files\CMake`
+- **VS Build Tools**: `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`
+- **NVM**: `%APPDATA%\nvm` or `C:\Program Files\nvm`
+- **Node.js**: `C:\Program Files\nodejs` (symlink managed by NVM)
+- **Repository**: `C:\vortex\Vortex`
+
+### Configuration Files Created
+
+- **`.npmrc`** (user home): Configures node-gyp for VS 2022
+- **`.npmrc`** (project): Sets MSVS version for project builds
+- **NVM settings.txt**: Configures NVM paths and architecture
+
+### Troubleshooting Tips
+
+1. **Check the logs**: The script provides colored output showing what's happening
+2. **Run twice**: Some installations may need a second attempt
+3. **Restart PowerShell**: Fresh session can resolve PATH issues  
+4. **Check versions**: Run the script again to see version info
+5. **Manual verification**: Use `winget list` to see what's actually installed
+
+### Re-running the Script
+
+The script is designed to be re-run safely. It will:
+- Skip already-installed tools
+- Update/repair existing installations
+- Only install missing components
+
+### After Installation
+
+Once complete, you can build Vortex:
+
+```powershell
+cd C:\vortex\Vortex
+yarn install          # Install dependencies
+yarn build            # Build the application
+```
+
+### Support
+
+If issues persist after trying these solutions:
+1. Check the [Vortex repository](https://github.com/Nexus-Mods/Vortex) for specific build instructions
+2. Ensure your Windows system is up to date
+3. Try running individual installation commands manually to isolate the problem
+
+## Development Decisions
 
 The following section aims to clarify and explain a few development decisions.
 
-#### Development vs Release builds
+### Development vs Release builds
 
 The toolchain for development builds and release builds is quite different.
 
@@ -77,15 +272,15 @@ Further, we use a two-package structure, meaning the `/package.json` file is use
 
 Bundled extensions on the other hand are built the same between dev and release: they are always built with webpack and each have their own build setup - with the exception of simple game extensions which are already single js files, those simply get copied over.
 
-#### Yarn 1 vs Yarn 3 vs NPM vs PNPM
+### Yarn 1 vs Yarn 3 vs NPM vs PNPM
 
 This codebase still use yarn 1 (classic). Any attempt to use yarn 2 or 3 ended up with nonsensical errors (missing dependencies that are clearly listed, successive installs leading to missing packages) with no reasonable way to investigate why. npm and pnpm are quite slow in comparison. We don't really use any yarn-specific features (workspaces?) so switching shouldn't be too difficult but for now yarn "classic" works.
 
-#### ESM vs CommonJS
+### ESM vs CommonJS
 
 At the time of writing, electron doesn't support ES modules so everything is transpiled to commonjs. This has the consequence that some updated libraries supporting only esm can't be used (e.g. new versions of d3). It also means that asynchronous imports (`const foo = await import('bar')`) are actually synchronous at runtime. Doesn't really matter though since everything is baked into a single file on release builds anyway and code splitting isn't really needed.
 
-#### Reporting Bugs
+### Reporting Bugs
 
 Please report issues on GitHub and include at the very least the following information:
 - The exact version of Vortex you're using
