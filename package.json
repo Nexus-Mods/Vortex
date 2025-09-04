@@ -54,7 +54,8 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/dist/",
-      "/app/"
+      "/app/",
+      "/playwright/"
     ],
     "moduleFileExtensions": [
       "js",
