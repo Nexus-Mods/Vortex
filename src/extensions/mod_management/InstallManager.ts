@@ -96,9 +96,7 @@ import {
   isOutdated, withContext
 } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
-import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { TFunction } from '../../util/i18n';
-import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
@@ -1390,7 +1388,7 @@ class InstallManager {
           && (phaseNum <= phaseState.allowedPhase)
           && phaseState.downloadsFinished.has(phaseNum));
 
-    if (canStartNow && download?.state === 'finished' && download?.size !== 0) {
+    if (canStartNow && download?.state === 'finished' && download?.size > 0) {
       startTask();
     } else {
       const pending = phaseState.pendingByPhase.get(phaseNum) ?? [];
@@ -1548,7 +1546,7 @@ class InstallManager {
     }
     state.scheduledDeploy.add(phase);
 
-    const POLL_MS = 2000;
+    const POLL_MS = 500;
     const poll = () => {
       const curr = this.mInstallPhaseState.get(sourceModId);
       if (!curr) { return; }
@@ -1600,19 +1598,27 @@ class InstallManager {
   private maybeAdvancePhase(sourceModId: string) {
     const state = this.mInstallPhaseState.get(sourceModId);
     if (state.allowedPhase === undefined) {
+      log('debug', 'phase gating: awaiting first finished phase', { sourceModId });
       return;
     }
     // Try to advance through finished phases where there are no active installs
     let curr = state.allowedPhase;
     while (state.downloadsFinished.has(curr)
       && (state.activeByPhase.get(curr) ?? 0) === 0
-      && (state.pendingByPhase.get(curr) ?? []).length === 0
-      && state.deployedPhases.has(curr)) {
+      && (state.pendingByPhase.get(curr) ?? []).length === 0) {
+      // Determine previous finished phase (by order in downloadsFinished)
+      const finished = Array.from(state.downloadsFinished).sort((a, b) => a - b);
+      const currIdx = finished.findIndex(p => p === curr);
+      const prev = currIdx > 0 ? finished[currIdx - 1] : undefined;
+      // Only advance past curr if the previous phase has been deployed (if any)
+      if ((prev !== undefined) && !state.deployedPhases.has(prev)) {
+        log('debug', 'phase gating: waiting for previous phase deployment', { sourceModId, prevPhase: prev, currPhase: curr });
+        break;
+      }
       // Start any pending installs for this phase (if not already started)
       this.startPendingForPhase(sourceModId, curr);
       // Move to next finished phase if any
-      const finished = Array.from(state.downloadsFinished).sort((a, b) => a - b);
-      const nextIdx = finished.findIndex(p => p === curr) + 1;
+      const nextIdx = currIdx + 1;
       if (nextIdx < finished.length) {
         curr = finished[nextIdx];
         state.allowedPhase = curr;
@@ -3375,45 +3381,56 @@ class InstallManager {
           : new Bluebird((resolve, reject) => {
             // First check current download state to avoid unnecessary resume attempts
             const currentDownloads = api.getState().persistent.downloads.files;
-            const currentDownload = currentDownloads[dep.download];
+            let resolvedId: string = dep.download;
+            let currentDownload = currentDownloads[resolvedId];
 
             if (!currentDownload) {
-              log('warn', 'Download not found when trying to resume', { downloadId: dep.download });
-              return reject(new NotFound(`Download ${dep.download} not found`));
+              // Try to resolve the download by referenceTag if possible
+              const tag = dep.reference?.tag;
+              if (truthy(tag)) {
+                const foundId = Object.keys(currentDownloads)
+                  .find(dlId => currentDownloads[dlId]?.modInfo?.referenceTag === tag);
+                if (foundId) {
+                  log('info', 'Resolved missing download id from referenceTag', { from: dep.download, to: foundId, tag });
+                  resolvedId = foundId;
+                  currentDownload = currentDownloads[resolvedId];
+                }
+              }
+            }
+
+            if (!currentDownload) {
+              const readableRef = renderModReference(dep.reference);
+              log('warn', 'Download not found when trying to resume', { intendedId: dep.download, ref: readableRef });
+              return reject(new NotFound(`download for ${readableRef}`));
             }
 
             if (currentDownload.state === 'finished') {
-              log('info', 'Download already finished, no need to resume', { downloadId: dep.download });
-              return resolve(dep.download);
+              log('info', 'Download already finished, no need to resume', { downloadId: resolvedId });
+              return resolve(resolvedId);
             }
 
             if (currentDownload.state !== 'paused') {
-              log('info', 'Download not in paused state, current state:', {
-                downloadId: dep.download,
-                state: currentDownload.state
-              });
-              return resolve(dep.download);
+              log('info', 'Download not in paused state', { downloadId: resolvedId, state: currentDownload.state });
+              return resolve(resolvedId);
             }
 
-            log('info', 'Resuming paused download', {
-              downloadId: dep.download,
-              tag: dep.reference?.tag
-            });
+            log('info', 'Resuming paused download', { downloadId: resolvedId, tag: dep.reference?.tag });
 
             api.events.emit('resume-download',
-              dep.download,
+              resolvedId,
               (err) => {
                 if (err !== null) {
                   // Handle "File already downloaded" error gracefully
                   if (err.message?.includes('File already downloaded') || err.message?.includes('already downloaded')) {
-                    log('info', 'Download already completed during resume attempt', { downloadId: dep.download });
-                    return resolve(dep.download);
+                    log('info', 'Download already completed during resume attempt', { downloadId: resolvedId });
+                    return resolve(resolvedId);
                   }
                   reject(err);
                 } else {
-                  resolve(dep.download);
+                  resolve(resolvedId);
                 }
-              }
+              },
+              { allowInstall: false }
             );
           })
       );
@@ -3636,11 +3653,6 @@ class InstallManager {
         });
 
         return waitForSettled().then(() => deps);
-      })
-      .then((deps: IDependency[]) => {
-        // Refresh dependency entries with installed mods if any finished during wait
-        const modsState = api.getState().persistent.mods[gameId] ?? {};
-        return Promise.all(deps.map(dep => dep?.mod ? dep : ({ ...dep, mod: findModByRef(dep.reference, modsState) } as IDependency)));
       })
       .finally(() => {
         // Soft cleanup of phase gating state at the end
