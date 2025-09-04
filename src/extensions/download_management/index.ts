@@ -983,7 +983,9 @@ function init(context: IExtensionContextExt): boolean {
       updateShutdown(selectors.activeDownloads(state));
 
       Promise.map(filtered, dlId => {
-        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+        const rawGameId = getDownloadGames(cur[dlId])[0];
+        const gameId = rawGameId ? (convertGameIdReverse(knownGames(state), rawGameId) || rawGameId) : rawGameId;
+        const downloadPath = selectors.downloadPathForGame(state, gameId);
         if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
