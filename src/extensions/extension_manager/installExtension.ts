@@ -54,7 +54,16 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   const context = new Proxy({}, handler);
 
   try {
-    const extension = vortexRun.dynreq(path.join(extPath, 'index.js'));
+    const indexPath = path.join(extPath, 'index.js');
+    // If the extension package doesn’t include an index.js (e.g. manifest-only update),
+    // skip dependency detection gracefully.
+    try {
+      fs.statSync(indexPath);
+    } catch (e) {
+      return Promise.resolve();
+    }
+
+    const extension = vortexRun.dynreq(indexPath);
     extension.default(context);
 
     const state: IState = api.store.getState();
@@ -92,6 +101,38 @@ function sanitize(input: string): string {
   } else {
     return path.basename(temp);
   }
+}
+
+// Attempt to flatten archives that contain a single visible top-level directory
+// (ignoring hidden files like .DS_Store and __MACOSX). This moves the contents of
+// that directory up into the root so that index.js and info.json are at the top level.
+function flattenNestedRoot(root: string): Promise<void> {
+  return fs.readdirAsync(root)
+    .then((entries: string[]) =>
+      Promise.map(entries, (name: string) =>
+        fs.statAsync(path.join(root, name))
+          .then(stat => ({ name, stat }))
+          .catch(() => null)))
+    .then((items: Array<{ name: string, stat: any } | null>) =>
+      (items || []).filter((it): it is { name: string, stat: any } => it !== null))
+    .then((items) => {
+      // ignore hidden and macOS helper directories
+      const visible = items.filter(it => !it.name.startsWith('.') && (it.name !== '__MACOSX'));
+      const dirs = visible.filter(it => it.stat.isDirectory());
+      const files = visible.filter(it => it.stat.isFile());
+
+      if ((files.length === 0) && (dirs.length === 1)) {
+        const inner = path.join(root, dirs[0].name);
+        return fs.readdirAsync(inner)
+          .then(innerEntries => Promise.map(innerEntries, (innerName: string) =>
+            fs.renameAsync(path.join(inner, innerName), path.join(root, innerName))))
+          .then(() => fs.removeAsync(inner))
+          // In case there are multiple nested levels, recurse until flattened
+          .then(() => flattenNestedRoot(root));
+      }
+      return Promise.resolve();
+    })
+    .then(() => undefined);
 }
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
@@ -259,11 +300,12 @@ function installExtension(api: IExtensionApi,
   let fullInfo: any = info || {};
 
   let type: ExtensionType;
+  let manifestOnly = false;
 
   let extName: string;
   return extractor.extractFull(archivePath, tempPath, {ssc: false},
                                () => undefined, () => undefined)
-    .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
+    .then(() => flattenNestedRoot(tempPath))
     .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
       // is data we may only know at runtime (e.g. the modId)
@@ -299,12 +341,46 @@ function installExtension(api: IExtensionApi,
       if (manifestInfo.info.type !== undefined) {
         type = manifestInfo.info.type;
       }
-      return removeOldVersion(api, manifestInfo.info);
+      // Determine whether this is a manifest-only update (no index.js in archive)
+      const tempIndex = path.join(tempPath, 'index.js');
+      return fs.statAsync(tempIndex).then(() => true).catch(() => false).then(hasIndex => {
+        if (!hasIndex) {
+          const destIndex = path.join(destPath, 'index.js');
+          return fs.statAsync(destIndex).then(() => true).catch(() => false).then(hasDestIndex => {
+            if (hasDestIndex) {
+              manifestOnly = true;
+              // Apply manifest update into existing install and remove temp
+              return fs.copyAsync(path.join(tempPath, 'info.json'), path.join(destPath, 'info.json'), { overwrite: true })
+                .then(() => fs.removeAsync(tempPath))
+                .then(() => undefined);
+            } else {
+              // No index.js in archive and no existing installed extension to update
+              throw new DataInvalid('Extension package missing index.js');
+            }
+          });
+        }
+        return undefined;
+      }).then(() => {
+        // Only validate a full extension install (skip for manifest-only updates)
+        if (!manifestOnly) {
+          return validateInstall(tempPath, info).then(guessedType => {
+            if (type === undefined) {
+              type = guessedType;
+            }
+            return manifestInfo.info;
+          });
+        }
+        return manifestInfo.info;
+      });
     })
       // we don't actually expect the output directory to exist
-    .then(() => fs.removeAsync(destPath))
-    .then(() => fs.renameAsync(tempPath, destPath))
+    .then((infoForRemoval) => manifestOnly ? Promise.resolve() : removeOldVersion(api, infoForRemoval))
+    .then(() => manifestOnly ? Promise.resolve() : fs.removeAsync(destPath))
+    .then(() => manifestOnly ? Promise.resolve() : fs.renameAsync(tempPath, destPath))
     .then(() => {
+      if (manifestOnly) {
+        return Promise.resolve();
+      }
       if (type === 'translation') {
         return fs.readdirAsync(destPath)
           .map((entry: string) => fs.statAsync(path.join(destPath, entry))
