@@ -1,0 +1,335 @@
+// rules to override bootstrap rules that aren't configurable
+// through variables
+
+h1, h2, h3 {
+  font-family: $font-family-headings;
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
+}
+
+.dropdown-menu {
+  border: $border-width solid $border-color;
+  > li > a {
+    display: flex;
+    align-items: center;
+    > .btn {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+}
+
+.dropdown-title {
+  > svg {
+    margin-right: 0.5em;
+  }
+}
+
+.margin {
+  margin-bottom: 0;
+}
+
+a[role=menuitem] svg {
+  margin-right: 10px;
+}
+
+.media {
+  overflow: visible;
+  display: flex;
+  .media-left, .media-right {
+    display: initial;
+  }
+  .media-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    width: initial;
+  }
+}
+
+// the original css to create a tab header that is open on the bottom
+// has a border around the <a>-tag that is colored on three sides and transparent
+// on the bottom. This leaves one pixels in the corners that is 50% transparent.
+//
+// This solution has the border on the <li>-tag (colored on all four sides)
+// and the <a> has only the transparent border on the bottom. It also has a negative
+// margin on the bottom so that this border overlaps the border of the <li>.
+// This way the transparent overlap is one pixel narrower than the border so the
+// pixels in the corner are colored.
+.nav-tabs>li.active {
+  border: $border-width solid $nav-tabs-active-link-hover-border-color;
+  margin-right: -1px;
+  margin-top: 0px;
+  border-top-left-radius: $border-radius-base;
+  border-top-right-radius: $border-radius-base;
+}
+
+.nav-tabs>li.active>a {
+  &,
+  &:hover,
+  &:focus {
+    border-top-width: 0px;
+    border-left-width: 0px;
+    border-right-width: 0px;
+    border-bottom: 1px solid transparent;
+    margin-right: 0px;
+    margin-bottom: -2px;
+  }
+}
+
+.nav-tabs>li {
+  margin-right: -1px;
+  margin-top: 1px;
+}
+
+.nav-tabs>li>a {
+  border: 1px solid $border-color;
+  border-bottom: 0;
+  margin-right: 0;
+  // text-transform: uppercase;
+  display: flex;
+  align-items: baseline;
+  padding: 6px $gutter-width;
+  font-family: $font-family-headings;
+  font-size: large;
+  &:hover {
+    z-index: 1;
+  }
+}
+
+
+.tab-pane>div {
+  border: $border-width solid $nav-tabs-border-color;
+  border-top-width: 0px;
+  background-color: $brand-menu;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.tab-pane>div>.panel {
+  border-width: 0px;
+  background-color: $brand-menu;
+}
+
+.radio, .checkbox {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.has-error {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-danger-lighter;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: $border-width solid $brand-danger-lighter;
+  }
+
+  .input-group-addon {
+    border-color: $brand-danger;
+  }
+}
+
+.has-warning {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-warning;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: $border-width solid $brand-warning;
+  }
+
+  .input-group-addon {
+    border-color: $brand-warning;
+  }
+}
+
+.has-success {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-success-lighter;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: $border-width solid $brand-success-lighter;
+  }
+
+  .input-group-addon {
+    border-color: $brand-success;
+  }
+}
+
+.input-group-btn > .btn {
+  border: 0px;
+  padding-bottom: 4px;
+}
+
+textarea {
+  background-color: $brand-bg;
+}
+
+.form-horizontal .has-feedback label ~ .form-control-feedback {
+  top: 0px;
+}
+
+.form-control, input {
+  // border-width: $border-width;
+  box-shadow: none;
+
+  &:focus {
+    box-shadow: none;
+  }
+}
+
+.btn-group-vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-group > .btn,
+.btn-group-vertical > .btn {
+  position: initial;
+  display: inline-block;
+}
+
+.list-group-item {
+  border-width: 0;
+}
+
+.btn:focus, .btn.focus, .btn:active:focus, .btn:active.focus, .btn.active:focus, .btn.active.focus {
+  outline-width: 0;
+}
+
+.popover {
+  border-width: $border-width !important;
+  // in case the popover overlaps with the top bar
+  -webkit-app-region: no-drag;
+
+  .popover-content {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+}
+
+// due to the slant the arrow comes out a bit thinner than the rest of the border
+.popover.bottom > .arrow:after {
+  top: calc(#{$border-width} + 1px);
+}
+
+.modal-header, .modal-footer {
+  margin: 0;
+}
+
+.modal-footer {
+  margin: 0;
+  border-radius: 0 0 $border-radius-large $border-radius-large;
+}
+
+.modal-content {
+  border: $border-width solid $modal-content-border-color;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.pager li > a {
+  padding: 4px $gutter-width;
+  color: $text-color;
+}
+
+.btn-primary {
+  margin: 0 10px;
+}
+
+.btn-ghost {
+  border: 2px solid $brand-primary;
+  color: $brand-primary;
+  background-color: transparent;
+
+  &:hover {
+    color: $text-color;
+    background-color: $brand-primary;
+  }
+}
+
+.btn-link {
+  border: 0;
+}
+
+.btn-secondary,
+.btn-inverted {
+  background-color: white;
+  color: $brand-primary;
+
+  &:hover {
+    background-color: $brand-primary;
+    color: $text-color;
+  }
+}
+
+.btn-ad {
+  background-color: $brand-primary;
+  color: $text-color;
+
+  &:hover {
+    background-color: $text-color;
+    color: $brand-primary;
+  }
+}
+
+
+.input-group-btn:last-child > .btn-primary {
+  margin-left: 5px;
+}
+
+.breadcrumb {
+  margin-bottom: 0;
+}
+
+hr {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+@media (min-width: $screen-sm-min) {
+  .form-horizontal {
+    .control-label {
+      padding-top: calc(#{$padding-base-vertical} + 2px) !important;
+    }
+  }
+}
+
+.modal-body {
+  padding: $half-gutter $gutter-width;
+}

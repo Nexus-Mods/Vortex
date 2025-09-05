@@ -1,0 +1,91 @@
+@import "react-select-variables";
+@import "react-select/scss/default";
+@import "react-select/scss/menu";
+@import "react-select/scss/mixins";
+@import "react-select/scss/multi";
+@import "react-select/scss/spinner";
+
+.Select-control {
+  display: inline-table;
+
+  .Select-clear-zone {
+    cursor: initial;
+  }
+}
+
+.Select-placeholder,
+.Select--single>.Select-control .Select-value {
+  // leave room for clear and arrow symbol
+  margin-right: 3em;
+  display: flex;
+  align-items: center;
+  padding-left: $padding-base-horizontal;
+}
+
+.Select-input {
+  margin-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  > input {
+    padding: $padding-base-vertical $padding-base-horizontal;
+  }
+}
+
+.select-compact {
+  padding: 0px;
+  height: auto;
+  font-weight: normal;
+
+  .Select-value {
+    margin: 1px 0;
+    padding: 0px;
+    white-space: nowrap;
+  }
+  .Select-value-icon {
+    padding: 0px 7px;
+  }
+  .Select-control {
+    height: 20px;
+  }
+  .Select-input {
+    height: 20px;
+    margin-top: 0;
+    input {
+      line-height: initial;
+    }
+  }
+  .Select-placeholder {
+    font-weight: normal;
+    padding-top: 0.2em;
+  }
+  .Select--multi {
+    padding: 0px 5px;
+  }
+  .Select.arrow-zone {
+    font-size: 11px;
+  }
+  .Select-menu-outer {
+    margin-top: 0px;
+  }
+}
+
+.select-up-down {
+  &.select-up-down-up {
+    .Select-menu-outer {
+      position: absolute !important;
+      top: auto !important;
+      bottom: calc(100% - 1px) !important;
+      border-bottom-left-radius: 0px !important;
+      border-bottom-right-radius: 0px !important;
+      border-top-left-radius: 5px !important;
+      border-top-right-radius: 5px !important;
+    }
+
+    .is-open .Select-control {
+      border-top-right-radius: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-bottom-right-radius: 5px !important;
+      border-bottom-left-radius: 5px !important;
+    }
+  }
+}

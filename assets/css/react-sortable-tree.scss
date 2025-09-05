@@ -1,0 +1,42 @@
+@import "react-sortable-tree-original";
+
+.rst__row {
+  border: 1px solid $border-color;
+}
+
+.rst__nodeContent {
+  right: $gutter-width;
+}
+
+.rst__rowContents {
+  background-color: initial;
+  border: 0;
+  box-shadow: initial;
+  flex: 1 1 0;
+
+  .rst__rowLabel {
+    overflow: hidden;
+    flex: 1 1 0;
+    .rst__rowTitle {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      height: initial;
+      margin-bottom: -0.3em;
+    }
+  }
+}
+
+.rst__moveHandle {
+  background-color: initial;
+  background-size: 32px 32px;
+  border: 0;
+  box-shadow: initial;
+}
+
+.rst__lineChildren:after {
+  background-color: $gray-lighter;
+}
+
+.rst__lineFullVertical:after, .rst__lineHalfHorizontalRight:before, .rst__lineHalfVerticalBottom:after, .rst__lineHalfVerticalTop:after {
+  background-color: $gray-lighter;
+}

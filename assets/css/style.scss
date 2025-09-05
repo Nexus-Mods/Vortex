@@ -1,0 +1,815 @@
+@use "sass:math";
+@import "./bootstrap/bootstrap/variables";
+@import "./bootstrap/bootstrap/mixins";
+@import "./bootstrap/bootstrap/type";
+@import "./bootstrap/bootstrap/panels";
+@import "variables";
+@import "details";
+
+////////////////////////
+// generic control rules
+
+// buttons
+.btn-embed {
+  padding: 0px;
+  border: 0px;
+  color: currentColor;
+  background-color: transparent;
+  &:hover {
+    color: $link-hover-color;
+    background-color: initial !important;
+    &[disabled] {
+      color: $text-color-disabled;
+    }
+  }
+  &:active {
+    color: $link-hover-color;
+    background-color: initial !important;
+  }
+  &:focus {
+    color: $link-hover-color;
+    background-color: initial !important;
+    outline-width: 0;
+  }
+  &.no-hover {
+    color: $text-color;
+  }
+}
+
+// button inside a (input- or list-) line  pulled to the right
+.btn-line-right {
+  position: absolute;
+  right: 10px;
+  top: 0px;
+  height: 100%;
+}
+
+// button inside a (input- or list-) line  pulled to the top
+.btn-line-top {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  display: inline-block;
+}
+
+// toggle-button that is active
+.btn-toggle-on {
+  background-color: $gray-dark;
+}
+
+// for some reason the badge-color is overwritten with ugly in buttons
+.btn-default .badge {
+  color: $badge-color;
+  background-color: $badge-bg;
+}
+.btn-default .badge:hover{
+  color: $brand-primary;
+  background-color: $white;
+}
+
+.badge {
+  text-shadow: none;
+}
+
+.dropdown .btn-group, .btn-group-vertical {
+  display: flex;
+}
+
+// tables
+.table {
+  margin-bottom: 0px;
+
+  >.xthead>.xtr>.xth {
+    vertical-align: top;
+  }
+
+  >.xtbody>.xtr>.xtd {
+    vertical-align: middle;
+  }
+
+  >.xthead>.xtr>.xth,
+  >.xthead>.xtr>.xtd,
+  >.xtbody>.xtr>.xth,
+  >.xtbody>.xtr>.xtd,
+  >.xtfoot>.xtr>.xth,
+  >.xtfoot>.xtr>.xtd {
+    border: none;
+  }
+}
+
+// forms
+.form-field-compact {
+  padding: 0 2px;
+  height: 22px;
+}
+
+.form-control-feedback {
+  z-index: 4;
+}
+
+.form-input-hasicon {
+  position: relative;
+}
+
+.form-input-clear {
+  z-index: 3;
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+}
+
+.has-feedback label ~ .form-control-feedback {
+  top: calc(#{$line-height-computed} + 0.4rem);
+}
+
+.inline-form {
+  display: flex;
+  flex-grow: 1;
+}
+
+// fill the available space inside a flex display
+.flex-fill {
+  flex: 1 1 0%;
+}
+
+.flex-center-both {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vcenter {
+  margin: auto 0 auto 0;
+}
+
+.hcenter {
+  margin: 0 auto 0 auto;
+}
+
+// uses <a>-tag to get a tooltip but should look like regular text
+.fake-link {
+  color: currentColor;
+  &:hover {
+    color: currentColor;
+    text-decoration: none;
+  }
+}
+
+.fake-link-disabled {
+  color: $text-color-disabled;
+  &:hover {
+    color: $text-color-disabled;
+    text-decoration: none;
+  }
+}
+
+.link-action-seperator {
+  color: $text-color-disabled;
+}
+
+.button-group {
+  text-align: right;
+}
+
+.feedback-awesome {
+  padding: 4px;
+}
+
+.close-button {
+  position: absolute;
+  top: $half-gutter;
+  right: $half-gutter;
+  padding: 0;
+  color: currentColor;
+  background-color: transparent;
+  border-width: 0px;
+  &:hover, &:active, &:focus {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+}
+
+.menu-separator-line > a {
+  // border-top: 1px solid $gray;
+  border-top: 0px;
+  padding-left: 10px !important;
+
+  font-weight: bold;
+  font-size: larger;
+  // text-transform: uppercase;
+
+  hr {
+    height: 1px;
+    width: 100%;
+  }
+}
+
+// text label that shows only ~2 lines of text
+// and expands when the mouse is over it
+div > .hover-expand {
+  white-space: nowrap;
+  max-height: 2.0em;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+  margin-bottom: 0px;
+}
+
+div:hover > .hover-expand {
+  white-space: initial;
+  max-height: 200px;
+}
+
+.hover-expand span {
+  display: block;
+  max-width: 30vw;
+}
+
+.button-toggle {
+  width: 32px !important;
+  height: 24px !important;
+  &.on {
+    fill: $brand-success;
+  }
+  &.off {
+    fill: $gray;
+  }
+}
+
+.p-link {
+  color: $link-color;
+}
+
+.icon-button.has-children {
+  display: flex;
+  align-items: center;
+
+  &.icon-button-horizontal {
+    flex-direction: row;
+    svg {
+      margin-right: 0.5em;
+    }
+  }
+
+  &.icon-button-vertical {
+    flex-direction: column;
+  }
+}
+
+.zoomed-image {
+  max-width: 90%;
+  max-height: 90%;
+  position: absolute;
+}
+
+.zoom-backdrop {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.dropdown {
+  .btn:first-child {
+    padding: 3px 8px;
+    border: 0px;
+  }
+  .dropdown-toggle {
+    padding: 3px;
+    border: 0px;
+    border-left: 1px solid darken( $brand-primary, 10% );
+  }
+}
+
+.progress {
+  overflow: hidden;
+  height: 1.5;
+  margin-bottom: 1.5;
+  background-color: #909090;
+  border-radius: 0;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  .progress-bar {
+    white-space: nowrap;
+    overflow-x: hidden;
+  }
+}
+
+.render-failure {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .render-failure-icon {
+    width: 5em;
+    height: 5em;
+  }
+
+  .render-failure-text {
+    font-size: larger;
+    margin: $gutter-width 0;
+  }
+
+  .render-failure-buttons {
+    display: flex;
+    flex-direction: row;
+    > .btn {
+      margin: 0 $half-gutter;
+    }
+  }
+}
+
+.errorboundary-dialog {
+  position: absolute;
+  top: 30%;
+  left: 30%;
+  bottom: 30%;
+  right: 30%;
+
+  .error-boundary-close {
+    @extend .btn-embed;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+}
+
+.panel {
+  border: $border-width solid $border-color;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  .panel-body {
+    background-color: $brand-menu;
+    flex: 1 1 0;
+    max-height: 100%;
+  }
+}
+
+.inset-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: initial;
+  z-index: 3;
+
+  .btn {
+    @extend .btn-embed;
+  }
+}
+
+.nav-title {
+  display: flex;
+  align-items: baseline;
+  .nav-title-count {
+    margin-left: 4px;
+    font-size: initial;
+  }
+}
+
+.Select-placeholder, .Select--single>.Select-control .Select-value {
+  color: $input-color-placeholder;
+}
+
+.datetime-filter {
+  width: 100%;
+  line-height: 0;
+  >div {
+    // not sure why this is necessary, without reducing the line-height
+    // the input box takes more vertical space than it should but only when there is no content
+    line-height: 0.5;
+  }
+}
+
+.react-datepicker__close-icon::after {
+  background-color: initial;
+  z-index: 2;
+  cursor: default;
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
+  >.react-datepicker__input-container {
+    width: 100%;
+    >input {
+      @extend .form-control;
+      padding: 0;
+      height: 22px;
+      cursor: default;
+    }
+  }
+}
+
+.react-datepicker__navigation {
+  overflow: hidden;
+  height: 5px;
+  top: 5px;
+}
+
+#browser-dialog {
+  .icon-spinner {
+    margin: 0 1em;
+  }
+  #browser-instructions {
+    white-space: pre-wrap;
+  }
+  #browser-webview {
+    height: 100%;
+    background: white;
+  }
+}
+
+// /generic control rules
+/////////////////////////
+
+@import "bootstrap-override.scss";
+@import "vortex/globals";
+@import "vortex/roboto";
+@import "vortex/montserrat";
+@import "vortex/inter";
+@import "vortex/banner";
+@import "vortex/bbcode";
+@import "vortex/browser";
+@import "vortex/charts";
+@import "vortex/collapse";
+@import "vortex/collapseicon";
+@import "vortex/dashlet";
+@import "vortex/dashlet-rss";
+@import "vortex/dialogs";
+@import "vortex/dropzone";
+@import "vortex/gamepicker";
+@import "vortex/hover-menu";
+@import "vortex/icon";
+@import "vortex/iconbar";
+@import "vortex/instructions-overlay";
+@import "vortex/layout";
+@import "vortex/main-window";
+@import "vortex/more";
+@import "vortex/navbar";
+@import "vortex/nexusmods";
+@import "vortex/notification";
+@import "vortex/quicklaunch";
+@import "vortex/placeholder";
+@import "vortex/portal-menu";
+@import "vortex/progress";
+@import "vortex/progressbar";
+@import "vortex/radial";
+@import "vortex/starter";
+@import "vortex/steps";
+@import "vortex/supertable";
+@import "vortex/table";
+@import "vortex/timer";
+@import "vortex/todo";
+@import "vortex/toggle";
+@import "vortex/usage";
+
+@import "vortex/page-extensions";
+@import "vortex/page-profile";
+@import "vortex/page-dashboard";
+@import "vortex/page-download";
+@import "vortex/page-game";
+@import "vortex/page-mod";
+@import "vortex/page-mod-load-order";
+@import "vortex/page-settings";
+
+@import "vortex/dialog-about";
+@import "vortex/dialog-categories";
+@import "vortex/dialog-diagnostic-files";
+@import "vortex/dialog-extensions";
+@import "vortex/dialog-external-change";
+@import "vortex/dialog-fix-deployment";
+@import "vortex/dialog-fomod";
+@import "vortex/dialog-login";
+@import "vortex/dialog-search-paths";
+@import "vortex/dialog-history";
+
+@import "vortex/window-controls";
+
+////////////////////
+// single components
+
+// logout control
+.logout-avatar {
+  color: red;
+}
+
+.listitem-tweak {
+  padding: 0;
+}
+
+// /single components
+/////////////////////
+
+/////////////////////////
+// specific table columns
+
+.cell-enabled, .header-enabled {
+  text-align: center;
+  min-width: 5em;
+}
+
+.cell-version, .header-version {
+  text-align: right;
+}
+
+.cell-installTime, .header-installTime {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cell-filetime, .header-filetime {
+  text-align: center;
+}
+
+.cell-progress, .header-progress {
+  text-align: center;
+}
+
+.cell-modType, .header-modType {
+    white-space: nowrap;
+}
+
+.cell-progress .progress {
+  height: 16px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled,
+.btn-extensions-enabled-enabled, .toggle-extensions-enabled-enabled {
+  background-color: $brand-success;
+
+  &:hover, &:focus {
+    background-color: darken($brand-success, 10%);
+  }
+}
+
+.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled,
+.btn-extensions-enabled-disabled, .toggle-extensions-enabled-disabled {
+  background-color: $gray;
+
+  &:hover, &:focus {
+    background-color: darken($gray, 10%);
+  }
+}
+
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled,
+.btn-mods-enabled-neverinstalled, .toggle-mods-enabled-neverinstalled {
+  background-color: $brand-info;
+
+  &:hover, &:focus {
+    background-color: darken($brand-info, 10%);
+  }
+}
+
+.btn-mods-enabled-installing, .toggle-mods-enabled-installing {
+  background-color: $gray;
+}
+.btn-mods-enabled-installing:hover {
+  background-color: darken($gray, 10%);
+}
+.toggle-mods-enabled-installing:hover{
+  background-color: darken($gray, 10%);
+}
+
+.option-mods-enabled-uninstalled {
+  background-color: $brand-danger;
+}
+
+.dropdown-version {
+  padding: 0px 10px;
+}
+
+.mod-picture {
+  max-width: 256px;
+  text-align: center;
+
+  .zoomable-image {
+    max-width: 100%;
+    max-height: 192px;
+  }
+}
+
+.xtd .dropdown,
+.xtd .dropup {
+  display: inline-flex;
+  width: 100%;
+  > .btn {
+    padding: 2px 10px;
+    border: 0px;
+    &:first-child {
+      flex: 1 1 0;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+  > .dropdown-toggle {
+    border-left: $border-width solid transparentize($white, 0.5);
+  }
+}
+
+#dropdown-mods-enabled,
+#dropdown-extensions-enabled {
+  padding: 2px 5px;
+  min-width: 0px;
+}
+
+.btngroup-version {
+  display: inline-flex;
+  vertical-align: text-bottom;
+}
+
+.header-dependencies {
+  text-align: center;
+}
+
+.header-action p {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 50vh;
+
+  // the flex sizing may not be optimal
+  > textarea {
+   width: 100%;
+   resize: none;
+   border: none;
+   flex: 1 1 0%;
+  }
+
+  > div {
+   flex: 1 1 90%;
+  }
+}
+
+.header-action-label {
+  flex: 1 1 0;
+  text-align: center;
+  margin-right: 1em;
+}
+
+// /specific table columns
+//////////////////////////
+
+////////
+// HIDPI
+
+.lodpi, .hidpi {
+  width: 100%;
+  height: 100%;
+}
+
+.hidpi {
+  font-size: $hidpi-scale-factor;
+}
+
+// /HIDPI
+/////////
+
+///////////////
+// nexus logo
+
+#nexus-dl-icon .svg-use {
+  --nexus-orange-color: transparent;
+  --nexus-orange-opacity: 0;
+  --nexus-orange-darker-opacity: 0;
+  --nexus-outline-opacity: 0;
+}
+
+.nexus-orange {
+  fill: #D78F46;
+}
+
+.nexus-orange-darker {
+  fill: darken(#D78F46, 15%);
+}
+
+.nexus-outline {
+  fill: black;
+}
+
+// /nexus logo
+//////////////
+
+////////////////////////////////////////////////////////
+// only used to make scss variables available at runtime
+
+$colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
+          gray: $gray, gray-dark: $gray-dark, gray-darker: $gray-darker,
+            brand-primary: $brand-primary, brand-highlight: $brand-highlight,
+            brand-success: $brand-success, brand-success-lighter: $brand-success-lighter,
+            brand-info: $brand-info, brand-info-lighter: $brand-info-lighter,
+            brand-warning: $brand-warning, brand-warning-lighter: $brand-warning-lighter, 
+            brand-danger: $brand-danger, brand-danger-lighter: $brand-danger-lighter,
+            brand-bg: $brand-bg, brand-menu: $brand-menu,
+            brand-clickable: $brand-clickable, brand-secondary: $brand-secondary,
+            text-color: $text-color, text-color-disabled: $text-color-disabled,
+            border-color: $border-color, link-color: $link-color,
+            link-hover-color: $link-hover-color,
+
+            );
+
+$other: (
+  font-family-sans-serif: $font-family-sans-serif,
+  font-family-serif: $font-family-serif,
+  font-family-monospace: $font-family-monospace,
+  font-family-base: $font-family-base,
+  font-family-headings: $font-family-headings,
+  font-size-base: $font-size-base,
+  headings-font-weight: $headings-font-weight,
+  gutter-width: $gutter-width,
+  half-gutter: $half-gutter,
+  line-height-large: $line-height-large,
+  line-height-small: $line-height-small,
+  border-radius-base: $border-radius-base,
+  border-radius-large: $border-radius-large,
+  border-radius-small: $border-radius-small,
+  border-width: $border-width,
+  caret-width-base: $caret-width-base,
+  caret-width-large: $caret-width-large,
+);
+
+#variables {
+  .color {
+    @each $id,
+    $col in $colors {
+      .#{"" + $id} {
+        color: $col;
+      }
+    }
+  }
+}
+
+///////////////////////////////////////
+// make scss variables available to css
+
+:root {
+  @each $id,
+  $col in $colors {
+    --#{"" + $id}: #{$col};
+  }
+
+  @each $id,
+  $val in $other {
+    --#{"" + $id}: #{$val};
+  }
+}
+
+
+@keyframes highlightPulse {
+  0% {border-color: $brand-highlight;}
+100% {border-color: darken($brand-highlight, 20%);}
+}
+
+@keyframes highlightColorPulse {
+  0% {color: $brand-highlight;}
+100% {color: darken($brand-highlight, 20%);}
+}
+
+#highlight-control-dummy {
+  border-width: $border-width !important;
+  border-style: solid !important;
+  animation: highlightPulse 1s infinite alternate !important;
+  padding: 4px !important;
+  margin: calc((4px + #{$border-width}) * -1) ! important;
+}
+
+#highlight-control-dummy-alt {
+  position: relative;
+}
+
+#highlight-control-dummy-alt::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-width: $border-width !important;
+  border-style: solid !important;
+  animation: highlightPulse 1s infinite alternate !important;
+}
+
+#highlight-control-dummy::after {
+  animation: highlightColorPulse 1s infinite alternate;
+  content: "__contentPlaceholder";
+}

@@ -1,0 +1,287 @@
+// macOS Tahoe Theme Variables
+// Inspired by macOS Monterey/Ventura design language
+
+// Typography - San Francisco font family with proper font feature settings
+$theme-font-family-base: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$theme-font-family-headings: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+// Font weights following Apple's design guidelines
+$font-weight-ultralight: 100;
+$font-weight-thin: 200;
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-heavy: 800;
+$font-weight-black: 900;
+
+// Font sizes following macOS interface guidelines with proper scaling
+$font-size-xs: 10px;        // Fine print, legal text
+$font-size-small: 11px;     // Labels, captions, secondary text
+$font-size-base: 13px;      // Standard macOS interface size
+$font-size-large: 15px;     // Titles, emphasized text
+$font-size-xl: 17px;        // Large titles
+$font-size-xxl: 20px;       // Hero text, main headings
+
+// Letter spacing for optimal macOS typography (tracking)
+$letter-spacing-xs: 0.0em;       // Normal tracking for small text
+$letter-spacing-base: -0.003em;  // Slightly tighter for base text
+$letter-spacing-headings: -0.005em; // Tighter for headings
+$letter-spacing-large: -0.008em;    // Tightest for large text
+$letter-spacing-caps: 0.06em;       // Looser for caps and labels
+
+// Line heights for optimal readability
+$line-height-xs: 1.2;          // Tight for small text
+$line-height-base: 1.38;        // macOS standard (18px for 13px text)
+$line-height-headings: 1.2;     // Tighter for headings
+$line-height-large: 1.25;       // Balanced for larger text
+$line-height-relaxed: 1.5;      // Relaxed for body text
+
+// macOS color palette - Monterey/Ventura inspired
+$primary-color: #007AFF; // macOS blue
+$secondary-color: #5856D6; // macOS purple
+$success-color: #34C759; // macOS green
+$warning-color: #FF9500; // macOS orange
+$danger-color: #FF3B30; // macOS red
+
+// Gray scale for Vortex compatibility (dark theme)
+$gray-darker: rgba(255, 255, 255, 0.9);  // Lightest
+$gray-dark: rgba(255, 255, 255, 0.7);    // Light
+$gray: rgba(255, 255, 255, 0.5);         // Medium
+$gray-light: rgba(44, 44, 46, 0.95);     // Dark
+$gray-lighter: rgba(28, 28, 30, 0.95);   // Darkest
+
+// Background colors with translucency support
+$background-primary: rgba(28, 28, 30, 0.95); // Dark mode primary
+$background-secondary: rgba(44, 44, 46, 0.95); // Dark mode secondary
+$background-tertiary: rgba(58, 58, 60, 0.95); // Dark mode tertiary
+
+// Brand colors for Vortex compatibility
+$brand-bg: $background-primary;
+$brand-menu: $background-secondary;
+$brand-clickable: $primary-color;
+$brand-secondary: $secondary-color;
+$brand-primary: $primary-color;
+$brand-success: $success-color;
+$brand-warning: $warning-color;
+$brand-danger: $danger-color;
+$brand-info: $primary-color;
+$brand-highlight: $primary-color;
+
+// Translucent materials (macOS vibrancy)
+$translucent-menu: rgba(30, 30, 30, 0.8);
+$translucent-sidebar: rgba(40, 40, 40, 0.85);
+$translucent-toolbar: rgba(50, 50, 50, 0.9);
+
+// Backdrop filter for vibrancy effect
+$backdrop-filter: blur(20px) saturate(180%);
+
+// Text colors
+$text-color: rgba(255, 255, 255, 0.85);
+$text-color-secondary: rgba(255, 255, 255, 0.65);
+$text-color-tertiary: rgba(255, 255, 255, 0.45);
+
+// Border and separator colors
+$border-color: rgba(255, 255, 255, 0.1);
+$separator-color: rgba(255, 255, 255, 0.08);
+
+// Focus ring color (macOS blue)
+$focus-ring-color: rgba(0, 122, 255, 0.4);
+
+// Border radius values
+$border-radius-small: 4px;
+$border-radius-medium: 6px;
+$border-radius-large: 8px;
+$border-radius-xl: 10px;
+
+// Spacing scale
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-xxl: 24px;
+
+// Layout dimensions with proper macOS sizing
+$sidebar-width-expanded: 220px;      // Slightly wider for better content fit
+$sidebar-width-compact: 52px;        // Standard macOS sidebar compact width
+$toolbar-height: 32px;               // Compact toolbar height
+$toolbar-height-expanded: 44px;      // Expanded toolbar when hovered
+$titlebar-height: 28px;              // macOS titlebar height
+$traffic-light-width: 80px;          // Space for macOS traffic light buttons
+
+// Layout spacing and margins
+$layout-margin-base: 12px;           // Base margin for layout elements  
+$layout-margin-large: 20px;          // Larger margin for major sections
+$layout-gap-small: 8px;              // Small gap between elements
+$layout-gap-medium: 16px;            // Medium gap for component spacing
+$layout-gap-large: 24px;             // Large gap for section separation
+
+// Flex layout utilities
+$flex-gap-xs: 4px;
+$flex-gap-sm: 8px;
+$flex-gap-md: 12px;
+$flex-gap-lg: 16px;
+$flex-gap-xl: 24px;
+
+// Z-index scale for proper layering
+$z-index-base: 1;
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+$z-index-top: 1080;
+
+// Content area calculations
+$content-max-width: calc(100vw - #{$sidebar-width-expanded} - #{$layout-margin-base * 2});
+$content-max-width-compact: calc(100vw - #{$sidebar-width-compact} - #{$layout-margin-base * 2});
+$content-height: calc(100vh - #{$toolbar-height} - #{$layout-margin-base * 2});
+
+// Window control dimensions
+$window-control-height: 24px;
+$window-control-spacing: 8px;
+
+// Animation timing with macOS-like easing curves
+$transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);    // Quick interactions
+$transition-medium: 0.25s cubic-bezier(0.4, 0, 0.2, 1);  // Standard transitions
+$transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);    // Slower, more dramatic
+$transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); // Subtle bounce
+
+// Button system variables
+$button-border-radius-small: 4px;
+$button-border-radius-medium: 6px;
+$button-border-radius-large: 8px;
+$button-border-radius-pill: 20px;
+
+// Button padding scales
+$button-padding-xs: 4px 8px;
+$button-padding-sm: 6px 12px;
+$button-padding-md: 8px 16px;
+$button-padding-lg: 10px 20px;
+$button-padding-xl: 12px 24px;
+
+// Button shadow definitions
+$button-shadow-default: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+$button-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+$button-shadow-active: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+$button-shadow-focus: 0 0 0 2px rgba(0, 122, 255, 0.3);
+
+// Primary button colors
+$button-primary-bg: $primary-color;
+$button-primary-border: $primary-color;
+$button-primary-text: rgba(255, 255, 255, 0.95);
+$button-primary-bg-hover: rgba(0, 122, 255, 0.9);
+$button-primary-border-hover: rgba(0, 122, 255, 0.9);
+$button-primary-bg-active: rgba(0, 122, 255, 0.8);
+
+// Secondary button colors
+$button-secondary-bg: rgba(255, 255, 255, 0.1);
+$button-secondary-border: rgba(255, 255, 255, 0.2);
+$button-secondary-text: $text-color;
+$button-secondary-bg-hover: rgba(255, 255, 255, 0.15);
+$button-secondary-border-hover: rgba(255, 255, 255, 0.25);
+$button-secondary-bg-active: rgba(255, 255, 255, 0.05);
+
+// Toolbar button colors
+$button-toolbar-bg: transparent;
+$button-toolbar-border: transparent;
+$button-toolbar-text: rgba(255, 255, 255, 0.75);
+$button-toolbar-bg-hover: rgba(255, 255, 255, 0.1);
+$button-toolbar-border-hover: rgba(255, 255, 255, 0.15);
+$button-toolbar-text-hover: rgba(255, 255, 255, 0.9);
+
+// Danger button colors
+$button-danger-bg: $danger-color;
+$button-danger-border: $danger-color;
+$button-danger-text: rgba(255, 255, 255, 0.95);
+$button-danger-bg-hover: rgba(255, 59, 48, 0.9);
+$button-danger-border-hover: rgba(255, 59, 48, 0.9);
+
+// Core body and background variables
+$body-bg: $brand-menu;
+$thumbnail-bg: $body-bg;
+
+// Nav tabs variables
+$nav-tabs-justified-active-link-border-color: $body-bg;
+
+// Additional variables for compatibility
+$font-size-sm: $font-size-small;
+$font-size-lg: $font-size-large;
+$transition-duration-fast: 0.15s;
+$transition-easing: ease;
+$spacing-small: $spacing-sm;
+
+// Font family compatibility mappings - ensure these are available early
+$font-family-headings: $theme-font-family-headings;
+$font-family-base: $theme-font-family-base;
+$font-family-sans-serif: $theme-font-family-base;
+$font-family-serif: Georgia, "Times New Roman", Times, serif;
+$font-family-monospace: Menlo, Monaco, Consolas, "Courier New", monospace;
+
+// Additional core variables that details.scss expects
+$font-size-large: $font-size-large;
+$font-size-small: $font-size-small;
+$line-height-large: 1.5;
+$line-height-small: 1.5;
+$text-color-disabled: rgba(255, 255, 255, 0.45);
+
+// Core variables for Vortex compatibility
+$white: #ffffff;
+$black: #000000;
+$component-active-color: $white;
+$component-active-bg: $primary-color;
+$border-color: rgba(255, 255, 255, 0.1);
+$border-width: 1px;
+$gutter-width: $spacing-xl;
+$padding-base-vertical: 3px;
+$padding-base-horizontal: 8px;
+$padding-large-vertical: 16px;
+$padding-large-horizontal: 29px;
+$padding-small-vertical: 4px;
+$padding-small-horizontal: 8px;
+$padding-xs-vertical: 0.1em;
+$padding-xs-horizontal: 0.4em;
+$line-height-computed: $line-height-base * $font-size-base;
+$line-height-large: 1.5;
+$line-height-small: 1.5;
+$border-radius-base: $border-radius-medium;
+$border-radius-large: $border-radius-large;
+$border-radius-small: $border-radius-small;
+$caret-width-base: 0.3em;
+$caret-width-large: 0.3em;
+$headings-font-weight: $font-weight-semibold;
+$headings-line-height: $line-height-headings;
+$headings-color: inherit;
+$dashlet-height: 120px;
+$tools-border-width: 2px !default;
+$tools-icon-size: 32px !default;
+$badge-color: $white !default;
+$badge-bg: $primary-color !default;
+$badge-border-radius: 10px !default;
+$badge-font-weight: bold !default;
+$badge-line-height: 1 !default;
+$scrollbar-width: 8px;
+$expand-sidebar-delay: 100ms;
+$transition-time: 200ms;
+$thumbnail-zoom-scale: 1.03;
+$thumbnail-transition-duration: 100ms;
+$touch-action: none;
+
+// Link colors
+$link-color: $primary-color;
+$link-hover-color: darken($link-color, 15%);
+$link-hover-decoration: underline;
+
+// Table and separator colors
+$table-header-border-width: $border-width;
+$table-header-border-color: $border-color;
+$table-row-gap: 0px;
+$table-header-separator: 1px;
+
+// Hover colors
+$primary-color-hover: darken($primary-color, 10%);
+$danger-color-hover: darken($danger-color, 10%);

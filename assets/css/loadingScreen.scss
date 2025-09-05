@@ -1,0 +1,29 @@
+@import "variables.scss";
+@import "details.scss";
+@import "bootstrap-override.scss";
+@import "vortex/globals";
+@import "vortex/progressbar";
+
+html, body, #content {
+  height: 100%;
+  margin: 0;
+  > svg {
+    display: none;
+  }
+}
+
+#loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: $text-color;
+}
+
+#loading-screen .progressbar {
+  width: 50%;
+  .progressbar-labels>*:last-child {
+    width: initial;
+  }
+}

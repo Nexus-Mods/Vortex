@@ -15,7 +15,8 @@
       "skipPaths": 2,
       "target": [
         "out",
-        "app"
+        "app",
+        "."
       ],
       "preserveTimestamps": true
     },

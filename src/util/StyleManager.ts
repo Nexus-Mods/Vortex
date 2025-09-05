@@ -87,6 +87,13 @@ if (ipcMain !== undefined) {
 
     const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
     const modulesPath = getVortexPath('modules_unpacked');
+    const applicationPath = getVortexPath('application');
+    const srcStylesPath = path.join(applicationPath, 'src', 'stylesheets');
+    // Add additional paths to handle different relative import patterns
+    const rootPath = applicationPath;
+    const appPath = path.join(applicationPath, 'app');
+    const assetsRootPath = path.join(appPath, 'assets', 'css');
+    const assetsBasePath = path.join(appPath, 'assets'); // Add this path for ../../../assets/css resolution
 
     const replyEvent = requested
       ? '__renderSASS_result'
@@ -102,7 +109,15 @@ if (ipcMain !== undefined) {
       const started = Date.now();
       sass.render({
         outFile: path.join(assetsPath, 'theme.css'),
-        includePaths: [assetsPath, modulesPath],
+        includePaths: [
+          assetsPath, 
+          modulesPath, 
+          srcStylesPath,
+          rootPath,           // For resolving paths like '../../src/stylesheets/variables.scss'
+          appPath,            // For resolving paths that go through the app directory
+          assetsRootPath,     // For resolving paths like '../../../assets/css/variables.scss'
+          assetsBasePath      // Additional path for assets resolution
+        ],
         data: sassIndex,
         outputStyle: isDevel ? 'expanded' : 'compressed',
       },

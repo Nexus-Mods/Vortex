@@ -1,4 +1,3 @@
-
 // This is a workaround for a problem where, when yarn installs/upgrades packages,
 // it will delete native modules and may not rebuild them, meaning that after a
 // "yarn add" or "yarn upgrade", node_modules is in an invalid state
@@ -39,7 +38,22 @@ if (isWindows()) {
   );
 }
 
-
+// Function to ensure TypeScript types are properly installed
+async function ensureTypesInstalled() {
+  console.log('Ensuring TypeScript types are properly installed...');
+  
+  // Check if @types/rimraf is properly installed
+  try {
+    const rimrafTypesPath = path.join(__dirname, 'node_modules', '@types', 'rimraf');
+    await fs.stat(rimrafTypesPath);
+    const files = await fs.readdir(rimrafTypesPath);
+    if (files.length === 0) {
+      console.log('@types/rimraf is empty, may need reinstallation');
+    }
+  } catch (err) {
+    console.log('@types/rimraf is missing, may need installation');
+  }
+}
 
 async function verifyModulesInstalled() {
   console.log('checking native modules');
@@ -53,6 +67,7 @@ async function verifyModulesInstalled() {
         continue;
       } catch (err) {
         // No mock found, proceed with verification
+        console.log(`No mock found for ${module[0]} on macOS, proceeding with verification`);
       }
     }
     
@@ -127,6 +142,7 @@ async function verifyPrebuild() {
 }
 
 async function main() {
+  ensureTypesInstalled();
   verifyPrebuild();
   verifyModulesInstalled();
 }

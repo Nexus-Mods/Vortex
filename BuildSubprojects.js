@@ -127,51 +127,24 @@ function changes(basePath, patterns, force) {
     return Promise.resolve();
   }
 
-  // Use a more reliable approach with fs.readdir instead of glob
-  const getAllFiles = (dir, patterns) => {
-    const files = [];
-    try {
-      const items = fs.readdirSync(dir, { withFileTypes: true });
-      for (const item of items) {
-        const fullPath = path.join(dir, item.name);
-        if (item.isDirectory()) {
-          files.push(...getAllFiles(fullPath, patterns));
-        } else {
-          // Check if file matches any pattern
-          const relativePath = path.relative(basePath, fullPath);
-          for (const pattern of patterns) {
-            if (pattern.includes('**')) {
-              // Simple wildcard matching for TypeScript files
-              if (pattern.includes('*.ts') && fullPath.endsWith('.ts')) {
-                files.push(fullPath);
-                break;
-              }
-              if (pattern.includes('*.tsx') && fullPath.endsWith('.tsx')) {
-                files.push(fullPath);
-                break;
-              }
-            } else if (relativePath === pattern || item.name === pattern) {
-              files.push(fullPath);
-              break;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      // Directory doesn't exist or can't be read
-    }
-    return files;
-  };
+  // Use the glob module instead of our custom patternMatcher
+  const glob = require('glob');
 
   try {
-    const allFiles = getAllFiles(basePath, patterns);
+    // Flatten all patterns into a single array of files
+    const allFiles = patterns.flatMap(pattern => {
+      // Handle different pattern types using glob
+      return glob.sync(pattern, { cwd: basePath });
+    }).filter(file => file !== undefined);
+
     if (allFiles.length === 0) {
       return Promise.resolve();
     }
 
     const fileTimes = allFiles.map(filePath => {
       try {
-        const stat = fs.statSync(filePath);
+        const fullPath = path.join(basePath, filePath);
+        const stat = fs.statSync(fullPath);
         return stat.mtime.getTime();
       } catch (err) {
         return 0;
@@ -313,14 +286,14 @@ function main(args) {
     return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
-            const platform = process.platform === 'win32' ? 'Windows' : process.platform === 'darwin' ? 'macOS' : 'Linux';
+            const platform = isWindows() ? 'Windows' : isMacOS() ? 'macOS' : 'Linux';
             return Promise.reject(new Unchanged(`Extension "${project.name}" is already up-to-date and compatible with ${platform}, no rebuild needed (use -f to force rebuild)`));
           }
           return processProject(project, buildType, feedback, args.noparallel);
         })
         .then((result) => {
-          const platformName = process.platform === 'win32' ? 'Windows' : 
-                              process.platform === 'darwin' ? 'macOS' : 
+          const platformName = isWindows() ? 'Windows' : 
+                              isMacOS() ? 'macOS' : 
                               process.platform === 'linux' ? 'Linux' : process.platform;
           if (result && result.elapsed) {
             console.log(`Successfully built extension "${project.name}" in ${result.elapsed} s - compatible with ${platformName} ✅`);
@@ -338,8 +311,8 @@ function main(args) {
             const targetPlatform = err.condition?.includes('win32') ? 'Windows' : 
                                  err.condition?.includes('darwin') ? 'macOS' : 
                                  err.condition?.includes('linux') ? 'Linux' : 'unknown';
-            const currentPlatform = process.platform === 'win32' ? 'Windows' : 
-                                  process.platform === 'darwin' ? 'macOS' : 
+            const currentPlatform = isWindows() ? 'Windows' : 
+                                  isMacOS() ? 'macOS' : 
                                   process.platform === 'linux' ? 'Linux' : process.platform;
             console.log(`⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
             return Promise.resolve();

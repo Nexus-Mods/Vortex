@@ -1,0 +1,6 @@
+@import "out/assets/css/variables.scss";
+@import "src/stylesheets/bootstrap/bootstrap/_variables.scss";
+
+.test {
+  background-color: $popover-title-bg;
+}

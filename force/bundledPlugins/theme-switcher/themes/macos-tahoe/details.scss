@@ -1,0 +1,295 @@
+// macOS Tahoe Theme - Details Styles
+// Additional styling for detail views and components
+
+@import 'variables';
+
+// Button styling
+.btn {
+  border-radius: $border-radius-medium;
+  font-weight: $font-weight-medium;
+  letter-spacing: -0.01em;
+  transition: all $transition-duration-fast $transition-easing;
+  
+  &.btn-primary {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    
+    &:hover {
+      background: $primary-color-hover;
+      border-color: $primary-color-hover;
+    }
+  }
+}
+
+// Form controls
+.form-control {
+  border-radius: $border-radius-medium;
+  border: 1px solid $border-color;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: $text-color;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 2px $focus-ring-color;
+  }
+}
+
+// Navigation pills
+.nav-pills {
+  > li {
+    > a {
+      border-radius: $border-radius-medium;
+      color: $text-color-secondary;
+      transition: all $transition-duration-fast $transition-easing;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: $text-color;
+      }
+    }
+    
+    &.active > a {
+      background-color: $primary-color;
+      color: white;
+    }
+  }
+}
+
+// Icon bar styling
+.icon-bar {
+  .icon-bar-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: $border-radius-medium;
+    color: $text-color-secondary;
+    transition: all $transition-duration-fast $transition-easing;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: $text-color;
+      transform: translateY(-1px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+    
+    &.active {
+      background: $primary-color;
+      border-color: $primary-color;
+      color: white;
+    }
+  }
+}
+
+// Notification styling
+.notification-button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: $border-radius-medium;
+  color: $text-color-secondary;
+  transition: all $transition-duration-fast $transition-easing;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: $text-color;
+  }
+  
+  &.has-notifications {
+    background: $danger-color;
+    border-color: $danger-color;
+    color: white;
+    
+    &:hover {
+      background: $danger-color-hover;
+      border-color: $danger-color-hover;
+    }
+  }
+}
+
+// Progress bar styling
+.progress {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: $border-radius-medium;
+  overflow: hidden;
+  
+  .progress-bar {
+    background: $primary-color;
+    transition: $transition-medium;
+    
+    &.progress-bar-success {
+      background: $success-color;
+    }
+    
+    &.progress-bar-warning {
+      background: $warning-color;
+    }
+    
+    &.progress-bar-danger {
+      background: $danger-color;
+    }
+  }
+}
+
+// Badge styling
+.badge {
+  background: $primary-color;
+  border-radius: $border-radius-medium;
+  color: white;
+  font-weight: $font-weight-medium;
+  
+  &.badge-success {
+    background: $success-color;
+  }
+  
+  &.badge-warning {
+    background: $warning-color;
+  }
+  
+  &.badge-danger {
+    background: $danger-color;
+  }
+  
+  &.badge-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: $text-color;
+  }
+}
+
+// List group styling
+.list-group {
+  .list-group-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $separator-color;
+    color: $text-color;
+    transition: all $transition-duration-fast $transition-easing;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    &.active {
+      background: $primary-color;
+      border-color: $primary-color;
+      color: white;
+    }
+    
+    &:first-child {
+      border-top-left-radius: $border-radius-medium;
+      border-top-right-radius: $border-radius-medium;
+    }
+    
+    &:last-child {
+      border-bottom-left-radius: $border-radius-medium;
+      border-bottom-right-radius: $border-radius-medium;
+    }
+  }
+}
+
+// Tooltip styling
+.tooltip {
+  .tooltip-inner {
+    background: $translucent-menu;
+    backdrop-filter: $backdrop-filter;
+    border: 1px solid $separator-color;
+    border-radius: $border-radius-medium;
+    color: $text-color;
+    font-size: $font-size-small;
+    font-weight: $font-weight-regular;
+    max-width: 200px;
+    padding: $spacing-xs $spacing-small;
+  }
+  
+  &.top .tooltip-arrow {
+    border-top-color: $separator-color;
+  }
+  
+  &.bottom .tooltip-arrow {
+    border-bottom-color: $separator-color;
+  }
+  
+  &.left .tooltip-arrow {
+    border-left-color: $separator-color;
+  }
+  
+  &.right .tooltip-arrow {
+    border-right-color: $separator-color;
+  }
+}
+
+// Popover styling
+.popover {
+  background: $translucent-menu;
+  backdrop-filter: $backdrop-filter;
+  border: 1px solid $separator-color;
+  border-radius: $border-radius-large;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  
+  .popover-title {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid $separator-color;
+    color: $text-color;
+    font-weight: $font-weight-medium;
+  }
+  
+  .popover-content {
+    color: $text-color;
+  }
+}
+
+// Tab styling
+.nav-tabs {
+  border-bottom: 1px solid $separator-color;
+  
+  > li {
+    > a {
+      border: 1px solid transparent;
+      border-radius: $border-radius-medium $border-radius-medium 0 0;
+      color: $text-color-secondary;
+      transition: all $transition-duration-fast $transition-easing;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: $separator-color;
+        color: $text-color;
+      }
+    }
+    
+    &.active > a {
+      background: $background-secondary;
+      border-color: $separator-color $separator-color transparent;
+      color: $text-color;
+      
+      &:hover {
+        background: $background-secondary;
+        border-color: $separator-color $separator-color transparent;
+        color: $text-color;
+      }
+    }
+  }
+}
+
+// Well styling
+.well {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $separator-color;
+  border-radius: $border-radius-medium;
+  color: $text-color;
+}
+
+// Input group styling
+.input-group {
+  .input-group-addon {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $border-color;
+    color: $text-color-secondary;
+  }
+  
+  .input-group-btn .btn {
+    border-color: $border-color;
+  }
+}

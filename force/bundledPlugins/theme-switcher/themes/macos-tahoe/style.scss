@@ -1,0 +1,1547 @@
+// macOS Tahoe Theme Styles with Compact Integration
+// Enhanced styling to create a native macOS look and feel with compact toolbar behavior
+
+// Import variables
+@import 'variables';
+
+// === COMPACT THEME INTEGRATION ===
+// Import compact theme toolbar behaviors and extend with macOS styling
+
+// Compact toolbar foundation - reduced paddings and icon-first approach
+.nav-tabs > li > a {
+  padding: 2px 16px;
+}
+
+.xtable > .xtbody > .xtr > .xtd {
+  padding: 0.25rem 0.75rem;
+}
+
+// === COMPACT TOOLBAR WITH MACOS STYLING ===
+// Show only icons on toolbars unless hovered, with macOS appearance
+.mainpage-header {
+  height: $toolbar-height !important; // 32px compact height
+  background: $translucent-toolbar;
+  backdrop-filter: $backdrop-filter;
+  -webkit-backdrop-filter: $backdrop-filter;
+  border: none;
+  border-radius: $border-radius-medium;
+  box-shadow: $button-shadow-default;
+  margin: $layout-margin-base;
+  margin-top: $layout-margin-base;
+  transition: height 250ms ease 500ms, box-shadow $transition-fast;
+  position: relative;
+  
+  .menubar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+  }
+  
+  // macOS-styled toolbar buttons with icon-first behavior
+  .btn {
+    background: $button-toolbar-bg;
+    border: 1px solid $button-toolbar-border;
+    color: $button-toolbar-text;
+    border-radius: $button-border-radius-small;
+    padding: $spacing-xs;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    transition: all $transition-fast;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    
+    // Text initially hidden, shown on hover
+    .button-text {
+      opacity: 0;
+      transition: opacity 250ms ease;
+      position: absolute;
+      top: $toolbar-height;
+      z-index: $z-index-tooltip;
+      background: $button-secondary-bg;
+      border: 1px solid $button-secondary-border;
+      border-radius: $button-border-radius-small;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-small;
+      pointer-events: none;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: $button-shadow-hover;
+    }
+    
+    &:hover {
+      background: $button-toolbar-bg-hover;
+      border-color: $button-toolbar-border-hover;
+      color: $button-toolbar-text-hover;
+      transform: translateY(-1px);
+      box-shadow: $button-shadow-hover;
+      
+      .button-text {
+        opacity: 1;
+        transition: opacity 250ms ease 100ms;
+      }
+    }
+    
+    &:active {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(0);
+      box-shadow: $button-shadow-active;
+    }
+    
+    &:focus {
+      outline: none;
+      box-shadow: $button-shadow-focus;
+    }
+  }
+  
+  // Enhanced hover state for entire toolbar
+  &:hover {
+    height: $toolbar-height-expanded !important;
+    box-shadow: $button-shadow-hover;
+    transition: height 250ms ease 100ms, box-shadow $transition-fast;
+  }
+}
+
+// Compact sidebar behaviors with macOS styling
+#main-nav-sidebar.sidebar-compact #main-nav-container {
+  overflow: visible;
+  z-index: $z-index-dropdown;
+}
+
+.sidebar-compact .nav-pills > li > a {
+  overflow: visible;
+}
+
+// Sidebar hover labels with macOS styling (from compact theme)
+.sidebar-compact .main-nav-group > li:hover a::after {
+  content: attr(title);
+  background: $button-secondary-bg;
+  border: 1px solid $button-secondary-border;
+  border-radius: $button-border-radius-small;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  margin-left: $spacing-sm;
+  padding: $spacing-xs $spacing-sm;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  display: flex;
+  align-items: center;
+  font-size: $font-size-small;
+  font-weight: $font-weight-medium;
+  color: $text-color;
+  white-space: nowrap;
+  z-index: $z-index-tooltip;
+  box-shadow: $button-shadow-hover;
+}
+
+// === COMPREHENSIVE TYPOGRAPHY SYSTEM ===
+// Global typography improvements with proper macOS font rendering
+
+// Global typography improvements
+body {
+  font-family: $theme-font-family-base !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "liga", "kern";
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-base;
+  line-height: $line-height-base;
+  background: transparent;
+  
+  // Ensure main application container is transparent
+  #app,
+  .application,
+  .main-window,
+  .window-content {
+    background: transparent;
+  }
+}
+
+// === GLOBAL FONT ENFORCEMENT ===
+// Ensure San Francisco font is used throughout the application
+* {
+  font-family: $theme-font-family-base !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Typography hierarchy with proper macOS sizing and spacing
+h1, h2, h3, h4, h5, h6 {
+  font-family: $theme-font-family-headings !important;
+  font-weight: $font-weight-semibold;
+  letter-spacing: $letter-spacing-headings;
+  line-height: $line-height-headings;
+  color: $text-color;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-large;
+}
+
+h2 {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  letter-spacing: $letter-spacing-headings;
+}
+
+h3 {
+  font-size: $font-size-large;
+  font-weight: $font-weight-semibold;
+}
+
+h4 {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+}
+
+h5, h6 {
+  font-size: $font-size-small;
+  font-weight: $font-weight-medium;
+  letter-spacing: $letter-spacing-caps;
+  text-transform: uppercase;
+}
+
+// Body text improvements
+p, span, div, label {
+  font-family: $theme-font-family-base !important;
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-base;
+  line-height: $line-height-base;
+  color: $text-color;
+}
+
+// Small text styling
+small, .small {
+  font-size: $font-size-small;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-xs;
+  color: $text-color-secondary;
+}
+
+// Caption and fine print
+.caption, .fine-print {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-xs;
+  color: $text-color-tertiary;
+  line-height: $line-height-xs;
+}
+
+// Link styling with macOS colors
+a {
+  color: $primary-color;
+  text-decoration: none;
+  font-weight: $font-weight-medium;
+  transition: color $transition-fast;
+  
+  &:hover {
+    color: rgba(0, 122, 255, 0.8);
+    text-decoration: underline;
+  }
+  
+  &:focus {
+    outline: none;
+    text-decoration: underline;
+    text-decoration-color: $focus-ring-color;
+  }
+}
+
+// === MACOS WINDOW CONTROLS AND TOOLBAR ===
+// Remove Windows controls and adjust for macOS traffic lights
+
+// Hide Windows-specific window controls completely - comprehensive approach
+#window-controls,
+.window-controls,
+.titlebar-controls,
+.windows-controls,
+.window-control-buttons,
+#titlebar-controls,
+.titlebar-buttons,
+.window-titlebar-controls,
+.titlebar-stoplight,
+.titlebar-fullscreen-button,
+.window-appicon,
+.window-close,
+.window-minimize,
+.window-maximize,
+.window-restore,
+.os-resize-control,
+.titlebar-resize,
+.window-icon,
+.system-buttons,
+.titlebar-button,
+.caption-button,
+.close-button,
+.minimize-button,
+.maximize-button,
+.restore-button {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+}
+
+// Remove Windows titlebar drag region
+.toolbar-app-region {
+  -webkit-app-region: none;
+}
+
+// Hide any Windows-style maximize, minimize, close buttons in toolbar - comprehensive
+.main-toolbar-right .btn-close,
+.main-toolbar-right .btn-minimize,
+.main-toolbar-right .btn-maximize,
+.main-toolbar-right .window-controls,
+#main-toolbar .btn-close,
+#main-toolbar .btn-minimize,
+#main-toolbar .btn-maximize,
+#main-toolbar .window-controls,
+.toolbar .btn-close,
+.toolbar .btn-minimize,
+.toolbar .btn-maximize,
+.toolbar .window-controls,
+[class*="window-control"],
+[class*="titlebar-control"],
+[id*="window-control"],
+[id*="titlebar-control"],
+[data-id*="window-control"],
+[data-id*="titlebar-control"],
+.application-icons-group .btn-close,
+.application-icons-group .btn-minimize,
+.application-icons-group .btn-maximize,
+.application-icons-group .window-controls,
+.toolbar-version + *:has(.btn-close),
+.toolbar-version + *:has(.btn-minimize),
+.toolbar-version + *:has(.btn-maximize) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+}
+
+// Main toolbar with macOS spacing and traffic light accommodation
+#main-toolbar {
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  height: auto;
+  min-height: $toolbar-height-expanded;
+  padding: $spacing-sm 0;
+  margin-left: $traffic-light-width; // Space for traffic lights
+  margin-right: $layout-margin-base;
+  margin-top: $layout-margin-base;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  font-family: $theme-font-family-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  z-index: $z-index-sticky;
+  
+  // Toolbar sections with proper flex layout
+  .main-toolbar-left,
+  .main-toolbar-center,
+  .main-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    flex-wrap: nowrap;
+  }
+  
+  .main-toolbar-left {
+    flex: 0 0 auto;
+  }
+  
+  .main-toolbar-center {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0 $spacing-md;
+  }
+  
+  .main-toolbar-right {
+    flex: 0 0 auto;
+    margin-right: 0;
+    border-left: none;
+    padding-left: $spacing-sm;
+    
+    > * {
+      margin-left: $spacing-xs;
+      margin-right: 0;
+      
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+    
+    .toolbar-version,
+    .application-icons-group {
+      position: relative;
+      font-size: $font-size-small;
+      color: $text-color-secondary;
+    }
+  }
+
+  // === BANNER STYLING ===
+  // Enhanced Nexus banner with proper macOS integration
+  .banner {
+    flex: 1 1 auto;
+    padding: 0 $spacing-md;
+    min-width: 400px;
+    
+    .nexus-main-banner {
+      position: relative;
+      width: 100%;
+      max-width: none;
+      height: 28px;
+      padding: 4px 12px;
+      margin: 0;
+      background: rgba(0, 122, 255, 0.12);
+      border: 1px solid rgba(0, 122, 255, 0.25);
+      border-radius: $border-radius-medium;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $spacing-sm;
+      font-family: $theme-font-family-base;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      
+      div {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: $font-size-small;
+        font-weight: $font-weight-medium;
+        letter-spacing: $letter-spacing-base;
+        line-height: 1.2;
+        margin: 0;
+        white-space: nowrap;
+        
+        &:first-child {
+          font-weight: $font-weight-semibold;
+          color: rgba(255, 255, 255, 0.95);
+        }
+      }
+      
+      .btn,
+      .right-center .btn {
+        background: $button-primary-bg;
+        border: 1px solid $button-primary-border;
+        color: $button-primary-text;
+        border-radius: $button-border-radius-small;
+        padding: 2px 8px;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        letter-spacing: $letter-spacing-base;
+        height: 20px;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all $transition-fast;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        
+        &:hover {
+          background: $button-primary-bg-hover;
+          border-color: $button-primary-border-hover;
+          transform: translateY(-0.5px);
+          box-shadow: $button-shadow-hover;
+        }
+        
+        &:active {
+          background: $button-primary-bg-active;
+          transform: translateY(0);
+          box-shadow: $button-shadow-active;
+        }
+        
+        &:focus {
+          outline: none;
+          box-shadow: $button-shadow-focus;
+        }
+      }
+    }
+  }
+  
+  // === TOOLBAR BUTTON STYLING ===
+  // macOS-styled buttons for toolbar
+  .btn {
+    background: $button-secondary-bg;
+    border: 1px solid $button-secondary-border;
+    color: $button-secondary-text;
+    border-radius: $button-border-radius-medium;
+    padding: $button-padding-sm;
+    font-family: $theme-font-family-base;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    letter-spacing: $letter-spacing-base;
+    transition: all $transition-fast;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: $button-shadow-default;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    &:hover {
+      background: $button-secondary-bg-hover;
+      border-color: $button-secondary-border-hover;
+      color: rgba(255, 255, 255, 0.95);
+      transform: translateY(-1px);
+      box-shadow: $button-shadow-hover;
+    }
+    
+    &:active {
+      background: $button-secondary-bg-active;
+      transform: translateY(0);
+      box-shadow: $button-shadow-active;
+    }
+    
+    &:focus {
+      outline: none;
+      box-shadow: $button-shadow-focus;
+    }
+    
+    // Primary button variant
+    &.btn-primary {
+      background: $button-primary-bg;
+      border-color: $button-primary-border;
+      color: $button-primary-text;
+      font-weight: $font-weight-semibold;
+      
+      &:hover {
+        background: $button-primary-bg-hover;
+        border-color: $button-primary-border-hover;
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3), $button-shadow-hover;
+      }
+      
+      &:active {
+        background: $button-primary-bg-active;
+      }
+    }
+    
+    // Danger button variant
+    &.btn-danger {
+      background: $button-danger-bg;
+      border-color: $button-danger-border;
+      color: $button-danger-text;
+      font-weight: $font-weight-semibold;
+      
+      &:hover {
+        background: $button-danger-bg-hover;
+        border-color: $button-danger-border-hover;
+        box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3), $button-shadow-hover;
+      }
+    }
+  }
+}
+
+// === ENHANCED SIDEBAR LAYOUT ===
+// Fixed positioning and layout to prevent cutoff and improve alignment
+
+#main-nav-sidebar {
+  // Enhanced positioning: move down 2 pixels to align with main content
+  position: relative !important;
+  top: 2px !important; // Move down exactly 2 pixels for alignment
+  left: auto !important;
+  
+  // Proper flex-based layout
+  display: flex;
+  flex-direction: column;
+  
+  // Enhanced glass styling
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: $border-radius-large;
+  
+  // Proper sizing and spacing with better alignment
+  margin: $layout-margin-base;
+  margin-right: $layout-margin-base; // Add right margin
+  margin-top: calc(#{$layout-margin-base} + 2px); // Add 2px offset for alignment
+  margin-bottom: calc(#{$layout-margin-base} + 8px); // Extra bottom margin to prevent cutoff
+  padding: 0;
+  
+  // Improved height calculation to prevent cutoff - shorter height
+  height: auto;
+  min-height: calc(100vh - #{$toolbar-height-expanded + $layout-margin-base * 6}); // More conservative height
+  max-height: calc(100vh - #{$toolbar-height-expanded + $layout-margin-base * 6}); // Prevent bottom cutoff with extra margin
+  
+  // Enhanced shadows
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  // Smooth transitions
+  transition: all $transition-medium;
+  
+  // Overflow management
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  // Z-index for proper layering
+  z-index: $z-index-sticky;
+  
+  // State-specific sizing
+  &.sidebar-expanded {
+    width: $sidebar-width-expanded;
+    flex: 0 0 $sidebar-width-expanded;
+  }
+  
+  &.sidebar-compact {
+    width: $sidebar-width-compact;
+    flex: 0 0 $sidebar-width-compact;
+    
+    // Compact theme behaviors
+    #main-nav-container {
+      overflow: visible;
+      z-index: $z-index-dropdown;
+    }
+  }
+  
+  // Glass reflection enhancement
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+    #main-nav-container {
+      background: transparent;
+      border: none;
+      padding: $spacing-md;
+      max-width: 100%;
+      width: 100%;
+      margin-bottom: $spacing-lg;
+
+      // Navigation items
+      .main-nav-group li {
+        background: transparent;
+        border: none;
+        border-radius: $border-radius-medium;
+        margin: $spacing-xs;
+        margin-bottom: 2px;
+        padding: 0;
+        transition: all $transition-fast;
+        position: relative;
+        overflow: hidden;
+        border-bottom: none;
+
+        a {
+          font-size: $font-size-base;
+          font-weight: $font-weight-medium;
+          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 0;
+          padding: $spacing-sm $spacing-md;
+          background: transparent;
+          border: none;
+          border-radius: $border-radius-medium;
+          transition: all $transition-fast;
+
+          div span {
+            font-size: $font-size-base;
+            letter-spacing: -0.007em;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+
+          &.active,
+          &:focus {
+            background: rgba(0, 122, 255, 0.15);
+            color: rgba(0, 122, 255, 1);
+            box-shadow: 0 2px 7px rgba(0, 122, 255, 0.2);
+          }
+        }
+      }
+
+
+      // Dashboard item as headline
+      .main-nav-group:first-child li:first-child a {
+        font-weight: $font-weight-semibold;
+        color: rgba(255, 255, 255, 0.9);
+        padding: $spacing-sm $spacing-md;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        margin-top: $spacing-md;
+
+        div span {
+          font-size: $font-size-lg;
+        }
+
+        &::after {
+          display: none;
+        }
+
+        &::before {
+          display: none;
+        }
+      }
+
+      > :not(:last-child) {
+        box-shadow: none;
+      }
+    }
+
+
+    // Native macOS sidebar toggle button - Standard UI element
+    .btn-menu-minimize {
+      position: absolute;
+      bottom: 7px;
+      left: 7px;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px; // Smaller radius for native feel
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 0.5px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 11px;
+      line-height: 1;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      z-index: 1001;
+      box-shadow:
+        0 0.5px 1px rgba(0, 0, 0, 0.1),
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.15),
+          inset 0 0.5px 0 rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow:
+          inset 0 1px 2px rgba(0, 0, 0, 0.1),
+          0 0.5px 1px rgba(0, 0, 0, 0.05);
+        transform: translateY(0);
+      }
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3); // macOS focus ring
+      }
+
+      .icon {
+        width: 12px;
+        height: 12px;
+        opacity: 0.85;
+        transition: opacity 0.15s ease;
+      }
+
+      &:hover .icon {
+        opacity: 1;
+      }
+
+      .sidebar-compact & {
+        width: 17px;
+        height: 17px;
+
+        .icon {
+          width: 7px;
+          height: 7px;
+        }
+      }
+
+      // Remove default button styling
+      background-image: none;
+      text-shadow: none;
+
+      &:hover,
+      &:focus,
+      &:active {
+        background-image: none;
+        text-shadow: none;
+      }
+
+      // Show SVG icons
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+
+// === CONTENT AREA ALIGNMENT AND LAYOUT ===
+// Proper alignment with sidebar, responsive behavior, and window bottom padding
+
+// Main Layout - Enhanced responsive flex layout with proper window margins
+#main-window-content {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: calc(#{$layout-margin-base} + 12px); // Enhanced window bottom padding
+  padding-right: calc(#{$layout-margin-base} + 8px); // Enhanced right margin for window edge spacing
+  box-sizing: border-box;
+  
+  // Enhanced flex layout with proper alignment
+  .flex-layout-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex: 1;
+    
+    // Sidebar area (handled by sidebar styles above)
+    .flex-layout-nav {
+      flex: 0 0 auto;
+      
+      &.sidebar-expanded {
+        width: $sidebar-width-expanded;
+      }
+      
+      &.sidebar-compact {
+        width: $sidebar-width-compact;
+      }
+    }
+    
+    // Content area takes remaining space with proper alignment and margins
+    .flex-layout-flex {
+      flex: 1;
+      padding: $layout-margin-base;
+      padding-left: $layout-margin-base;
+      padding-right: calc(#{$layout-margin-base} + 8px); // Extra right padding for window edge
+      padding-bottom: calc(#{$layout-margin-base} + 8px); // Extra bottom padding for window edge
+      box-sizing: border-box;
+      min-height: calc(100vh - #{$toolbar-height-expanded + $layout-margin-base * 2});
+      overflow-x: hidden;
+      overflow-y: auto;
+      
+      // Ensure scrollbar doesn't touch window edge - increased margin
+      margin-right: calc(#{$spacing-xs} + 4px);
+      margin-bottom: calc(#{$spacing-xs} + 4px);
+      
+      // Ensure content aligns with sidebar
+      .main-page {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        
+        .main-page-body {
+          background: transparent;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          border-radius: 0;
+          margin: 0;
+          padding: $spacing-lg;
+          border: none;
+          box-shadow: none;
+          min-height: calc(100vh - #{$toolbar-height-expanded + $layout-margin-base * 4});
+          box-sizing: border-box;
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+// === RESPONSIVE LAYOUT ADJUSTMENTS ===
+// Ensure proper behavior across different viewport sizes
+
+// Page content adjustments
+.page-content {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+// Content containers with enhanced macOS styling
+.table-container,
+.list-container,
+.content-container {
+  background: rgba(50, 50, 52, 0.65);
+  border-radius: $border-radius-medium;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  margin: $spacing-md 0;
+  padding: $spacing-lg;
+  transition: all $transition-medium;
+  
+  &:hover {
+    background: rgba(50, 50, 52, 0.75);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 
+      0 6px 24px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
+// Responsive breakpoints for different screen sizes
+@media (max-width: 1200px) {
+  #main-toolbar {
+    margin-left: $spacing-lg; // Reduce traffic light spacing on smaller screens
+  }
+  
+  .flex-layout-flex {
+    padding: $spacing-sm;
+  }
+}
+
+@media (max-width: 768px) {
+  #main-toolbar {
+    margin-left: $spacing-md;
+    .banner {
+      min-width: 300px;
+    }
+  }
+  
+  #main-nav-sidebar {
+    &.sidebar-expanded {
+      width: calc(#{$sidebar-width-expanded} - 20px);
+    }
+  }
+}
+
+// === MAIN PAGE CONTENT STYLING ===
+// Enhanced content containers and responsive layout adjustments
+
+// Content containers with enhanced macOS styling
+.table-container,
+.list-container,
+.content-container {
+  background: rgba(50, 50, 52, 0.65);
+  border-radius: $border-radius-medium;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  margin: $spacing-md 0;
+  padding: $spacing-lg;
+  transition: all $transition-medium;
+  
+  &:hover {
+    background: rgba(50, 50, 52, 0.75);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 
+      0 6px 24px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
+// Main Page Header - Clean Tahoe headline styling
+.mainpage-header {
+    border: none;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    background: transparent;
+    backdrop-filter: none;
+    padding: $spacing-lg 0 $spacing-lg 0;
+    height: auto;
+    margin: 0;
+
+    // Clean headline layout
+    display: block;
+    text-align: left;
+
+    // Typography - clean Tahoe headline style with explicit SF Pro font
+    font-family: $theme-font-family-headings !important;
+    font-size: 27px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    // Remove any inherited styling
+    box-shadow: none;
+    border-radius: 0;
+
+    // Ensure all child elements have no borders or backgrounds
+    *,
+    *::before,
+    *::after {
+      border: none;
+      border-bottom: none;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    // Style the main heading text
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: $theme-font-family-headings !important;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    // Button styling within header
+    .btn {
+      font-family: $theme-font-family-base !important;
+      font-size: $font-size-base;
+      font-weight: $font-weight-medium;
+      border-radius: $border-radius-medium;
+      padding: $spacing-xs $spacing-md;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: $text-color;
+      transition: all $transition-fast;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.95);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px $focus-ring-color;
+      }
+    }
+  }
+
+  // Dashboard styling - Remove background panels behind applets
+  #page-dashboard {
+    background: transparent;
+
+    .dynamic-dashlets {
+      background: transparent;
+      padding: 0;
+      padding-right: $spacing-lg;
+    }
+
+    .dashboard-background-grid {
+      display: none; // Remove background grid
+    }
+
+    // Applet Styling - Add borders and proper styling
+    .dashlet,
+    .applet,
+    .widget {
+      background: rgba(28, 28, 30, 0.6);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: $border-radius-large;
+      padding: $spacing-md;
+      margin: $spacing-sm;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: $spacing-lg;
+
+      // Headers within applets
+      .dashlet-header,
+      .applet-header,
+      .widget-header {
+        border: none;
+        border-bottom: none;
+        background: transparent;
+        padding-bottom: $spacing-sm;
+        margin-bottom: $spacing-sm;
+
+        h3,
+        h4,
+        h5 {
+          border: none;
+          border-bottom: none;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: $font-weight-semibold;
+        }
+      }
+
+      // Content styling
+      .content {
+        background: transparent;
+        padding: $spacing-md;
+        margin: 0;
+
+        // Custom scrollbar for macOS feel
+        &::-webkit-scrollbar {
+          width: 7px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .nav-group {
+        margin-bottom: $spacing-sm;
+
+        // Navigation items
+        .nav-item {
+          transition: all $transition-fast;
+          background: transparent;
+          border: none;
+          margin: $spacing-xs;
+          margin-bottom: 2px;
+
+          // Icon styling
+          .icon {
+            width: 16px;
+            height: 16px;
+            margin-right: $spacing-xs;
+            opacity: 0.8;
+            transition: opacity $transition-fast;
+          }
+
+          // Text styling
+          span {
+            font-size: $font-size-base;
+            font-weight: $font-weight-regular;
+            color: inherit;
+            opacity: 0.9;
+            transition: opacity $transition-fast;
+          }
+
+          // Hover state
+          &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+
+            .icon {
+              opacity: 1;
+            }
+
+            span {
+              opacity: 1;
+            }
+          }
+
+          // Active/selected state
+          &.active,
+          &:focus {
+            background: rgba(0, 122, 255, 0.2);
+            color: rgba(255, 255, 255, 1);
+            box-shadow:
+              0 1px 3px rgba(0, 122, 255, 0.3),
+              0 0 0 2px rgba(0, 122, 255, 0.4);
+          }
+
+          // Group titles - Finder-style section headers
+          .main-nav-group-title {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
+            font-size: $font-size-sm;
+            font-weight: $font-weight-semibold;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            padding: $spacing-sm $spacing-sm $spacing-xs $spacing-sm;
+            margin-bottom: $spacing-xs;
+            border-bottom: none;
+            background: transparent;
+          }
+
+          // Dashboard specific styling
+          &.headline {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            padding: 6px 7px;
+            margin-bottom: 7px;
+
+            span {
+              text-transform: uppercase;
+              font-weight: 500;
+            }
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.12);
+              border-color: rgba(255, 255, 255, 0.18);
+            }
+
+            &:active {
+              background: rgba(255, 255, 255, 0.06);
+            }
+
+            .nav-link {
+              width: 100%;
+              max-width: 100%;
+              box-sizing: border-box;
+              overflow: hidden;
+              white-space: nowrap;
+
+              // Finder-style navigation item
+              display: flex;
+              align-items: center;
+              padding: $spacing-xs;
+              border-radius: 6px;
+              font-size: $font-size-base;
+              font-weight: $font-weight-regular;
+              color: $text-color;
+              text-decoration: none;
+            }
+          }
+        }
+      }
+    }
+
+    // Go Premium Dashlet - Premium banner style integrated with dashlet system
+    .dashlet-go-premium {
+      // Reset positioning to integrate with content flow
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      display: block;
+      position: relative;
+      margin-bottom: $spacing-lg;
+      float: none;
+      clear: both;
+      margin: 7px;
+      order: -1; // Show at the top of dashlets
+      box-sizing: border-box;
+
+      // Premium banner styling
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(0, 122, 255, 0.3);
+      border-radius: $border-radius-large;
+      box-shadow: 0 7px 32px rgba(0, 122, 255, 0.2),
+        0 2px 16px rgba(0, 122, 255, 0.1);
+      padding: $spacing-lg;
+      z-index: auto;
+      overflow: hidden;
+
+      // Ensure it's part of the normal content flow
+      &::before,
+      &::after {
+        display: none;
+      }
+
+      // Dashlet header styling (like other dashlets)
+      .dashlet-header {
+        border: none;
+        border-bottom: none;
+        background: transparent;
+        padding-bottom: $spacing-sm;
+        margin-bottom: $spacing-md;
+
+        h3,
+        h4,
+        h5 {
+          border: none;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: $font-weight-semibold;
+          font-size: $font-size-lg;
+          margin: 0;
+        }
+      }
+
+      .nexus-ad-image {
+        display: none; // Hide background image
+      }
+
+      .gopremium-widget-text {
+        font-size: $font-size-base;
+        font-weight: $font-weight-medium;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 $spacing-sm 0;
+        line-height: 1.4;
+        width: 100%;
+      }
+
+      .gopremium-widget-text:first-child {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        color: white;
+        margin-bottom: $spacing-sm;
+        border-bottom: none;
+        padding-bottom: $spacing-sm;
+      }
+
+      .right-center {
+        position: absolute;
+        bottom: $spacing-lg;
+        left: $spacing-lg;
+        right: $spacing-lg;
+        top: unset;
+        margin-top: $spacing-md;
+
+        .btn {
+          padding: $spacing-sm $spacing-md;
+          font-size: $font-size-sm;
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: $border-radius-small;
+          font-weight: $font-weight-semibold;
+          white-space: nowrap;
+          transition: all $transition-fast;
+          display: inline-block;
+          backdrop-filter: blur(7px);
+          -webkit-backdrop-filter: blur(7px);
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+          }
+        }
+      }
+    }
+
+    // Ensure dashlet container flows properly
+    .dashlet-container,
+    .content-dashlets,
+    .main-content-dashlets {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+// Additional macOS font overrides for comprehensive coverage
+
+// Global font enforcement
+body * {
+  font-family: inherit !important;
+}
+
+// Specific overrides for elements that might inherit non-macOS fonts
+.page-title,
+.content-title,
+.section-title,
+.panel-heading,
+.panel-title,
+.modal-header h4,
+.dropdown-header,
+.list-group-item-heading {
+  font-family: $theme-font-family-headings !important;
+  font-weight: $font-weight-semibold;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Sidebar and navigation elements
+.sidebar-nav,
+.nav-link,
+.navbar-nav,
+.breadcrumb,
+.pagination {
+  font-family: $theme-font-family-base !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Form and input elements
+.form-group label,
+.control-label,
+.form-control,
+.input-group-addon,
+.help-block {
+  font-family: $theme-font-family-base !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Tab and accordion headers
+.nav-tabs > li > a,
+.nav-pills > li > a,
+.panel-heading > .panel-title {
+  font-family: $theme-font-family-base !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Alert and notification headers
+.alert-heading,
+.notification-title,
+.toast-title {
+  font-family: $theme-font-family-headings !important;
+  font-weight: $font-weight-semibold;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// === ENHANCED COMPACT BEHAVIORS ===
+// Additional compact theme behaviors with macOS styling
+
+// Category names handling for tables
+.xtd.table-mods.cell-category {
+  white-space: nowrap;
+  max-width: 20em;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  font-family: $theme-font-family-base !important;
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-base;
+}
+
+// Toolbar quick launch integration
+.toolbar-app-region .container-quicklaunch .tool-icon-container {
+  width: 200px;
+  height: $toolbar-height;
+}
+
+.container-quicklaunch .tool-icon-container {
+  height: $toolbar-height;
+}
+
+// Main toolbar app region adjustments
+#main-toolbar.toolbar-app-region {
+  height: unset;
+  
+  .main-toolbar-right {
+    margin-bottom: auto;
+    margin-right: $layout-margin-base;
+    border-right: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-left: none;
+    padding-left: $spacing-md;
+    
+    .toolbar-version {
+      position: static;
+      margin-right: $spacing-sm;
+      font-family: $theme-font-family-base !important;
+      font-size: $font-size-small;
+      color: $text-color-secondary;
+    }
+  }
+}
+
+// Banner text sizing with proper typography
+#main-toolbar .nexus-main-banner div {
+  font-size: $font-size-xs !important;
+  font-family: $theme-font-family-base !important;
+  font-weight: $font-weight-medium;
+  letter-spacing: $letter-spacing-base;
+  
+  &:first-child {
+    font-size: $font-size-small !important;
+    font-weight: $font-weight-semibold;
+    margin-bottom: 0;
+  }
+}
+
+#main-toolbar .nexus-main-banner .right-center {
+  font-size: inherit;
+}
+
+// Table hover effects with macOS styling
+.table-hover > .xtbody > .xtr:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  transition: background-color $transition-fast;
+}
+
+// Form validation styling
+.has-success .control-label {
+  color: $success-color;
+  filter: none;
+}
+
+.has-error .control-label {
+  color: $danger-color;
+  filter: none;
+}
+
+// Titlebar starter grid adjustments
+#titlebar-starter {
+  grid-template-rows: repeat(1, auto);
+}

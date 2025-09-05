@@ -5,6 +5,15 @@ const path = require('path');
 
 const pkgRoot = process.cwd();
 
+// Platform detection utilities
+function isWindows() {
+  return process.platform === 'win32';
+}
+
+function isMacOS() {
+  return process.platform === 'darwin';
+}
+
 // List of native modules that need patching
 // Exclude modules that have mocks in __mocks__ directory
 const modulesToPatch = [
@@ -106,7 +115,7 @@ if (fs.existsSync(nodeAddonApiPath)) {
 }
 
 // Handle macOS-specific mocks and native module compilation
-if (process.platform === 'darwin') {
+if (isMacOS()) {
 
   // Then handle mocked modules
   for (const moduleName of macOnlyMocks) {

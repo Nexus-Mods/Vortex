@@ -1,0 +1,87 @@
+/**
+ * styles to make the ui more desktop-like
+ */
+
+body {
+    margin: 0;
+}
+
+html, body, #content {
+    // fill the screen, no scrolling
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+}
+
+img, a {
+  -webkit-user-drag: none;
+}
+
+.full-height {
+    height: 100%;
+}
+
+.well-slim {
+    // very slim well item, used in statusbar
+    padding: 2px;
+    margin-bottom: 0px;
+}
+
+.modal {
+    overflow-y: initial
+}
+
+// fix conflict bootstrap <-> layout
+.row {
+    margin-left: initial;
+    margin-right: initial;
+}
+
+// in native ui's, the cursor doesn't change to a hand over buttons
+[role="button"] {
+  cursor: default;
+}
+
+a, .btn {
+  cursor: default;
+}
+
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
+  cursor: initial;
+}
+
+.radio label, .checkbox label {
+  cursor: default;
+}
+
+.Select-arrow-zone {
+  cursor: default;
+  min-width: 25px;
+  padding-right: 0px;
+  .Select-arrow {
+    top: 3px;
+  }
+}
+
+.is-open {
+  .Select-arrow-zone {
+    .Select-arrow {
+      top: 1px;
+    }
+  }
+}
+
+// in native ui's, there is no text selection on 'label' elements,
+// only on elements that expect user input
+:not(input):not(textarea), :not(input):not(textarea)::after, :not(input):not(textarea)::before {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+
+input, button, textarea, :focus {
+    outline: none;
+}

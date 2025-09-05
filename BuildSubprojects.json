@@ -139,7 +139,7 @@
       "name": "meta-editor",
       "path": "extensions/meta-editor",
       "removeModules": ["vortex-api", "nexus-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
     },
     {
@@ -320,7 +320,7 @@
       "name": "documentation",
       "path": "extensions/documentation",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/documentation"
     },
     {
