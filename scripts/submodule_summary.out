@@ -1,0 +1,550 @@
+===== Submodules Summary Report =====
+Repository: vortex
+Top-level commit: 0fb5675a4
+
+
+---- extensions/games (extensions/games) ----
+Remotes:
+  origin: https://github.com/ErikVeland/vortex-games.git
+  upstream: https://github.com/ErikVeland/vortex-games.git
+  original: https://github.com/Nexus-Mods/vortex-games.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 1c3c71a refactor(baldursgate3): normalize divineWrapper js/ts changes after macOS tooling (2025-09-07 15:57:49 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-plugin-management (extensions/gamebryo-plugin-management) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-plugin-management.git
+  upstream: https://github.com/ErikVeland/extension-plugin-management.git
+  original: https://github.com/Nexus-Mods/extension-plugin-management.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: b1a30b6 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:54 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/feedback (extensions/feedback) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-feedback.git
+  upstream: https://github.com/ErikVeland/extension-feedback.git
+  original: https://github.com/Nexus-Mods/extension-feedback.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: acc0633 chore(git): remove conflicted .DS_Store (2025-09-05 17:17:12 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-archive-invalidation (extensions/gamebryo-archive-invalidation) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-archive-invalidation.git
+  upstream: https://github.com/ErikVeland/extension-archive-invalidation.git
+  original: https://github.com/Nexus-Mods/extension-archive-invalidation.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: e2d55ec chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:30 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-ba2-support (extensions/gamebryo-ba2-support) ----
+Remotes:
+  origin: git@github.com:ErikVeland/extension-ba2-support.git
+  upstream: git@github.com:ErikVeland/extension-ba2-support.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 353aecb chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:38 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-bsa-support (extensions/gamebryo-bsa-support) ----
+Remotes:
+  origin: git@github.com:ErikVeland/extension-bsa-support.git
+  upstream: git@github.com:ErikVeland/extension-bsa-support.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 99f50c9 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:46 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-plugin-indexlock (extensions/gamebryo-plugin-indexlock) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-plugin-indexlock.git
+  upstream: https://github.com/ErikVeland/extension-plugin-indexlock.git
+  original: https://github.com/Nexus-Mods/extension-plugin-indexlock.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 5ac5db4 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:51 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-savegame-management (extensions/gamebryo-savegame-management) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamebryo-savegames.git
+  upstream: https://github.com/ErikVeland/extension-gamebryo-savegames.git
+  original: https://github.com/Nexus-Mods/extension-gamebryo-savegames.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 414c357 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:58 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-test-settings (extensions/gamebryo-test-settings) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamebryo-testsettings.git
+  upstream: https://github.com/ErikVeland/extension-gamebryo-testsettings.git
+  original: https://github.com/Nexus-Mods/extension-gamebryo-testsettings.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 2afbd8f chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:18:01 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gameinfo-steam (extensions/gameinfo-steam) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gameinfo-steam.git
+  upstream: https://github.com/ErikVeland/extension-gameinfo-steam.git
+  original: https://github.com/Nexus-Mods/extension-gameinfo-steam.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 3b76cf7 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:18:04 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/local-gamesettings (extensions/local-gamesettings) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-local-gamesettings.git
+  upstream: https://github.com/ErikVeland/extension-local-gamesettings.git
+  original: https://github.com/Nexus-Mods/extension-local-gamesettings.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 642e8d1 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:37 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/meta-editor (extensions/meta-editor) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-metaeditor.git
+  upstream: https://github.com/ErikVeland/extension-metaeditor.git
+  original: https://github.com/Nexus-Mods/extension-metaeditor.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: e696359 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:42 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mo-import (extensions/mo-import) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-mo-import.git
+  upstream: https://github.com/ErikVeland/extension-mo-import.git
+  original: https://github.com/Nexus-Mods/extension-mo-import.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 87b709e chore(git): remove conflicted .DS_Store (2025-09-06 10:35:46 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mod-dependencies (extensions/mod-dependency-manager) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-mod-dependencies.git
+  upstream: https://github.com/ErikVeland/extension-mod-dependencies.git
+  original: https://github.com/Nexus-Mods/extension-mod-dependencies.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 474b4b6 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:37:59 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mod-highlights (extensions/mod-highlight) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-mod-highlights.git
+  upstream: https://github.com/ErikVeland/extension-mod-highlights.git
+  original: https://github.com/Nexus-Mods/extension-mod-highlights.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: ed14b4d chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:59 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-dinput (extensions/modtype-dinput) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-dinput.git
+  upstream: https://github.com/ErikVeland/extension-modtype-dinput.git
+  original: https://github.com/Nexus-Mods/extension-modtype-dinput.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 5836275 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:14 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-dazip (extensions/modtype-dazip) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-dazip.git
+  upstream: https://github.com/ErikVeland/extension-modtype-dazip.git
+  original: https://github.com/Nexus-Mods/extension-modtype-dazip.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 4e4a751 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:36:13 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-enb (extensions/modtype-enb) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-enb.git
+  upstream: https://github.com/ErikVeland/extension-modtype-enb.git
+  original: https://github.com/Nexus-Mods/extension-modtype-enb.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: c231f6d chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:18 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-gedosato (extensions/modtype-gedosato) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-gedosato.git
+  upstream: https://github.com/ErikVeland/extension-modtype-gedosato.git
+  original: https://github.com/Nexus-Mods/extension-modtype-gedosato.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: a94b89f chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:23 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mtframework-arc-support (extensions/mtframework-arc-support) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-arc-support.git
+  upstream: https://github.com/ErikVeland/extension-arc-support.git
+  original: https://github.com/Nexus-Mods/extension-arc-support.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 21812e2 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:35 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/nmm-import (extensions/nmm-import-tool) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-nmm-import.git
+  upstream: https://github.com/ErikVeland/extension-nmm-import.git
+  original: https://github.com/Nexus-Mods/extension-nmm-import.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: a2465fb chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:43 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/open-directory (extensions/open-directory) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-open-directory.git
+  upstream: https://github.com/ErikVeland/extension-open-directory.git
+  original: https://github.com/Nexus-Mods/extension-open-directory.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 495ef00 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:47 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/theme-switcher (extensions/theme-switcher) ----
+Remotes:
+  origin: git@github.com:ErikVeland/extension-theme-switcher.git
+  upstream: git@github.com:ErikVeland/extension-theme-switcher.git
+Branch: macos-tahoe-theme
+Tracking: origin/macos-tahoe-theme
+Ahead/Behind: 0/0
+Latest: 26d3bee macOS compatibility updates (2025-09-05 13:40:39 +1000) by Erik Veland
+Working tree: dirty (1 changes)
+   M themes/macos-tahoe/details.scss
+   M themes/macos-tahoe/style.scss
+
+---- api (api) ----
+Remotes:
+  origin: https://github.com/ErikVeland/vortex-api.git
+  upstream: https://github.com/ErikVeland/vortex-api.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 31f160c chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:16:51 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/common-interpreters (extensions/common-interpreters) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-common-interpreters.git
+  upstream: https://github.com/ErikVeland/extension-common-interpreters.git
+  original: https://github.com/Nexus-Mods/extension-common-interpreters.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: c24458d chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:02 +1000) by Erik Veland
+Working tree: dirty (0 changes)
+  ?? dist/
+
+---- extensions/issue-tracker (extensions/issue-tracker) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-issue-tracker.git
+  upstream: https://github.com/ErikVeland/extension-issue-tracker.git
+  original: https://github.com/Nexus-Mods/extension-issue-tracker.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: eea042a chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:33 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/changelog-dashlet (extensions/changelog-dashlet) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-changelog-dashlet.git
+  upstream: https://github.com/ErikVeland/extension-changelog-dashlet.git
+  original: https://github.com/Nexus-Mods/extension-changelog-dashlet.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: bbede49 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:16:55 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/fnis-integration (extensions/fnis-integration) ----
+Remotes:
+  origin: https://github.com/ErikVeland/fnis-integration.git
+  upstream: https://github.com/ErikVeland/fnis-integration.git
+  original: https://github.com/Nexus-Mods/fnis-integration.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 5bf18d0 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:15 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/game-pillarsofeternity2 (extensions/game-pillarsofeternity2) ----
+Remotes:
+  origin: https://github.com/ErikVeland/game-pillarsofeternity2.git
+  upstream: https://github.com/ErikVeland/game-pillarsofeternity2.git
+  original: https://github.com/Nexus-Mods/game-pillarsofeternity2.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 5c3e7ca chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:18 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/test-gameversion (extensions/test-gameversion) ----
+Remotes:
+  origin: https://github.com/ErikVeland/test-gameversion.git
+  upstream: https://github.com/ErikVeland/test-gameversion.git
+  original: https://github.com/Nexus-Mods/test-gameversion.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 4f4ab72 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:39:10 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/documentation (extensions/documentation) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-documentation.git
+  upstream: https://github.com/ErikVeland/extension-documentation.git
+  original: https://github.com/Nexus-Mods/extension-documentation.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 97a7d2b docs(documentation): fix SASS undefined -title-bg by importing details.scss (2025-09-07 15:49:59 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-umm (extensions/modtype-umm) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-umm.git
+  upstream: https://github.com/ErikVeland/extension-modtype-umm.git
+  original: https://github.com/nexus-mods/extension-modtype-umm.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 756292b chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:27 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mod-content (extensions/mod-content) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-mod-content.git
+  upstream: https://github.com/ErikVeland/extension-mod-content.git
+  original: https://github.com/Nexus-Mods/extension-mod-content.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: c7ffa01 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:50 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/quickbms-support (extensions/quickbms-support) ----
+Remotes:
+  origin: git@github.com:ErikVeland/extension-quickbms-support.git
+  upstream: git@github.com:ErikVeland/extension-quickbms-support.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: ebcc7bc chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:54 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/morrowind-plugin-management (extensions/morrowind-plugin-management) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-morrowind-plugin-management.git
+  upstream: https://github.com/ErikVeland/extension-morrowind-plugin-management.git
+  original: https://github.com/Nexus-Mods/extension-morrowind-plugin-management.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 6bf1df4 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:31 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/script-extender-error-check (extensions/script-extender-error-check) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-script-extender-error-check.git
+  upstream: https://github.com/ErikVeland/extension-script-extender-error-check.git
+  original: https://github.com/Nexus-Mods/extension-script-extender-error-check.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: e30c79c chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:39:01 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamestore-gog (extensions/gamestore-gog) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamestore-gog.git
+  upstream: https://github.com/ErikVeland/extension-gamestore-gog.git
+  original: https://github.com/nexus-mods/extension-gamestore-gog.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 9965734 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:18:13 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamestore-origin (extensions/gamestore-origin) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamestore-origin.git
+  upstream: https://github.com/ErikVeland/extension-gamestore-origin.git
+  original: https://github.com/nexus-mods/extension-gamestore-origin.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: bc9547b chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:18:16 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamestore-uplay (extensions/gamestore-uplay) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamestore-uplay.git
+  upstream: https://github.com/ErikVeland/extension-gamestore-uplay.git
+  original: https://github.com/nexus-mods/extension-gamestore-uplay.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: f90367e chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:18:21 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamestore-xbox (extensions/gamestore-xbox) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-gamestore-xbox.git
+  upstream: https://github.com/ErikVeland/extension-gamestore-xbox.git
+  original: https://github.com/nexus-mods/extension-gamestore-xbox.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: a984588 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-07 15:16:36 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/new-file-monitor (extensions/new-file-monitor) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-new-file-monitor.git
+  upstream: https://github.com/ErikVeland/extension-new-file-monitor.git
+  original: https://github.com/Nexus-Mods/extension-new-file-monitor.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: c6d1fdb chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:38:39 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/extension-dashlet (extensions/extension-dashlet) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-extension-dashlet.git
+  upstream: https://github.com/ErikVeland/extension-extension-dashlet.git
+  original: https://github.com/Nexus-Mods/extension-extension-dashlet.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 729b77c chore(git): remove conflicted .DS_Store (2025-09-05 17:17:08 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/test-setup (extensions/test-setup) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-test-setup.git
+  upstream: https://github.com/ErikVeland/extension-test-setup.git
+  original: https://github.com/Nexus-Mods/extension-test-setup.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: fe52c46 chore(git): remove conflicted .DS_Store (2025-09-06 10:39:14 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/mod-report (extensions/mod-report) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-mod-report.git
+  upstream: https://github.com/ErikVeland/extension-mod-report.git
+  original: https://github.com/Nexus-Mods/extension-mod-report.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 13923ca chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:36:04 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/script-extender-installer (extensions/script-extender-installer) ----
+Remotes:
+  origin: https://github.com/ErikVeland/script-extender-installer.git
+  upstream: https://github.com/ErikVeland/script-extender-installer.git
+  original: https://github.com/Nexus-Mods/script-extender-installer.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 9b363a9 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:39:05 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gamebryo-archive-check (extensions/gamebryo-archive-check) ----
+Remotes:
+  origin: git@github.com:ErikVeland/bethesda-archive-check.git
+  upstream: git@github.com:ErikVeland/bethesda-archive-check.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 212a6c0 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:17:26 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/modtype-bepinex (extensions/modtype-bepinex) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-modtype-bepinex.git
+  upstream: https://github.com/ErikVeland/extension-modtype-bepinex.git
+  original: https://github.com/Nexus-Mods/extension-modtype-bepinex.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 852d829 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:36:09 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/collections (extensions/collections) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-collections.git
+  upstream: https://github.com/ErikVeland/extension-collections.git
+  original: https://github.com/Nexus-Mods/extension-collections.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: a4f9394 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-05 17:16:58 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/gameversion-hash (extensions/gameversion-hash) ----
+Remotes:
+  origin: git@github.com:ErikVeland/extension-gameversion-hash.git
+  upstream: git@github.com:ErikVeland/extension-gameversion-hash.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 98c6d2c chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:35:27 +1000) by Erik Veland
+Working tree: clean
+
+---- extensions/titlebar-launcher (extensions/titlebar-launcher) ----
+Remotes:
+  origin: https://github.com/ErikVeland/extension-titlebar-launcher.git
+  upstream: https://github.com/ErikVeland/extension-titlebar-launcher.git
+  original: https://github.com/Nexus-Mods/extension-titlebar-launcher.git
+Branch: macos-experimental
+Tracking: origin/macos-experimental
+Ahead/Behind: 0/0
+Latest: 6aceeb1 chore(git): ignore .DS_Store (macOS) and untrack existing files (2025-09-06 10:39:26 +1000) by Erik Veland
+Working tree: clean
