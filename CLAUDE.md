@@ -130,8 +130,15 @@ webPreferences: {
    - Fixed in `src/main.ts:249-256` with try/catch guard for duplicate initialization
 3. **"require is not defined" error**: Main window failed to load due to missing nodeIntegration
    - Fixed by ensuring `nodeIntegration: true` in MainWindow webPreferences (line 313)
-4. **Security configuration**: Balanced security with @electron/remote compatibility
-5. **VS Code debugging**: Fixed launch.json to work with newer Electron debugging protocol
+4. **File.path deprecated**: `File.path` property removed from dropped files in Electron 37+
+   - Fixed in `src/controls/Dropzone.tsx:202` by using `webUtils.getPathForFile()` instead
+   - **Breaking change**: `evt.dataTransfer.files.item(i).path` → `webUtils.getPathForFile(evt.dataTransfer.files.item(i))`
+5. **url.format() deprecated**: Node.js `url.format()` removed in newer Node.js versions with Electron 37+
+   - Fixed in `src/util/util.ts:890` by using string concatenation instead of `url.format()`
+   - Fixed in `tools/addicons/main.js:14` by using `pathToFileURL().href` instead
+   - **Breaking change**: `url.format(urlObj)` → `pathToFileURL(filePath).href` or manual string building
+6. **Security configuration**: Balanced security with @electron/remote compatibility
+7. **VS Code debugging**: Fixed launch.json to work with newer Electron debugging protocol
    - Separated runtimeArgs from args to prevent duplicate argument passing
 
 **Result**: ✅ Vortex now starts successfully with Electron 37.4.0 and main window displays properly
