@@ -1,10 +1,10 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-import { IProfileMod } from '../../profile_management/types/IProfile';
+import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 
@@ -18,7 +18,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  mods: { [modId: string]: IMod };
+  mods: { [modId: string]: IModWithState };
   gameMode: string;
   updateRunning: boolean;
   isPremium: boolean;
@@ -92,11 +92,11 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
   private checkForUpdatesAndInstall = () => {
     return this.dispatchCheckModsVersionEvent(true)
-      .then((_) => {
+      .then(() => {
         const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
           const mod = this.props.mods[modId];
           const state = updateState(mod.attributes);
-          return state === 'update' && mod.type !== 'collection';
+          return state === 'update' && mod.type !== 'collection' && mod.enabled;
         });
         return Array.from(new Set<string>([].concat(outdatedModIds)));
       })
@@ -129,8 +129,19 @@ const emptyObject = {};
 
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
+  const profile = activeProfile(state);
+  const modsWithState: { [modId: string]: IModWithState } = {};
+  const mods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameMode], emptyObject);
+  if (profile && profile.modState) {
+    for (const modId in mods) {
+      modsWithState[modId] = {
+        ...mods[modId],
+        ...profile.modState[modId] || { enabled: false, enabledTime: 0 },
+      };
+    }
+  }
   return {
-    mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObject),
+    mods: modsWithState,
     gameMode,
     updateRunning: getSafe(state, ['session', 'mods', 'updatingMods', gameMode], false),
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),

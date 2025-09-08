@@ -64,6 +64,7 @@ import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
+import updateState from '../util/modUpdateState';
 
 type IModWithState = IMod & IProfileMod;
 
@@ -216,6 +217,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             return mods[instanceId] !== undefined;
           } else {
             return instanceId.find(id => mods[id] !== undefined) !== undefined;
+          }
+        },
+      },
+      {
+        icon: 'refresh',
+        title: 'Update',
+        action: this.updateAll,
+        condition: instanceId => {
+          const { mods, modState } = this.props;
+          if (typeof(instanceId) === 'string') {
+            return mods[instanceId] !== undefined && (modState[instanceId]?.enabled === true);
+          } else {
+            return instanceId.find(id => mods[id] !== undefined && (modState[id]?.enabled === true)) !== undefined;
           }
         },
       },
@@ -1503,6 +1517,28 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private toggleDropzone = () => {
     const { showDropzone, onShowDropzone } = this.props;
     onShowDropzone(!showDropzone);
+  }
+
+  private updateAll = (modIds: string[]) => {
+    const { modState, gameMode, mods } = this.props;
+    const filtered = modIds.filter(modId => modState[modId]?.enabled);
+    if (filtered.length === 0) {
+      return;
+    }
+    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, filtered), 'silent')
+      .then(() => {
+        const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
+          const mod = this.props.mods[modId];
+          const state = updateState(mod.attributes);
+          return state === 'update' && mod.type !== 'collection';
+        });
+        return Array.from(new Set<string>([].concat(outdatedModIds)));
+      })
+      .then((outdatedModIds: string[]) => {
+        if (outdatedModIds.length > 0) {
+          this.context.api.events.emit('mods-update', gameMode, outdatedModIds);
+        }
+      });
   }
 
   private checkForUpdate = (modIds: string[]) => {
