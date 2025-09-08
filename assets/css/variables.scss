@@ -143,21 +143,22 @@ $line-height-base:            1.5;
 $line-height-computed:        floor(($font-size-base * $line-height-base));
 
 //== Bootstrap State Variables
-$state-success-text:          $brand-success;
-$state-success-bg:            lighten($brand-success, 50%);
-$state-success-border:        $brand-success;
+// macOS-inspired colors that are legible with white text
+$state-success-text:          $white;
+$state-success-bg:            rgba(52, 199, 89, 0.25); // macOS green with transparency
+$state-success-border:        rgba(52, 199, 89, 0.4); // Slightly more opaque border
 
-$state-info-text:             $brand-info;
-$state-info-bg:               lighten($brand-info, 50%);
-$state-info-border:           $brand-info;
+$state-info-text:             $white;
+$state-info-bg:               rgba(0, 122, 255, 0.25); // macOS blue with transparency
+$state-info-border:           rgba(0, 122, 255, 0.4); // Slightly more opaque border
 
-$state-warning-text:          $brand-warning;
-$state-warning-bg:            lighten($brand-warning, 50%);
-$state-warning-border:        $brand-warning;
+$state-warning-text:          $white;
+$state-warning-bg:            rgba(255, 149, 0, 0.25); // macOS orange with transparency
+$state-warning-border:        rgba(255, 149, 0, 0.4); // Slightly more opaque border
 
-$state-danger-text:           $brand-danger;
-$state-danger-bg:             lighten($brand-danger, 50%);
-$state-danger-border:         $brand-danger;
+$state-danger-text:           $white;
+$state-danger-bg:             rgba(255, 59, 48, 0.25); // macOS red with transparency
+$state-danger-border:         rgba(255, 59, 48, 0.4); // Slightly more opaque border
 
 //== Alert Variables
 $alert-padding:               15px;
