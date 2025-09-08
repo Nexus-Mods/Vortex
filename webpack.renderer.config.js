@@ -23,8 +23,7 @@ if ((ForkTsCheckerWebpackPlugin !== undefined) && (process.env['BUILD_QUICK_AND_
 
 module.exports = {
   entry: {
-    renderer: './src/renderer.tsx',
-    splash: './src/splash.ts'
+    renderer: './src/renderer.tsx'
   },
   target: 'electron-renderer',
   node: { __filename: false, __dirname: false },
