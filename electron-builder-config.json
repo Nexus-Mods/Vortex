@@ -18,6 +18,12 @@
   ],
   "afterSign": "./createMD5List.js",
   "appId": "com.nexusmods.vortex",
+  "protocols": [
+    {
+      "name": "nxm",
+      "schemes": ["nxm"]
+    }
+  ],
   "includeSubNodeModules": true,
   "win": {
     "target": "nsis",

@@ -249,6 +249,14 @@ class Application {
       this.applyArguments(commandLine(secondaryArgv, true));
     });
 
+    if (isMacOS()) {
+      app.on('open-url', (event: Electron.Event, url: string) => {
+        event.preventDefault();
+        log('debug', 'received open-url', url);
+        this.applyArguments({ download: url });
+      });
+    }
+
     app.whenReady().then(() => {
       // Set the dock icon on macOS
       if (isMacOS()) {
