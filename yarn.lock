@@ -8838,7 +8838,7 @@ modify-filename@^1.1.0:
 
 modmeta-db@Nexus-Mods/modmeta-db#simplify-file-hash-query:
   version "0.9.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/fcece0a66df6c0f4bbdbc09fff2196da1a28d46c"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/615d08d1036af897eaf1088ee86eacbc3cfdd2d3"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"
