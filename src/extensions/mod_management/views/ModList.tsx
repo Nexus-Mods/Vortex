@@ -208,22 +208,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         multiRowAction: false,
       },
       {
-        icon: 'refresh',
+        component: CheckModVersionsButton,
         title: 'Check for Update',
-        action: this.checkForUpdate,
-        condition: instanceId => {
-          const { mods } = this.props;
-          if (typeof(instanceId) === 'string') {
-            return mods[instanceId] !== undefined;
-          } else {
-            return instanceId.find(id => mods[id] !== undefined) !== undefined;
-          }
-        },
-      },
-      {
-        icon: 'auto-update',
-        title: 'Update Selected',
-        action: this.updateAll,
         condition: instanceId => {
           const { mods, modState } = this.props;
           if (typeof(instanceId) === 'string') {
@@ -232,7 +218,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             return instanceId.find(id => mods[id] !== undefined && (modState[id]?.enabled === true)) !== undefined;
           }
         },
-        position: 400,
+        props: () => ({ selectionOnly: true }),
       },
       {
         icon: 'start-install',
@@ -1518,57 +1504,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private toggleDropzone = () => {
     const { showDropzone, onShowDropzone } = this.props;
     onShowDropzone(!showDropzone);
-  }
-
-  private updateAll = (modIds: string[]) => {
-    const { modState, gameMode, mods } = this.props;
-    const filtered = modIds.filter(modId => modState[modId]?.enabled);
-    if (filtered.length === 0) {
-      return;
-    }
-    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, filtered), 'silent')
-      .then(() => {
-        const outdatedModIds = filtered.filter(modId => {
-          const mod = this.props.mods[modId];
-          const state = updateState(mod.attributes);
-          return state === 'update' && mod.type !== 'collection';
-        });
-        return Array.from(new Set<string>([].concat(outdatedModIds)));
-      })
-      .then((outdatedModIds: string[]) => {
-        if (outdatedModIds.length > 0) {
-          this.updateAllNotification(outdatedModIds);
-        }
-      });
-  }
-
-  private updateAllNotification = (modIds: string[]) => {
-    const { t, gameMode } = this.props;
-    this.context.api.showDialog('question', t('Confirm update'), {
-      text: t('Do you want to update all selected mods?'),
-      message: modIds.map(modId => modName(this.state.modsWithState[modId], { version: true })).join('\n'),
-    }, [
-      { label: t('Cancel') },
-      { label: t('Update All') },
-    ])
-    .then(result => {
-      if (result.action === 'Update All') {
-        this.context.api.events.emit('mods-update', gameMode, modIds);
-      }
-    });
-  }
-
-  private checkForUpdate = (modIds: string[]) => {
-    const { gameMode, mods } = this.props;
-
-    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds), 'silent')
-      .then(() => {
-        this.context.api.sendNotification({
-          type: 'success',
-          message: 'Check for mod updates complete',
-          displayMS: 5000,
-        });
-      });
   }
 
   private dropMod = (type: DropType, values: string[]) => {
