@@ -931,7 +931,7 @@ class InstallManager {
               fullInfo.choices, unattended)
               .tap(() => {
                 const endTime = Date.now();
-                log('error', 'processed instructions', { installId: activeInstall.installId, duration: endTime - startTime });
+                log('debug', 'processed instructions', { installId: activeInstall.installId, duration: endTime - startTime });
               });
           })
           .finally(() => {
@@ -959,22 +959,6 @@ class InstallManager {
                   installed: true,
                 });
               }
-              /*
-              if (processDependencies) {
-                log('info', 'process dependencies', { modId });
-                const mod: IMod = state.persistent.mods[installGameId]?.[modId];
-    
-                this.installDependenciesImpl(api, currentProfile,
-                                             mod.id, modName(mod),
-                                             [].concat(modInfo.rules || [], mod.rules || []),
-                                             this.mGetInstallPath(installGameId))
-                  .then(() => this.installRecommendationsImpl(
-                                             api, currentProfile,
-                                             mod.id, modName(mod),
-                                             [].concat(modInfo.rules || [], mod.rules || []),
-                                             this.mGetInstallPath(installGameId)));
-              }
-              */
             }
             this.setModSize(api, modId, installGameId);
             promiseCallback?.(null, modId);
@@ -1134,23 +1118,8 @@ class InstallManager {
               const state = api.store.getState();
               const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
 
-              const activeInstall = this.mActiveInstalls.get(installId);
-              const remainingActiveCount = this.mActiveInstalls.size;
-
-              log('debug', 'InstallManager: Cleaning up installation in finally block', {
-                installId,
-                modId: modId || 'unknown',
-                indicatorId: installContext?.['mIndicatorId'],
-                remainingActiveInstallations: remainingActiveCount,
-                installDuration: activeInstall ? Date.now() - activeInstall.startTime : 'unknown'
-              });
-
               try {
                 installContext.stopIndicator(mod);
-                log('debug', 'InstallManager: stopIndicator completed successfully', {
-                  installId,
-                  modId: modId || 'unknown'
-                });
               } catch (stopError) {
                 log('error', 'InstallManager: Error in stopIndicator during cleanup', {
                   installId,
@@ -1159,11 +1128,6 @@ class InstallManager {
                   stack: stopError.stack
                 });
               }
-            } else {
-              log('warn', 'InstallManager: installContext is undefined in finally block', {
-                installId,
-                modId: modId || 'unknown'
-              });
             }
           }));
 
@@ -1491,7 +1455,7 @@ class InstallManager {
         const endTime = Date.now();
         this.mActiveInstalls.delete(installKey);
 
-        log('warn', 'Failed to install dependency in parallel', {
+        log('warn', 'Failed to install dependency', {
           downloadId,
           error: err.message,
           dependency: renderModReference(dep.reference),
@@ -1506,7 +1470,7 @@ class InstallManager {
         this.maybeAdvancePhase(sourceModId);
       }
     }).catch(err => {
-      log('error', 'Critical error in parallel installation', {
+      log('error', 'Critical error in dependency installation', {
         downloadId,
         error: err.message,
         dependency: renderModReference(dep.reference)
@@ -3247,9 +3211,6 @@ class InstallManager {
       return Bluebird.resolve([]);
     }
 
-    // Check if collections install while downloading is enabled
-    const collectionsInstallWhileDownloading = api.getState().settings.downloads.collectionsInstallWhileDownloading;
-
     let queuedDownloads: IModReference[] = [];
 
     const clearQueued = () => {
@@ -4336,236 +4297,9 @@ class InstallManager {
     } catch (err) {
       return Promise.reject(err);
     } finally {
-      log('error', 'extraction completed', { duration: Date.now() - now, archivePath, instructions: copies.length });
+      log('debug', 'extraction completed', { duration: Date.now() - now, archivePath, instructions: copies.length });
     }
   }
-
-  /**
-   * extract an archive
-   *
-   * @export
-   * @param {string} archivePath path to the archive file
-   * @param {string} destinationPath path to install to
-   */
-  // private extractArchive(
-  //   api: IExtensionApi,
-  //   archivePath: string,
-  //   tempPath: string,
-  //   destinationPath: string,
-  //   copies: IInstruction[],
-  //   gameId: string): Bluebird<void> {
-  //   let normalize: Normalize;
-
-  //   const dlPath = downloadPathForGame(api.getState(), gameId);
-
-  // const missingFiles: string[] = [];
-  // // Collect actions to batch-dispatch and md5 tasks to process in background
-  // const addDownloadActions: any[] = [];
-  // const md5Tasks: Array<{ file: string, fileSize: number }> = [];
-  // // Collect transferred download paths to stat later in parallel
-  // const transferredDownloads: Array<{ destPath: string, rel: string }> = [];
-  // const now = Date.now();
-  // return fs.ensureDirAsync(destinationPath)
-  //       .then(() => getNormalizeFunc(destinationPath))
-  //       .then((normalizeFunc: Normalize) => {
-  //         normalize = normalizeFunc;
-  //       })
-  //       .then(() => {
-  //         interface IDest {
-  //           dest: string;
-  //           section: string;
-  //         }
-  //         const sourceMap: {[src: string]: IDest[]} =
-  //             copies.reduce((prev: { [src: string]: IDest[] }, copy) => {
-  //               setdefault(prev, copy.source, [])
-  //                 .push({ dest:  copy.destination, section: copy.section });
-  //               return prev;
-  //             }, {});
-  //         return Bluebird.map(Object.keys(sourceMap), srcRel => {
-  //           const sourcePath = path.join(tempPath, srcRel);
-  //           const destinations = sourceMap[srcRel];
-
-  //           // Stat source once and run per-destination logic with that hint
-  //           return fs.statAsync(sourcePath)
-  //             .catch(() => ({ isDirectory: () => false }))
-  //             .then((sourceStat: any) => {
-  //               const sourceIsDir = !!(sourceStat && sourceStat.isDirectory && sourceStat.isDirectory());
-
-  //               // Pre-create parent directories for all destinations to avoid repeated ensureDir
-  //               const parentDirs = destinations.map(dest => {
-  //                 const destPath = (dest.section === 'download')
-  //                   ? path.join(dlPath, dest.dest)
-  //                   : path.join(destinationPath, dest.dest);
-  //                 return path.dirname(destPath);
-  //               }).filter((v, i, a) => a.indexOf(v) === i);
-
-  //               return Bluebird.map(parentDirs, dir => fs.ensureDirAsync(dir), { concurrency: 10 })
-  //                 .then(() => {
-
-  //                   const handleSingle = (dest: IDest) => {
-  //             const destPath = (dest.section === 'download')
-  //               ? path.join(dlPath, dest.dest)
-  //               : path.join(destinationPath, dest.dest);
-
-  //             const attemptTransfer = () => {
-  //               if (dest.== 'download') {
-  //                 return this.transferFile(sourcePath, destPath, true, sourceIsDir)
-  //                   .then(() => true)
-  //                   .catch(err => {
-  //                     if (err && (err.code === 'EEXIST' || err.code === 'EPERM')) {
-  //                       if (err.code === 'EPERM') {
-  //                         return this.transferFile(sourcePath, destPath, false, sourceIsDir)
-  //                           .then(() => true)
-  //                           .catch(innerErr => Bluebird.reject(innerErr));
-  //                       }
-  //                       return false;
-  //                     }
-  //                     if (err && err.code === 'ENOENT') {
-  //                       return Bluebird.reject(err);
-  //                     }
-  //                     return Bluebird.reject(err);
-  //                   });
-  //               }
-  //               return this.transferFile(sourcePath, destPath, true, sourceIsDir).then(() => true);
-  //             };
-
-  //                 return attemptTransfer()
-  //               .then(transferred => {
-  //                 if ((dest.== 'download') && transferred) {
-  //                   transferredDownloads.push({ destPath, rel: dest.dest });
-  //                 }
-  //                 return Bluebird.resolve();
-  //               })
-  //               .catch(err => {
-  //                 if (err && err.code === 'ENOENT') {
-  //                   missingFiles.push(srcRel);
-  //                   return Bluebird.resolve();
-  //                 } else if (err && err.code === 'EPERM') {
-  //                   return this.transferFile(sourcePath, destPath, false);
-  //                 } else {
-  //                   return Bluebird.reject(err);
-  //                 }
-  //               });
-  //                   };
-
-  //                   if (destinations.length === 1) {
-  //                     return handleSingle(destinations[0]);
-  //                   }
-
-  //                   const nonMove = destinations.slice(0, -1);
-  //                   const moveDest = destinations[destinations.length - 1];
-  //                   const copyConcurrency = 10;
-
-  //                   return Bluebird.map(nonMove, dest => {
-  //             const destPath = (dest.section === 'download')
-  //               ? path.join(dlPath, dest.dest)
-  //               : path.join(destinationPath, dest.dest);
-
-  //                     return this.transferFile(sourcePath, destPath, false, sourceIsDir)
-  //               .then(() => {
-  //                 if (dest.section === 'download') {
-  //                   transferredDownloads.push({ destPath, rel: dest.dest });
-  //                 }
-  //                 return Bluebird.resolve();
-  //               })
-  //               .catch(err => {
-  //                 if (err && (err.code === 'EEXIST' || err.code === 'EPERM')) {
-  //                   if (err.code === 'EPERM') {
-  //                             return this.transferFile(sourcePath, destPath, false)
-  //                               .then(() => Bluebird.resolve())
-  //                               .catch(innerErr => Bluebird.reject(innerErr));
-  //                   }
-  //                   return Bluebird.resolve();
-  //                 }
-  //                 if (err && err.code === 'ENOENT') {
-  //                   return Bluebird.reject(err);
-  //                 }
-  //                 return Bluebird.reject(err);
-  //               });
-  //                   }, { concurrency: copyConcurrency })
-  //                     .then(() => handleSingle(moveDest));
-  //                 });
-  //             });
-  //         }, { concurrency: 10 });
-  //       })
-  //       .then(() => {
-  //         // Stat transferred downloads in parallel (bounded) to collect sizes
-  //         if (transferredDownloads.length > 0) {
-  //           const statConcurrency = 10;
-  //           return Bluebird.map(transferredDownloads, entry =>
-  //             fs.statAsync(entry.destPath)
-  //               .then(stat => {
-  //                 const fileSize = stat.size;
-  //                 const archiveId = shortid();
-  //                 addDownloadActions.push(addLocalDownload(archiveId, gameId, entry.rel, fileSize));
-  //                 md5Tasks.push({ file: entry.rel, fileSize });
-  //                 return Bluebird.resolve();
-  //               })
-  //           , { concurrency: statConcurrency })
-  //           .then(() => {
-  //             // Batch-dispatch collected addLocalDownload actions to reduce store thrash
-  //             if (addDownloadActions.length > 0) {
-  //               batchDispatch(api.store, addDownloadActions);
-  //             }
-
-  //             // Start background MD5 processing with limited concurrency. Do not block
-  //             // the extract operation on MD5 work; just log errors.
-  //             if (md5Tasks.length > 0) {
-  //               Bluebird.map(md5Tasks, task =>
-  //                 api.genMd5Hash(task.file)
-  //                   .then(result => api.store.dispatch(setDownloadHashByFile(task.file, result.md5sum, task.fileSize)))
-  //                   .catch(err => log('warn', 'Failed to calculate MD5 for downloaded file', { file: task.file, error: err?.message || err }))
-  //               , { concurrency: 10 })
-  //               .catch(() => { /* swallow background errors */ });
-  //             }
-
-  //             if (missingFiles.length > 0) {
-  //               api.showErrorNotification(api.translate('Invalid installer'),
-  //                 api.translate('The installer in "{{name}}" tried to install files that were '
-  //                               + 'not part of the archive.\nThis is a bug in the mod, please '
-  //                               + 'report it to the mod author.\n'
-  //                               + 'Please note: NMM silently ignores this kind of errors so you '
-  //                               + 'might get this message for mods that appear to install '
-  //                               + 'fine with NMM. The mod will likely work, at least partially.',
-  //                             { replace: {name: path.basename(archivePath)} })
-  //                 + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
-  //               , { allowReport: false });
-  //             }
-  //             return Bluebird.resolve();
-  //           });
-  //         }
-
-  //         // No transferred downloads to stat; still need to dispatch any actions and schedule md5
-  //         if (addDownloadActions.length > 0) {
-  //           batchDispatch(api.store, addDownloadActions);
-  //         }
-  //         if (md5Tasks.length > 0) {
-  //           Bluebird.map(md5Tasks, task =>
-  //             api.genMd5Hash(task.file)
-  //               .then(result => api.store.dispatch(setDownloadHashByFile(task.file, result.md5sum, task.fileSize)))
-  //               .catch(err => log('warn', 'Failed to calculate MD5 for downloaded file', { file: task.file, error: err?.message || err }))
-  //           , { concurrency: 10 })
-  //           .catch(() => { /* swallow background errors */ });
-  //         }
-
-  //         if (missingFiles.length > 0) {
-  //           api.showErrorNotification(api.translate('Invalid installer'),
-  //             api.translate('The installer in "{{name}}" tried to install files that were '
-  //                           + 'not part of the archive.\nThis is a bug in the mod, please '
-  //                           + 'report it to the mod author.\n'
-  //                           + 'Please note: NMM silently ignores this kind of errors so you '
-  //                           + 'might get this message for mods that appear to install '
-  //                           + 'fine with NMM. The mod will likely work, at least partially.',
-  //                         { replace: {name: path.basename(archivePath)} })
-  //             + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
-  //           , { allowReport: false });
-  //         }
-  //         return Bluebird.resolve();
-  //       }).finally(() => {
-  //         const duration = Date.now() - now;
-  //         log('error', 'extraction finished', { duration, archivePath, totalInstructions: copies.length });
-  //       });
-  // }
 }
 
 export default InstallManager;
