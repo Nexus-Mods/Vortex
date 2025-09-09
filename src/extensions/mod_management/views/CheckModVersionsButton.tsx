@@ -8,6 +8,8 @@ import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 
+import _ from 'lodash';
+
 import * as React from 'react';
 import updateState from '../util/modUpdateState';
 
@@ -86,7 +88,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
           ? [this.props.instanceId]
           : this.props.instanceId)
         : Object.keys(this.props.mods);
-      const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, mods, force);
+      const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(this.props.mods, mods), force);
       const modIds = modIdsResults
         .filter(iter => iter !== undefined)
         .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
