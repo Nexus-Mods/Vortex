@@ -1,11 +1,23 @@
 /* eslint-disable max-lines-per-function */
 import path from 'path';
 import fs from 'fs';
-import { _electron as electron } from '@playwright/test';
+import { _electron as electron, ElectronApplication, Page } from '@playwright/test';
 
-export async function waitForMainWindow(app) {
+interface WindowInfo {
+  url: string;
+  width: number;
+  height: number;
+}
+
+interface VortexLaunchResult {
+  app: ElectronApplication;
+  mainWindow: Page;
+  testRunDir: string;
+}
+
+export async function waitForMainWindow(app: ElectronApplication): Promise<Page> {
   const splashWindow = await app.firstWindow();
-  let mainWindow = splashWindow;
+  let mainWindow: Page = splashWindow;
   
   // First, find the main window
   for (let attempts = 0; attempts < 30; attempts++) {
@@ -13,10 +25,10 @@ export async function waitForMainWindow(app) {
     
     if (windows.length > 1) {
       for (const window of windows) {
-        const windowInfo = await window.evaluate(() => ({
-          url: window.location.href,
-          width: window.outerWidth,
-          height: window.outerHeight
+        const windowInfo: WindowInfo = await window.evaluate(() => ({
+          url: (window as any).location.href,
+          width: (window as any).outerWidth,
+          height: (window as any).outerHeight
         }));
         
         if (windowInfo.url.includes('index.html') && 
@@ -28,10 +40,10 @@ export async function waitForMainWindow(app) {
       }
       if (mainWindow !== splashWindow) break;
     } else if (windows.length === 1) {
-      const currentInfo = await windows[0].evaluate(() => ({
-        url: window.location.href,
-        width: window.outerWidth,
-        height: window.outerHeight
+      const currentInfo: WindowInfo = await windows[0].evaluate(() => ({
+        url: (window as any).location.href,
+        width: (window as any).outerWidth,
+        height: (window as any).outerHeight
       }));
       
       if (currentInfo.url.includes('index.html') || 
@@ -50,9 +62,9 @@ export async function waitForMainWindow(app) {
   // Wait for React components to mount and render
   await mainWindow.waitForFunction(() => {
     // Check for React-specific indicators
-    const hasReact = window.React || window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    const hasReact = (window as any).React || (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
     const hasContent = document.body.children.length > 2;
-    const hasVortexContent = document.body.textContent.includes('Vortex') || 
+    const hasVortexContent = document.body.textContent!.includes('Vortex') || 
                              document.querySelector('[class*="App"], [class*="application"], [data-testid]') !== null;
     
     return hasContent && (hasReact || hasVortexContent);
@@ -72,7 +84,7 @@ export async function waitForMainWindow(app) {
   return mainWindow;
 }
 
-export async function launchVortex(testName = 'unknown-test') {
+export async function launchVortex(testName: string = 'unknown-test'): Promise<VortexLaunchResult> {
   // Initialize session and reset counter if needed
   initializeTestSession();
 
@@ -97,7 +109,13 @@ export async function launchVortex(testName = 'unknown-test') {
       ...process.env,
       NODE_ENV: 'development',
       START_DEVTOOLS: 'false',
-      ELECTRON_DISABLE_SECURITY_WARNINGS: 'true'
+      ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+      NEXUS_DOMAIN: 'cluster.nexdev.uk',
+      API_SUBDOMAIN: 'api-staging',
+      USERS_SUBDOMAIN: 'users-staging',
+      FLAMEWORK_SUBDOMAIN: 'nexusmods-staging',
+      NEXT_SUBDOMAIN: 'next-staging',
+      PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
     },
     timeout: 30000
   });
@@ -107,12 +125,12 @@ export async function launchVortex(testName = 'unknown-test') {
   return { app, mainWindow, testRunDir };
 }
 
-function resetRunCounter() {
+function resetRunCounter(): void {
   const counterFile = path.join(process.cwd(), 'playwright', '.run-counter');
   fs.writeFileSync(counterFile, '0');
 }
 
-function getNextRunNumber() {
+function getNextRunNumber(): number {
   const counterFile = path.join(process.cwd(), 'playwright', '.run-counter');
   
   let counter = 1;
@@ -124,7 +142,7 @@ function getNextRunNumber() {
   return counter;
 }
 
-function initializeTestSession() {
+function initializeTestSession(): void {
   const sessionFile = path.join(process.cwd(), 'playwright', '.test-session');
   const currentPid = process.pid.toString();
   

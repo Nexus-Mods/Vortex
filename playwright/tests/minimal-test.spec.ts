@@ -1,6 +1,19 @@
+/* eslint-disable max-lines-per-function */
 import { test } from '@playwright/test';
 import { _electron as electron } from '@playwright/test';
 import path from 'path';
+
+interface WindowInfo {
+  url: string;
+  title: string;
+  readyState: string;
+  width: number;
+  height: number;
+}
+
+interface FinalWindowInfo extends WindowInfo {
+  bodyText: string;
+}
 
 test('minimal electron launch - find main window', async () => {
   const isCI = !!process.env.CI;
@@ -61,7 +74,7 @@ test('minimal electron launch - find main window', async () => {
       // Check each window
       for (let i = 0; i < windows.length; i++) {
         try {
-          const windowInfo = await windows[i].evaluate(() => ({
+          const windowInfo: WindowInfo = await windows[i].evaluate(() => ({
             url: window.location.href,
             title: document.title,
             readyState: document.readyState,
@@ -80,7 +93,7 @@ test('minimal electron launch - find main window', async () => {
             break;
           }
         } catch (error) {
-          console.log(`Error evaluating window ${i}: ${error.message}`);
+          console.log(`Error evaluating window ${i}: ${(error as Error).message}`);
         }
       }
       
@@ -99,7 +112,7 @@ test('minimal electron launch - find main window', async () => {
           await windows[i].screenshot({ path: `debug-window-${i}.png` });
           console.log(`Screenshot taken for window ${i}`);
         } catch (error) {
-          console.log(`Failed to screenshot window ${i}: ${error.message}`);
+          console.log(`Failed to screenshot window ${i}: ${(error as Error).message}`);
         }
       }
       throw new Error('Main window never appeared');
@@ -110,11 +123,11 @@ test('minimal electron launch - find main window', async () => {
     console.log('Main window screenshot taken');
     
     // Get final window state
-    const finalInfo = await mainWindow.evaluate(() => ({
+    const finalInfo: FinalWindowInfo = await mainWindow.evaluate(() => ({
       url: window.location.href,
       title: document.title,
       readyState: document.readyState,
-      bodyText: document.body ? document.body.textContent.substring(0, 200) : 'No body',
+      bodyText: document.body ? document.body.textContent!.substring(0, 200) : 'No body',
       width: window.outerWidth,
       height: window.outerHeight
     }));
@@ -129,8 +142,8 @@ test('minimal electron launch - find main window', async () => {
     console.log('SUCCESS: Main window found and working!');
     
   } catch (error) {
-    console.error('Test failed:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Test failed:', (error as Error).message);
+    console.error('Error stack:', (error as Error).stack);
     throw error;
   } finally {
     if (app) {
@@ -139,7 +152,7 @@ test('minimal electron launch - find main window', async () => {
         await app.close();
         console.log('App closed successfully');
       } catch (closeError) {
-        console.error('Error closing app:', closeError.message);
+        console.error('Error closing app:', (closeError as Error).message);
       }
     }
   }

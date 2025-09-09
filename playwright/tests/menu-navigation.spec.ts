@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { test, expect } from '@playwright/test';
 import path from 'path';
-import { launchVortex } from '../utils/vortex-helpers.js';
+import { launchVortex } from '../utils/vortex-helpers';
 
 test('can open global menu and click About', async () => {
   const { app, mainWindow, testRunDir } = await launchVortex('menu-navigation');
@@ -28,8 +28,8 @@ test('can open global menu and click About', async () => {
     await mainWindow.screenshot({ path: path.join(testRunDir, '03-about-opened.png') });
     
     const aboutVisible = await mainWindow.evaluate(() => {
-      return document.body.textContent.toLowerCase().includes('about') ||
-             document.body.textContent.toLowerCase().includes('version');
+      return document.body.textContent!.toLowerCase().includes('about') ||
+             document.body.textContent!.toLowerCase().includes('version');
     });
     
     expect(aboutVisible).toBe(true);
