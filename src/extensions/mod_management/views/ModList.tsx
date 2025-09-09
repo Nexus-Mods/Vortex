@@ -221,8 +221,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         },
       },
       {
-        icon: 'refresh',
-        title: 'Update',
+        icon: 'auto-update',
+        title: 'Update Selected',
         action: this.updateAll,
         condition: instanceId => {
           const { mods, modState } = this.props;
@@ -232,6 +232,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             return instanceId.find(id => mods[id] !== undefined && (modState[id]?.enabled === true)) !== undefined;
           }
         },
+        position: 400,
       },
       {
         icon: 'start-install',
@@ -1527,7 +1528,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
     this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, filtered), 'silent')
       .then(() => {
-        const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
+        const outdatedModIds = filtered.filter(modId => {
           const mod = this.props.mods[modId];
           const state = updateState(mod.attributes);
           return state === 'update' && mod.type !== 'collection';
@@ -1536,9 +1537,25 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       })
       .then((outdatedModIds: string[]) => {
         if (outdatedModIds.length > 0) {
-          this.context.api.events.emit('mods-update', gameMode, outdatedModIds);
+          this.updateAllNotification(outdatedModIds);
         }
       });
+  }
+
+  private updateAllNotification = (modIds: string[]) => {
+    const { t, gameMode } = this.props;
+    this.context.api.showDialog('question', t('Confirm update'), {
+      text: t('Do you want to update all selected mods?'),
+      message: modIds.map(modId => modName(this.state.modsWithState[modId], { version: true })).join('\n'),
+    }, [
+      { label: t('Cancel') },
+      { label: t('Update All') },
+    ])
+    .then(result => {
+      if (result.action === 'Update All') {
+        this.context.api.events.emit('mods-update', gameMode, modIds);
+      }
+    });
   }
 
   private checkForUpdate = (modIds: string[]) => {
