@@ -7,6 +7,8 @@ import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
 import AnalyticsUA, { DIMENSIONS } from './analytics/AnalyticsUA';
 import AnalyticsGA4 from './analytics/AnalyticsGA4';
+import AnalyticsMixpanel from './analytics/AnalyticsMixpanel';
+import { AppLaunchedEvent } from './types/MixpanelEvents';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
 import { HELP_ARTICLE } from './constants';
@@ -25,7 +27,7 @@ function init(context: IExtensionContext): boolean {
     const instanceId = context.api.store.getState().app.instanceId;
     const updateChannel = context.api.store.getState().settings.update.channel;
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
-    const userInfo = () => context.api.store.getState().persistent.nexus.userInfo;
+    const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ['settings', 'analytics', 'enabled'];
@@ -43,6 +45,7 @@ function init(context: IExtensionContext): boolean {
       } else {
         AnalyticsUA.trackClickEvent('Tracking', 'Deny - Settings');
         AnalyticsUA.stop();
+        AnalyticsMixpanel.stop();
       }
     });
 
@@ -87,6 +90,7 @@ function init(context: IExtensionContext): boolean {
         // If I'm logging out disable tracking
         AnalyticsUA.stop();
         AnalyticsGA4.stop();
+        AnalyticsMixpanel.stop();
       }
     });
 
@@ -147,8 +151,8 @@ function init(context: IExtensionContext): boolean {
     async function initializeAnalytics() {
 
       try {
-        const info = userInfo();
-        if (info === undefined) {
+        const userInfo = getUserInfo();
+        if (userInfo === undefined) {
           return;
         }
 
@@ -190,9 +194,9 @@ function init(context: IExtensionContext): boolean {
         const collectionCount = allModsAndCollections.filter((mod) => { return mod.type === 'collection'}).length;
         const modCount = allModsAndCollections.filter((mod) => { return mod.type !== 'collection'}).length;
 
-        const membership = info.isPremium
+        const membership = userInfo.isPremium
           ? 'Premium'
-          : info.isSupporter
+          : userInfo.isSupporter
             ? 'Supporter'
             : 'Member';       
 
@@ -221,6 +225,13 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Theme]: theme,
           [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
+
+        AnalyticsMixpanel.start(userInfo, updateChannel);
+
+        // Send app_launched event
+        AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
+          process.platform
+        ));
 
         metrics.start(instanceId, getApplication().version, context.api);
         
@@ -279,7 +290,7 @@ function init(context: IExtensionContext): boolean {
       });
     }
 
-    if (enabled() === undefined && !!userInfo()) {
+    if (enabled() === undefined && !!getUserInfo()) {
       // Is logged in, show consent dialog
       showConsentDialog();
     }
