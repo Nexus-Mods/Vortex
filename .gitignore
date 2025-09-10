@@ -86,3 +86,34 @@ ehthumbs.db
 *.swp
 *.swo
 *.tmp
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+# Icon must end with two carriage returns
+Icon
+
+._*
+.Spotlight-V100
+.Trashes
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# VS Code user-specific artifacts (keep tracked project config files)
+.vscode/.history/
+.vscode/*.log
+.vscode/*.db
+.history/
+
+# Package manager debug logs and local stores
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Optional Yarn Plug'n'Play files (if enabled locally)
+.pnp.*
