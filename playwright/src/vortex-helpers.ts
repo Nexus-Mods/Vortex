@@ -93,6 +93,7 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
   const testRunDir = path.join(
     process.cwd(), 
     'playwright', 
+    'test-results',
     `run-${timestamp}-${runNumber.toString().padStart(3, '0')}-${testName}`
   );
   

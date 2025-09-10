@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import { launchVortex } from '../utils/vortex-helpers';
+import { launchVortex } from '../src/vortex-helpers';
 
 interface AppInfo {
   title: string;

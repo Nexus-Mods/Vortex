@@ -1,9 +1,9 @@
 /* eslint-disable max-lines-per-function */
 import { test, expect, Browser } from '@playwright/test';
-import { launchVortex } from '../utils/vortex-helpers';
+import { launchVortex } from '../src/vortex-helpers';
 import path from 'path';
-import { login } from '../selectors/user_accounts/login_page';
-import { constants } from '../helpers/constants';
+import { login } from '../src/login_page';
+import { constants } from '../src/constants';
 
 test('can log into nexusmods.com', async ({ browser }: { browser: Browser }) => {
 

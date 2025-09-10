@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { test, expect } from '@playwright/test';
 import path from 'path';
-import { launchVortex } from '../utils/vortex-helpers';
+import { launchVortex } from '../src/vortex-helpers';
 
 test('can open global menu and click About', async () => {
   const { app, mainWindow, testRunDir } = await launchVortex('menu-navigation');
