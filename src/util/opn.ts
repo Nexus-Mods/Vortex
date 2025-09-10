@@ -57,10 +57,37 @@ function open(target: string, wait?: boolean): Promise<void> {
       }
     }
   } else {
+    // On non-Windows platforms Electron's shell.openExternal expects a valid URL and
+    // will throw "Invalid URL" for filesystem paths. Detect URLs by scheme; otherwise
+    // open local files/folders using shell.openPath instead.
+    const isURL = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target) || target.startsWith('www.');
     if (wait) {
-      return Promise.resolve(shell.openExternal(target, { activate: true }));
+      if (isURL) {
+        return Promise.resolve(shell.openExternal(target, { activate: true }));
+      } else {
+        return new Promise<void>((resolve, reject) => {
+          shell.openPath(target)
+            .then((msg) => {
+              if (msg) {
+                reject(new Error(msg));
+              } else {
+                resolve();
+              }
+            })
+            .catch(reject);
+        });
+      }
     } else {
-      shell.openExternal(target, { activate: true });
+      if (isURL) {
+        shell.openExternal(target, { activate: true });
+      } else {
+        // Fire and forget, but log potential error string
+        shell.openPath(target).then((msg) => {
+          if (msg) {
+            log('warn', 'openPath failed', { target, error: msg });
+          }
+        }).catch((err) => log('warn', 'openPath threw', { target, error: err?.message || err }));
+      }
       return Promise.resolve();
     }
   }

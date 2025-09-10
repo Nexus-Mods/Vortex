@@ -784,7 +784,16 @@ export function renderError(err: string | Error | any, options?: IErrorOptions):
   } else if (err?.code === 'invalid_grant') {
     return {
       message: err?.description ?? 'Invalid token',
-      text: `Your OAuth token has either expired or has been revoked, please log in again to generate a new token.`,
+      text: `Your OAuth token has either expired or has been revoked.\n\n` +
+        `This can happen when:\n` +
+        `- The token has naturally expired\n` +
+        `- You have logged out from Nexus Mods website\n` +
+        `- Your account security settings have changed\n\n` +
+        `To resolve this issue:\n` +
+        `1. Log out completely from Vortex\n` +
+        `2. Restart Vortex\n` +
+        `3. Log in again through the proper OAuth flow\n\n` +
+        `If the issue persists, please check your network connection or contact Nexus Mods support.`,
       wrap: false,
       allowReport: false,
     };

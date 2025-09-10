@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
+
+# Force git submodule foreach to use bash
+export SHELL=/bin/bash
 
 # Sweep repo and all submodules: commit and push any untracked/modified changes
 # With macOS-branch and fork safety checks.
@@ -149,6 +152,7 @@ info "== Submodules: sweep and push =="
 # shellcheck disable=SC2016
 git submodule foreach --recursive '
   set -e
+  set +u
   st=$(git status --porcelain=v1 -uall)
   # Check branch name in each submodule
   cur=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")

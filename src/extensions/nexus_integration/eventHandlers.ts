@@ -931,6 +931,20 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
         log('warn', 'Token update failed', { error: err.message });
         // If we get an invalid_grant error, clear credentials
         if (err?.code === 'invalid_grant') {
+          const detailedMessage = 'Your OAuth token has either expired or has been revoked. '
+            + 'This can happen when:\n'
+            + '- The token has naturally expired\n'
+            + '- You have logged out from Nexus Mods website\n'
+            + '- Your account security settings have changed\n\n'
+            + 'To resolve this issue:\n'
+            + '1. Log out completely from Vortex\n'
+            + '2. Restart Vortex\n'
+            + '3. Log in again through the proper OAuth flow';
+          
+          api.showErrorNotification('Authentication failed', detailedMessage, {
+            allowReport: false,
+            isHTML: true
+          });
           api.store.dispatch(setUserInfo(undefined));
           api.events.emit('did-login', err);
         }
