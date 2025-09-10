@@ -1828,6 +1828,13 @@ class ExtensionManager {
       }
     };
     return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
+      .catch(err => {
+        // Add file path context to the error
+        if (err instanceof Error) {
+          err.message = `Failed to calculate MD5 for ${filePath}: ${err.message}`;
+        }
+        return Promise.reject(err);
+      })
       .then((result) => {
         this.mApi.store.dispatch(setDownloadHashByFile(path.basename(filePath), result, lastProgress));
         return Promise.resolve({

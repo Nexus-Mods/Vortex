@@ -17,7 +17,7 @@ function isMacOS() {
   return process.platform === 'darwin';
 }
 
-const projectGroups = JSON.parse(fs.readFileSync('./BuildSubprojects.json'));
+const projectGroups = JSON.parse(fs.readFileSync('./BuildSubprojects.json', 'utf8').replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m));
 
 const packageJSON = JSON.parse(fs.readFileSync('./package.json'));
 
@@ -175,9 +175,10 @@ function processModule(project, buildType, feedback) {
     modulePath = path.join('node_modules', project.module);
   }
 
+  // Use the project's node-gyp instead of the extension's node-gyp
   let build = project.build !== undefined && project.build !== false
     ? npm('install', [], { cwd: project.path }, feedback)
-      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback))
+      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path, env: { ...process.env, npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') } }, feedback))
     : Promise.resolve();
 
   return build
@@ -203,8 +204,51 @@ async function updateSourceMap(filePath) {
 function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
   let instArgs = noparallel ? ['--network-concurrency', '1'] : [];
-  let res = npm('install', instArgs, { cwd: project.path }, feedback)
-      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
+  
+  // Special handling for gamebryo-savegame-management extension
+  let res;
+  if (project.name === 'gamebryo-savegame-management') {
+    // For macOS, we need to handle the gamebryo-savegame dependency properly
+    // The extension has an optional dependency on gamebryo-savegame which should be installed normally
+    res = npm('install', instArgs, { 
+      cwd: project.path, 
+      env: { 
+        ...process.env, 
+        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
+        // Add environment variables for macOS build
+        LDFLAGS: "-L/usr/local/opt/zlib/lib",
+        CPPFLAGS: "-I/usr/local/opt/zlib/include",
+        PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig"
+      } 
+    }, feedback)
+    .then(() => {
+      // Build the extension
+      return npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
+        cwd: project.path, 
+        env: { 
+          ...process.env, 
+          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+        } 
+      }, feedback);
+    });
+  } else {
+    // Use the project's node-gyp instead of the extension's node-gyp
+    res = npm('install', instArgs, { 
+      cwd: project.path, 
+      env: { 
+        ...process.env, 
+        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+      } 
+    }, feedback)
+    .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
+      cwd: project.path, 
+      env: { 
+        ...process.env, 
+        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+      } 
+    }, feedback));
+  }
+  
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
@@ -212,12 +256,12 @@ function processCustom(project, buildType, feedback, noparallel) {
     res = res
       .then(() => copyfilesAsync([source, output], project.depth || 3))
       .then(() => updateSourceMap(path.join(output, 'index.js')));
-
   }
+  
   res = res.then(() => {
     const elapsed = (Date.now() - start) / 1000;
     return { elapsed };
-  })
+  });
   return res;
 }
 

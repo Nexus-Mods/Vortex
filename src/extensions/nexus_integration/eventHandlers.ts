@@ -920,7 +920,21 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     api.store.dispatch(setUserInfo(undefined));
     
     if (newValue !== undefined) {
-      updateToken(api, nexus, newValue);
+      // Add timeout to prevent hanging on invalid tokens
+      Promise.race([
+        updateToken(api, nexus, newValue),
+        new Promise((resolve, reject) => 
+          setTimeout(() => reject(new Error('Token update timeout')), 10000)
+        )
+      ])
+      .catch(err => {
+        log('warn', 'Token update failed', { error: err.message });
+        // If we get an invalid_grant error, clear credentials
+        if (err?.code === 'invalid_grant') {
+          api.store.dispatch(setUserInfo(undefined));
+          api.events.emit('did-login', err);
+        }
+      });
     }
   };
 }

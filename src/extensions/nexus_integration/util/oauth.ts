@@ -253,6 +253,13 @@ class OAuth {
                 err['code'] = errDetails?.error;
                 // these details are explicitly intended for the developer, not for the user
                 err['details'] = errDetails?.error_description;
+                
+                // Special handling for invalid_grant errors
+                if (errDetails?.error === 'invalid_grant') {
+                  // Add more descriptive error message
+                  err['description'] = 'Your OAuth token has either expired or has been revoked. Please log in again to generate a new token.';
+                }
+                
                 reject(err);
               } catch (err) {
                 const errMessage = responseStr.includes('<!DOCTYPE html>')
@@ -265,7 +272,18 @@ class OAuth {
             }
           });
       });
-      req.on('error', err => console.error('token req error', err));
+      req.on('error', err => {
+        console.error('token req error', err);
+        // Handle network errors that might be related to invalid_grant
+        if (err.message.includes('certificate') || err.message.includes('SSL')) {
+          const networkErr = new Error('Secure connection failed. This may be due to network issues or an expired OAuth token.');
+          networkErr['code'] = 'invalid_grant';
+          networkErr['description'] = 'Secure connection failed. Please check your network connection and try logging in again.';
+          reject(networkErr);
+        } else {
+          reject(err);
+        }
+      });
       req.write(requestStr);
       req.end();
     })

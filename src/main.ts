@@ -5,6 +5,7 @@
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 import { isWindows, isMacOS } from './util/platform';
+import { setupMacOSPaths } from './util/macosPaths';
 
 import { app, dialog, Menu, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
@@ -39,6 +40,11 @@ process.on('unhandledRejection', earlyErrHandler);
 
 // ensure the cwd is always set to the path containing the exe, otherwise dynamically loaded
 // dlls will not be able to load vc-runtime files shipped with Vortex.
+// Setup macOS-specific paths before anything else
+if (isMacOS()) {
+  setupMacOSPaths();
+}
+
 process.chdir(getVortexPath('application'));
 
 /* the below would completely restart Vortex to ensure everything is loaded with the cwd

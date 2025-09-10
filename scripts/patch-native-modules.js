@@ -23,9 +23,7 @@ const modulesToPatch = [
 
 // List of modules that need mocks on macOS
 const macOnlyMocks = [
-  'drivelist',
   'bsdiff-node',
-  'diskusage',
   'leveldown',
   'modmeta-db',
   'native-errors',
@@ -40,7 +38,6 @@ const macOnlyMocks = [
   'wholocks',
   'winapi-bindings',
   'ffi',
-  'exe-version',
   'node-addon-api',
   'vortexmt',
   'xxhash-addon'
@@ -49,9 +46,6 @@ const macOnlyMocks = [
 // Windows-only modules that should use mocks
 const windowsOnlyModules = [
   'bsdiff-node',
-  'diskusage',
-  'drivelist',
-  'exe-version',
   'leveldown',
   'modmeta-db',
   'native-errors',
@@ -116,9 +110,55 @@ if (fs.existsSync(nodeAddonApiPath)) {
 
 // Handle macOS-specific mocks and native module compilation
 if (isMacOS()) {
+  // For macOS, we can implement real functionality for some modules instead of using mocks
+  // Create symlinks or copies of our real implementations
+  const realImplementations = {
+    'drivelist': path.join(pkgRoot, 'src', 'util', 'drivelist-macos.js'),
+    'diskusage': path.join(pkgRoot, 'src', 'util', 'diskusage-macos.js'),
+    'exe-version': path.join(pkgRoot, 'src', 'util', 'exe-version-macos.js')
+  };
 
-  // Then handle mocked modules
+  // Create node_modules directory if it doesn't exist
+  const nodeModulesPath = path.join(pkgRoot, 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    fs.mkdirSync(nodeModulesPath, { recursive: true });
+  }
+
+  // Link our real implementations
+  for (const [moduleName, implPath] of Object.entries(realImplementations)) {
+    if (fs.existsSync(implPath)) {
+      const modulePath = path.join(nodeModulesPath, moduleName);
+      const moduleIndexPath = path.join(modulePath, 'index.js');
+      
+      // Create module directory if it doesn't exist
+      if (!fs.existsSync(modulePath)) {
+        fs.mkdirSync(modulePath, { recursive: true });
+      }
+      
+      // Copy our implementation to the module
+      const implContent = fs.readFileSync(implPath, 'utf8');
+      fs.writeFileSync(moduleIndexPath, implContent, 'utf8');
+      
+      // Create package.json for the module
+      const packageJson = {
+        "name": moduleName,
+        "version": "1.0.0",
+        "main": "index.js",
+        "description": `Real implementation of ${moduleName} for macOS`
+      };
+      fs.writeFileSync(path.join(modulePath, 'package.json'), JSON.stringify(packageJson, null, 2), 'utf8');
+      
+      console.log(`Installed real implementation for ${moduleName} on macOS`);
+    }
+  }
+
+  // Handle mocked modules that still need mocks
   for (const moduleName of macOnlyMocks) {
+    // Skip modules we've provided real implementations for
+    if (realImplementations[moduleName]) {
+      continue;
+    }
+    
     const mockPath = path.join(pkgRoot, '__mocks__', moduleName + '.js');
     if (fs.existsSync(mockPath)) {
       console.log(`Using mock for ${moduleName} on macOS`);

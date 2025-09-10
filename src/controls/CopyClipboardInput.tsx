@@ -1,5 +1,4 @@
-
-import { FormControl, FormGroup,  InputGroup } from 'react-bootstrap';
+import { FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 
 import * as React from 'react';
 import { IconButton } from './TooltipControls';
@@ -15,10 +14,13 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
   const { api } = React.useContext(MainContext);
   const [ showElement, setShowElement ] = React.useState(false);
 
+  // Ensure inputValue is never undefined
+  const safeInputValue = props.inputValue || '';
+
   const handleButtonClick = () => {    
     
     try {
-      clipboard.writeText(props.inputValue);
+      clipboard.writeText(safeInputValue);
 
       // show confirmation text
       setShowElement(true);
@@ -39,7 +41,7 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
       <InputGroup>
         <FormControl
           type='text'
-          value={props.inputValue}
+          value={safeInputValue} // Use safe value
           readOnly />
         <InputGroup.Addon>
           <IconButton
