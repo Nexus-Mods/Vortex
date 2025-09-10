@@ -13,24 +13,24 @@ export interface INexusAPIExtension {
   nexusResolveCollectionUrl?: (apiLink: string) => PromiseLike<IDownloadURL[]>;
   nexusGetCollectionRevision?:
     (collectionSlug: string, revisionNumber: number) => PromiseLike<IRevision>;
-  nexusRateCollectionRevision?: (revisionId: number, rating: number) => PromiseLike<any>;
-  nexusGetLatestMods?: (gameId: string) => PromiseLike<any>;
-  nexusGetTrendingMods?: (gameId: string) => PromiseLike<any>;
+  nexusRateCollectionRevision?: (revisionId: number, rating: number) => PromiseLike<unknown>;
+  nexusGetLatestMods?: (gameId: string) => PromiseLike<unknown>;
+  nexusGetTrendingMods?: (gameId: string) => PromiseLike<unknown>;
   nexusEndorseDirect?:
     (gameId: string, nexusId: number, version: string, endorsedStatus: EndorsedStatus)
     => PromiseLike<EndorsedStatus>;
   nexusEndorseMod?: (gameId: string, modId: string, endorsedStatus: EndorsedStatus) => void;
   nexusSubmitFeedback?:
     (title: string, message: string, hash: string, feedbackFiles: string[],
-     anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => void;
+     anonymous: boolean, callback: (err: Error | null, response?: IFeedbackResponse) => void) => void;
   nexusSubmitCollection?:
     (collectionInfo: ICollectionManifest, assetFilePath: string,
-     collectionId: number, callback: (err: Error, response?: any) => void) => void;
+     collectionId: number, callback: (err: Error | null, response?: { id: number } | { success: boolean; message?: string }) => void) => void;
   nexusModUpdate?: (gameId: string, modId: number, fileId: number, source: string) => void;
   nexusOpenCollectionPage?:
     (gameId: string, collectionSlug: string, revisionNumber: number, source: string) => void;
   nexusOpenModPage?: (gameId: string, modId: string, source: string) => void;
-  nexusRequestNexusLogin?: (callback: any) => void;
+  nexusRequestNexusLogin?: (callback: (err: Error | null, url?: string) => void) => void;
   nexusRequestOwnIssues?: (cb: (err: Error, issues?: IIssue[]) => void) => void;
   nexusRetrieveCategoryList?: (isUpdate: boolean) => void;
   nexusGetModFiles?: (gameId: string, modId: number) => PromiseLike<IFileInfo[]>;

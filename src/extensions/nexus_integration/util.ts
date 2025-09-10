@@ -54,6 +54,7 @@ import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
+import { onRefreshUserInfo } from './eventHandlers';
 
 
 import Debouncer from '../../util/Debouncer';
@@ -1470,7 +1471,7 @@ export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any):
       id: OAUTH_CLIENT_ID,
     }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
     ))
-      .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
+      .then(() => onRefreshUserInfo(nexus, api)()) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
       .then(() => true),
     new Promise<boolean>((resolve, reject) => 
       setTimeout(() => {
@@ -1548,44 +1549,6 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   }
 
   //Promise.resolve(getUserInfo(api, nexus)); 
-}
-        //log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
-        showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
-          allowReport: false,
-        });
-        return false;
-      });
-
-      
-  } else {
-    log('warn', 'updateUserInfo() not logged in');
-  }
-  
-  /*
-  return github.fetchConfig('api')
-    .then(configObj => {
-      const currentVer = getApplication().version;
-      if ((currentVer !== '0.0.1')
-        && (semver.lt(currentVer, configObj.minversion))) {
-        nexus['disable']();
-        api.sendNotification({
-          type: 'warning',
-          title: 'Vortex outdated',
-          message: 'Your version of Vortex is quite outdated. Network features disabled.',
-          actions: [
-            {
-              title: 'Check for update', action: () => {
-                ipcRenderer.send('check-for-updates', 'stable');
-              },
-            },
-          ],
-        });
-      }
-    })
-    .catch(err => {
-      log('warn', 'Failed to fetch api config', { message: err.message });
-    })
-    .then(() => true);*/
 }
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {

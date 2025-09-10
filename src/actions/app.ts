@@ -4,13 +4,14 @@ import safeCreateAction from './safeCreateAction';
 
 import VortexInstallType from '../types/VortexInstallType';
 
-const id = input => input;
+const stringId = (input: string) => input;
+const numberId = (input: number) => input;
 
 export const setStateVersion = safeCreateAction('SET_STATE_VERSION',
-                                                version => version);
+                                                (version: string) => version);
 
 export const setApplicationVersion = safeCreateAction('SET_APPLICATION_VERSION',
-                                                      version => version);
+                                                      (version: string) => version);
 
 export const setExtensionEnabled = safeCreateAction('SET_EXTENSION_ENABLED',
                                                     (extensionId: string, enabled: boolean) => ({ extensionId, enabled }));
@@ -21,14 +22,14 @@ export const setExtensionVersion = safeCreateAction('SET_EXTENSION_VERSION',
 export const setExtensionEndorsed = safeCreateAction('SET_EXTENSION_ENDORSED',
                                                      (extensionId: string, endorsed: string) => ({ extensionId, endorsed }));
 
-export const removeExtension = safeCreateAction('REMOVE_EXTENSION', id);
+export const removeExtension = safeCreateAction('REMOVE_EXTENSION', stringId);
 
-export const forgetExtension = safeCreateAction('FORGET_EXTENSION', id);
+export const forgetExtension = safeCreateAction('FORGET_EXTENSION', stringId);
 
-export const completeMigration = safeCreateAction('COMPLETE_MIGRATION', id);
+export const completeMigration = safeCreateAction('COMPLETE_MIGRATION', stringId);
 
-export const setInstanceId = safeCreateAction('SET_INSTANCE_ID', id);
+export const setInstanceId = safeCreateAction('SET_INSTANCE_ID', stringId);
 
-export const setWarnedAdmin = safeCreateAction('SET_WARNED_ADMIN', id);
+export const setWarnedAdmin = safeCreateAction('SET_WARNED_ADMIN', numberId);
 
 export const setInstallType = safeCreateAction('SET_INSTALL_TYPE', (type: VortexInstallType) => type);
