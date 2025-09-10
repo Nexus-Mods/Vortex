@@ -4,19 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.15.0-beta.3 - 2025-09-09
+## 1.15.1 - 2025-09-10
 
 - Fixed and consolidated multi-select update/update all functionality ([#18229](https://github.com/Nexus-Mods/Vortex/issues/18229))
-
-## 1.15.0-beta.2 - 2025-09-08
-
 - Adding ability to update mods using multi-selection menu. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
 - Fixed "Update All" functionality updating disabled/uninstalled mods. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
 - Fixed exception when attempting to "Open Archive" and the archive is missing. ([#18181](https://github.com/Nexus-Mods/Vortex/issues/18181))
 - Fixed disabled plugins being sorted to the bottom of the plugins page ([#18137](https://github.com/Nexus-Mods/Vortex/issues/18137))
-
-## 1.15.0-beta.1 - 2025-09-03
-
 - .NET 6 and MSVC 2022 are now bundled with the installer
 - Updated Premium branding
 - Optimized user subscription checking 
