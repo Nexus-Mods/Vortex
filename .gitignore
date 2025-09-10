@@ -56,3 +56,9 @@ tools/stackmap/*.vsix
 changelog_*.txt
 eslint.log
 log.txt
+
+# Exclude local IDE/project folders
+.qoder/
+
+# Exclude generic build directories
+{BUILD_DIR}/

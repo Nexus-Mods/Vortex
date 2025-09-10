@@ -2,94 +2,117 @@
 	path = extensions/games
 	url = https://github.com/Nexus-Mods/vortex-games.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
 	branch = master
+	ignore = all
 [submodule "extensions/feedback"]
 	path = extensions/feedback
 	url = https://github.com/Nexus-Mods/extension-feedback.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-archive-invalidation"]
 	path = extensions/gamebryo-archive-invalidation
 	url = https://github.com/Nexus-Mods/extension-archive-invalidation.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-ba2-support"]
 	path = extensions/gamebryo-ba2-support
 	url = https://github.com/Nexus-Mods/extension-ba2-support.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-bsa-support"]
 	path = extensions/gamebryo-bsa-support
 	url = https://github.com/Nexus-Mods/extension-bsa-support.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-plugin-indexlock"]
 	path = extensions/gamebryo-plugin-indexlock
 	url = https://github.com/Nexus-Mods/extension-plugin-indexlock.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-savegame-management"]
 	path = extensions/gamebryo-savegame-management
 	url = https://github.com/Nexus-Mods/extension-gamebryo-savegames.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-test-settings"]
 	path = extensions/gamebryo-test-settings
 	url = https://github.com/Nexus-Mods/extension-gamebryo-testsettings.git
 	branch = master
+	ignore = all
 [submodule "extensions/gameinfo-steam"]
 	path = extensions/gameinfo-steam
 	url = https://github.com/Nexus-Mods/extension-gameinfo-steam.git
 	branch = master
+	ignore = all
 [submodule "extensions/local-gamesettings"]
 	path = extensions/local-gamesettings
 	url = https://github.com/Nexus-Mods/extension-local-gamesettings.git
 	branch = master
+	ignore = all
 [submodule "extensions/meta-editor"]
 	path = extensions/meta-editor
 	url = https://github.com/Nexus-Mods/extension-metaeditor.git
 	branch = master
+	ignore = all
 [submodule "extensions/mo-import"]
 	path = extensions/mo-import
 	url = https://github.com/Nexus-Mods/extension-mo-import.git
 	branch = master
+	ignore = all
 [submodule "extensions/mod-dependencies"]
 	path = extensions/mod-dependency-manager
 	url = https://github.com/Nexus-Mods/extension-mod-dependencies.git
 	branch = master
+	ignore = all
 [submodule "extensions/mod-highlights"]
 	path = extensions/mod-highlight
 	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-dinput"]
 	path = extensions/modtype-dinput
 	url = https://github.com/Nexus-Mods/extension-modtype-dinput.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-dazip"]
 	path = extensions/modtype-dazip
 	url = https://github.com/Nexus-Mods/extension-modtype-dazip.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-enb"]
 	path = extensions/modtype-enb
 	url = https://github.com/Nexus-Mods/extension-modtype-enb.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-gedosato"]
 	path = extensions/modtype-gedosato
 	url = https://github.com/Nexus-Mods/extension-modtype-gedosato.git
 	branch = master
+	ignore = all
 [submodule "extensions/mtframework-arc-support"]
 	path = extensions/mtframework-arc-support
 	url = https://github.com/Nexus-Mods/extension-arc-support.git
 	branch = master
+	ignore = all
 [submodule "extensions/nmm-import"]
 	path = extensions/nmm-import-tool
 	url = https://github.com/Nexus-Mods/extension-nmm-import.git
 	branch = master
+	ignore = all
 [submodule "extensions/open-directory"]
 	path = extensions/open-directory
 	url = https://github.com/Nexus-Mods/extension-open-directory.git
 	branch = master
+	ignore = all
 [submodule "extensions/theme-switcher"]
 	path = extensions/theme-switcher
 	url = https://github.com/Nexus-Mods/extension-theme-switcher.git
 	branch = master
+	ignore = all
 [submodule "api"]
 	path = api
 	url = https://github.com/Nexus-Mods/vortex-api.git
@@ -98,103 +121,129 @@
 	path = extensions/common-interpreters
 	url = https://github.com/Nexus-Mods/extension-common-interpreters.git
 	branch = master
+	ignore = all
 [submodule "extensions/issue-tracker"]
 	path = extensions/issue-tracker
 	url = https://github.com/Nexus-Mods/extension-issue-tracker.git
 	branch = master
+	ignore = all
 [submodule "extensions/changelog-dashlet"]
 	path = extensions/changelog-dashlet
 	url = https://github.com/Nexus-Mods/extension-changelog-dashlet.git
 	branch = master
+	ignore = all
 [submodule "extensions/fnis-integration"]
 	path = extensions/fnis-integration
 	url = https://github.com/Nexus-Mods/fnis-integration.git
 	branch = master
+	ignore = all
 [submodule "extensions/game-pillarsofeternity2"]
 	path = extensions/game-pillarsofeternity2
 	url = https://github.com/Nexus-Mods/game-pillarsofeternity2.git
 	branch = master
+	ignore = all
 [submodule "extensions/test-gameversion"]
 	path = extensions/test-gameversion
 	url = https://github.com/Nexus-Mods/test-gameversion.git
 	branch = master
+	ignore = all
 [submodule "extensions/documentation"]
 	path = extensions/documentation
 	url = https://github.com/Nexus-Mods/extension-documentation.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-umm"]
 	path = extensions/modtype-umm
 	url = https://github.com/nexus-mods/extension-modtype-umm.git
 	branch = master
+	ignore = all
 [submodule "extensions/mod-content"]
 	path = extensions/mod-content
 	url = https://github.com/Nexus-Mods/extension-mod-content.git
 	branch = master
+	ignore = all
 [submodule "extensions/quickbms-support"]
 	path = extensions/quickbms-support
 	url = https://github.com/nexus-mods/extension-quickbms-support.git
 	branch = master
+	ignore = all
 [submodule "extensions/morrowind-plugin-management"]
 	path = extensions/morrowind-plugin-management
 	url = https://github.com/Nexus-Mods/extension-morrowind-plugin-management.git
 	branch = master
+	ignore = all
 [submodule "extensions/script-extender-error-check"]
 	path = extensions/script-extender-error-check
 	url = https://github.com/Nexus-Mods/extension-script-extender-error-check.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamestore-gog"]
 	path = extensions/gamestore-gog
 	url = https://github.com/nexus-mods/extension-gamestore-gog.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamestore-origin"]
 	path = extensions/gamestore-origin
 	url = https://github.com/nexus-mods/extension-gamestore-origin.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamestore-uplay"]
 	path = extensions/gamestore-uplay
 	url = https://github.com/nexus-mods/extension-gamestore-uplay.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamestore-xbox"]
 	path = extensions/gamestore-xbox
 	url = https://github.com/nexus-mods/extension-gamestore-xbox.git
 	branch = master
+	ignore = all
 [submodule "extensions/new-file-monitor"]
 	path = extensions/new-file-monitor
 	url = https://github.com/Nexus-Mods/extension-new-file-monitor.git
 	branch = master
+	ignore = all
 [submodule "extensions/extension-dashlet"]
 	path = extensions/extension-dashlet
 	url = https://github.com/Nexus-Mods/extension-extension-dashlet.git
 	branch = master
+	ignore = all
 [submodule "extensions/test-setup"]
 	path = extensions/test-setup
 	url = https://github.com/Nexus-Mods/extension-test-setup.git
 	branch = master
+	ignore = all
 [submodule "extensions/mod-report"]
 	path = extensions/mod-report
 	url = https://github.com/Nexus-Mods/extension-mod-report.git
 	branch = master
+	ignore = all
 [submodule "extensions/script-extender-installer"]
 	path = extensions/script-extender-installer
 	url = https://github.com/Nexus-Mods/script-extender-installer.git
 	branch = master
+	ignore = all
 [submodule "extensions/gamebryo-archive-check"]
 	path = extensions/gamebryo-archive-check
 	url = https://github.com/Nexus-Mods/bethesda-archive-check.git
 	branch = master
+	ignore = all
 [submodule "extensions/modtype-bepinex"]
 	path = extensions/modtype-bepinex
 	url = https://github.com/Nexus-Mods/extension-modtype-bepinex.git
 	branch = main
+	ignore = all
 [submodule "extensions/collections"]
 	path = extensions/collections
 	url = https://github.com/Nexus-Mods/extension-collections.git
 	branch = master
+	ignore = all
 [submodule "extensions/gameversion-hash"]
 	path = extensions/gameversion-hash
 	url = https://github.com/nexus-mods/extension-gameversion-hash.git
 	branch = main
+	ignore = all
 [submodule "extensions/titlebar-launcher"]
 	path = extensions/titlebar-launcher
 	url = https://github.com/Nexus-Mods/extension-titlebar-launcher.git
 	branch = master
+	ignore = all
