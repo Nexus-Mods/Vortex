@@ -133,12 +133,43 @@ class OAuth {
       }
     } else {
       if (this.mStates[state] === undefined) {
-        throw new ArgumentInvalid('unexpected authorize token');
+        const err = new ArgumentInvalid('unexpected authorize token');
+        err['code'] = 'invalid_grant';
+        err['description'] = 'Unexpected authorization token received. This may indicate a security issue or session mismatch. Please try logging in again.';
+        throw err;
       }
       try {
-        const tokenReply = await this.sentAuthorizeToken(code)
+        // Add validation for the code parameter
+        if (!code || code.trim() === '') {
+          const err = new Error('Invalid authorization code received');
+          err['code'] = 'invalid_grant';
+          err['description'] = 'Invalid authorization code received. Please try logging in again.';
+          this.mStates[state]?.(err, undefined);
+          delete this.mStates[state];
+          return;
+        }
+        
+        const tokenReply = await this.sentAuthorizeToken(code);
+        
+        // Add validation for the token reply
+        if (!tokenReply || !tokenReply.access_token) {
+          const err = new Error('Invalid token response received');
+          err['code'] = 'invalid_grant';
+          err['description'] = 'Invalid token response received from server. Please try logging in again.';
+          this.mStates[state]?.(err, undefined);
+          delete this.mStates[state];
+          return;
+        }
+        
         this.mStates[state]?.(null, tokenReply);
       } catch (err) {
+        // Enhance error handling
+        if (!err['code']) {
+          err['code'] = 'invalid_grant';
+        }
+        if (!err['description']) {
+          err['description'] = 'Failed to obtain authorization token. Please check your network connection and try again.';
+        }
         this.mStates[state]?.(err, undefined);
       }
       delete this.mStates[state];
@@ -237,6 +268,7 @@ class OAuth {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           'Content-Length': requestStr.length,
         },
+        timeout: 10000, // 10 second timeout
       }, res => {
         let responseStr = '';
         let error: Error;
@@ -272,6 +304,16 @@ class OAuth {
             }
           });
       });
+      
+      // Add timeout handling
+      req.on('timeout', () => {
+        req.destroy();
+        const timeoutErr = new Error('Token request timed out. This may indicate network issues or an invalid/expired OAuth token.');
+        timeoutErr['code'] = 'invalid_grant';
+        timeoutErr['description'] = 'Token request timed out. Please check your network connection and try logging in again.';
+        reject(timeoutErr);
+      });
+      
       req.on('error', err => {
         console.error('token req error', err);
         // Handle network errors that might be related to invalid_grant
@@ -322,8 +364,28 @@ class OAuth {
       code_verifier: this.mVerifier,
     };
     const tokenUrl = `${this.mServerSettings.baseUrl}/token`;
-    // TODO: validate result
-    return JSON.parse(await this.postRequest(tokenUrl, request));
+    
+    try {
+      // TODO: validate result
+      const response = await this.postRequest(tokenUrl, request);
+      const tokenReply: ITokenReply = JSON.parse(response);
+      
+      // Validate the token reply
+      if (!tokenReply.access_token || !tokenReply.refresh_token) {
+        throw new Error('Invalid token response received from server');
+      }
+      
+      return tokenReply;
+    } catch (err) {
+      // Enhance error handling for token authorization
+      if (err.message.includes('JSON')) {
+        const parseErr = new Error('Failed to parse token response. This may indicate a network issue or server problem.');
+        parseErr['code'] = 'invalid_grant';
+        parseErr['description'] = 'Failed to parse token response. Please check your network connection and try again.';
+        throw parseErr;
+      }
+      throw err;
+    }
   }
 }
 

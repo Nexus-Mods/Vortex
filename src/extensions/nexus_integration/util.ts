@@ -1460,22 +1460,43 @@ export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any):
   // update the nexus-node object with our credentials.
   // could be from nexus_integration once() or from when the credentials are updated in state
 
-  return Promise.resolve(nexus.setOAuthCredentials({
-    fingerprint: credentials.fingerprint,
-    refreshToken: credentials.refreshToken,
-    token: credentials.token,
-  }, {
-    id: OAUTH_CLIENT_ID,
-  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
-  ))
-    .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
-    .then(() => true)
+  // Add timeout to prevent hanging on invalid tokens
+  return Promise.race([
+    Promise.resolve(nexus.setOAuthCredentials({
+      fingerprint: credentials.fingerprint,
+      refreshToken: credentials.refreshToken,
+      token: credentials.token,
+    }, {
+      id: OAUTH_CLIENT_ID,
+    }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
+    ))
+      .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
+      .then(() => true),
+    new Promise<boolean>((resolve, reject) => 
+      setTimeout(() => {
+        const timeoutErr = new Error('Token update timed out. This may indicate network issues or an invalid/expired OAuth token.');
+        timeoutErr['code'] = 'invalid_grant';
+        timeoutErr['description'] = 'Token update timed out. Please check your network connection and try logging in again.';
+        reject(timeoutErr);
+      }, 15000) // 15 second timeout
+    )
+  ])
     .catch(err => {
       // Special handling for invalid_grant errors
       if (err?.code === 'invalid_grant') {
-        api.showErrorNotification('Authentication failed', 
-          'Your OAuth token has expired or been revoked. Please log out and log back in to generate a new token.', {
+        const detailedMessage = 'Your OAuth token has either expired or has been revoked. '
+          + 'This can happen when:\n'
+          + '- The token has naturally expired\n'
+          + '- You have logged out from Nexus Mods website\n'
+          + '- Your account security settings have changed\n\n'
+          + 'To resolve this issue:\n'
+          + '1. Log out completely from Vortex\n'
+          + '2. Restart Vortex\n'
+          + '3. Log in again through the proper OAuth flow';
+        
+        api.showErrorNotification('Authentication failed', detailedMessage, {
           allowReport: false,
+          isHTML: true
         });
         // Clear the invalid credentials
         clearOAuthCredentials(api);
@@ -1494,6 +1515,20 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   
   log('info', 'onJWTTokenRefresh');
 
+  // Add validation for refreshed credentials
+  if (!credentials || !credentials.token || !credentials.refreshToken) {
+    log('warn', 'Invalid credentials received during token refresh');
+    const err = new Error('Invalid credentials received during token refresh');
+    err['code'] = 'invalid_grant';
+    err['description'] = 'Token refresh failed due to invalid credentials. Please log in again.';
+    api.showErrorNotification('Authentication failed', err['description'], {
+      allowReport: false
+    });
+    clearOAuthCredentials(api);
+    api.events.emit('did-login', err);
+    return;
+  }
+
   // sets state oauth credentials
   api.store.dispatch(setOAuthCredentials(
     credentials.token, credentials.refreshToken, credentials.fingerprint));
@@ -1503,37 +1538,17 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   // we will leave thie as an 'oauth credentials only' function. updating the state with updated token
   // and then that will perform updateToken below and make sure both node-neuxs and state are in sync.
 
+  // Add validation that the token was actually refreshed
+  const state = api.getState();
+  const storedCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+  if (storedCredentials && storedCredentials.token === credentials.token) {
+    log('warn', 'Token refresh may have failed - token unchanged');
+  } else {
+    log('info', 'Token successfully refreshed');
+  }
+
   //Promise.resolve(getUserInfo(api, nexus)); 
 }
-
-function getUserInfo(api: IExtensionApi,
-                     nexus: Nexus,
-                        /*userInfo: IValidateKeyResponse*/)
-                        : Promise<boolean> {
-
-
-
-  log('info', 'updateUserInfo()')
-  
-  /**
-   * This is where we are primarily updating the user info in the state.
-   * I've added a check for the oauth token in the state, and if it exists, updates
-   * from the nexus api instead of the information that was supplied in
-   * oauth token itself as this could be out of date 
-   */
-  //const token = getOAuthTokenFromState(api);
-
-  if(isLoggedIn(api.getState())) {
-    
-    // get userinfo from api
-    return Promise.resolve(nexus.getUserInfo())
-      .then(apiUserInfo => {
-        // update state with new info from endpoint
-        api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        //log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
-        return true;
-      })
-      .catch((err) => {
         //log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
         showError(api.store.dispatch, 'An error occurred refreshing user info', err, {
           allowReport: false,
