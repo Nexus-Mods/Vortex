@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.15.0-beta.3 - 2025-09-09
+
+- Fixed and consolidated multi-select update/update all functionality ([#18229](https://github.com/Nexus-Mods/Vortex/issues/18229))
+
 ## 1.15.0-beta.2 - 2025-09-08
 
 - Adding ability to update mods using multi-selection menu. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
@@ -980,3 +984,4 @@ _Yanked due to critical issue found with file overrides_
 [1.9.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.1
 [1.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.0
 [1.8.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.8.5
+
