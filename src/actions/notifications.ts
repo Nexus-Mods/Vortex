@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
+import { DialogActions, DialogType, IDialog, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification, NotificationDismiss } from '../types/INotification';
 import local from '../util/local';
 import {log} from '../util/log';
@@ -14,13 +14,11 @@ import { generate as shortid } from 'shortid';
 
 export * from '../types/IDialog';
 
-const identity = input => input;
-
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  */
-export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
+export const startNotification = safeCreateAction('ADD_NOTIFICATION', (noti: INotification) => noti);
 
 export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
                                                    (id: string, progress: number, message: string) => ({ id, progress, message }),
@@ -29,7 +27,7 @@ export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const stopNotification = safeCreateAction('STOP_NOTIFICATION', identity);
+export const stopNotification = safeCreateAction('STOP_NOTIFICATION', (id: string) => id);
 
 /**
  * show a modal dialog to the user
@@ -38,9 +36,9 @@ export const stopNotification = safeCreateAction('STOP_NOTIFICATION', identity);
  */
 export const addDialog = safeCreateAction(
   'SHOW_MODAL_DIALOG',
-  (id: string, type: string, title: string, content: IDialogContent,
+  (id: string, type: DialogType, title: string, content: IDialogContent,
    defaultAction: string, actions: string[]) =>
-    ({id, type, title, content, defaultAction, actions}));
+    ({id, type, title, content, defaultAction, actions} as IDialog));
 
 /**
  * dismiss the dialog being displayed
@@ -49,7 +47,7 @@ export const addDialog = safeCreateAction(
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
  */
-export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG', identity);
+export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG', (id: string) => id);
 
 const timers = local<{ [id: string]: NodeJS.Timeout }>('notification-timers', {});
 

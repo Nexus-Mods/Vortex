@@ -13,4 +13,4 @@ import safeCreateAction from './safeCreateAction';
  * impractical to redeploy every time the load order is changed)
  */
 export const setLoadOrder =
-  safeCreateAction('SET_LOAD_ORDER', (id: string, order: any[]) => ({ id, order }));
+  safeCreateAction('SET_LOAD_ORDER', <T>(id: string, order: T) => ({ id, order } as { id: string; order: T }));
