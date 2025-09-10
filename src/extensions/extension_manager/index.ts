@@ -223,7 +223,23 @@ function checkMissingDependencies(api: IExtensionApi,
         return prev;
       }, {});
 
-    if (Object.keys(missingDependencies).length > 0) {
+    // Filter out dependencies that are not installable on this platform (excluded submodules):
+    // If a dependency is neither installed nor present in the available extensions list,
+    // then we can't fix it programmatically, so suppress the "Fix" notification for it.
+    const state: IState = api.store.getState();
+    const availableExtensions = state.session.extensions.available;
+    const installedExtensions = state.session.extensions.installed;
+
+    const installableMissing = Object.keys(missingDependencies).reduce((acc, depId) => {
+      const isInstalled = installedExtensions[depId] !== undefined;
+      const isAvailable = availableExtensions.find(iter => (!iter.type && ((iter.name === depId) || (iter.id === depId)))) !== undefined;
+      if (isInstalled || isAvailable) {
+        acc[depId] = missingDependencies[depId];
+      }
+      return acc;
+    }, {} as { [depId: string]: string[] });
+
+    if (Object.keys(installableMissing).length > 0) {
       const updateInstalled = genUpdateInstalledExtensions(api);
       api.sendNotification({
         type: 'warning',
@@ -231,7 +247,7 @@ function checkMissingDependencies(api: IExtensionApi,
                + 'they have missing or incompatible dependencies.',
         actions: [
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
-            Promise.map(Object.keys(missingDependencies), depId =>
+            Promise.map(Object.keys(installableMissing), depId =>
               installDependency(api, depId, updateInstalled)
                 .then(results => {
                   if (results) {
