@@ -62,3 +62,27 @@ log.txt
 
 # Exclude generic build directories
 {BUILD_DIR}/
+
+# IDE folders
+.idea/
+.vs/
+.fleet/
+
+# Environment files
+.env
+.env.*
+
+# Tool caches
+.eslintcache
+.nyc_output/
+.cache/
+.tmp/
+tmp/
+
+# OS/editor junk files
+Thumbs.db
+ehthumbs.db
+*~
+*.swp
+*.swo
+*.tmp
