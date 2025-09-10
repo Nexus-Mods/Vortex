@@ -126,6 +126,9 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     const { gameMode } = this.props;
     const updateAble = modIds.filter(modId => {
       const mod = this.props.mods[modId];
+      if (mod?.attributes == null) {
+        return false;
+      }
       const state = updateState(mod.attributes);
       return state === 'update' && mod.type !== 'collection';
     });
