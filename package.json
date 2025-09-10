@@ -50,7 +50,8 @@
     "validate-clean-install": "node scripts/validate-clean-install.js",
     "check-submodules": "node scripts/submodule-branch-check.js",
     "complete-validation": "node scripts/complete-validation.js",
-    "start:dev": "cross-env NODE_ENV=development electron ."
+    "start:dev": "cross-env NODE_ENV=development electron .",
+    "push:macos": "bash ./scripts/push_macos_branches.sh"
   },
   "parserOptions": {
     "ecmaFeatures": {
