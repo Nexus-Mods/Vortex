@@ -87,7 +87,20 @@ export class CommunityEndorsementRemovedEvent implements MixpanelEvent {
   }
 }
 
-
+/**
+ * Event sent when a collection download is started.
+ * @param collection_id ID of the collection
+ * @param mod_count Number of mods in the collection
+ * @param game_id ID of the game
+ * @param revision_id ID of the revision
+ */
+export class CollectionsDownloadStartedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_download_started';
+  readonly properties: Record<string, any>;
+  constructor(collection_id: string, mod_count: number, game_id: string, revision_id: string) {
+    this.properties = { collection_id, mod_count, game_id, revision_id };
+  }
+}
 
 /**
  * Event sent when a collection download is completed.
@@ -235,5 +248,83 @@ export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly properties: Record<string, any>;
   constructor(file_id: string, mod_id: string, game_id: string) {
     this.properties = { file_id, mod_id, game_id };
+  }
+}
+
+/**
+ * Event sent when a collection is endorsed.
+ * @param collection_id ID of the collection
+ * @param game_id ID of the game
+ */
+export class CollectionsEndorsedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_endorsed';
+  readonly properties: Record<string, any>;
+  constructor(collection_id: string, game_id: string) {
+    this.properties = { collection_id, game_id };
+  }
+}
+
+/**
+ * Event sent when a collection is shared.
+ * @param collection_id ID of the collection
+ * @param channel Channel used for sharing
+ */
+export class CollectionsSharedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_shared';
+  readonly properties: Record<string, any>;
+  constructor(collection_id: string, channel: string) {
+    this.properties = { collection_id, channel };
+  }
+}
+
+/**
+ * Event sent when a collection badge is clicked.
+ * @param collection_id ID of the collection
+ * @param badge_type Type of badge clicked
+ */
+export class CollectionsClickedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_clicked';
+  readonly properties: Record<string, any>;
+  constructor(collection_id: string, badge_type: string) {
+    this.properties = { collection_id, badge_type };
+  }
+}
+
+/**
+ * Event sent when collection installation is started.
+ * @param collection_id ID of the collection
+ * @param game_id ID of the game
+ * @param revision_id ID of the revision
+ */
+export class CollectionsInstallationStartedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_installation_started';
+  readonly properties: Record<string, any>;
+  constructor(collection_id: string, game_id: string, revision_id: string) {
+    this.properties = { collection_id, game_id, revision_id };
+  }
+}
+
+/**
+ * Event sent when an upsell is seen.
+ * @param placement Placement location of the upsell
+ */
+export class CollectionsUpsellSeenEvent implements MixpanelEvent {
+  readonly eventName = 'collections_upsell_seen';
+  readonly properties: Record<string, any>;
+  constructor(placement: string) {
+    this.properties = { placement };
+  }
+}
+
+/**
+ * Event sent when an upsell is clicked.
+ * @param placement Placement location of the upsell
+ * @param plan_suggested Plan that was suggested
+ */
+export class CollectionsUpsellClickedEvent implements MixpanelEvent {
+  readonly eventName = 'collections_upsell_clicked';
+  readonly properties: Record<string, any>;
+  constructor(placement: string, plan_suggested: string) {
+    this.properties = { placement, plan_suggested };
   }
 }

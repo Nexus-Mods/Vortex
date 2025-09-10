@@ -177,12 +177,14 @@ export {
   walk,
   withErrorContext,
   writeFileAtomic,
+  MixpanelEvent,
 };
 
 // getText functions are rolled up into one function
 export type TextGroup = 'mod' | 'profile';
 import getTextModManagement from '../extensions/mod_management/texts';
 import getTextProfileManagement from '../extensions/profile_management/texts';
+import { MixpanelEvent } from '../extensions/analytics/mixpanel/MixpanelEvents';
 
 export function getText(group: TextGroup, textId: string, t: TFunction) {
   if (group === 'mod') {
