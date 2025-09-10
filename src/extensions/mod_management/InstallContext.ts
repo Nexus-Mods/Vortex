@@ -1,16 +1,20 @@
-import { addNotification, dismissNotification,
-         updateNotification } from '../../actions/notifications';
+import {
+  addNotification, dismissNotification,
+  updateNotification
+} from '../../actions/notifications';
 import { startActivity, stopActivity } from '../../actions/session';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
-import { IState } from '../../types/IState';
+import { IDownload, IState } from '../../types/IState';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
+import { ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
+import NXMUrl from '../nexus_integration/NXMUrl';
 import { setModsEnabled } from '../profile_management/actions/profiles';
 
 import {
@@ -35,7 +39,7 @@ class InstallContext implements IInstallContext {
   private mUpdateNotification: (id: string, progress: number, message: string) => void;
   private mDismissNotification: (id: string) => void;
   private mShowError: (message: string, details?: any, allowReport?: boolean,
-                       replace?: { [key: string]: string }) => void;
+    replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttributes: (id: string, attributes: { [key: string]: any }) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
@@ -58,7 +62,12 @@ class InstallContext implements IInstallContext {
   private mLastPhase: string;
   private mLastProgress: number;
 
+  private mApi: IExtensionApi;
+  private mStartTime: number;
+
   constructor(gameMode: string, api: IExtensionApi, silent: boolean) {
+    this.mStartTime = Date.now();
+    this.mApi = api;
     const store = api.store;
     const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
@@ -70,17 +79,20 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
     this.mStartActivity = (activity: string) => dispatch(startActivity('mods', 'installing'));
+
     this.mStopActivity = (activity: string) => dispatch(stopActivity('mods', 'installing'));
     this.mShowError = (message, details?, allowReport?, replace?) => {
       this.mDidReportError = true;
-      return showError(dispatch, message, details, { allowReport, replace, attachments: [
-        {
-          id: 'log',
-          type: 'file',
-          data: path.join(getVortexPath('userData'), 'vortex.log'),
-          description: 'Vortex Log',
-        },
-      ] });
+      return showError(dispatch, message, details, {
+        allowReport, replace, attachments: [
+          {
+            id: 'log',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          },
+        ]
+      });
     };
     this.mLastProgress = 0;
     this.mSetModState = (id, state) =>
@@ -117,14 +129,16 @@ class InstallContext implements IInstallContext {
     this.mIsDownload = (archiveId) => {
       const state: IState = store.getState();
       return (archiveId !== null)
-          && (getSafe(state, ['persistent', 'downloads', 'files', archiveId],
-                      undefined) !== undefined);
+        && (getSafe(state, ['persistent', 'downloads', 'files', archiveId],
+          undefined) !== undefined);
     };
     this.mSilent = silent ?? false;
   }
 
   public startIndicator(id: string): void {
     log('info', 'start mod install', { id });
+
+
     this.mLastProgress = 0;
     // TODO: we're adding even when silent but those "silent"
     // notifications aren't displayed.
@@ -153,23 +167,24 @@ class InstallContext implements IInstallContext {
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
     Promise.delay(500)
-    .then(() => {
-      if (!this.mDidReportError) {
-        this.mDidReportError = true;
-        const noti = this.outcomeNotification(
+      .then(() => {
+        if (!this.mDidReportError) {
+
+          this.mDidReportError = true;
+          const noti = this.outcomeNotification(
             this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
             mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
-        if (noti !== null) {
-          this.mAddNotification(noti);
+          if (noti !== null) {
+            this.mAddNotification(noti);
+          }
         }
-      }
-    });
+      });
   }
 
   public setProgress(phase: string, percent?: number) {
     if ((percent === undefined)
-        || (this.mLastPhase !== phase)
-        || (Math.abs(percent - (this.mLastProgress ?? 0)) >= 2)) {
+      || (this.mLastPhase !== phase)
+      || (Math.abs(percent - (this.mLastProgress ?? 0)) >= 2)) {
       this.mLastProgress = percent;
       this.mLastPhase = phase;
       this.mUpdateNotification(
@@ -195,6 +210,27 @@ class InstallContext implements IInstallContext {
     this.mAddedId = id;
     this.mGameId = gameId;
     this.mArchiveId = archiveId;
+
+    const nexusIds = this.getNexusIds();
+
+    if (nexusIds) {
+      this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.gameId));
+    }
+  }
+
+  private getNexusIds(): { modId: string, gameId: string, fileId: string } | null {
+    if (this.mArchiveId === undefined) {
+      return null;
+    }
+    const state: IState = this.mApi.getState();
+    const downloads = state.persistent.downloads.files;
+    const download: IDownload = downloads[this.mArchiveId];
+
+    const modId = download.modInfo.nexus.ids.modId;
+    const gameId = download.modInfo.nexus.ids.gameId;
+    const fileId = download.modInfo.nexus.ids.fileId;
+
+    return { modId, gameId, fileId };
   }
 
   public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
@@ -243,7 +279,7 @@ class InstallContext implements IInstallContext {
   }
 
   public reportError(message: string, details?: string | Error, allowReport?: boolean,
-                     replace?: { [key: string]: string }): void {
+    replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details, replace });
     this.mShowError(message, details, allowReport, replace);
   }
@@ -253,12 +289,12 @@ class InstallContext implements IInstallContext {
   }
 
   private outcomeNotification(outcome: InstallOutcome, id: string,
-                              isEnabled: boolean, modName: string,
-                              mod?: IMod): INotification {
+    isEnabled: boolean, modName: string,
+    mod?: IMod): INotification {
     const type = mod !== undefined ? getModType(mod.type) : undefined;
     const typeName = (type !== undefined)
-                  && (type.options !== undefined)
-                  && (type.options.name !== undefined)
+      && (type.options !== undefined)
+      && (type.options.name !== undefined)
       ? type.options.name
       : 'Mod';
     switch (outcome) {
@@ -268,6 +304,14 @@ class InstallContext implements IInstallContext {
         if ((mod?.type === 'collection') || this.mSilent) {
           return null;
         }
+
+        const nexusIds = this.getNexusIds();
+
+        if (nexusIds) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.gameId, Date.now() - this.mStartTime));
+        }
+
         return {
           id: `may-enable-${id}`,
           type: 'success',
@@ -294,13 +338,20 @@ class InstallContext implements IInstallContext {
         localize: { message: false },
       };
       case 'ignore': return null;
-      default: return {
-        type: 'error',
-        title: '{{id}} failed to install',
-        message: this.mFailReason,
-        replace: { id },
-        localize: { message: false },
-      };
+      default:
+        const nexusIdsFail = this.getNexusIds();
+
+        if (nexusIdsFail) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsInstallationFailedEvent(nexusIdsFail.fileId, nexusIdsFail.modId, nexusIdsFail.gameId, "", this.mFailReason ?? 'unknown_error'));
+        }
+        return {
+          type: 'error',
+          title: '{{id}} failed to install',
+          message: this.mFailReason,
+          replace: { id },
+          localize: { message: false },
+        };
     }
   }
 }

@@ -9,7 +9,7 @@ import { setAnalytics } from './actions/analytics.action';
 import AnalyticsUA, { DIMENSIONS } from './analytics/AnalyticsUA';
 import AnalyticsGA4 from './analytics/AnalyticsGA4';
 import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
-import { AppLaunchedEvent } from './mixpanel/MixpanelEvents';
+import { AppCrashedEvent, AppLaunchedEvent, MixpanelEvent, ModsInstallationCompletedEvent } from './mixpanel/MixpanelEvents';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
 import { HELP_ARTICLE } from './constants';
@@ -25,6 +25,43 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings('Vortex', SettingsAnalytics);
 
   context.once(() => {
+
+    // Capture uncaught exceptions
+    process.on('uncaughtException', (err: any) => {
+      try {
+        if (enabled() && AnalyticsMixpanel.isUserSet()) {
+          AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
+            process.platform, 
+            err.code || 'unknown', 
+            err.message || 'Unknown uncaught exception'
+          ));
+        }
+        analyticsLog('error', 'Uncaught exception', { error: err.message, code: err.code, stack: err.stack });
+      } catch (trackingError) {
+        // Don't let analytics tracking cause additional crashes
+        console.error('Failed to track crash event:', trackingError);
+      }
+      // Note: Process will still terminate unless you handle it differently
+    });
+
+    // Capture unhandled rejections
+    process.on('unhandledRejection', (err: any) => {
+      try {
+        if (enabled() && AnalyticsMixpanel.isUserSet()) {
+          AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
+            process.platform, 
+            err.code || 'unknown', 
+            err.message || 'Unknown unhandled rejection'
+          ));
+        }
+        analyticsLog('error', 'Unhandled rejection', { error: err.message, code: err.code, stack: err.stack });
+      } catch (trackingError) {
+        // Don't let analytics tracking cause additional crashes
+        console.error('Failed to track crash event:', trackingError);
+      }
+      // Note: Process will still terminate unless you handle it differently
+    });
+
     const instanceId = context.api.store.getState().app.instanceId;
     const updateChannel = context.api.store.getState().settings.update.channel;
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
@@ -102,6 +139,15 @@ function init(context: IExtensionContext): boolean {
       AnalyticsGA4.trackPageView(pageId);
       metrics.trackEvent('Navigation', {pageId});
     });
+
+
+
+    // Mixpanel specific event
+    context.api.events.on('analytics-track-mixpanel-event', (event: MixpanelEvent) => {
+      AnalyticsMixpanel.trackEvent(event);
+    });
+  
+
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-event', (category, action, label?, value?) => {
@@ -240,6 +286,13 @@ function init(context: IExtensionContext): boolean {
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
           process.platform
+        ));
+
+        // send some more events to the new metrics system
+        AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
+          process.platform,
+          '12345', // error code - not available yet
+          'Simon\'s invented error'   // error message - not available yet
         ));
 
         metrics.start(instanceId, getApplication().version, context.api);
