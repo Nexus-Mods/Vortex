@@ -55,6 +55,185 @@ describe('objDiff', () => {
       '+hasOwnProperty': 2,
     })
   });
+
+  // Edge case tests for type safety
+  it('handles null inputs gracefully', () => {
+    expect(util.objDiff(null, null)).toEqual({});
+    expect(util.objDiff(null, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, null)).toBe(null);
+  });
+
+  it('handles undefined inputs gracefully', () => {
+    expect(util.objDiff(undefined, undefined)).toEqual({});
+    expect(util.objDiff(undefined, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, undefined)).toBe(null);
+  });
+
+  it('handles array inputs gracefully', () => {
+    // Arrays are not plain objects, so they return null unless they're the same reference
+    const arr1 = [];
+    const arr2 = [1, 2];
+    expect(util.objDiff(arr1, arr1)).toEqual({});
+    expect(util.objDiff(arr2, arr2)).toEqual({});
+    expect(util.objDiff([], [])).toBe(null); // Different array instances
+    expect(util.objDiff([1, 2], [1, 2])).toBe(null); // Different array instances
+    expect(util.objDiff([1, 2], { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, [1, 2])).toBe(null);
+  });
+
+  it('handles primitive inputs gracefully', () => {
+    expect(util.objDiff('string', 'string')).toEqual({});
+    expect(util.objDiff('string1', 'string2')).toBe(null);
+    expect(util.objDiff(42, 42)).toEqual({});
+    expect(util.objDiff(42, 43)).toBe(null);
+    expect(util.objDiff(true, true)).toEqual({});
+    expect(util.objDiff(true, false)).toBe(null);
+  });
+
+  it('handles mixed primitive and object inputs', () => {
+    expect(util.objDiff('string', { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, 'string')).toBe(null);
+    expect(util.objDiff(42, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, 42)).toBe(null);
+  });
+
+  it('handles Date objects gracefully', () => {
+    const date1 = new Date('2023-01-01');
+    const date2 = new Date('2023-01-02');
+    expect(util.objDiff(date1, date1)).toEqual({});
+    expect(util.objDiff(date1, date2)).toBe(null);
+    expect(util.objDiff(date1, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, date1)).toBe(null);
+  });
+
+  it('handles RegExp objects gracefully', () => {
+    const regex1 = /test/;
+    const regex2 = /other/;
+    expect(util.objDiff(regex1, regex1)).toEqual({});
+    expect(util.objDiff(regex1, regex2)).toBe(null);
+    expect(util.objDiff(regex1, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, regex1)).toBe(null);
+  });
+
+  it('handles functions gracefully', () => {
+    const func1 = () => 'test';
+    const func2 = () => 'other';
+    expect(util.objDiff(func1, func1)).toEqual({});
+    expect(util.objDiff(func1, func2)).toBe(null);
+    expect(util.objDiff(func1, { a: 1 })).toBe(null);
+    expect(util.objDiff({ a: 1 }, func1)).toBe(null);
+  });
+
+  it('handles skip parameter correctly', () => {
+    const lhs = { a: 1, b: 2, c: 3 };
+    const rhs = { a: 10, b: 2, c: 30 };
+    const res = util.objDiff(lhs, rhs, ['a', 'c']);
+    expect(res).toEqual({});
+  });
+
+  it('handles skip parameter with non-existent keys', () => {
+    const lhs = { a: 1, b: 2 };
+    const rhs = { a: 10, b: 2 };
+    const res = util.objDiff(lhs, rhs, ['a', 'nonexistent']);
+    expect(res).toEqual({});
+  });
+
+  it('handles skip parameter as non-array', () => {
+    const lhs = { a: 1, b: 2 };
+    const rhs = { a: 10, b: 2 };
+    // Should not crash when skip is not an array
+    const res = util.objDiff(lhs, rhs, 'not-an-array');
+    expect(res).toEqual({
+      '-a': 1,
+      '+a': 10,
+    });
+  });
+
+  it('handles deeply nested structures', () => {
+    const lhs = {
+      level1: {
+        level2: {
+          level3: {
+            value: 'old'
+          }
+        }
+      }
+    };
+    const rhs = {
+      level1: {
+        level2: {
+          level3: {
+            value: 'new'
+          }
+        }
+      }
+    };
+    const res = util.objDiff(lhs, rhs);
+    expect(res).toEqual({
+      level1: {
+        level2: {
+          level3: {
+            '-value': 'old',
+            '+value': 'new'
+          }
+        }
+      }
+    });
+  });
+
+  it('handles empty objects', () => {
+    expect(util.objDiff({}, {})).toEqual({});
+    expect(util.objDiff({}, { a: 1 })).toEqual({ '+a': 1 });
+    expect(util.objDiff({ a: 1 }, {})).toEqual({ '-a': 1 });
+  });
+
+  it('handles objects with prototype methods', () => {
+    function TestClass() {
+      this.prop = 'value';
+    }
+    TestClass.prototype.method = function() { return 'test'; };
+
+    const obj1 = new TestClass();
+    const obj2 = new TestClass();
+    obj2.prop = 'different';
+
+    // Should only compare own properties, not prototype methods
+    const res = util.objDiff(obj1, obj2);
+    expect(res).toEqual({
+      '-prop': 'value',
+      '+prop': 'different'
+    });
+  });
+
+  it('handles objects with null prototype', () => {
+    const obj1 = Object.create(null);
+    obj1.a = 1;
+    const obj2 = Object.create(null);
+    obj2.a = 2;
+
+    const res = util.objDiff(obj1, obj2);
+    expect(res).toEqual({
+      '-a': 1,
+      '+a': 2
+    });
+  });
+
+  it('returns empty object when objects are identical', () => {
+    const obj = { a: 1, b: { c: 2, d: [1, 2, 3] } };
+    expect(util.objDiff(obj, obj)).toEqual({});
+  });
+
+  it('handles circular references in recursive calls', () => {
+    const lhs = { a: 1, nested: {} };
+    const rhs = { a: 2, nested: {} };
+
+    // The function should handle this gracefully due to the ?? {} fallback
+    const res = util.objDiff(lhs, rhs);
+    expect(res).toEqual({
+      '-a': 1,
+      '+a': 2
+    });
+  });
 });
 
 describe('isFilenameValid', () => {

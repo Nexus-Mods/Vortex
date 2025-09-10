@@ -97,6 +97,11 @@ export function truthy(val: any): boolean {
   return !!val;
 }
 
+// Helper to check for plain objects (not null, not array)
+function isPlainObject(obj: any): boolean {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+}
+
 /**
  * return the delta between two objects
  * @param lhs the left, "before", object
@@ -105,9 +110,8 @@ export function truthy(val: any): boolean {
  */
 export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   const res = {};
-
-  if ((typeof (lhs) === 'object') && (typeof (rhs) === 'object')) {
-    Object.keys(lhs || {}).forEach(key => {
+  if (isPlainObject(lhs) && isPlainObject(rhs)) {
+    Object.keys(lhs).forEach(key => {
       if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
         return null;
       }
@@ -124,7 +128,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
         }
       }
     });
-    Object.keys(rhs || {}).forEach(key => {
+    Object.keys(rhs).forEach(key => {
       if (!Object.prototype.hasOwnProperty.call(lhs, key)
         && Object.prototype.hasOwnProperty.call(rhs, key)) {
         res['+' + key] = rhs[key];
