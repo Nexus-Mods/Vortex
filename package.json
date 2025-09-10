@@ -51,7 +51,9 @@
     "check-submodules": "node scripts/submodule-branch-check.js",
     "complete-validation": "node scripts/complete-validation.js",
     "start:dev": "cross-env NODE_ENV=development electron .",
-    "push:macos": "bash ./scripts/push_macos_branches.sh"
+    "push:macos": "bash ./scripts/push_macos_branches.sh",
+    "sweep:all": "bash ./scripts/sweep_and_push_all.sh",
+    "sweep:all:dry": "bash ./scripts/sweep_and_push_all.sh --dry-run"
   },
   "parserOptions": {
     "ecmaFeatures": {

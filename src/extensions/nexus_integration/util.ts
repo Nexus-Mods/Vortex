@@ -18,7 +18,7 @@ import * as semver from 'semver';
 import { generate as shortId } from 'shortid';
 import * as util from 'util';
 import WebSocket from 'ws';
-import { addNotification, clearOAuthCredentials, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setOAuthCredentials, setUserAPIKey } from '../../actions';
+import { addNotification, dismissNotification, setDialogVisible, setExtensionEndorsed, setModAttribute, setOAuthCredentials, setUserAPIKey } from '../../actions';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IMod, IState } from '../../types/IState';
 import { getApplication } from '../../util/application';
@@ -54,6 +54,8 @@ import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
 import { getPageURL } from './util/sso';
 import transformUserInfo from './util/transformUserInfo';
+
+
 import Debouncer from '../../util/Debouncer';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
@@ -1439,6 +1441,71 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
+export function clearOAuthCredentials(api: IExtensionApi) {
+  log('info', 'Clearing OAuth credentials');
+  // Dispatch action to clear credentials from state
+  api.store.dispatch({ type: 'CLEAR_OAUTH_CREDENTIALS' });
+  // Clear user info
+  api.store.dispatch(setUserInfo(undefined));
+  // Emit login event with null error to indicate logout
+  api.events.emit('did-login', null);
+}
+
+// Enhanced updateToken function with better error handling
+export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any): Promise<boolean> {
+  setOauthToken(credentials); // used for reporting, unimportant right now
+                        
+  log('info', 'updateToken()'); 
+
+  // update the nexus-node object with our credentials.
+  // could be from nexus_integration once() or from when the credentials are updated in state
+
+  return Promise.resolve(nexus.setOAuthCredentials({
+    fingerprint: credentials.fingerprint,
+    refreshToken: credentials.refreshToken,
+    token: credentials.token,
+  }, {
+    id: OAUTH_CLIENT_ID,
+  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
+  ))
+    .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
+    .then(() => true)
+    .catch(err => {
+      // Special handling for invalid_grant errors
+      if (err?.code === 'invalid_grant') {
+        api.showErrorNotification('Authentication failed', 
+          'Your OAuth token has expired or been revoked. Please log out and log back in to generate a new token.', {
+          allowReport: false,
+        });
+        // Clear the invalid credentials
+        clearOAuthCredentials(api);
+      } else {
+        api.showErrorNotification('Authentication failed, please log in again', err, {
+          allowReport: false,
+        });
+      }
+      api.store.dispatch(setUserInfo(undefined));
+      api.events.emit('did-login', err);
+      return false;
+    })
+}
+
+function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
+  
+  log('info', 'onJWTTokenRefresh');
+
+  // sets state oauth credentials
+  api.store.dispatch(setOAuthCredentials(
+    credentials.token, credentials.refreshToken, credentials.fingerprint));
+
+  // if we've had a token refresh, then we need to update userinfo
+  // EDIT: we don't want this as it doesnt' make sense if the refresh is completed by a userInfo check.
+  // we will leave thie as an 'oauth credentials only' function. updating the state with updated token
+  // and then that will perform updateToken below and make sure both node-neuxs and state are in sync.
+
+  //Promise.resolve(getUserInfo(api, nexus)); 
+}
+
 function getUserInfo(api: IExtensionApi,
                      nexus: Nexus,
                         /*userInfo: IValidateKeyResponse*/)
@@ -1505,52 +1572,6 @@ function getUserInfo(api: IExtensionApi,
     })
     .then(() => true);*/
 }
-
-function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
-  
-  log('info', 'onJWTTokenRefresh');
-
-  // sets state oauth credentials
-  api.store.dispatch(setOAuthCredentials(
-    credentials.token, credentials.refreshToken, credentials.fingerprint));
-
-  // if we've had a token refresh, then we need to update userinfo
-  // EDIT: we don't want this as it doesnt' make sense if the refresh is completed by a userInfo check.
-  // we will leave thie as an 'oauth credentials only' function. updating the state with updated token
-  // and then that will perform updateToken below and make sure both node-neuxs and state are in sync.
-
-  //Promise.resolve(getUserInfo(api, nexus)); 
-}
-
-export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any): Promise<boolean> {
-  setOauthToken(credentials); // used for reporting, unimportant right now
-                        
-  log('info', 'updateToken()'); 
-
-  // update the nexus-node object with our credentials.
-  // could be from nexus_integration once() or from when the credentials are updated in state
-
-  return Promise.resolve(nexus.setOAuthCredentials({
-    fingerprint: credentials.fingerprint,
-    refreshToken: credentials.refreshToken,
-    token: credentials.token,
-  }, {
-    id: OAUTH_CLIENT_ID,
-  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
-  ))
-    .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
-    .then(() => true)
-    .catch(err => {
-      api.showErrorNotification('Authentication failed, please log in again', err, {
-        allowReport: false,
-      });
-      api.store.dispatch(setUserInfo(undefined));
-      api.events.emit('did-login', err);
-      return false;
-    })
-}
-
-
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);

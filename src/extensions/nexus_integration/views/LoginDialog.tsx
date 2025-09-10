@@ -269,7 +269,13 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
           <li>
             <p>{t('Click "Authorise" on the website and you will be given a token, copy and paste the token below and click save.')}</p>
      
-            <PlaceholderTextArea t={t} mModalRef={this.mModalRef} className='token-paste-textarea' onChange={this.updateAPIKey}/>
+            <PlaceholderTextArea 
+              t={t} 
+              mModalRef={this.mModalRef} 
+              className='token-paste-textarea' 
+              onChange={this.updateAPIKey}
+              value={this.state.apiKeyInput} // Pass the value prop
+            />
 
           </li>
         </ol>

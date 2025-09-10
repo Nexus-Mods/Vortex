@@ -13,7 +13,7 @@
       "type": "build-copy",
       "name": "gameversion-hash",
       "path": "extensions/gameversion-hash",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "src/**/*.scss", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gameversion-hash"
@@ -22,7 +22,7 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-indexlock",
       "path": "extensions/gamebryo-plugin-indexlock",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-indexlock"
@@ -31,7 +31,7 @@
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
       "path": "extensions/gamebryo-savegame-management",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
@@ -40,7 +40,7 @@
       "type": "build-copy",
       "name": "gamebryo-test-settings",
       "path": "extensions/gamebryo-test-settings",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-test-settings"
@@ -58,7 +58,7 @@
       "type": "build-copy",
       "name": "gamebryo-ba2-support",
       "path": "extensions/gamebryo-ba2-support",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api", "ba2tk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-ba2-support"
@@ -67,7 +67,7 @@
       "type": "build-copy",
       "name": "local-gamesettings",
       "path": "extensions/local-gamesettings",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
@@ -84,7 +84,7 @@
       "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
       "path": "extensions/gamebryo-archive-invalidation",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-invalidation"
@@ -129,7 +129,7 @@
       "type": "build-copy",
       "name": "mod-dependency-manager",
       "path": "extensions/mod-dependency-manager",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-dependency-manager"
@@ -155,7 +155,7 @@
       "type": "build-copy",
       "name": "feedback",
       "path": "extensions/feedback",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/feedback"
@@ -310,7 +310,7 @@
       "type": "build-copy",
       "name": "test-gameversion",
       "path": "extensions/test-gameversion",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/test-gameversion"
@@ -327,7 +327,7 @@
       "type": "build-copy",
       "name": "mod-content",
       "path": "extensions/mod-content",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-content"
@@ -336,7 +336,7 @@
       "type": "build-copy",
       "name": "new-file-monitor",
       "path": "extensions/new-file-monitor",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/new-file-monitor"
@@ -345,7 +345,7 @@
       "type": "build-copy",
       "name": "extension-dashlet",
       "path": "extensions/extension-dashlet",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/extension-dashlet"
@@ -363,7 +363,7 @@
       "type": "build-copy",
       "name": "script-extender-error-check",
       "path": "extensions/script-extender-error-check",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/script-extender-error-check"
@@ -372,7 +372,7 @@
       "type": "build-copy",
       "name": "mod-report",
       "path": "extensions/mod-report",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-report"
@@ -381,7 +381,7 @@
       "type": "build-copy",
       "name": "script-extender-installer",
       "path": "extensions/script-extender-installer",
-      "condition": "process.platform === 'win32'",
+      // Removed condition to allow building on macOS - this extension should work on macOS
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/script-extender-installer"

@@ -665,9 +665,21 @@ function flattenInner(obj: any, key: string[],
 
 export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
   return new Bluebird((resolve, reject) => {
-    const cb = (err: Error, res: ResT) => {
+    const cb = (err: Error | number | string, res: ResT) => {
       if ((err !== null) && (err !== undefined)) {
-        return reject(err);
+        // Convert non-Error objects to Error instances
+        let errorObj: Error;
+        if (err instanceof Error) {
+          errorObj = err;
+        } else if (typeof err === 'string') {
+          errorObj = new Error(err);
+        } else if (typeof err === 'number') {
+          errorObj = new Error(`Error code: ${err}`);
+          (errorObj as any).code = err;
+        } else {
+          errorObj = new Error(`Unknown error: ${JSON.stringify(err)}`);
+        }
+        return reject(errorObj);
       } else {
         return resolve(res);
       }

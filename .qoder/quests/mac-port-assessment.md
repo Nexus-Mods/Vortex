@@ -48,34 +48,34 @@ Several extensions that are currently Windows-only need to be evaluated for macO
 
 **Why this is important**: These extensions provide critical functionality for mod management, including game-specific support, mod format handling, and utility features. By removing unnecessary platform restrictions, macOS users will gain access to the full range of Vortex's capabilities, ensuring a consistent experience across platforms.
 
-| Extension | Current Status | Action Required |
-|-----------|----------------|-----------------|
-| gamebryo-plugin-management | Windows-only | Evaluate game-specific requirements |
-| gameversion-hash | Windows-only | Check if hashing functionality works on macOS |
-| gamebryo-plugin-indexlock | Windows-only | Assess file locking mechanisms |
-| gamebryo-savegame-management | Windows-only | Verify save game handling on macOS |
-| gamebryo-test-settings | Windows-only | Determine test compatibility |
-| gamebryo-bsa-support | Windows-only | Check archive handling on macOS |
-| gamebryo-ba2-support | Windows-only | Validate BA2 format support |
-| local-gamesettings | Windows-only | Evaluate local settings management |
-| gamebryo-archive-invalidation | Windows-only | Check archive invalidation methods |
-| gamestore-gog | Windows-only | Verify GOG integration on macOS |
-| gamestore-origin | Windows-only | Check Origin integration |
-| gamestore-uplay | Windows-only | Assess Uplay integration |
-| gamestore-xbox | Windows-only | Evaluate Xbox integration |
-| mod-dependency-manager | Windows-only | Verify dependency resolution |
-| nmm-import-tool | Windows-only | Check NMM import functionality |
-| feedback | Windows-only | Validate feedback submission |
-| mo-import | Windows-only | Assess MO import tools |
-| fnis-integration | Windows-only | Evaluate FNIS compatibility |
-| test-gameversion | Windows-only | Determine test suite compatibility |
-| new-file-monitor | Windows-only | Check file monitoring capabilities |
-| extension-dashlet | Windows-only | Verify dashlet functionality |
-| test-setup | Windows-only | Assess test environment setup |
-| script-extender-error-check | Windows-only | Validate error checking |
-| mod-report | Windows-only | Check reporting functionality |
-| script-extender-installer | Windows-only | Evaluate installer compatibility |
-| titlebar-launcher | No restriction | Verify launcher functionality |
+| Extension | Current Status | Action Required | Detailed Functionality and Required Updates |
+|-----------|----------------|-----------------|------------------|
+| gamebryo-plugin-management | Windows-only | Evaluate game-specific requirements | Manages plugin load order for Gamebryo-based games (Skyrim, Fallout). Handles .esp/.esm files and conflict resolution. Needs verification of file operations, path handling, and plugin scanning on macOS file system. |
+| gameversion-hash | Windows-only | Check if hashing functionality works on macOS | Calculates and compares file hashes to determine game versions. Hashing algorithms should work the same on macOS, but file path handling and access permissions may need adjustment. |
+| gamebryo-plugin-indexlock | Windows-only | Assess file locking mechanisms | Manages file locking for Gamebryo game plugins to prevent conflicts. File locking mechanisms differ between Windows and Unix systems, so this extension may need platform-specific implementations. |
+| gamebryo-savegame-management | Windows-only | Verify save game handling on macOS | Handles save game detection, backup, and management for Gamebryo games. Path handling for save game locations and file operations need to be verified on macOS. |
+| gamebryo-test-settings | Windows-only | Determine test compatibility | Provides testing capabilities for Gamebryo game extensions. Test frameworks and file operations should be validated on macOS. |
+| gamebryo-bsa-support | Windows-only | Check archive handling on macOS | Handles BSA (Bethesda Softworks Archive) files used by Bethesda games. Archive extraction and creation functionality needs to be tested on macOS. |
+| gamebryo-ba2-support | Windows-only | Validate BA2 format support | Manages BA2 (Bethesda Archive v2) files used by newer Bethesda games like Fallout 4 and Skyrim SE. Archive handling needs validation on macOS. |
+| local-gamesettings | Windows-only | Evaluate local settings management | Manages local game settings and configuration files. Path handling for configuration files and file operations need to be verified on macOS. |
+| gamebryo-archive-invalidation | Windows-only | Check archive invalidation methods | Handles archive invalidation for Gamebryo games, which is used to prioritize loose files over archived ones. File system operations and timestamp handling may differ on macOS. |
+| gamestore-gog | Windows-only | Verify GOG integration on macOS | Integrates with GOG Galaxy to detect installed games and download mods. Integration needs to be updated to locate GOG games in macOS-specific directories and handle macOS-specific GOG Galaxy APIs. |
+| gamestore-origin | Windows-only | Check Origin integration | Integrates with EA Origin to detect installed games. Path detection for Origin games and API integration need to be validated on macOS. |
+| gamestore-uplay | Windows-only | Assess Uplay integration | Integrates with Ubisoft Connect (formerly Uplay) to detect installed games. Path detection and API integration need macOS-specific adjustments. |
+| gamestore-xbox | Windows-only | Evaluate Xbox integration | Integrates with Xbox Game Pass/Windows Store to detect installed games. This extension may have limited functionality on macOS but should be evaluated for any cross-platform features. |
+| mod-dependency-manager | Windows-only | Verify dependency resolution | Resolves and manages mod dependencies. Dependency resolution algorithms should work the same on macOS, but file operations and path handling need validation. |
+| nmm-import-tool | Windows-only | Check NMM import functionality | Imports mods and profiles from Nexus Mod Manager. File import functionality and path handling need to be verified on macOS. |
+| feedback | Windows-only | Validate feedback submission | Submits user feedback and crash reports to Nexus Mods. Network operations and file handling for logs need validation on macOS. |
+| mo-import | Windows-only | Assess MO import tools | Imports mods and profiles from Mod Organizer. File import functionality and path handling need to be verified on macOS. |
+| fnis-integration | Windows-only | Evaluate FNIS compatibility | Integrates with FNIS (Fores New Idles in Skyrim) to generate animation files. This tool is Windows-specific, so the extension may need to either provide macOS alternatives or gracefully handle lack of support. |
+| test-gameversion | Windows-only | Determine test suite compatibility | Provides testing capabilities for game version detection. Test frameworks and file operations should be validated on macOS. |
+| new-file-monitor | Windows-only | Check file monitoring capabilities | Monitors file system changes to detect new mods or changes. File system monitoring APIs differ between Windows and macOS, so this extension may need platform-specific implementations. |
+| extension-dashlet | Windows-only | Verify dashlet functionality | Provides a dashboard widget for extension management. UI components should work the same on macOS, but platform-specific UI behaviors need validation. |
+| test-setup | Windows-only | Assess test environment setup | Provides testing environment setup for extensions. Test frameworks and file operations should be validated on macOS. |
+| script-extender-error-check | Windows-only | Validate error checking | Checks for errors in script extenders like SKSE, F4SE, etc. Error detection logic should work the same on macOS, but file access and parsing may need adjustments. |
+| mod-report | Windows-only | Check reporting functionality | Generates reports about mod collections for troubleshooting. File operations and report generation should be validated on macOS. |
+| script-extender-installer | Windows-only | Evaluate installer compatibility | Installs script extenders like SKSE, F4SE, etc. Installation processes and file operations need to be verified on macOS. This may have limited functionality on macOS as many script extenders are Windows-specific. |
+| titlebar-launcher | No restriction | Verify launcher functionality | Provides game launching functionality through the title bar. Game launching mechanisms and process management need validation on macOS. |
 
 **What is needed and why**: These extensions provide important functionality for Vortex users. Many are game-specific extensions that handle mod formats (BSA, BA2 archives) or game-specific features (plugin management, save game handling). Others provide utility functions like dependency management, import tools from other mod managers, and feedback mechanisms. Restricting these to Windows only limits the functionality available to macOS users and creates an uneven user experience. Evaluating each extension for macOS compatibility ensures that users on all platforms have access to the same features.
 
@@ -85,14 +85,14 @@ Some native modules currently use mocks on macOS and may need full implementatio
 
 **Why this is important**: Native modules provide low-level system functionality that cannot be achieved with pure JavaScript. While mock implementations allow the application to run, they don't provide actual functionality to users. Replacing mocks with real implementations ensures that users get accurate system information and full functionality, such as proper drive listing and disk usage calculation.
 
-| Module | Current Status | Action Required |
-|--------|----------------|-----------------|
-| drivelist | Mocked | Implement actual drive listing |
-| diskusage | Mocked | Add real disk usage calculation |
-| winapi-bindings | Mocked | Replace with macOS equivalents |
-| native-errors | Mocked | Implement native error handling |
-| wholocks | Mocked | Add file lock detection for macOS |
-| exe-version | Mocked | Implement executable version checking |
+| Module | Current Status | Action Required | Detailed Functionality and Required Updates |
+|--------|----------------|-----------------|------------------|
+| drivelist | Mocked | Implement actual drive listing | Lists all connected drives and their properties. Currently returns empty results on macOS. Needs implementation using macOS system APIs or Node.js fs module to provide actual drive information. |
+| diskusage | Mocked | Add real disk usage calculation | Calculates disk space usage for storage management. Currently returns placeholder data on macOS. Needs implementation using Node.js fs module or system commands to provide real disk usage statistics. |
+| winapi-bindings | Mocked | Replace with macOS equivalents | Provides low-level Windows API access for various system operations. Completely non-functional on macOS. Needs replacement with macOS-specific implementations or cross-platform alternatives for required functionality. |
+| native-errors | Mocked | Implement native error handling | Handles native system error codes and messages. Currently non-functional on macOS. Needs implementation to properly handle and translate macOS system errors. |
+| wholocks | Mocked | Add file lock detection for macOS | Detects which processes are locking files to prevent conflicts. Currently non-functional on macOS. Needs implementation using macOS system APIs or alternative approaches to detect file locks. |
+| exe-version | Mocked | Implement executable version checking | Extracts version information from Windows executable files. Non-functional on macOS. Needs implementation to handle macOS executable formats (Mach-O) and extract version information, or provide cross-platform version checking. |
 
 **What is needed and why**: Native modules provide low-level system functionality that can't be achieved with pure JavaScript. On Windows, these modules interface directly with the Windows API to provide features like drive listing, disk usage calculation, and file lock detection. On macOS, these modules currently use mock implementations that return placeholder data or no data at all. This means macOS users don't get the full functionality. For example, the drivelist mock returns an empty array instead of actual drive information, which prevents users from seeing available drives for mod installation. Implementing proper macOS equivalents ensures that users get accurate system information and full functionality.
 
@@ -103,6 +103,17 @@ Areas that may need adjustment for macOS:
 - File permissions and access controls
 - Game installation path detection for macOS game stores (Steam, GOG, etc.)
 - Mod deployment locations following macOS conventions
+
+**Detailed Requirements**:
+1. **Path separators**: Use Node.js `path` module instead of hardcoded separators to ensure cross-platform compatibility.
+2. **File permissions**: macOS has stricter permissions model. Ensure proper handling of read/write permissions for game directories and Vortex data directories.
+3. **Game store paths**: Update detection logic for common game stores:
+   - Steam: `~/Library/Application Support/Steam` (vs `C:Program Files (x86)Steam`)
+   - GOG: `~/Library/Application Support/GOG.com/Galaxy` (vs `C:Program Files (x86)GOG Galaxy`)
+   - Epic Games: `~/Library/Application Support/Epic` (vs `C:Program Files (x86)Epic Games`)
+4. **Mod deployment**: Follow macOS conventions for file locations:
+   - User data: `~/Library/Application Support/Vortex` (vs `%APPDATA%Vortex`)
+   - Cache data: `~/Library/Caches/Vortex` (vs `%LOCALAPPDATA%Vortex`)
 
 **What is needed and why**: File system handling is one of the most critical areas for cross-platform compatibility. Different operating systems have different conventions for path separators, file permissions, and directory structures. macOS follows Unix conventions with forward slashes as path separators and specific locations for application data (`~/Library/Application Support/` for user data, `/Applications` for installed applications). Game stores also install games in different locations on macOS compared to Windows. Properly handling these differences ensures that Vortex can correctly locate games, manage mod files, and store its own data in appropriate locations. This also includes handling file permissions correctly, as macOS has stricter security controls than some Windows configurations.
 
@@ -115,9 +126,18 @@ Features that may need macOS-specific handling:
 - Keyboard shortcuts compatibility
 - Dialog and window management differences
 
+**Detailed Requirements**:
+1. **System tray**: macOS uses the Notification Center instead of a system tray. Implement using Electron's `Tray` API with macOS-specific considerations.
+2. **Menu bar**: macOS applications typically integrate with the global menu bar rather than having menu bars within application windows. Use Electron's `Menu` API to create macOS-style menus.
+3. **File associations**: Register nxm:// protocol handler with the system using Electron's `app.setAsDefaultProtocolClient()` method and handle activation events properly.
+4. **Keyboard shortcuts**: Follow macOS conventions (Cmd+Q to quit, Cmd+, for preferences) instead of Windows conventions (Alt+F4, Ctrl+,).
+5. **Dialogs and windows**: Implement macOS-specific window management behaviors, including proper handling of modal dialogs, window resizing constraints, and close button behavior according to macOS Human Interface Guidelines.
+
 **What is needed and why**: User interface conventions differ significantly between macOS and Windows. macOS applications typically integrate with the system menu bar rather than having menu bars within application windows. System tray integration works differently, with macOS using the Notification Center instead of a system tray. Keyboard shortcuts follow platform conventions (Cmd+Q to quit on macOS vs Alt+F4 on Windows). File associations for the nxm:// protocol need to be registered with the system. Dialog and window management also follow different conventions, with macOS having specific behaviors for modal dialogs, window resizing, and close buttons. Properly implementing these UI and integration features ensures that Vortex feels like a native macOS application rather than a ported Windows application.
 
 ## Technical Implementation Plan
+
+**Implementation Approach**: The technical implementation should follow an iterative approach, starting with core compatibility and gradually expanding to full feature parity. Each phase should include thorough testing to ensure stability and prevent regressions. Cross-platform abstractions should be preferred over platform-specific code where possible to maintain codebase consistency and reduce maintenance burden.
 
 ### Phase 1: Core Compatibility
 
@@ -174,6 +194,8 @@ Features that may need macOS-specific handling:
    **What is needed and why**: Performance characteristics can vary significantly between platforms due to differences in operating systems, file systems, and hardware. macOS may have different performance bottlenecks compared to Windows, especially in areas like file I/O operations, which are critical for a mod manager. Profiling the application on macOS helps identify platform-specific performance issues. Optimization efforts might include improving file scanning algorithms, optimizing database operations, reducing memory usage, and minimizing startup times. Efficient file operations are particularly important as mod managers frequently scan large directories and process many files.
 
 ## Testing and Validation
+
+**Testing Strategy**: A comprehensive testing approach should be employed, combining automated tests with manual validation. Automated tests should cover unit and integration testing across platforms, while manual validation should focus on user experience and edge cases. Testing should be performed on multiple macOS versions and hardware configurations to ensure broad compatibility.
 
 ### Automated Testing
 
