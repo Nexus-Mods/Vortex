@@ -10,11 +10,12 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
-import { ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { ModsInstallationCancelledEvent, ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import NXMUrl from '../nexus_integration/NXMUrl';
+import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 import { setModsEnabled } from '../profile_management/actions/profiles';
 
 import {
@@ -211,26 +212,10 @@ class InstallContext implements IInstallContext {
     this.mGameId = gameId;
     this.mArchiveId = archiveId;
 
-    const nexusIds = this.getNexusIds();
+    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
 
-    if (nexusIds) {
-      this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.gameId));
-    }
-  }
+    this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
 
-  private getNexusIds(): { modId: string, gameId: string, fileId: string } | null {
-    if (this.mArchiveId === undefined) {
-      return null;
-    }
-    const state: IState = this.mApi.getState();
-    const downloads = state.persistent.downloads.files;
-    const download: IDownload = downloads[this.mArchiveId];
-
-    const modId = download.modInfo.nexus.ids.modId;
-    const gameId = download.modInfo.nexus.ids.gameId;
-    const fileId = download.modInfo.nexus.ids.fileId;
-
-    return { modId, gameId, fileId };
   }
 
   public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
@@ -297,6 +282,9 @@ class InstallContext implements IInstallContext {
       && (type.options.name !== undefined)
       ? type.options.name
       : 'Mod';
+
+    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), mod.archiveId);
+
     switch (outcome) {
       case 'success':
         // TODO: bit of a hack, I'd prefer if we controlled this from the collections
@@ -305,12 +293,9 @@ class InstallContext implements IInstallContext {
           return null;
         }
 
-        const nexusIds = this.getNexusIds();
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, Date.now() - this.mStartTime));
 
-        if (nexusIds) {
-          this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.gameId, Date.now() - this.mStartTime));
-        }
 
         return {
           id: `may-enable-${id}`,
@@ -329,22 +314,25 @@ class InstallContext implements IInstallContext {
             },
           ],
         };
-      case 'canceled': return {
-        type: 'info',
-        title: 'Installation canceled',
-        message: modName,
-        replace: { id },
-        displayMS: 4000,
-        localize: { message: false },
-      };
+      case 'canceled':
+
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsInstallationCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
+
+        return {
+          type: 'info',
+          title: 'Installation canceled',
+          message: modName,
+          replace: { id },
+          displayMS: 4000,
+          localize: { message: false },
+        };
       case 'ignore': return null;
       default:
-        const nexusIdsFail = this.getNexusIds();
 
-        if (nexusIdsFail) {
-          this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsInstallationFailedEvent(nexusIdsFail.fileId, nexusIdsFail.modId, nexusIdsFail.gameId, "", this.mFailReason ?? 'unknown_error'));
-        }
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsInstallationFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, "", this.mFailReason ?? 'unknown_error'));
+        
         return {
           type: 'error',
           title: '{{id}} failed to install',

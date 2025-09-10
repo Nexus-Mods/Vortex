@@ -37,8 +37,9 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
-import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent } from '../analytics/mixpanel/MixpanelEvents';
 import { isArray } from 'lodash';
+import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   total: number, chunks: IChunk[], chunkable: boolean,
@@ -156,14 +157,16 @@ export class DownloadObserver {
     callback?: (err: Error, id: string) => void): Promise<void> {
     const innerState: IState = this.mApi.getState();
 
-    const downloads = innerState.persistent.downloads.files;
-    const download: IDownload = downloads[id];
-    const gameId = Array.isArray(download?.game) ? download.game[0] : download.game;
-    const modId = download.urls[0].match(/\/mods\/(\d+)\//);
-    const fileId = download.modInfo.nexus.ids.fileId;
+    const nexusIds = nexusIdsFromDownloadId(innerState, id);
 
-    this.mApi.events.emit('analytics-track-mixpanel-event',
-      new ModsDownloadFailedEvent(fileId, modId[0], gameId, '', err.message));
+    if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
+      this.mApi.events.emit('analytics-track-mixpanel-event',
+        new ModsDownloadCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
+    } else {
+      this.mApi.events.emit('analytics-track-mixpanel-event',
+        new ModsDownloadFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, '', err.message));
+    }
 
     if (err instanceof DownloadIsHTML) {
       const filePath: string =
@@ -181,6 +184,7 @@ export class DownloadObserver {
           });
       }
     } else if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
       const prom: Promise<void> = (filePath !== undefined)
@@ -387,14 +391,13 @@ export class DownloadObserver {
           const flattened = flatten(res.metaInfo ?? {});
 
           const state: IState = this.mApi.getState();
-          const downloads = state.persistent.downloads.files;
-          const download: IDownload = downloads[id];
-          const modId = download.modInfo.nexus.ids.modId;
-          const nexusGameId = download.modInfo.nexus.ids.gameId;
-          const fileId = download.modInfo.nexus.ids.fileId;
+
+          const duration_ms = Date.now() - download.fileTime;
+
+          const nexusIds = nexusIdsFromDownloadId(state, id);
 
           this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsDownloadCompletedEvent(fileId, modId, nexusGameId, download.size, 0));
+            new ModsDownloadCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, download.size, duration_ms));
 
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
           util.batchDispatch(this.mApi.store.dispatch, batchedActions);
