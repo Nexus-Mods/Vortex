@@ -199,7 +199,6 @@ class StyleManager {
         hasError: !!err,
         errorMessage: err?.message,
         cssLength: css?.length || 0,
-        cssPreview: css?.substring(0, 100) || 'empty',
         expectingResult: !!this.mExpectingResult
       });
       
@@ -225,8 +224,7 @@ class StyleManager {
       log('debug', 'StyleManager IPC __renderSASS_update - received SASS update', { 
         hasError: !!err,
         errorMessage: err?.message,
-        cssLength: css?.length || 0,
-        cssPreview: css?.substring(0, 100) || 'empty'
+        cssLength: css?.length || 0
       });
       
       if (err !== null) {
@@ -370,8 +368,7 @@ class StyleManager {
     })
       .then((css: string) => {
         log('debug', 'StyleManager render - received CSS', {
-          cssLength: css?.length || 0,
-          cssPreview: css?.substring(0, 200) || 'empty'
+          cssLength: css?.length || 0
         });
         this.applyCSS(css);
       });
@@ -387,7 +384,6 @@ class StyleManager {
     
     log('debug', 'StyleManager applyCSS - injecting CSS', {
       cssLength: css?.length || 0,
-      cssContent: css || 'empty',
       existingThemeElements: Array.from(head.children).filter(el => el.id === 'theme').length
     });
     
@@ -407,7 +403,6 @@ class StyleManager {
     const injectedElement = document.getElementById('theme');
     log('debug', 'StyleManager applyCSS - verification', {
       elementExists: !!injectedElement,
-      elementContent: injectedElement?.innerHTML?.substring(0, 200) || 'none',
       totalHeadChildren: head.children.length
     });
   }
