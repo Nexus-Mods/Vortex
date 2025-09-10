@@ -1,12 +1,11 @@
 import Mixpanel from 'mixpanel';
-import { MIXPANEL_DEV_TOKEN } from '../constants';
+import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from '../constants';
 import { getApplication } from '../../../util/application';
 import { IValidateKeyDataV2 } from '../../nexus_integration/types/IValidateKeyData';
-import { UpdateChannel } from '../../../types/IState';
-import { log } from '../../../util/log';
-import { MixpanelEvent } from '../types/MixpanelEvents';
+import { analyticsServiceLog } from '../utils/analyticsLog';
+import { MixpanelEvent } from './MixpanelEvents';
 
-class AnalyticsMixpanel {
+class MixpanelAnalytics {
 
   private mixpanel: Mixpanel.Mixpanel;
   private user: number;
@@ -22,14 +21,21 @@ class AnalyticsMixpanel {
   /**
    * Sets and Initializes the Mixpanel tracking with super properties
    */
-  public start(userInfo: IValidateKeyDataV2, updateChannel: UpdateChannel) {
+  public start(userInfo: IValidateKeyDataV2, isStable: boolean) {
     this.user = userInfo.userId;
-    this.mixpanel = Mixpanel.init(MIXPANEL_DEV_TOKEN);
+    const token = isStable ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
+    const environment = isStable ? 'production' : 'development';
+    this.mixpanel = Mixpanel.init(token);
 
     // Build and store super properties based on data team requirements
     this.superProperties = this.buildSuperProperties(userInfo);
 
-    log('debug', 'Mixpanel initialized', { userId: this.user, superProperties: this.superProperties });
+    analyticsServiceLog('mixpanel', 'debug', `Initialized for ${environment}`, { 
+      userId: this.user, 
+      isStable,
+      environment,
+      superProperties: this.superProperties 
+    });
   }
 
   /**
@@ -103,7 +109,7 @@ class AnalyticsMixpanel {
    */
   public trackEvent(event: MixpanelEvent) {
     if (!this.isUserSet()) {
-      log('warn', 'Mixpanel trackEvent called but user not set', { eventName: event.eventName });
+      analyticsServiceLog('mixpanel', 'warn', 'trackEvent called but user not set', { eventName: event.eventName });
       return;
     }
 
@@ -114,11 +120,11 @@ class AnalyticsMixpanel {
       ...event.properties,
     };
 
-    log('debug', 'Mixpanel event sent', { eventName: event.eventName, eventData });
+    analyticsServiceLog('mixpanel', 'debug', 'Event tracked', { eventName: event.eventName, eventData });
     this.mixpanel!.track(event.eventName, eventData);
   }
 }
 
-const analyticsMixpanel = new AnalyticsMixpanel();
+const analyticsMixpanel = new MixpanelAnalytics();
 
 export default analyticsMixpanel;

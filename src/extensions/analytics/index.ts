@@ -1,14 +1,15 @@
 import { contextType } from 'react-bootstrap/lib/Accordion';
+import * as semver from 'semver';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { getApplication } from '../../util/application';
-import { log } from '../../util/log';
+import { analyticsLog } from './utils/analyticsLog';
 import { activeGameId, discoveryByGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { setAnalytics } from './actions/analytics.action';
 import AnalyticsUA, { DIMENSIONS } from './analytics/AnalyticsUA';
 import AnalyticsGA4 from './analytics/AnalyticsGA4';
-import AnalyticsMixpanel from './analytics/AnalyticsMixpanel';
-import { AppLaunchedEvent } from './types/MixpanelEvents';
+import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
+import { AppLaunchedEvent } from './mixpanel/MixpanelEvents';
 import { EVENTS_EVENT_LISTENERS, EVENTS_STATE_LISTENERS } from './analytics/events';
 import { NAVIGATION_EVENT_LISTENERS, NAVIGATION_STATE_LISTENERS } from './analytics/navigation';
 import { HELP_ARTICLE } from './constants';
@@ -173,6 +174,14 @@ function init(context: IExtensionContext): boolean {
         const theme = state.settings.interface['currentTheme'];
         const language = state.settings.interface['language'];
 
+        // Determine if this is a stable version for analytics routing
+        const appVersion = getApplication().version;
+        const parsedVersion = semver.parse(appVersion);
+        const isStable = parsedVersion && 
+                        !parsedVersion.prerelease.length &&
+                        appVersion !== '0.0.1' &&
+                        process.env.NODE_ENV !== 'development';
+
         /**
         * don't need now that we are forcing users to relogin if older than a certain version
         * 
@@ -226,7 +235,7 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
 
-        AnalyticsMixpanel.start(userInfo, updateChannel);
+        AnalyticsMixpanel.start(userInfo, isStable);
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
@@ -235,8 +244,8 @@ function init(context: IExtensionContext): boolean {
 
         metrics.start(instanceId, getApplication().version, context.api);
         
-        log('info', `initializeAnalytics()`);
-        log('debug', `user properties ${updateChannel}`, userProperties); 
+        analyticsLog('info', 'Analytics initialized');
+        analyticsLog('debug', `User properties for channel: ${updateChannel}`, userProperties); 
 
         AnalyticsUA.trackEvent('Vortex', 'Version', getApplication().version);
 
@@ -244,7 +253,7 @@ function init(context: IExtensionContext): boolean {
         // there is no error handling anywhere invoking initializeAnalytics,
         // the results aren't even adviced, so any unhandled exception here would
         // crash the application.
-        log('warn', 'failed to initialize analytics', { error: err.message });
+        analyticsLog('warn', 'Failed to initialize analytics', { error: err.message });
       }
     }
 

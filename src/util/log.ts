@@ -87,6 +87,19 @@ if ((process as any).type === 'renderer') {
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+/**
+ * Formats log level to fixed 4-character width for consistent log alignment
+ */
+function formatLogLevel(level: string): string {
+  switch (level) {
+    case 'debug': return 'DEBG';
+    case 'info': return 'INFO';
+    case 'warn': return 'WARN';
+    case 'error': return 'ERRO';
+    default: return level.toUpperCase();
+  }
+}
+
 export function setLogPath(basePath: string) {
 
   // remove the original transport so we can add the new one back again
@@ -102,7 +115,7 @@ export function setLogPath(basePath: string) {
     tailable: true,
     timestamp: () => new Date().toISOString(),
       formatter: (options: any) => {
-        return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+        return `${options.timestamp()} [${formatLogLevel(options.level)}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
       }
   });
 }
@@ -128,7 +141,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
       tailable: true,
       timestamp: () => new Date().toISOString(),
         formatter: (options: any) => {
-          return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+          return `${options.timestamp()} [${formatLogLevel(options.level)}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
         }
     });
 
@@ -138,7 +151,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
         level: 'debug',
         timestamp: () => new Date().toISOString(),
         formatter: (options: any) => {
-          return `${options.timestamp()} [${winston.config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+          return `${options.timestamp()} [${winston.config.colorize(options.level, formatLogLevel(options.level))}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
             //(options.meta && Object.keys(options.meta).length ? '\n\t'+ JSON.stringify(options.meta) : '' );
         }
       });
