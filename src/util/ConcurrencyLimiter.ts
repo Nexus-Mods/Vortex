@@ -6,6 +6,7 @@ const RETRIES = 5;
  * helper class to limit concurrency with asynchronous functions.
  */
 class ConcurrencyLimiter {
+  private mInitialLimit: number;
   private mLimit: number;
   private mNext: () => any;
   private mEndOfQueue: Promise<void>;
@@ -23,9 +24,15 @@ class ConcurrencyLimiter {
    *                   handle errors that indicate the resource running out separately
    */
   constructor(limit: number, repeatTest?: (err: Error) => boolean) {
-    this.mLimit = limit;
+    this.mLimit = this.mInitialLimit = limit;
     this.mEndOfQueue = Promise.resolve();
     this.mRepeatTest = repeatTest;
+  }
+
+  public clearQueue(): void {
+    this.mEndOfQueue = Promise.resolve();
+    this.mNext = undefined;
+    this.mLimit = this.mInitialLimit;
   }
 
   public async do<T>(cb: () => PromiseLike<T>): Promise<T> {

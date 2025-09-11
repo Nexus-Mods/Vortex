@@ -2,8 +2,9 @@ import { showDialog } from '../../../actions';
 import { ThunkStore } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { UserCanceled } from '../../../util/CustomErrors';
-import { activeGameId, discoveryByGame, gameName } from '../../../util/selectors';
+import { activeGameId, discoveryByGame, gameName, knownGames } from '../../../util/selectors';
 import { SITE_ID } from '../../gamemode_management/constants';
+import { convertGameIdReverse, nexusGameId } from '../../nexus_integration/util/convertGameId';
 
 import Promise from 'bluebird';
 
@@ -30,6 +31,22 @@ function queryGameId(store: ThunkStore<any>,
   if (downloadGameIds.indexOf(gameMode) !== -1) {
     // the managed game is compatible to the archive so use that
     return Promise.resolve(gameMode);
+  }
+
+  // Check for game ID conversion compatibility (e.g., skyrimse <-> skyrimspecialedition)
+  const games = knownGames(state);
+  const currentGame = games.find(game => game.id === gameMode);
+  if (currentGame) {
+    // Check if any downloadGameIds match when converted to internal IDs
+    const convertedDownloadIds = downloadGameIds.map(id => convertGameIdReverse(games, id));
+    if (convertedDownloadIds.indexOf(gameMode) !== -1) {
+      return Promise.resolve(gameMode);
+    }
+    // Check if current game's nexus ID matches any downloadGameIds
+    const currentGameNexusId = nexusGameId(currentGame);
+    if (downloadGameIds.indexOf(currentGameNexusId) !== -1) {
+      return Promise.resolve(gameMode);
+    }
   }
 
   if ((downloadGameIds.length === 1) && (downloadGameIds[0] === SITE_ID) && fileName.toLowerCase().includes('extension')) {

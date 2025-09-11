@@ -168,15 +168,12 @@ class FileAssembler {
   }
 
   private writeAsync(data: Buffer, offset: number) {
-    // try to write with the lower-overhead function first. If it fails, retry with
-    // our own wrapper that will retry on some errors and provide better backtraces
-    return Promise.resolve(fsFast.write(this.mFD, data, 0, data.length, offset))
-      .catch(() => fs.writeAsync(this.mFD, data, 0, data.length, offset))
+    return fs.writeAsync(this.mFD, data, 0, data.length, offset)
       .catch(err => {
         if (err.code === 'EBADF') {
           err.message += ` (fd: ${this.mFD ?? 'closed'})`;
         }
-        return Promise.reject(err);
+          return Promise.reject(err);
       });
   }
 }

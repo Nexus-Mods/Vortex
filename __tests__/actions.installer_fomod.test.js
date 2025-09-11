@@ -7,19 +7,21 @@ describe('startDialog', () => {
       moduleName: 'test',
       image: 'test',
     };
-    expect(actions.startDialog(installerInfo)).toEqual({
+    let instanceId = 'testInstance';
+    expect(actions.startDialog(installerInfo, instanceId)).toEqual({
       error: false,
       type: 'START_FOMOD_DIALOG',
-      payload: { moduleName: 'test', image: 'test' },
+      payload: { info: installerInfo, instanceId: instanceId },
     });
   });
 });
 
 describe('endDialog', () => {
   it('creates the correct action', () => {
-    expect(actions.endDialog({})).toEqual({
+    let instanceId = 'testInstance';
+    expect(actions.endDialog(instanceId)).toEqual({
       error: false,
-      payload: {},
+      payload: { instanceId: instanceId },
       type: 'END_FOMOD_DIALOG',
     });
   });
@@ -31,20 +33,22 @@ describe('setDialogState', () => {
       installSteps: [],
       currentStep: 1,
     };
-    expect(actions.setDialogState(state)).toEqual({
+    let instanceId = 'testInstance';
+    expect(actions.setDialogState(state, instanceId)).toEqual({
       error: false,
       type: 'SET_FOMOD_DIALOG_STATE',
-      payload: { installSteps: [], currentStep: 1},
+      payload: { dialogState: state, instanceId: instanceId },
     });
   });
 });
 
 describe('setInstallerDataPath', () => {
   it('creates the correct action', () => {
-    expect(actions.setInstallerDataPath('path')).toEqual({
+    let instanceId = 'testInstance';
+    expect(actions.setInstallerDataPath('path', instanceId)).toEqual({
       error: false,
       type: 'SET_INSTALLER_DATA_PATH',
-      payload: 'path',
+      payload: { path: 'path', instanceId: instanceId },
     });
   });
 });

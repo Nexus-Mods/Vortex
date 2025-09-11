@@ -152,7 +152,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification('install_' + this.mIndicatorId);
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
-    Promise.delay(500)
+    Promise.delay(50)
     .then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
