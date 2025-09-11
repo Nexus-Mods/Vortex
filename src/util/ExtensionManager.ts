@@ -1976,8 +1976,14 @@ class ExtensionManager {
                         ? lines[lines.length - 1]
                         : lines.join('\n');
                     }
+
+                    // Sanitize the error message to prevent crashpad issues
+                    const sanitizedExecutable = executable.replace(/[^\x20-\x7E]/g, '?');
+                    const sanitizedLastLine = lastLine.replace(/[^\x20-\x7E]/g, '?').substring(0, 500);
+                    const exitCodeHex = code.toString(16);
+
                     const err: any = new Error(
-                      `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                      `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`);
                     err.exitCode = code;
                     return reject(err);
                   }
