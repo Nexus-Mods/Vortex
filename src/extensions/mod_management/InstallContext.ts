@@ -212,9 +212,9 @@ class InstallContext implements IInstallContext {
     this.mGameId = gameId;
     this.mArchiveId = archiveId;
 
-    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
-
-    this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
+    // server analytics event
+    // const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
+    // this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
 
   }
 
@@ -294,7 +294,7 @@ class InstallContext implements IInstallContext {
         }
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, Date.now() - this.mStartTime));
+          new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, Date.now() - this.mStartTime));
 
 
         return {
@@ -317,7 +317,7 @@ class InstallContext implements IInstallContext {
       case 'canceled':
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
+          new ModsInstallationCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
 
         return {
           type: 'info',
@@ -331,7 +331,7 @@ class InstallContext implements IInstallContext {
       default:
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, "", this.mFailReason ?? 'unknown_error'));
+          new ModsInstallationFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, "", this.mFailReason ?? 'unknown_error'));
         
         return {
           type: 'error',

@@ -24,11 +24,13 @@ export const nexusIdsFromDownloadId = createSelector(
     if (dl?.modInfo?.nexus?.ids?.gameId == null) {
       return undefined;
     }
-    const numericId = nexusGames().find(g => g.domain_name === dl.modInfo.nexus.ids.gameId);
+    const numericGameId = nexusGames().find(g => g.domain_name === dl.modInfo.nexus.ids.gameId);
     return {
-      domainName: dl.modInfo.nexus.ids.gameId,
+      gameDomainName: dl.modInfo.nexus.ids.gameId,
       fileId: dl.modInfo.nexus.ids.fileId,
       modId: dl.modInfo.nexus.ids.modId,
-      numericId: numericId?.id?.toString(),
+      numericGameId: numericGameId?.id?.toString(),
+      collectionSlug: dl.modInfo.nexus.ids.collectionSlug,
+      revisionId: dl.modInfo.nexus.ids?.revisionId?.toString()
    }
 });

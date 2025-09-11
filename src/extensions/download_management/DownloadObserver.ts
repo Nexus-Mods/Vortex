@@ -37,7 +37,7 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
-import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent } from '../analytics/mixpanel/MixpanelEvents';
 import { isArray } from 'lodash';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 
@@ -162,10 +162,10 @@ export class DownloadObserver {
     if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
 
       this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId));
+        new ModsDownloadCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
     } else {
       this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, '', err.message));
+        new ModsDownloadFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, '', err.message));
     }
 
     if (err instanceof DownloadIsHTML) {
@@ -393,11 +393,16 @@ export class DownloadObserver {
           const state: IState = this.mApi.getState();
 
           const duration_ms = Date.now() - download.fileTime;
-
           const nexusIds = nexusIdsFromDownloadId(state, id);
+          const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-          this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsDownloadCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericId, download.size, duration_ms));
+          if (isCollection) {
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
+          } else {
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new ModsDownloadCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, download.size, duration_ms));
+          }
 
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
           util.batchDispatch(this.mApi.store.dispatch, batchedActions);
