@@ -162,10 +162,10 @@ export class DownloadObserver {
     if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
 
       this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
+        new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId));
     } else {
       this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, '', err.message));
+        new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, '', err.message));
     }
 
     if (err instanceof DownloadIsHTML) {
@@ -401,7 +401,7 @@ export class DownloadObserver {
               new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
           } else {
             this.mApi.events.emit('analytics-track-mixpanel-event',
-              new ModsDownloadCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, download.size, duration_ms));
+              new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, download.size, duration_ms));
           }
 
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));

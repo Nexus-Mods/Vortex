@@ -212,10 +212,8 @@ class InstallContext implements IInstallContext {
     this.mGameId = gameId;
     this.mArchiveId = archiveId;
 
-    // server analytics event
-    // const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
-    // this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
-
+    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
+    this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId));
   }
 
   public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
@@ -294,7 +292,7 @@ class InstallContext implements IInstallContext {
         }
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationCompletedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, Date.now() - this.mStartTime));
+          new ModsInstallationCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, Date.now() - this.mStartTime));
 
 
         return {
@@ -317,7 +315,7 @@ class InstallContext implements IInstallContext {
       case 'canceled':
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationCancelledEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId));
+          new ModsInstallationCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId));
 
         return {
           type: 'info',
@@ -331,7 +329,7 @@ class InstallContext implements IInstallContext {
       default:
 
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsInstallationFailedEvent(nexusIds.fileId, nexusIds.modId, nexusIds.numericGameId, "", this.mFailReason ?? 'unknown_error'));
+          new ModsInstallationFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, "", this.mFailReason ?? 'unknown_error'));
         
         return {
           type: 'error',

@@ -131,11 +131,11 @@ function init(context: IExtensionContext): boolean {
         ));
 
         // send some more events to the new metrics system
-        AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
-          process.platform,
-          '12345', // error code - not available yet
-          'Simon\'s invented error'   // error message - not available yet
-        ));
+        // AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
+        //   process.platform,
+        //   '12345', // error code - not available yet
+        //   'Simon\'s invented error'   // error message - not available yet
+        // ));
         
         analyticsLog('info', 'Analytics initialized');
 
