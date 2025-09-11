@@ -1,12 +1,14 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-import { IProfileMod } from '../../profile_management/types/IProfile';
+import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
+
+import _ from 'lodash';
 
 import * as React from 'react';
 import updateState from '../util/modUpdateState';
@@ -14,11 +16,13 @@ import updateState from '../util/modUpdateState';
 export type IModWithState = IMod & IProfileMod;
 
 export interface IBaseProps {
+  instanceId?: string | string[];
   buttonType: ButtonType;
+  selectionOnly?: boolean;
 }
 
 interface IConnectedProps {
-  mods: { [modId: string]: IMod };
+  mods: { [modId: string]: IModWithState };
   gameMode: string;
   updateRunning: boolean;
   isPremium: boolean;
@@ -77,9 +81,14 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
   }
   
   private dispatchCheckModsVersionEvent = async (force: boolean): Promise<string[]> => {
-    const { mods, gameMode } = this.props;
+    const { gameMode } = this.props;
     try {
-      const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, mods, force);
+      const mods = this.props.selectionOnly
+        ? (typeof(this.props.instanceId) === 'string'
+          ? [this.props.instanceId]
+          : this.props.instanceId)
+        : Object.keys(this.props.mods);
+      const modIdsResults: string[][] = await this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(this.props.mods, mods), force);
       const modIds = modIdsResults
         .filter(iter => iter !== undefined)
         .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
@@ -92,11 +101,16 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
   private checkForUpdatesAndInstall = () => {
     return this.dispatchCheckModsVersionEvent(true)
-      .then((_) => {
-        const outdatedModIds = Object.keys(this.props.mods).filter(modId => {
+      .then(() => {
+        const mods = this.props.selectionOnly
+          ? (typeof(this.props.instanceId) === 'string'
+            ? [this.props.instanceId]
+            : this.props.instanceId)
+          : Object.keys(this.props.mods);
+        const outdatedModIds = mods.filter(modId => {
           const mod = this.props.mods[modId];
           const state = updateState(mod.attributes);
-          return state === 'update' && mod.type !== 'collection';
+          return state === 'update' && mod.type !== 'collection' && mod.enabled;
         });
         return Array.from(new Set<string>([].concat(outdatedModIds)));
       })
@@ -129,8 +143,19 @@ const emptyObject = {};
 
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
+  const profile = activeProfile(state);
+  const modsWithState: { [modId: string]: IModWithState } = {};
+  const mods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameMode], emptyObject);
+  if (profile && profile.modState) {
+    for (const modId in mods) {
+      modsWithState[modId] = {
+        ...mods[modId],
+        ...profile.modState[modId] || { enabled: false, enabledTime: 0 },
+      };
+    }
+  }
   return {
-    mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObject),
+    mods: modsWithState,
     gameMode,
     updateRunning: getSafe(state, ['session', 'mods', 'updatingMods', gameMode], false),
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
