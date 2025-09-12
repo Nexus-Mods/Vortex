@@ -1,6 +1,7 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
+const Promise = Bluebird;
 import * as path from 'path';
 const winapiT = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import * as fs from './fs';
@@ -12,6 +13,7 @@ import opn from './opn';
 import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 import lazyRequire from './lazyRequire';
 import { isWindows, isMacOS, isLinux, getWineDriveCPath, platformSwitch } from './platform';
+import { getCrossoverPaths } from './macVirtualization';
 
 const winapi: typeof winapiT = lazyRequire(() => (isWindows() ? require('winapi-bindings') : undefined));
 
@@ -48,9 +50,8 @@ class Origin implements IGameStore {
           );
       },
       darwin: () => {
-        // macOS: Origin/EA App is not natively available
-        log('info', 'Origin/EA App not natively available on macOS');
-        return Promise.resolve(undefined);
+        // macOS: Check for Origin/EA App in virtualized environments
+        return this.findMacOSOriginDataPath();
       },
       linux: () => {
         // Linux: Origin/EA App is not natively available, but we can check for Wine installations
@@ -69,6 +70,35 @@ class Origin implements IGameStore {
           );
       }
     });
+  }
+
+  private async findMacOSOriginDataPath(): Promise<string | undefined> {
+    // Check for Origin/EA App in Crossover bottles
+    try {
+      const crossoverPaths = await getCrossoverPaths();
+      for (const bottlePath of crossoverPaths) {
+        // Origin is typically installed in drive_c/Program Files (x86)/Origin
+        const crossoverOriginPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'Origin');
+        // EA App is typically installed in drive_c/Program Files/Electronic Arts/EA Desktop
+        const crossoverEAAppPath = path.join(bottlePath, 'drive_c', 'Program Files', 'Electronic Arts', 'EA Desktop');
+        
+        try {
+          if (await fs.statAsync(crossoverEAAppPath)) {
+            return crossoverEAAppPath;
+          }
+          if (await fs.statAsync(crossoverOriginPath)) {
+            return crossoverOriginPath;
+          }
+        } catch (err) {
+          // Continue to next path
+        }
+      }
+    } catch (err) {
+      log('debug', 'Failed to check Crossover Origin/EA App paths', { error: err.message });
+    }
+
+    log('info', 'Origin/EA App not found in virtualized environments on macOS');
+    return undefined;
   }
 
   public allGames(): Promise<IGameStoreEntry[]> {
@@ -135,9 +165,8 @@ class Origin implements IGameStore {
           );
       },
       darwin: () => {
-        // macOS: Origin/EA App is not natively available
-        log('info', 'Origin/EA App not natively available on macOS');
-        return Promise.reject(new Error('Origin/EA App not available on macOS'));
+        // macOS: Check for Origin/EA App in virtualized environments
+        return this.findMacOSOriginPath();
       },
       linux: () => {
         // Linux: Origin/EA App is not natively available, but we can check for Wine installations
@@ -162,6 +191,36 @@ class Origin implements IGameStore {
           );
       }
     });
+  }
+
+  private async findMacOSOriginPath(): Promise<string> {
+    // Check for Origin/EA App in Crossover bottles
+    try {
+      const crossoverPaths = await getCrossoverPaths();
+      for (const bottlePath of crossoverPaths) {
+        // EA App is typically installed in drive_c/Program Files/Electronic Arts/EA Desktop
+        const crossoverEAAppPath = path.join(bottlePath, 'drive_c', 'Program Files', 'Electronic Arts', 'EA Desktop', 'EA Desktop', 'EADesktop.exe');
+        // Origin is typically installed in drive_c/Program Files (x86)/Origin
+        const crossoverOriginPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'Origin', 'Origin.exe');
+        
+        try {
+          if (await fs.statAsync(crossoverEAAppPath)) {
+            this.mLauncherExecPath = crossoverEAAppPath;
+            return crossoverEAAppPath;
+          }
+          if (await fs.statAsync(crossoverOriginPath)) {
+            this.mLauncherExecPath = crossoverOriginPath;
+            return crossoverOriginPath;
+          }
+        } catch (err) {
+          // Continue to next path
+        }
+      }
+    } catch (err) {
+      log('debug', 'Failed to check Crossover Origin/EA App paths', { error: err.message });
+    }
+
+    return Promise.reject(new Error('Origin/EA App not found in virtualized environments on macOS'));
   }
 
   public launchGameStore(api?: IExtensionApi): Promise<void> {

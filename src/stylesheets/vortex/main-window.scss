@@ -144,6 +144,16 @@
   display: block;
 }
 
+// Show dragbar on macOS even without custom titlebar
+.macOS .dragbar {
+  -webkit-app-region: drag;
+  display: block;
+}
+
+// On macOS, position dragbar to avoid traffic lights
+.macOS #main-toolbar {
+  margin-left: 70px; // Space for traffic lights
+}
 
 .window-frame {
   border: 1px solid $gray;

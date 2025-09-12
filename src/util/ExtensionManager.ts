@@ -836,8 +836,8 @@ class ExtensionManager {
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
       genMd5Hash: this.genMd5Hash,
-      clearStylesheet: () => this.mStyleManager.clearCache(),
-      setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
+      clearStylesheet: () => { this.ensureStyleManager(); this.mStyleManager?.clearCache(); },
+      setStylesheet: (key, filePath) => { this.ensureStyleManager(); this.mStyleManager?.setSheet(key, filePath); },
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
       withPrePost: this.withPrePost,
@@ -875,12 +875,25 @@ class ExtensionManager {
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
+      // Enhanced extension removal process
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
-          log('info', 'removing', path.join(extensionsPath, extId));
-          fs.removeSync(path.join(extensionsPath, extId));
-          initStore.dispatch(forgetExtension(extId));
+          const extPath = path.join(extensionsPath, extId);
+          try {
+            // Check if extension directory exists before attempting removal
+            if (fs.existsSync(extPath)) {
+              log('info', 'removing extension directory', { path: extPath });
+              fs.removeSync(extPath);
+            }
+            // Ensure state cleanup happens even if directory removal fails
+            initStore.dispatch(forgetExtension(extId));
+            log('info', 'extension removed and state cleaned up', { extId });
+          } catch (err) {
+            log('error', 'failed to remove extension', { extId, error: err.message });
+            // Even if removal fails, still try to clean up the state
+            initStore.dispatch(forgetExtension(extId));
+          }
         });
       ipcMain.on('__get_extension_state', event => {
         event.returnValue = this.mExtensionState;
@@ -888,31 +901,7 @@ class ExtensionManager {
       ipcMain.on('__ui_is_ready', () => {
         this.mOnUIStarted();
       });
-    } else {
-      this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
     }
-    if (process.type === 'renderer') {
-      this.mStyleManager = new StyleManager(this.mApi);
-    }
-    this.mExtensions = this.prepareExtensions();
-
-    log('info', 'outdated extensions', { numOutdated: this.mOutdated.length });
-    if (this.mOutdated.length > 0) {
-      this.mOutdated.forEach(ext => {
-        log('info', 'extension older than bundled version, will be removed',
-          { name: ext });
-        // if we get here in the renderer process, initStore is not defined.
-        // This should happen in the main process only
-        initStore?.dispatch?.(removeExtension(ext));
-      });
-      return;
-    }
-
-    this.initExtensions();
-  }
-
-  public get hasOutdatedExtensions() {
-    return this.mOutdated.length > 0;
   }
 
   public setTranslation(translator: i18n) {
@@ -921,6 +910,10 @@ class ExtensionManager {
 
   public get extensions(): IRegisteredExtension[] {
     return this.mExtensions;
+  }
+
+  public get hasOutdatedExtensions(): boolean {
+    return this.mOutdated.length > 0;
   }
 
   /**
@@ -1113,6 +1106,9 @@ class ExtensionManager {
    * retrieve list of all reducers registered by extensions
    */
   public getReducers() {
+    if (this.mContextProxyHandler === undefined) {
+      this.initExtensions();
+    }
     const reducers = [];
     this.apply('registerReducer', (statePath: string[], reducer: IReducerSpec) => {
       reducers.push({ path: statePath, reducer });
@@ -1158,6 +1154,9 @@ class ExtensionManager {
   public apply(funcName: keyof IExtensionContext,
                func: (...args: any[]) => void,
                addExtInfo?: boolean) {
+    if (this.mContextProxyHandler === undefined) {
+      this.initExtensions();
+    }
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
       try {
         if (addExtInfo === true) {
@@ -1238,8 +1237,24 @@ class ExtensionManager {
   }
 
   public renderStyle() {
+    this.ensureStyleManager();
+    if (this.mStyleManager === undefined) {
+      return Promise.resolve();
+    }
     this.mStyleManager.startAutoUpdate();
     return this.mStyleManager.renderNow();
+  }
+
+  private ensureStyleManager() {
+    try {
+      if ((this.mStyleManager === undefined)
+          && (typeof process !== 'undefined')
+          && (process.type === 'renderer')) {
+        this.mStyleManager = new StyleManager(this.mApi);
+      }
+    } catch (err) {
+      log('warn', 'failed to initialize StyleManager', { error: (err as Error)?.message });
+    }
   }
 
   public getProtocolHandler(protocol: string) {
@@ -1429,6 +1444,9 @@ class ExtensionManager {
    * initialize all extensions
    */
   private initExtensions() {
+    if (this.mExtensions == null) {
+      this.mExtensions = this.prepareExtensions();
+    }
     const context = {
       api: this.mApi,
     };
@@ -1821,13 +1839,24 @@ class ExtensionManager {
 
   private genMd5Hash = (filePath: string, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
     let lastProgress: number = 0;
-    const progressHash = (progress: number, total: number) => {
-      progressFunc?.(progress, total);
-      if (lastProgress !== total) {
-        lastProgress = total;
+    const progressHash = (progress: number) => {
+      // Convert progress from 0-1 to bytes for compatibility with progressFunc
+      if (progressFunc) {
+        try {
+          const stats = fs.statSync(filePath);
+          const total = stats.size;
+          const processed = Math.floor(progress * total);
+          progressFunc(processed, total);
+          if (lastProgress !== total) {
+            lastProgress = total;
+          }
+        } catch (err) {
+          // If we can't get file stats, just call progressFunc with progress value
+          progressFunc(progress, 1);
+        }
       }
     };
-    return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
+    return toPromise<string>(cb => fileMD5(filePath, cb))
       .catch(err => {
         // Add file path context to the error
         if (err instanceof Error) {
@@ -1862,8 +1891,7 @@ class ExtensionManager {
     return creator(archivePath, options || {})
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
-
-  private applyStartHooks(input: IRunParameters): Promise<IRunParameters> {
+  private applyStartHooks = (input: IRunParameters): Promise<IRunParameters> => {
     let updated = input;
     return Promise.each(this.mStartHooks, hook => hook.hook(updated)
       .then((newParameters: IRunParameters) => {
@@ -1887,7 +1915,7 @@ class ExtensionManager {
         }
         return Promise.reject(err);
       }))
-    .then(() => updated);
+      .then(() => updated);
   }
 
   private runExecutable =

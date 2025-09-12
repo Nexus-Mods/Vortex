@@ -1,6 +1,7 @@
+import Bluebird from 'bluebird';
+const Promise = Bluebird;
 import { log } from './log';
 
-import Promise from 'bluebird';
 import * as path from 'path';
 const winapiT = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import * as fs from './fs';
@@ -9,6 +10,7 @@ import getVortexPath from './getVortexPath';
 
 import opn from './opn';
 import { isWindows, isMacOS, isLinux, getWineDriveCPath, platformSwitch } from './platform';
+import { getCrossoverPaths, getVMwarePaths, getVirtualBoxPaths } from './macVirtualization';
 
 import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 import lazyRequire from './lazyRequire';
@@ -49,6 +51,7 @@ class GOGGalaxy implements IGameStore {
         const gogDataPath = path.join(getVortexPath('home'), 'Library', 'Application Support', 'GOG.com', 'Galaxy');
         return fs.statAsync(gogDataPath)
           .then(() => gogDataPath)
+          .catch(() => this.findMacOSGOGDataPath())
           .catch(() => {
             log('info', 'GOG Galaxy not found on macOS');
             return Promise.reject(new Error('GOG Galaxy not found in default location'));
@@ -66,6 +69,75 @@ class GOGGalaxy implements IGameStore {
           });
       }
     });
+  }
+
+  private async findMacOSGOGDataPath(): Promise<string | undefined> {
+    // First check the standard macOS GOG path
+    const standardPath = path.join(getVortexPath('home'), 'Library', 'Application Support', 'GOG.com', 'Galaxy');
+    try {
+      if (await fs.statAsync(standardPath)) {
+        return standardPath;
+      }
+    } catch (err) {
+      // Standard path not found, continue searching
+    }
+
+    // Check for GOG Galaxy in Crossover bottles
+    try {
+      const crossoverPaths = await getCrossoverPaths();
+      for (const bottlePath of crossoverPaths) {
+        // GOG Galaxy is typically installed in drive_c/Program Files (x86)/GOG Galaxy
+        const crossoverGogPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'GOG Galaxy');
+        try {
+          if (await fs.statAsync(crossoverGogPath)) {
+            return path.join(bottlePath, 'users', 'Public', 'GOG.com', 'Galaxy');
+          }
+        } catch (err) {
+          // Continue to next path
+        }
+      }
+    } catch (err) {
+      log('debug', 'Failed to check Crossover GOG paths', { error: err.message });
+    }
+
+    // Check for GOG Galaxy in VMware VMs
+    try {
+      const vmwarePaths = await getVMwarePaths();
+      for (const vmPath of vmwarePaths) {
+        // GOG Galaxy might be installed in drive_c/Program Files (x86)/GOG Galaxy in VMware VMs
+        const vmwareGogPath = path.join(vmPath, 'drive_c', 'Program Files (x86)', 'GOG Galaxy');
+        try {
+          if (await fs.statAsync(vmwareGogPath)) {
+            return path.join(vmPath, 'users', 'Public', 'GOG.com', 'Galaxy');
+          }
+        } catch (err) {
+          // Continue to next path
+        }
+      }
+    } catch (err) {
+      log('debug', 'Failed to check VMware GOG paths', { error: err.message });
+    }
+
+    // Check for GOG Galaxy in VirtualBox VMs
+    try {
+      const virtualboxPaths = await getVirtualBoxPaths();
+      for (const vmPath of virtualboxPaths) {
+        // GOG Galaxy might be installed in drive_c/Program Files (x86)/GOG Galaxy in VirtualBox VMs
+        const virtualboxGogPath = path.join(vmPath, 'drive_c', 'Program Files (x86)', 'GOG Galaxy');
+        try {
+          if (await fs.statAsync(virtualboxGogPath)) {
+            return path.join(vmPath, 'users', 'Public', 'GOG.com', 'Galaxy');
+          }
+        } catch (err) {
+          // Continue to next path
+        }
+      }
+    } catch (err) {
+      log('debug', 'Failed to check VirtualBox GOG paths', { error: err.message });
+    }
+
+    // Return undefined if GOG Galaxy is not found
+    return undefined;
   }
 
   public allGames(): Promise<IGameStoreEntry[]> {

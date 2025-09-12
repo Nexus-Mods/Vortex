@@ -1,4 +1,4 @@
-import { ExtensionManager } from '../src/util/ExtensionManager';
+import ExtensionManager from '../src/util/ExtensionManager';
 import path from 'path';
 
 // Mock the fileMD5 function from vortexmt
@@ -8,7 +8,7 @@ jest.mock('vortexmt', () => ({
 
 // Mock the setDownloadHashByFile action
 jest.mock('../src/actions', () => ({
-  setDownloadHashByFile: jest.fn()
+  setDownloadHashByFile: jest.fn(() => ({ type: 'SET_DOWNLOAD_HASH_BY_FILE' }))
 }));
 
 describe('ExtensionManager.genMd5Hash', () => {

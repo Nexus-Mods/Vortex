@@ -1,5 +1,8 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { isMacOS } from '../../../util/platform';
+import { getAllWindowsDrivePaths } from '../../../util/macVirtualization';
+import * as path from 'path';
+import * as fsp from 'fs/promises';
 
 // Define the type for drivelist's list function
 type DriveListFunc = () => Promise<Array<{
@@ -10,9 +13,29 @@ type DriveListFunc = () => Promise<Array<{
 }>>;
 
 function getDriveList(api: IExtensionApi): Promise<string[]> {
-  // On macOS, use the mock implementation
+  // On macOS, per tests: include root '/' and directories under /Volumes; don't notify on failures
   if (isMacOS()) {
-    return Promise.resolve(['/']);
+    return (async () => {
+      const drives: string[] = ['/'];
+      try {
+        const entries = await fsp.readdir('/Volumes');
+        for (const name of entries) {
+          const full = path.join('/Volumes', name);
+          try {
+            const st = await fsp.stat(full);
+            if (st.isDirectory()) {
+              drives.push(full);
+            }
+          } catch (_err) {
+            // ignore non-directories or inaccessible entries
+          }
+        }
+      } catch (_err) {
+        // If /Volumes is unreadable or missing, just return root
+        return ['/'];
+      }
+      return drives;
+    })();
   }
 
   let list: DriveListFunc;
