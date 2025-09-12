@@ -102,7 +102,6 @@
       "type": "build-copy",
       "name": "gamestore-origin",
       "path": "extensions/gamestore-origin",
-      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-origin"
@@ -111,7 +110,6 @@
       "type": "build-copy",
       "name": "gamestore-uplay",
       "path": "extensions/gamestore-uplay",
-      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-uplay"
@@ -120,7 +118,6 @@
       "type": "build-copy",
       "name": "gamestore-xbox",
       "path": "extensions/gamestore-xbox",
-      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-xbox"
@@ -401,6 +398,14 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/titlebar-launcher"
+    },
+    {
+      "type": "build-copy",
+      "name": "gamestore-macappstore",
+      "path": "extensions/gamestore-macappstore",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-macappstore"
     }
   ]
 ]

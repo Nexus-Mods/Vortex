@@ -13,7 +13,7 @@ export const setAttributeSort = safeCreateAction(
     ({tableId, attributeId, direction}));
 
 export const setAttributeFilter = safeCreateAction('SET_ATTRIBUTE_FILTER',
-                                                   (tableId: string, attributeId: string, filter: any) => ({ tableId, attributeId, filter }));
+                                                   (tableId: string, attributeId: string, filter: unknown | undefined | null) => ({ tableId, attributeId, filter }));
 
 export const setGroupingAttribute = safeCreateAction('SET_GROUPING_ATTRIBUTE',
                                                      (tableId: string, attributeId: string) => ({ tableId, attributeId }));

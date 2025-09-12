@@ -1,0 +1,21 @@
+{
+  "name": "gamestore-macappstore",
+  "version": "1.0.0",
+  "description": "Mac App Store game store integration for Vortex",
+  "main": "./out/index.js",
+  "repository": "",
+  "author": "Vortex Team",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "vortex-api": "file:../../api"
+  },
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo",
+    "clean": "rimraf out dist"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

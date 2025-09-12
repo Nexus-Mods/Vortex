@@ -1,4 +1,5 @@
 import { TFunction } from '../../util/i18n';
+import { processPlatformText } from '../../util/platformText';
 
 function getText(id: string, t: TFunction) {
   switch (id) {
@@ -77,7 +78,8 @@ function getText(id: string, t: TFunction) {
         'If the mod was removed from the source it may make sense to select no source here to ' +
         'quiet error messages.');
     case 'downloadspath': {
-      return t(
+      // Example of using platform-specific text
+      const text = t(
         'The downloads folder holds all mod archives you have downloaded with Vortex. It is shared across all '
         + 'games and includes a subfolder for each of them. e.g. if your downloads folder is set to\n'
         + '"D:\\Vortex Downloads\\", archive files for Skyrim will be stored in: "D:\\Vortex Downloads\\skyrim\\".\n'
@@ -90,6 +92,7 @@ function getText(id: string, t: TFunction) {
         + 'e.g. if your Windows account name is Mike,'
         + '\n "{USERDATA}\\Downloads\\" will be converted to:\n'
         + '"C:\\Users\\Mike\\AppData\\Roaming\\Vortex\\Downloads\\"');
+      return processPlatformText(text, t);
     }
     case 'modspath': {
       return t(

@@ -7,12 +7,20 @@ import * as path from 'path';
  * @returns A regular expression that matches the pattern
  */
 export function globToRegex(pattern: string): RegExp {
+  // Use a placeholder to avoid double replacement when handling ** and *
+  const DOUBLE_STAR_PLACEHOLDER = '\u0000DOUBLESTAR\u0000';
+
   // Escape special regex characters, but be careful with * and ?
-  const escapedPattern = pattern
+  let escapedPattern = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // Escape regex special characters except * and ?
     .replace(/\?/g, '.')                   // Convert ? to .
-    .replace(/\*\*/g, '(.*)')              // Convert ** to (.*) for recursive matching
-    .replace(/\*/g, '[^/]*');              // Convert * to [^/]*
+    .replace(/\*\*/g, DOUBLE_STAR_PLACEHOLDER); // Temporarily replace **
+
+  // Convert single * to .*
+  escapedPattern = escapedPattern.replace(/\*/g, '.*');
+
+  // Restore ** as .*
+  escapedPattern = escapedPattern.replace(new RegExp(DOUBLE_STAR_PLACEHOLDER, 'g'), '.*');
 
   // Ensure the pattern matches the entire path
   return new RegExp(`^${escapedPattern}$`);

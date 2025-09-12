@@ -4,14 +4,13 @@
 
 import * as path from 'path';
 import getVortexPath from './getVortexPath';
-import { getAppDataPath, getHomeDirectory } from './platform';
 
 /**
  * Get macOS-specific application support directory
  * ~/Library/Application Support/Vortex
  */
 export function getMacOSAppSupportPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -23,7 +22,7 @@ export function getMacOSAppSupportPath(): string {
  * ~/Library/Caches/Vortex
  */
 export function getMacOSCachesPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -35,7 +34,7 @@ export function getMacOSCachesPath(): string {
  * ~/Library/Preferences/Vortex
  */
 export function getMacOSPreferencesPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -47,7 +46,7 @@ export function getMacOSPreferencesPath(): string {
  * ~/Library/Logs/Vortex
  */
 export function getMacOSLogsPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -67,7 +66,7 @@ export function getMacOSApplicationPath(): string {
  * ~/Library/Application Support/Steam
  */
 export function getMacOSSteamPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -79,7 +78,7 @@ export function getMacOSSteamPath(): string {
  * ~/Library/Application Support/GOG.com/Galaxy
  */
 export function getMacOSGOGPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -91,7 +90,7 @@ export function getMacOSGOGPath(): string {
  * ~/Library/Application Support/Origin
  */
 export function getMacOSOriginPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -103,7 +102,7 @@ export function getMacOSOriginPath(): string {
  * ~/Library/Application Support/Epic
  */
 export function getMacOSEpicPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }
@@ -115,7 +114,7 @@ export function getMacOSEpicPath(): string {
  * ~/Library/Application Support/Ubisoft/Ubisoft Game Launcher
  */
 export function getMacOSUbisoftPath(): string {
-  const homeDir = getHomeDirectory();
+  const homeDir = getVortexPath('home');
   if (!homeDir) {
     return '';
   }

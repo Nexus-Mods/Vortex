@@ -9,6 +9,8 @@ import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE, truthy } from '../../util/util';
 
+import { ipcRenderer } from 'electron';
+
 import { addLocalDownload, setDownloadModInfo } from '../download_management/actions/state';
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
 import { downloadPathForGame } from '../download_management/selectors';
@@ -155,11 +157,26 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   const bundledPath = getVortexPath('bundledPlugins');
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
+  // Get the current extension state to check for extensions marked for removal
+  let persistentState = {};
+  try {
+    // Try to get the extension state from the main process
+    if (ipcRenderer !== undefined) {
+      persistentState = ipcRenderer.sendSync('__get_extension_state') || {};
+    }
+  } catch (err) {
+    // If we can't get the state, continue without filtering
+    log('debug', 'could not retrieve extension state for filtering', { error: err.message });
+  }
+
   return Promise.all([readExtensionDir(bundledPath, true),
     readExtensionDir(extensionsPath, false)])
     .then(extLists => [].concat(...extLists))
     .reduce((prev, value: { id: string, info: IExtension }) => {
-      prev[value.id] = value.info;
+      // Skip extensions marked for removal in persistent state
+      if (!persistentState[value.id]?.remove) {
+        prev[value.id] = value.info;
+      }
       return prev;
     }, {})
   ;

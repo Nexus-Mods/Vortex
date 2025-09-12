@@ -50,6 +50,8 @@ import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { isMacOS } from '../util/platform';
+
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
 addStyle(ReactButton, 'ghost');
@@ -180,6 +182,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     if (this.props.customTitlebar) {
       document.body.classList.add('custom-titlebar-body');
     }
+    
+    // Add macOS class to body for platform-specific styling
+    if (isMacOS()) {
+      document.body.classList.add('macOS');
+    }
 
     this.updateSize();
 
@@ -263,7 +270,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <div className='menu-layer' ref={this.setMenuLayer} />
               <FlexLayout id='main-window-content' type='column'>
                 {this.renderToolbar(switchingProfile)}
-                {customTitlebar ? <div className='dragbar' /> : null}
+                {/* Show dragbar on macOS or when custom titlebar is enabled */}
+                {customTitlebar || isMacOS() ? <div className='dragbar' /> : null}
                 {switchingProfile ? this.renderWait() : this.renderBody()}
               </FlexLayout>
               <Dialog />

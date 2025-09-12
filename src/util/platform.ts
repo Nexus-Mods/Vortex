@@ -161,3 +161,11 @@ export function getWineDriveCPath(): string {
 export function isWineAvailable(): boolean {
   return isLinux() && !!getWinePrefixPath();
 }
+
+/**
+ * Check if running on macOS with virtualization support
+ * This is always true on macOS as we can detect Crossover/Parallels
+ */
+export function isMacOSWithVirtualization(): boolean {
+  return isMacOS();
+}
