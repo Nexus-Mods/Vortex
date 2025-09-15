@@ -6278,8 +6278,8 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 fomod-installer@Nexus-Mods/fomod-installer#dotnet9:
-  version "0.7.23"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/621d085c824c62f06ccb8addbb62a0345c520b15"
+  version "0.8.1"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/d2ce4f05c4cc9525d76ac6d313efb62222747411"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
