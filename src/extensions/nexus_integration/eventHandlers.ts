@@ -276,6 +276,7 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
       noDismiss: true,
       allowSuppress: false,
     });
+    api.store.dispatch(setUpdatingMods(gameId, true));
     let game = gameId === SITE_ID ? null : gameById(api.getState(), gameId);
     log('debug', 'on mods update', { gameId, modIds });
     if (!game) {
@@ -284,18 +285,9 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
       game = currentGame(api.getState());
     }
     const mods: { [modId: string]: IMod } = getSafe(api.getState(), ['persistent', 'mods', game?.id], {});
-    const downloadGameId = truthy(game)
-        ? (game.id !== gameId)
-          ? gameId // download id is different from the game extension's id - this is a compatibleDownload entry.
-          : game.id
-        : gameId; // Game is not present in the state. Concurrency issue? lets just assign it to gameId.
-    const downloadFunc = (modId: number, fileId: number) => truthy(game)
-      ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
-      : Promise.reject(new ProcessCanceled('Game not found')); // Can't download an update for a game extension that doesn't exist
-    const downloadIds: Set<string> = new Set<string>();
     for (const modId of modIds) {
       const mod = mods[modId];
-      if (!mod || !mod.attributes?.modId || mod.attributes?.source !== 'nexus') {
+      if (!mod || mod.attributes?.source !== 'nexus' || !mod.attributes?.newestFileId) {
         log('warn', 'unable to automatically update mod', modId);
         continue;
       }
@@ -306,61 +298,12 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
         //  correctly when uploading the mod file.
         continue;
       }
-      if (mod.attributes.fileId === newestFileId) {
-        log('debug', 'mod is already up to date', modId);
-        continue;
-      }
-      try {
-        const dlId = await downloadFunc(mod.attributes.modId, newestFileId);
-        downloadIds.add(dlId);
-      } catch (err) {
-        if (err instanceof AlreadyDownloaded) {
-          const state = api.getState();
-          const downloads = state.persistent.downloads.files;
-          const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
-          downloadIds.add(dlId);
-        } else if (err instanceof DataInvalid) {
-          const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${newestFileId}`;
-          api.showErrorNotification('Invalid URL', url, { allowReport: false });
-        } else if (err instanceof ProcessCanceled) {
-          const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), 'mods', modId].join('/');
-          const params = `?tab=files&file_id=${newestFileId}&nmm=1`;
-          opn(url + params).catch(() => undefined);
-        } else {
-          api.showErrorNotification('Failed to start download', err);
-        }
-      }
+      const numericModId = mod.attributes?.modId;
+      onModUpdate(api, nexus)(gameId, numericModId, newestFileId, 'nexus');
     }
 
-    const archiveIds: string[] = Array.from(downloadIds);
-    withBatchContext('install-mod', archiveIds, () => {
-      return Promise.all(archiveIds.map(async archiveId => {
-        const download = getSafe(api.getState(), ['persistent', 'downloads', 'files', archiveId], undefined);
-        if (download?.state !== 'finished') {
-          api.store.dispatch(setDownloadModInfo(archiveId, 'startedAsUpdate', true));
-          return Promise.resolve(null);
-        }
-        try {
-          return toPromise<string>(cb => api.events.emit('start-install-download', archiveId, { allowAutoEnable: false, }, cb));
-        } catch (err) {
-          log('error', 'failed to install mod update', err);
-          // if the download failed, we just ignore it
-          if (err instanceof ProcessCanceled) {
-            return Promise.resolve(null);
-          } else {
-            api.showErrorNotification('Failed to install mod update', err);
-          }
-        }
-      }))
-      .finally(() => {
-        api.dismissNotification('mods-update-multi')
-        api.sendNotification({
-          type: 'success',
-          message: `Mod updates complete (${archiveIds.length} update/s found)`,
-          displayMS: 3000,
-        })
-      });
-    });
+    api.dismissNotification('mods-update-multi');
+    api.store.dispatch(setUpdatingMods(gameId, false))
   }
 }
 
@@ -567,7 +510,8 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
 }
 
 function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
-  const expectedError = resolveGraphError(api.translate, err);
+  const loggedIn = isLoggedIn(api.getState());
+  const expectedError = resolveGraphError(api.translate, loggedIn, err);
   if (expectedError !== undefined) {
     api.sendNotification({
       type: 'info',
@@ -968,6 +912,17 @@ export function onCheckModsVersion(api: IExtensionApi,
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));
         });
+    }
+  };
+}
+
+
+export function sendMetric(api: IExtensionApi, nexus: Nexus) {
+  return async (eventType: string, entityType: string, entityId: string, metadata: Record<string, any>, clientString?: string) => {
+    try {
+      await nexus.sendMetric(eventType, entityType, entityId, metadata, clientString);
+    } catch {
+      // do nothing
     }
   };
 }

@@ -29,6 +29,16 @@ const downloadFiles = (state: IState) => state.persistent.downloads.files;
 
 const ACTIVE_STATES: DownloadState[] = ['finalizing', 'started'];
 
+const QUEUE_CLEAR_STATES: DownloadState[] = ['started', 'paused', 'init'];
+export const queueClearingDownloads =
+  createSelector(downloadFiles,
+    (files: { [dlId: string]: IDownload }) => Object.keys(files).reduce((prev, id) => {
+      if (QUEUE_CLEAR_STATES.includes(files[id].state)) {
+        prev[id] = files[id];
+      }
+      return prev;
+    }, {}));
+
 export const activeDownloads =
   createSelector(downloadFiles,
     (files: { [dlId: string]: IDownload }) => Object.keys(files).reduce((prev, id) => {

@@ -13,6 +13,7 @@ import { HELP_ARTICLE } from './constants';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
 import { IMod } from '@nexusmods/nexus-api/lib/types';
+import metrics from './analytics/Metrics';
 
 let ignoreNextAnalyticsStateChange = false;
 
@@ -94,18 +95,27 @@ function init(context: IExtensionContext): boolean {
     context.api.events.on('analytics-track-navigation', pageId => {
       AnalyticsUA.trackNavigation(pageId);
       AnalyticsGA4.trackPageView(pageId);
+      metrics.trackEvent('Navigation', {pageId});
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-event', (category, action, label?, value?) => {
       AnalyticsUA.trackEvent(category, action, label, value);
       AnalyticsGA4.trackEvent(action.toLocaleLowerCase(), category, label, value);
+      metrics.trackEvent(action.toLocaleLowerCase(), {category, label, value});
+    });
+
+    // Custom event for event tracking (with raw payload)
+    context.api.events.on('analytics-track-event-with-payload', (action, payload) => {
+      AnalyticsGA4.trackEventWithRawPayload(action.toLocaleLowerCase(), payload);
+      metrics.trackEvent(action.toLocaleLowerCase(), payload);
     });
 
     // Custom event for event tracking
     context.api.events.on('analytics-track-click-event', (category, label?, value?) => {
       AnalyticsUA.trackClickEvent(category, label, value);
       AnalyticsGA4.trackClickEvent(category, label, value);
+      metrics.trackEvent('Click', {category, label, value});
     });
 
     // Used to ensure a new dimension is set when changing game by restarting the UA tracking
@@ -211,6 +221,8 @@ function init(context: IExtensionContext): boolean {
           [DIMENSIONS.Theme]: theme,
           [DIMENSIONS.Sandbox]: state.settings.mods['installerSandbox'] ?? true,
         });
+
+        metrics.start(instanceId, getApplication().version, context.api);
         
         log('info', `initializeAnalytics()`);
         log('debug', `user properties ${updateChannel}`, userProperties); 

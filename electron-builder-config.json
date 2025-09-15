@@ -81,11 +81,13 @@
   "extraResources": [
     "build/windowsdesktop-runtime-win-x64.exe",
     "build/VC_redist.x64.exe",
+    "build/windowsdesktop-runtime-win-x64.exe",
     "locales"
   ],
   "files": [
     "build/windowsdesktop-runtime-win-x64.exe",
     "build/VC_redist.x64.exe",
+    "build/windowsdesktop-runtime-win-x64.exe",
     "**/*",
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
     "!**/node_modules/.bin${/*}",

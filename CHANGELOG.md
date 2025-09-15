@@ -4,19 +4,87 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.15.0 - 2025-xx-xx
+## 1.15.1 - 2025-09-10
 
+_Stable release based on 1.15.0-beta.3_ 
+
+- Fixed and consolidated multi-select update/update all functionality ([#18229](https://github.com/Nexus-Mods/Vortex/issues/18229))
+- Adding ability to update mods using multi-selection menu. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
+- Fixed "Update All" functionality updating disabled/uninstalled mods. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
+- Fixed exception when attempting to "Open Archive" and the archive is missing. ([#18181](https://github.com/Nexus-Mods/Vortex/issues/18181))
+- Fixed disabled plugins being sorted to the bottom of the plugins page ([#18137](https://github.com/Nexus-Mods/Vortex/issues/18137))
+- .NET 6 and MSVC 2022 are now bundled with the installer
+- Updated Premium branding
+- Optimized user subscription checking 
 - Fixed download queue memory leak
-- Fixed warnings raised on startup for old bundled extensions. ([#17374](https://github.com/Nexus-Mods/Vortex/issues/17374))
+- Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
 - Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
+- Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
+- Adding ability to view/copy modtype id using mods panel widget
+- Improved error message for expired/not valid certificates
+- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
+- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
+- **collections**: Added API-based metrics endpoint usage
+- **collections**: Fixed error message for mismatched hashes when using replicate option. ([#18186](https://github.com/Nexus-Mods/Vortex/issues/18186))
+- **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
 - **plugin-management**: Fixed libloot potentially running in the background while installing collections
-- **stardewvalley**: Fixed configuration mod not applied when smapi installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+- **stardewvalley**: Fixed configuration mod not applied when SMAPI installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+- **mod-content**: Fixed mod content column not displaying FOMOD installations. ([#17634](https://github.com/Nexus-Mods/Vortex/issues/17634))
+
+## 1.15.0-beta.3 - 2025-09-09
+
+- Fixed and consolidated multi-select update/update all functionality ([#18229](https://github.com/Nexus-Mods/Vortex/issues/18229))
+
+## 1.15.0-beta.2 - 2025-09-08
+
+- Adding ability to update mods using multi-selection menu. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
+- Fixed "Update All" functionality updating disabled/uninstalled mods. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
+- Fixed exception when attempting to "Open Archive" and the archive is missing. ([#18181](https://github.com/Nexus-Mods/Vortex/issues/18181))
+- Fixed disabled plugins being sorted to the bottom of the plugins page ([#18137](https://github.com/Nexus-Mods/Vortex/issues/18137))
+
+## 1.15.0-beta.1 - 2025-09-03
+
+- .NET 6 and MSVC 2022 are now bundled with the installer
+- Updated Premium branding
+- Optimized user subscription checking 
+- Fixed download queue memory leak
+- Fixed warnings raised on startup for old bundled extensions
+- Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
+- Fixed game store helper potentially losing data during discovery. ([#17373](https://github.com/Nexus-Mods/Vortex/issues/17373), [#7](https://github.com/Nexus-Mods/game-oblivionremastered/issues/7))
+- Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
+- Adding ability to view/copy modtype id using mods panel widget
+- Improved error message for expired/not valid certificates
+- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
+- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
+- **collections**: Added API-based metrics endpoint usage
+- **collections**: Fixed error message for mismatched hashes when using replicate option. ([#18186](https://github.com/Nexus-Mods/Vortex/issues/18186))
+- **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
+- **plugin-management**: Fixed libloot potentially running in the background while installing collections
+- **stardewvalley**: Fixed configuration mod not applied when SMAPI installed manually. ([#17107](https://github.com/Nexus-Mods/Vortex/issues/17107), [#17093](https://github.com/Nexus-Mods/Vortex/issues/17093))
+- **mod-content**: Fixed mod content column not displaying FOMOD installations. ([#17634](https://github.com/Nexus-Mods/Vortex/issues/17634))
+
+## 1.14.11 - 2025-08-12
+
+- Fixed unhandled exception when launching games without installed collections/mods ([#18022](https://github.com/Nexus-Mods/Vortex/issues/18022))
+
+## 1.14.10 - 2025-08-06
+
+- Improved collection install tracking 
+
+## 1.14.9 - 2025-07-31
+
+- Fixed inability to export using replicate when deleting files. ([#17982](https://github.com/Nexus-Mods/Vortex/issues/17982))
+- **collections**: Fixed intermittent download version resolution error when installing collections.
+- **collections**: Greatly simplified checksum matching when exporting with replicate
+- **plugin-management**: fixed plugin info not retrieved if plugin contains no metadata (light plugins identification). ([#17962](https://github.com/Nexus-Mods/Vortex/issues/17962))
 
 ## 1.14.8 - 2025-07-08
 
-- **plugin-management**: Fixed plugins not auto-sorting on deployment
 - MSVC 2022 distributable will now install alongside Vortex to fix crashes for Windows 10 users
+- Fixed downloads going into the wrong game folder
+- The File Based Overrides not working as expected in some situations
+- **plugin-management**: Fixed plugins not auto-sorting on deployment
 
 ## 1.14.7 - 2025-07-03
 
@@ -944,3 +1012,5 @@ _Yanked due to critical issue found with file overrides_
 [1.9.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.1
 [1.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.0
 [1.8.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.8.5
+
+

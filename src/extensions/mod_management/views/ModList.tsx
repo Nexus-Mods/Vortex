@@ -64,6 +64,7 @@ import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
+import updateState from '../util/modUpdateState';
 
 type IModWithState = IMod & IProfileMod;
 
@@ -207,17 +208,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         multiRowAction: false,
       },
       {
-        icon: 'refresh',
+        component: CheckModVersionsButton,
         title: 'Check for Update',
-        action: this.checkForUpdate,
         condition: instanceId => {
-          const { mods } = this.props;
+          const { mods, modState } = this.props;
           if (typeof(instanceId) === 'string') {
-            return mods[instanceId] !== undefined;
+            return mods[instanceId] !== undefined && (modState[instanceId]?.enabled === true);
           } else {
-            return instanceId.find(id => mods[id] !== undefined) !== undefined;
+            return instanceId.find(id => mods[id] !== undefined && (modState[id]?.enabled === true)) !== undefined;
           }
         },
+        props: () => ({ selectionOnly: true }),
       },
       {
         icon: 'start-install',
@@ -1503,19 +1504,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private toggleDropzone = () => {
     const { showDropzone, onShowDropzone } = this.props;
     onShowDropzone(!showDropzone);
-  }
-
-  private checkForUpdate = (modIds: string[]) => {
-    const { gameMode, mods } = this.props;
-
-    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds), 'silent')
-      .then(() => {
-        this.context.api.sendNotification({
-          type: 'success',
-          message: 'Check for mod updates complete',
-          displayMS: 5000,
-        });
-      });
   }
 
   private dropMod = (type: DropType, values: string[]) => {

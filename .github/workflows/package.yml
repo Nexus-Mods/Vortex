@@ -103,7 +103,7 @@ jobs:
         shell: pwsh
         run: | 
           Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile "build\\windowsdesktop-runtime-win-x64.exe"
- 
+
       - name: Download CodeSignTool 
         id: codesign 
         shell: pwsh 
