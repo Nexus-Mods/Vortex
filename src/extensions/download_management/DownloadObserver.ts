@@ -37,6 +37,7 @@ import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], chunkable: boolean,
@@ -272,10 +273,12 @@ export class DownloadObserver {
       ? [downloadDomain, gameId]
       : [gameId];
     const gameIds = Array.from(new Set<string>(baseIds.concat(compatibleGames.map(game => game.id))));
+    const internalId = convertGameIdReverse(selectors.knownGames(state), gameIds[0]);
+    gameIds.sort((a, b) => (a === internalId ? -1 : (b === internalId ? 1 : 0)));
     this.mApi.store.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
-    const downloadPath = selectors.downloadPathForGame(state, downloadDomain);
+    const downloadPath = selectors.downloadPathForGame(state, internalId);
 
     const processCB = this.genProgressCB(id);
 
