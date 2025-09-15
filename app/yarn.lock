@@ -1509,9 +1509,9 @@ flux-standard-action@^2.0.0:
     lodash.isplainobject "^4.0.6"
     lodash.isstring "^4.0.1"
 
-fomod-installer@Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup:
-  version "0.8.0"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/69a33c3a62ba49c29b9c52933cf28b866d9f2fae"
+fomod-installer@Nexus-Mods/fomod-installer#dotnet9:
+  version "0.8.1"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/d2ce4f05c4cc9525d76ac6d313efb62222747411"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
