@@ -39,7 +39,6 @@ import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
-import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], chunkable: boolean,
