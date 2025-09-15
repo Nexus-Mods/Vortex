@@ -6277,9 +6277,9 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-fomod-installer@Nexus-Mods/fomod-installer#bugfix-proper-resource-cleanup:
+fomod-installer@Nexus-Mods/fomod-installer:
   version "0.8.0"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/69a33c3a62ba49c29b9c52933cf28b866d9f2fae"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/ff100c7085a70faf94be146dad9ee7c5380e7186"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -8843,9 +8843,9 @@ modify-filename@^1.1.0:
   resolved "https://registry.yarnpkg.com/modify-filename/-/modify-filename-1.1.0.tgz#9a2dec83806fbb2d975f22beec859ca26b393aa1"
   integrity sha512-EickqnKq3kVVaZisYuCxhtKbZjInCuwgwZWyAmRIp1NTMhri7r3380/uqwrUHfaDiPzLVTuoNy4whX66bxPVog==
 
-modmeta-db@Nexus-Mods/modmeta-db#simplify-file-hash-query:
+modmeta-db@Nexus-Mods/modmeta-db:
   version "0.9.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/615d08d1036af897eaf1088ee86eacbc3cfdd2d3"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"
@@ -12349,9 +12349,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-vortex-api@Nexus-Mods/vortex-api#experimental-tick-queue:
+vortex-api@Nexus-Mods/vortex-api:
   version "1.8.15"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/f825cb3b93b61debaa192dfbc58b132f661c739e"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/db5e5585b7492d7a0e07c76d4cf33e3d0dfbf3fb"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.3.0"
