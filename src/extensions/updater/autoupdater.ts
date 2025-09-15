@@ -480,7 +480,7 @@ Are you sure you want to downgrade?`,
     if (!state().session.base.networkConnected) {
       log('info', 'Not checking for updates because network is offline');    }
 
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
 
     log('info', 'Checking for vortex update:', channel);
     const didOverride = channelOverride !== undefined;
