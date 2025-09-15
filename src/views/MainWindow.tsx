@@ -273,7 +273,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
 
-              {/* ✅ Add toaster here */}
               <Toaster position="bottom-center" reverseOrder={false} />
 
               {customTitlebar ? <WindowControls /> : null}

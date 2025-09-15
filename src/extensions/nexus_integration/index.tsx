@@ -1676,7 +1676,6 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(clearOAuthCredentials(null));
   });*/
 
-
   userInfoDebouncer = new Debouncer(() => {
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
@@ -1686,7 +1685,6 @@ function init(context: IExtensionContextExt): boolean {
     toast.success('User info refreshed!');
 
     context.api.events.emit('refresh-user-info');
-
 
     return Promise.resolve();
   }, 3000, true, false);
