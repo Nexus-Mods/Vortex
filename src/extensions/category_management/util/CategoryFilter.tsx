@@ -230,7 +230,7 @@ class CategoryFilter implements ITableFilter {
     if ((patterns.length > 0) && (value !== undefined)) {
       const gameId = activeGameId(state);
       const catName = state.persistent.categories[gameId]?.[value];
-      if ((catName !== undefined)
+      if ((catName?.name != null)
           && (patterns.find(pat => catName.name.toLowerCase().includes(pat)) !== undefined)) {
         return true;
       }

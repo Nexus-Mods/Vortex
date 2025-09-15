@@ -195,7 +195,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
             return resolvedInfo;
           });
       } else if (resolvedInfo === undefined) {
-        return Promise.reject(new GameEntryNotFound(game.id, 'unknown'));
+        return Bluebird.reject(new GameEntryNotFound(game.id, 'unknown'));
       } else {
         store = resolvedInfo.gameStoreId;
         return resolvedInfo.gamePath;
@@ -282,7 +282,7 @@ export function quickDiscovery(knownGames: IGame[],
                   game, result.gamePath, result.gameStoreId,
                   discoveredGames, onDiscoveredGame, onDiscoveredTool);
               } else {
-                return Promise.resolve(undefined);
+                return Bluebird.resolve(undefined);
               }
             });
         } else if (game.queryPath !== undefined) {

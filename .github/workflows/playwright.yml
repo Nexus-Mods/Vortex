@@ -1,0 +1,77 @@
+name: Playwright E2E Tests
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive  # For your git submodules
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+    
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile --non-interactive
+    
+    - name: Build application
+      run: yarn run build
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    
+    - name: Run Playwright tests
+      run: yarn run test:e2e
+      env:
+        ELECTRON_DISABLE_SECURITY_WARNINGS: true
+        NODE_ENV: development
+        CI: true  # Triggers longer timeouts in your helper
+        DEBUG: pw:browser*,pw:api,electron*  # Added electron debugging
+        PWDEBUG: 1  # Additional debug info
+        ELECTRON_ENABLE_LOGGING: true  # Enable electron console logging
+        ELECTRON_IS_DEV: 0  # Disable dev tools auto-open
+        # Force software rendering at environment level
+        LIBGL_ALWAYS_SOFTWARE: 1
+        GALLIUM_DRIVER: llvmpipe
+        
+    # Capture screenshots even on success for debugging
+    - name: Take debug screenshot
+      if: always()
+      run: |
+        # List any screenshots that were created
+        if (Test-Path "playwright\run-*") { 
+          Get-ChildItem -Path "playwright\run-*" -Recurse -Include "*.png" | ForEach-Object { Write-Host $_.FullName }
+        }
+      shell: pwsh
+    
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright/playwright-report/
+        retention-days: 30
+        
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: playwright/test-results/
+        retention-days: 30
+        
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-run-artifacts
+        path: playwright/run-*/
+        retention-days: 30

@@ -1,7 +1,8 @@
 /**
  * entry point for the main process
  */
-
+import os from 'os';
+process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 2).toString();
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 
@@ -246,7 +247,14 @@ async function main(): Promise<void> {
   }
 
   // tslint:disable-next-line:no-submodule-imports
-  require('@electron/remote/main').initialize();
+  try {
+    require('@electron/remote/main').initialize();
+  } catch (err) {
+    if (!err.message.includes('already been initialized')) {
+      throw err;
+    }
+    // @electron/remote already initialized, continue
+  }
 
   let fixedT = require('i18next').getFixedT('en');
   try {

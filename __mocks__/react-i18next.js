@@ -16,6 +16,19 @@ function translate(namespace) {
   } 
 }
 
-react_i18n.withTranslation = translate;
+function withTranslation(namespace) {
+  return (component) => {
+    return class Translation extends React.Component {
+      render() {
+        return React.createElement(component, Object.assign({}, this.props, {
+          t: (str) => str
+        }), []);
+      }
+    }
+  } 
+}
+
+react_i18n.withTranslation = withTranslation;
+react_i18n.translate = translate;
 
 module.exports = react_i18n;

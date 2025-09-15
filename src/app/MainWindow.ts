@@ -307,11 +307,11 @@ class MainWindow {
       title: 'Vortex',
       titleBarStyle: windowMetrics?.customTitlebar === true ? 'hidden' : 'default',
       webPreferences: {
-        nodeIntegration: true,
+        nodeIntegration: true,         // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,
         enableWebSQL: false,
-        contextIsolation: false,
+        contextIsolation: false,       // Required for @electron/remote compatibility
         backgroundThrottling: false,
       },
     };

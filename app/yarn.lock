@@ -59,8 +59,8 @@
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
-  version "1.4.27"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/29721da7495e0c6d7b2e1a89d31028775c515b7e"
+  version "1.4.28"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/170ba592fba4c92abd1f05dd952476d7a7dc421d"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -1510,8 +1510,8 @@ flux-standard-action@^2.0.0:
     lodash.isstring "^4.0.1"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.7.21"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bfd8d4dee8e6e75c450d1b8bb5f66f243ab5d1ca"
+  version "0.8.0"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/ff100c7085a70faf94be146dad9ee7c5380e7186"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
@@ -2614,7 +2614,7 @@ modify-filename@^1.1.0:
 
 modmeta-db@Nexus-Mods/modmeta-db:
   version "0.9.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ff8b9cff17357a837fca6153df4cdd1e946694d2"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"

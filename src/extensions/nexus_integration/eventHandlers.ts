@@ -9,9 +9,9 @@ import { log } from '../../util/log';
 import { calcDuration, showError } from '../../util/message';
 import { upload } from '../../util/network';
 import opn from '../../util/opn';
-import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { toPromise, truthy } from '../../util/util';
+import { batchDispatch, toPromise, truthy } from '../../util/util';
 
 import { resolveCategoryName } from '../category_management';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
@@ -22,7 +22,7 @@ import { IModListItem } from '../news_dashlet/types';
 
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
-import { nexusGameId, toNXMId } from './util/convertGameId';
+import { nexusGameId, toNXMId, convertGameIdReverse } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
@@ -39,65 +39,135 @@ import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
-import { format as urlFormat } from 'url';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
 import { withBatchContext } from '../../util/BatchContext';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
-  // contains the state from before the debouncer last triggered
-  let lastDownloadTable = state.persistent.downloads.files;
-
+  // Cache for mod/file info to avoid duplicate API calls
+  const infoCache = new Map<string, any>();
+  const IDS_PATH = ['modInfo', 'nexus', 'ids'];
   const updateDebouncer: Debouncer = new Debouncer(
-    (newDownloadTable: { [id: string]: IDownload }) => {
-      if (lastDownloadTable !== newDownloadTable) {
-        const idsPath = ['modInfo', 'nexus', 'ids'];
-        return Promise.map(Object.keys(newDownloadTable), dlId => {
-          const download = newDownloadTable[dlId];
-          const oldModId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'modId'], undefined);
-          const oldFileId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'fileId'], undefined);
-          const modId = getSafe(download, [...idsPath, 'modId'], undefined);
-          const fileId = getSafe(download, [...idsPath, 'fileId'], undefined);
-          let gameId = getSafe(download, [...idsPath, 'gameId'], undefined);
-          if (gameId === undefined) {
-            gameId = Array.isArray(download.game)
-              ? download.game[0]
-              : activeGameId(api.store.getState());
-          }
-          const gameDomain = nexusGameId(gameById(state, gameId), gameId);
-          if ((modId !== undefined)
-            && ((oldModId !== modId) || (oldFileId !== fileId))) {
-            return nexus.getModInfo(modId, gameDomain)
-              .then(modInfo => {
-                api.store.dispatch(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
-                return (fileId !== undefined)
-                  ? nexus.getFileInfo(modId, fileId, gameDomain)
-                    .catch(err => {
-                      log('warn', 'failed to query file info', { message: err.message });
-                      return Promise.resolve(undefined);
-                    })
-                  : Promise.resolve(undefined);
-              })
-              .then(fileInfo => {
-                api.store.dispatch(setDownloadModInfo(dlId, 'nexus.fileInfo', fileInfo));
-              })
-              .catch(err => {
-                log('warn', 'failed to query mod info', { message: err.message });
+    (oldDownloadTable: { [id: string]: IDownload }, newDownloadTable: { [id: string]: IDownload }) => {
+      if (oldDownloadTable === newDownloadTable) {
+        return Promise.resolve();
+      }
+
+      // Only process downloads that have actually changed
+      const changedDownloadIds = Object.keys(newDownloadTable).filter(dlId => {
+        const newDownload = newDownloadTable[dlId];
+        const oldDownload = oldDownloadTable?.[dlId];
+
+        if (!oldDownload || !newDownload) return true;
+
+        const newModId = getSafe(newDownload, [...IDS_PATH, 'modId'], undefined);
+        const newFileId = getSafe(newDownload, [...IDS_PATH, 'fileId'], undefined);
+        const oldModId = getSafe(oldDownload, [...IDS_PATH, 'modId'], undefined);
+        const oldFileId = getSafe(oldDownload, [...IDS_PATH, 'fileId'], undefined);
+
+        return newModId !== oldModId || newFileId !== oldFileId;
+      });
+
+      if (changedDownloadIds.length === 0) {
+        return Promise.resolve();
+      }
+
+      return Promise.map(changedDownloadIds, dlId => {
+        const download = newDownloadTable[dlId];
+        const modId = getSafe(download, [...IDS_PATH, 'modId'], undefined);
+        const fileId = getSafe(download, [...IDS_PATH, 'fileId'], undefined);
+
+        if (!modId) {
+          return Promise.resolve();
+        }
+
+        const rawGame = Array.isArray(download.game) && download.game.length > 0
+            ? download.game[0]
+            : activeGameId(api.store.getState());
+        // Ensure we use the internal game id for lookups and domain conversion
+        const metaGameId = rawGame
+          ? (convertGameIdReverse(knownGames(api.store.getState()), rawGame) || rawGame)
+          : rawGame;
+
+        const gameDomain = nexusGameId(gameById(state, metaGameId), metaGameId);
+
+        // Create cache keys for deduplication
+        const modInfoKey = `mod_${modId}_${gameDomain}`;
+        const fileInfoKey = fileId !== undefined ? `file_${modId}_${fileId}_${gameDomain}` : null;
+
+        // Fetch mod info with caching
+        let modInfoPromise = infoCache.get(modInfoKey);
+        if (!modInfoPromise) {
+          modInfoPromise = nexus.getModInfo(modId, gameDomain)
+            .catch(err => {
+              log('warn', 'failed to query mod info', {
+                modId,
+                gameDomain,
+                downloadId: dlId,
+                message: err.message
               });
-          } else {
-            return Promise.resolve();
+              return null;
+            });
+          infoCache.set(modInfoKey, modInfoPromise);
+        }
+
+        // Fetch file info with caching (if needed)
+        let fileInfoPromise = Promise.resolve(undefined);
+        if (fileId !== undefined && fileInfoKey) {
+          let cachedFileInfo = infoCache.get(fileInfoKey);
+          if (!cachedFileInfo) {
+            cachedFileInfo = nexus.getFileInfo(modId, fileId, gameDomain)
+              .catch(err => {
+                log('warn', 'failed to query file info', {
+                  modId,
+                  fileId,
+                  gameDomain,
+                  downloadId: dlId,
+                  message: err.message
+                });
+                return null;
+              });
+            infoCache.set(fileInfoKey, cachedFileInfo);
+          }
+          fileInfoPromise = cachedFileInfo;
+        }
+
+        return Promise.all([modInfoPromise, fileInfoPromise])
+          .then(([modInfo, fileInfo]) => {
+            const batched = [];
+            if (modInfo !== null) {
+              batched.push(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
+            }
+            if (fileInfo !== null) {
+              batched.push(setDownloadModInfo(dlId, 'nexus.fileInfo', fileInfo));
+            }
+
+            batchDispatch(api.store, batched);
+          })
+          .catch(err => {
+            log('error', 'unexpected error processing download info', {
+              downloadId: dlId,
+              modId,
+              fileId,
+              message: err.message
+            });
+          });
+      }, { concurrency: 5 })
+        .then(() => {
+          if (infoCache.size > 100) {
+            const entries = Array.from(infoCache.entries());
+            infoCache.clear();
+            entries.slice(-50).forEach(([key, value]) => infoCache.set(key, value));
           }
         })
-          .then(() => {
-            lastDownloadTable = newDownloadTable;
-          });
-      }
-      return null;
-    }, 2000);
+        .catch(err => {
+          log('error', 'failed to process download changes', { message: err.message });
+        });
+    }, 200);
 
   return (oldValue: IModTable, newValue: IModTable) =>
-      updateDebouncer.schedule(undefined, newValue);
+      updateDebouncer.schedule(undefined, oldValue, newValue);
 } 
 
 /**
@@ -276,6 +346,7 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
       noDismiss: true,
       allowSuppress: false,
     });
+    api.store.dispatch(setUpdatingMods(gameId, true));
     let game = gameId === SITE_ID ? null : gameById(api.getState(), gameId);
     log('debug', 'on mods update', { gameId, modIds });
     if (!game) {
@@ -284,18 +355,9 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
       game = currentGame(api.getState());
     }
     const mods: { [modId: string]: IMod } = getSafe(api.getState(), ['persistent', 'mods', game?.id], {});
-    const downloadGameId = truthy(game)
-        ? (game.id !== gameId)
-          ? gameId // download id is different from the game extension's id - this is a compatibleDownload entry.
-          : game.id
-        : gameId; // Game is not present in the state. Concurrency issue? lets just assign it to gameId.
-    const downloadFunc = (modId: number, fileId: number) => truthy(game)
-      ? downloadFile(api, nexus, { ...game, downloadGameId }, modId, fileId, undefined, false)
-      : Promise.reject(new ProcessCanceled('Game not found')); // Can't download an update for a game extension that doesn't exist
-    const downloadIds: Set<string> = new Set<string>();
     for (const modId of modIds) {
       const mod = mods[modId];
-      if (!mod || !mod.attributes?.modId || mod.attributes?.source !== 'nexus') {
+      if (!mod || mod.attributes?.source !== 'nexus' || !mod.attributes?.newestFileId) {
         log('warn', 'unable to automatically update mod', modId);
         continue;
       }
@@ -306,61 +368,12 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
         //  correctly when uploading the mod file.
         continue;
       }
-      if (mod.attributes.fileId === newestFileId) {
-        log('debug', 'mod is already up to date', modId);
-        continue;
-      }
-      try {
-        const dlId = await downloadFunc(mod.attributes.modId, newestFileId);
-        downloadIds.add(dlId);
-      } catch (err) {
-        if (err instanceof AlreadyDownloaded) {
-          const state = api.getState();
-          const downloads = state.persistent.downloads.files;
-          const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
-          downloadIds.add(dlId);
-        } else if (err instanceof DataInvalid) {
-          const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${newestFileId}`;
-          api.showErrorNotification('Invalid URL', url, { allowReport: false });
-        } else if (err instanceof ProcessCanceled) {
-          const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), 'mods', modId].join('/');
-          const params = `?tab=files&file_id=${newestFileId}&nmm=1`;
-          opn(url + params).catch(() => undefined);
-        } else {
-          api.showErrorNotification('Failed to start download', err);
-        }
-      }
+      const numericModId = mod.attributes?.modId;
+      onModUpdate(api, nexus)(gameId, numericModId, newestFileId, 'nexus');
     }
 
-    const archiveIds: string[] = Array.from(downloadIds);
-    withBatchContext('install-mod', archiveIds, () => {
-      return Promise.all(archiveIds.map(async archiveId => {
-        const download = getSafe(api.getState(), ['persistent', 'downloads', 'files', archiveId], undefined);
-        if (download?.state !== 'finished') {
-          api.store.dispatch(setDownloadModInfo(archiveId, 'startedAsUpdate', true));
-          return Promise.resolve(null);
-        }
-        try {
-          return toPromise<string>(cb => api.events.emit('start-install-download', archiveId, { allowAutoEnable: false, }, cb));
-        } catch (err) {
-          log('error', 'failed to install mod update', err);
-          // if the download failed, we just ignore it
-          if (err instanceof ProcessCanceled) {
-            return Promise.resolve(null);
-          } else {
-            api.showErrorNotification('Failed to install mod update', err);
-          }
-        }
-      }))
-      .finally(() => {
-        api.dismissNotification('mods-update-multi')
-        api.sendNotification({
-          type: 'success',
-          message: `Mod updates complete (${archiveIds.length} update/s found)`,
-          displayMS: 3000,
-        })
-      });
-    });
+    api.dismissNotification('mods-update-multi');
+    api.store.dispatch(setUpdatingMods(gameId, false))
   }
 }
 
@@ -729,7 +742,7 @@ export function onDownloadUpdate(api: IExtensionApi,
           }
         }
 
-        return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
+        return startDownload(api, nexus, urlParsed.toString(), 'never', undefined, false, false, referenceTag)
           .then(dlId => ({ error: null, dlId }))
           .catch(err => ({ error: err }));
       })
@@ -741,7 +754,8 @@ export function onDownloadUpdate(api: IExtensionApi,
           if (campaign !== undefined) {
             urlParsed.searchParams.set('campaign', campaign);
           }
-          return startDownload(api, nexus, urlFormat(urlParsed), 'never', undefined, false, false, referenceTag)
+
+          return startDownload(api, nexus, urlParsed.toString(), 'never', undefined, false, false, referenceTag)
             .then(dlId => ({ error: null, dlId }))
             .catch(innerErr => ({ error: innerErr }));
         } else {

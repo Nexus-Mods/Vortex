@@ -13,9 +13,11 @@ import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {batchDispatch, truthy} from '../../util/util';
+import { knownGames } from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
@@ -675,28 +677,36 @@ export function onRemoveMods(api: IExtensionApi,
 
   api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id), options)
     .then(() => undeployMods(api, activators, gameId, removeMods))
-    .then(() => Promise.mapSeries(removeMods,
-        (mod: IMod, idx: number, length: number) => {
-      options?.progressCB?.(idx, length, modName(mod));
-      const forwardOptions = { ...(options || {}), modData: { ...mod } };
-      return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
-      .then(() => {
-        if (truthy(mod) && truthy(mod.installationPath)) {
-          const fullModPath = path.join(installationPath, mod.installationPath);
-          log('debug', 'removing files for mod',
-              { game: gameId, mod: mod.id });
-          return fs.removeAsync(fullModPath)
-            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
-        } else {
-          return Promise.resolve();
+    .then(() => {
+      let completedCount = 0;
+      const totalCount = removeMods.length;
+      let batched = [];
+      return Promise.map(removeMods, async (mod: IMod) => {
+        const forwardOptions = { ...(options || {}), modData: { ...mod } };
+        try {
+          await api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions);
+          if (truthy(mod) && truthy(mod.installationPath)) {
+            const fullModPath = path.join(installationPath, mod.installationPath);
+            log('debug', 'removing files for mod', { game: gameId, mod: mod.id });
+            await fs.removeAsync(fullModPath)
+              .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+          }
+          await api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
+
+          batched.push(removeMod(gameId, mod.id));
+          if (batched.length >= 10 || completedCount + 1 === totalCount) {
+            batchDispatch(store, batched);
+            batched = [];
+          }
+
+          // Update progress after successful removal
+          completedCount++;
+          options?.progressCB?.(completedCount, totalCount, modName(mod));
+        } catch (error) {
+          log('error', 'Failed to remove mod', { game: gameId, mod: mod.id, error: error.message });
         }
-      })
-      .then(() => {
-        store.dispatch(removeMod(gameId, mod.id));
-        return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
-      });
-    }))
+      }, { concurrency: 5 });
+    })
     .then(() => {
       if (callback !== undefined) {
         callback(null);
@@ -766,11 +776,11 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   });
 }
 
-export function onStartInstallDownload(api: IExtensionApi,
+export async function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
                                        options: IInstallOptions,
-                                       callback?: (error, id: string) => void): Promise<void> {
+                                       callback?: (error, id: string) => void) {
   const store = api.store;
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -789,40 +799,75 @@ export function onStartInstallDownload(api: IExtensionApi,
     return Promise.resolve();
   }
 
-  return queryGameId(api.store, download.game, download.localPath)
-    .then(gameId => {
-      if (!truthy(download.localPath)) {
-        api.events.emit('refresh-downloads', gameId, () => {
-          api.showErrorNotification('Download invalid',
-            'Sorry, the meta data for this download is incomplete. Vortex has '
-            + 'tried to refresh it, please try again.',
-            { allowReport: false });
-        });
-        return Promise.resolve();
-      }
+  if (download.state !== 'finished') {
+    const message = `Download not finished (state: ${download.state}), cannot install`;
+    log('warn', message, { downloadId, state: download.state });
+    if (callback !== undefined) {
+      callback(new DataInvalid(message), undefined);
+    } else {
+      api.showErrorNotification('Download Not Ready',
+        'The download must be completely finished before installation can begin. '
+        + `Current state: ${download.state}`,
+        { allowReport: false });
+    }
+    return Promise.resolve();
+  }
 
-      const downloadGame: string[] = getDownloadGames(download);
-      const downloadPath: string = downloadPathForGame(state, downloadGame[0]);
-      if (downloadPath === undefined) {
-        api.showErrorNotification('Unknown Game',
-          'Failed to determine download directory. This shouldn\'t have happened', {
-            message: downloadGame[0],
-            allowReport: true,
-          });
-        return;
-      }
-      const fullPath: string = path.join(downloadPath, download.localPath);
-      const allowAutoDeploy = options.allowAutoEnable !== false;
-      const { enable } = state.settings.automation;
-      installManager.install(downloadId, fullPath, downloadGame, api,
-        { download, choices: options.choices }, true, enable && allowAutoDeploy,
-        callback, gameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
-    })
-    .catch(err => {
-      if (callback !== undefined) {
-        callback(err, undefined);
-      } else if (!(err instanceof UserCanceled)) {
-        api.showErrorNotification('Failed to start download', err);
-      }
+  const downloadGames = getDownloadGames(download);
+  // Convert to internal IDs (e.g., skyrimspecialedition -> skyrimse)
+  const knownGamesList = knownGames(state);
+  const convertedGameId = downloadGames.length > 0
+    ? convertGameIdReverse(knownGamesList, downloadGames[0]) || downloadGames[0]
+    : downloadGames[0];
+
+  if (!truthy(download.localPath)) {
+    api.events.emit('refresh-downloads', convertedGameId, () => {
+      api.showErrorNotification('Download invalid',
+        'Sorry, the meta data for this download is incomplete. Vortex has '
+        + 'tried to refresh it, please try again.',
+        { allowReport: false });
     });
+    return Promise.resolve();
+  }
+
+  const downloadPath = downloadPathForGame(state, convertedGameId);
+  const fullPath: string = path.join(downloadPath, download.localPath);
+
+  try {
+    // Small delay to ensure file handles are released and filesystem buffers are flushed
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify file exists and is accessible by checking its stats
+    const stats = await fs.statAsync(fullPath);
+
+    // Additional verification: ensure file is readable and has expected size
+    if (stats.size === 0) {
+      throw new Error('File appears to be empty or still being written');
+    }
+
+    log('debug', 'Download file verified as accessible for installation', {
+      downloadId,
+      filePath: path.basename(fullPath),
+      fileSize: stats.size
+    });
+  } catch (accessError) {
+    const message = `Download file not accessible for installation: ${accessError.message}`;
+    log('warn', message, { downloadId, filePath: path.basename(fullPath) });
+    if (callback !== undefined) {
+      callback(new DataInvalid(message), undefined);
+    } else {
+      api.showErrorNotification('Download File Locked',
+        'The download file is still being processed or is locked by another process. '
+        + 'Please wait a moment and try again.',
+        { allowReport: false });
+    }
+    return;
+  }
+
+  const allowAutoDeploy = options.allowAutoEnable !== false;
+  const { enable } = state.settings.automation;
+  installManager.install(downloadId, fullPath, download.game, api,
+    { download, choices: options.choices }, true, enable && allowAutoDeploy,
+    callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
+  return;
 }
