@@ -87,7 +87,9 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
       batched.push(forgetMod(profile.id, modId));
     }
   });
-  batchDispatch(store, batched);
+  if (batched.length > 0) {
+    batchDispatch(store, batched);
+  }
 }
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
