@@ -8,7 +8,8 @@ import SuperTable, { ITableRowAction } from '../../../controls/Table';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IAttachment } from '../../../types/IExtensionContext';
+import { IAttachment, IExtensionApi } from '../../../types/IExtensionContext';
+import { convertGameIdReverse } from '../../nexus_integration/util/convertGameId';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -573,8 +574,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     const download: IDownload = downloads[downloadId];
     if (download?.localPath !== undefined) {
       const downloadGame = getDownloadGames(download);
+      // Normalize to internal game id for path lookups
+      const rawGame = downloadGame[0];
+      const games = this.props.knownGames;
+      const internalGameId = rawGame ? (convertGameIdReverse(games as any, rawGame) || rawGame) : rawGame;
 
-      if (downloadPathForGame(downloadGame[0]) === undefined) {
+      if (downloadPathForGame(internalGameId) === undefined) {
         // Not sure under what circumstances we would fail to retrieve a game's
         //  download path. https://github.com/Nexus-Mods/Vortex/issues/7372
         const downloadData = JSON.stringify(download, undefined, 2);
@@ -587,14 +592,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             description: 'Vortex Log',
           },
         ];
-        const err = new Error(`Cannot find download path for ${downloadGame[0]}`);
+        const err = new Error(`Cannot find download path for ${internalGameId}`);
         err['download'] = download;
         this.props.onShowError('Failed to open archive', err,
           undefined, true, attachments);
         return;
       }
 
-      opn(path.join(downloadPathForGame(downloadGame[0]), download.localPath))
+      opn(path.join(downloadPathForGame(internalGameId), download.localPath))
         .catch(err => {
           this.props.onShowError('Failed to open archive', err, undefined, false);
         });

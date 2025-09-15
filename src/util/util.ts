@@ -97,6 +97,11 @@ export function truthy(val: any): boolean {
   return !!val;
 }
 
+// Helper to check for plain objects (not null, not array)
+function isPlainObject(obj: any): boolean {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+}
+
 /**
  * return the delta between two objects
  * @param lhs the left, "before", object
@@ -105,9 +110,8 @@ export function truthy(val: any): boolean {
  */
 export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   const res = {};
-
-  if ((typeof (lhs) === 'object') && (typeof (rhs) === 'object')) {
-    Object.keys(lhs || {}).forEach(key => {
+  if (isPlainObject(lhs) && isPlainObject(rhs)) {
+    Object.keys(lhs).forEach(key => {
       if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
         return null;
       }
@@ -124,7 +128,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
         }
       }
     });
-    Object.keys(rhs || {}).forEach(key => {
+    Object.keys(rhs).forEach(key => {
       if (!Object.prototype.hasOwnProperty.call(lhs, key)
         && Object.prototype.hasOwnProperty.call(rhs, key)) {
         res['+' + key] = rhs[key];
@@ -855,39 +859,45 @@ function sectionHost(section?: Section) {
 
 export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
 
-  // if no parameters set, then just empty array to start
-  const parameters = options?.parameters ?? [];
+  // Build the base URL
+  const url = new URL(`${NEXUS_PROTOCOL}//${sectionHost(options?.section)}`);
 
-  // if we set a campaign then we want to track some data, fill in all the parameters
+  // Add path segments
+  if (reqPath.length > 0) {
+    url.pathname = '/' + reqPath.join('/');
+  }
+
+  // Add query parameters
+  const searchParams = new URLSearchParams();
+
+  // Add existing parameters (they're already in "key=value" format)
+  if (options?.parameters) {
+    for (const param of options.parameters) {
+      const [key, value] = param.split('=', 2);
+      if (key && value) {
+        searchParams.set(key, decodeURIComponent(value));
+      }
+    }
+  }
+
+  // Add campaign tracking parameters if specified
   if (options?.campaign !== undefined) {
+    searchParams.set('utm_source', 'vortex');
+    searchParams.set('utm_medium', 'app');
 
-    // always need these
-    parameters.push(`utm_source=vortex`);
-    parameters.push('utm_medium=app');
-
-    // content is optional, but if set, we want to track it
     if (options?.content !== undefined) {
-      parameters.push(`utm_content=${options.content}`);
+      searchParams.set('utm_content', options.content);
     }
 
-    // we add the campaign
-    parameters.push(`utm_campaign=${options.campaign.toString()}`);
+    searchParams.set('utm_campaign', options.campaign.toString());
   }
 
-  const urlParameters: url.UrlObject = {
-    protocol: NEXUS_PROTOCOL,
-    host: sectionHost(options?.section),
-  };
-
-  if (reqPath.length > 0) {
-    urlParameters.pathname = '/' + reqPath.join('/');
+  // Set search params if any exist
+  if (searchParams.toString()) {
+    url.search = searchParams.toString();
   }
 
-  if (parameters.length > 0) {
-    urlParameters.search = '?' + parameters.join('&');
-  }
-
-  return url.format(urlParameters);
+  return url.toString();
 }
 
 // environment variables we might have set for ourselves or passed in by chrome/electron/node

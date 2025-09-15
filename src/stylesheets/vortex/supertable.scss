@@ -1,5 +1,6 @@
 .table-actions {
   display: inline-flex;
+
   .btn {
     @extend .btn-embed;
     @extend .hcenter;
@@ -17,6 +18,7 @@
 
 .table-selected {
   background-color: $table-bg-active;
+
   // the following is needed so the row color takes precedence over the
   // column color
   .table-sort-column {
@@ -24,7 +26,7 @@
   }
 }
 
-.table-hover > .xtbody > .xtr:hover {
+.table-hover>.xtbody>.xtr:hover {
   .table-sort-column {
     background-color: $table-bg-hover;
   }
@@ -32,6 +34,7 @@
 
 .table-highlighted {
   background-color: $brand-secondary;
+
   .table-sort-column {
     background-color: $brand-secondary;
   }
@@ -58,7 +61,7 @@
 }
 
 .table-container.has-details {
-  .table-header-pane { 
+  .table-header-pane {
     right: calc(#{$half-gutter} + #{$scrollbar-width});
   }
 
@@ -82,7 +85,7 @@
         padding-right: $table-header-border-width !important;
       }
 
-      > div {
+      >div {
         height: 100%;
         // min-height: 48px;
         display: flex;
@@ -95,8 +98,9 @@
 
   .xtbody {
     background-color: $brand-menu;
+
     .xtr {
-      > div {
+      >div {
         padding: 4px 0px;
       }
     }
@@ -107,7 +111,8 @@
   .table-header-cell.xth {
     padding: 0 !important;
     border: 0 !important;
-    > * {
+
+    >* {
       max-height: 0 !important;
       visibility: hidden;
       margin-top: -100%;
@@ -126,7 +131,8 @@
   background-color: darken($table-bg, 5%);
   border-bottom: 1px solid $gray-dark !important;
   border-top: 1em solid $table-bg !important;
-  > .icon {
+
+  >.icon {
     margin-right: 1em;
   }
 
@@ -136,7 +142,7 @@
 }
 
 .table-row-grouped {
-  > td:first-child {
+  >td:first-child {
     padding-left: 2em !important;
   }
 }
@@ -158,6 +164,7 @@
     border-right-width: 0;
     box-shadow: -2px 0px 4px 1px rgba(0, 0, 0, 0.5);
   }
+
   &.closed {
     // overruled by min-width
     max-width: 0%;
@@ -211,9 +218,11 @@
   display: flex;
   width: 100%;
   align-items: center;
+
   svg {
     margin-right: 1em;
   }
+
   .Select {
     flex: 1 1 0;
   }
@@ -236,11 +245,14 @@
 
 .table-pinned {
   height: 3em;
-  > div, td {
+
+  >div,
+  td {
     height: 3em;
     background-color: $brand-info;
     padding: 8px;
-    > .btn {
+
+    >.btn {
       margin-left: 8px;
     }
   }
@@ -248,7 +260,8 @@
 
 .table-pinned-hidden {
   display: none;
-  > div {
+
+  >div {
     display: none;
   }
 }
@@ -271,9 +284,11 @@
   .btn {
     background-color: transparent;
     color: inherit;
+
     &:hover {
-      background-color: rgba(255,255,255, 0.2);
+      background-color: rgba(255, 255, 255, 0.2);
     }
+
     // this simply restores the settings from ".table-footer .btn" but with a
     // higher specificity
     &:disabled {
@@ -307,7 +322,7 @@
 }
 
 .table-container-inner {
-  display:flex;
+  display: flex;
   flex-direction: column;
   width: 100%;
 }
@@ -330,6 +345,19 @@
   right: 0;
 }
 
+.table-actions {
+  .dropdown-menu button#check-mod-updates-button {
+    background: transparent;
+    color: white;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    width: 100%;
+  }
+
+}
+
+
 .xtable .cell-actions {
   // display: inline-flex;
   // width: 100%;
@@ -337,10 +365,12 @@
   .dropdown .btn:first-child,
   .dropup .btn:first-child {
     text-align: left;
+
     svg {
       margin-right: 0.5em;
     }
   }
+
   .dropdown-toggle {
     min-width: initial;
   }
