@@ -31,6 +31,7 @@ import {
   activeProfile,
   currentGameDiscovery,
   downloadPathForGame,
+  knownGames,
   installPath,
   installPathForGame,
   modPathsForGame,
@@ -100,6 +101,7 @@ import mergeMods, { MERGED_PATH } from './modMerging';
 import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 import { findModByRef } from './util/dependencies';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -1300,7 +1302,10 @@ function once(api: IExtensionApi) {
      cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
-      const downloadPath: string = downloadPathForGame(state, download.game[0]);
+      const rawGameId = Array.isArray(download?.game) ? download.game[0] : download?.game;
+      const games = knownGames(state);
+      const internalGameId = rawGameId ? (convertGameIdReverse(games, rawGameId) || rawGameId) : activeGameId(state);
+      const downloadPath: string = downloadPathForGame(state, internalGameId);
       const archivePath: string = path.join(downloadPath, download.localPath);
       const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
       return installManager.simulate(api, gameId, archivePath, tempPath,

@@ -321,13 +321,11 @@ interface IInstallerInfo {
   image: IHeaderImage;
 }
 
-export interface IBaseProps {
-}
-
 interface IConnectedProps {
   dataPath: string;
   installerInfo: IInstallerInfo;
   installerState: IInstallerState;
+  activeInstanceId: string | null;
 }
 
 interface IDialogState {
@@ -337,7 +335,7 @@ interface IDialogState {
   waiting: boolean;
 }
 
-type IProps = IBaseProps & IConnectedProps;
+type IProps = IConnectedProps;
 
 class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   constructor(props: IProps) {
@@ -358,11 +356,16 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     }
   }
   public render(): JSX.Element {
-    const { t, installerInfo, installerState } = this.props;
+    const { t, installerInfo, installerState, activeInstanceId } = this.props;
     const { currentDescription, waiting } = this.state;
-    if (!truthy(installerInfo) || !truthy(installerState)) {
+
+    if (!truthy(installerState)) {
       return null;
     }
+
+    // Use default values if installerInfo is missing
+    const moduleName = installerInfo?.moduleName || 'FOMOD Installer';
+    const hasImage = installerInfo?.image != null;
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
     const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
@@ -376,12 +379,12 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     return (
       <Modal
         id='fomod-installer-dialog'
-        show={true}
-        onHide={this.nop}
+        show={activeInstanceId != null}
+        onHide={this.cancel}
       >
         <Modal.Header>
           <Modal.Title>
-            {installerInfo.moduleName}
+            {moduleName}
           </Modal.Title>
           {steps[idx].name}
           <IconButton
@@ -448,14 +451,15 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   private nop = () => undefined;
 
   private select = (groupId: number, plugins: number[], valid: boolean) => {
-    const {events} = this.context.api;
-    const {installerState} = this.props;
+    const { events } = this.context.api;
+    const { activeInstanceId, installerState } = this.props;
+
     let newState = this.state;
     newState = valid
       ? removeValue(newState, ['invalidGroups'], groupId)
       : pushSafe(newState, ['invalidGroups'], groupId);
 
-    events.emit('fomod-installer-select',
+    events.emit(`fomod-installer-select-${activeInstanceId}`,
       installerState.installSteps[installerState.currentStep].id, groupId, plugins);
     this.setState(newState);
   }
@@ -464,7 +468,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     const { dataPath, installerInfo } = this.props;
     const { currentImage } = this.state;
 
-    const image = currentImage || installerInfo.image.path;
+    const image = currentImage || installerInfo?.image?.path;
 
     if (!truthy(dataPath) || !truthy(image)) {
       return null;
@@ -506,28 +510,41 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
   private prev = () => {
     const { events } = this.context.api;
+    const { activeInstanceId } = this.props;
     this.setState(update(this.state, {
       waiting: { $set: true },
     }));
-    events.emit('fomod-installer-continue', 'back', this.props.installerState.currentStep);
+
+    // Emit instance-specific event if instanceId is available, otherwise use global event
+    events.emit(`fomod-installer-continue-${activeInstanceId}`, 'back', this.props.installerState.currentStep);
   }
   private next = () => {
     const { events } = this.context.api;
+    const { activeInstanceId } = this.props;
     this.setState(update(this.state, {
       waiting: { $set: true },
     }));
-    events.emit('fomod-installer-continue', 'forward', this.props.installerState.currentStep);
+
+    events.emit(`fomod-installer-continue-${activeInstanceId}`, 'forward', this.props.installerState.currentStep);
   }
-  private cancel = () => this.context.api.events.emit('fomod-installer-cancel');
+  private cancel = () => {
+    const { activeInstanceId } = this.props;
+    this.context.api.events.emit(`fomod-installer-cancel-${activeInstanceId}`);
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  // Use instance-specific state if available, fall back to legacy state for compatibility
+  const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
+  const instanceData = state.session.fomod.installer.dialog.instances?.[activeInstanceId];
+
   return {
     dataPath: state.session.fomod.installer.dialog.dataPath || undefined,
-    installerInfo: state.session.fomod.installer.dialog.info || undefined,
-    installerState: state.session.fomod.installer.dialog.state || undefined,
+    installerInfo: instanceData?.info,
+    installerState: instanceData?.state,
+    activeInstanceId,
   };
 }
 
 export default translate(['common'])(connect(mapStateToProps)(
-  InstallerDialog)) as React.ComponentClass<IBaseProps>;
+  InstallerDialog)) as React.ComponentClass<{}>;
