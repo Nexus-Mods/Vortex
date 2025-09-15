@@ -2547,10 +2547,13 @@ class InstallManager {
           return Bluebird.resolve(undefined);
         })
         .then((updatedDependency: IDependency) => {
+          if (updatedDependency === undefined) {
+            return Bluebird.resolve(undefined);
+          }
           log('debug', 'done installing dependency', {
             ref: dep.reference.logicalFileName,
           });
-          return updatedDependency;
+          return Bluebird.resolve(updatedDependency);
         });
     })
       .finally(() => {
