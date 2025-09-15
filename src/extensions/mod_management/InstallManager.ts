@@ -150,7 +150,6 @@ import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
-import * as url from 'url';
 
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
@@ -2787,7 +2786,7 @@ class InstallManager {
           parsedUrl.searchParams.set('campaign', campaign);
         }
 
-        if (!api.events.emit('start-download', [url.format(parsedUrl)], {
+        if (!api.events.emit('start-download', [parsedUrl], {
           game: convertGameIdReverse(knownGames(api.store.getState()), lookupResult.domainName),
           source: lookupResult.source,
           name: lookupResult.logicalFileName,

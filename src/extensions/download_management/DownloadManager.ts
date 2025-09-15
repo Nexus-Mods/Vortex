@@ -977,7 +977,7 @@ class DownloadManager {
     let nameTemplate: string;
     let baseUrl: string;
     try {
-      baseUrl = urls[0].split('<')[0];
+      baseUrl = urls[0].toString().split('<')[0];
       nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
     } catch (err) {
       return Bluebird.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
@@ -1178,7 +1178,7 @@ class DownloadManager {
       const cache = this.mResolveCache[input];
       return Bluebird.resolve({ urls: cache.urls, meta: cache.meta });
     }
-    const protocol = url.parse(input).protocol;
+    const protocol = new URL(input).protocol;
     if (!truthy(protocol)) {
       return Bluebird.resolve({ urls: [], meta: {} });
     }
@@ -1242,7 +1242,7 @@ class DownloadManager {
             download.urls = resolved.updatedUrls;
           }
           if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
-            const [urlIn, fileName] = resolved.urls[0].split('<')[0].split('|');
+            const [urlIn, fileName] = resolved.urls[0].toString().split('<')[0].split('|');
             fileNameFromURL = (fileName !== undefined)
               ? fileName
               : decodeURI(path.basename(url.parse(urlIn).pathname));

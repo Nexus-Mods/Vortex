@@ -40,7 +40,14 @@ const applicationPath = isDevelopment
   : path.resolve(path.dirname(basePath), '..');
 
 if (isDevelopment) {
-  basePath = path.join(applicationPath, 'out');
+  // In Electron 37, app.getAppPath() may already point to the 'out' directory
+  // Check if basePath already ends with 'out' to avoid double 'out/out'
+  if (path.basename(basePath) === 'out') {
+    // basePath is already correct (points to out directory)
+    // Don't modify it
+  } else {
+    basePath = path.join(applicationPath, 'out');
+  }
 }
 
 // basePath is now the path that contains assets, bundledPlugins, index.html, main.js and so on
