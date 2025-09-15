@@ -59,3 +59,10 @@ log.txt
 
 # Claude Code directory
 .claude
+
+# playright stuff
+playwright/playwright-report/
+playwright/run-*
+playwright/test-results/
+playwright/.test-session
+playwright/.run-counter

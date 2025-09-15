@@ -357,3 +357,14 @@ export function getNativePlugins(gameMode: string): string[] {
   const x = gameSupport.get(gameMode, 'nativePlugins');
   return gameSupport.get(gameMode, 'nativePlugins') ?? [];
 }
+
+// Helper function to check if there's an active FOMOD dialog
+export function hasActiveFomodDialog(store): boolean {
+  const state = store.getState();
+  const activeInstanceId = state?.session?.fomod?.installer?.dialog?.activeInstanceId;
+  if (!activeInstanceId) {
+    return false;
+  } else {
+    return true;
+  }
+}

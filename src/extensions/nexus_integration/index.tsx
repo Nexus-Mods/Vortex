@@ -437,6 +437,10 @@ function safeParseInt(input: any, radix: number = 10): number {
   return res;
 }
 
+// Cache for processAttributes to avoid repeated API calls
+const attributesCache: { [key: string]: { data: any, expires: number } } = {};
+const ATTRIBUTES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
@@ -463,27 +467,64 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       ?? input.download?.modInfo?.nexus?.ids?.revisionNumber;
 
     if (!quick) {
+      let cacheKey: string = '';
       if (truthy(gameId) && truthy(modId) && truthy(fileId)) {
         // not entirely sure how this is possible
         if (Array.isArray(gameId)) {
           gameId = gameId[0];
         }
-        const domain = nexusGameId(gameById(state, gameId), gameId);
-        fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
-          .catch(err => {
-            log('error', 'failed to fetch nexus info during mod install',
-              { gameId, modId, fileId, error: err.message });
-            return undefined;
-          });
-      } else if (truthy(revisionNumber) || truthy(revisionId)) {
-        fetchPromise = getCollectionInfo(nexus, collectionSlug, revisionNumber, revisionId)
-          .catch(err => {
-            const errorLevel = ['COLLECTION_UNDER_MODERATION', 'NOT_FOUND'].includes(err.code) ? 'warn' : 'error';
-            log(errorLevel, 'failed to fetch nexus info about collection', {
-              gameId, collectionSlug, revisionNumber, error: err.message
+        cacheKey = `mod_${gameId}_${modId}_${fileId}`;
+        // Check cache first
+        const cached = attributesCache[cacheKey];
+        if (cached && Date.now() < cached.expires) {
+          fetchPromise = Promise.resolve(cached.data);
+        } else {
+          const domain = nexusGameId(gameById(state, gameId), gameId);
+
+          // Make API call non-blocking by not awaiting it immediately
+          fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
+            .then(result => {
+              // Cache the successful result
+              if (result) {
+                attributesCache[cacheKey] = {
+                  data: result,
+                  expires: Date.now() + ATTRIBUTES_CACHE_DURATION
+                };
+              }
+              return result;
+            })
+            .catch(err => {
+              log('error', 'failed to fetch nexus info during mod install',
+                { gameId, modId, fileId, error: err.message });
+              return undefined;
             });
-            return undefined;
-          });
+        }
+      } else if (truthy(revisionNumber) || truthy(revisionId)) {
+        cacheKey = `collection_${collectionSlug}_${revisionNumber || revisionId}`;
+
+        // Check cache first
+        const cached = attributesCache[cacheKey];
+        if (cached && Date.now() < cached.expires) {
+          fetchPromise = Promise.resolve(cached.data);
+        } else {
+          fetchPromise = getCollectionInfo(nexus, collectionSlug, revisionNumber, revisionId)
+            .then(result => {
+              // Cache the successful result
+              if (result) {
+                attributesCache[cacheKey] = {
+                  data: result,
+                  expires: Date.now() + ATTRIBUTES_CACHE_DURATION
+                };
+              }
+              return result;
+            })
+            .catch(err => {
+              const errorLevel = ['COLLECTION_UNDER_MODERATION', 'NOT_FOUND'].includes(err.code) ? 'warn' : 'error';
+              log(errorLevel, 'failed to fetch nexus info about collection', {
+                gameId, collectionSlug, revisionNumber, error: err.message });
+              return undefined;
+            });
+        }
       }
     }
   }
@@ -580,7 +621,9 @@ function makeNXMLinkCallback(api: IExtensionApi) {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
-      const isExtAvailable = api.getState().session.extensions.available
+
+      const state = api.getState();
+      const isExtAvailable = state.session.extensions.available
         .find(iter => iter.modId === nxmUrl.modId) !== undefined;
 
       if (nxmUrl.type === 'oauth') {
@@ -607,7 +650,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
           return Promise.resolve();
         }
       } else {
-        const { foregroundDL } = api.store.getState().settings.interface;
+        const { foregroundDL } = state.settings.interface;
         if (foregroundDL) {
           bringToFront();
         }
@@ -617,7 +660,6 @@ function makeNXMLinkCallback(api: IExtensionApi) {
       return;
     }
 
-    // test if we're already awaiting this link
     const awaitedIdx = awaitedLinks.findIndex(link =>
       (link.gameId === nxmUrl.gameId)
       && (link.modId === nxmUrl.modId)
@@ -635,9 +677,9 @@ function makeNXMLinkCallback(api: IExtensionApi) {
           return Promise.resolve(undefined);
         }
 
-        // downloading via a nxm link so definitively a nexus source
-        const actions: Action[] = [];
-        actions.push(setDownloadModInfo(dlId, 'source', 'nexus'));
+        const actions: Action[] = [
+          setDownloadModInfo(dlId, 'source', 'nexus')
+        ];
         if (nxmUrl.collectionId !== undefined) {
           actions.push(setDownloadModInfo(dlId, 'collectionId', nxmUrl.collectionId));
         }
@@ -647,15 +689,14 @@ function makeNXMLinkCallback(api: IExtensionApi) {
         if (nxmUrl.collectionSlug !== undefined) {
           actions.push(setDownloadModInfo(dlId, 'collectionSlug', nxmUrl.collectionSlug));
         }
-        if ((nxmUrl.revisionNumber !== undefined)
-          && (nxmUrl.revisionNumber > 0)) {
+        if ((nxmUrl.revisionNumber !== undefined) && (nxmUrl.revisionNumber > 0)) {
           actions.push(setDownloadModInfo(dlId, 'revisionNumber', nxmUrl.revisionNumber));
         }
         batchDispatch(api.store, actions);
 
         return new Promise((resolve, reject) => {
-          const state: IState = api.store.getState();
-          const download = state.persistent.downloads.files[dlId];
+          const currentState: IState = api.store.getState();
+          const download = currentState.persistent.downloads.files[dlId];
           if (download === undefined) {
             return reject(new ProcessCanceled(`Download not found "${dlId}"`));
           }
@@ -668,6 +709,8 @@ function makeNXMLinkCallback(api: IExtensionApi) {
                 resolve();
               }
             });
+          } else {
+            resolve();
           }
         });
       })
@@ -838,43 +881,44 @@ function checkModsWithMissingMeta(api: IExtensionApi) {
 
   const actions: Action[] = [];
 
-  Object.keys(mods)
-    .forEach(gameId => Object.keys(mods[gameId])
-      .forEach(modId => {
-        const mod = mods[gameId][modId];
-        if ((mod.archiveId === undefined)
-          || (downloads[mod.archiveId] === undefined)) {
-          return;
-        }
+  const allMods = Object.entries(mods).flatMap(([gameId, gameMods]) =>
+    Object.entries(gameMods).map(([modId, mod]) => ({ gameId, modId, mod }))
+  );
 
-        const before = actions.length;
+  for (const { gameId, modId, mod } of allMods) {
+    if ((mod.archiveId === undefined) || (downloads[mod.archiveId] === undefined)) {
+      continue;
+    }
 
-        const attributes = mod?.attributes ?? {};
-        const download = downloads[mod.archiveId];
-        let source = attributes.source;
-        if ((source === undefined) && (download.modInfo?.source === 'nexus')) {
-          actions.push(setModAttribute(gameId, modId, 'source', 'nexus'));
-          source = 'nexus';
-        }
-        if ((source === 'nexus') && (mod.archiveId !== undefined)) {
-          const ids = download.modInfo?.nexus?.ids ?? {};
-          if (!truthy(attributes.modId) && truthy(ids?.modId)) {
-            actions.push(setModAttribute(gameId, modId, 'modId', ids.modId));
-          }
-          if (!truthy(attributes.fileId) && truthy(ids?.fileId)) {
-            actions.push(setModAttribute(gameId, modId, 'fileId', ids.fileId));
-          }
-          if (!truthy(attributes.downloadGame) && truthy(ids?.gameId)) {
-            actions.push(setModAttribute(gameId, modId, 'downloadGame', ids.gameId));
-          }
-        }
+    const before = actions.length;
+    const attributes = mod?.attributes ?? {};
+    const download = downloads[mod.archiveId];
+    let source = attributes.source;
 
-        if (actions.length !== before) {
-          log('info', 'mod meta updating', {
-            modId, mod: JSON.stringify(mod), meta: JSON.stringify(download.modInfo)
-          });
-        }
-      }));
+    if ((source === undefined) && (download.modInfo?.source === 'nexus')) {
+      actions.push(setModAttribute(gameId, modId, 'source', 'nexus'));
+      source = 'nexus';
+    }
+
+    if ((source === 'nexus') && (mod.archiveId !== undefined)) {
+      const ids = download.modInfo?.nexus?.ids ?? {};
+      if (!truthy(attributes.modId) && truthy(ids?.modId)) {
+        actions.push(setModAttribute(gameId, modId, 'modId', ids.modId));
+      }
+      if (!truthy(attributes.fileId) && truthy(ids?.fileId)) {
+        actions.push(setModAttribute(gameId, modId, 'fileId', ids.fileId));
+      }
+      if (!truthy(attributes.downloadGame) && truthy(ids?.gameId)) {
+        actions.push(setModAttribute(gameId, modId, 'downloadGame', ids.gameId));
+      }
+    }
+
+    // Only log if we made changes (reduce JSON.stringify overhead)
+    if (actions.length !== before && process.env.NODE_ENV === 'development') {
+      log('info', 'mod meta updating', {
+        modId, mod: JSON.stringify(mod), meta: JSON.stringify(download.modInfo) });
+    }
+  }
 
   log('info', 'fixing mod meta info', { count: actions.length });
   batchDispatch(api.store, actions);
@@ -1296,7 +1340,11 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     });
   }
 
-  function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+// Cache download URLs to avoid repeated API calls for the same file
+const downloadURLCache: { [key: string]: { urls: string[], expires: number, meta: any } } = {};
+const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
     const state = api.getState();
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
@@ -1309,23 +1357,48 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       return Promise.reject(new ProcessCanceled('Not a download url'));
     }
 
+    // Create cache key
+    const cacheKey = url.type === 'mod'
+      ? `mod_${url.modId}_${url.fileId}_${pageId}`
+      : `collection_${url.collectionSlug}_${revNumber || 'latest'}`;
+
+    // Check cache first
+    const cached = downloadURLCache[cacheKey];
+    if (cached && Date.now() < cached.expires) {
+      return Promise.resolve({
+        urls: cached.urls,
+        updatedUrl: input,
+        meta: cached.meta,
+      });
+    }
+
     return Promise.resolve()
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
-          .then((res: IDownloadURL[]) =>
-          ({
-            urls: res.map(u => u.URI),
-            updatedUrl: input,
-            meta: {
-              source: 'nexus',
-              nexus: {
-                ids: {
-                  modId: url.modId,
-                  fileId: url.fileId,
+          .then((res: IDownloadURL[]) => {
+            const result = {
+              urls: res.map(u => u.URI),
+              updatedUrl: input,
+              meta: {
+                source: 'nexus',
+                nexus: {
+                  ids: {
+                    modId: url.modId,
+                    fileId: url.fileId,
+                  },
                 },
-              },
-            } as any,
-          }))
+              } as any,
+            };
+
+            // Cache the result
+            downloadURLCache[cacheKey] = {
+              urls: result.urls,
+              expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
+              meta: result.meta,
+            };
+
+            return result;
+          })
         : nexus.getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, revNumber)
           .catch(err => {
             err['collectionSlug'] = url.collectionSlug;
@@ -1336,21 +1409,32 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
             revisionInfo = revision;
             return nexus.getCollectionDownloadLink(revision.downloadLink);
           })
-          .then(downloadUrls => ({
-            urls: downloadUrls.map(iter => iter.URI),
-            updatedUrl: input,
-            meta: {
-              source: 'nexus',
-              nexus: {
-                ids: {
-                  collectionId: revisionInfo.collection.id,
-                  revisionId: revisionInfo.id,
-                  collectionSlug: url.collectionSlug,
-                  revisionNumber: url.revisionNumber,
+          .then(downloadUrls => {
+            const result = {
+              urls: downloadUrls.map(iter => iter.URI),
+              updatedUrl: input,
+              meta: {
+                source: 'nexus',
+                nexus: {
+                  ids: {
+                    collectionId: revisionInfo.collection.id,
+                    revisionId: revisionInfo.id,
+                    collectionSlug: url.collectionSlug,
+                    revisionNumber: url.revisionNumber,
+                  },
                 },
-              },
-            } as any,
-          })))
+              } as any,
+            };
+
+            // Cache the result
+            downloadURLCache[cacheKey] = {
+              urls: result.urls,
+              expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
+              meta: result.meta,
+            };
+
+            return result;
+          }))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
@@ -1453,9 +1537,6 @@ function onRetryImpl(resolveFunc: ResolveFunc, api: IExtensionApi, inputUrl: str
     return;
   }
 
-  const { url } = queueItem;
-
-
   resolveFunc(queueItem.input)
     .then(queueItem.res)
     .catch(queueItem.rej);
@@ -1475,9 +1556,6 @@ resolveFunc(resUrl, queueItem.name, queueItem.friendlyName)
 */
 
   //awaitedLinks.push(awaitedLink);
-
-  console.log('queueItem', JSON.stringify(queueItem));
-  //console.log('awaitedLink', JSON.stringify(awaitedLink));
 }
 
 function onCheckStatusImpl() {
@@ -1512,8 +1590,11 @@ function init(context: IExtensionContextExt): boolean {
       return;
     }
 
+    const gameMods = state.persistent.mods[gameMode];
+    if (!gameMods) return;
+
     for (const id of ids) {
-      const mod = getSafe(state, ['persistent', 'mods', gameMode, id], undefined);
+      const mod = gameMods[id];
       if (!mod || !mod.attributes?.url) {
         return;
       }
@@ -1526,16 +1607,14 @@ function init(context: IExtensionContextExt): boolean {
     if (gameMode === undefined) {
       return false;
     }
-    let supported = true;
-    for (const id of ids) {
-      const mod = getSafe(state, ['persistent', 'mods', gameMode, id], undefined);
-      if (!mod || mod?.attributes?.source !== 'website') {
-        supported = false;
-        continue;
-      }
-    }
 
-    return supported;
+    const gameMods = state.persistent.mods[gameMode];
+    if (!gameMods) return false;
+
+    return ids.every(id => {
+      const mod = gameMods[id];
+      return mod && mod.attributes?.source === 'website';
+    });
   })
   context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
     instanceIds => {

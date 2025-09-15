@@ -47,6 +47,11 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 }
 
 export function sanitizeExpression(fileName: string): string {
+  // Validate input - return empty string for invalid inputs
+  if (fileName == null || typeof fileName !== 'string') {
+    return '';
+  }
+
   // drop extension and anything like ".1" or " (1)" at the end which probaby
   // indicates duplicate downloads (either in our own format or common browser
   // style)
@@ -130,7 +135,7 @@ function hasIdentifyingMarker(mod: IModLookupInfo,
                               fuzzyVersion: boolean,
                               allowTag: boolean): boolean {
   return ((ref.id !== undefined) && (modId !== undefined))
-      || (!fuzzyVersion && (mod.fileMD5 !== undefined))
+      || (!fuzzyVersion && (ref.fileMD5 !== undefined) && (mod.fileMD5 !== undefined))
       || ((ref.fileExpression !== undefined) && ((mod.fileName ?? mod.name) !== undefined))
       || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
       || ((ref.repo !== undefined) && (mod.source !== undefined))
@@ -143,16 +148,21 @@ let onRefResolved: (gameId: string, modId: string,
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
                  source?: { gameId: string, modId: string },
                  fuzzyVersion?: boolean): boolean {
+  // Additional safety checks for ref parameter
+  if (!ref || typeof ref !== 'object' || Array.isArray(ref)) {
+    return false;
+  }
+
   // if an id is set, it has to match
-  if ((ref.id !== undefined)
-      && ((modId !== undefined) || idOnlyRef(ref))
+  if ((ref.id != null)
+      && ((modId != null) || idOnlyRef(ref))
       && (ref.id !== modId)) {
     return false;
   }
 
   // testing if a version is fuzzy can be quite expensive. When doing multiple comparisons
   // for the same reference, the caller can calculate it once and pass it in
-  if (fuzzyVersion === undefined) {
+  if (fuzzyVersion == null) {
     fuzzyVersion = isFuzzyVersion(ref.versionMatch);
   }
 
@@ -163,23 +173,23 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // Right installer choices?
-  if ((ref.installerChoices !== undefined && Object.keys(ref.installerChoices).length > 0) && (!_.isEqualWith(mod.installerChoices, ref.installerChoices))) {
+  if ((ref.installerChoices != null && Object.keys(ref.installerChoices).length > 0) && (!_.isEqualWith(mod.installerChoices, ref.installerChoices))) {
     return false;
   }
 
   // Right hashes?
-  if ((ref.fileList !== undefined && ref.fileList.length > 0) && (!_.isEqual(ref.fileList, mod.fileList))) {
+  if ((ref.fileList != null && ref.fileList.length > 0) && (!_.isEqual(ref.fileList, mod.fileList))) {
     return false;
   }
 
   // Right patches?
-  if ((ref.patches !== undefined && Object.keys(ref.patches).length > 0 && ref.tag !== undefined) && ((!_.isEqual(mod.patches, ref.patches)))) {
-    if (mod?.patches !== undefined && mod.referenceTag !== ref.tag) {
+  if ((ref.patches != null && Object.keys(ref.patches).length > 0 && ref.tag != null) && ((!_.isEqual(mod.patches, ref.patches)))) {
+    if (mod?.patches != null && mod.referenceTag !== ref.tag) {
       return false;
     }
   }
 
-  if (ref.tag !== undefined) {
+  if (ref.tag != null) {
     if (mod.referenceTag === ref.tag) {
       return true;
     } else {
@@ -198,7 +208,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
     return false;
   }
 
-  if (ref.repo !== undefined) {
+  if (ref.repo != null) {
     if ((ref.repo.repository !== mod.source)
         || (ref.repo.modId !== (mod.modId || -1).toString())) {
       return false;
@@ -212,21 +222,21 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // right file?
-  if (ref.logicalFileName !== undefined) {
-    if (mod.additionalLogicalFileNames !== undefined) {
+  if (ref.logicalFileName != null) {
+    if (mod.additionalLogicalFileNames != null) {
       if (!mod.additionalLogicalFileNames.includes(ref.logicalFileName)
-          && (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression === undefined)) {
+          && (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression == null)) {
         return false;
       }
-    } else if (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression === undefined) {
+    } else if (![mod.logicalFileName, mod.customFileName].includes(ref.logicalFileName) && ref.fileExpression == null) {
       return false;
     }
   }
 
-  if (ref.fileExpression !== undefined) {
+  if (ref.fileExpression != null) {
     // file expression is either an exact match against the mod name or
     // a glob match against the archive name (without file extension)
-    if (mod.fileName === undefined) {
+    if (mod.fileName == null) {
       if (mod.name !== ref.fileExpression) {
         return false;
       }
@@ -286,7 +296,11 @@ export function setResolvedCB(
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference,
                                  source?: { gameId: string, modId: string },
                                  fuzzyVersion?: boolean) {
-  if (mod === undefined) {
+  if (mod == null || typeof mod !== 'object' || Array.isArray(mod)) {
+    return false;
+  }
+
+  if (reference == null || typeof reference !== 'object' || Array.isArray(reference)) {
     return false;
   }
 
