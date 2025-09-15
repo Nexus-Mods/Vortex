@@ -47,6 +47,11 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 }
 
 export function sanitizeExpression(fileName: string): string {
+  // Validate input - return empty string for invalid inputs
+  if (fileName == null || typeof fileName !== 'string') {
+    return '';
+  }
+
   // drop extension and anything like ".1" or " (1)" at the end which probaby
   // indicates duplicate downloads (either in our own format or common browser
   // style)
@@ -130,7 +135,7 @@ function hasIdentifyingMarker(mod: IModLookupInfo,
                               fuzzyVersion: boolean,
                               allowTag: boolean): boolean {
   return ((ref.id !== undefined) && (modId !== undefined))
-      || (!fuzzyVersion && (mod.fileMD5 !== undefined))
+      || (!fuzzyVersion && (ref.fileMD5 !== undefined) && (mod.fileMD5 !== undefined))
       || ((ref.fileExpression !== undefined) && ((mod.fileName ?? mod.name) !== undefined))
       || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
       || ((ref.repo !== undefined) && (mod.source !== undefined))
@@ -143,6 +148,11 @@ let onRefResolved: (gameId: string, modId: string,
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
                  source?: { gameId: string, modId: string },
                  fuzzyVersion?: boolean): boolean {
+  // Additional safety checks for ref parameter
+  if (!ref || typeof ref !== 'object' || Array.isArray(ref)) {
+    return false;
+  }
+
   // if an id is set, it has to match
   if ((ref.id !== undefined)
       && ((modId !== undefined) || idOnlyRef(ref))
@@ -286,7 +296,11 @@ export function setResolvedCB(
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference,
                                  source?: { gameId: string, modId: string },
                                  fuzzyVersion?: boolean) {
-  if (mod === undefined) {
+  if (mod == null || typeof mod !== 'object' || Array.isArray(mod)) {
+    return false;
+  }
+
+  if (reference == null || typeof reference !== 'object' || Array.isArray(reference)) {
     return false;
   }
 
