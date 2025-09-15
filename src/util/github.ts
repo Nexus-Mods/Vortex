@@ -85,7 +85,7 @@ class GitHub {
 
   private static repoUrl() {
     
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
     const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
 
     return `https://api.github.com/repos/Nexus-Mods/${repo}`;
@@ -93,7 +93,7 @@ class GitHub {
 
   private static rawUrl() {
 
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
     const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
 
     return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;

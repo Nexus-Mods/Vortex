@@ -96,7 +96,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if ((nextProps.localState.preselectModId !== this.props.localState.preselectModId)
-        ?? (nextProps.localState.preselectModId !== undefined)) {
+        && (nextProps.localState.preselectModId !== undefined)) {
       this.nextState.selected = {
         modId: nextProps.localState.preselectModId,
         github: undefined,
