@@ -13,7 +13,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Test for Windows 10 SDK 19041
+    - name: Install Windows 10 SDK 19041
+      shell: powershell
+      run: |
+        $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
+        Write-Host "Installing $sdkComponent to existing VS 2022 Enterprise"
+        
+        # Use the VS installer that's already on the system to modify the existing installation
+        $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+        
+        # Get the instance ID of the installed VS Enterprise
+        $instanceId = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property instanceId
+        Write-Host "Modifying VS instance: $instanceId"
+        
+        # Add the specific SDK component to the existing installation
+        Start-Process -FilePath $vsInstaller -ArgumentList "modify", "--installPath", "C:\Program Files\Microsoft Visual Studio\2022\Enterprise", "--add", $sdkComponent, "--quiet" -Wait -PassThru
+        
+        Write-Host "Installation complete"
+    
+    - name: Verify Windows 10 SDK 19041
       shell: powershell
       run: |
         $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
@@ -36,10 +54,3 @@ jobs:
         Write-Host "Target component available: $componentFound"
         echo "SDK_AVAILABLE=$componentFound" >> $env:GITHUB_OUTPUT
       id: sdk-check
-    
-    - name: Install SDK if missing
-      if: steps.sdk-check.outputs.SDK_AVAILABLE == 'false'
-      shell: powershell
-      run: |
-        Write-Host "Installing $sdkComponent"
-        # Add installation command here
