@@ -13,24 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Install Windows 10 SDK 19041
-      shell: powershell
+    - name: Add Windows 10 SDK 19041 via VS Installer
       run: |
-        Write-Host "Installing Windows 10 SDK Build 19041 directly from Microsoft"
-        
-        # Download the Windows 10 SDK installer directly
-        $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2120843"  # Windows 10 SDK 2004 (19041)
-        $installerPath = "$env:TEMP\winsdksetup.exe"
-        
-        Write-Host "Downloading SDK installer..."
-        Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UserAgent "Mozilla/5.0"
-        
-        Write-Host "Installing SDK silently..."
-        # Install with minimal features - just what we need for building
-        $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart", "/features", "OptionId.WindowsPerformanceToolkit", "OptionId.WindowsDesktopDebuggers", "OptionId.AvrfExternal", "OptionId.NetFxSoftwareDevelopmentKit", "OptionId.WindowsSoftwareLogoToolkit", "OptionId.MSIInstallTools", "OptionId.SigningTools", "OptionId.UWPManaged", "OptionId.UWPCPP", "OptionId.UWPLocalized", "OptionId.DesktopCPPx86", "OptionId.DesktopCPPx64", "OptionId.DesktopCPParm", "OptionId.DesktopCPParm64" -Wait -PassThru
-        
-        Write-Host "SDK installer exit code: $($process.ExitCode)"
-        Write-Host "Installation complete"
+        & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" `
+          modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
+          --add Microsoft.VisualStudio.Component.Windows10SDK.19041 `
+          --quiet --norestart --nocache
+      shell: pwsh
     
     - name: Verify Windows 10 SDK 19041
       shell: powershell
