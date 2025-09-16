@@ -27,8 +27,7 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
             -products * `
-            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041 `
-            -format table
+            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041
         shell: pwsh
 
       - name: Verify Windows SDK 19041 installed
