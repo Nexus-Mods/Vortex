@@ -3,14 +3,70 @@ import * as os from 'os';
 import * as path from 'path';
 import { makeRemoteCallSync } from './electronRemote';
 
-const getElectronPath = (electron !== undefined) ?  makeRemoteCallSync('get-electron-path',
-  (electronIn, webContents, id: string) => {
-    // bit of a hack to roll getPath and getAppPath into a single call
-    if (id === '__app') {
-      return electronIn.app.getAppPath();
+// If running as a forked child process, read Electron app info from environment variables
+const electronAppInfoEnv: { [key: string]: string | undefined } = (typeof process.send === 'function') ? {
+  userData: process.env.ELECTRON_USERDATA,
+  temp: process.env.ELECTRON_TEMP,
+  appData: process.env.ELECTRON_APPDATA,
+  home: process.env.ELECTRON_HOME,
+  documents: process.env.ELECTRON_DOCUMENTS,
+  exe: process.env.ELECTRON_EXE,
+  desktop: process.env.ELECTRON_DESKTOP,
+  appPath: process.env.ELECTRON_APP_PATH,
+  assets: process.env.ELECTRON_ASSETS,
+  assets_unpacked: process.env.ELECTRON_ASSETS_UNPACKED,
+  modules: process.env.ELECTRON_MODULES,
+  modules_unpacked: process.env.ELECTRON_MODULES_UNPACKED,
+  bundledPlugins: process.env.ELECTRON_BUNDLEDPLUGINS,
+  locales: process.env.ELECTRON_LOCALES,
+  base: process.env.ELECTRON_BASE,
+  application: process.env.ELECTRON_APPLICATION,
+  package: process.env.ELECTRON_PACKAGE,
+  package_unpacked: process.env.ELECTRON_PACKAGE_UNPACKED,
+} : {};
+
+
+const getElectronPath = (() => {
+  if (electron && electron.app) {
+    return makeRemoteCallSync('get-electron-path',
+      (electronIn, webContents, id: string) => {
+        if (!electronIn.app) {
+          throw new Error('Electron app is not available. This code must run in the Electron main process.');
+        }
+        if (id === '__app') {
+          return electronIn.app.getAppPath();
+        }
+        return electronIn.app.getPath(id as any);
+      });
+  }
+  // Try to use @electron/remote or electron.remote in renderer
+  try {
+    // Prefer @electron/remote if available
+    const electronRemote = require('@electron/remote');
+    if (electronRemote && electronRemote.app) {
+      return (id: string) => {
+        if (id === '__app') return electronRemote.app.getAppPath();
+        return electronRemote.app.getPath(id);
+      };
     }
-    return electronIn.app.getPath(id as any);
-}) : (id: string) => os.tmpdir();
+  } catch {}
+  try {
+    // Fallback to electron.remote if available
+    if (electron && (electron as any).remote && (electron as any).remote.app) {
+      return (id: string) => {
+        if (id === '__app') return (electron as any).remote.app.getAppPath();
+        return (electron as any).remote.app.getPath(id);
+      };
+    }
+  } catch {}
+  // Fallback for non-Electron processes
+  return (id: string) => {
+    if (id === '__app') {
+      return path.resolve(__dirname, '..', '..');
+    }
+    return os.tmpdir();
+  };
+})();
 
 const setElectronPath = makeRemoteCallSync('set-electron-path',
   (electronIn, webContents, id: string, value: string) => {
@@ -138,7 +194,64 @@ export function setVortexPath(id: AppPath, value: string | (() => string)) {
  * This function aims to provide reasonable paths to application data independent
  * of any of that.
  */
+
+
 function getVortexPath(id: AppPath): string {
+  if (electronAppInfoEnv && Object.keys(electronAppInfoEnv).length > 0) {
+    if (id in electronAppInfoEnv && electronAppInfoEnv[id]) {
+      return electronAppInfoEnv[id]!;
+    }
+    // If not found, fall through to next logic (do not throw)
+  }
+  switch (id) {
+    case 'userData': return cachedAppPath('userData');
+    case 'temp': return cachedAppPath('temp');
+    case 'appData': return cachedAppPath('appData');
+    case 'localAppData': return localAppData();
+    case 'home': return cachedAppPath('home');
+    case 'documents': return cachedAppPath('documents');
+    case 'exe': return cachedAppPath('exe');
+    case 'desktop': return cachedAppPath('desktop');
+    case 'base': return basePath;
+    case 'application': return applicationPath;
+    case 'package': return getPackagePath(false);
+    case 'package_unpacked': return getPackagePath(true);
+    case 'assets': return getAssets(false);
+    case 'assets_unpacked': return getAssets(true);
+    case 'modules': return getModulesPath(false);
+    case 'modules_unpacked': return getModulesPath(true);
+    case 'bundledPlugins': return getBundledPluginsPath();
+    case 'locales': return getLocalesPath();
+  }
+}
+
+export async function getVortexPathAsync(id: AppPath): Promise<string> {
+  // 1. Forked child process: use env vars for all supported paths
+  if (electronAppInfoEnv && Object.keys(electronAppInfoEnv).length > 0) {
+    if (id in electronAppInfoEnv && electronAppInfoEnv[id]) {
+      return electronAppInfoEnv[id]!;
+    }
+    // If not found, fall through to next logic (do not throw)
+  }
+  // 2. Main/renderer process: use electronRemote IPC if available
+  try {
+    const { makeRemoteCallSync: makeRemoteCall } = require('./electronRemote');
+    const getElectronPathRemote = makeRemoteCall('get-electron-path',
+      (electronIn, webContents, id: string) => {
+        if (!electronIn.app) throw new Error('Electron app is not available.');
+        if (id === '__app') return electronIn.app.getAppPath();
+        return electronIn.app.getPath(id as any);
+      });
+    if (typeof getElectronPathRemote === 'function') {
+      if (id === 'base') {
+        return await Promise.resolve(getElectronPathRemote('__app'));
+      }
+      return await Promise.resolve(getElectronPathRemote(id));
+    }
+  } catch (e) {
+    // ignore, fallback to sync logic
+  }
+  // 3. Fallback to sync logic
   switch (id) {
     // c:\users\<username>\appdata\roaming\vortex
     case 'userData': return cachedAppPath('userData');

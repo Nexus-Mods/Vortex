@@ -1,3 +1,22 @@
+// IPC handler for forked child processes requesting Electron app info
+if (process.send) {
+  process.on('message', (msg: any) => {
+    if (msg && msg.type === 'get-app-info') {
+      // You can expand this object with more info as needed
+      process.send({
+        type: 'app-info',
+        appPath: app.getAppPath(),
+        userData: app.getPath('userData'),
+        temp: app.getPath('temp'),
+        appData: app.getPath('appData'),
+        exe: app.getPath('exe'),
+        home: app.getPath('home'),
+        documents: app.getPath('documents'),
+        desktop: app.getPath('desktop'),
+      });
+    }
+  });
+}
 /**
  * entry point for the main process
  */
@@ -126,6 +145,9 @@ import type { IPresetStep, IPresetStepCommandLine } from './types/IPreset';
 import commandLine, { relaunch } from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
+// Activate vortex-api polyfill for all extension requires as early as possible
+import extensionRequire from './util/extensionRequire';
+extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
 import {} from './util/extensionRequire';
 
 // required for the side-effect!
@@ -189,6 +211,24 @@ async function main(): Promise<void> {
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
+        ELECTRON_USERDATA: app.getPath('userData'),
+        ELECTRON_TEMP: app.getPath('temp'),
+        ELECTRON_APPDATA: app.getPath('appData'),
+        ELECTRON_HOME: app.getPath('home'),
+        ELECTRON_DOCUMENTS: app.getPath('documents'),
+        ELECTRON_EXE: app.getPath('exe'),
+        ELECTRON_DESKTOP: app.getPath('desktop'),
+        ELECTRON_APP_PATH: app.getAppPath(),
+        ELECTRON_ASSETS: path.join(app.getAppPath(), 'assets'),
+        ELECTRON_ASSETS_UNPACKED: path.join(app.getAppPath() + '.unpacked', 'assets'),
+        ELECTRON_MODULES: path.join(app.getAppPath(), 'node_modules'),
+        ELECTRON_MODULES_UNPACKED: path.join(app.getAppPath() + '.unpacked', 'node_modules'),
+        ELECTRON_BUNDLEDPLUGINS: path.join(app.getAppPath() + '.unpacked', 'bundledPlugins'),
+        ELECTRON_LOCALES: path.resolve(app.getAppPath(), '..', 'locales'),
+        ELECTRON_BASE: app.getAppPath(),
+        ELECTRON_APPLICATION: path.resolve(app.getAppPath(), '..'),
+        ELECTRON_PACKAGE: app.getAppPath(),
+        ELECTRON_PACKAGE_UNPACKED: path.join(path.dirname(app.getAppPath()), 'app.asar.unpacked'),
       },
       stdio: 'inherit',
       detached: true,
