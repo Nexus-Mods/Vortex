@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { tokens, ColorVariant, SizeVariant, RadiusVariant, TransitionVariant } from '../tokens';
+import { tokens, ColorVariant, SizeVariant, RadiusVariant, TransitionVariant, semanticColorTokens } from '../tokens';
 import { clsx, createVariantClasses } from '../utils';
 
 export interface IButtonProps {

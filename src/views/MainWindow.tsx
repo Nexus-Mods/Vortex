@@ -49,9 +49,12 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button as ReactButton, Nav } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
-import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
+import { addStyle } from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+import * as Tailwind from '../tailwind/components';
+import { tokens } from '../tailwind/tokens';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -86,7 +89,7 @@ export interface IConnectedProps {
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
   customTitlebar: boolean;
-  version: string;  
+  version: string;
   updateChannel: string;
   userInfo: any;
   notifications: INotification[];
@@ -233,7 +236,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, uiBlockers, visibleDialog } = this.props;
+      nextProfileId, uiBlockers, visibleDialog } = this.props;
     const { focused, hidpi, menuOpen } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
@@ -304,7 +307,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='center-content' style={{ flexDirection: 'column' }}>
           <h4>{
             t('Switching to Profile: {{name}}',
-            { replace: { name: profile?.name ?? t('None') } })
+              { replace: { name: profile?.name ?? t('None') } })
           }</h4>
           {control}
         </div>
@@ -318,7 +321,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t } = this.props;
     return (
       <div className='ui-blocker'>
-        <Icon name={blocker.icon}/>
+        <Icon name={blocker.icon} />
         <div className='blocker-text'>{blocker.description}</div>
         {blocker.mayCancel
           ? (
@@ -361,19 +364,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
-      return (<div className={className}/>);
+      return (<div className={className} />);
     }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
-        <div className='main-toolbar-right'>          
-          
+        <div className='main-toolbar-right'>
+
           <div className='toolbar-version'>
 
             {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
-            <Icon name='conflict'></Icon>
+              <Icon name='conflict'></Icon>
               <div className='toolbar-version-text'>Staging</div>
             </div> : null}
 
@@ -383,9 +386,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </div> : null}
 
             <div className={updateChannelClassName}>
-              { prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null }
+              {prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null}
               <div className='toolbar-version-text'>{version}</div>
-            </div>            
+            </div>
           </div>
 
           <div className='application-icons-group'>
@@ -394,7 +397,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               group='application-icons'
               staticElements={this.applicationButtons}
               t={t}
-            />          
+            />
             <NotificationButton id='notification-button' hide={switchingProfile} />
             <IconBar
               id='global-icons'
@@ -439,12 +442,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <>
         {/* Column 1: Spine Menu */}
-        <div className="tw:w-24 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-3 tw:gap-3">
-          <div className="tw:flex-shrink-0">
-            <ThemeSelector t={this.props.t} />
-          </div>
+        <div className="tw:w-24 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-3 tw:gap-3">          
           <div className="tw:flex-1 tw:flex tw:justify-center">
             <SpineQuickLauncher t={this.props.t} />
+          </div>
+          <div className="tw:flex-shrink-0">
+            <ThemeSelector t={this.props.t} />
           </div>
         </div>
 
@@ -487,18 +490,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <div className={sbClass}>
+        {/* <Tailwind.Button
+          variant='primary'
+          onClick={() => console.log('Tailwind Button Clicked')}
+        >
+          Tailwind Button
+        </Tailwind.Button> */}
         <div id='main-nav-container' ref={this.setSidebarRef}>
           {pageGroups.map(this.renderPageGroup)}
         </div>
-        <MainFooter slim={tabsMinimized} />
-        <Button
+        {/* <MainFooter slim={tabsMinimized} /> */}
+        {/* <Button
           tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
           id='btn-minimize-menu'
           onClick={this.toggleMenu}
           className='btn-menu-minimize'
         >
           <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
-        </Button>
+        </Button> */}
       </div>
     );
   }
@@ -537,7 +546,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <FlexLayout.Flex>
         <FlexLayout type='row' style={{ overflow: 'hidden' }}>
           <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
-            <div id='main-nav-container' ref={this.setSidebarRef}>
+            <div id='main-nav-container' ref={this.setSidebarRef} className="tw:w-44 tw:flex tw:flex-col tw:gap-8 tw:pt-8 tw:px-3">
               {pageGroups.map(this.renderPageGroup)}
             </div>
             <MainFooter slim={tabsMinimized} />
@@ -581,16 +590,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const showTitle = !tabsMinimized && (title !== undefined);
 
     return (
-      <div key={key}>
-        {showTitle ? <p className='main-nav-group-title'>{t(title)}</p> : null}
-        <Nav
-          bsStyle='pills'
-          stacked
-          activeKey={mainPage}
-          className='main-nav-group'
-        >
+      <div key={key} className="tw:flex tw:flex-col tw:gap-2">
+        {showTitle ? <p className={`main-nav-group-title ${tokens.textStyles.title.xs.semi} ${tokens.semanticColors.textStrong}`}>{t(title)}</p> : null}
+        <div className="tw:flex tw:flex-col tw:gap-1">
           {pages.map(this.renderPageButton)}
-        </Nav>
+        </div>
       </div>
     );
   }
@@ -604,23 +608,28 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage, idx: number) => {
-    const { t, secondaryPage } = this.props;
+    const { t, mainPage, secondaryPage } = this.props;
+    const isSelected = mainPage === page.id || secondaryPage === page.id;
+
+    const handlePageClick = (evt: React.MouseEvent<HTMLButtonElement>) => {
+      // Create a synthetic event that matches the expected signature
+      const syntheticEvent = {
+        ...evt,
+        currentTarget: { ...evt.currentTarget, id: page.id }
+      } as React.MouseEvent<any>;
+      this.handleClickPage(syntheticEvent);
+    };
+
     return (
-      <NavItem
-        id={page.id}
-        className={secondaryPage === page.id ? 'secondary' : undefined}
+      <Tailwind.SidebarPageButton
         key={page.id}
-        eventKey={page.id}
-        tooltip={t(page.title, { ns: page.namespace })}
-        placement='right'
-        onClick={this.handleClickPage}
-      >
-        <PageButton
-          t={this.props.t}
-          namespace={page.namespace}
-          page={page}
-        />
-      </NavItem>
+        t={t}
+        namespace={page.namespace}
+        page={page}
+        onClick={handlePageClick}
+        selected={isSelected}
+        className={secondaryPage === page.id ? 'secondary' : undefined}
+      />
     );
   }
 

@@ -144,12 +144,12 @@ class ThemeSelector extends React.Component<IThemeSelectorProps, IThemeSelectorS
         </button>
 
         {isOpen && (
-          <div className="tw:absolute tw:top-full tw:left-0 tw:right-0 tw:mt-1 tw:bg-white tw:dark:bg-gray-800 tw:rounded tw:shadow-lg tw:border tw:border-gray-300 tw:dark:border-gray-600 tw:z-50">
+          <div className="tw:absolute tw:bottom-full tw:left-0 tw:right-0 tw:mb-1 tw:bg-white tw:dark:bg-gray-800 tw:rounded tw:shadow-lg tw:border tw:border-gray-300 tw:dark:border-gray-600 tw:z-50">
             {themes.map((theme) => (
               <button
                 key={theme}
                 onClick={() => this.handleThemeChange(theme)}
-                className={`tw:w-full tw:p-2 tw:text-left tw:flex tw:items-center tw:gap-2 tw:text-sm tw:transition-colors hover:tw:bg-gray-100 tw:dark:hover:bg-gray-700 ${
+                className={`tw:w-full tw:p-2 tw:text-left tw:flex tw:items-center tw:gap-2 tw:text-sm tw:transition-colors tw:hover:bg-gray-100 tw:dark:hover:bg-gray-700 ${
                   currentTheme === theme
                     ? 'tw:bg-blue-50 tw:dark:bg-blue-900/20 tw:text-blue-600 tw:dark:text-blue-400'
                     : 'tw:text-gray-900 tw:dark:text-white'

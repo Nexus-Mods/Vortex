@@ -79,16 +79,7 @@ class SpineQuickLauncher extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <div className="tw:flex tw:flex-col tw:gap-1 tw:p-1">
-        {/* Test custom theme variables */}
-        <div className="tw:bg-primary tw:dark:bg-primary-dark tw:p-1 tw:rounded tw:mb-2">
-          <span className="tw:text-white tw:text-sm">Primary Theme Test</span>
-        </div>
-
-        <div className="tw:bg-accent tw:p-1 tw:rounded tw:mb-2">
-          <span className="tw:text-white tw:text-sm">Accent Theme Test</span>
-        </div>
-
+      <div className="tw:flex tw:flex-col tw:gap-3 tw:p-1">
         {Object.keys(gameIconCache)
           .filter(gameId => !getSafe(this.props.discoveredGames, [gameId, 'hidden'], false))
           .map(gameId => this.renderGameButton(gameId, gameId === game?.id))
@@ -122,11 +113,11 @@ class SpineQuickLauncher extends ComponentEx<IProps, IComponentState> {
           tw:bg-cover tw:bg-center tw:bg-no-repeat
           ${isActive
             ? 'tw:border-blue-400'
-            : 'tw:border-gray-600 hover:tw:border-gray-400 tw:dark:border-gray-500 tw:dark:hover:border-gray-300'
+            : 'tw:border-gray-600 tw:hover:border-gray-400 tw:dark:border-gray-500 tw:dark:hover:border-gray-300'
           }
           ${isDisabled
             ? 'tw:opacity-50 tw:cursor-not-allowed'
-            : 'hover:tw:scale-110 tw:cursor-pointer'
+            : 'tw:hover:scale-110 tw:cursor-pointer'
           }
         `}
         style={{
