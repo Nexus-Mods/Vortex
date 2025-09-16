@@ -182,6 +182,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       document.body.classList.add('custom-titlebar-body');
     }
 
+    // Add dark class to html element for Tailwind dark mode
+    document.documentElement.classList.add('dark');
+
     this.updateSize();
 
     window.addEventListener('resize', this.updateSize);
@@ -192,6 +195,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public componentWillUnmount() {
+    // Remove dark class from html element
+    document.documentElement.classList.remove('dark');
+
     window.removeEventListener('resize', this.updateSize);
     window.removeEventListener('keydown', this.updateModifiers);
     window.removeEventListener('keyup', this.updateModifiers);
@@ -259,7 +265,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           <MutexProvider value={this.mutexQueue}>
             <div
               key='main'
-              className={`${classes.join(' ')} dark`}
+              className={classes.join(' ')}
             >
               <div className='menu-layer' ref={this.setMenuLayer} />
               {/* New 3-column Tailwind grid layout */}
@@ -431,25 +437,25 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <>
         {/* Column 1: Spine Menu */}
-        <div className="tw:w-16 tw:bg-gray-100 dark:tw:bg-gray-900 tw:flex tw:flex-col tw:items-center">
+        <div className="tw:w-16 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:items-center">
           <SpineQuickLauncher t={this.props.t} />
         </div>
 
         {/* Column 2: Sidebar */}
-        <div className="tw:bg-gray-100 dark:tw:bg-gray-800">
+        <div className="tw:bg-gray-100 tw:dark:bg-gray-800">
           {this.renderSidebarColumn()}
         </div>
 
         {/* Column 3: Main Content Area (2 rows) */}
         <div className="tw:grid tw:grid-rows-[auto_1fr] tw:overflow-hidden">
           {/* Row 1: Titlebar */}
-          <div className="tw:bg-gray-200 dark:tw:bg-gray-700">
+          <div className="tw:bg-gray-200 tw:dark:bg-gray-700">
             {this.renderToolbar(false)}
             {customTitlebar ? <div className='dragbar' /> : null}
           </div>
 
           {/* Row 2: Main Content */}
-          <div className="tw:bg-white dark:tw:bg-gray-900 tw:overflow-hidden">
+          <div className="tw:bg-white tw:dark:bg-gray-900 tw:overflow-hidden">
             {this.renderMainContent()}
           </div>
         </div>

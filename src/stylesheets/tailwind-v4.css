@@ -1,44 +1,4 @@
 @import "tailwindcss" prefix(tw);
 
-@theme {
-  /* Add missing gray colors */
-  --color-gray-700: oklch(31.8% 0.032 256.848);
-  --color-gray-800: oklch(27.8% 0.033 256.848);
-
-  /* Optional: Add custom theme variables */
-  --color-brand: #0066cc;
-  --color-success: #10b981;
-
-  /* Dark mode configuration */
-  --default-transition-duration: 200ms;
-}
-
-/* Apply dark mode globally when .dark class is present */
-.dark {
-  color-scheme: dark;
-}
-
-/* Manual dark mode classes since Tailwind v4 dark variant isn't working */
-.dark .tw\:bg-gray-100 {
-  background-color: var(--tw-color-gray-800) !important;
-}
-
-.dark .tw\:bg-gray-200 {
-  background-color: var(--tw-color-gray-700) !important;
-}
-
-.dark .tw\:bg-white {
-  background-color: var(--tw-color-gray-900) !important;
-}
-
-.dark .tw\:bg-gray-800 {
-  background-color: var(--tw-color-gray-800) !important;
-}
-
-.dark .tw\:bg-gray-700 {
-  background-color: var(--tw-color-gray-700) !important;
-}
-
-.dark .tw\:bg-gray-900 {
-  background-color: var(--tw-color-gray-900) !important;
-}
+/* Make `dark:` respond to a `.dark` class on <html> or parent element */
+@variant dark (.dark &);
