@@ -148,6 +148,12 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
     .catch(err => {
       if (!dirExists
           && (Object.keys(state.persistent.downloads.files ?? {}).length === 0)) {
+        const id = shortid();
+        api.sendNotification({
+          id,
+          type: 'activity',
+          message: 'Creating downloads folder...',
+        });
         return fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
           .catch({ code: 'ENOENT' }, () => {
             // user has no downloads yet so no point asking them for the location but
@@ -160,6 +166,9 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
                 type: 'info',
                 message: 'Your download directory was misconfigured and got reset.',
               }));
+          })
+          .finally(() => {
+            api.dismissNotification(id);
           });
       }
 

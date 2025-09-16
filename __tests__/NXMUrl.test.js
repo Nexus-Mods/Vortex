@@ -7,7 +7,7 @@ describe('NXMUrl', () => {
     expect(url.modId).toBe(123);
     expect(url.fileId).toBe(456);
   });
-  it('throws on invalid url', () => {
+  it('throws on invalid URL', () => {
     expect(() => new NXMUrl('gugu')).toThrow(new Error('invalid nxm url "gugu"'));
   });
 });

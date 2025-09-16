@@ -20,7 +20,7 @@ jest.mock('../src/util/fs', () => {
 
   const insert = (filePath, info) => {
     const insertInner = (tgt, restPath) => {
-      let name = restPath[0];
+      const name = restPath[0];
       if (restPath.length === 1) {
         tgt[name] = info;
       } else {
@@ -35,12 +35,12 @@ jest.mock('../src/util/fs', () => {
 
   const get = (filePath) => {
     const getInner = (tgt, restPath) => {
-      let name = restPath[0];
+      const name = restPath[0];
       if (restPath.length === 1) {
         return tgt[name];
       } else {
         if (tgt[name] === undefined) {
-          let err = new Error('file not found');
+          const err = new Error('file not found');
           err.code = 'ENOENT';
           throw err;
         }
@@ -53,12 +53,12 @@ jest.mock('../src/util/fs', () => {
 
   const del = (filePath) => {
     const delInner = (tgt, restPath) => {
-      let name = restPath[0];
+      const name = restPath[0];
       if (restPath.length === 1) {
         delete tgt[name];
       } else {
         if (tgt[name] === undefined) {
-          let err = new Error('file not found');
+          const err = new Error('file not found');
           err.code = 'ENOENT';
           throw err;
         }
@@ -76,7 +76,7 @@ jest.mock('../src/util/fs', () => {
     getMock: () => fakeFS,
     resetMock: () => fakeFS = {},
     statAsync: (filePath) => {
-      let dev = filePath.startsWith(path.sep + 'drivea') ? 1 : 2;
+      const dev = filePath.startsWith(path.sep + 'drivea') ? 1 : 2;
       return Promise.resolve({
         dev,
         ino: Math.floor(Math.random() * 1000000),
@@ -110,9 +110,9 @@ jest.mock('../src/util/fs', () => {
       return Promise.resolve();
     }),
     rmdirAsync: jest.fn((dirPath) => {
-      let info = get(dirPath);
+      const info = get(dirPath);
       if (Object.keys(info).length > 0) {
-        let error = new Error('not empty');
+        const error = new Error('not empty');
         error.path = dirPath;
         error.code = 'ENOTEMPTY';
         return Promise.reject(error);
@@ -158,8 +158,8 @@ describe('testPathTransfer', () => {
     du.__setCheckResult(baseB, { free: 256 * MB });
     // Mock process.platform to be win32 so it uses device ID comparison
     
-      const expectedPath = process.platform === 'win32' ? path.sep + 'driveb' : '/driveb';
-      await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${expectedPath}" has insufficient space.`);
+    const expectedPath = process.platform === 'win32' ? path.sep + 'driveb' : '/driveb';
+    await expect(testPathTransfer(path.join(baseA, 'source'), path.join(baseB, 'destination'))).rejects.toThrow(`The partition "${expectedPath}" has insufficient space.`);
     
   });
 });

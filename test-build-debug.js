@@ -28,10 +28,10 @@ Promise.map(testProjects, (project) => {
   console.log(`  Would process ${project.name}`);
   return Promise.resolve('processed');
 }, { concurrency: 1 })
-.then((results) => {
-  console.log('\nResults:', results);
-  console.log('All projects processed successfully');
-})
-.catch((err) => {
-  console.error('Error:', err);
-});
+  .then((results) => {
+    console.log('\nResults:', results);
+    console.log('All projects processed successfully');
+  })
+  .catch((err) => {
+    console.error('Error:', err);
+  });

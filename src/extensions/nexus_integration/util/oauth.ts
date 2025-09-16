@@ -92,7 +92,8 @@ class OAuth {
 
   constructor(settings: IOAuthServerSettings) {
     this.mServerSettings = settings;
-    this.mLocalhost = url.parse(OAUTH_REDIRECT_URL).protocol === 'http:';
+    // Avoid parsing an invalid placeholder URL like "http://127.0.0.1:PORT" which triggers Node DeprecationWarning
+    this.mLocalhost = OAUTH_REDIRECT_URL.startsWith('http:');
   }
 
   public async sendRequest(

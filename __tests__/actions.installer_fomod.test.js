@@ -4,7 +4,7 @@ import * as actions from '../src/extensions/installer_fomod/actions/installerUI'
 
 describe('startDialog', () => {
   it('creates the correct action', () => {
-     let installerInfo = {
+    const installerInfo = {
       moduleName: 'test',
       image: 'test',
     };
@@ -28,7 +28,7 @@ describe('endDialog', () => {
 
 describe('setDialogState', () => {
   it('creates the correct action', () => {
-    let state = {
+    const state = {
       installSteps: [],
       currentStep: 1,
     };

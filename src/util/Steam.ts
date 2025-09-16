@@ -210,7 +210,7 @@ class Steam implements IGameStore {
   public reloadGames(): Bluebird<void> {
     this.mCache = this.parseManifests();
     return Bluebird.resolve();
-   }
+  }
 
   private async findMacOSSteamPath(): Promise<string | undefined> {
     // First check the standard macOS Steam path (Application Support)

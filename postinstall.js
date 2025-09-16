@@ -108,10 +108,10 @@ async function testURL(targetURL) {
       req.destroy();
       res.destroy();
     })
-    .on('error', err => {
-      console.log('connection failed', err);
-      resolve(false);
-    });
+      .on('error', err => {
+        console.log('connection failed', err);
+        resolve(false);
+      });
   });
 }
 

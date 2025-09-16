@@ -10,8 +10,8 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 const ignoreFileList = ['arctool.exe']
 
 if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
-  }
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
 async function sign(configuration) {
     
@@ -43,7 +43,7 @@ async function sign(configuration) {
 
     childProcess.execSync(`${setDir} && ${signFile} && ${moveFile}`, { stdio: 'inherit' });
   
-} else {
+  } else {
 
     console.warn(`sign.js - Can't sign file ${configuration.path}, missing value for:
         ${ES_USERNAME ? '' : 'ES_USERNAME'}

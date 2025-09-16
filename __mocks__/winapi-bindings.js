@@ -1,7 +1,7 @@
 'use strict';
 
-var util = require('util');
-var path = require('path');
+const util = require('util');
+const path = require('path');
 
 let error = undefined;
 

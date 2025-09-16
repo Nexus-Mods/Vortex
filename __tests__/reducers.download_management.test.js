@@ -9,9 +9,9 @@ const { terminate } = require('../src/util/errorHandling');
 
 describe('addLocalDownload', () => {
   it('adds the download', () => {
-    let input = { files: {} };
-    let result = stateReducer.reducers.ADD_LOCAL_DOWNLOAD(input,
-      { id: 'newid', game: 'game', localPath: 'localPath', fileSize: 42 }
+    const input = { files: {} };
+    const result = stateReducer.reducers.ADD_LOCAL_DOWNLOAD(input,
+                                                            { id: 'newid', game: 'game', localPath: 'localPath', fileSize: 42 }
     );
 
     _.unset(result, ['files', 'newid', 'fileTime']);

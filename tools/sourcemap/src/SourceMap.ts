@@ -22,10 +22,10 @@ class SourceMap {
 
   public lookup(position: IPosition): Promise<IPosition> {
     return this.getConsumer(position.source)
-    .then(consumer =>
-      (consumer === null)
-        ? position
-        : consumer.originalPositionFor({ line: position.line, column: position.column }));
+      .then(consumer =>
+        (consumer === null)
+          ? position
+          : consumer.originalPositionFor({ line: position.line, column: position.column }));
   }
 
   private findSourceMapPath(sourceData: string): string {

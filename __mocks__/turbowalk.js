@@ -1,6 +1,6 @@
 'use strict';
 
-let handlers = {
+const handlers = {
 };
 
 module.exports = {

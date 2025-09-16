@@ -57,7 +57,7 @@ describe('objDiff', () => {
     });
   });
   it('doesn\'t fail if object has overloaded hasOwnProperty', () => {
-    let res = util.objDiff({ hasOwnProperty: 1, foo: 42 }, { hasOwnProperty: 2, foo: 42 });
+    const res = util.objDiff({ hasOwnProperty: 1, foo: 42 }, { hasOwnProperty: 2, foo: 42 });
     expect(res).toEqual({
       '-hasOwnProperty': 1,
       '+hasOwnProperty': 2,

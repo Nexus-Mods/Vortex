@@ -28,7 +28,7 @@ function fixGameExtension(filePath) {
   // Fix duplicate imports and redefinitions
   if (duplicateImportPattern.test(content)) {
     content = content.replace(duplicateImportPattern, 
-      `const { isWindows, isMacOS, isLinux, platformSwitch } = require('../../../src/util/platform');\n\nconst platformSwitchLocal = (cases) => {`);
+                              `const { isWindows, isMacOS, isLinux, platformSwitch } = require('../../../src/util/platform');\n\nconst platformSwitchLocal = (cases) => {`);
     modified = true;
     console.log(`  - Fixed duplicate imports and redefinitions`);
   }
@@ -36,7 +36,7 @@ function fixGameExtension(filePath) {
   // Fix winapi declaration
   if (winapiPattern.test(content)) {
     content = content.replace(winapiPattern, 
-      `const winapi = isWindows() ? require('winapi-bindings') : undefined;`);
+                              `const winapi = isWindows() ? require('winapi-bindings') : undefined;`);
     modified = true;
     console.log(`  - Fixed winapi declaration`);
   }
