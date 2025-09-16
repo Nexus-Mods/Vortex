@@ -35,11 +35,13 @@ import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import SpineQuickLauncher from './SpineQuickLauncher';
+import ThemeSelector from './ThemeSelector';
 import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
 import { profileById } from '../util/selectors';
 import { getGame } from '../util/api';
+import { initializeTheme } from '../util/theme';
 
 import update from 'immutability-helper';
 import * as _ from 'lodash';
@@ -182,8 +184,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       document.body.classList.add('custom-titlebar-body');
     }
 
-    // Add dark class to html element for Tailwind dark mode
-    document.documentElement.classList.add('dark');
+    // Initialize theme system
+    initializeTheme();
 
     this.updateSize();
 
@@ -437,8 +439,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <>
         {/* Column 1: Spine Menu */}
-        <div className="tw:w-16 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:items-center">
-          <SpineQuickLauncher t={this.props.t} />
+        <div className="tw:w-48 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-2 tw:gap-2">
+          <div className="tw:flex-shrink-0">
+            <ThemeSelector t={this.props.t} />
+          </div>
+          <div className="tw:flex-1 tw:flex tw:justify-center">
+            <SpineQuickLauncher t={this.props.t} />
+          </div>
         </div>
 
         {/* Column 2: Sidebar */}
