@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     strategy:
       matrix:
@@ -24,67 +24,36 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Install Windows 10 SDK 19041
-        shell: powershell
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Print dotnet info
+        run: dotnet --info      
+
+      - name: Confirm SDK via vswhere
         run: |
-          Write-Host "Installing Windows 10 SDK Build 19041 directly from Microsoft"
-          
-          # Download the Windows 10 SDK installer directly
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2120843"  # Windows 10 SDK 2004 (19041)
-          $installerPath = "$env:TEMP\winsdksetup.exe"
-          
-          Write-Host "Downloading SDK installer..."
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UserAgent "Mozilla/5.0"
-          
-          Write-Host "Installing SDK silently..."
-          # Install with minimal features - just what we need for building
-          $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart", "/features", "OptionId.WindowsPerformanceToolkit", "OptionId.WindowsDesktopDebuggers", "OptionId.AvrfExternal", "OptionId.NetFxSoftwareDevelopmentKit", "OptionId.WindowsSoftwareLogoToolkit", "OptionId.MSIInstallTools", "OptionId.SigningTools", "OptionId.UWPManaged", "OptionId.UWPCPP", "OptionId.UWPLocalized", "OptionId.DesktopCPPx86", "OptionId.DesktopCPPx64", "OptionId.DesktopCPParm", "OptionId.DesktopCPParm64" -Wait -PassThru
-          
-          Write-Host "SDK installer exit code: $($process.ExitCode)"
-          Write-Host "Installation complete"
-      
-      - name: Verify Windows 10 SDK 19041
-        shell: powershell
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041
+        shell: pwsh
+
+      - name: Verify Windows SDK 19041 installed
         run: |
-          $sdkVersion = "10.0.19041.0"
-          Write-Host "Verifying SDK $sdkVersion installation..."
-          
-          # Check if SDK files are actually installed
-          $sdkPaths = @(
-              "${env:ProgramFiles(x86)}\Windows Kits\10",
-              "${env:ProgramFiles}\Windows Kits\10"
-          )
-          
-          $sdkFound = $false
-          foreach ($path in $sdkPaths) {
-              if (Test-Path $path) {
-                  Write-Host "Checking Windows Kits at: $path"
-                  
-                  $includeDir = Join-Path $path "Include\$sdkVersion"
-                  $binDir = Join-Path $path "bin\$sdkVersion"
-                  
-                  Write-Host "Include dir exists: $(Test-Path $includeDir)"
-                  Write-Host "Bin dir exists: $(Test-Path $binDir)"
-                  
-                  if ((Test-Path $includeDir) -and (Test-Path $binDir)) {
-                      Write-Host "SUCCESS: SDK $sdkVersion files found!"
-                      $sdkFound = $true
-                      
-                      # Show available versions for confirmation
-                      $allVersions = Get-ChildItem (Join-Path $path "Include") -Directory | Where-Object { $_.Name -like "10.0.*" }
-                      Write-Host "All available SDK versions:"
-                      foreach ($version in $allVersions) {
-                          $isNew = if ($version.Name -eq $sdkVersion) { " <- NEWLY INSTALLED" } else { "" }
-                          Write-Host "  $($version.Name)$isNew"
-                      }
-                      break
-                  }
-              }
+          if (Test-Path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0") {
+            Write-Host "Windows SDK 19041 installed"
+          } else {
+            Write-Error "Windows SDK 19041 NOT found"
+            exit 1
           }
-          
-          Write-Host "SDK $sdkVersion available: $sdkFound"
-          echo "SDK_AVAILABLE=$sdkFound" >> $env:GITHUB_OUTPUT
-        id: sdk-check
+        shell: pwsh
+
+      - name: List all Windows SDK versions
+        run: |
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
+            Where-Object { $_.PSIsContainer } |
+            Select-Object -ExpandProperty Name
+        shell: pwsh
 
       - name: Use Node.js
         uses: actions/setup-node@v4
