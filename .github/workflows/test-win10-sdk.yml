@@ -19,28 +19,21 @@ jobs:
         $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
         $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         
-        # Check which SDK components are installed
-        $sdkPatterns = @(
-            "Microsoft.VisualStudio.Component.Windows10SDK.22621",
-            "Microsoft.VisualStudio.Component.Windows10SDK.20348", 
-            "Microsoft.VisualStudio.Component.Windows10SDK.19041",
-            "Microsoft.VisualStudio.Component.Windows10SDK.18362",
-            "Microsoft.VisualStudio.Component.Windows11SDK.22000"
-        )
-        
-        Write-Host "Installed Windows SDK components:"
-        $componentFound = $false
-        foreach ($pattern in $sdkPatterns) {
-            $result = & $vswherePath -latest -products * -requires $pattern -format json
-            if ($result -and $result.Trim() -ne "" -and $result -ne "[]") {
-                Write-Host "FOUND: $pattern"
-                if ($pattern -eq $sdkComponent) {
-                    $componentFound = $true
-                }
-            }
+        # Show what SDK components are currently installed
+        Write-Host "All Windows SDK components installed:"
+        $allSDKs = & $vswherePath -products * -requires Microsoft.VisualStudio.Component.Windows10SDK -format json
+        if ($allSDKs -and $allSDKs.Trim() -ne "" -and $allSDKs -ne "[]") {
+            Write-Host "Generic Windows10SDK component found"
+        } else {
+            Write-Host "No Windows SDK components found"
         }
         
-        Write-Host "Target component $sdkComponent available: $componentFound"
+        # Check for our specific target component
+        Write-Host "Checking for target: $sdkComponent"
+        $result = & $vswherePath -latest -products * -requires $sdkComponent -format json
+        $componentFound = ($result -and $result.Trim() -ne "" -and $result -ne "[]")
+        
+        Write-Host "Target component available: $componentFound"
         echo "SDK_AVAILABLE=$componentFound" >> $env:GITHUB_OUTPUT
       id: sdk-check
     
