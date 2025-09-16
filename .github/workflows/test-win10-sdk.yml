@@ -26,10 +26,15 @@ jobs:
         $instanceId = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property instanceId
         Write-Host "Modifying VS instance: $instanceId"
         
-        # Add the specific SDK component to the existing installation
-        Start-Process -FilePath $vsInstaller -ArgumentList "modify", "--installPath", "C:\Program Files\Microsoft Visual Studio\2022\Enterprise", "--add", $sdkComponent, "--quiet" -Wait -PassThru
+        # Add the specific SDK component to the existing installation with more verbose output
+        $process = Start-Process -FilePath $vsInstaller -ArgumentList "modify", "--instanceId", $instanceId, "--add", $sdkComponent, "--quiet", "--wait" -Wait -PassThru
+        Write-Host "Installer exit code: $($process.ExitCode)"
         
-        Write-Host "Installation complete"
+        # Wait a bit longer for changes to take effect
+        Write-Host "Waiting for installation to complete..."
+        Start-Sleep -Seconds 30
+        
+        Write-Host "Installation process complete"
     
     - name: Verify Windows 10 SDK 19041
       shell: powershell
