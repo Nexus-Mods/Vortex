@@ -1,21 +1,19 @@
-name: Build
+name: Test SDK
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
+  test-sdk:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
+      - name: Show Windows version
+        run: |
+          Write-Host "OS version:"
+          [System.Environment]::OSVersion.VersionString
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer
+        shell: pwsh
 
       - name: Install Windows 10 SDK 19041
         run: |
@@ -39,6 +37,7 @@ jobs:
             Write-Host "Windows SDK 19041 installed"
           } else {
             Write-Error "Windows SDK 19041 NOT found"
+            exit 1
           }
         shell: pwsh
 
