@@ -262,7 +262,7 @@ function main(args) {
           }
         })
         ;
-  }, { concurrency: 10 }))
+  }, { concurrency: 1 }))
   .then(() => failed ? 1 : 0);
 }
 
