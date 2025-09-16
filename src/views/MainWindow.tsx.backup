@@ -34,7 +34,6 @@ import OverlayContainer from './OverlayContainer';
 import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
-import SpineQuickLauncher from './SpineQuickLauncher';
 import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
@@ -259,13 +258,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           <MutexProvider value={this.mutexQueue}>
             <div
               key='main'
-              className={`${classes.join(' ')} dark`}
+              className={classes.join(' ')}
             >
               <div className='menu-layer' ref={this.setMenuLayer} />
-              {/* New 3-column Tailwind grid layout */}
-              <div className="tw:grid tw:grid-cols-[auto_auto_1fr] tw:h-screen" id='main-window-content'>
-                {switchingProfile ? this.renderWait() : this.render3ColumnBody()}
-              </div>
+              <FlexLayout id='main-window-content' type='column'>
+                {this.renderToolbar(switchingProfile)}
+                {customTitlebar ? <div className='dragbar' /> : null}
+                {switchingProfile ? this.renderWait() : this.renderBody()}
+              </FlexLayout>
               <Dialog />
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
@@ -357,6 +357,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
+        <QuickLauncher t={t} />
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
@@ -423,83 +424,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         focused: { $set: false },
       });
     }
-  }
-
-  private render3ColumnBody() {
-    const { customTitlebar } = this.props;
-
-    return (
-      <>
-        {/* Column 1: Spine Menu */}
-        <div className="tw:w-16 tw:bg-gray-100 dark:tw:bg-gray-900 tw:flex tw:flex-col tw:items-center">
-          <SpineQuickLauncher t={this.props.t} />
-        </div>
-
-        {/* Column 2: Sidebar */}
-        <div className="tw:bg-gray-100 dark:tw:bg-gray-800">
-          {this.renderSidebarColumn()}
-        </div>
-
-        {/* Column 3: Main Content Area (2 rows) */}
-        <div className="tw:grid tw:grid-rows-[auto_1fr] tw:overflow-hidden">
-          {/* Row 1: Titlebar */}
-          <div className="tw:bg-gray-200 dark:tw:bg-gray-700">
-            {this.renderToolbar(false)}
-            {customTitlebar ? <div className='dragbar' /> : null}
-          </div>
-
-          {/* Row 2: Main Content */}
-          <div className="tw:bg-white dark:tw:bg-gray-900 tw:overflow-hidden">
-            {this.renderMainContent()}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  private renderSidebarColumn() {
-    const { t, objects, tabsMinimized } = this.props;
-    const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
-
-    const state = this.props.api.getState();
-    const profile = profileById(state, this.props.activeProfileId);
-    const game = profile !== undefined ? getGame(profile.gameId) : undefined;
-    const gameName = game?.shortName || game?.name || 'Mods';
-    const pageGroups = [
-      { title: undefined, key: 'dashboard' },
-      { title: 'General', key: 'global' },
-      { title: gameName, key: 'per-game' },
-      { title: 'About', key: 'support' },
-    ];
-
-    return (
-      <div className={sbClass}>
-        <div id='main-nav-container' ref={this.setSidebarRef}>
-          {pageGroups.map(this.renderPageGroup)}
-        </div>
-        <MainFooter slim={tabsMinimized} />
-        <Button
-          tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
-          id='btn-minimize-menu'
-          onClick={this.toggleMenu}
-          className='btn-menu-minimize'
-        >
-          <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
-        </Button>
-      </div>
-    );
-  }
-
-  private renderMainContent() {
-    const { objects } = this.props;
-    const pages = objects.map(obj => this.renderPage(obj));
-    pages.push(this.renderPage(this.settingsPage));
-
-    return (
-      <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {pages}
-      </DNDContainer>
-    );
   }
 
   private renderBody() {
