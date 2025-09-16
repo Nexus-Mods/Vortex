@@ -35,23 +35,42 @@ jobs:
     - name: Verify Windows 10 SDK 19041
       shell: powershell
       run: |
-        $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
-        $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $sdkVersion = "10.0.19041.0"
+        Write-Host "Verifying SDK $sdkVersion installation..."
         
-        # Show what SDK components are currently installed
-        Write-Host "All Windows SDK components installed:"
-        $allSDKs = & $vswherePath -products * -requires Microsoft.VisualStudio.Component.Windows10SDK -format json
-        if ($allSDKs -and $allSDKs.Trim() -ne "" -and $allSDKs -ne "[]") {
-            Write-Host "Generic Windows10SDK component found"
-        } else {
-            Write-Host "No Windows SDK components found"
+        # Check if SDK files are actually installed
+        $sdkPaths = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10",
+            "${env:ProgramFiles}\Windows Kits\10"
+        )
+        
+        $sdkFound = $false
+        foreach ($path in $sdkPaths) {
+            if (Test-Path $path) {
+                Write-Host "Checking Windows Kits at: $path"
+                
+                $includeDir = Join-Path $path "Include\$sdkVersion"
+                $binDir = Join-Path $path "bin\$sdkVersion"
+                
+                Write-Host "Include dir exists: $(Test-Path $includeDir)"
+                Write-Host "Bin dir exists: $(Test-Path $binDir)"
+                
+                if ((Test-Path $includeDir) -and (Test-Path $binDir)) {
+                    Write-Host "SUCCESS: SDK $sdkVersion files found!"
+                    $sdkFound = $true
+                    
+                    # Show available versions for confirmation
+                    $allVersions = Get-ChildItem (Join-Path $path "Include") -Directory | Where-Object { $_.Name -like "10.0.*" }
+                    Write-Host "All available SDK versions:"
+                    foreach ($version in $allVersions) {
+                        $isNew = if ($version.Name -eq $sdkVersion) { " <- NEWLY INSTALLED" } else { "" }
+                        Write-Host "  $($version.Name)$isNew"
+                    }
+                    break
+                }
+            }
         }
         
-        # Check for our specific target component
-        Write-Host "Checking for target: $sdkComponent"
-        $result = & $vswherePath -latest -products * -requires $sdkComponent -format json
-        $componentFound = ($result -and $result.Trim() -ne "" -and $result -ne "[]")
-        
-        Write-Host "Target component available: $componentFound"
-        echo "SDK_AVAILABLE=$componentFound" >> $env:GITHUB_OUTPUT
+        Write-Host "SDK $sdkVersion available: $sdkFound"
+        echo "SDK_AVAILABLE=$sdkFound" >> $env:GITHUB_OUTPUT
       id: sdk-check
