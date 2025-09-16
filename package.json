@@ -203,7 +203,7 @@
     "tslint-eslint-rules": "^5.4.0",
     "tslint-react": "^4.1.0",
     "typescript": "^5.0.0",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "Nexus-Mods/vortex-api#fix-node22",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
     "webpack-node-externals": "^3.0.0"
