@@ -60,7 +60,7 @@ jobs:
             Write-Host "vswhere not found at expected path"
         }
         
-        # Check SDK files
+        # Check SDK files with details
         $sdkPaths = @(
             "${env:ProgramFiles(x86)}\Windows Kits\10",
             "${env:ProgramFiles}\Windows Kits\10"
@@ -69,14 +69,30 @@ jobs:
         foreach ($path in $sdkPaths) {
             if (Test-Path $path) {
                 Write-Host "Found Windows Kits at $path"
-                $includeDir = Join-Path $path "Include\$sdkVersion"
-                $binDir = Join-Path $path "bin\$sdkVersion"
                 
-                if ((Test-Path $includeDir) -and (Test-Path $binDir)) {
-                    Write-Host "Found SDK $sdkVersion files"
-                    $sdkFound = $true
-                    break
+                # Show what SDK versions are actually available
+                $includeDir = Join-Path $path "Include"
+                if (Test-Path $includeDir) {
+                    $availableVersions = Get-ChildItem $includeDir -Directory | Where-Object { $_.Name -like "10.0.*" }
+                    Write-Host "Available SDK versions:"
+                    foreach ($version in $availableVersions) {
+                        Write-Host "  $($version.Name)"
+                    }
+                    
+                    # Check for our target version
+                    $targetInclude = Join-Path $includeDir $sdkVersion
+                    $targetBin = Join-Path $path "bin\$sdkVersion"
+                    
+                    if ((Test-Path $targetInclude) -and (Test-Path $targetBin)) {
+                        Write-Host "Found target SDK $sdkVersion files"
+                        $sdkFound = $true
+                    } else {
+                        Write-Host "Target SDK $sdkVersion files not found"
+                    }
+                } else {
+                    Write-Host "No Include directory found"
                 }
+                break
             }
         }
         
