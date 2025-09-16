@@ -15,10 +15,6 @@ jobs:
   build:
     runs-on: windows-2022
 
-    strategy:
-      matrix:
-        dotnet-version: [ 6.0.x ]
-
     steps:   
       - uses: actions/checkout@v4
         with:
@@ -72,3 +68,4 @@ jobs:
 
       - name: Test
         run: yarn test
+
