@@ -16,32 +16,21 @@ jobs:
     - name: Install Windows 10 SDK 19041
       shell: powershell
       run: |
-        Write-Host "Checking what SDK components are available to install..."
+        Write-Host "Installing Windows 10 SDK Build 19041 directly from Microsoft"
         
-        # First, let's see what components are available
-        $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-        $instanceId = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property instanceId
+        # Download the Windows 10 SDK installer directly
+        $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2120843"  # Windows 10 SDK 2004 (19041)
+        $installerPath = "$env:TEMP\winsdksetup.exe"
         
-        Write-Host "Available SDK components:"
-        # Try different component ID patterns that might work
-        $possibleComponents = @(
-            "Microsoft.VisualStudio.Component.Windows10SDK.19041",
-            "Microsoft.VisualStudio.Component.Windows10SDK.20348", 
-            "Microsoft.VisualStudio.Component.Windows11SDK.22000",
-            "Microsoft.VisualStudio.Component.Windows11SDK.22621"
-        )
+        Write-Host "Downloading SDK installer..."
+        Invoke-WebRequest -Uri $sdkUrl -OutFile $installerPath -UserAgent "Mozilla/5.0"
         
-        foreach ($component in $possibleComponents) {
-            Write-Host "Trying to install: $component"
-            $process = Start-Process -FilePath $vsInstaller -ArgumentList "modify", "--instanceId", $instanceId, "--add", $component, "--quiet", "--wait" -Wait -PassThru
-            Write-Host "  Exit code for $component : $($process.ExitCode)"
-            if ($process.ExitCode -eq 0) {
-                Write-Host "  SUCCESS: $component installed"
-                break
-            }
-        }
+        Write-Host "Installing SDK silently..."
+        # Install with minimal features - just what we need for building
+        $process = Start-Process -FilePath $installerPath -ArgumentList "/quiet", "/norestart", "/features", "OptionId.WindowsPerformanceToolkit", "OptionId.WindowsDesktopDebuggers", "OptionId.AvrfExternal", "OptionId.NetFxSoftwareDevelopmentKit", "OptionId.WindowsSoftwareLogoToolkit", "OptionId.MSIInstallTools", "OptionId.SigningTools", "OptionId.UWPManaged", "OptionId.UWPCPP", "OptionId.UWPLocalized", "OptionId.DesktopCPPx86", "OptionId.DesktopCPPx64", "OptionId.DesktopCPParm", "OptionId.DesktopCPParm64" -Wait -PassThru
         
-        Write-Host "Installation attempts complete"
+        Write-Host "SDK installer exit code: $($process.ExitCode)"
+        Write-Host "Installation complete"
     
     - name: Verify Windows 10 SDK 19041
       shell: powershell
