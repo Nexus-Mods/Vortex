@@ -1,7 +1,7 @@
 name: Test Windows 10 SDK Component
 
 on:
-  workflow_dispatch:  # Manual trigger for testing
+  workflow_dispatch:
   push:
     branches: [ main ]
 
@@ -13,187 +13,81 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Test for Windows 10 SDK Component
+    - name: Test for Windows 10 SDK 19041
       shell: powershell
       run: |
-        Write-Host "=== Testing for Windows 10 SDK Component ===" -ForegroundColor Cyan
-        
-        # Define the specific SDK component you're looking for
         $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
-        $sdkVersion = "10.0.19041"  # Build 2004 / 20H1
+        $sdkVersion = "10.0.19041.0"
+        $componentFound = $false
+        $sdkFound = $false
         
-        # Method 1: Check via Visual Studio Installer (vswhere)
-        Write-Host "`n--- Checking Visual Studio Components via vswhere ---" -ForegroundColor Yellow
+        Write-Host "Testing for $sdkComponent"
+        
+        # Check via vswhere
         $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         if (Test-Path $vswherePath) {
-            Write-Host "✓ vswhere.exe found, checking for component..." -ForegroundColor Green
-            
-            # Check for the specific component
-            $vsInstances = & $vswherePath -latest -products * -requires $sdkComponent -format json | ConvertFrom-Json
-            if ($vsInstances -and $vsInstances.Count -gt 0) {
-                Write-Host "✓ Component $sdkComponent found in Visual Studio installation!" -ForegroundColor Green
-                foreach ($instance in $vsInstances) {
-                    Write-Host "  VS Instance: $($instance.displayName) ($($instance.installationVersion))" -ForegroundColor White
-                    Write-Host "  Install Path: $($instance.installationPath)" -ForegroundColor White
+            Write-Host "Checking via vswhere"
+            try {
+                $vsInstances = & $vswherePath -latest -products * -requires $sdkComponent -format json | ConvertFrom-Json
+                if ($vsInstances -and $vsInstances.Count -gt 0) {
+                    Write-Host "Component found in VS installation"
+                    $componentFound = $true
+                } else {
+                    Write-Host "Component not found in VS installation"
                 }
-                $componentFound = $true
-            } else {
-                Write-Host "✗ Component $sdkComponent NOT found in any VS installation" -ForegroundColor Red
-                $componentFound = $false
+            } catch {
+                Write-Host "vswhere check failed: $_"
             }
         } else {
-            Write-Host "✗ vswhere.exe not found - Visual Studio may not be installed" -ForegroundColor Red
-            $componentFound = $false
+            Write-Host "vswhere not found"
         }
         
-        # Method 2: Check SDK Registry for specific version
-        Write-Host "`n--- Checking SDK Registry for version $sdkVersion ---" -ForegroundColor Yellow
-        $regPath = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0"
-        if (Test-Path $regPath) {
-            $sdkInfo = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
-            Write-Host "✓ Windows 10 SDK registry entry found" -ForegroundColor Green
-            Write-Host "Installation Folder: $($sdkInfo.InstallationFolder)" -ForegroundColor White
-            Write-Host "Product Version: $($sdkInfo.ProductVersion)" -ForegroundColor White
-            
-            # Check if the specific version we need is available
-            if ($sdkInfo.ProductVersion -like "*19041*" -or $sdkInfo.ProductVersion -eq "10.0.19041") {
-                Write-Host "✓ SDK version 19041 (2004) detected!" -ForegroundColor Green
-            }
-        } else {
-            Write-Host "✗ Windows 10 SDK registry entry not found" -ForegroundColor Red
-        }
-        
-        # Method 3: Check Program Files for specific SDK version
-        Write-Host "`n--- Checking Program Files for SDK 19041 ---" -ForegroundColor Yellow
-        $programFiles = @(
+        # Check SDK files
+        $sdkPaths = @(
             "${env:ProgramFiles(x86)}\Windows Kits\10",
             "${env:ProgramFiles}\Windows Kits\10"
         )
         
-        $sdkFound = $false
-        foreach ($path in $programFiles) {
+        foreach ($path in $sdkPaths) {
             if (Test-Path $path) {
-                Write-Host "✓ Found Windows Kits at: $path" -ForegroundColor Green
+                Write-Host "Found Windows Kits at $path"
+                $includeDir = Join-Path $path "Include\$sdkVersion"
+                $binDir = Join-Path $path "bin\$sdkVersion"
                 
-                # Check for specific version 19041
-                $includeDir = Join-Path $path "Include"
-                $binDir = Join-Path $path "bin"
-                
-                if (Test-Path $includeDir) {
-                    $version19041 = Join-Path $includeDir "10.0.19041.0"
-                    if (Test-Path $version19041) {
-                        Write-Host "✓ Found SDK 19041 include files at: $version19041" -ForegroundColor Green
-                        $sdkFound = $true
-                    } else {
-                        Write-Host "✗ SDK 19041 include files not found" -ForegroundColor Red
-                    }
-                    
-                    # List available versions
-                    $versions = Get-ChildItem $includeDir -Directory | Where-Object { $_.Name -like "10.0.*" }
-                    Write-Host "Available SDK versions:" -ForegroundColor White
-                    foreach ($version in $versions) {
-                        $isTarget = if ($version.Name -eq "10.0.19041.0") { " ← TARGET" } else { "" }
-                        Write-Host "  - $($version.Name)$isTarget" -ForegroundColor $(if ($isTarget) { "Green" } else { "Gray" })
-                    }
-                }
-                
-                # Check bin directory for tools
-                if (Test-Path $binDir) {
-                    $bin19041 = Join-Path $binDir "10.0.19041.0"
-                    if (Test-Path $bin19041) {
-                        Write-Host "✓ Found SDK 19041 tools at: $bin19041" -ForegroundColor Green
-                        
-                        # Check for x64 tools
-                        $x64Tools = Join-Path $bin19041 "x64"
-                        if (Test-Path $x64Tools) {
-                            Write-Host "✓ x64 tools available" -ForegroundColor Green
-                        }
-                    } else {
-                        Write-Host "✗ SDK 19041 tools not found" -ForegroundColor Red
-                    }
+                if ((Test-Path $includeDir) -and (Test-Path $binDir)) {
+                    Write-Host "Found SDK $sdkVersion files"
+                    $sdkFound = $true
+                    break
                 }
             }
         }
         
-        if (-not $sdkFound) {
-            Write-Host "✗ Windows 10 SDK 19041 not found in Program Files" -ForegroundColor Red
-        }
-        
-        # Method 4: Check for specific SDK 19041 tools in PATH and common locations
-        Write-Host "`n--- Checking for SDK 19041 Specific Tools ---" -ForegroundColor Yellow
-        
-        # Common SDK tools that should be available with this component
-        $sdkToolsToCheck = @{
-            "rc.exe" = "Resource Compiler"
-            "mt.exe" = "Manifest Tool" 
-            "signtool.exe" = "Sign Tool"
-            "midl.exe" = "MIDL Compiler"
-            "lib.exe" = "Library Manager"
-        }
-        
+        # Check for key tools
+        $tools = @("rc.exe", "mt.exe", "lib.exe")
         $toolsFound = 0
-        foreach ($tool in $sdkToolsToCheck.Keys) {
-            $found = Get-Command $tool -ErrorAction SilentlyContinue
-            if ($found) {
-                Write-Host "✓ Found $tool ($($sdkToolsToCheck[$tool])) at: $($found.Source)" -ForegroundColor Green
+        foreach ($tool in $tools) {
+            if (Get-Command $tool -ErrorAction SilentlyContinue) {
                 $toolsFound++
-            } else {
-                Write-Host "✗ $tool ($($sdkToolsToCheck[$tool])) not found in PATH" -ForegroundColor Red
-                
-                # Try to find it in the SDK bin directory
-                foreach ($programFiles in @("${env:ProgramFiles(x86)}\Windows Kits\10", "${env:ProgramFiles}\Windows Kits\10")) {
-                    $sdkBinPath = Join-Path $programFiles "bin\10.0.19041.0\x64\$tool"
-                    if (Test-Path $sdkBinPath) {
-                        Write-Host "  → Found at SDK location: $sdkBinPath" -ForegroundColor Yellow
-                        break
-                    }
-                }
             }
         }
         
-        # Set final status based on component and file system checks
-        Write-Host "`n=== Summary ===" -ForegroundColor Cyan
-        $finalStatus = ($componentFound -or ($sdkFound -and $toolsFound -ge 2))
+        Write-Host "Tools found: $toolsFound of $($tools.Count)"
         
-        if ($finalStatus) {
-            Write-Host "✓ Microsoft.VisualStudio.Component.Windows10SDK.19041 is available!" -ForegroundColor Green
-            Write-Host "  Component found via VS: $componentFound" -ForegroundColor White
-            Write-Host "  SDK files found: $sdkFound" -ForegroundColor White  
-            Write-Host "  Tools found in PATH: $toolsFound/$($sdkToolsToCheck.Count)" -ForegroundColor White
-            echo "SDK_AVAILABLE=true" >> $env:GITHUB_OUTPUT
-        } else {
-            Write-Host "✗ Microsoft.VisualStudio.Component.Windows10SDK.19041 is NOT available" -ForegroundColor Red
-            Write-Host "  Component found via VS: $componentFound" -ForegroundColor White
-            Write-Host "  SDK files found: $sdkFound" -ForegroundColor White
-            Write-Host "  Tools found in PATH: $toolsFound/$($sdkToolsToCheck.Count)" -ForegroundColor White
-            echo "SDK_AVAILABLE=false" >> $env:GITHUB_OUTPUT
-        }
+        # Final result
+        $available = $componentFound -or ($sdkFound -and ($toolsFound -ge 2))
+        
+        Write-Host "SDK Available: $available"
+        Write-Host "Component via VS: $componentFound"  
+        Write-Host "SDK files found: $sdkFound"
+        
+        echo "SDK_AVAILABLE=$available" >> $env:GITHUB_OUTPUT
       id: sdk-check
     
-    - name: Show SDK Status
-      shell: powershell
-      run: |
-        $sdkAvailable = "${{ steps.sdk-check.outputs.SDK_AVAILABLE }}"
-        Write-Host "SDK Available: $sdkAvailable" -ForegroundColor $(if ($sdkAvailable -eq "true") { "Green" } else { "Red" })
-        
-        if ($sdkAvailable -eq "false") {
-            Write-Host "Next step: Add SDK installation step to workflow" -ForegroundColor Yellow
-        }
-    
-    # Conditional step - only runs if SDK component is missing  
-    - name: Install Windows 10 SDK 19041 (if missing)
+    - name: Install SDK if missing
       if: steps.sdk-check.outputs.SDK_AVAILABLE == 'false'
       shell: powershell
       run: |
-        Write-Host "SDK component Microsoft.VisualStudio.Component.Windows10SDK.19041 not found" -ForegroundColor Yellow
-        Write-Host "Installation options:" -ForegroundColor White
-        Write-Host "1. Via Visual Studio Build Tools:" -ForegroundColor Gray
-        Write-Host "   vs_buildtools.exe --add Microsoft.VisualStudio.Component.Windows10SDK.19041" -ForegroundColor Gray
-        Write-Host "2. Via Chocolatey:" -ForegroundColor Gray  
-        Write-Host "   choco install windows-sdk-10-version-2004-all" -ForegroundColor Gray
-        Write-Host "3. Direct download from Microsoft" -ForegroundColor Gray
-        
-        # Example implementation - uncomment and modify as needed:
-        # Write-Host "Installing via Visual Studio Build Tools..." -ForegroundColor Green
-        # Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
-        # .\vs_buildtools.exe --wait --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --quiet
+        Write-Host "SDK component missing - installation needed"
+        Write-Host "Options:"
+        Write-Host "1. vs_buildtools.exe --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
+        Write-Host "2. choco install windows-sdk-10-version-2004-all"
