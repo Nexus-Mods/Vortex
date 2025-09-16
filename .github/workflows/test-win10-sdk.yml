@@ -23,23 +23,41 @@ jobs:
         
         Write-Host "Testing for $sdkComponent"
         
-        # Check via vswhere
+        # Check via vswhere with detailed output
         $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         if (Test-Path $vswherePath) {
-            Write-Host "Checking via vswhere"
-            try {
-                $vsInstances = & $vswherePath -latest -products * -requires $sdkComponent -format json | ConvertFrom-Json
-                if ($vsInstances -and $vsInstances.Count -gt 0) {
-                    Write-Host "Component found in VS installation"
-                    $componentFound = $true
-                } else {
-                    Write-Host "Component not found in VS installation"
-                }
-            } catch {
-                Write-Host "vswhere check failed: $_"
+            Write-Host "vswhere found at: $vswherePath"
+            
+            # Show all VS installations with components
+            Write-Host "All VS installations with components:"
+            $allWithComponents = & $vswherePath -all -format json -property displayName,installationPath,installationVersion,catalog_productDisplayVersion
+            Write-Host $allWithComponents
+            
+            # Show what components are actually installed
+            Write-Host "Installed components (if available):"
+            $withComponents = & $vswherePath -all -format json -property displayName,catalog_buildTools
+            Write-Host $withComponents
+            
+            # Try a different approach - look for any Windows SDK components
+            Write-Host "Checking for any Windows SDK components..."
+            $anyWindowsSDK = & $vswherePath -products * -requires Microsoft.VisualStudio.Component.Windows10SDK -format json
+            Write-Host "Any Windows10SDK components:"
+            Write-Host $anyWindowsSDK
+            
+            # Check our specific component
+            Write-Host "Checking for our specific component: $sdkComponent"
+            $specificCheck = & $vswherePath -latest -products * -requires $sdkComponent -format json
+            Write-Host "Specific component output:"
+            Write-Host $specificCheck
+            
+            if ($specificCheck -and $specificCheck.Trim() -ne "" -and $specificCheck -ne "[]") {
+                Write-Host "Component found in VS installation"
+                $componentFound = $true
+            } else {
+                Write-Host "Component not found in VS installation (expected)"
             }
         } else {
-            Write-Host "vswhere not found"
+            Write-Host "vswhere not found at expected path"
         }
         
         # Check SDK files
