@@ -1,0 +1,48 @@
+name: Test SDK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-sdk:
+    runs-on: windows-2022
+
+    steps:
+      - name: Show Windows version
+        run: |
+          Write-Host "OS version:"
+          [System.Environment]::OSVersion.VersionString
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer
+        shell: pwsh
+
+      - name: Install Windows 10 SDK 19041
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" `
+            modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
+            --add Microsoft.VisualStudio.Component.Windows10SDK.19041 `
+            --quiet --norestart --nocache
+        shell: pwsh
+
+      - name: Confirm SDK via vswhere
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041
+        shell: pwsh
+
+      - name: Verify Windows SDK 19041 installed
+        run: |
+          if (Test-Path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0") {
+            Write-Host "Windows SDK 19041 installed"
+          } else {
+            Write-Error "Windows SDK 19041 NOT found"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: List all Windows SDK versions
+        run: |
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
+            Where-Object { $_.PSIsContainer } |
+            Select-Object -ExpandProperty Name
+        shell: pwsh
