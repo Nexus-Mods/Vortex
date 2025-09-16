@@ -1,4 +1,13 @@
 @import "tailwindcss" prefix(tw);
 
+@theme {
+  /* Custom theme color for testing */
+  --color-primary: #3b82f6;        /* Blue-500 for light mode */
+  --color-primary-dark: #1e40af;   /* Blue-800 for dark mode */
+
+  /* Semantic color with fallback (light-dark() not widely supported yet) */
+  --color-accent: #f59e0b;  /* Amber-500 - fallback color */
+}
+
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

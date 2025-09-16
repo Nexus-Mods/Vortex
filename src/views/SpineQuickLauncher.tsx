@@ -80,6 +80,15 @@ class SpineQuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div className="tw:flex tw:flex-col tw:gap-1 tw:p-1">
+        {/* Test custom theme variables */}
+        <div className="tw:bg-primary tw:dark:bg-primary-dark tw:p-1 tw:rounded tw:mb-2">
+          <span className="tw:text-white tw:text-sm">Primary Theme Test</span>
+        </div>
+
+        <div className="tw:bg-accent tw:p-1 tw:rounded tw:mb-2">
+          <span className="tw:text-white tw:text-sm">Accent Theme Test</span>
+        </div>
+
         {Object.keys(gameIconCache)
           .filter(gameId => !getSafe(this.props.discoveredGames, [gameId, 'hidden'], false))
           .map(gameId => this.renderGameButton(gameId, gameId === game?.id))
