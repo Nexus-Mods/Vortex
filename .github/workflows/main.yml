@@ -15,14 +15,17 @@ jobs:
   build:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        dotnet-version: [ 6.0.x ]
-
     steps:   
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: "recursive"
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Print dotnet info
+        run: dotnet --info      
 
       - name: Install Windows 10 SDK 19041
         shell: powershell
@@ -94,9 +97,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
-
-      - name: Print debug info
-        run: dotnet --info
 
       - name: Build
         run: yarn build
