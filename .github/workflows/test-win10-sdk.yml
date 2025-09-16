@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-sdk:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Show Windows version
