@@ -134,14 +134,11 @@ class ThemeSelector extends React.Component<IThemeSelectorProps, IThemeSelectorS
       <div className="tw:relative tw:w-full" ref={this.dropdownRef}>
         <button
           onClick={this.toggleDropdown}
-          className="tw:w-full tw:p-2 tw:rounded tw:bg-gray-200 tw:dark:bg-gray-700 tw:text-gray-900 tw:dark:text-white tw:text-sm tw:flex tw:items-center tw:justify-between tw:transition-colors"
+          className="tw:w-full tw:aspect-square tw:p-2 tw:rounded tw:bg-gray-200 tw:dark:bg-gray-700 tw:text-gray-900 tw:dark:text-white tw:text-xl tw:flex tw:items-center tw:justify-center tw:transition-colors tw:relative"
           title={`Theme: ${this.getThemeLabel(currentTheme)}`}
         >
-          <span className="tw:flex tw:items-center tw:gap-2">
-            <span>{this.getThemeIcon(currentTheme)}</span>
-            <span>{this.getThemeLabel(currentTheme)}</span>
-          </span>
-          <span className={`tw:transition-transform tw:duration-200 ${isOpen ? 'tw:rotate-180' : ''}`}>
+          <span>{this.getThemeIcon(currentTheme)}</span>
+          <span className={`tw:absolute tw:bottom-0 tw:right-0 tw:text-xs tw:transition-transform tw:duration-200 ${isOpen ? 'tw:rotate-180' : ''}`}>
             ▼
           </span>
         </button>

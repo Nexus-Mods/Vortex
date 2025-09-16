@@ -12,7 +12,7 @@
     "_assets_out": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css && yarn run build_tailwind_out",
     "_assets_app": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css && yarn run build_tailwind_app",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn autoclean --force",
-    "build_tailwind_out": "tailwindcss -i src/stylesheets/tailwind-v4.css -o out/assets/css/tailwind-v4.css",
+    "build_tailwind_out": "tailwindcss -i src/stylesheets/tailwind-v4.css -o out/assets/css/tailwind-v4.css --content 'src/**/*.{ts,tsx}'",
     "build_tailwind_app": "tailwindcss -i src/stylesheets/tailwind-v4.css -o app/assets/css/tailwind-v4.css",
     "watch_tailwind": "tailwindcss -i src/stylesheets/tailwind-v4.css -o out/assets/css/tailwind-v4.css --watch",
     "subprojects": "node BuildSubprojects.js out",

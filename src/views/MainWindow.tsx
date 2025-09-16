@@ -439,7 +439,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <>
         {/* Column 1: Spine Menu */}
-        <div className="tw:w-48 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-2 tw:gap-2">
+        <div className="tw:w-24 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-3 tw:gap-3">
           <div className="tw:flex-shrink-0">
             <ThemeSelector t={this.props.t} />
           </div>

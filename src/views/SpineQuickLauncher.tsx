@@ -121,7 +121,7 @@ class SpineQuickLauncher extends ComponentEx<IProps, IComponentState> {
           tw:w-12 tw:h-12 tw:rounded-lg tw:border-2 tw:transition-all tw:duration-200
           tw:bg-cover tw:bg-center tw:bg-no-repeat
           ${isActive
-            ? 'tw:border-blue-400 tw:shadow-md tw:shadow-blue-400/20 tw:scale-105'
+            ? 'tw:border-blue-400'
             : 'tw:border-gray-600 hover:tw:border-gray-400 tw:dark:border-gray-500 tw:dark:hover:border-gray-300'
           }
           ${isDisabled
