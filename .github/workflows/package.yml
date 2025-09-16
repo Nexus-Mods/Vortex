@@ -135,8 +135,8 @@ jobs:
       - name: Use Node.js 
         uses: actions/setup-node@v4 
         with: 
-          node-version: '18.17.1' 
-          cache: "yarn" 
+          node-version: '22.14.0' 
+          cache: "yarn"
 
       - name: Install dependencies 
         run: yarn --frozen-lockfile --network-timeout 600000 install
