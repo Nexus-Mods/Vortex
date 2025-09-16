@@ -5,7 +5,7 @@ import { analyticsLog } from './utils/analyticsLog';
 import { setAnalytics } from './actions/analytics.action';
 import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
 import { AppCrashedEvent, AppLaunchedEvent, MixpanelEvent, ModsInstallationCompletedEvent } from './mixpanel/MixpanelEvents';
-import { HELP_ARTICLE } from './constants';
+import { HELP_ARTICLE, PRIVACY_POLICY } from './constants';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
 
@@ -22,8 +22,8 @@ function init(context: IExtensionContext): boolean {
       try {
         if (enabled() && AnalyticsMixpanel.isUserSet()) {
           AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
-            process.platform, 
-            err.code || 'unknown', 
+            process.platform,
+            err.code || 'unknown',
             err.message || 'Unknown uncaught exception'
           ));
         }
@@ -40,8 +40,8 @@ function init(context: IExtensionContext): boolean {
       try {
         if (enabled() && AnalyticsMixpanel.isUserSet()) {
           AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
-            process.platform, 
-            err.code || 'unknown', 
+            process.platform,
+            err.code || 'unknown',
             err.message || 'Unknown unhandled rejection'
           ));
         }
@@ -99,8 +99,8 @@ function init(context: IExtensionContext): boolean {
     // Mixpanel specific event
     context.api.events.on('analytics-track-mixpanel-event', (event: MixpanelEvent) => {
       AnalyticsMixpanel.trackEvent(event);
-    });  
-   
+    });
+
     async function initializeAnalytics() {
 
       try {
@@ -114,10 +114,10 @@ function init(context: IExtensionContext): boolean {
         // Determine if this is a stable version for analytics routing
         const appVersion = getApplication().version;
         const parsedVersion = semver.parse(appVersion);
-        const isStable = parsedVersion && 
-                        !parsedVersion.prerelease.length &&
-                        appVersion !== '0.0.1' &&
-                        process.env.NODE_ENV !== 'development';              
+        const isStable = parsedVersion &&
+          !parsedVersion.prerelease.length &&
+          appVersion !== '0.0.1' &&
+          process.env.NODE_ENV !== 'development';
 
         AnalyticsMixpanel.start(userInfo, isStable);
 
@@ -125,7 +125,7 @@ function init(context: IExtensionContext): boolean {
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
           process.platform
         ));
-        
+
         analyticsLog('info', 'Analytics initialized');
 
       } catch (err) {
@@ -140,34 +140,35 @@ function init(context: IExtensionContext): boolean {
       context.api.sendNotification({
         id: 'vortex-analytics-consent',
         type: 'info',
-        title: 'Diagnostics & Usage Data',
-        message: 'Find out more about how we use diagnostic and usage data',
+        title: 'Help us improve your modding experience',
+        message: 'Find out more about how your data helps us improve',
         actions: [
           {
             title: 'More', action: dismiss => {
-              context.api.showDialog('question', 'Diagnostics & usage data', {
+              context.api.showDialog('question', 'Help us improve your modding experience', {
                 bbcode:
-                  'Help us provide you with the best modding experience possible![br][/br]'
-                  + 'With your permission, Vortex can automatically collect '
-                  + 'analytics information and send it to our team to help us improve quality and performance.[br][/br]'
-                  + 'This information is sent to our team entirely anonymously and only with your express consent. '
-                  + '[url={{url}}]More about the data we track.[/url]',
+                  'With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.'
+                  + '[br][/br][br][/br][url={{help-article}}]More about the data we track.[/url] | [url={{privacy-policy}}]Privacy Policy[/url]',
                 parameters: {
-                  url: HELP_ARTICLE,
+                  'help-article': HELP_ARTICLE,
+                  'privacy-policy': PRIVACY_POLICY,
                 }
               }, [
-                { label: 'Deny' },
-                { label: 'Allow', default: true },
-              ])
-                .then(result => {
-                  dismiss();
-                  if (result.action === 'Allow') {
+                {
+                  label: 'No, don’t share data', action: () => {
+                    context.api.store.dispatch(setAnalytics(false));
+                  }
+                },
+                {
+                  label: 'Yes, share anonymous data', action: () => {
                     initializeAnalytics();
                     ignoreNextAnalyticsStateChange = true;
                     context.api.store.dispatch(setAnalytics(true));
-                  } else if (result.action === 'Deny') {
-                    context.api.store.dispatch(setAnalytics(false));
-                  }
+                  }, default: true
+                },
+              ])
+                .then(result => {
+                  dismiss();
                   return Promise.resolve();
                 });
             }
