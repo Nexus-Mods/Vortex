@@ -1,65 +1,50 @@
-name: Test Windows 10 SDK Component
+name: Build
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  pull_request:
 
 jobs:
-  test-windows-sdk:
+  build:
     runs-on: windows-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Add Windows 10 SDK 19041 via VS Installer
-      run: |
-        & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" `
-          modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
-          --add Microsoft.VisualStudio.Component.Windows10SDK.19041 `
-          --quiet --norestart --nocache
-      shell: pwsh
-    
-    - name: Verify Windows 10 SDK 19041
-      shell: powershell
-      run: |
-        $sdkVersion = "10.0.19041.0"
-        Write-Host "Verifying SDK $sdkVersion installation..."
-        
-        # Check if SDK files are actually installed
-        $sdkPaths = @(
-            "${env:ProgramFiles(x86)}\Windows Kits\10",
-            "${env:ProgramFiles}\Windows Kits\10"
-        )
-        
-        $sdkFound = $false
-        foreach ($path in $sdkPaths) {
-            if (Test-Path $path) {
-                Write-Host "Checking Windows Kits at: $path"
-                
-                $includeDir = Join-Path $path "Include\$sdkVersion"
-                $binDir = Join-Path $path "bin\$sdkVersion"
-                
-                Write-Host "Include dir exists: $(Test-Path $includeDir)"
-                Write-Host "Bin dir exists: $(Test-Path $binDir)"
-                
-                if ((Test-Path $includeDir) -and (Test-Path $binDir)) {
-                    Write-Host "SUCCESS: SDK $sdkVersion files found!"
-                    $sdkFound = $true
-                    
-                    # Show available versions for confirmation
-                    $allVersions = Get-ChildItem (Join-Path $path "Include") -Directory | Where-Object { $_.Name -like "10.0.*" }
-                    Write-Host "All available SDK versions:"
-                    foreach ($version in $allVersions) {
-                        $isNew = if ($version.Name -eq $sdkVersion) { " <- NEWLY INSTALLED" } else { "" }
-                        Write-Host "  $($version.Name)$isNew"
-                    }
-                    break
-                }
-            }
-        }
-        
-        Write-Host "SDK $sdkVersion available: $sdkFound"
-        echo "SDK_AVAILABLE=$sdkFound" >> $env:GITHUB_OUTPUT
-      id: sdk-check
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Install Windows 10 SDK 19041
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" `
+            modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
+            --add Microsoft.VisualStudio.Component.Windows10SDK.19041 `
+            --quiet --norestart --nocache
+        shell: pwsh
+
+      - name: Confirm SDK via vswhere
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041 `
+            -format table
+        shell: pwsh
+
+      - name: Verify Windows SDK 19041 installed
+        run: |
+          if (Test-Path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0") {
+            Write-Host "Windows SDK 19041 installed"
+          } else {
+            Write-Error "Windows SDK 19041 NOT found"
+          }
+        shell: pwsh
+
+      - name: List all Windows SDK versions
+        run: |
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
+            Where-Object { $_.PSIsContainer } |
+            Select-Object -ExpandProperty Name
+        shell: pwsh
