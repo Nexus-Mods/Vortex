@@ -31,6 +31,26 @@ export class AppLaunchedEvent implements MixpanelEvent {
 
 
 /**
+ * App start game event - sent when Vortex launches a game
+ * @param game_id ID of the game being launched
+ * @param enabled_mods_count Number of enabled mods for the game
+ * @param enabled_collections_count Number of enabled collections for the game
+ */
+export class AppStartGameEvent implements MixpanelEvent {
+  readonly eventName = 'app_start_game';
+  readonly properties: Record<string, any>;
+
+  constructor(game_id: string, enabled_mods_count: number, enabled_collections_count: number) {
+    this.properties = {
+      game_id: game_id,
+      enabled_mods_count: enabled_mods_count,
+      enabled_collections_count: enabled_collections_count,
+    };
+  }
+}
+
+
+/**
  * DNU - NEEDS TO BE FIRED BEFORE ANALYTICS ARE INITIALIZED
  * Event sent when the application is updated.
  * @param from_version Previous version
