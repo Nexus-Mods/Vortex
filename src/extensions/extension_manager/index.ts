@@ -371,7 +371,12 @@ function init(context: IExtensionContext) {
     const didFetchAvailableExtensions = new Promise((resolve => onDidFetch = resolve));
     updateExtensions(true)
     .then(() => updateAvailableExtensions(context.api))
-    .then(() => onDidFetch());
+    .then(() => onDidFetch())
+    .catch(err => {
+      // If extension fetching fails, still resolve the promise to avoid blocking install-extension
+      log('error', 'Failed to fetch available extensions', err);
+      onDidFetch();
+    });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
       return didFetchAvailableExtensions
         .then(() => downloadAndInstallExtension(context.api, ext))

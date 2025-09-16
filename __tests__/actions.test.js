@@ -4,25 +4,25 @@ import safeCreateAction from '../src/actions/safeCreateAction';
 
 describe('safeCreateAction', () => {
   it('creates the action creator', () => {
-    let creator = safeCreateAction('ACTION');
+    const creator = safeCreateAction('ACTION');
     expect(typeof creator).toBe('function');
   });
   it('replaces action creator', () => {
-    let c1 = safeCreateAction('ACTION', () => ({ key: 'old' }));
+    const c1 = safeCreateAction('ACTION', () => ({ key: 'old' }));
     expect(c1()).toEqual({ error: false, type: 'ACTION', payload: { key: 'old' } });
-    let c2 = safeCreateAction('ACTION', () => ({ key: 'new' }));
+    const c2 = safeCreateAction('ACTION', () => ({ key: 'new' }));
     expect(c2()).toEqual({ error: false, type: 'ACTION', payload: { key: 'new' } });
   });
 });
 
 describe('addNotification', () => {
   it('creates the correct action for minimal case', () => {
-    let minimal = {
+    const minimal = {
       message: 'sample',
       type: 'info',
     };
 
-    let expected = {
+    const expected = {
       type: 'ADD_NOTIFICATION',
       payload: minimal,
       error: false,
@@ -32,7 +32,7 @@ describe('addNotification', () => {
   });
 
   it('creates the correct action if everything specified', () => {
-    let complete = {
+    const complete = {
       id: '__test',
       message: 'sample',
       displayMS: 42,
@@ -62,7 +62,7 @@ describe('dismissNotification', () => {
 
 describe('setWindowSize', () => {
   it('creates the correct action', () => {
-    let size = { width: 42, height: 13 };
+    const size = { width: 42, height: 13 };
     expect(actions.setWindowSize(size)).toEqual({
       error: false,
       type: 'STORE_WINDOW_SIZE',
@@ -73,7 +73,7 @@ describe('setWindowSize', () => {
 
 describe('setWindowPosition', () => {
   it('creates the correct action', () => {
-    let pos = { x: 1, y: 2 };
+    const pos = { x: 1, y: 2 };
     expect(actions.setWindowPosition(pos)).toEqual({
       error: false,
       type: 'STORE_WINDOW_POSITION',

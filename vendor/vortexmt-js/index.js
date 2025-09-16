@@ -6,48 +6,77 @@ const { promisify } = require("util");
 const stat = promisify(fs.stat);
 
 /**
- * Calculate MD5 of a file with optional progress callback.
- * Signature matches upstream: fileMD5(path, [progressCb]) -> Promise<string>
- * progressCb receives a number in [0,1].
+ * Calculate MD5 of a file.
+ * Supported signatures:
+ *  - Promise style: fileMD5(path, [progressCb]) -> Promise<string>
+ *  - Callback style: fileMD5(path, cb, [progressCb]) where cb(err, digest)
+ * In all cases this function returns a Promise<string>.
  */
-async function fileMD5(filePath, progressCb) {
-    const info = await stat(filePath);
-    const total = info.size;
-    const stream = fs.createReadStream(filePath);
-    const hash = createHash("md5");
+async function fileMD5(filePath, arg2, arg3) {
+    // Determine invocation style
+  let cb = undefined;
+  let progressCb = undefined;
 
-    let processed = 0;
-    let lastEmit = 0;
+  if (typeof arg2 === "function" && typeof arg3 === "function") {
+        // Callback + progress
+    cb = arg2;
+    progressCb = arg3;
+  } else if (typeof arg2 === "function" && arg3 === undefined) {
+        // Ambiguous: treat as callback for backward compatibility
+    cb = arg2;
+  } else if (arg2 !== undefined) {
+        // If arg2 is provided but not a function, ignore it (defensive)
+        // and keep promise-style without progress
+  }
 
-    return await new Promise((resolve, reject) => {
-        stream.on("data", (chunk) => {
-            hash.update(chunk);
-            processed += chunk.length;
+  const info = await stat(filePath);
+  const total = info.size;
+  const stream = fs.createReadStream(filePath);
+  const hash = createHash("md5");
 
-            if (typeof progressCb === "function") {
-                const now = Date.now();
-                if (now - lastEmit > 100 || processed === total) {
-                    lastEmit = now;
-                    const p = total > 0 ? processed / total : 1;
-                    try { progressCb(p > 1 ? 1 : p); } catch (_) {}
-                }
-            }
-        });
+  let processed = 0;
+  let lastEmit = 0;
 
-        stream.on("error", reject);
+  return await new Promise((resolve, reject) => {
+    stream.on("data", (chunk) => {
+      hash.update(chunk);
+      processed += chunk.length;
 
-        stream.on("end", () => {
-            try {
-                const digest = hash.digest("hex");
-                if (typeof progressCb === "function") {
-                    try { progressCb(1); } catch (_) {}
-                }
-                resolve(digest);
-            } catch (e) {
-                reject(e);
-            }
-        });
+      if (typeof progressCb === "function") {
+        const now = Date.now();
+        if (now - lastEmit > 100 || processed === total) {
+          lastEmit = now;
+          const p = total > 0 ? processed / total : 1;
+          try { progressCb(p > 1 ? 1 : p); } catch (_) {}
+        }
+      }
     });
+
+    stream.on("error", (err) => {
+      if (typeof cb === "function") {
+        try { cb(err); } catch (_) {}
+      }
+      reject(err);
+    });
+
+    stream.on("end", () => {
+      try {
+        const digest = hash.digest("hex");
+        if (typeof progressCb === "function") {
+          try { progressCb(1); } catch (_) {}
+        }
+        if (typeof cb === "function") {
+          try { cb(null, digest); } catch (_) {}
+        }
+        resolve(digest);
+      } catch (e) {
+        if (typeof cb === "function") {
+          try { cb(e); } catch (_) {}
+        }
+        reject(e);
+      }
+    });
+  });
 }
 
 module.exports = { fileMD5 };

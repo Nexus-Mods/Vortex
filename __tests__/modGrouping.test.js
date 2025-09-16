@@ -10,7 +10,7 @@ describe('modGrouping', () => {
     const result = group(input, { groupBy: 'modId', multipleEnabled: true });
     expect(result).toEqual([
       [{ id: 'a', attributes: { modId: 42 } },
-       { id: 'c', attributes: { modId: 42 } }],
+        { id: 'c', attributes: { modId: 42 } }],
       [{ id: 'b', attributes: { modId: 43 } }],
     ]);
   });
@@ -24,7 +24,7 @@ describe('modGrouping', () => {
     const result = group(input, { groupBy: 'modId', multipleEnabled: false });
     expect(result).toEqual([
       [{ id: 'a', enabled: true, attributes: { modId: 42, version: '1.1.0' } },
-       { id: 'c', enabled: false, attributes: { modId: 42, version: '1.0.0' } }],
+        { id: 'c', enabled: false, attributes: { modId: 42, version: '1.0.0' } }],
       [{ id: 'd', enabled: true, attributes: { modId: 42, version: '1.0.0' } }],
       [{ id: 'b', enabled: true, attributes: { modId: 43, version: '1.0.0' } }],
     ]);
@@ -39,7 +39,7 @@ describe('modGrouping', () => {
     const result = group(input, { groupBy: 'file', multipleEnabled: true });
     expect(result).toEqual([
       [{ id: 'a', attributes: { modId: 42, logicalFileName: '42' } },
-       { id: 'c', attributes: { modId: 42, logicalFileName: '42' } }],
+        { id: 'c', attributes: { modId: 42, logicalFileName: '42' } }],
       [{ id: 'd', attributes: { modId: 42, logicalFileName: '42_2' } }],
       [{ id: 'b', attributes: { modId: 43, logicalFileName: '43' } }],
     ]);

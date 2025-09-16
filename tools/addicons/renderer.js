@@ -4,8 +4,8 @@ const path = require('path');
 const util = require('util');
 const format = require('string-template');
 
-let dropzone = document.querySelector('#dropzone');
-let icons = document.querySelector('#icons');
+const dropzone = document.querySelector('#dropzone');
+const icons = document.querySelector('#icons');
 
 const basePath = path.resolve(__dirname, '..', '..', 'icons');
 const configPath = path.resolve(__dirname, '..', 'iconconfig.json');
@@ -67,8 +67,8 @@ function refreshIcons() {
 
 function saveChanges() {
   fs.writeFile(configPath, JSON.stringify(config, undefined, 2))
-  .then(() => refreshIcons())
-  .catch(err => console.error('failed to write', err));
+    .then(() => refreshIcons())
+    .catch(err => console.error('failed to write', err));
 }
 
 function sanitizeName(name) {

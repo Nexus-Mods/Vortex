@@ -162,7 +162,8 @@
       "target": [
         "out",
         "app"
-      ]
+      ],
+      "excludeNames": ["game-cyberpunk2077"]
     },
     {
       "srcPath": "extensions/*/index.js",

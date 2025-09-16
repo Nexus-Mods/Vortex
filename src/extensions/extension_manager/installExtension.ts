@@ -13,11 +13,11 @@ import { countryExists, languageExists } from '../settings_interface/languagemap
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
-import ZipT = require('node-7z');
 import * as path from 'path';
 import * as vortexRunT from 'vortex-run';
+import { spawn } from 'child_process';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
 
@@ -38,9 +38,12 @@ class ContextProxyHandler implements ProxyHandler<any> {
     } else if (key === 'api') {
       return {
         translate: (input) => input,
+        actions: {
+          add: () => undefined,
+          remove: () => undefined,
+          setShowInMenu() { /* ignore in this context */ },
+        },
       };
-    } else {
-      return () => undefined;
     }
   }
 
@@ -55,7 +58,7 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 
   try {
     const indexPath = path.join(extPath, 'index.js');
-    // If the extension package doesn’t include an index.js (e.g. manifest-only update),
+    // If the extension package doesn't include an index.js (e.g. manifest-only update),
     // skip dependency detection gracefully.
     try {
       fs.statSync(indexPath);
@@ -68,20 +71,21 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 
     const state: IState = api.store.getState();
 
-    return Promise.map(handler.dependencies, depId => {
-      if (state.session.extensions.installed[depId] !== undefined) {
-        return;
-      }
-      const ext = state.session.extensions.available.find(iter =>
-        (!iter.type && ((iter.name === depId) || (iter.id === depId))));
+    return Promise.resolve(
+      Bluebird.map(handler.dependencies, (depId: string) => {
+        if (state.session.extensions.installed[depId] !== undefined) {
+          return;
+        }
+        const ext = state.session.extensions.available.find(iter =>
+          (!iter.type && ((iter.name === depId) || (iter.id === depId))));
 
-      if (ext !== undefined) {
-        return api.emitAndAwait('install-extension', ext);
-      } else {
-        return Promise.resolve();
-      }
-    })
-      .then(() => null);
+        if (ext !== undefined) {
+          return api.emitAndAwait('install-extension', ext);
+        } else {
+          return Promise.resolve();
+        }
+      }).then(() => undefined),
+    );
   } catch (err) {
     // TODO: can't check for dependencies if the extension is already loaded
     //   and registers actions
@@ -107,9 +111,9 @@ function sanitize(input: string): string {
 // (ignoring hidden files like .DS_Store and __MACOSX). This moves the contents of
 // that directory up into the root so that index.js and info.json are at the top level.
 function flattenNestedRoot(root: string): Promise<void> {
-  return fs.readdirAsync(root)
+  return Promise.resolve(fs.readdirAsync(root)
     .then((entries: string[]) =>
-      Promise.map(entries, (name: string) =>
+      Bluebird.map(entries, (name: string) =>
         fs.statAsync(path.join(root, name))
           .then(stat => ({ name, stat }))
           .catch(() => null)))
@@ -124,7 +128,7 @@ function flattenNestedRoot(root: string): Promise<void> {
       if ((files.length === 0) && (dirs.length === 1)) {
         const inner = path.join(root, dirs[0].name);
         return fs.readdirAsync(inner)
-          .then(innerEntries => Promise.map(innerEntries, (innerName: string) =>
+          .then(innerEntries => Bluebird.map(innerEntries, (innerName: string) =>
             fs.renameAsync(path.join(inner, innerName), path.join(root, innerName))))
           .then(() => fs.removeAsync(inner))
           // In case there are multiple nested levels, recurse until flattened
@@ -132,7 +136,7 @@ function flattenNestedRoot(root: string): Promise<void> {
       }
       return Promise.resolve();
     })
-    .then(() => undefined);
+    .then(() => undefined));
 }
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
@@ -163,7 +167,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
  * "variables.scss", "style.scss" or "fonts.scss"
  */
 function validateTheme(extPath: string): Promise<void> {
-  return fs.readdirAsync(extPath)
+  return Promise.resolve(fs.readdirAsync(extPath)
     .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
@@ -172,7 +176,7 @@ function validateTheme(extPath: string): Promise<void> {
         return Promise.reject(
           new DataInvalid('Expected a subdirectory containing the stylesheets'));
       }
-      return Promise.map(dirNames, dirName =>
+      return Bluebird.map(dirNames, dirName =>
         fs.readdirAsync(path.join(extPath, dirName))
           .then(files => {
             if (!files.includes('variables.scss')
@@ -184,8 +188,8 @@ function validateTheme(extPath: string): Promise<void> {
               return Promise.resolve();
             }
           }))
-        .then(() => null);
-    });
+        .then(() => undefined);
+    }));
 }
 
 function isLocaleCode(input: string): boolean {
@@ -202,48 +206,58 @@ function isLocaleCode(input: string): boolean {
  * directories are ignored) which needs to contain at least one json file
  */
 function validateTranslation(extPath: string): Promise<void> {
-  return fs.readdirAsync(extPath)
-    .filter((fileName: string) => isLocaleCode(fileName))
-    .filter((fileName: string) =>
-      fs.statAsync(path.join(extPath, fileName))
-        .then(stats => stats.isDirectory()))
-    .then(dirNames => {
-      if (dirNames.length !== 1) {
-        return Promise.reject(
-          new DataInvalid('Expected exactly one language subdirectory'));
-      }
-      // the check in isLocaleCode is extremely unreliable because it will fall back to
-      // iso on everything. Was it always like that or was that changed in a recent
-      // node release?
-      const [language, country] = dirNames[0].split('-');
-      if (!languageExists(language)
-          || (country !== undefined) && !countryExists(country)) {
-        return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
-      }
-      return fs.readdirAsync(path.join(extPath, dirNames[0]))
-        .then(files => {
-          if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
-            return Promise.reject(new DataInvalid('No translation files'));
-          }
-
-          return Promise.resolve();
-        });
-    });
+  return Promise.resolve(
+    fs.readdirAsync(extPath)
+      .filter((fileName: string) => isLocaleCode(fileName))
+      .filter((fileName: string) =>
+        fs.statAsync(path.join(extPath, fileName))
+          .then(stats => stats.isDirectory()))
+      .then(dirNames => {
+        if (dirNames.length !== 1) {
+          return Promise.reject(
+            new DataInvalid('Expected exactly one language subdirectory'));
+        }
+        // the check in isLocaleCode is extremely unreliable because it will fall back to
+        // iso on everything. Was it always like that or was that changed in a recent
+        // node release?
+        const [language, country] = dirNames[0].split('-');
+        if (!languageExists(language)
+            || (country !== undefined) && !countryExists(country)) {
+          return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
+        }
+        return fs.readdirAsync(path.join(extPath, dirNames[0]))
+          .then(files => {
+            if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
+              return Promise.reject(new DataInvalid('No translation files'));
+            }
+            return Promise.resolve();
+          });
+      })
+  );
 }
 
 /**
- * validate an extension. It has to contain an index.js and info.json on the top-level
+ * validate an extension. It has to contain an entry script and info.json on the top-level
  */
 function validateExtension(extPath: string): Promise<void> {
-  return Promise.all([
-    fs.statAsync(path.join(extPath, 'index.js')),
-    fs.statAsync(path.join(extPath, 'info.json')),
-  ])
-    .then(() => null)
-    .catch({ code: 'ENOENT' }, () => {
-      return Promise.reject(
-        new DataInvalid('Extension needs to include index.js and info.json on top-level'));
-    });
+  return Promise.resolve(
+    fs.statAsync(path.join(extPath, 'info.json'))
+      .then(() => findEntryScript(extPath))
+      .then(entry => {
+        if (entry) {
+          return Promise.resolve();
+        }
+        return Promise.reject(
+          new DataInvalid('Extension needs to include an entry script (index.js or package.json main) and info.json on top-level'));
+      })
+      .catch(err => {
+        if ((err as any).code === 'ENOENT') {
+          return Promise.reject(
+            new DataInvalid('Extension needs to include an entry script (index.js or package.json main) and info.json on top-level'));
+        }
+        return Promise.reject(err);
+      })
+  );
 }
 
 function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
@@ -255,11 +269,29 @@ function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionT
     const guessedType: ExtensionType = undefined;
     // if we don't know the type we can only check if _any_ extension type applies
     return validateTheme(extPath)
-      .catch(DataInvalid, () => validAsTheme = false)
+      .catch(err => {
+        if (err instanceof DataInvalid) {
+          validAsTheme = false;
+        } else {
+          return Promise.reject(err);
+        }
+      })
       .then(() => validateTranslation(extPath))
-      .catch(DataInvalid, () => validAsTranslation = false)
+      .catch(err => {
+        if (err instanceof DataInvalid) {
+          validAsTranslation = false;
+        } else {
+          return Promise.reject(err);
+        }
+      })
       .then(() => validateExtension(extPath))
-      .catch(DataInvalid, () => validAsExtension = false)
+      .catch(err => {
+        if (err instanceof DataInvalid) {
+          validAsExtension = false;
+        } else {
+          return Promise.reject(err);
+        }
+      })
       .then(() => {
         if (!validAsExtension && !validAsTheme && !validAsTranslation) {
           return Promise.reject(
@@ -294,17 +326,26 @@ function installExtension(api: IExtensionApi,
   let destPath: string;
   const tempPath = path.join(extensionsPath, path.basename(archivePath)) + '.installing';
 
-  const Zip: typeof ZipT = require('node-7z');
-  const extractor = new Zip();
-
+  // Removed direct node-7z extractor creation; we choose implementation per-platform below
   let fullInfo: any = info || {};
 
   let type: ExtensionType;
   let manifestOnly = false;
 
   let extName: string;
-  return extractor.extractFull(archivePath, tempPath, {ssc: false},
-                               () => undefined, () => undefined)
+  // Ensure target directories exist to avoid ENOENT when writing manifest or extracting
+  const chain = fs.ensureDirAsync(extensionsPath)
+    .then(() => fs.ensureDirAsync(tempPath))
+    .then(() => {
+      if (process.platform === 'darwin') {
+        return extractArchiveNative(archivePath, tempPath);
+      } else {
+        const Zip: any = require('node-7z');
+        const extractor = new Zip();
+        return extractor.extractFull(archivePath, tempPath, { ssc: false },
+                                     () => undefined, () => undefined).then(() => undefined);
+      }
+    })
     .then(() => flattenNestedRoot(tempPath))
     .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
@@ -322,12 +363,18 @@ function installExtension(api: IExtensionApi,
 
       return res;
     })
-    .catch({ code: 'ENOENT' }, () => (info !== undefined)
-      ? Promise.resolve({
-        id: path.basename(archivePath, path.extname(archivePath)),
-        info,
-      })
-      : Promise.reject(new Error('not an extension, info.json missing')))
+    .catch(err => {
+      if (err && (err as any).code === 'ENOENT') {
+        if (info !== undefined) {
+          return {
+            id: path.basename(archivePath, path.extname(archivePath)),
+            info,
+          };
+        }
+        return Promise.reject(new Error('not an extension, info.json missing'));
+      }
+      return Promise.reject(err);
+    })
     .then(manifestInfo =>
         // update the manifest on disc, in case we had new info from the caller
       fs.writeFileAsync(path.join(tempPath, 'info.json'),
@@ -341,21 +388,19 @@ function installExtension(api: IExtensionApi,
       if (manifestInfo.info.type !== undefined) {
         type = manifestInfo.info.type;
       }
-      // Determine whether this is a manifest-only update (no index.js in archive)
-      const tempIndex = path.join(tempPath, 'index.js');
-      return fs.statAsync(tempIndex).then(() => true).catch(() => false).then(hasIndex => {
-        if (!hasIndex) {
-          const destIndex = path.join(destPath, 'index.js');
-          return fs.statAsync(destIndex).then(() => true).catch(() => false).then(hasDestIndex => {
-            if (hasDestIndex) {
+      // Determine whether this is a manifest-only update (no acceptable entry script in archive)
+      return findEntryScript(tempPath).then(tempEntry => {
+        if (!tempEntry) {
+          return findEntryScript(destPath).then(destEntry => {
+            if (destEntry) {
               manifestOnly = true;
               // Apply manifest update into existing install and remove temp
               return fs.copyAsync(path.join(tempPath, 'info.json'), path.join(destPath, 'info.json'), { overwrite: true })
                 .then(() => fs.removeAsync(tempPath))
                 .then(() => undefined);
             } else {
-              // No index.js in archive and no existing installed extension to update
-              throw new DataInvalid('Extension package missing index.js');
+              // No entry in archive and no existing installed extension to update
+              throw new DataInvalid('Extension package missing entry script (expected index.js or package.json main)');
             }
           });
         }
@@ -385,7 +430,7 @@ function installExtension(api: IExtensionApi,
         return fs.readdirAsync(destPath)
           .map((entry: string) => fs.statAsync(path.join(destPath, entry))
             .then(stat => ({ name: entry, stat })))
-          .then(() => null);
+          .then(() => undefined);
       } else if (type === 'theme') {
         return Promise.resolve();
       } else {
@@ -398,23 +443,294 @@ function installExtension(api: IExtensionApi,
         }
       }
     })
-    .catch(DataInvalid, err => {
-      try {
-        fs.removeSync(tempPath);
-      } catch (removeErr) {
-        // Ignore removal errors
-      }
-      return api.showErrorNotification('Invalid Extension', err,
-                                        { allowReport: false, message: archivePath });
-    })
     .catch(err => {
       try {
         fs.removeSync(tempPath);
       } catch (removeErr) {
         // Ignore removal errors
       }
+      if (err instanceof DataInvalid) {
+        return api.showErrorNotification('Invalid Extension', err,
+                                         { allowReport: false, message: archivePath });
+      }
       return Promise.reject(err);
     });
+
+  return Promise.resolve(chain);
 }
 
 export default installExtension;
+
+/**
+ * Attempts to resolve an extension entry script inside extPath.
+ * Accepted entries:
+ *  - index.js (top-level)
+ *  - dist/index.js
+ *  - package.json with a valid "main" that points to an existing file
+ */
+function findEntryScript(extPath: string): Promise<string | undefined> {
+  const tryExists = (p: string) => fs.statAsync(p).then(() => true).catch(() => false);
+  const tryReadPkgMain = () =>
+    fs.readFileAsync(path.join(extPath, 'package.json'), { encoding: 'utf8' })
+      .then(raw => {
+        try {
+          const pkg = JSON.parse(raw);
+          if (pkg && typeof pkg.main === 'string' && pkg.main.length > 0) {
+            const mainPath = path.join(extPath, pkg.main);
+            return tryExists(mainPath).then(exists => exists ? mainPath : undefined);
+          }
+        } catch (_) {
+          // ignore invalid package.json
+        }
+        return undefined as undefined;
+      })
+      .catch(() => undefined as undefined);
+
+  return Promise.resolve(
+    tryExists(path.join(extPath, 'index.js')).then(idxExists => {
+      if (idxExists) { return path.join(extPath, 'index.js'); }
+      return tryExists(path.join(extPath, 'dist', 'index.js')).then(distExists => {
+        if (distExists) { return path.join(extPath, 'dist', 'index.js'); }
+        return tryReadPkgMain();
+      });
+    })
+  );
+}
+
+// Run a system command and resolve on exit code 0, otherwise reject with aggregated output
+function runCommand(cmd: string, args: string[], cwd?: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { cwd });
+    let stdout = '';
+    let stderr = '';
+    child.stdout?.on('data', (d) => stdout += d.toString());
+    child.stderr?.on('data', (d) => stderr += d.toString());
+    child.on('error', (err) => {
+      (err as any).stdout = stdout;
+      (err as any).stderr = stderr;
+      reject(err);
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        const err: any = new Error(`Command failed: ${cmd} ${args.join(' ')} (exit ${code})`);
+        err.exitCode = code;
+        err.stdout = stdout;
+        err.stderr = stderr;
+        reject(err);
+      }
+    });
+  });
+}
+
+// Try a list of commands in sequence until one succeeds
+function tryCommands(cmds: Array<{ cmd: string, args: string[] }>, cwd?: string): Promise<void> {
+  const attempt = (idx: number): Promise<void> => {
+    if (idx >= cmds.length) {
+      return Promise.reject(new Error('No suitable extractor available on this system.'));
+    }
+    const { cmd, args } = cmds[idx];
+    return runCommand(cmd, args, cwd).catch((err) => {
+      log('warn', 'archive extraction attempt failed', { cmd, args, error: err && err.message });
+      return attempt(idx + 1);
+    });
+  };
+  return attempt(0);
+}
+
+// Resolve a packaged 7-Zip binary that we ship with the app (if present)
+async function getPackaged7zPath(): globalThis.Promise<string | undefined> {
+  try {
+    // Base node_modules path (handles dev and production/asar-unpacked)
+    const modulesBase = getVortexPath('modules_unpacked');
+    const candidates: string[] = [];
+    // Prefer platform-specific directory if present
+    if (process.platform === 'win32') {
+      candidates.push(path.join(modulesBase, '7z-bin', 'win32', '7z.exe'));
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z.exe'));
+      // Also check 7zip-bin package
+      candidates.push(path.join(modulesBase, '7zip-bin', 'win', 'x64', '7za.exe'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'win', 'ia32', '7za.exe'));
+    } else if (process.platform === 'linux') {
+      candidates.push(path.join(modulesBase, '7z-bin', 'linux', '7zzs'));
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7zzs'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'x64', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'ia32', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'arm', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'arm64', '7za'));
+    } else if (process.platform === 'darwin') {
+    // Prioritize 7zip-bin which has actual macOS binaries
+    candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'x64', '7za'));
+    candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'arm64', '7za'));
+    // 7z-bin is broken on macOS - only check as last resort
+    candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z'));
+  }
+
+    for (const p of candidates) {
+      try {
+        const st = await fs.statAsync(p);
+        if (st && st.isFile()) {
+          // Ensure executable permissions on Unix
+          if (process.platform !== 'win32') {
+            try { await fs.chmodAsync(p, 0o755 as any); } catch (_) { /* ignore */ }
+          }
+          return p;
+        }
+      } catch (_) {
+        // continue
+      }
+    }
+
+    // As a last resort, try resolving via the 7z-bin package export (may point into asar-unpacked)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sevenBinPath: string = require('7z-bin');
+      if (sevenBinPath) {
+        try {
+          const st = await fs.statAsync(sevenBinPath);
+          if (st && st.isFile()) {
+            if (process.platform !== 'win32') {
+              try { await fs.chmodAsync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+            }
+            return sevenBinPath;
+          }
+        } catch (_) { 
+          // On macOS, the 7z-bin package may return a path like .../darwin/7z that doesn't exist
+          // but the actual binary is at .../bin/7z. Let's check if this is the case.
+          if (process.platform === 'darwin' && sevenBinPath.includes('/darwin/')) {
+            const correctedPath = sevenBinPath.replace('/darwin/', '/bin/');
+            try {
+              const st = await fs.statAsync(correctedPath);
+              if (st && st.isFile()) {
+                try { await fs.chmodAsync(correctedPath, 0o755 as any); } catch (_) { /* ignore */ }
+                return correctedPath;
+              }
+            } catch (_) { /* ignore */ }
+          }
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    // Also try 7zip-bin package
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sevenZipBin = require('7zip-bin');
+      if (sevenZipBin) {
+        // 7zip-bin exports an object with path7za property, not a string
+        const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
+        if (sevenZipBinPath) {
+          try {
+            const st = await fs.statAsync(sevenZipBinPath);
+            if (st && st.isFile()) {
+              if (process.platform !== 'win32') {
+                try { await fs.chmodAsync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+              }
+              return sevenZipBinPath;
+            }
+          } catch (_) { /* ignore */ }
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    return undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+// Check if a command exists in PATH (macOS/Unix)
+async function hasCommand(cmd: string): globalThis.Promise<boolean> {
+  try {
+    await runCommand(process.platform === 'win32' ? 'where' : 'sh', process.platform === 'win32'
+      ? [cmd]
+      : ['-c', `command -v ${cmd} >/dev/null 2>&1`] );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// Native macOS (and general CLI) archive extraction supporting .7z, .zip, .rar
+async function extractArchiveNative(archivePath: string, destPath: string): globalThis.Promise<void> {
+  const ext = path.extname(archivePath).toLowerCase();
+  const isDarwin = process.platform === 'darwin';
+
+  // Resolve bundled 7z first so we can prefer it where appropriate
+  const packaged7z = await getPackaged7zPath();
+
+  if (ext === '.zip') {
+    // Prefer macOS-native ditto, fallback to unzip, then bundled 7z if present
+    const cmds: Array<{ cmd: string, args: string[] }> = [
+      { cmd: 'ditto', args: ['-x', '-k', archivePath, destPath] },
+      { cmd: 'unzip', args: ['-oq', archivePath, '-d', destPath] },
+    ];
+    if (packaged7z) {
+      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
+    }
+
+    // Preflight on macOS: ensure at least one tool is available
+    if (isDarwin) {
+      const [c1, c2] = await Promise.all([hasCommand('ditto'), hasCommand('unzip')]);
+      if (!packaged7z && !c1 && !c2) {
+        throw new Error('No ZIP extractor found. Vortex requires either macOS "ditto", "unzip", or the bundled 7z tool.');
+      }
+    }
+
+    return tryCommands(cmds);
+  } else if (ext === '.7z') {
+    const cmds: Array<{ cmd: string, args: string[] }> = [];
+    if (packaged7z) {
+      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
+    }
+    cmds.push(
+      { cmd: '7zz', args: ['x', '-y', archivePath, `-o${destPath}`] },
+      { cmd: '7z', args: ['x', '-y', archivePath, `-o${destPath}`] },
+      { cmd: 'unar', args: ['-force-overwrite', '-o', destPath, archivePath] },
+    );
+
+    if (isDarwin) {
+      const avail = await Promise.all([hasCommand('7zz'), hasCommand('7z'), hasCommand('unar')]);
+      if (!packaged7z && !avail.some(Boolean)) {
+        throw new Error('No 7z extractor found. Vortex requires 7-Zip (7zz/7z), The Unarchiver (unar), or the bundled 7z tool to extract .7z archives.');
+      }
+    }
+
+    return tryCommands(cmds).catch((err) => {
+      const help = 'Please install 7-Zip (7zz/7z) or The Unarchiver (unar), or use the bundled 7z tool to extract .7z archives on macOS.';
+      const wrapped: any = new Error(`${err.message}\n${help}`);
+      wrapped.cause = err;
+      throw wrapped;
+    });
+  } else if (ext === '.rar') {
+    const cmds: Array<{ cmd: string, args: string[] }> = [
+      { cmd: 'unar', args: ['-force-overwrite', '-o', destPath, archivePath] },
+      { cmd: 'unrar', args: ['x', '-y', archivePath, destPath] },
+    ];
+    // 7z can extract many RAR archives; include bundled 7z as a last fallback
+    if (packaged7z) {
+      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
+    }
+
+    if (isDarwin) {
+      const avail = await Promise.all([hasCommand('unar'), hasCommand('unrar')]);
+      if (!packaged7z && !avail.some(Boolean)) {
+        throw new Error('No RAR extractor found. Vortex requires The Unarchiver (unar), unrar, or the bundled 7z tool to extract .rar archives.');
+      }
+    }
+
+    return tryCommands(cmds).catch((err) => {
+      const help = 'Please install The Unarchiver (unar) or unrar, or rely on the bundled 7z tool to extract .rar archives on macOS.';
+      const wrapped: any = new Error(`${err.message}\n${help}`);
+      wrapped.cause = err;
+      throw wrapped;
+    });
+  }
+  // Fallback: try tar for common tarballs
+  if (ext === '.tar' || ext === '.gz' || ext === '.bz2' || ext === '.xz' || archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
+    return tryCommands([
+      { cmd: 'tar', args: ['-xf', archivePath, '-C', destPath] },
+    ]);
+  }
+  return Promise.reject(new Error(`Unsupported archive type: ${ext}`));
+}

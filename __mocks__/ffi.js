@@ -1,14 +1,14 @@
 'use strict';
 
-var util = require('util');
+const util = require('util');
 
 let error = undefined;
 
 module.exports = {
   Library: (name, exp) => {
-    let result = {};
-    let keys = Object.keys(exp);
-    for (var i = 0; i < keys.length; ++i) {
+    const result = {};
+    const keys = Object.keys(exp);
+    for (let i = 0; i < keys.length; ++i) {
       result[keys[i]] = {
         async: (...args) => {
           const callback = args[args.length - 1];

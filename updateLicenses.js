@@ -1,8 +1,8 @@
-let fs = require('fs');
-let checker = require('license-checker');
-let path = require('path');
+const fs = require('fs');
+const checker = require('license-checker');
+const path = require('path');
 
-let basePath = path.join(__dirname, '.');
+const basePath = path.join(__dirname, '.');
 
 checker.init(
   {

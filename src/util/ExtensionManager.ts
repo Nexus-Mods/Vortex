@@ -798,13 +798,11 @@ class ExtensionManager {
   private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
   // or coffescript directly but that would require us shipping the corresponding compilers
-  private mExtensionFormats: string[] = ['index.js'];
+  private mExtensionFormats: string[] = ['index.js', 'dist/index.js'];
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
-    this.mEventEmitter = eventEmitter;
-    if (eventEmitter !== undefined) {
-      this.mEventEmitter.setMaxListeners(100);
-    }
+    this.mEventEmitter = eventEmitter !== undefined ? eventEmitter : new EventEmitter();
+    this.mEventEmitter.setMaxListeners(100);
 
     this.mUIStartedPromise = new Promise(resolve => {
       this.mOnUIStarted = resolve;
@@ -875,24 +873,29 @@ class ExtensionManager {
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
-      // Enhanced extension removal process
+      // Extension removal process with conditional forget
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
           const extPath = path.join(extensionsPath, extId);
+          let deleted = false;
           try {
-            // Check if extension directory exists before attempting removal
             if (fs.existsSync(extPath)) {
               log('info', 'removing extension directory', { path: extPath });
               fs.removeSync(extPath);
             }
-            // Ensure state cleanup happens even if directory removal fails
-            initStore.dispatch(forgetExtension(extId));
-            log('info', 'extension removed and state cleaned up', { extId });
+            if (!fs.existsSync(extPath)) {
+              deleted = true;
+            }
           } catch (err) {
             log('error', 'failed to remove extension', { extId, error: err.message });
-            // Even if removal fails, still try to clean up the state
+          }
+          if (deleted) {
             initStore.dispatch(forgetExtension(extId));
+            log('info', 'extension removed and state cleaned up', { extId });
+          } else {
+            log('warn', 'extension still present after failed removal, will retry on next start',
+                { extId, path: extPath });
           }
         });
       ipcMain.on('__get_extension_state', event => {
@@ -2331,9 +2334,35 @@ class ExtensionManager {
                                alreadyLoaded: IRegisteredExtension[],
                                bundled: boolean)
                                : IRegisteredExtension {
-    const indexPath = this.mExtensionFormats
+    let indexPath: string | undefined = this.mExtensionFormats
       .map(format => path.join(extensionPath, format))
       .find(iter => fs.existsSync(iter));
+
+    // If not found via known formats, try resolving from package.json main/module
+    if (indexPath === undefined) {
+      try {
+        const pkgPath = path.join(extensionPath, 'package.json');
+        if (fs.existsSync(pkgPath)) {
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, { encoding: 'utf8' }));
+          const mainFields: Array<string | undefined> = [pkg.main, pkg.module];
+          const candidates = mainFields
+            .filter((v): v is string => typeof v === 'string' && v.length > 0)
+            .map(rel => path.join(extensionPath, rel));
+          indexPath = candidates.find(p => fs.existsSync(p));
+          if (indexPath === undefined) {
+            log('debug', 'package.json exists but entry not found at declared main/module',
+                { extensionPath, candidates });
+          } else {
+            log('debug', 'resolved extension entry from package.json',
+                { extensionPath, indexPath });
+          }
+        }
+      } catch (err) {
+        log('debug', 'failed to parse package.json while resolving extension entry',
+            { extensionPath, error: err.message });
+      }
+    }
+
     if (indexPath !== undefined) {
       let info: IExtension = { name: '', author: '', description: '', version: '' };
       try {
@@ -2365,7 +2394,18 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () => winapi.dynreq(indexPath).default,
+        initFunc: () => {
+          const mod: any = winapi.dynreq(indexPath);
+          if (typeof mod === 'function') {
+            return mod;
+          }
+          if (mod && typeof mod.default === 'function') {
+            return mod.default;
+          }
+          const exportedKeys = mod && typeof mod === 'object' ? Object.keys(mod) : [];
+          log('warn', 'extension entry module did not export an init function', { extensionPath, indexPath, exportedKeys });
+          throw new Error('Extension entry module must export a function (ESM default or CommonJS module.exports)');
+        },
         path: extensionPath,
         dynamic: true,
         info: {
@@ -2375,8 +2415,9 @@ class ExtensionManager {
       };
     } else {
       // this is not necessarily a problem, translation extensions for example
-      // have no index.js file
-      log('debug', 'extension directory contains no index.js file', { extensionPath });
+      // may not have a js entry file. We tried known formats and package.json fields.
+      log('debug', 'extension directory contains no known entry file',
+          { extensionPath, triedFormats: this.mExtensionFormats });
       return undefined;
     }
   }
@@ -2398,6 +2439,11 @@ class ExtensionManager {
     const res = fs.readdirSync(extension.path)
       .filter(name => fs.statSync(path.join(extension.path, name)).isDirectory())
       .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
+        const extState = this.mExtensionState?.[name];
+        if (extState?.remove === true) {
+          log('debug', 'extension marked for removal, skipping load', { name });
+          return prev;
+        }
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
           log('debug', 'extension disabled', { name });
           return prev;
@@ -2411,6 +2457,10 @@ class ExtensionManager {
           const ext = this.loadDynamicExtension(
             path.join(extension.path, name), alreadyLoaded, extension.bundled);
           if (ext !== undefined) {
+            if (this.mExtensionState?.[ext.name]?.remove === true) {
+              log('debug', 'extension marked for removal, skipping load', { name: ext.name });
+              return prev;
+            }
             if (this.mExtensionState?.[ext.name]?.enabled === false) {
               log('debug', 'extension disabled', { name: ext.name });
               return prev;

@@ -17,7 +17,7 @@ describe('upload', () => {
   it('uploads data', async () => {
     expect.assertions(2);
     let serv;
-    let port = 12345;
+    const port = 12345;
     const serveProm = new Promise((resolve) => {
       serv = net.createServer((socket) => {
         socket.setEncoding('utf-8');

@@ -38,9 +38,9 @@ Promise.map(projects, (project) => {
       }
     });
 }, { concurrency: 1 })
-.then(() => {
-  console.log('All projects processed');
-})
-.catch((err) => {
-  console.error('Overall error:', err);
-});
+  .then(() => {
+    console.log('All projects processed');
+  })
+  .catch((err) => {
+    console.error('Overall error:', err);
+  });

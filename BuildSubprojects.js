@@ -63,7 +63,7 @@ class ProcessFeedback {
     if (data === undefined) {
       return;
     }
-    let lines = data.split(/[\r\n\t]+/);
+    const lines = data.split(/[\r\n\t]+/);
     lines.forEach((line) => {
       if (line.length > 0) {
         this.output.push(`-- ${line}`);
@@ -75,7 +75,7 @@ class ProcessFeedback {
     if (data === undefined) {
       return;
     }
-    let lines = data.split(/[\r\n\t]+/);
+    const lines = data.split(/[\r\n\t]+/);
     lines.forEach((line) => {
       if (line.length > 0) {
         this.output.push(`xx ${line}`);
@@ -86,10 +86,10 @@ class ProcessFeedback {
 
 function spawnAsync(exe, args, options, out) {
   return new Promise((resolve, reject) => {
-    let desc = `${options.cwd || '.'}/${exe} ${args.join(' ')}`;
+    const desc = `${options.cwd || '.'}/${exe} ${args.join(' ')}`;
     out.log('started: ' + desc);
     try {
-      let proc = spawn(exe, args, { ...options, shell: true });
+      const proc = spawn(exe, args, { ...options, shell: true });
       proc.stdout.on('data', (data) => out.log(data.toString()));
       proc.stderr.on('data', (data) => out.err(data.toString()));
       proc.on('error', (err) => reject(err));
@@ -165,7 +165,7 @@ function format(fmt, parameters) {
 
 function processModule(project, buildType, feedback) {
   const start = Date.now();
-  let options = {};
+  const options = {};
   let modulePath;
   if (buildType !== 'out') {
     options.cwd = path.join(__dirname, buildType);
@@ -176,7 +176,7 @@ function processModule(project, buildType, feedback) {
   }
 
   // Use the project's node-gyp instead of the extension's node-gyp
-  let build = project.build !== undefined && project.build !== false
+  const build = project.build !== undefined && project.build !== false
     ? npm('install', [], { cwd: project.path }, feedback)
       .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path, env: { ...process.env, npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') } }, feedback))
     : Promise.resolve();
@@ -196,14 +196,14 @@ async function updateSourceMap(filePath) {
   const modPath = path.basename(path.dirname(filePath));
 
   dat = dat.replace(/\/\/# sourceMappingURL=([a-z\-.]+\.js\.map)$/,
-    `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
+                    `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
 
   await fs.promises.writeFile(filePath, dat);
 }
 
 function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
-  let instArgs = noparallel ? ['--network-concurrency', '1'] : [];
+  const instArgs = noparallel ? ['--network-concurrency', '1'] : [];
   
   // Special handling for gamebryo-savegame-management extension
   let res;
@@ -221,16 +221,16 @@ function processCustom(project, buildType, feedback, noparallel) {
         PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig"
       } 
     }, feedback)
-    .then(() => {
+      .then(() => {
       // Build the extension
-      return npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
-        cwd: project.path, 
-        env: { 
-          ...process.env, 
-          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
-        } 
-      }, feedback);
-    });
+        return npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
+          cwd: project.path, 
+          env: { 
+            ...process.env, 
+            npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+          } 
+        }, feedback);
+      });
   } else {
     // Use the project's node-gyp instead of the extension's node-gyp
     res = npm('install', instArgs, { 
@@ -240,13 +240,13 @@ function processCustom(project, buildType, feedback, noparallel) {
         npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
       } 
     }, feedback)
-    .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
-      cwd: project.path, 
-      env: { 
-        ...process.env, 
-        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
-      } 
-    }, feedback));
+      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
+        cwd: project.path, 
+        env: { 
+          ...process.env, 
+          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+        } 
+      }, feedback));
   }
   
   if (project.copyTo !== undefined) {
@@ -320,14 +320,14 @@ function main(args) {
   return Promise.each(projectGroups, (projects) => {
     return Promise.map(projects, (project) => {
     // Filter by target project if specified
-    if (targetProject && project.name !== targetProject) {
-      return Promise.resolve();
-    }
-    if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.VORTEX_VARIANT !== project.variant)) {
-      return Promise.resolve();
-    }
-    let feedback = new ProcessFeedback(project.name);
-    return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
+      if (targetProject && project.name !== targetProject) {
+        return Promise.resolve();
+      }
+      if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.VORTEX_VARIANT !== project.variant)) {
+        return Promise.resolve();
+      }
+      const feedback = new ProcessFeedback(project.name);
+      return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
             const platform = isWindows() ? 'Windows' : isMacOS() ? 'macOS' : 'Linux';
@@ -337,8 +337,8 @@ function main(args) {
         })
         .then((result) => {
           const platformName = isWindows() ? 'Windows' : 
-                              isMacOS() ? 'macOS' : 
-                              process.platform === 'linux' ? 'Linux' : process.platform;
+            isMacOS() ? 'macOS' : 
+            process.platform === 'linux' ? 'Linux' : process.platform;
           if (result && result.elapsed) {
             console.log(`Successfully built extension "${project.name}" in ${result.elapsed} s - compatible with ${platformName} ✅`);
           } else {
@@ -353,11 +353,11 @@ function main(args) {
             return Promise.resolve();
           } else if (err instanceof ConditionNotMet) {
             const targetPlatform = err.condition?.includes('win32') ? 'Windows' : 
-                                 err.condition?.includes('darwin') ? 'macOS' : 
-                                 err.condition?.includes('linux') ? 'Linux' : 'unknown';
+              err.condition?.includes('darwin') ? 'macOS' : 
+              err.condition?.includes('linux') ? 'Linux' : 'unknown';
             const currentPlatform = isWindows() ? 'Windows' : 
-                                  isMacOS() ? 'macOS' : 
-                                  process.platform === 'linux' ? 'Linux' : process.platform;
+              isMacOS() ? 'macOS' : 
+              process.platform === 'linux' ? 'Linux' : process.platform;
             console.log(`⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
             return Promise.resolve();
           } else {
@@ -366,10 +366,10 @@ function main(args) {
             return Promise.resolve();
           }
         })
-        ;
+      ;
     });
   }, { concurrency: 1 })
-  .then(() => failed ? 1 : 0);
+    .then(() => failed ? 1 : 0);
 }
 
 const args = minimist(process.argv.slice(2));

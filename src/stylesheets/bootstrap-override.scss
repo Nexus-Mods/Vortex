@@ -268,6 +268,20 @@ textarea {
   color: $text-color;
 }
 
+// Subtle glass hover treatment for all buttons
+.btn {
+  transition: background-color 180ms ease, box-shadow 220ms ease, color 180ms ease, border-color 180ms ease;
+  &:hover, &:focus {
+    // Keep text readable and add a Tahoe-style glass effect
+    color: currentColor;
+    text-shadow: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 16px rgba(0, 0, 0, 0.25);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    backdrop-filter: saturate(140%) blur(12px);
+    outline: none;
+  }
+}
+
 .btn-primary {
   margin: 0 10px;
 }
@@ -277,9 +291,14 @@ textarea {
   color: $brand-primary;
   background-color: transparent;
 
-  &:hover {
-    color: $text-color;
-    background-color: $brand-primary;
+  &:hover, &:focus {
+    // Maintain ghost appearance while improving contrast and adding glass effect
+    color: $brand-primary;
+    background-color: transparentize($white, 0.9);
+    border-color: lighten($brand-primary, 5%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 16px rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    backdrop-filter: saturate(140%) blur(14px);
   }
 }
 
@@ -292,9 +311,14 @@ textarea {
   background-color: white;
   color: $brand-primary;
 
-  &:hover {
-    background-color: $brand-primary;
-    color: $text-color;
+  &:hover, &:focus {
+    // Avoid heavy color fills; use subtle glass tint and keep readable brand text
+    background-color: transparentize($white, 0.06);
+    color: $brand-primary;
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 16px rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    backdrop-filter: saturate(140%) blur(12px);
   }
 }
 

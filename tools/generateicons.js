@@ -107,14 +107,14 @@ function processConfig(basePath, config) {
       ? extractMDI(iconId, iconCfg.value)
       : extractLegacy(iconId, path.join(basePath, format(iconCfg.path, config.variables) + '.svg'), iconCfg)
     return iconDat
-    .then(icon => {
-      symbol.push(icon);
-      return Promise.resolve();
-    })
-    .catch(err => {
-      console.error('failed to extract icon', iconId, err.message);
-      return Promise.resolve();
-    })
+      .then(icon => {
+        symbol.push(icon);
+        return Promise.resolve();
+      })
+      .catch(err => {
+        console.error('failed to extract icon', iconId, err.message);
+        return Promise.resolve();
+      })
   }))
 
     .then(() => {

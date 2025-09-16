@@ -44,9 +44,9 @@ describe('parseModEntries', () => {
       isAlreadyManaged: false,
     });
     return parseModEntries(inputXML, undefined)
-    .then(result => {
-      expect(result).toEqual(modEntry);
-    });
+      .then(result => {
+        expect(result).toEqual(modEntry);
+      });
   });
   it('parse a mismatched NMM config file', () => {
     const inputXML = `<?xml version="1.0" encoding="utf-8"?>
@@ -57,15 +57,15 @@ describe('parseModEntries', () => {
         + 'you need to upgrade your NMM before proceeding with the mod import.');
     let result;
     return parseModEntries(inputXML, undefined)
-    .then((ModEntries) => {
-      result = ModEntries;
-    })
-    .then(() => {
-      expect(result).toEqual(expectedError);
-    })
-    .catch((err) => {
-      expect(err).toEqual(expectedError);
-    });
+      .then((ModEntries) => {
+        result = ModEntries;
+      })
+      .then(() => {
+        expect(result).toEqual(expectedError);
+      })
+      .catch((err) => {
+        expect(err).toEqual(expectedError);
+      });
   });
   it('parse an invalid NMM config file', () => {
     const inputXML = `<?xml version="1.0" encoding="utf-8"?>
@@ -75,15 +75,15 @@ describe('parseModEntries', () => {
     const expectedError = new ParseError('The selected folder does not contain a valid VirtualModConfig.xml file.');
     let result;
     return parseModEntries(inputXML, undefined)
-    .then((ModEntries) => {
-      result = ModEntries;
-    })
-    .then(() => {
-      expect(result).toEqual(expectedError);
-    })
-    .catch((err) => {
-      expect(err).toEqual(expectedError);
-    });
+      .then((ModEntries) => {
+        result = ModEntries;
+      })
+      .then(() => {
+        expect(result).toEqual(expectedError);
+      })
+      .catch((err) => {
+        expect(err).toEqual(expectedError);
+      });
   });
   it('parse an empty NMM config file', () => {
     const inputXML = `<?xml version="1.0" encoding="utf-8"?>
@@ -93,14 +93,14 @@ describe('parseModEntries', () => {
     const expectedError = new ParseError('The selected folder contains an empty VirtualModConfig.xml file.');
     let result;
     return parseModEntries(inputXML, undefined)
-    .then((ModEntries) => {
-      result = ModEntries;
-    })
-    .then(() => {
-      expect(result).toEqual(expectedError);
-    })
-    .catch((err) => {
-      expect(err).toEqual(expectedError);
-    });
+      .then((ModEntries) => {
+        result = ModEntries;
+      })
+      .then(() => {
+        expect(result).toEqual(expectedError);
+      })
+      .catch((err) => {
+        expect(err).toEqual(expectedError);
+      });
   });
 });

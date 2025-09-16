@@ -248,7 +248,7 @@ export class DownloadObserver {
       if (!Array.isArray(urls)) {
         // could happen if triggered by foreign extensions, can't prevent that.
         // During beta it also happened in our own code but that should be fixed
-        log('warn', 'invalid url list', { urls });
+        log('warn', 'Invalid URL list', { urls });
         urls = [];
       }
       urls = urls.filter(url => url !== undefined);
@@ -287,13 +287,11 @@ export class DownloadObserver {
       ? [downloadDomain, gameId]
       : [gameId];
     const gameIds = Array.from(new Set<string>(baseIds.concat(compatibleGames.map(game => game.id))));
-    this.mApi.store.dispatch(
-      initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
     // Use the converted internal game ID for download path instead of the domain name
     // This ensures downloads are saved to the correct directory based on Vortex's
     // internal game identification rather than the Nexus domain name
-    const downloadPath = selectors.downloadPathForGame(state, downloadGameId);
+    let downloadPath = selectors.downloadPathForGame(state, downloadGameId);
 
     const processCB = this.genProgressCB(id);
 
@@ -304,6 +302,15 @@ export class DownloadObserver {
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
         .then(() => {
+          // Create the download entry only after the downloads directory has been ensured.
+          // This prevents the first-download flow from thinking there are existing downloads
+          // and showing the "Downloads Folder missing!" dialog instead of auto-creating.
+          this.mApi.store.dispatch(
+            initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
+
+          // Recompute download path after ensure as it may have been reset.
+          downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), downloadGameId);
+
           if (this.wasIntercepted(modInfo?.referenceTag)) {
             this.mInterceptedDownloads = this.mInterceptedDownloads
               .filter(iter => iter.tag !== modInfo?.referenceTag);

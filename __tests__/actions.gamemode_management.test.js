@@ -34,7 +34,7 @@ describe('setGameHidden', () => {
 describe('setGameParameters', () => {
   it('creates the correct action', () => {
 
- let parameters = {
+    const parameters = {
       workingDirectory: 'E:',
       iconPath: 'new icon',
       environment: 'new env',
@@ -52,7 +52,7 @@ describe('setGameParameters', () => {
 describe('addDiscoveredGame', () => {
   it('creates the correct action', () => {
 
-   let result = {
+    const result = {
       path: 'path2',
       modPath: 'modPath2',
       hidden: false,
@@ -71,7 +71,7 @@ describe('addDiscoveredGame', () => {
 describe('addDiscoveredTool', () => {
   it('creates the correct action', () => {
 
-   let result = {
+    const result = {
       path: 'tool2 path',
       hidden: false,
       custom: true,

@@ -129,6 +129,26 @@ function waitForProcesses() {
   });
 }
 
+// Utility: apply optional excludes from config
+function applyExcludes(files, fileConfig) {
+  const excludeNames = Array.isArray(fileConfig.excludeNames) ? fileConfig.excludeNames : [];
+  const excludePaths = Array.isArray(fileConfig.excludePaths) ? fileConfig.excludePaths.map(p => path.resolve(p)) : [];
+
+  return files.filter(f => {
+    const base = path.basename(f);
+    if (excludeNames.includes(base)) {
+      return false;
+    }
+    const resolved = path.resolve(f);
+    for (const ex of excludePaths) {
+      if (resolved === ex || resolved.startsWith(ex + path.sep)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 // copy files
 Promise.mapSeries(data.copy, file => {
   if (file.target.indexOf(tgt) === -1) {
@@ -143,7 +163,9 @@ Promise.mapSeries(data.copy, file => {
       const pattern = file.srcPath.split('*')[1] || '';
       
       if (fs.existsSync(basePath)) {
-        const files = expandWildcardPath(file.srcPath);
+        let files = expandWildcardPath(file.srcPath);
+        // Apply excludes if configured
+        files = applyExcludes(files, file);
         copies = copies === -1 ? files.length : copies += files.length;
         resolve(files);
       } else {
@@ -152,8 +174,10 @@ Promise.mapSeries(data.copy, file => {
     } else {
       // For direct file paths
       if (fs.existsSync(file.srcPath)) {
-        copies = copies === -1 ? 1 : copies += 1;
-        resolve([file.srcPath]);
+        let files = [file.srcPath];
+        files = applyExcludes(files, file);
+        copies = copies === -1 ? files.length : copies += files.length;
+        resolve(files);
       } else {
         resolve([]);
       }

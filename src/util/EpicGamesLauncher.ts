@@ -218,112 +218,112 @@ class EpicGamesLauncher implements IGameStore {
 
   public getGameStorePath(): Bluebird<string | undefined> {
     const getExecPath = (): Bluebird<string | undefined> => {
-       if (isWindows()) {
-         try {
-           const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-                                                   'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
-                                                   '(Default)');
-           const val = epicLauncher.value;
-           this.mLauncherExecPath = val.toString().split(',')[0];
-           return Bluebird.resolve(this.mLauncherExecPath);
-         } catch (err) {
-           log('info', 'Epic games launcher not found', { error: err.message });
-           return Bluebird.resolve(undefined);
-         }
-       } else if (isMacOS()) {
+      if (isWindows()) {
+        try {
+          const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+                                                  'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
+                                                  '(Default)');
+          const val = epicLauncher.value;
+          this.mLauncherExecPath = val.toString().split(',')[0];
+          return Bluebird.resolve(this.mLauncherExecPath);
+        } catch (err) {
+          log('info', 'Epic games launcher not found', { error: err.message });
+          return Bluebird.resolve(undefined);
+        }
+      } else if (isMacOS()) {
          // macOS: Epic Games Launcher is typically in /Applications
-         const epicAppPath = '/Applications/Epic Games Launcher.app';
-         return fs.statAsync(epicAppPath)
-           .then(() => {
-             this.mLauncherExecPath = epicAppPath;
-             return epicAppPath;
-           })
-           .catch(async () => {
+        const epicAppPath = '/Applications/Epic Games Launcher.app';
+        return fs.statAsync(epicAppPath)
+          .then(() => {
+            this.mLauncherExecPath = epicAppPath;
+            return epicAppPath;
+          })
+          .catch(async () => {
              // On macOS, also check Crossover and then VMware/VirtualBox
-             try {
-               const crossoverPaths = await getCrossoverPaths();
-               for (const bottlePath of crossoverPaths) {
-                 const crossoverEpicPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'Epic Games', 'Launcher');
-                 try {
-                   if (await fs.statAsync(crossoverEpicPath)) {
-                     this.mLauncherExecPath = crossoverEpicPath;
-                     return crossoverEpicPath;
-                   }
-                 } catch (err) {
+            try {
+              const crossoverPaths = await getCrossoverPaths();
+              for (const bottlePath of crossoverPaths) {
+                const crossoverEpicPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'Epic Games', 'Launcher');
+                try {
+                  if (await fs.statAsync(crossoverEpicPath)) {
+                    this.mLauncherExecPath = crossoverEpicPath;
+                    return crossoverEpicPath;
+                  }
+                } catch (err) {
                    // Continue checking other paths
-                 }
-               }
-             } catch (err) {
+                }
+              }
+            } catch (err) {
                // No Crossover paths found
-             }
+            }
 
              // Check VMware paths
-             try {
-               const vmwarePaths = await getVMwarePaths();
-               for (const vmPath of vmwarePaths) {
-                 const vmEpicPath = path.join(vmPath, 'Program Files (x86)', 'Epic Games', 'Launcher');
-                 try {
-                   if (await fs.statAsync(vmEpicPath)) {
-                     this.mLauncherExecPath = vmEpicPath;
-                     return vmEpicPath;
-                   }
-                 } catch (err) {
+            try {
+              const vmwarePaths = await getVMwarePaths();
+              for (const vmPath of vmwarePaths) {
+                const vmEpicPath = path.join(vmPath, 'Program Files (x86)', 'Epic Games', 'Launcher');
+                try {
+                  if (await fs.statAsync(vmEpicPath)) {
+                    this.mLauncherExecPath = vmEpicPath;
+                    return vmEpicPath;
+                  }
+                } catch (err) {
                    // Continue checking other paths
-                 }
-               }
-             } catch (err) {
+                }
+              }
+            } catch (err) {
                // No VMware paths found
-             }
+            }
 
              // Check VirtualBox paths
-             try {
-               const vboxPaths = await getVirtualBoxPaths();
-               for (const vboxPath of vboxPaths) {
-                 const vboxEpicPath = path.join(vboxPath, 'Program Files (x86)', 'Epic Games', 'Launcher');
-                 try {
-                   if (await fs.statAsync(vboxEpicPath)) {
-                     this.mLauncherExecPath = vboxEpicPath;
-                     return vboxEpicPath;
-                   }
-                 } catch (err) {
+            try {
+              const vboxPaths = await getVirtualBoxPaths();
+              for (const vboxPath of vboxPaths) {
+                const vboxEpicPath = path.join(vboxPath, 'Program Files (x86)', 'Epic Games', 'Launcher');
+                try {
+                  if (await fs.statAsync(vboxEpicPath)) {
+                    this.mLauncherExecPath = vboxEpicPath;
+                    return vboxEpicPath;
+                  }
+                } catch (err) {
                    // Continue checking other paths
-                 }
-               }
-             } catch (err) {
+                }
+              }
+            } catch (err) {
                // No VirtualBox paths found
-             }
+            }
 
              // If not found in virtualization paths, return undefined
-             return undefined;
-           });
-       } else {
+            return undefined;
+          });
+      } else {
          // Linux: Try Heroic Games Launcher
-         const heroicPath = '/usr/bin/heroic';
-         return fs.statAsync(heroicPath)
-           .then(() => {
-             this.mLauncherExecPath = heroicPath;
-             return heroicPath;
-           })
-           .catch(() => {
+        const heroicPath = '/usr/bin/heroic';
+        return fs.statAsync(heroicPath)
+          .then(() => {
+            this.mLauncherExecPath = heroicPath;
+            return heroicPath;
+          })
+          .catch(() => {
              // Try flatpak installation
-             const flatpakPath = '/var/lib/flatpak/exports/bin/com.heroicgameslauncher.hgl';
-             return fs.statAsync(flatpakPath)
-               .then(() => {
-                 this.mLauncherExecPath = flatpakPath;
-                 return flatpakPath;
-               })
-               .catch(() => {
-                 log('info', 'Heroic games launcher not found');
-                 return undefined;
-               });
-           });
-       }
-     };
+            const flatpakPath = '/var/lib/flatpak/exports/bin/com.heroicgameslauncher.hgl';
+            return fs.statAsync(flatpakPath)
+              .then(() => {
+                this.mLauncherExecPath = flatpakPath;
+                return flatpakPath;
+              })
+              .catch(() => {
+                log('info', 'Heroic games launcher not found');
+                return undefined;
+              });
+          });
+      }
+    };
 
-     return (!!this.mLauncherExecPath)
-       ? Bluebird.resolve(this.mLauncherExecPath)
-       : getExecPath();
-   }
+    return (!!this.mLauncherExecPath)
+      ? Bluebird.resolve(this.mLauncherExecPath)
+      : getExecPath();
+  }
 
   private executable() {
     if (isWindows()) {

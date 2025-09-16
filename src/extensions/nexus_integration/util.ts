@@ -296,15 +296,21 @@ export function oauthCallback(api: IExtensionApi, code: string, state?: string) 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   if (!isLoggedIn(api.getState())) {
     return new Promise((resolve, reject) => {
-      api.events.on('did-login', (err: Error) => {
+      // Add timeout to prevent hanging indefinitely
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Authentication timeout: The login process took too long'));
+      }, 30000); // 30 second timeout
 
+      const loginHandler = (err: Error) => {
+        clearTimeout(timeoutId);
         if (err !== null) {
           reject(err);
         } else {
           resolve();
         }
-      });
+      };
 
+      api.events.once('did-login', loginHandler);
       api.store.dispatch(setDialogVisible('login-dialog'));
     });
   } else {
@@ -1448,8 +1454,8 @@ export function clearOAuthCredentials(api: IExtensionApi) {
   api.store.dispatch({ type: 'CLEAR_OAUTH_CREDENTIALS' });
   // Clear user info
   api.store.dispatch(setUserInfo(undefined));
-  // Emit login event with null error to indicate logout
-  api.events.emit('did-login', null);
+  // Emit login event with cancel error to indicate logout
+  api.events.emit('did-login', new UserCanceled());
 }
 
 // Enhanced updateToken function with better error handling
@@ -1554,7 +1560,11 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<boolean> {
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key)) 
-    .then(() => true) 
+    .then(() => {
+      // Emit successful login event
+      api.events.emit('did-login', null);
+      return true;
+    }) 
     //.then(userInfo => updateUserInfo(api, nexus))
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve(true))

@@ -125,7 +125,7 @@ function lookupDownloadHint(api: IExtensionApi,
     try {
       urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
     } catch (err) {
-      return Bluebird.reject(new NotFound(`Invalid url set for external dependency: "${input.url ?? '<unset>'}"`));
+      return Bluebird.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
     }
     return Bluebird.resolve({ url: urlNorm });
   } else if (input.mode === 'browse') {
@@ -133,7 +133,7 @@ function lookupDownloadHint(api: IExtensionApi,
     try {
       urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
     } catch (err) {
-      return Bluebird.reject(new NotFound(`Invalid url set for external dependency: "${input.url ?? '<unset>'}"`));
+      return Bluebird.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
     }
     return browseForDownload(api, urlNorm, input.instructions)
       .then(result => {

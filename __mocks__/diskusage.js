@@ -1,7 +1,7 @@
 'use strict';
 
 // Default mock values for disk usage (500GB total, 100GB free)
-let checkResult = {
+const checkResult = {
   '': {
     available: 107374182400,  // 100GB in bytes
     free: 107374182400,      // 100GB in bytes

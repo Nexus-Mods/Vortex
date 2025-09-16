@@ -17,7 +17,7 @@ class SourceMap {
 
   public lookup(position: NullableMappedPosition): Promise<NullableMappedPosition> {
     return this.getConsumer(position.source)
-    .then(consumer => (consumer === null)
+      .then(consumer => (consumer === null)
         ? Promise.resolve(position)
         : consumer.originalPositionFor({ line: position.line || 0, column: position.column || 0 }));
   }

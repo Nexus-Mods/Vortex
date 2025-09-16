@@ -474,17 +474,33 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
             'installing-game', 'download',
             'Installing Game, Vortex will restart upon completion.', true));
 
-          api.ext.ensureLoggedIn()
-            .then(() => api.emitAndAwait('install-extension', extension))
+          // Add timeout to prevent hanging on authentication
+          const authTimeout = setTimeout(() => {
+            api.store.dispatch(clearUIBlocker('installing-game'));
+            api.showErrorNotification('Authentication timeout', 
+              'The authentication process took too long. Please try again.', {
+                allowReport: false
+              });
+          }, 30000); // 30 second timeout
+
+          return api.ext.ensureLoggedIn()
+            .then(() => {
+              clearTimeout(authTimeout);
+              return api.emitAndAwait('install-extension', extension);
+            })
             .then((results: boolean[]) => {
               if (results.includes(true)) {
                 relaunch(['--game', gameId]);
               }
             })
             .finally(() => {
+              clearTimeout(authTimeout);
               api.store.dispatch(clearUIBlocker('installing-game'));
             })
             .catch(err => {
+              clearTimeout(authTimeout);
+              api.store.dispatch(clearUIBlocker('installing-game'));
+              
               if (err instanceof UserCanceled) {
                 return Promise.resolve();
               }
@@ -499,7 +515,18 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
         },
       },
     ])
-      .then(() => Promise.resolve());
+      .then(result => {
+        // Wait for the installation to complete if the user clicked Download
+        if (result.action === 'Download') {
+          // Return a promise that resolves when the installation completes
+          return new Promise<void>((resolve) => {
+            // The installation process will handle restarting Vortex
+            // We just need to ensure the dialog doesn't resolve prematurely
+            setTimeout(resolve, 100); // Small delay to allow restart to initiate
+          });
+        }
+        return Promise.resolve();
+      });
   }
 
   return api.showDialog('question', 'Game not discovered', {

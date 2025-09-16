@@ -1877,6 +1877,33 @@ function init(context: IExtensionContextExt): boolean {
   context.once(() => once(context.api, extIntegrations));
   context.onceMain(() => onceMain(context.api));
 
+  // Add event listener to automatically resume paused downloads after authorization
+  context.api.events.on('did-login', (err: Error) => {
+    if (err) {
+      log('warn', 'Login failed, not resuming downloads', err.message);
+      return;
+    }
+    
+    log('info', 'Login successful, checking for paused downloads to resume');
+    
+    // Resume any downloads that were paused due to authorization issues
+    const state: IState = context.api.getState();
+    const downloads = state.persistent.downloads;
+    
+    if (downloads && downloads.files) {
+      Object.entries(downloads.files).forEach(([downloadId, download]) => {
+        if (download && download.state === 'paused') {
+          // Check if this download was paused due to authorization issues
+          const pauseReason = download.pauseReason;
+          if (pauseReason === 'network' || pauseReason === 'user') {
+            log('info', 'Resuming download after authorization', downloadId);
+            context.api.events.emit('resume-download', downloadId);
+          }
+        }
+      });
+    }
+  });
+
   return true;
 }
 

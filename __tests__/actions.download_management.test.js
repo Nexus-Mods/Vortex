@@ -2,7 +2,7 @@ import * as actions from '../src/extensions/download_management/actions/state';
 
 describe('addLocalDownload', () => {
   it('creates the action', () => {
-    let action = actions.addLocalDownload('id', 'game', 'localPath', 42);
+    const action = actions.addLocalDownload('id', 'game', 'localPath', 42);
     expect(action).toEqual(
       { error: false, type: 'ADD_LOCAL_DOWNLOAD', payload: { id: 'id', game: 'game', localPath: 'localPath', fileSize: 42 } }
     );
@@ -11,7 +11,7 @@ describe('addLocalDownload', () => {
 
 describe('downloadProgress', () => {
   it('creates the action', () => {
-    let action = actions.downloadProgress('id', 42, 43);
+    const action = actions.downloadProgress('id', 42, 43);
     expect(action).toEqual(
       { error: false, type: 'DOWNLOAD_PROGRESS', payload: { id: 'id', received: 42, total: 43 } }
     );
@@ -20,7 +20,7 @@ describe('downloadProgress', () => {
 
 describe('finishDownload', () => {
   it('creates the action', () => {
-    let action = actions.finishDownload('id', 'state', 'failCause');
+    const action = actions.finishDownload('id', 'state', 'failCause');
     expect(action).toEqual(
       { error: false, type: 'FINISH_DOWNLOAD', payload: { id: 'id', state: 'state', failCause: 'failCause' } }
     );
@@ -29,7 +29,7 @@ describe('finishDownload', () => {
 
 describe('initDownload', () => {
   it('creates the action', () => {
-    let action = actions.initDownload('id', ['url1', 'url2'], { key: 'value' }, ['game']);
+    const action = actions.initDownload('id', ['url1', 'url2'], { key: 'value' }, ['game']);
     expect(action).toEqual(
       { error: false, type: 'INIT_DOWNLOAD', payload:
         { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, games: ['game'] }
@@ -40,7 +40,7 @@ describe('initDownload', () => {
 
 describe('pauseDownload', () => {
   it('creates the action', () => {
-    let action = actions.pauseDownload('id');
+    const action = actions.pauseDownload('id');
     expect(action).toEqual(
       { error: false, type: 'PAUSE_DOWNLOAD', payload: { id: 'id' } }
     );
@@ -49,7 +49,7 @@ describe('pauseDownload', () => {
 
 describe('removeDownload', () => {
   it('creates the action', () => {
-    let action = actions.removeDownload('id');
+    const action = actions.removeDownload('id');
     expect(action).toEqual(
       { error: false, type: 'REMOVE_DOWNLOAD', payload: { id: 'id' } }
     );
@@ -58,7 +58,7 @@ describe('removeDownload', () => {
 
 describe('setDownloadFilePath', () => {
   it('creates the action', () => {
-    let action = actions.setDownloadFilePath('id', 'filePath');
+    const action = actions.setDownloadFilePath('id', 'filePath');
     expect(action).toEqual(
       { error: false, type: 'SET_DOWNLOAD_FILEPATH', payload:
         { id: 'id', filePath: 'filePath' }
@@ -69,7 +69,7 @@ describe('setDownloadFilePath', () => {
 
 describe('setDownloadHash', () => {
   it('creates the action', () => {
-    let action = actions.setDownloadHash('id', 'hash');
+    const action = actions.setDownloadHash('id', 'hash');
     expect(action).toEqual(
       { error: false, type: 'SET_DOWNLOAD_HASH', payload: { id: 'id', fileMD5: 'hash' } }
     );
@@ -78,7 +78,7 @@ describe('setDownloadHash', () => {
 
 describe('setDownloadHashByFile', () => {
   it('creates the action', () => {
-    let action = actions.setDownloadHashByFile('filePath', 'hash', 42);
+    const action = actions.setDownloadHashByFile('filePath', 'hash', 42);
     expect(action).toEqual(
       { error: false, type: 'SET_DOWNLOAD_HASH_BY_FILE', payload:
         { fileName: 'filePath', fileMD5: 'hash', fileSize: 42 }
@@ -89,7 +89,7 @@ describe('setDownloadHashByFile', () => {
 
 describe('setDownloadSpeed', () => {
   it('creates the action', () => {
-    let action = actions.setDownloadSpeed(42);
+    const action = actions.setDownloadSpeed(42);
     expect(action).toEqual(
       {
         error: false,
@@ -106,7 +106,7 @@ describe('setDownloadSpeed', () => {
 
 describe('startDownload', () => {
   it('creates the action', () => {
-    let action = actions.startDownload('id');
+    const action = actions.startDownload('id');
     expect(action).toEqual(
       { error: false, type: 'START_DOWNLOAD', payload: { id: 'id' } }
     );

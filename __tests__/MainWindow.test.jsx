@@ -18,8 +18,8 @@ function renderMainWindow() {
 }
 
 it('has no modals', () => {
-  let win = renderMainWindow();
-  let modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal));
+  const win = renderMainWindow();
+  const modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal));
 
   // expecting only the Dialog Modal
   expect(modals.length).toBe(0);

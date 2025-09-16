@@ -1,5 +1,5 @@
-var webpack = require('webpack');
-var nodeExternals = require('webpack-node-externals');
+const webpack = require('webpack');
+const nodeExternals = require('webpack-node-externals');
 const TerserPlugin = require('terser-webpack-plugin')
 
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');

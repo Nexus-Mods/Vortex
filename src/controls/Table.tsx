@@ -10,6 +10,7 @@ import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import { log } from '../util/log';
+import {isMacOS, isWindows} from '../util/platform';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
 import {makeUnique, sanitizeCSSId, truthy} from '../util/util';
@@ -370,10 +371,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     if (selected.length < 2) {
+      const modifierKey = isMacOS() ? 'cmd' : 'ctrl';
       return (
         <Usage infoId='table-multiselect'>
-          {t('Did you know? You can select multiple items using ctrl+click or shift+click or '
-            + 'select everything using ctrl+a and then do things with all selected items at once.')}
+          {t('Did you know? You can select multiple items using {{modifierKey}}+click or shift+click or '
+            + 'select everything using {{modifierKey}}+a and then do things with all selected items at once.',
+            { modifierKey })}
         </Usage>
       );
     }
