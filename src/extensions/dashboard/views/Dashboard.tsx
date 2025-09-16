@@ -23,7 +23,7 @@ import { Button, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-import { TailwindTest } from '../../../controls/TailwindTest';
+import { TailwindTest } from '../../../tailwind/components/TailwindTest';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
@@ -147,7 +147,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage id='page-dashboard' className={classes.join(' ')}>
-        <TailwindTest />
+        {/* <TailwindTest /> */}
         <MainPage.Body
           style={{ display: 'flex', flexDirection: 'column' }}
         >
