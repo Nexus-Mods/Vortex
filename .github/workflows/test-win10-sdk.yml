@@ -17,111 +17,36 @@ jobs:
       shell: powershell
       run: |
         $sdkComponent = "Microsoft.VisualStudio.Component.Windows10SDK.19041"
-        $sdkVersion = "10.0.19041.0"
-        $componentFound = $false
-        $sdkFound = $false
-        
-        Write-Host "Testing for $sdkComponent"
-        
-        # Check via vswhere with detailed output
         $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-        if (Test-Path $vswherePath) {
-            Write-Host "vswhere found at: $vswherePath"
-            
-            # Show all VS installations with components
-            Write-Host "All VS installations with components:"
-            $allWithComponents = & $vswherePath -all -format json -property displayName,installationPath,installationVersion,catalog_productDisplayVersion
-            Write-Host $allWithComponents
-            
-            # Show what components are actually installed
-            Write-Host "Installed components (if available):"
-            $withComponents = & $vswherePath -all -format json -property displayName,catalog_buildTools
-            Write-Host $withComponents
-            
-            # Try a different approach - look for any Windows SDK components
-            Write-Host "Checking for any Windows SDK components..."
-            $anyWindowsSDK = & $vswherePath -products * -requires Microsoft.VisualStudio.Component.Windows10SDK -format json
-            Write-Host "Any Windows10SDK components:"
-            Write-Host $anyWindowsSDK
-            
-            # Check our specific component
-            Write-Host "Checking for our specific component: $sdkComponent"
-            $specificCheck = & $vswherePath -latest -products * -requires $sdkComponent -format json
-            Write-Host "Specific component output:"
-            Write-Host $specificCheck
-            
-            if ($specificCheck -and $specificCheck.Trim() -ne "" -and $specificCheck -ne "[]") {
-                Write-Host "Component found in VS installation"
-                $componentFound = $true
-            } else {
-                Write-Host "Component not found in VS installation (expected)"
-            }
-        } else {
-            Write-Host "vswhere not found at expected path"
-        }
         
-        # Check SDK files with details
-        $sdkPaths = @(
-            "${env:ProgramFiles(x86)}\Windows Kits\10",
-            "${env:ProgramFiles}\Windows Kits\10"
+        # Check which SDK components are installed
+        $sdkPatterns = @(
+            "Microsoft.VisualStudio.Component.Windows10SDK.22621",
+            "Microsoft.VisualStudio.Component.Windows10SDK.20348", 
+            "Microsoft.VisualStudio.Component.Windows10SDK.19041",
+            "Microsoft.VisualStudio.Component.Windows10SDK.18362",
+            "Microsoft.VisualStudio.Component.Windows11SDK.22000"
         )
         
-        foreach ($path in $sdkPaths) {
-            if (Test-Path $path) {
-                Write-Host "Found Windows Kits at $path"
-                
-                # Show what SDK versions are actually available
-                $includeDir = Join-Path $path "Include"
-                if (Test-Path $includeDir) {
-                    $availableVersions = Get-ChildItem $includeDir -Directory | Where-Object { $_.Name -like "10.0.*" }
-                    Write-Host "Available SDK versions:"
-                    foreach ($version in $availableVersions) {
-                        Write-Host "  $($version.Name)"
-                    }
-                    
-                    # Check for our target version
-                    $targetInclude = Join-Path $includeDir $sdkVersion
-                    $targetBin = Join-Path $path "bin\$sdkVersion"
-                    
-                    if ((Test-Path $targetInclude) -and (Test-Path $targetBin)) {
-                        Write-Host "Found target SDK $sdkVersion files"
-                        $sdkFound = $true
-                    } else {
-                        Write-Host "Target SDK $sdkVersion files not found"
-                    }
-                } else {
-                    Write-Host "No Include directory found"
+        Write-Host "Installed Windows SDK components:"
+        $componentFound = $false
+        foreach ($pattern in $sdkPatterns) {
+            $result = & $vswherePath -latest -products * -requires $pattern -format json
+            if ($result -and $result.Trim() -ne "" -and $result -ne "[]") {
+                Write-Host "FOUND: $pattern"
+                if ($pattern -eq $sdkComponent) {
+                    $componentFound = $true
                 }
-                break
             }
         }
         
-        # Check for key tools
-        $tools = @("rc.exe", "mt.exe", "lib.exe")
-        $toolsFound = 0
-        foreach ($tool in $tools) {
-            if (Get-Command $tool -ErrorAction SilentlyContinue) {
-                $toolsFound++
-            }
-        }
-        
-        Write-Host "Tools found: $toolsFound of $($tools.Count)"
-        
-        # Final result
-        $available = $componentFound -or ($sdkFound -and ($toolsFound -ge 2))
-        
-        Write-Host "SDK Available: $available"
-        Write-Host "Component via VS: $componentFound"  
-        Write-Host "SDK files found: $sdkFound"
-        
-        echo "SDK_AVAILABLE=$available" >> $env:GITHUB_OUTPUT
+        Write-Host "Target component $sdkComponent available: $componentFound"
+        echo "SDK_AVAILABLE=$componentFound" >> $env:GITHUB_OUTPUT
       id: sdk-check
     
     - name: Install SDK if missing
       if: steps.sdk-check.outputs.SDK_AVAILABLE == 'false'
       shell: powershell
       run: |
-        Write-Host "SDK component missing - installation needed"
-        Write-Host "Options:"
-        Write-Host "1. vs_buildtools.exe --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
-        Write-Host "2. choco install windows-sdk-10-version-2004-all"
+        Write-Host "Installing $sdkComponent"
+        # Add installation command here
