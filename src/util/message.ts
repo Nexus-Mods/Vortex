@@ -578,10 +578,7 @@ export function prettifyNodeErrorMessage(err: any,
     };
   } else if (['CERT_HAS_EXPIRED', 'CERT_NOT_YET_VALID'].includes(err.code)) {
     return {
-      message: 'A secure connection was rejected because the server certificate is not valid. '
-             + 'If this problem persists it probably indicates an issue with your setup, either your '
-             + 'ISP or Anti Virus interfering with the certification or your system is infected '
-             + 'with malicious software.',
+      message: 'A secure connection could not be established because the server certificate is not valid. In most cases this happens when the date or time on your computer is incorrect. It can also be caused by problems with your internet provider, antivirus software interfering with certificates, or in rare cases by malicious software on your system.',
       allowReport: false,
     };
   } else if (['UNABLE_TO_VERIFY_LEAF_SIGNATURE',

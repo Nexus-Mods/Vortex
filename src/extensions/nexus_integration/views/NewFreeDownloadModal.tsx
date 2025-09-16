@@ -14,11 +14,12 @@ export interface INewFreeDownloadModal {
   fileInfo: any;
   openModPage: () => void;
   goPremium: () => void;
+  onDownload: () => void;
 }
 
 function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
-  const { t, fileInfo, openModPage, goPremium } = props;
+  const { t, fileInfo, openModPage, goPremium, onDownload } = props;
 
 
 
@@ -74,7 +75,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
                   <li>Throttled download speeds (3 MB/s)</li>
                   <li>Ads and delay for each download</li>
                 </ul>
-                <Button id='download-mod-button' onClick={openModPage}>{t('Download manually')}</Button>
+                <Button id='download-mod-button' onClick={onDownload}>{t('Download manually')}</Button>
               </FlexLayout>
             </FlexLayout.Flex>
 
