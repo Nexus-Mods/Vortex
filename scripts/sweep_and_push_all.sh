@@ -6,6 +6,9 @@ export SHELL=/bin/bash
 
 # Sweep repo and all submodules: commit and push any untracked/modified changes
 # With macOS-branch and fork safety checks.
+# 
+# IMPORTANT: This script preserves existing submodule remote configurations
+# to prevent unintended changes to remote URLs during push operations.
 #
 # Usage:
 #   ./scripts/sweep_and_push_all.sh [--dry-run]
@@ -37,6 +40,18 @@ export REMOTE_NAME SUPER_REMOTE MACOS_BRANCH FORK_USER
 info()  { printf "[info] %s\n" "$*"; }
 warn()  { printf "[warn] %s\n" "$*"; }
 error() { printf "[error] %s\n" "$*"; }
+
+# Function to preserve current submodule remote configurations
+preserve_submodule_remotes() {
+  info "Preserving current submodule remote configurations..."
+  
+  # Save current remote configurations to prevent unintended changes
+  if [[ -f "scripts/preserve_submodule_remotes.sh" ]]; then
+    bash scripts/preserve_submodule_remotes.sh save
+  else
+    warn "Remote preservation script not found. Submodule remotes may be modified."
+  fi
+}
 
 git_current_branch() {
   git rev-parse --abbrev-ref HEAD 2>/dev/null
@@ -141,6 +156,9 @@ ensure_branch_upstream_here() {
 
 info "== Superproject root: $(pwd) =="
 info "Using remote '$REMOTE_NAME' for submodules and '$SUPER_REMOTE' for superproject pushes"
+
+# Preserve current submodule remote configurations before any operations
+preserve_submodule_remotes
 
 # Ensure correct branch and remote ownership in superproject
 require_macos_branch_here "superproject"
