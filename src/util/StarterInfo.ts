@@ -19,6 +19,7 @@ import { getApplication } from './application';
 import { MissingDependency, MissingInterpreter,
          ProcessCanceled, UserCanceled } from './CustomErrors';
 import getVortexPath from './getVortexPath';
+import { getExecutablePathForPlatform } from './macOSGameCompatibility';
 
 import Promise from 'bluebird';
 import * as fs from 'fs';
@@ -336,7 +337,9 @@ class StarterInfo implements IStarterInfo {
 
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
     this.name = gameDiscovery.name || game.name;
-    this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
+    const executable = gameDiscovery.executable || game.executable;
+    const executablePath = getExecutablePathForPlatform(gameDiscovery.path, this.gameId, executable);
+    this.exePath = executablePath || path.join(gameDiscovery.path, executable);
     this.commandLine = getSafe(gameDiscovery, ['parameters'], getSafe(game, ['parameters'], []));
     this.workingDirectory = path.dirname(this.exePath);
     this.originalEnvironment = getSafe(game, ['environment'], {});

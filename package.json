@@ -27,7 +27,7 @@
     "package": "electron-builder --config electron-builder-config.json --publish never",
     "package-old": "electron-builder --config electron-builder-config-old.json --publish never",
     "preinstall": "",
-    "postinstall": "node scripts/configure-native-modules.js && node scripts/patch-native-modules.js && node postinstall.js && patch-package || true",
+    "postinstall": "node scripts/configure-native-modules.js && node scripts/patch-native-modules.js && node scripts/fix-7z-bin-macos.js && node postinstall.js && patch-package || true",
     "postinstall:make-bsdiff-patch": "node scripts/patch-bsdiff.js && npx patch-package bsdiff-node",
     "postinstall:make-drivelist-patch": "node scripts/patch-drivelist.js && npx patch-package drivelist",
     "postinstall:patch-native-modules": "node scripts/patch-native-modules.js && npx patch-package bsdiff-node drivelist diskusage exe-version leveldown native-errors node-7z permissions turbowalk vortexmt wholocks winapi-bindings xxhash-addon",

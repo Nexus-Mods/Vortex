@@ -15,6 +15,7 @@ import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from '../../util/constants';
 import {DataInvalid, ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { validateRequiredFilesWithMacOSCompat } from '../../util/macOSGameCompatibility';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -167,9 +168,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 }
 
 function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
-  return Promise.map(game.requiredFiles || [], file =>
-    Promise.resolve(fsExtra.stat(path.join(gamePath, file))))
-    .then(() => undefined)
+  return validateRequiredFilesWithMacOSCompat(gamePath, game.requiredFiles || [], game.id)
     .catch(err => {
       // if the error is anything other than "the file doesn't exist" we assume
       // the file is there and can't be accessed because of permissions or something.
@@ -380,9 +379,7 @@ function removeDisappearedGames(api: IExtensionApi,
     if (requiredFiles === undefined) {
       return Promise.resolve();
     }
-    return Promise.map(requiredFiles,
-          file => fsExtra.stat(path.join(discovered[gameId].path, file)))
-          .then(() => undefined)
+    return validateRequiredFilesWithMacOSCompat(discovered[gameId].path, requiredFiles, gameId)
           .catch(err => {
             if (err.code === 'ENOENT') {
               return Promise.reject(err);
