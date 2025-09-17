@@ -51,6 +51,8 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 import FlexLayout from '../../controls/FlexLayout';
 import Image from '../../controls/Image';
+import { toast } from 'react-hot-toast';
+
 
 import {
   genCollectionIdAttribute,
@@ -1674,13 +1676,16 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(clearOAuthCredentials(null));
   });*/
 
-
   userInfoDebouncer = new Debouncer(() => {
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
       return Promise.resolve();
     }
+
+    toast.success('User info refreshed!');
+
     context.api.events.emit('refresh-user-info');
+
     return Promise.resolve();
   }, 3000, true, false);
 
