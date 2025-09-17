@@ -5,6 +5,7 @@
 #Requires -RunAsAdministrator
 
 # Configuration
+$NODE_VERSION = "22.19.0"
 $WindowsSDKVer = "19041"
 $RepoUrl = "https://github.com/Nexus-Mods/Vortex.git"
 $Branch = "master"
@@ -25,11 +26,11 @@ function Write-Log {
     
     $timestamp = Get-Date -Format "HH:mm:ss"
     $prefix = switch ($Level) {
-        "STEP"    { "[STEP]   "; "Cyan" }
+        "STEP" { "[STEP]   "; "Cyan" }
         "SUCCESS" { "[OK]     "; "Green" }
-        "WARN"    { "[WARN]   "; "Yellow" }
-        "ERROR"   { "[ERROR]  "; "Red" }
-        default   { "[INFO]   "; "White" }
+        "WARN" { "[WARN]   "; "Yellow" }
+        "ERROR" { "[ERROR]  "; "Red" }
+        default { "[INFO]   "; "White" }
     }
     
     Write-Host "$timestamp $($prefix[0])$Message" -ForegroundColor $prefix[1]
@@ -127,7 +128,7 @@ function Install-Python310 {
     Write-Log "Checking Python 3.10 installation..." "STEP"
     
     # Check for existing Python 3.10
-    $pythonCommands = @({ py -3.10 -V }, { python --version }, { python3.10 --version })
+    $pythonCommands = @( { py -3.10 -V }, { python --version }, { python3.10 --version })
     foreach ($cmd in $pythonCommands) {
         try {
             $version = & $cmd 2>&1
@@ -135,7 +136,8 @@ function Install-Python310 {
                 Write-Log "Python 3.10 already installed: $version" "SUCCESS"
                 return
             }
-        } catch { }
+        }
+        catch { }
     }
     
     Invoke-WithRetry -Operation "Python 3.10 installation" -ScriptBlock {
@@ -151,7 +153,8 @@ function Install-Python310 {
                     $pythonFound = $true
                     break
                 }
-            } catch { }
+            }
+            catch { }
         }
         
         if (-not $pythonFound) {
@@ -172,22 +175,32 @@ function Install-CMake {
     }
     
     Invoke-WithRetry -Operation "CMake installation" -ScriptBlock {
-        winget install --id Kitware.CMake -e --accept-package-agreements --accept-source-agreements --silent | Out-Null
-        Start-Sleep -Seconds 3
-        
-        # Add CMake to PATH
-        @("$env:ProgramFiles\CMake\bin", "${env:ProgramFiles(x86)}\CMake\bin") | ForEach-Object {
-            if (Test-Path "$_\cmake.exe") { 
-                Add-ToPathPermanently -Path $_
-                break
-            }
+        $wingetArgs = @(
+            'install', '-e', '--id', 'Kitware.CMake',
+            '--accept-package-agreements', '--accept-source-agreements', '--silent'
+        )
+        $proc = Start-Process -FilePath 'winget.exe' -ArgumentList $wingetArgs -NoNewWindow -Wait -PassThru
+        if ($null -eq $proc -or $proc.ExitCode -ne 0) {
+            throw "winget failed to install CMake (exit $($proc.ExitCode))"
         }
         
-        # Refresh PATH
-        $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
-        
+        # Wait for cmake to appear on PATH (PATH updates can lag until a new session)
+        $deadline = (Get-Date).AddMinutes(10)
+        while (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
+            if ((Get-Date) -gt $deadline) { break }
+            Start-Sleep -Seconds 5
+        }
         if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
-            throw "CMake command not found after installation"
+            $possible = @("$Env:ProgramFiles\CMake\bin", "$Env:ProgramFiles(x86)\CMake\bin")
+            foreach ($pdir in $possible) {
+                if (Test-Path (Join-Path $pdir 'cmake.exe')) {
+                    $env:PATH = "$pdir;$env:PATH"
+                    break
+                }
+            }
+            if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
+                throw "CMake not available on PATH after installation"
+            }
         }
     }
     
@@ -197,7 +210,6 @@ function Install-CMake {
 function Install-VisualStudioBuildTools {
     Write-Log "Checking Visual Studio Build Tools..." "STEP"
     
-    # Use vswhere to detect existing Build Tools
     $buildToolsInstalled = $false
     $buildToolsPath = $null
     $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -211,67 +223,50 @@ function Install-VisualStudioBuildTools {
                 Write-Log "Build Tools detected at: $buildToolsPath" "SUCCESS"
             }
         }
-        catch {
-            Write-Log "vswhere query failed, using fallback detection" "WARN"
-        }
-    }
-    
-    # Fallback detection
-    if (-not $buildToolsInstalled) {
-        $fallbackPaths = @(
-            "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools",
-            "C:\Program Files\Microsoft Visual Studio\2022\BuildTools"
-        )
-        foreach ($path in $fallbackPaths) {
-            if (Test-Path "$path\MSBuild\Current\Bin\MSBuild.exe") {
-                $buildToolsInstalled = $true
-                $buildToolsPath = $path
-                Write-Log "Build Tools detected at: $path" "SUCCESS"
-                break
-            }
-        }
+        catch {}
     }
     
     $components = @(
         "Microsoft.VisualStudio.Workload.VCTools",
         "Microsoft.NetCore.Component.Runtime.6.0", 
         "Microsoft.NetCore.Component.SDK",
-        "Microsoft.VisualStudio.Component.VC.ATL",
-        "Microsoft.VisualStudio.Component.Windows10SDK.$WindowsSDKVer"
+        "Microsoft.VisualStudio.Component.VC.ATL"
+        # "Microsoft.VisualStudio.Component.Windows10SDK.$WindowsSDKVer"
     )
     
-    if ($buildToolsInstalled) {
-        Write-Log "Modifying existing Build Tools to add required components..." "INFO"
+    if (-not $buildToolsInstalled) {
+        Write-Log "Installing Visual Studio 2022 Build Tools..." "INFO"
         
+        $installArgs = @('--passive', '--norestart')
+        foreach ($component in $components) { $installArgs += '--add', $component }
+        $installArgs += '--includeRecommended', '--remove', 'Microsoft.VisualStudio.Component.VC.CMake.Project'
+
+        $overrideString = $installArgs -join ' '
+
+        Invoke-WithRetry -Operation "Build Tools installation" -ScriptBlock {
+            $wingetArgs = @(
+                'install', '-e', '--id', 'Microsoft.VisualStudio.2022.BuildTools',
+                '--accept-source-agreements', '--accept-package-agreements',
+                '--override', "`"$overrideString`""
+            )
+            $p = Start-Process -FilePath 'winget.exe' -ArgumentList $wingetArgs -NoNewWindow -Wait -PassThru
+            if ($null -eq $p -or $p.ExitCode -ne 0) { throw "winget Build Tools install failed (exit $($p.ExitCode))" }
+        }
+
+    }
+    else {
+        Write-Log "Modifying existing Build Tools to add required components..." "INFO"
         $installerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
         if (-not (Test-Path $installerPath)) {
             Write-Log "VS Installer not found, components may already be present" "WARN"
             return
         }
-        
-        $modifyArgs = @("modify", "--installPath", "`"$buildToolsPath`"")
-        foreach ($component in $components) {
-            $modifyArgs += "--add", $component
-        }
-        $modifyArgs += "--includeRecommended", "--passive", "--norestart"
-        
-        Invoke-WithRetry -Operation "Build Tools modification" -ScriptBlock {
-            $process = Start-Process -FilePath $installerPath -ArgumentList $modifyArgs -Wait -PassThru -NoNewWindow
-            if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
-                throw "VS Installer failed with exit code: $($process.ExitCode)"
-            }
-        }
-    } else {
-        Write-Log "Installing Visual Studio 2022 Build Tools..." "INFO"
-        
-        $installArgs = @("--passive", "--norestart")
-        foreach ($component in $components) {
-            $installArgs += "--add", $component
-        }
-        $installArgs += "--includeRecommended", "--remove", "Microsoft.VisualStudio.Component.VC.CMake.Project"
-        
-        Invoke-WithRetry -Operation "Build Tools installation" -ScriptBlock {
-            winget install --id Microsoft.VisualStudio.2022.BuildTools -e --accept-package-agreements --accept-source-agreements --override ($installArgs -join ' ')
+        $modifyArgs = @('modify', '--installPath', "`"$buildToolsPath`"")
+        foreach ($component in $components) { $modifyArgs += '--add', $component }
+        $modifyArgs += '--includeRecommended', '--passive', '--norestart'
+        Invoke-WithRetry -Operation "Build Tools modify" -ScriptBlock {
+            $p = Start-Process -FilePath $installerPath -ArgumentList $modifyArgs -NoNewWindow -Wait -PassThru
+            if ($null -eq $p -or $p.ExitCode -ne 0) { throw "vs_installer modify failed (exit $($p.ExitCode))" }
         }
     }
     
@@ -279,7 +274,7 @@ function Install-VisualStudioBuildTools {
 }
 
 function Install-NVMAndNode {
-    Write-Log "Setting up NVM and Node.js 18.20.4..." "STEP"
+    Write-Log "Setting up NVM and Node.js $NODE_VERSION..." "STEP"
     
     # Install NVM if not present
     if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
@@ -322,16 +317,16 @@ function Install-NVMAndNode {
         throw "NVM installation failed"
     }
     
-    # Install and activate Node.js 18.20.4
+    # Install and activate Node.js 22.19.0
     try {
         $nvmList = nvm list 2>&1 | Out-String
-        if ($nvmList -notmatch "18\.20\.4") {
-            Write-Log "Installing Node.js 18.20.4..." "INFO"
-            nvm install 18.20.4 | Out-Null
+        if ($nvmList -notmatch $NODE_VERSION) {
+            Write-Log "Installing Node.js $NODE_VERSION..." "INFO"
+            nvm install $NODE_VERSION | Out-Null
             Start-Sleep -Seconds 3
         }
         
-        nvm use 18.20.4 | Out-Null
+        nvm use $NODE_VERSION | Out-Null
         Start-Sleep -Seconds 2
         
         # Wait for Node to become available
@@ -351,7 +346,8 @@ function Install-NVMAndNode {
         $nodeVersion = node -v
         Write-Log "Node.js active: $nodeVersion" "SUCCESS"
         
-    } catch {
+    }
+    catch {
         throw "Node.js setup failed: $($_.Exception.Message)"
     }
 }
@@ -365,13 +361,15 @@ function Install-Yarn {
             Write-Log "Yarn 1.x already installed: $yarnVersion" "SUCCESS"
             return
         }
-    } catch { }
+    }
+    catch { }
     
     Invoke-WithRetry -Operation "Yarn installation" -ScriptBlock {
         try {
             corepack enable | Out-Null
             corepack prepare yarn@1.22.22 --activate | Out-Null
-        } catch {
+        }
+        catch {
             npm install -g yarn@1.22.22 | Out-Null
         }
         
@@ -396,14 +394,15 @@ function Set-NodeGyp {
         try {
             $detectedPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
             if ($detectedPath) { $vsPath = $detectedPath }
-        } catch { }
+        }
+        catch { }
     }
     
     # Set environment variables
     $gypVars = @{
         "npm_config_msvs_version" = "2022"
-        "GYP_MSVS_VERSION" = "2022"
-        "GYP_MSVS_OVERRIDE_PATH" = $vsPath
+        "GYP_MSVS_VERSION"        = "2022"
+        "GYP_MSVS_OVERRIDE_PATH"  = $vsPath
     }
     
     foreach ($var in $gypVars.GetEnumerator()) {
@@ -434,7 +433,8 @@ function Update-Repository {
         git -C $repoPath fetch origin
         git -C $repoPath checkout $Branch
         git -C $repoPath pull --ff-only
-    } else {
+    }
+    else {
         Write-Log "Cloning repository..." "INFO"
         git clone -b $Branch $RepoUrl $repoPath
     }
@@ -459,12 +459,12 @@ function Show-Summary {
     
     # Check and display versions
     $tools = @{
-        "Git" = { git --version 2>&1 }
-        "Python" = { py -3.10 -V 2>&1 }
-        "CMake" = { (cmake --version | Select-Object -First 1) 2>&1 }
+        "Git"     = { git --version 2>&1 }
+        "Python"  = { py -3.10 -V 2>&1 }
+        "CMake"   = { (cmake --version | Select-Object -First 1) 2>&1 }
         "Node.js" = { node -v 2>&1 }
-        "NPM" = { npm -v 2>&1 }
-        "Yarn" = { yarn -v 2>&1 }
+        "NPM"     = { npm -v 2>&1 }
+        "Yarn"    = { yarn -v 2>&1 }
     }
     
     Write-Log "Installed Tools:" "INFO"
@@ -491,7 +491,7 @@ function Show-Summary {
 # Main Execution
 try {
     Write-Log "Starting Windows Development Environment Bootstrap" "STEP"
-    Write-Log "This will install: Git, Python 3.10, CMake, VS Build Tools, NVM, Node.js 18.20.4, Yarn" "INFO"
+    Write-Log "This will install: Git, Python 3.10, CMake, VS Build Tools, NVM, Node.js $NODE_VERSION, Yarn" "INFO"
     Write-Log "" "INFO"
     
     # Prerequisites check
@@ -513,12 +513,13 @@ try {
     # Final summary
     Show-Summary
     
-} catch {
+}
+catch {
     Write-Log "" "ERROR"
     Write-Log "Bootstrap failed: $($_.Exception.Message)" "ERROR"
     Write-Log "" "ERROR"
     Write-Log "Troubleshooting:" "ERROR"
-    Write-Log "- Run the script again (it handles partial installations)" "ERROR"
+    Write-Log "- Restart computer and run the script again (it handles partial installations)" "ERROR"
     Write-Log "- Ensure winget is installed (Microsoft Store > App Installer)" "ERROR"
     Write-Log "- Check Windows Defender is not blocking installations" "ERROR"
     Write-Log "- Try running individual install commands manually" "ERROR"
