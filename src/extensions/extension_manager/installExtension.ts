@@ -70,8 +70,8 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     
     // Create vortexExt compatibility shim for older extensions
     const vortexExt = {
-      registerGame: (game: any, extensionPath: string) => {
-        context.registerGame(game, extensionPath);
+      registerGame: (game: any, extensionPath?: string) => {
+        context.registerGame(game, extensionPath || extPath);
       },
       registerGameStub: (game: any, ext: any) => {
         context.registerGameStub(game, ext);
