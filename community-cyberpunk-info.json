@@ -1,0 +1,10 @@
+{
+  "name": "Cyberpunk 2077 Vortex Support",
+  "author": "KellieAtTheLab -- Auska -- Bladehawke",
+  "version": "0.11.4",
+  "description": "Cyber-enhanced support for Cyberpunk 2077 mods for easier installation, management, load ordering, autofixes, and all that quality of life goodness!",
+  "type": "game",
+  "path": "/Users/veland/Library/Application Support/vortex_devel/plugins/Vortex Extension Update - Cyberpunk 2077 Vortex Support v0.11.4.7z",
+  "bundled": false,
+  "modId": 196
+}

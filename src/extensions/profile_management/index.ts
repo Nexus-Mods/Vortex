@@ -392,6 +392,17 @@ function genOnProfileChange(api: IExtensionApi,
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;
           log('info', 'switched to profile', { gameId, current });
+          
+          // Show success notification for profile switch
+          if (profile !== undefined) {
+            api.sendNotification({
+              type: 'success',
+              message: api.translate('Successfully switched to profile "{{profileName}}"', 
+                { replace: { profileName: profile.name } }),
+              displayMS: 3000,
+            });
+          }
+          
           confirmProfile(gameId, current);
           return null;
         });
@@ -475,17 +486,36 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
             'Installing Game, Vortex will restart upon completion.', true));
 
           // Add timeout to prevent hanging on authentication
-          const authTimeout = setTimeout(() => {
-            api.store.dispatch(clearUIBlocker('installing-game'));
-            api.showErrorNotification('Authentication timeout', 
-              'The authentication process took too long. Please try again.', {
-                allowReport: false
-              });
-          }, 30000); // 30 second timeout
+          let authTimeout: NodeJS.Timeout | null = null;
+          let isCompleted = false;
+
+          const cleanup = () => {
+            if (authTimeout) {
+              clearTimeout(authTimeout);
+              authTimeout = null;
+            }
+            if (!isCompleted) {
+              isCompleted = true;
+              api.store.dispatch(clearUIBlocker('installing-game'));
+            }
+          };
+
+          authTimeout = setTimeout(() => {
+            if (!isCompleted) {
+              cleanup();
+              api.showErrorNotification('Authentication timeout', 
+                'The authentication process took too long. Please try again.', {
+                  allowReport: false
+                });
+            }
+          }, 35000); // Slightly longer timeout to let ensureLoggedIn handle its own timeout first
 
           return api.ext.ensureLoggedIn()
             .then(() => {
-              clearTimeout(authTimeout);
+              if (authTimeout) {
+                clearTimeout(authTimeout);
+                authTimeout = null;
+              }
               return api.emitAndAwait('install-extension', extension);
             })
             .then((results: boolean[]) => {
@@ -494,12 +524,10 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
               }
             })
             .finally(() => {
-              clearTimeout(authTimeout);
-              api.store.dispatch(clearUIBlocker('installing-game'));
+              cleanup();
             })
             .catch(err => {
-              clearTimeout(authTimeout);
-              api.store.dispatch(clearUIBlocker('installing-game'));
+              cleanup();
               
               if (err instanceof UserCanceled) {
                 return Promise.resolve();

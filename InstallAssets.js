@@ -84,7 +84,7 @@ let status = 0;
 
 // run other, independend commands concurrently to speed things up.
 for (const spawn of data.spawn) {
-  if (spawn.target.indexOf(tgt) === -1) {
+  if (!spawn.target || spawn.target.indexOf(tgt) === -1) {
     continue;
   }
 
@@ -151,7 +151,7 @@ function applyExcludes(files, fileConfig) {
 
 // copy files
 Promise.mapSeries(data.copy, file => {
-  if (file.target.indexOf(tgt) === -1) {
+  if (!file.target || file.target.indexOf(tgt) === -1) {
     return;
   }
 

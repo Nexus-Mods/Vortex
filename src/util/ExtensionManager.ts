@@ -1999,6 +1999,33 @@ class ExtensionManager {
               })
               .on('close', (code) => {
                 const game = activeGameId(this.mApi.store.getState());
+                
+                // Handle null exit code (process was killed or terminated abnormally)
+                if (code === null) {
+                  log('warn', 'child process terminated without exit code (likely killed)', { executable });
+                  if (options.expectSuccess) {
+                    // Provide more helpful error message for game launches
+                    const isGameExecutable = executable.toLowerCase().includes('cyberpunk') 
+                      || executable.toLowerCase().includes('game') 
+                      || executable.toLowerCase().includes('.exe');
+                    
+                    let errorMessage = `Process "${executable}" was terminated unexpectedly (no exit code)`;
+                    if (isGameExecutable) {
+                      errorMessage += '\n\nThis often happens when:\n' +
+                        '• The game crashed during startup\n' +
+                        '• Required game files are missing or corrupted\n' +
+                        '• Antivirus software blocked the game\n' +
+                        '• The game requires additional dependencies\n\n' +
+                        'Try verifying game files through your game launcher or reinstalling the game.';
+                    }
+                    
+                    const err: any = new Error(errorMessage);
+                    err.exitCode = null;
+                    return reject(err);
+                  }
+                  return resolve();
+                }
+                
                 if ((game === 'fallout3') && (code === 0xC0000135)) {
                   // 0xC0000135 means that a dll couldn't be found.
                   // In the context of FO3 it's commonly xlive or other redistribs are
@@ -2022,7 +2049,8 @@ class ExtensionManager {
                   // TODO: the child process returns an exit code of 53 for SSE and
                   // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                   // doesn't seem to affect anything
-                  log('warn', 'child process exited with code: ' + code.toString(16), {});
+                  const codeHex = code !== null ? code.toString(16) : 'null';
+                  log('warn', 'child process exited with code: ' + codeHex, {});
                   if (errOut !== undefined) {
                     log('warn', 'child output', errOut.trim());
                   }
@@ -2035,8 +2063,23 @@ class ExtensionManager {
                         ? lines[lines.length - 1]
                         : lines.join('\n');
                     }
-                    const err: any = new Error(
-                      `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                    
+                    // Provide more helpful error message for game launches
+                    const isGameExecutable = executable.toLowerCase().includes('cyberpunk') 
+                      || executable.toLowerCase().includes('game') 
+                      || executable.toLowerCase().includes('.exe');
+                    
+                    let errorMessage = `Failed to run "${executable}": "${lastLine} (${codeHex})"`;
+                    if (isGameExecutable && code !== 0) {
+                      errorMessage += '\n\nGame launch failed. Common solutions:\n' +
+                        '• Verify game files through your game launcher\n' +
+                        '• Run the game as administrator\n' +
+                        '• Check for Windows updates and graphics driver updates\n' +
+                        '• Temporarily disable antivirus software\n' +
+                        '• Ensure all game dependencies are installed';
+                    }
+                    
+                    const err: any = new Error(errorMessage);
                     err.exitCode = code;
                     return reject(err);
                   }

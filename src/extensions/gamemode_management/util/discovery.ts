@@ -27,6 +27,8 @@ import Bluebird from 'bluebird';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { discoverMacOSGames } from '../../../util/macOSGameDiscovery';
+import { isMacOS } from '../../../util/platform';
 const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
@@ -258,9 +260,39 @@ function handleDiscoveredGame(game: IGame,
  * @export
  * @param {IGame[]} knownGames
  * @param {DiscoveredCB} onDiscoveredGame
+ * @param {DiscoveredToolCB} onDiscoveredTool
+ * @param {Function} onProgress optional progress callback
  * @return the list of gameIds that were discovered
  */
 export function quickDiscovery(knownGames: IGame[],
+                               discoveredGames: {[id: string]: IDiscoveryResult},
+                               onDiscoveredGame: DiscoveredCB,
+                               onDiscoveredTool: DiscoveredToolCB,
+                               onProgress?: (gameId: string, step: string, percent: number) => void): Bluebird<string[]> {
+  // On macOS, use platform-specific discovery with priority ordering
+  if (isMacOS()) {
+    return discoverMacOSGames(knownGames, discoveredGames, onDiscoveredGame, onDiscoveredTool, onProgress)
+      .then(macResults => {
+        // Continue with standard discovery for any games not found by macOS discovery
+        const remainingGames = knownGames.filter(game => 
+          !macResults.includes(game.id) && 
+          !getSafe(discoveredGames, [game.id, 'pathSetManually'], false)
+        );
+        
+        if (remainingGames.length === 0) {
+          return macResults;
+        }
+        
+        return standardQuickDiscovery(remainingGames, discoveredGames, onDiscoveredGame, onDiscoveredTool)
+          .then(standardResults => [...macResults, ...standardResults]);
+      });
+  }
+  
+  // Use standard discovery for non-macOS platforms
+  return standardQuickDiscovery(knownGames, discoveredGames, onDiscoveredGame, onDiscoveredTool);
+}
+
+function standardQuickDiscovery(knownGames: IGame[],
                                discoveredGames: {[id: string]: IDiscoveryResult},
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Bluebird<string[]> {
@@ -417,21 +449,36 @@ export function assertToolDir(tool: ITool, testPath: string)
     return Bluebird.resolve(undefined);
   }
 
-  return verifyToolDir(tool, testPath)
-    .then(() => testPath)
-    .catch(err => {
-      if (err.code === 'ENOENT') {
-        log('warn', 'game directory not valid', { game: tool.name, testPath, missing: err.path });
-      } else if (err.code === 'EPERM') {
-        log('warn', 'game directory can\'t be read due to file permissions',
-            { game: tool.name, testPath });
-        return testPath;
-      } else {
-        log('error', 'failed to verify game directory',
-            { testPath, error: err.message });
-      }
-      return Bluebird.reject(err);
-    });
+  // Add retry logic for macOS timing issues
+  const attemptVerification = (retryCount: number = 0): Bluebird<string> => {
+    return verifyToolDir(tool, testPath)
+      .then(() => testPath)
+      .catch(err => {
+        if (err.code === 'ENOENT' && retryCount < 2 && process.platform === 'darwin') {
+          // On macOS, retry once after a brief delay for timing issues
+          log('debug', 'game directory verification failed, retrying', { 
+            game: tool.name, 
+            testPath, 
+            missing: err.path,
+            retryCount 
+          });
+          return Bluebird.delay(150 * (retryCount + 1))
+            .then(() => attemptVerification(retryCount + 1));
+        } else if (err.code === 'ENOENT') {
+          log('warn', 'game directory not valid', { game: tool.name, testPath, missing: err.path });
+        } else if (err.code === 'EPERM') {
+          log('warn', 'game directory can\'t be read due to file permissions',
+              { game: tool.name, testPath });
+          return testPath;
+        } else {
+          log('error', 'failed to verify game directory',
+              { testPath, error: err.message });
+        }
+        return Bluebird.reject(err);
+      });
+  };
+
+  return attemptVerification();
 }
 
 const nop = () => undefined;

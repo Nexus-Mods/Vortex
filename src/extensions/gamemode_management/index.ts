@@ -429,6 +429,13 @@ function removeDisappearedGames(api: IExtensionApi,
 
           const batchedActions = [];
           if (gameId === gameMode) {
+            // Show a notification to the user about the automatic profile switch
+            api.sendNotification({
+              type: 'warning',
+              message: api.translate('Game {{gameName}} is no longer available. Switching to no active profile.', 
+                { replace: { gameName: gameName || gameId } }),
+              displayMS: 5000,
+            });
             batchedActions.push(setNextProfile(undefined));
           }
 
@@ -442,6 +449,12 @@ function removeDisappearedGames(api: IExtensionApi,
       gameMode = activeGameId(state);
       if (known.find(game => game.id === gameMode) === undefined) {
         log('info', 'the active game is no longer known, resetting', { activeGame: gameMode ?? 'none', known });
+        // Notify user about automatic profile reset
+        api.sendNotification({
+          type: 'warning',
+          message: api.translate('Active game is no longer supported. Switching to no active profile.'),
+          displayMS: 5000,
+        });
         api.store.dispatch(setNextProfile(undefined));
       }
 
@@ -734,7 +747,7 @@ function init(context: IExtensionContext): boolean {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
         Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-      $.gameModeManager.startQuickDiscovery()
+      $.gameModeManager.startQuickDiscovery(undefined, false)
         .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
           .reduce((prev, stub) => {
             prev[stub.game.id] = stub.ext;
@@ -758,7 +771,7 @@ function init(context: IExtensionContext): boolean {
       const discoveredGames = new Set(
         Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
 
-      $.gameModeManager.startQuickDiscovery()
+      $.gameModeManager.startQuickDiscovery(undefined, false)
         .then((gameIds: string[]) => {
           return removeDisappearedGames(context.api, discoveredGames)
             .then(() => {

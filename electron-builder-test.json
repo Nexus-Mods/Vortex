@@ -7,6 +7,7 @@
     "bundledPlugins",
     "lib/modinstaller",
     "node_modules/7z-bin",
+    "node_modules/7zip-bin",
     "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
@@ -106,7 +107,12 @@
     "!**/node_modules/fomod-installer/InstallScripting",
     "!**/node_modules/native-errors/Detours",
     "!**/node_modules/zeromq/build/libzmq",
-    "!**/node_modules/zeromq/prebuilds"
+    "!**/node_modules/zeromq/prebuilds",
+    "!**/node_modules/7zip-bin/**/*",
+    "**/node_modules/7zip-bin/*",
+    "**/node_modules/7zip-bin/${platform}/*",
+    "**/node_modules/7zip-bin/mac/*",
+    "**/node_modules/7zip-bin/mac/**/*"
   ],
   "buildDependenciesFromSource": true,
   "npmRebuild": true

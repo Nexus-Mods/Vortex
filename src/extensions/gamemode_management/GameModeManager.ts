@@ -237,13 +237,32 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startQuickDiscovery(games?: IGame[]) {
+  public startQuickDiscovery(games?: IGame[], showProgress: boolean = true) {
+    const gamesToDiscover = games ?? this.mKnownGames;
+    
+    // Set up progress tracking only if showProgress is true
+    if (showProgress) {
+      this.mStore.dispatch(setPhaseCount(gamesToDiscover.length));
+    }
+    
+    // Progress callback for macOS discovery - only dispatch if showProgress is true
+    const progressCallback = showProgress ? (gameId: string, step: string, percent: number) => {
+      const gameIndex = gamesToDiscover.findIndex(g => g.id === gameId);
+      if (gameIndex !== -1) {
+        this.mStore.dispatch(discoveryProgress(gameIndex, percent, `${step} - ${gameId}`));
+      }
+    } : undefined;
+    
     return this.reloadStoreGames()
-      .then(() => quickDiscovery(games ?? this.mKnownGames,
+      .then(() => quickDiscovery(gamesToDiscover,
         this.mStore.getState().settings.gameMode.discovered,
-        this.onDiscoveredGame, this.onDiscoveredTool))
-      .tap(() => this.postDiscovery())
-      ;
+        this.onDiscoveredGame, this.onDiscoveredTool, progressCallback))
+      .tap(() => {
+        if (showProgress) {
+          this.mStore.dispatch(discoveryFinished());
+        }
+        this.postDiscovery();
+      });
   }
 
   public startToolDiscovery(gameId: string) {
