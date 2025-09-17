@@ -41,13 +41,12 @@ jobs:
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }} 
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands 
       CERT_PATH: Release      
-      DEBUG: electron-builder # gives electron more verbose logs        
-       
-    
- 
+      DEBUG: electron-builder # gives electron more verbose logs
+      
     steps: 
       - name: Show Inputs 
         run: echo "${{ toJSON(github.event.inputs) }}" 
+      
       - name: Set Outputs 
         id: setOutputs 
         shell: pwsh 
@@ -69,11 +68,13 @@ jobs:
           echo "artifactNameInstaller=vortex-setup-$rawVersion-installer" >> $env:GITHUB_OUTPUT 
           echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT 
           echo "epicBuildString=$rawVersion+$env:GITHUB_RUN_NUMBER" 
+      
       - name: Get current time 
         uses: josStorer/get-current-time@v2 
         id: current-time 
         with: 
           format: 'YYYY-MM-DD HHmm' 
+      
       - name: Use current time 
         env: 
           TIME: "${{ steps.current-time.outputs.time }}" 
@@ -220,3 +221,4 @@ jobs:
             ./dist/vortex-setup-*.*.*.exe 
             ./dist/latest.yml 
           if-no-files-found: error 
+
