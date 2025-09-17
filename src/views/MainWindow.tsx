@@ -46,9 +46,12 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button as ReactButton, Nav } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
-import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
+import { addStyle } from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+import { Toaster } from 'react-hot-toast'; // at top
+
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -83,7 +86,7 @@ export interface IConnectedProps {
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
   customTitlebar: boolean;
-  version: string;  
+  version: string;
   updateChannel: string;
   userInfo: any;
   notifications: INotification[];
@@ -224,7 +227,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, uiBlockers, visibleDialog } = this.props;
+      nextProfileId, uiBlockers, visibleDialog } = this.props;
     const { focused, hidpi, menuOpen } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
@@ -269,6 +272,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <Dialog />
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
+
+              <Toaster position="bottom-center" reverseOrder={false} />
+
               {customTitlebar ? <WindowControls /> : null}
             </div>
             {(uiBlocker !== undefined)
@@ -296,7 +302,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='center-content' style={{ flexDirection: 'column' }}>
           <h4>{
             t('Switching to Profile: {{name}}',
-            { replace: { name: profile?.name ?? t('None') } })
+              { replace: { name: profile?.name ?? t('None') } })
           }</h4>
           {control}
         </div>
@@ -310,7 +316,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t } = this.props;
     return (
       <div className='ui-blocker'>
-        <Icon name={blocker.icon}/>
+        <Icon name={blocker.icon} />
         <div className='blocker-text'>{blocker.description}</div>
         {blocker.mayCancel
           ? (
@@ -353,7 +359,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
-      return (<div className={className}/>);
+      return (<div className={className} />);
     }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
@@ -361,12 +367,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
-        <div className='main-toolbar-right'>          
-          
+        <div className='main-toolbar-right'>
+
           <div className='toolbar-version'>
 
             {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
-            <Icon name='conflict'></Icon>
+              <Icon name='conflict'></Icon>
               <div className='toolbar-version-text'>Staging</div>
             </div> : null}
 
@@ -376,9 +382,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </div> : null}
 
             <div className={updateChannelClassName}>
-              { prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null }
+              {prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null}
               <div className='toolbar-version-text'>{version}</div>
-            </div>            
+            </div>
           </div>
 
           <div className='application-icons-group'>
@@ -387,7 +393,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               group='application-icons'
               staticElements={this.applicationButtons}
               t={t}
-            />          
+            />
             <NotificationButton id='notification-button' hide={switchingProfile} />
             <IconBar
               id='global-icons'
