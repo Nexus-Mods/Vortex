@@ -52,7 +52,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 }
 
-function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
+async function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
   const handler = new ContextProxyHandler();
   const context = new Proxy({}, handler);
 
@@ -67,7 +67,130 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
     }
 
     const extension = vortexRun.dynreq(indexPath);
-    extension.default(context);
+    
+    // Create vortexExt compatibility shim for older extensions
+    const vortexExt = {
+      registerGame: (game: any, extensionPath: string) => {
+        context.registerGame(game, extensionPath);
+      },
+      registerGameStub: (game: any, ext: any) => {
+        context.registerGameStub(game, ext);
+      },
+      registerGameInfoProvider: (id: string, priority: number, expireMS: number, keys: string[], query: any) => {
+        context.registerGameInfoProvider(id, priority, expireMS, keys, query);
+      },
+      registerModType: (modType: any) => {
+        context.registerModType(modType);
+      },
+      registerAction: (group: string, priority: number, icon: any, options: any, title: any, action: any, condition?: any) => {
+        context.registerAction(group, priority, icon, options, title, action, condition);
+      },
+      registerReducer: (path: any, reducer: any) => {
+        context.registerReducer(path, reducer);
+      },
+      registerSettings: (id: string, component: any, filter?: any, options?: any, priority?: number) => {
+        context.registerSettings(id, component, filter, options, priority);
+      },
+      registerDialog: (id: string, component: any, props?: any) => {
+        context.registerDialog(id, component, props);
+      },
+      registerDashlet: (id: string, row: number, col: number, height: number, component: any, filter?: any, props?: any) => {
+        context.registerDashlet(id, row, col, height, component, filter, props);
+      },
+      registerInstaller: (id: string, priority: number, test: any, install: any) => {
+        context.registerInstaller(id, priority, test, install);
+      },
+      registerDownloadProtocol: (schema: string, handler: any) => {
+        context.registerDownloadProtocol(schema, handler);
+      },
+      registerAttributeExtractor: (priority: number, extractor: any) => {
+        context.registerAttributeExtractor(priority, extractor);
+      },
+      registerModSource: (id: string, name: string, query: any) => {
+        context.registerModSource(id, name, query);
+      },
+      registerTest: (id: string, eventType: string, check: any) => {
+        context.registerTest(id, eventType, check);
+      },
+      registerAPI: (name: string, func: any, options?: any) => {
+        context.registerAPI(name, func, options);
+      },
+      registerMainPage: (id: string, title: string, component: any, options?: any) => {
+        context.registerMainPage(id, title, component, options);
+      },
+      registerFooter: (id: string, component: any) => {
+        context.registerFooter(id, component);
+      },
+      registerBanner: (id: string, component: any) => {
+        context.registerBanner(id, component);
+      },
+      registerOverlay: (id: string, component: any, props?: any) => {
+        context.registerOverlay(id, component, props);
+      },
+      registerToDo: (id: string, title: string, component: any, filter?: any) => {
+        context.registerToDo(id, title, component, filter);
+      },
+      registerDeploymentMethod: (method: any) => {
+        context.registerDeploymentMethod(method);
+      },
+      registerActionCheck: (actionType: string, check: any) => {
+        context.registerActionCheck(actionType, check);
+      },
+      registerStartHook: (priority: number, id: string, func: any) => {
+        context.registerStartHook(priority, id, func);
+      },
+      registerHistoryStack: (id: string, stack: any) => {
+        context.registerHistoryStack(id, stack);
+      },
+      registerProfileFile: (file: any) => {
+        context.registerProfileFile(file);
+      },
+      registerProfileFeature: (feature: any) => {
+        context.registerProfileFeature(feature);
+      },
+      registerLoadOrder: (gameInfo: any, extPath: string) => {
+        context.registerLoadOrder(gameInfo, extPath);
+      },
+      registerLoadOrderPage: (gameEntry: any) => {
+        context.registerLoadOrderPage(gameEntry);
+      },
+      registerGameVersionProvider: (id: string, priority: number, query: any) => {
+        context.registerGameVersionProvider(id, priority, query);
+      },
+      registerToolVariables: (func: any) => {
+        context.registerToolVariables(func);
+      },
+      registerPreview: (priority: number, component: any) => {
+        context.registerPreview(priority, component);
+      }
+    };
+    
+    // Make vortexExt available globally for older extensions
+    (global as any).vortexExt = vortexExt;
+    
+    // Ensure the global assignment is available before calling the extension
+    // Use setImmediate to allow the global assignment to complete
+    await new Promise<void>((resolve) => {
+      setImmediate(() => {
+        try {
+          extension.default(context);
+          resolve();
+        } catch (err) {
+          // If the extension still fails, try passing vortexExt directly as a fallback
+          if (err.message?.includes('registerGame is not a function')) {
+            try {
+              // Some extensions might expect vortexExt as a parameter
+              extension.default(vortexExt);
+              resolve();
+            } catch (fallbackErr) {
+              throw err; // Throw the original error
+            }
+          } else {
+            throw err;
+          }
+        }
+      });
+    });
 
     const state: IState = api.store.getState();
 

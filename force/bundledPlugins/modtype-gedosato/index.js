@@ -71,6 +71,9 @@
       let gedosatoPath;
       function getLocation() {
         try {
+          if (!winapi) {
+            throw new Error('winapi not available on this platform');
+          }
           const instPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE', 'Software\\Wow6432Node\\Durante\\GeDoSaTo', 'InstallPath');
           if (!instPath) {
             throw new Error('empty registry key');

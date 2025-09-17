@@ -179,7 +179,15 @@ class Steam implements IGameStore {
     if (!this.mCache) {
       this.mCache = this.parseManifests();
     }
-    return this.mCache;
+    return this.mCache.catch(err => {
+      // If cache initialization fails, retry once after a brief delay
+      // This helps with timing issues on macOS
+      log('warn', 'Steam cache initialization failed, retrying', { error: err.message });
+      return Bluebird.delay(200).then(() => {
+        this.mCache = this.parseManifests();
+        return this.mCache;
+      });
+    });
   }
 
   public getGameStorePath(): Bluebird<string | undefined> {

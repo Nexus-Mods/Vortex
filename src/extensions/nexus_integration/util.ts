@@ -294,28 +294,53 @@ export function oauthCallback(api: IExtensionApi, code: string, state?: string) 
 }
 
 export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
-  if (!isLoggedIn(api.getState())) {
-    return new Promise((resolve, reject) => {
-      // Add timeout to prevent hanging indefinitely
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Authentication timeout: The login process took too long'));
-      }, 30000); // 30 second timeout
+  const state = api.getState();
+  
+  // Check if user is already logged in with either API key or OAuth credentials
+  if (isLoggedIn(state)) {
+    return Promise.resolve();
+  }
 
-      const loginHandler = (err: Error) => {
+  // Check specifically for OAuth credentials that might be valid but not yet verified
+  const oauthCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+  if (oauthCredentials && oauthCredentials.token && oauthCredentials.refreshToken) {
+    // User has OAuth credentials, they should be considered logged in
+    // No need to wait for 'did-login' event
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    let isResolved = false;
+    
+    // Reduced timeout since we've already checked for existing credentials
+    const timeoutId = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        api.events.removeListener('did-login', loginHandler);
+        // Check one more time before rejecting in case login completed just before timeout
+        if (isLoggedIn(api.getState())) {
+          resolve();
+        } else {
+          reject(new Error('Authentication timeout: The login process took too long'));
+        }
+      }
+    }, 15000); // Reduced to 15 second timeout
+
+    const loginHandler = (err: Error) => {
+      if (!isResolved) {
+        isResolved = true;
         clearTimeout(timeoutId);
         if (err !== null) {
           reject(err);
         } else {
           resolve();
         }
-      };
+      }
+    };
 
-      api.events.once('did-login', loginHandler);
-      api.store.dispatch(setDialogVisible('login-dialog'));
-    });
-  } else {
-    return Promise.resolve();
-  }
+    api.events.once('did-login', loginHandler);
+    api.store.dispatch(setDialogVisible('login-dialog'));
+  });
 }
 
 export function startDownload(api: IExtensionApi,

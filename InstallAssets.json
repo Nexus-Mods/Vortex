@@ -162,8 +162,7 @@
       "target": [
         "out",
         "app"
-      ],
-      "excludeNames": ["game-cyberpunk2077"]
+      ]
     },
     {
       "srcPath": "extensions/*/index.js",
@@ -172,6 +171,27 @@
       "target": [
         "out",
         "app"
+      ]
+    },
+    {
+      "bundledPlugins": [
+        "extensions/games/*",
+        "extensions/feedback",
+        "extensions/nexus_integration",
+        "extensions/updater",
+        "extensions/recovery",
+        "extensions/mod-content",
+        "extensions/new-file-monitor",
+        "extensions/extension-dashlet",
+        "extensions/changelog-dashlet",
+        "extensions/mod-report",
+        "extensions/script-extender-installer",
+        "extensions/script-extender-error-check",
+        "extensions/collections",
+        "extensions/titlebar-launcher",
+        "extensions/gamestore-macappstore"
+      ],
+      "excludeNames": [
       ]
     }
   ]
