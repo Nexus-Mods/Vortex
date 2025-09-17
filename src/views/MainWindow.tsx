@@ -273,7 +273,26 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
 
-              <Toaster position="bottom-center" reverseOrder={false} />
+              <Toaster
+                position="bottom-center"
+                reverseOrder={false}
+                toastOptions={{
+                  className: 'custom-toast',
+                  success: {
+                    className: 'custom-toast toast-success',
+                    iconTheme: {
+                      primary: 'var(--toast-success-primary)',
+                      secondary: 'var(--toast-success-secondary)',
+                    },
+                  },
+                  error: {
+                    className: 'custom-toast toast-error',
+                    iconTheme: {
+                      primary: 'var(--toast-error-primary)',
+                      secondary: 'var(--toast-error-secondary)',
+                    },
+                  }
+                }} />
 
               {customTitlebar ? <WindowControls /> : null}
             </div>

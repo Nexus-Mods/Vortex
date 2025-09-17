@@ -92,6 +92,11 @@ $typography: (
   --Premium-950: #2E1065;
 
   --Violet-300: #C4B5FD;
+
+  --toast-success-primary: #22C55E;
+  --toast-success-secondary: #3E3E47;
+  --toast-error-primary: #EF4444;
+  --toast-error-secondary: #3E3E47;
 }
 
 #get-premium-button {
@@ -209,7 +214,7 @@ $typography: (
     margin: 8px 0;
     border: none;
     height: 1px;
-        background: var(--Stroke-Neutral-Translucent-Weak, rgba(255, 255, 255, 0.10));
+    background: var(--Stroke-Neutral-Translucent-Weak, rgba(255, 255, 255, 0.10));
   }
 
   .modal-dialog {
