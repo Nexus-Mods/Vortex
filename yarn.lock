@@ -10797,12 +10797,7 @@ shebang-regex@^3.0.0:
   resolved "https://registry.yarnpkg.com/shebang-regex/-/shebang-regex-3.0.0.tgz#ae16f1644d873ecad843b0307b143362d4c42172"
   integrity sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==
 
-shortid@2.2.8:
-  version "2.2.8"
-  resolved "https://registry.yarnpkg.com/shortid/-/shortid-2.2.8.tgz#033b117d6a2e975804f6f0969dbe7d3d0b355131"
-  integrity sha512-/DQs6HHGgeZN3B8V90yL7anMr2ehO/ldvcncCY6O8XaXTco5tbSR2iQUfVcvBOaZS8jOSK6HJtNLvDgA6OTR8w==
-
-shortid@^2.2.16:
+shortid@2.2.17, shortid@^2.2.16:
   version "2.2.17"
   resolved "https://registry.yarnpkg.com/shortid/-/shortid-2.2.17.tgz#ea87297a36b7edd10a57818fbac5be798e0994bb"
   integrity sha512-GpbM3gLF1UUXZvQw6MCyulHkWbRseNO4cyBEZresZRorwl1+SLu1ZdqgVtuwqz8mB6RpwPkm541mYSqrKyJSaA==
@@ -12137,8 +12132,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/55280fae505b01246b6fa24c8f7cce327be73f17"
+  version "1.9.1-r1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/cd377a0ae28303c87bc0e4cc5ff543e1cc59b41a"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

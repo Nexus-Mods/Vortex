@@ -289,7 +289,7 @@
     "rimraf": "TanninOne/rimraf",
     "sass": "1.32.*",
     "semver": "^7.6.0",
-    "shortid": "2.2.8",
+    "shortid": "2.2.17",
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
