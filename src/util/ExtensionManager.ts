@@ -799,6 +799,8 @@ class ExtensionManager {
   // the idea behind this was that we might want to support things like typescript
   // or coffescript directly but that would require us shipping the corresponding compilers
   private mExtensionFormats: string[] = ['index.js', 'dist/index.js'];
+  private stubRegisterGame: ((game: any, extensionPath: string) => void) | undefined;
+  private pendingGameRegistrations: Array<{ game: any, extensionPath: string }> = [];
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter !== undefined ? eventEmitter : new EventEmitter();
@@ -1450,9 +1452,23 @@ class ExtensionManager {
     if (this.mExtensions == null) {
       this.mExtensions = this.prepareExtensions();
     }
+    
     const context = {
       api: this.mApi,
+      // Stub registerGame function that queues calls until real implementation is available
+      registerGame: (game: any, extensionPath: string) => {
+        if (context.registerGame !== this.stubRegisterGame) {
+          // Real implementation is now available, call it directly
+          return (context.registerGame as any)(game, extensionPath);
+        } else {
+          // Queue the call for later processing
+          this.pendingGameRegistrations.push({ game, extensionPath });
+        }
+      },
     };
+    
+    // Store reference to stub function for comparison
+    this.stubRegisterGame = context.registerGame;
 
     this.mContextProxyHandler = new ContextProxyHandler(context);
     const contextProxy = new Proxy(context, this.mContextProxyHandler);
@@ -1483,6 +1499,20 @@ class ExtensionManager {
       }
     });
     this.mContextProxyHandler.endRegistration();
+    
+    // Process any pending game registrations now that all extensions are initialized
+    if (this.pendingGameRegistrations.length > 0 && contextProxy.registerGame !== this.stubRegisterGame) {
+      log('info', 'processing pending game registrations', { count: this.pendingGameRegistrations.length });
+      this.pendingGameRegistrations.forEach(({ game, extensionPath }) => {
+        try {
+          contextProxy.registerGame(game, extensionPath);
+        } catch (err) {
+          log('error', 'failed to process pending game registration', { game: game?.id, err: err.message });
+        }
+      });
+      this.pendingGameRegistrations = [];
+    }
+    
     // need to store them locally for now because the store isn't loaded at this time
     this.mLoadFailures = {
       ...this.mLoadFailures,
