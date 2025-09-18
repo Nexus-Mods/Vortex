@@ -286,7 +286,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
 }
 
 /** DONE
- * Event sent when mod installation is started.
+ * Event sent when mod installation is started. Not sent for collection bundle/manifest mod.
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -302,7 +302,7 @@ export class ModsInstallationStartedEvent implements MixpanelEvent {
 }
 
 /** DONE
- * Event sent when mod installation is completed.
+ * Event sent when mod installation is completed. Not sent for collection bundle/manifest mod.
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -319,7 +319,7 @@ export class ModsInstallationCompletedEvent implements MixpanelEvent {
 }
 
 /**
- * Event sent when mod installation is cancelled.
+ * Event sent when mod installation is cancelled. Not sent for collection bundle/manifest mod.
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -335,7 +335,7 @@ export class ModsInstallationCancelledEvent implements MixpanelEvent {
 }
 
 /** DONE
- * Event sent when mod installation fails.
+ * Event sent when mod installation fails. Not sent for collection bundle/manifest mod.
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
