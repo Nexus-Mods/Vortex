@@ -298,7 +298,7 @@
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
-    "tmp": "^0.1.0",
+    "tmp": "^0.2.4",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "universal-analytics": "^0.4.23",
     "uuid": "^3.3.3",
