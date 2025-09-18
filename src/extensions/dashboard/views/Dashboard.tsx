@@ -212,9 +212,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       </FlexLayout>
     ) : (
       <div className='dashlet-customize-btn'>
-        <IconButton icon='edit' tooltip={t('Customize your dashboard')} onClick={this.toggleEdit}>
-          {t('Customize your dashboard')}
-        </IconButton>
+        <IconButton icon='edit' tooltip={t('Customize your dashboard')} onClick={this.toggleEdit} />
       </div>
     );
   }

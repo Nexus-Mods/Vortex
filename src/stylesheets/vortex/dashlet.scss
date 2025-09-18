@@ -10,6 +10,16 @@
   flex-direction: column;
   gap: 8px;
   border-radius: 8px;
+  position: relative;
+
+  // Add padding for dashlets when customize button is present
+  .dashboard-view & {
+    padding-top: calc($half-gutter + 40px);
+  }
+  
+  .dashboard-edit & {
+    padding-top: $half-gutter;
+  }
 
   li {
     border: 0px;
@@ -252,18 +262,74 @@
     margin-left: 1em;
   }
 
+  // Add padding for dashlets with customize button
+  &.has-customize-btn {
+    padding-top: calc($half-gutter + 32px);
+  }
+
   .dashlet-customize-btn {
-    display: flex;
-    justify-content: flex-end;
-    
+    // Position in top-right corner without overlapping content
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
 
     .btn {
-      color: currentColor;
-      background-color: transparent;
-      border-color: transparent;
+      // Match toolbar button styling exactly
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      flex: 0 0 auto;
+      max-width: 34px;
+      margin: 0;
+      transition: all 0.2s ease;
+      color: $text-color;
+      min-width: unset;
 
       &:hover {
-        color: $link-hover-color;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+        color: $brand-clickable;
+      }
+
+      &:active {
+        transform: scale(1.02);
+      }
+
+      // Properly sized icon to match toolbar
+      svg {
+        margin: 0;
+        transition: all 0.2s ease;
+        fill: currentColor;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+
+      // Legacy icon class support
+      .icon {
+        margin: 0;
+        transition: all 0.2s ease;
+        fill: currentColor;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+
+      // Focus styling
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
       }
     }
   }

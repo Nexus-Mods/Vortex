@@ -19,7 +19,7 @@ import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
 
 import * as winapiT from 'winapi-bindings';
-import { isWindows } from '../../util/platform';
+import { isWindows, isMacOS } from '../../util/platform';
 const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
 
 // Platform detection utilities
@@ -38,7 +38,7 @@ export class FileFound extends Error {
 }
 
 class DeploymentMethod extends LinkingDeployment {
-  public priority: number = 50;
+  public priority: number = isMacOS() ? 0 : 50;
 
   private mLnkExpression = new RegExp(LNK_EXT + '$');
 
@@ -48,6 +48,12 @@ class DeploymentMethod extends LinkingDeployment {
       'Deploys mods by actually moving files to the destination directory.',
       false,
       api);
+    
+    log('debug', 'Move activator initialized', { 
+      platform: process.platform, 
+      priority: this.priority,
+      isMacOS: isMacOS()
+    });
   }
 
   public detailedDescription(t: TFunction): string {
@@ -66,8 +72,16 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
+    log('debug', 'Move activator isSupported check', { 
+      gameId, 
+      typeId, 
+      platform: process.platform,
+      isMacOS: isMacOS()
+    });
+    
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
     if ((discovery === undefined) || (discovery.path === undefined)) {
+      log('debug', 'Move activator not supported: game not discovered', { gameId });
       return { description: t => t('Game not discovered.') };
     }
 
@@ -136,6 +150,12 @@ class DeploymentMethod extends LinkingDeployment {
       return { description: t => t('Game not fully initialized yet, this should disappear soon.') };
     }
 
+    log('debug', 'Move activator is supported', { 
+      gameId, 
+      typeId, 
+      priority: this.priority,
+      platform: process.platform
+    });
     return undefined;
   }
 
@@ -286,6 +306,12 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private createLink(sourcePath: string, linkPath: string): Promise<void> {
+    log('debug', 'Move activator creating link (move operation)', { 
+      sourcePath, 
+      linkPath,
+      platform: process.platform
+    });
+    
     const linkInfo = JSON.stringify({
       target: linkPath,
     });
@@ -301,7 +327,13 @@ class DeploymentMethod extends LinkingDeployment {
         //   checking if the content has changed (not that that could happen with move
         //   deployment anyway)
         fs.utimesAsync(sourcePath + LNK_EXT, stat.atime as any, stat.mtime as any)))
-      .then(() => fs.renameAsync(sourcePath, linkPath));
+      .then(() => {
+        log('debug', 'Move activator performing actual move operation', { 
+          from: sourcePath, 
+          to: linkPath 
+        });
+        return fs.renameAsync(sourcePath, linkPath);
+      });
   }
 
   private restoreLink(linkPath: string): Promise<void> {
