@@ -30,7 +30,7 @@ class MixpanelAnalytics {
     // Build and store super properties based on data team requirements
     this.superProperties = this.buildSuperProperties(userInfo);
 
-    analyticsServiceLog('mixpanel', 'debug', `Initialized for ${environment}`, { 
+    analyticsServiceLog('mixpanel', 'debug', `Started for ${environment}`, { 
       userId: this.user, 
       isStable,
       environment,

@@ -67,24 +67,26 @@ function init(context: IExtensionContext): boolean {
         return;
       }
       if (newState) {
-        initializeAnalytics();
+        startAnalytics();
       } else {
-        AnalyticsMixpanel.stop();
+        stopAnalytics();
       }
     });
 
     // Check for user login
     context.api.onStateChange(['persistent', 'nexus', 'userInfo'], (previous, current) => {
 
+      //showConsentDialog();
+
       if (enabled() && current) {
         // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
-        initializeAnalytics()
+        startAnalytics()
       } else if (enabled() === undefined && !!current) {
         // If I was not logged it, and the tracking is undefined ask me for the tracking
         showConsentDialog();
       } else if (!current) {
         // If logging out, disable tracking
-        AnalyticsMixpanel.stop();
+        stopAnalytics();
       }
     });
 
@@ -101,16 +103,17 @@ function init(context: IExtensionContext): boolean {
       AnalyticsMixpanel.trackEvent(event);
     });
 
-    async function initializeAnalytics() {
+    async function startAnalytics() {
 
       try {
         const userInfo = getUserInfo();
         if (userInfo === undefined) {
+          analyticsLog('warn', 'Tried to start analytics but user not logged in');
           return;
         }
 
         const state = context.api.getState();
-
+        
         // Determine if this is a stable version for analytics routing
         const appVersion = getApplication().version;
         const parsedVersion = semver.parse(appVersion);
@@ -126,14 +129,19 @@ function init(context: IExtensionContext): boolean {
           process.platform
         ));
 
-        analyticsLog('info', 'Analytics initialized');
+        analyticsLog('info', 'Analytics started');
 
       } catch (err) {
         // there is no error handling anywhere invoking initializeAnalytics,
         // the results aren't even adviced, so any unhandled exception here would
         // crash the application.
-        analyticsLog('warn', 'Failed to initialize analytics', { error: err.message });
+        analyticsLog('warn', 'Failed to start analytics', { error: err.message });
       }
+    }
+
+    async function stopAnalytics() {
+      AnalyticsMixpanel.stop();
+      analyticsLog('info', 'Analytics stopped');
     }
 
     function showConsentDialog() {
@@ -148,7 +156,7 @@ function init(context: IExtensionContext): boolean {
               context.api.showDialog('question', 'Help us improve your modding experience', {
                 bbcode:
                   'With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.'
-                  + '[br][/br][br][/br][url={{help-article}}]More about the data we track.[/url] | [url={{privacy-policy}}]Privacy Policy[/url]',
+                  + '[br][/br][br][/br][url={{help-article}}]More about the data we track[/url] | [url={{privacy-policy}}]Privacy Policy[/url]',
                 parameters: {
                   'help-article': HELP_ARTICLE,
                   'privacy-policy': PRIVACY_POLICY,
@@ -161,7 +169,7 @@ function init(context: IExtensionContext): boolean {
                 },
                 {
                   label: 'Yes, share anonymous data', action: () => {
-                    initializeAnalytics();
+                    startAnalytics();
                     ignoreNextAnalyticsStateChange = true;
                     context.api.store.dispatch(setAnalytics(true));
                   }, default: true
@@ -183,7 +191,7 @@ function init(context: IExtensionContext): boolean {
     }
 
     if (enabled()) {
-      initializeAnalytics();
+      startAnalytics();
     }
   });
 
