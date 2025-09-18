@@ -12138,7 +12138,7 @@ void-elements@3.1.0:
 
 vortex-api@Nexus-Mods/vortex-api:
   version "1.9.1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/71653cffbec562e56a3e199b19fc0d57748bc209"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/55280fae505b01246b6fa24c8f7cce327be73f17"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"
