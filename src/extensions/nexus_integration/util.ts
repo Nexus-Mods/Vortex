@@ -7,7 +7,6 @@ import Nexus, {
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
 import { makeFileUID } from './util/UIDs';
-import Promise from 'bluebird';
 import BluebirdPromise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
@@ -35,7 +34,7 @@ import { jsonRequest } from '../../util/network';
 import opn from '../../util/opn';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { batchDispatch, toPromise, truthy } from '../../util/util';
+import { batchDispatch, toBlue, toPromise, truthy } from '../../util/util';
 import { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
@@ -433,7 +432,7 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
 }
 
 // GraphQL-based version of getInfo function
-export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, fileId: number): Promise<IRemoteInfo> {
+export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, fileId: number): BluebirdPromise<IRemoteInfo> {
   // Define the GraphQL query for file information
   const fileQuery: Partial<IModFileQuery> = {
         categoryId: true,
@@ -486,7 +485,7 @@ export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, file
   //   },
   // } as any;
 
-  return new Promise((resolve, reject) => {
+  return new BluebirdPromise((resolve, reject) => {
     nexus.modFilesByUid(fileQuery, [makeFileUID({ fileId: fileId.toString(), modId: modId.toString(), gameId: domain })])
       .then(fileResult => {
         const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
