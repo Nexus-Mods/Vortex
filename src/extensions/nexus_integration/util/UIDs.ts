@@ -1,3 +1,4 @@
+import { log } from '../../../util/log';
 import { IModRepoId } from '../../mod_management/types/IMod';
 import { nexusGames } from '../util';
 
@@ -42,8 +43,9 @@ export function makeModAndFileUIDs(gameId: string, modId: string, fileId: string
   // 1303 518 138454
 
   const repoInfo = { gameId, modId, fileId };
-  console.log('makeModAndFileUIDs', gameId, modId, fileId);
-  console.log('makeModAndFileUIDs repoInfo', repoInfo);
+  if (process.env.NODE_ENV === 'development') {
+    log('debug', 'makeModAndFileUIDs', JSON.stringify(repoInfo));
+  }
   return {
     modUID: makeModUID(repoInfo),
     fileUID: makeFileUID(repoInfo)
