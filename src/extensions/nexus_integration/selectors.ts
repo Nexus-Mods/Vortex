@@ -30,7 +30,8 @@ export const nexusIdsFromDownloadId = createSelector(
       fileId: dl.modInfo.nexus.ids.fileId,
       modId: dl.modInfo.nexus.ids.modId,
       numericGameId: numericGameId?.id?.toString(),
-      collectionSlug: dl.modInfo.nexus.ids.collectionSlug,
-      revisionId: dl.modInfo.nexus.ids?.revisionId?.toString()
+      collectionSlug: dl.modInfo?.nexus?.ids?.collectionSlug,
+      collectionId: dl.modInfo?.nexus?.ids?.collectionId,
+      revisionId: dl.modInfo.nexus.ids?.revisionId?.toString(),      
    }
 });
