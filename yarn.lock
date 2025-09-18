@@ -2382,7 +2382,7 @@
     date-fns "^2.0.1"
     popper.js "^1.14.1"
 
-"@types/react-dom@^16.9.4":
+"@types/react-dom@16.9.25":
   version "16.9.25"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-16.9.25.tgz#fc6440aaae3d2d3aa10f6afeb7f1b0c4a55d5e31"
   integrity sha512-ZK//eAPhwft9Ul2/Zj+6O11YR6L4JX0J2sVeBC9Ft7x7HFN7xk7yUV/zDxqV6rjvqgl6r8Dq7oQImxtyf/Mzcw==
@@ -2433,7 +2433,7 @@
     "@types/prop-types" "*"
     "@types/react" "*"
 
-"@types/react@*", "@types/react@>=16.9.11", "@types/react@^16", "@types/react@^16.14.34", "@types/react@^16.9.43":
+"@types/react@*", "@types/react@16.14.66", "@types/react@>=16.9.11", "@types/react@^16":
   version "16.14.66"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.14.66.tgz#38fb6d7630756c78b896413499bf2fd0f8c7cc0a"
   integrity sha512-KPilYP4+25N2ki7vrB4adSR2ucAj95xJcGfKC09bsxcHT+QtB//K7i1FenPnbkLA0Xt9pRi1/RXC1wxFvL9Wtw==
@@ -9310,8 +9310,8 @@ performance-now@^2.1.0:
   integrity sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==
 
 permissions@Nexus-Mods/node-permissions:
-  version "2.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/f2b77e2b85a17d47032fc00e893d810bf4f1ecc6"
+  version "2.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -11676,8 +11676,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "3.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295"
+  version "3.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/cf4238a4d192763c8133500ce9b366a71b262a33"
   dependencies:
     fs-extra "^8.1.0"
     winapi-bindings Nexus-Mods/node-winapi-bindings
@@ -12121,8 +12121,8 @@ vortex-api@Nexus-Mods/vortex-api#fix-node22:
   resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/795057e139b5a0b0083aaeda0570256a5e7b8f84"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24"
+  version "0.4.0"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d"
   dependencies:
     lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings

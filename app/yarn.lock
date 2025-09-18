@@ -2962,8 +2962,8 @@ performance-now@^2.1.0:
   integrity sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==
 
 permissions@Nexus-Mods/node-permissions:
-  version "2.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/f2b77e2b85a17d47032fc00e893d810bf4f1ecc6"
+  version "2.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
@@ -4133,8 +4133,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "3.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295"
+  version "3.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/cf4238a4d192763c8133500ce9b366a71b262a33"
   dependencies:
     fs-extra "^8.1.0"
     winapi-bindings Nexus-Mods/node-winapi-bindings
@@ -4358,8 +4358,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24"
+  version "0.4.0"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d"
   dependencies:
     lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings
