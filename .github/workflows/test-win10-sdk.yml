@@ -17,38 +17,21 @@ jobs:
 
       - name: List all Windows SDK versions
         run: |
-          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
-            Where-Object { $_.PSIsContainer } |
-            Select-Object -ExpandProperty Name
-        shell: pwsh
-
-      - name: Install Windows 10 SDK 19041
-        run: |
-          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" `
-            modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
-            --add Microsoft.VisualStudio.Component.Windows10SDK.19041 `
-            --quiet --norestart --nocache
-        shell: pwsh
-
-      - name: Confirm SDK via vswhere
-        run: |
-          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
-            -products * `
-            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041
-        shell: pwsh
-
-      - name: Verify Windows SDK 19041 installed
-        run: |
-          if (Test-Path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0") {
-            Write-Host "Windows SDK 19041 installed"
+          Write-Host "=== Windows SDKs from File Path ===" -ForegroundColor Cyan
+          $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" -Directory |
+                  Select-Object -ExpandProperty Name
+          $sdks | ForEach-Object { Write-Host $_ }
+          
+          Write-Host "`n=== Windows SDKs from Visual Studio (via vswhere) ===" -ForegroundColor Cyan
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          
+          if (Test-Path $vswhere) {
+              & $vswhere -products * -requires Microsoft.VisualStudio.Component.Windows10SDK -format json |
+                  ConvertFrom-Json | ForEach-Object {
+                      $_.packages | Where-Object { $_.id -like "Microsoft.VisualStudio.Component.Windows10SDK*" } |
+                      Select-Object -ExpandProperty id
+                  } | ForEach-Object { Write-Host $_ }
           } else {
-            Write-Error "Windows SDK 19041 NOT found"
+              Write-Host "vswhere.exe not found. Visual Studio may not be installed." -ForegroundColor Yellow
           }
-        shell: pwsh
-
-      - name: List all Windows SDK versions
-        run: |
-          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
-            Where-Object { $_.PSIsContainer } |
-            Select-Object -ExpandProperty Name
         shell: pwsh
