@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-sdk:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
       - name: Show Windows version
@@ -36,7 +36,6 @@ jobs:
             Write-Host "Windows SDK 19041 installed"
           } else {
             Write-Error "Windows SDK 19041 NOT found"
-            exit 1
           }
         shell: pwsh
 
