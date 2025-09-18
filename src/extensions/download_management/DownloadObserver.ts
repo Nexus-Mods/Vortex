@@ -416,28 +416,29 @@ export class DownloadObserver {
       return finalizeDownload(this.mApi, id, res.filePath)
         .then(() => {
           const flattened = flatten(res.metaInfo ?? {});
-
-          const state: IState = this.mApi.getState();
-
-          const duration_ms = Date.now() - download.fileTime;
-          const nexusIds = nexusIdsFromDownloadId(state, id);
-          const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
-
-          // this is so we know if it's a collection bundle/manifest downloading or an individual mod
-          if (isCollection) {
-            this.mApi.events.emit('analytics-track-mixpanel-event',
-              new CollectionsDownloadCompletedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
-          } else {
-            const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
-            this.mApi.events.emit('analytics-track-mixpanel-event',
-              new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
-          }
-
           const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
           if (batchedActions.length > 0) {
             util.batchDispatch(this.mApi.store.dispatch, batchedActions);
           }
 
+          const state: IState = this.mApi.getState();
+          
+          const duration_ms = Date.now() - download.fileTime;
+          const nexusIds = nexusIdsFromDownloadId(state, id);
+          const isCollection = nexusIds?.collectionSlug !== undefined && nexusIds?.revisionId !== undefined;
+
+          // this is so we know if it's a collection bundle/manifest downloading or an individual mod
+          if (isCollection) {
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
+          } else if (nexusIds?.modId !== undefined && nexusIds?.fileId !== undefined) {
+            const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
+          } else {
+            alert('Download completed but missing nexus mod/file id: ' + JSON.stringify(nexusIds));
+            // This is a bundled mod - bye!
+          }
           if ((state.settings.automation?.install && (allowInstall === true))
             || (allowInstall === 'force')
             || (download.modInfo?.['startedAsUpdate'] === true)) {
