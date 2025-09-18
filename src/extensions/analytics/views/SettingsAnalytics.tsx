@@ -34,6 +34,7 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
           </Toggle>
           <HelpBlock>
             {t('Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.')}
+            <br /><br />
             <a style={{ marginLeft: '0.25rem' }} href={HELP_ARTICLE}>
               {t('More about the data we track')}
             </a> | <a style={{ marginLeft: '0.25rem' }} href={PRIVACY_POLICY}>
