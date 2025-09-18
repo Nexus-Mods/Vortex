@@ -411,6 +411,7 @@ export class DownloadObserver {
           const nexusIds = nexusIdsFromDownloadId(state, id);
           const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
+          // this is so we know if it's a collection bundle/manifest downloading or an individual mod
           if (isCollection) {
             this.mApi.events.emit('analytics-track-mixpanel-event',
               new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
