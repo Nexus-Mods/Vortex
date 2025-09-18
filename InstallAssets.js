@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const fs = require('fs-extra');
 const path = require('path');
-const glob = require('glob');
+const { glob } = require('glob');
 const exec = require('child_process').exec;
 
 const data = require('./InstallAssets.json');
@@ -73,15 +73,11 @@ Promise.mapSeries(data.copy, file => {
     return;
   }
 
-  return new Promise((resolve, reject) => {
-    glob(file.srcPath, globOptions, (globErr, files) => {
+  return glob(file.srcPath, globOptions)
+    .then(files => {
       copies = copies === -1 ? files.length : copies += files.length;
-      if (globErr !== null) {
-        reject(new Error('glob failed: ' + globErr));
-      }
-      resolve(files);
-    });
-  })
+      return files;
+    })
     .then(files => Promise.map(files, (globResult) => {
       let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
       if (file.rename) {
