@@ -12,6 +12,7 @@ import { flatten, setdefault, truthy } from '../../util/util';
 import { showURL } from '../browser/actions';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 import { knownGames } from '../gamemode_management/selectors';
+import { interceptDownloadURLForMacOS } from '../../util/macOSGameCompatibility';
 
 import {
   downloadProgress,
@@ -252,6 +253,10 @@ export class DownloadObserver {
         urls = [];
       }
       urls = urls.filter(url => url !== undefined);
+      
+      // Intercept URLs for macOS compatibility (e.g., Lovely injector)
+      urls = urls.map(url => interceptDownloadURLForMacOS(url));
+      
       if (urls.length === 0) {
         if (callback !== undefined) {
           callback(new ProcessCanceled('URL not usable, only ftp, http and https are supported.'));
@@ -262,6 +267,12 @@ export class DownloadObserver {
 
     const state: IState = this.mApi.store.getState();
     let gameId: string = (modInfo || {}).game || selectors.activeGameId(state);
+    
+    // Debug logging for macOS compatibility
+    log('debug', 'DownloadObserver: Processing URLs for macOS compatibility', {
+      originalUrls: urls,
+      gameId: gameId
+    });
     if (Array.isArray(gameId)) {
       gameId = gameId[0];
     }

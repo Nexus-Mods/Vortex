@@ -7,6 +7,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import { log } from './log';
 import Promise from 'bluebird';
 
@@ -21,6 +22,12 @@ export interface MacOSGameFix {
   alternativeFiles?: string[];
 }
 
+interface DownloadURLMapping {
+  windowsPattern: RegExp;
+  getMacOSUrl: (windowsUrl: string) => string;
+  description: string;
+}
+
 /**
  * Known macOS compatibility fixes for popular games
  */
@@ -29,9 +36,36 @@ const MACOS_GAME_FIXES: MacOSGameFix[] = [
     gameId: 'balatro',
     windowsExecutable: 'Balatro.exe',
     macOSAppBundle: 'Balatro.app',
-    alternativeFiles: ['Balatro.app', 'liblovely.dylib', 'run_lovely_macos.sh']
-  },
-  // Add more games as needed
+    alternativeFiles: ['liblovely.dylib', 'run_lovely_macos.sh']
+  }
+];
+
+/**
+ * Download URL mappings for macOS compatibility
+ */
+const DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
+  {
+    // Lovely injector for Balatro - Windows to macOS URL mapping
+    windowsPattern: /https:\/\/github\.com\/ethangreen-dev\/lovely-injector\/releases\/(?:download\/v[\d.]+([-\w]*)?\/|latest\/download\/)lovely-(?:windows\.zip|x86_64-pc-windows-msvc\.zip)/,
+    getMacOSUrl: (windowsUrl: string) => {
+      // Extract version from Windows URL (including beta versions)
+      const versionMatch = windowsUrl.match(/\/v([\d.]+([-\w]*)?)\//); 
+      const version = versionMatch ? versionMatch[1] : 'latest';
+      
+      // Detect architecture and select appropriate macOS binary
+      const arch = getMacOSArchitecture();
+      const macOSFileName = arch === 'arm64' ? 'lovely-macos-arm64.zip' : 'lovely-macos-x64.zip';
+      
+      // Handle both versioned and latest URLs
+      if (windowsUrl.includes('/latest/download/')) {
+        return `https://github.com/ethangreen-dev/lovely-injector/releases/latest/download/${macOSFileName}`;
+      } else {
+        return `https://github.com/ethangreen-dev/lovely-injector/releases/download/v${version}/${macOSFileName}`;
+      }
+    },
+    description: 'Lovely injector for Balatro - Windows to macOS conversion with architecture detection'
+  }
+  // Add more URL mappings as needed
 ];
 
 /**
@@ -131,4 +165,52 @@ export function getExecutablePathForPlatform(
   }
   
   return windowsExecutable ? path.join(basePath, windowsExecutable) : null;
+}
+
+/**
+ * Detects the current macOS architecture (ARM64 or Intel x64)
+ * @returns 'arm64' for Apple Silicon Macs, 'x64' for Intel Macs
+ */
+export function getMacOSArchitecture(): 'arm64' | 'x64' {
+  const arch = os.arch();
+  return arch === 'arm64' ? 'arm64' : 'x64';
+}
+
+/**
+ * Intercept and modify download URLs for macOS compatibility
+ */
+export function interceptDownloadURLForMacOS(url: string): string {
+  // Always log URL interception attempts for debugging
+  log('debug', 'URL interception called', {
+    url: url,
+    platform: os.platform(),
+    architecture: getMacOSArchitecture()
+  });
+
+  if (os.platform() !== 'darwin') {
+    log('debug', 'Not on macOS, returning original URL', { url });
+    return url;
+  }
+
+  for (const mapping of DOWNLOAD_URL_MAPPINGS) {
+    log('debug', 'Testing URL against pattern', {
+      url: url,
+      pattern: mapping.windowsPattern.toString(),
+      matches: mapping.windowsPattern.test(url)
+    });
+    
+    if (mapping.windowsPattern.test(url)) {
+      const macUrl = mapping.getMacOSUrl(url);
+      log('info', 'Intercepted Windows download URL for macOS compatibility', {
+        originalUrl: url,
+        macUrl: macUrl,
+        description: mapping.description,
+        architecture: getMacOSArchitecture()
+      });
+      return macUrl;
+    }
+  }
+
+  log('debug', 'No URL mapping found, returning original URL', { url });
+  return url;
 }

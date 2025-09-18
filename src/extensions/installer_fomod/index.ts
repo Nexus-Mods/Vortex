@@ -17,7 +17,7 @@ import { delayed, toPromise, truthy} from '../../util/util';
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 import { IMod } from '../mod_management/types/IMod';
-import { isWindows, getCurrentPlatform } from '../../util/platform';
+import { isWindows, isMacOS, getCurrentPlatform } from '../../util/platform';
 
 import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
 import { setInstallerSandbox } from './actions/settings';
@@ -1206,6 +1206,13 @@ async function createIsolatedConnection(securityLevel: SecurityLevel): Promise<C
 async function testSupportedScripted(securityLevel: SecurityLevel,
                                      files: string[])
                                      : Promise<ISupportedResult> {
+  // On macOS, FOMOD installer is not functional (mock implementation only)
+  // Return unsupported to allow basic installer to handle the installation
+  if (isMacOS()) {
+    log('debug', '[installer] FOMOD installer not supported on macOS, using basic installer');
+    return { supported: false, requiredFiles: [] };
+  }
+
   let connection: ConnectionIPC;
   try {
     connection = await createIsolatedConnection(securityLevel);
@@ -1228,6 +1235,13 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
 async function testSupportedFallback(securityLevel: SecurityLevel,
                                      files: string[])
                                      : Promise<ISupportedResult> {
+  // On macOS, FOMOD installer is not functional (mock implementation only)
+  // Return unsupported to allow basic installer to handle the installation
+  if (isMacOS()) {
+    log('debug', '[installer] FOMOD fallback installer not supported on macOS, using basic installer');
+    return { supported: false, requiredFiles: [] };
+  }
+
   let connection: ConnectionIPC;
   try {
     connection = await createIsolatedConnection(securityLevel);

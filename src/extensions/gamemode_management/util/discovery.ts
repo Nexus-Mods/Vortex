@@ -28,6 +28,7 @@ import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import { discoverMacOSGames } from '../../../util/macOSGameDiscovery';
+import { checkFileWithMacOSFallback } from '../../../util/macOSGameCompatibility';
 import { isMacOS } from '../../../util/platform';
 const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 
@@ -436,10 +437,27 @@ function verifyToolDir(tool: ITool, testPath: string): Bluebird<void> {
     // our fs overload would try to acquire access to the directory if it's locked, which
     // is not something we want at this point because we don't even know yet if the user
     // wants to manage the game at all.
-                            (fileName: string) => fsExtra.stat(path.join(testPath, fileName))
-                              .catch(err => {
-                                return Bluebird.reject(err);
-                              }))
+                            (fileName: string) => {
+                              // Use macOS compatibility layer for file validation
+                              if (isMacOS()) {
+                                return checkFileWithMacOSFallback(testPath, fileName, tool.id)
+                                  .then((exists) => {
+                                    if (!exists) {
+                                      const error = new Error(`File not found: ${fileName}`);
+                                      (error as any).code = 'ENOENT';
+                                      (error as any).path = path.join(testPath, fileName);
+                                      throw error;
+                                    }
+                                    return undefined;
+                                  });
+                              } else {
+                                return fsExtra.stat(path.join(testPath, fileName))
+                                  .then(() => undefined)
+                                  .catch(err => {
+                                    return Bluebird.reject(err);
+                                  });
+                              }
+                            })
     .then(() => undefined);
 }
 

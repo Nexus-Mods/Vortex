@@ -405,7 +405,13 @@ export function downloadGithubRelease(api: IExtensionApi,
 }
 
 export function downloadFile(url: string, outputPath: string): Promise<void> {
-  return Promise.resolve(rawRequest(url))
+  // Import the macOS compatibility function
+  const { interceptDownloadURLForMacOS } = require('../../util/macOSGameCompatibility');
+  
+  // Apply macOS URL interception
+  const interceptedUrl = interceptDownloadURLForMacOS(url);
+  
+  return Promise.resolve(rawRequest(interceptedUrl))
     .then((data: Buffer) => fs.writeFileAsync(outputPath, data));
 }
 

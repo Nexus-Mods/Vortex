@@ -44,6 +44,13 @@ class ContextProxyHandler implements ProxyHandler<any> {
           setShowInMenu() { /* ignore in this context */ },
         },
       };
+    } else if (typeof key === 'string' && key.startsWith('register')) {
+      // Provide stub functions for all register* methods during dependency detection
+      return (...args: any[]) => {
+        // During dependency detection, we just need to prevent errors
+        // The actual registration will happen during proper extension initialization
+        return undefined;
+      };
     }
   }
 
@@ -170,23 +177,29 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     
     // Ensure the global assignment is available before calling the extension
     // Use setImmediate to allow the global assignment to complete
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       setImmediate(() => {
         try {
           extension.default(context);
           resolve();
         } catch (err) {
           // If the extension still fails, try passing vortexExt directly as a fallback
-          if (err.message?.includes('registerGame is not a function')) {
+          const errorMessage = err.message || err.toString();
+          if (errorMessage.includes('registerGame is not a function') || 
+              errorMessage.includes('context.registerGame is not a function')) {
             try {
               // Some extensions might expect vortexExt as a parameter
               extension.default(vortexExt);
               resolve();
             } catch (fallbackErr) {
-              throw err; // Throw the original error
+              // If vortexExt also fails, it means registerGame is not available yet
+              // This can happen if gamemode_management hasn't initialized yet
+              reject(new Error(`Extension failed to load: ${errorMessage}. ` +
+                `This may be due to gamemode_management not being initialized yet. ` +
+                `Please ensure gamemode_management extension is loaded first.`));
             }
           } else {
-            throw err;
+            reject(err);
           }
         }
       });

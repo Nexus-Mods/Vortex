@@ -4,8 +4,9 @@ import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
-import { isWindows } from '../../util/platform';
+import { isWindows, isMacOS } from '../../util/platform';
 import { activeGameId, gameName } from '../../util/selectors';
+import { getMacOSGameFix } from '../../util/macOSGameCompatibility';
 import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
@@ -141,17 +142,56 @@ class DeploymendMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
-      .then(() => fs.symlinkAsync(sourcePath, linkPath)
-        .catch(err => (err.code !== 'EEXIST')
-          ? Promise.reject(err)
-          : fs.removeAsync(linkPath)
-            .then(() => fs.symlinkAsync(sourcePath, linkPath))));
+      .then(() => {
+        // On macOS, check if we're dealing with an app bundle and use copying instead of symlinking
+        if (isMacOS() && this.shouldCopyInsteadOfLink(sourcePath)) {
+          return fs.copyAsync(sourcePath, linkPath)
+            .catch(err => (err.code !== 'EEXIST')
+              ? Promise.reject(err)
+              : fs.removeAsync(linkPath)
+                .then(() => fs.copyAsync(sourcePath, linkPath)));
+        } else {
+          return fs.symlinkAsync(sourcePath, linkPath)
+            .catch(err => (err.code !== 'EEXIST')
+              ? Promise.reject(err)
+              : fs.removeAsync(linkPath)
+                .then(() => fs.symlinkAsync(sourcePath, linkPath)));
+        }
+      });
+  }
+
+  private shouldCopyInsteadOfLink(sourcePath: string): boolean {
+    // Check if the source path is inside a macOS app bundle
+    if (sourcePath.includes('.app/')) {
+      return true;
+    }
+
+    // Check if we have a specific game fix that indicates this should be copied
+     try {
+       const state = this.api.getState();
+       const gameId = activeGameId(state);
+      if (gameId) {
+        const gameFix = getMacOSGameFix(gameId);
+        if (gameFix) {
+          // If the source path contains the macOS app bundle, we should copy
+          return sourcePath.includes(gameFix.macOSAppBundle);
+        }
+      }
+    } catch (err) {
+      // If we can't get the game ID, fall back to basic detection
+      log('debug', 'Could not determine game ID for macOS copy decision', { error: err.message });
+    }
+
+    return false;
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
     return fs.lstatAsync(linkPath)
       .then(stats => {
         if (stats.isSymbolicLink()) {
+          return fs.removeAsync(linkPath);
+        } else if (isMacOS() && this.shouldCopyInsteadOfLink(linkPath)) {
+          // On macOS, if this was a copied file (not a symlink), we should remove it
           return fs.removeAsync(linkPath);
         } else {
         // should we report the attempt to remove a non-link as an error?
