@@ -16,6 +16,7 @@ import { setDownloadInstalled } from '../download_management/actions/state';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import NXMUrl from '../nexus_integration/NXMUrl';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
+import { makeModAndFileUIDs } from '../nexus_integration/util/UIDs';
 import { setModsEnabled } from '../profile_management/actions/profiles';
 
 import {
@@ -216,7 +217,8 @@ class InstallContext implements IInstallContext {
     const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
 
     if (nexusIds !== undefined) {
-      this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId));
+      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.gameId, nexusIds.modId, nexusIds.fileId);
+      this.mApi.events.emit('analytics-track-mixpanel-event', new ModsInstallationStartedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
     }
   }
 
@@ -296,8 +298,9 @@ class InstallContext implements IInstallContext {
         }
 
         if (nexusIds !== undefined) {
+          const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.gameId, nexusIds.modId, nexusIds.fileId);
           this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsInstallationCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, Date.now() - this.mStartTime));
+            new ModsInstallationCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, Date.now() - this.mStartTime));
         }
 
         return {
@@ -320,8 +323,9 @@ class InstallContext implements IInstallContext {
       case 'canceled':
 
         if (nexusIds !== undefined) {
+          const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.gameId, nexusIds.modId, nexusIds.fileId);
           this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsInstallationCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId));
+            new ModsInstallationCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
         }
 
         return {
@@ -336,8 +340,9 @@ class InstallContext implements IInstallContext {
       default:
 
         if (nexusIds !== undefined) {
+          const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.gameId, nexusIds.modId, nexusIds.fileId);
           this.mApi.events.emit('analytics-track-mixpanel-event',
-            new ModsInstallationFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, "", this.mFailReason ?? 'unknown_error'));
+            new ModsInstallationFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, "", this.mFailReason ?? 'unknown_error'));
         }
 
         return {

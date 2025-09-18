@@ -222,12 +222,14 @@ export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  */
 export class ModsDownloadStartedEvent implements MixpanelEvent {
   readonly eventName = 'mods_download_started';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string) {
-    this.properties = { mod_id, file_id, game_id };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
   }
 }
 
@@ -236,14 +238,16 @@ export class ModsDownloadStartedEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  * @param file_size Size of the file
  * @param duration_ms Duration in milliseconds
  */
 export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = 'mods_download_completed';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string, file_size: number, duration_ms: number) {
-    this.properties = { mod_id, file_id, game_id, file_size, duration_ms };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string, file_size: number, duration_ms: number) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, file_size, duration_ms };
   }
 }
 
@@ -252,12 +256,14 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  */
 export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = 'mods_download_cancelled';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string) {
-    this.properties = { mod_id, file_id, game_id };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
   }
 }
 
@@ -266,14 +272,16 @@ export class ModsDownloadCancelledEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  * @param error_code Error code
  * @param error_message Error message
  */
 export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = 'mods_download_failed';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string, error_code: string, error_message: string) {
-    this.properties = { mod_id, file_id, game_id, error_code, error_message };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string, error_code: string, error_message: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, error_code, error_message };
   }
 }
 
@@ -282,12 +290,14 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  */
 export class ModsInstallationStartedEvent implements MixpanelEvent {
   readonly eventName = 'mods_installation_started';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string) {
-    this.properties = { mod_id, file_id, game_id };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
   }
 }
 
@@ -296,13 +306,15 @@ export class ModsInstallationStartedEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  * @param duration_ms Duration in milliseconds
  */
 export class ModsInstallationCompletedEvent implements MixpanelEvent {
   readonly eventName = 'mods_installation_completed';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string, duration_ms: number) {
-    this.properties = { mod_id, file_id, game_id, duration_ms };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string, duration_ms: number) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, duration_ms };
   }
 }
 
@@ -311,12 +323,14 @@ export class ModsInstallationCompletedEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  */
 export class ModsInstallationCancelledEvent implements MixpanelEvent {
   readonly eventName = 'mods_installation_cancelled';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string) {
-    this.properties = { mod_id, file_id, game_id };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
   }
 }
 
@@ -325,13 +339,15 @@ export class ModsInstallationCancelledEvent implements MixpanelEvent {
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
+ * @param mod_uid UID of the mod
+ * @param file_uid UID of the file
  * @param error_code Error code
  * @param error_message Error message
  */
 export class ModsInstallationFailedEvent implements MixpanelEvent {
   readonly eventName = 'mods_installation_failed';
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: string, error_code: string, error_message: string) {
-    this.properties = { mod_id, file_id, game_id, error_code, error_message };
+  constructor(mod_id: string, file_id: string, game_id: string, mod_uid: string, file_uid: string, error_code: string, error_message: string) {
+    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, error_code, error_message };
   }
 }
