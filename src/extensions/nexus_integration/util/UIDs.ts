@@ -17,5 +17,18 @@ const gameNum = (() => {
 
 export function makeFileUID(repoInfo: IModRepoId): string {
   return ((BigInt(gameNum(repoInfo.gameId)) << BigInt(32))
-          | BigInt(parseInt(repoInfo.fileId, 10))).toString();
+    | BigInt(parseInt(repoInfo.fileId, 10))).toString();
+}
+
+export function makeModUID(repoInfo: IModRepoId): string {
+  return ((BigInt(gameNum(repoInfo.gameId)) << BigInt(32))
+    | BigInt(parseInt(repoInfo.modId, 10))).toString();
+}
+
+export function makeModAndFileUIDs(gameId: string, modId: string, fileId: string): { modUID: string, fileUID: string } {
+  const repoInfo = { gameId, modId, fileId };
+  return {
+    modUID: makeModUID(repoInfo),
+    fileUID: makeFileUID(repoInfo)
+  };
 }

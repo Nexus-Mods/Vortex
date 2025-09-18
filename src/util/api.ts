@@ -7,8 +7,10 @@ export * from './message';
 export * from './storeHelper';
 
 import { installIconSet } from '../controls/Icon';
-import { resolveCategoryName,
-         resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
+import {
+  resolveCategoryName,
+  resolveCategoryPath
+} from '../extensions/category_management/util/retrieveCategoryPath';
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
@@ -16,8 +18,10 @@ import getDriveList from '../extensions/gamemode_management/util/getDriveList';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { findDownloadByRef, findModByRef, lookupFromDownload } from '../extensions/mod_management/util/dependencies';
-import { getActivator,
-         getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
+import {
+  getActivator,
+  getCurrentActivator
+} from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
 import { makeModReference } from '../extensions/mod_management/util/modReference';
 import { getModSource, getModSources } from '../extensions/mod_management/util/modSource';
@@ -33,8 +37,10 @@ import calculateFolderSize from './calculateFolderSize';
 import { checksum, fileMD5 } from './checksum';
 import ConcurrencyLimiter from './ConcurrencyLimiter';
 import copyRecursive from './copyRecursive';
-import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
-         ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
+import {
+  ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
+  ProcessCanceled, SetupError, UserCanceled
+} from './CustomErrors';
 import Debouncer from './Debouncer';
 import makeRemoteCall from './electronRemote';
 import epicGamesLauncher from './EpicGamesLauncher';
@@ -57,10 +63,12 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
-         makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
-         sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
-         makeOverlayableDictionary } from './util';
+import {
+  batchDispatch, bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid,
+  makeQueue, makeUnique, makeUniqueByKey, nexusModsURL, objDiff, pad, sanitizeCSSId,
+  sanitizeFilename, semverCoerce, setdefault, toBlue, toPromise, unique,
+  makeOverlayableDictionary
+} from './util';
 import { Campaign, Section, Content, Overlayable } from './util';
 import deepMerge from './deepMerge';
 import walk from './walk';
@@ -68,8 +76,19 @@ import walk from './walk';
 import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
 
-export * from './network';
 
+import getTextModManagement from '../extensions/mod_management/texts';
+import getTextProfileManagement from '../extensions/profile_management/texts';
+import { CollectionsDownloadCompletedEvent,
+  CollectionsDownloadFailedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsInstallationStartedEvent, 
+  CollectionsInstallationCompletedEvent,
+  CollectionsInstallationFailedEvent,
+  CollectionsInstallationCancelledEvent
+} from '../extensions/analytics/mixpanel/MixpanelEvents';
+
+export * from './network';
 export {
   Archive,
   ArgumentInvalid,
@@ -177,12 +196,17 @@ export {
   walk,
   withErrorContext,
   writeFileAtomic,
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadFailedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsInstallationStartedEvent,
+  CollectionsInstallationCompletedEvent,
+  CollectionsInstallationFailedEvent,
+  CollectionsInstallationCancelledEvent
 };
 
 // getText functions are rolled up into one function
 export type TextGroup = 'mod' | 'profile';
-import getTextModManagement from '../extensions/mod_management/texts';
-import getTextProfileManagement from '../extensions/profile_management/texts';
 
 export function getText(group: TextGroup, textId: string, t: TFunction) {
   if (group === 'mod') {
