@@ -39,14 +39,14 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
-import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadCancelledEvent } from '../analytics/mixpanel/MixpanelEvents';
 import { isArray } from 'lodash';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 import { makeModAndFileUIDs } from '../nexus_integration/util/UIDs';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], chunkable: boolean,
-                        urls: string[], filePath: string, smallUpdate: boolean) {
+  total: number, chunks: IChunk[], chunkable: boolean,
+  urls: string[], filePath: string, smallUpdate: boolean) {
   const state = store.getState();
   const download: IDownload = state.persistent.downloads.files[dlId];
   if (download === undefined) {
@@ -168,16 +168,28 @@ export class DownloadObserver {
     const innerState: IState = this.mApi.getState();
 
     const nexusIds = nexusIdsFromDownloadId(innerState, id);
+    const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
     if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
 
-      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
-      this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+      if (isCollection) {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+      } else {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+      }
+
     } else {
-      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
-      this.mApi.events.emit('analytics-track-mixpanel-event',
-        new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+
+      if (isCollection) {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+      } else {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+      }
     }
 
     if (err instanceof DownloadIsHTML) {
@@ -355,7 +367,7 @@ export class DownloadObserver {
           return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath,
-                                               options?.allowOpenHTML ?? true, callback)));
+          options?.allowOpenHTML ?? true, callback)));
   }
 
   private handleDownloadFinished(id: string,
@@ -414,7 +426,7 @@ export class DownloadObserver {
           // this is so we know if it's a collection bundle/manifest downloading or an individual mod
           if (isCollection) {
             this.mApi.events.emit('analytics-track-mixpanel-event',
-              new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
+              new CollectionsDownloadCompletedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
           } else {
             const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
             this.mApi.events.emit('analytics-track-mixpanel-event',
@@ -425,7 +437,7 @@ export class DownloadObserver {
           if (batchedActions.length > 0) {
             util.batchDispatch(this.mApi.store.dispatch, batchedActions);
           }
-          
+
           if ((state.settings.automation?.install && (allowInstall === true))
             || (allowInstall === 'force')
             || (download.modInfo?.['startedAsUpdate'] === true)) {
@@ -460,13 +472,13 @@ export class DownloadObserver {
           setImmediate(() => {
             pendingUpdate = false;
             progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                          urls, filePath, false);
+              urls, filePath, false);
           });
         }
       } else if (small) {
         // For small updates, still call progressUpdate but mark as small
         progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                       urls, filePath, small);
+          urls, filePath, small);
       }
     };
   }
@@ -660,8 +672,8 @@ export class DownloadObserver {
   }
 
   private handleUnknownDownloadError(err: any,
-                                     downloadId: string,
-                                     callback?: (err: Error, id?: string) => void) {
+    downloadId: string,
+    callback?: (err: Error, id?: string) => void) {
     if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF', 'EIO'].includes(err.code)) {
       // may be resumable
       this.handlePauseDownload(downloadId);
@@ -676,7 +688,7 @@ export class DownloadObserver {
             + 'This is likely a temporary issue, please try resuming later.', {
             allowReport: false,
           });
-        }  
+        }
       } else {
         return this.attemptResumeDownload(downloadId, callback);
       }
@@ -707,7 +719,7 @@ export class DownloadObserver {
             err.message, {
             allowReport: false,
           });
-        }  
+        }
       } else {
         return this.attemptResumeDownload(downloadId, callback);
       }
