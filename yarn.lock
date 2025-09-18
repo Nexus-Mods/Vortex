@@ -12379,8 +12379,8 @@ which@^4.0.0:
     isexe "^3.1.1"
 
 wholocks@Nexus-Mods/node-wholocks:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f"
+  version "1.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
