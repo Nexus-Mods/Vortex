@@ -1,6 +1,5 @@
 /// <reference types="node" />
-/// <reference types="jest" />
 import runElevated from './elevated';
 import runThreaded from './thread';
-declare const dynreq: NodeRequire;
+declare const dynreq: NodeJS.Require;
 export { runElevated, runThreaded, dynreq };

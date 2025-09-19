@@ -26,6 +26,7 @@
     "src/main.ts",
     "src/index.ts",
     "src/renderer.tsx",
-    "src/extensions/index.ts"
+    "src/extensions/index.ts",
+    "src/util/winapi-bindings-shim.ts"
   ]
 }

@@ -46,7 +46,12 @@ module.exports = {
       },
     ],
   },
-  resolve: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'] },
+  resolve: { 
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+    alias: {
+      'winapi-bindings': require('path').resolve(__dirname, 'src/util/winapi-bindings-shim.ts')
+    }
+  },
   plugins,
   devtool: 'source-map',
   optimization: {

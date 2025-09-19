@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="jest" />
 import Bluebird from 'bluebird';
 /**
  * run a function as an elevated process (windows only!).

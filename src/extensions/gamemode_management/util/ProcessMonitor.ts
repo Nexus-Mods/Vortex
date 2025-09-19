@@ -12,9 +12,8 @@ import { BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 
-import * as winapiT from 'winapi-bindings';
 import { isWindows } from '../../../util/platform';
-const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+const winapi = isWindows() ? require('winapi-bindings') : null;
 
 // Platform detection utilities
 

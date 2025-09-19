@@ -1,7 +1,6 @@
 import { isWindows } from '../../util/platform';
-import * as winapiT from 'winapi-bindings';
-const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
-const winapiRemote: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+const winapi = isWindows() ? require('winapi-bindings') : null;
+const winapiRemote = isWindows() ? require('winapi-bindings') : null;
 
 /* eslint-disable */
 import { clearUIBlocker, setUIBlocker } from '../../actions';

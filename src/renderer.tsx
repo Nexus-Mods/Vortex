@@ -55,9 +55,10 @@ if (process.env.NODE_ENV === 'development') {
 
 // Produce english error messages (windows only atm), otherwise they don't get
 // grouped correctly when reported through our feedback system
-import { SetProcessPreferredUILanguages } from 'winapi-bindings';
-if (SetProcessPreferredUILanguages !== undefined) {
-  SetProcessPreferredUILanguages(['en-US']);
+import { isWindows } from './util/platform';
+const winapi = isWindows() ? require('winapi-bindings') : null;
+if (winapi?.SetProcessPreferredUILanguages !== undefined) {
+  winapi.SetProcessPreferredUILanguages(['en-US']);
 }
 
 import * as path from 'path';

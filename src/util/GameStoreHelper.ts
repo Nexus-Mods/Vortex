@@ -16,8 +16,7 @@ import getNormalizeFunc from './getNormalizeFunc';
 import { toBlue } from './util';
 
 import { isWindows } from './platform';
-import * as winapiT from 'winapi-bindings';
-const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+const winapi = isWindows() ? require('winapi-bindings') : null;
 
 // Platform detection utilities
 

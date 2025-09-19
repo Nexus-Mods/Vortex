@@ -43,6 +43,17 @@ function patchedLoad(orig) {
       return electron;
     } else if ((request === '@electron/remote') && (process.type !== 'renderer')) {
       return undefined;
+    } else if (request === 'winapi-bindings') {
+      // Redirect winapi-bindings to our shim for non-Windows platforms
+      try {
+        return orig.apply(this, [request, parent, ...rest]);
+      } catch (err) {
+        if (err.code === 'MODULE_NOT_FOUND') {
+          const shimPath = path.resolve(__dirname, 'winapi-bindings-shim');
+          return orig.apply(this, [shimPath, parent, ...rest]);
+        }
+        throw err;
+      }
     }
 
     let res = orig.apply(this, [request, parent, ...rest]);

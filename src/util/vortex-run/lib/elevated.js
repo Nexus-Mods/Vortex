@@ -1,80 +1,94 @@
 "use strict";
-const __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  o[k2] = m[k];
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
 }));
-const __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-  Object.defineProperty(o, "default", { enumerable: true, value: v });
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
 }) : function(o, v) {
-  o["default"] = v;
+    o["default"] = v;
 });
-const __importStar = (this && this.__importStar) || function (mod) {
-  if (mod && mod.__esModule) return mod;
-  const result = {};
-  if (mod != null) for (const k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-  __setModuleDefault(result, mod);
-  return result;
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
-const __importDefault = (this && this.__importDefault) || function (mod) {
-  return (mod && mod.__esModule) ? mod : { "default": mod };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/* eslint-disable */
 const bluebird_1 = __importDefault(require("bluebird"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const tmp = __importStar(require("tmp"));
-const winapi = __importStar(require("winapi-bindings"));
+// Platform detection utilities
+function isWindows() {
+    return process.platform === 'win32';
+}
+function isMacOS() {
+    return process.platform === 'darwin';
+}
+function isLinux() {
+    return process.platform === 'linux';
+}
+const winapi = isWindows() ? require('winapi-bindings') : undefined;
 function elevatedMain(moduleRoot, ipcPath, main) {
-  let client;
-  const syntaxErrors = ['ReferenceError'];
-  const handleError = (error) => {
-    const testIfScriptInvalid = () => {
-      syntaxErrors.forEach(errType => {
-        if (error.stack.startsWith(errType)) {
-          error = 'InvalidScriptError: ' + error.stack;
-          client.sendEndError(error);
-        }
-      });
-    };
+    let client;
+    const syntaxErrors = ['ReferenceError'];
+    const handleError = (error) => {
+        const testIfScriptInvalid = () => {
+            syntaxErrors.forEach(errType => {
+                if (error.stack.startsWith(errType)) {
+                    error = 'InvalidScriptError: ' + error.stack;
+                    client.sendEndError(error);
+                }
+            });
+        };
         // tslint:disable-next-line:no-console
-    console.error('Elevated code failed', error.stack);
-    if (client !== undefined) {
-      testIfScriptInvalid();
-    }
-  };
-  process.on('uncaughtException', handleError);
-  process.on('unhandledRejection', handleError);
+        console.error('Elevated code failed', error.stack);
+        if (client !== undefined) {
+            testIfScriptInvalid();
+        }
+    };
+    process.on('uncaughtException', handleError);
+    process.on('unhandledRejection', handleError);
     // tslint:disable-next-line:no-shadowed-variable
-  module.paths.push(moduleRoot);
+    module.paths.push(moduleRoot);
     // tslint:disable-next-line:no-shadowed-variable
-  const net = require('net');
-  const JsonSocket = require('json-socket');
+    const net = require('net');
+    const JsonSocket = require('json-socket');
     // tslint:disable-next-line:no-shadowed-variable
-  const path = require('path');
-  client = new JsonSocket(new net.Socket());
-  client.connect(path.join('\\\\?\\pipe', ipcPath));
-  client.on('connect', () => {
-    Promise.resolve(main(client, require))
-      .catch(error => {
-        client.sendError(error);
-      })
-      .finally(() => {
-        client.end();
-            // process.exit(0);
-      });
-  })
-    .on('close', () => {
-      process.exit(0);
+    const path = require('path');
+    client = new JsonSocket(new net.Socket());
+    client.connect(path.join('\\\\?\\pipe', ipcPath));
+    client.on('connect', () => {
+        Promise.resolve(main(client, require))
+            .catch(error => {
+            client.sendError(error);
+        })
+            .finally(() => {
+            client.end();
+        });
     })
-    .on('error', err => {
-      if (err.code !== 'EPIPE') {
+        .on('close', () => {
+        process.exit(0);
+    })
+        .on('error', err => {
+        if (err.code !== 'EPIPE') {
             // will anyone ever see this?
             // tslint:disable-next-line:no-console
-        console.error('Connection failed', err.message);
-      }
+            console.error('Connection failed', err.message);
+        }
     });
 }
 /**
@@ -101,65 +115,71 @@ function elevatedMain(moduleRoot, ipcPath, main) {
  *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath, func, args) {
-  return new bluebird_1.default((resolve, reject) => {
-    tmp.file({ postfix: '.js' }, (err, tmpPath, fd, cleanup) => {
-      if (err) {
-        return reject(err);
-      }
-      const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
-      let mainBody = elevatedMain.toString();
-      mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
-      let prog = `
+    return new bluebird_1.default((resolve, reject) => {
+        tmp.file({ postfix: '.js' }, (err, tmpPath, fd, cleanup) => {
+            if (err) {
+                return reject(err);
+            }
+            const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
+            let mainBody = elevatedMain.toString();
+            mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
+            let prog = `
         let moduleRoot = '${projectRoot}';\n
         let ipcPath = '${ipcPath}';\n
       `;
-      if (args !== undefined) {
-        for (const argKey of Object.keys(args)) {
-          if (args.hasOwnProperty(argKey)) {
-            prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
-          }
-        }
-      }
-      prog += `
+            if (args !== undefined) {
+                for (const argKey of Object.keys(args)) {
+                    if (args.hasOwnProperty(argKey)) {
+                        prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
+                    }
+                }
+            }
+            prog += `
         let main = ${func.toString()};\n
         ${mainBody}\n
       `;
-      fs.write(fd, prog, (writeErr, written, str) => {
-        if (writeErr) {
-          try {
-            cleanup();
-          }
-          catch (cleanupErr) {
+            fs.write(fd, prog, (writeErr, written, str) => {
+                if (writeErr) {
+                    try {
+                        cleanup();
+                    }
+                    catch (cleanupErr) {
                         // tslint:disable-next-line:no-console
-            console.error('failed to clean up temporary script', cleanupErr.message);
-          }
-          return reject(writeErr);
-        }
-        try {
-          fs.closeSync(fd);
-        }
-        catch (err) {
-          if (err.code !== 'EBADF') {
-            return reject(err);
-          }
+                        console.error('failed to clean up temporary script', cleanupErr.message);
+                    }
+                    return reject(writeErr);
+                }
+                try {
+                    fs.closeSync(fd);
+                }
+                catch (err) {
+                    if (err.code !== 'EBADF') {
+                        return reject(err);
+                    }
                     // not sure what causes EBADF, don't want to return now if there is a chance this
                     // will actually work
-        }
-        try {
-          winapi.ShellExecuteEx({
-            verb: 'runas',
-            file: process.execPath,
-            parameters: `--run ${tmpPath}`,
-            directory: path.dirname(process.execPath),
-            show: 'shownormal',
-          });
-          return resolve(tmpPath);
-        }
-        catch (err) {
-          return reject(err);
-        }
-      });
+                }
+                try {
+                    if (!isWindows()) {
+                        return reject(new Error('Elevated execution is only supported on Windows'));
+                    }
+                    if (!winapi) {
+                        return reject(new Error('Windows API bindings not available'));
+                    }
+                    winapi.ShellExecuteEx({
+                        verb: 'runas',
+                        file: process.execPath,
+                        parameters: `--run ${tmpPath}`,
+                        directory: path.dirname(process.execPath),
+                        show: 'shownormal',
+                    });
+                    return resolve(tmpPath);
+                }
+                catch (err) {
+                    return reject(err);
+                }
+            });
+        });
     });
-  });
 }
 exports.default = runElevated;

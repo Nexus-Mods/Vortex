@@ -67,10 +67,20 @@ function makeRebuildFunc(orig) {
     }
     processed.add(request);
 
-    const resolved = reqResolve.sync(request, {
-      basedir: path.dirname(parent.id),
-      extensions: ['.js', '.json', '.node'],
-    });
+    let resolved;
+    try {
+      resolved = reqResolve.sync(request, {
+        basedir: path.dirname(parent.id),
+        extensions: ['.js', '.json', '.node'],
+      });
+    } catch (err) {
+      // Skip winapi-bindings on non-Windows platforms where it's not available
+      if (request === 'winapi-bindings' && err.code === 'MODULE_NOT_FOUND') {
+        log('info', 'skipping winapi-bindings rebuild on non-Windows platform');
+        return true;
+      }
+      throw err;
+    }
 
     const segments = resolved.split(path.sep);
     const modulesIdx = segments.indexOf('node_modules');

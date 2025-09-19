@@ -25,7 +25,7 @@
     "bbcode-to-react": "^0.2.9",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
-    "bootstrap-sass": "^3.4.1",
+    "bootstrap": "^4.6.1",
     "classnames": "^2.5.1",
     "commander": "^4.0.1",
     "content-disposition": "^0.5.3",

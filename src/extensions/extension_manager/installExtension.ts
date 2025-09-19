@@ -169,6 +169,9 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
       },
       registerPreview: (priority: number, component: any) => {
         context.registerPreview(priority, component);
+      },
+      once: (callback: () => void) => {
+        context.once(callback);
       }
     };
     
@@ -186,13 +189,15 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
           // If the extension still fails, try passing vortexExt directly as a fallback
           const errorMessage = err.message || err.toString();
           if (errorMessage.includes('registerGame is not a function') || 
-              errorMessage.includes('context.registerGame is not a function')) {
+              errorMessage.includes('context.registerGame is not a function') ||
+              errorMessage.includes('once is not a function') ||
+              errorMessage.includes('context.once is not a function')) {
             try {
               // Some extensions might expect vortexExt as a parameter
               extension.default(vortexExt);
               resolve();
             } catch (fallbackErr) {
-              // If vortexExt also fails, it means registerGame is not available yet
+              // If vortexExt also fails, it means the required methods are not available yet
               // This can happen if gamemode_management hasn't initialized yet
               reject(new Error(`Extension failed to load: ${errorMessage}. ` +
                 `This may be due to gamemode_management not being initialized yet. ` +

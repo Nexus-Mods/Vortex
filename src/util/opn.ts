@@ -5,8 +5,7 @@ import Promise from 'bluebird';
 import {ipcMain, ipcRenderer, shell} from 'electron';
 
 import { isWindows } from './platform';
-import * as winapiT from 'winapi-bindings';
-const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
+const winapi = isWindows() ? require('winapi-bindings') : null;
 
 // Platform detection utilities
 

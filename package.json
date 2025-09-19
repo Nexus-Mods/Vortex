@@ -211,7 +211,7 @@
     "bbcode-to-react": "^0.2.9",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
-    "bootstrap-sass": "^3.4.1",
+    "bootstrap": "^4.6.1",
     "bsdiff-node": "file:./vendor/bsdiff-node-js",
     "cheerio": "1.0.0-rc.12",
     "classnames": "^2.5.1",

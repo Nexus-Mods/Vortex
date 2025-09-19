@@ -17,7 +17,7 @@ function isLinux(): boolean {
   return process.platform === 'linux';
 }
 
-const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
+const winapi = isWindows() ? require('winapi-bindings') : undefined;
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequire) =>
