@@ -24,14 +24,14 @@ export const nexusIdsFromDownloadId = createSelector(
     if (dl?.modInfo?.nexus?.ids?.gameId == null && dl?.modInfo?.meta?.gameId == null) {
       return undefined;
     }
-    const numericGameId = nexusGames().find(g => g.domain_name === dl.modInfo.nexus.ids.gameId);
+    const numericGameId = nexusGames().find(g => g.domain_name === dl.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.gameId);
     return {
-      gameDomainName: dl.modInfo.nexus.ids.gameId || dl?.modInfo?.meta?.domainName,
-      fileId: dl.modInfo.nexus.ids.fileId,
-      modId: dl.modInfo.nexus.ids.modId,
+      gameDomainName: dl?.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName,
+      fileId: dl?.modInfo?.nexus?.ids?.fileId,
+      modId: dl?.modInfo?.nexus?.ids?.modId,
       numericGameId: numericGameId?.id?.toString() || dl?.modInfo?.meta?.gameId?.toString(),
-      collectionSlug: dl.modInfo?.nexus?.ids?.collectionSlug,
-      collectionId: dl.modInfo?.nexus?.ids?.collectionId,
-      revisionId: dl.modInfo.nexus.ids?.revisionId?.toString(),      
+      collectionSlug: dl?.modInfo?.nexus?.ids?.collectionSlug,
+      collectionId: dl?.modInfo?.nexus?.ids?.collectionId,
+      revisionId: dl?.modInfo?.nexus?.ids?.revisionId?.toString(),
    }
 });

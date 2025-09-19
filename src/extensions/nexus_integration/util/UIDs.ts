@@ -46,8 +46,17 @@ export function makeModAndFileUIDs(gameId: string, modId: string, fileId: string
   if (process.env.NODE_ENV === 'development') {
     log('debug', 'makeModAndFileUIDs', JSON.stringify(repoInfo));
   }
-  return {
-    modUID: makeModUID(repoInfo),
-    fileUID: makeFileUID(repoInfo)
-  };
+
+  // Early return if mId or fId is missing or invalid
+  if (!repoInfo.modId || !repoInfo.fileId
+    || isNaN(parseInt(repoInfo.modId, 10))
+    || isNaN(parseInt(repoInfo.fileId, 10))
+  ) {
+    return { modUID: undefined, fileUID: undefined };
+  } else {
+    return {
+      modUID: makeModUID(repoInfo),
+      fileUID: makeFileUID(repoInfo)
+    };
+  }
 }
