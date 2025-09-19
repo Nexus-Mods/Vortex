@@ -46,8 +46,8 @@ const nop = () => undefined;
 
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
-    { key: 'import', text: 'Save change (use deployed file)', allText: 'Save all changes' },
     { key: 'drop', text: 'Revert change (use staging file)', allText: 'Revert all changes' },
+    { key: 'import', text: 'Save change (use deployed file)', allText: 'Save all changes' },
     { key: 'newest', text: 'Use newer file', allText: 'Use newer file for all changes' },
   ],
   valchange: [
@@ -55,12 +55,12 @@ const possibleActions: { [type: string]: IPossibleAction[] } = {
     // TODO: implement a "restore from archive" option
   ],
   deleted: [
-    { key: 'delete', text: 'Save change (delete file)', allText: 'Save all changes' },
     { key: 'restore', text: 'Revert change (restore file)', allText: 'Revert all changes' },
+    { key: 'delete', text: 'Save change (delete file)', allText: 'Save all changes' },
   ],
   srcdeleted: [
-    { key: 'drop', text: 'Save change (delete file)', allText: 'Save all changes' },
     { key: 'import', text: 'Revert change (restore file)', allText: 'Revert all changes' },
+    { key: 'drop', text: 'Save change (delete file)', allText: 'Save all changes' },
   ],
 };
 
