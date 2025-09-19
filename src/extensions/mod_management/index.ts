@@ -1177,7 +1177,7 @@ function once(api: IExtensionApi) {
         const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
         Promise.map(modIds, modId =>
-          installManager.installDependencies(api, profile, gameId, modId, silent === true)
+          installManager.installDependencies(api, profile, gameId, modId, silent === true, false)
             .catch(ProcessCanceled, () => null))
           .catch(err => api.showErrorNotification('Failed to install dependencies', err));
       } catch (err) {
@@ -1215,7 +1215,7 @@ function once(api: IExtensionApi) {
       return;
     }
 
-    installManager.installDependencies(api, profile, profile.gameId, modId, false)
+    installManager.installDependencies(api, profile, profile.gameId, modId, true, false)
       .then(() => installManager.installRecommendations(api, profile, profile.gameId, modId))
       .catch(err => {
         if (!(err instanceof ProcessCanceled)) {

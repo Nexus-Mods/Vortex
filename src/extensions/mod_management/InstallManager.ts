@@ -10,6 +10,7 @@ import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
 import { getBatchContext, IBatchContext } from '../../util/BatchContext';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
+import { NotificationAggregator } from './NotificationAggregator';
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -241,6 +242,10 @@ class InstallManager {
   private mDependencyInstalls: { [modId: string]: () => void } = {};
   private mDependencyDownloadsLimit: DynamicDownloadConcurrencyLimiter;
 
+
+  private mNotificationAggregator: NotificationAggregator;
+  private mNotificationAggregationTimeoutMS: number = 10000; 
+
   // This limiter drives the DownloadManager to queue up new downloads.
   private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
 
@@ -258,6 +263,7 @@ class InstallManager {
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
     this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
+    this.mNotificationAggregator = new NotificationAggregator(api);
 
     api.onAsync(
       'install-from-dependencies',
@@ -1182,7 +1188,7 @@ class InstallManager {
   }
 
   public installDependencies(api: IExtensionApi, profile: IProfile, gameId: string, modId: string,
-    allowAutoDeploy: boolean): Bluebird<void> {
+    silent: boolean, allowAutoDeploy?: boolean): Bluebird<void> {
     const state: IState = api.store.getState();
     const mod: IMod = state.persistent.mods[gameId]?.[modId];
 
@@ -1195,14 +1201,22 @@ class InstallManager {
     const installPath = this.mGetInstallPath(gameId);
     log('info', 'start installing dependencies', { modId });
 
+    const aggregationId = `install-dependencies-${modId}`;
+    if (!silent) {
+      this.mNotificationAggregator.startAggregation(aggregationId, this.mNotificationAggregationTimeoutMS);
+    }
+
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.withDependenciesContext('install-dependencies', () =>
       this.augmentRules(api, gameId, mod)
         .then(rules => this.installDependenciesImpl(
           api, profile, gameId, mod.id, modName(mod), rules,
-          installPath, allowAutoDeploy))
+          installPath, silent))
         .finally(() => {
           log('info', 'done installing dependencies', { modId });
+          if (!silent) {
+            this.mNotificationAggregator.stopAggregation(aggregationId);
+          }
           api.store.dispatch(stopActivity('installing_dependencies', mod.id));
         }));
   }
@@ -3004,7 +3018,8 @@ class InstallManager {
     sourceModId: string,
     recommended: boolean,
     doDownload: (dep: IDependency) => Bluebird<{ updatedDep: IDependency, downloadId: string }>,
-    abort: AbortController)
+    abort: AbortController,
+    silent: boolean)
     : Bluebird<IDependency[]> {
     const res: Bluebird<IDependency[]> = Bluebird.map(dependencies, async (dep: IDependency) => {
       if (abort.signal.aborted) {
@@ -3063,36 +3078,30 @@ class InstallManager {
             return Bluebird.resolve(undefined);
           }
           const refName = renderModReference(dep.reference, undefined);
-          api.showErrorNotification('Failed to install dependency',
-            '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
+          const message = err.message + '\nA common cause for issues here is that the file may no longer '
             + 'be available. You may want to install a current version of the specified mod '
-            + 'and update or remove the dependency for the old one.', {
+            + 'and update or remove the dependency for the old one.';
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency', message, refName, {
             allowReport: false,
-            id: `failed-install-dependency-${refName}`,
-            message: refName,
-            replace: {
-              errorMessage: err.message,
-            },
+            silent,
           });
           return Bluebird.resolve(undefined);
         })
         .catch(DownloadIsHTML, () => {
           const refName = renderModReference(dep.reference, undefined);
-          api.showErrorNotification('Failed to install dependency',
-            'The direct download URL for this file is not valid or didn\'t lead to a file. '
-            + 'This may be a setup error in the dependency or the file has been moved.', {
+          const message = 'The direct download URL for this file is not valid or didn\'t lead to a file. '
+            + 'This may be a setup error in the dependency or the file has been moved.';
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency', message, refName, {
             allowReport: false,
-            id: `failed-install-dependency-${refName}`,
-            message: refName,
+            silent,
           });
           return Bluebird.resolve(undefined);
         })
         .catch(NotFound, err => {
           const refName = renderModReference(dep.reference, undefined);
-          api.showErrorNotification('Failed to install dependency', err, {
-            id: `failed-install-dependency-${refName}`,
-            message: refName,
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency', err.message, refName, {
             allowReport: false,
+            silent,
           });
           return Bluebird.resolve(undefined);
         })
@@ -3109,50 +3118,38 @@ class InstallManager {
               return Bluebird.reject(err);
             }
           } else if (err.code === 'Z_BUF_ERROR') {
-            api.showErrorNotification(
-              'Download failed',
-              'The download ended prematurely or was corrupted. You\'ll have to restart it.', {
+            this.showDependencyError(api, sourceModId, 'Download failed', 
+              'The download ended prematurely or was corrupted. You\'ll have to restart it.', refName, {
               allowReport: false,
+              silent,
             });
           } else if ([403, 404, 410].includes(err['statusCode'])) {
-            api.showErrorNotification(
-              'Failed to install dependency',
-              `${err['message']}\n\nThis error is usually caused by an invalid request, maybe you followed a link that has expired or you lack permission to access it.`,
-              {
-                allowReport: false,
-                id: notiId,
-                message: refName,
-              });
+            const message = `${err['message']}\n\nThis error is usually caused by an invalid request, maybe you followed a link that has expired or you lack permission to access it.`;
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', message, refName, {
+              allowReport: false,
+              silent,
+            });
 
             return Bluebird.resolve();
           } else if (err.code === 'ERR_INVALID_PROTOCOL') {
             const msg = err.message.replace(/ Expected .*/, '');
-            api.showErrorNotification(
-              'Failed to install dependency',
-              'The URL protocol used in the dependency is not supported, '
-              + 'you may be missing an extension required to handle it:\n{{errorMessage}}', {
-              message: refName,
-              id: notiId,
+            const message = 'The URL protocol used in the dependency is not supported, '
+              + 'you may be missing an extension required to handle it:\n' + msg;
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', message, refName, {
               allowReport: false,
-              replace: {
-                errorMessage: msg,
-              },
+              silent,
             });
           } else if (err.name === 'HTTPError') {
             err['attachLogOnReport'] = true;
-            api.showErrorNotification('Failed to install dependency', err, {
-              id: notiId,
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', err.message, refName, {
+              allowReport: true,
+              silent,
             });
           } else {
             const pretty = prettifyNodeErrorMessage(err);
-            const newErr = new Error(pretty.message);
-            newErr.stack = err.stack;
-            newErr['attachLogOnReport'] = true;
-            api.showErrorNotification('Failed to install dependency', newErr, {
-              message: refName,
-              id: notiId,
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', pretty.message, refName, {
               allowReport: pretty.allowReport,
-              replace: pretty.replace,
+              silent,
             });
           }
           return Bluebird.resolve(undefined);
@@ -3577,7 +3574,7 @@ class InstallManager {
         }
         return this.doInstallDependenciesPhase(api, depList, gameId, sourceModId,
           recommended,
-          doDownload, abort)
+          doDownload, abort, silent)
           .then((updated: IDependency[]) => {
             // Mark this phase's downloads as finished to allow its installers to run,
             // but do not wait for installations to complete before proceeding to next phase.
@@ -4300,6 +4297,39 @@ class InstallManager {
       return Promise.reject(err);
     } finally {
       log('debug', 'extraction completed', { duration: Date.now() - now, archivePath, instructions: copies.length });
+    }
+  }
+
+  /**
+   * Helper method to show aggregated error notification for dependency installation failures
+   */
+  private showDependencyError(
+    api: IExtensionApi,
+    sourceModId: string,
+    title: string,
+    message: string,
+    dependencyRef: string,
+    options: { allowReport?: boolean; replace?: any; silent?: boolean } = {}
+  ): void {
+    const aggregationId = `install-dependencies-${sourceModId}`;
+    
+    if (this.mNotificationAggregator.isAggregating(aggregationId)) {
+      this.mNotificationAggregator.addNotification(
+        aggregationId,
+        'error',
+        title,
+        message,
+        dependencyRef,
+        { allowReport: options.allowReport }
+      );
+    } else if (!options.silent) {
+      // Fallback to immediate notification if aggregation is not active and not silent
+      api.showErrorNotification(title, message, {
+        id: `failed-install-dependency-${dependencyRef}`,
+        message: dependencyRef,
+        allowReport: options.allowReport,
+        replace: options.replace,
+      });
     }
   }
 }
