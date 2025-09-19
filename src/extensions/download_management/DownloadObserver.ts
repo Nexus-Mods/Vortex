@@ -652,13 +652,8 @@ export class DownloadObserver {
       return;
     }
     if (['paused'].includes(download.state)) {
-      if (download.chunks > 0) {
         log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
         return this.handleResumeDownload(downloadId, callback);
-      } else {
-        return this.handleStartDownload(download.urls, download.modInfo,
-          download.localPath, callback, 'never');
-      }
     }
     log('debug', 'not resuming download', { id: downloadId, state: download.state })
     if (callback !== undefined) {

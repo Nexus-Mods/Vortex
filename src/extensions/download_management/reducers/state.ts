@@ -17,9 +17,9 @@ export const stateReducer: IReducerSpec = {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] != null) {
-        if (state.files[payload.id].modInfo?.meta?.fileId != null
-            && payload.modInfo?.meta?.fileId != null
-            && state.files[payload.id].modInfo?.meta?.fileId === payload.modInfo?.meta?.fileId) {
+        if (state.files[payload.id].modInfo?.meta?.details?.fileId != null
+            && payload.modInfo?.meta?.details?.fileId != null
+            && state.files[payload.id].modInfo?.meta?.details?.fileId === payload.modInfo?.meta?.details?.fileId) {
           // If it's the same id for the same file, just ignore the request - it's probably the
           //  redux module replaying actions.
           return state;
