@@ -237,7 +237,7 @@
     "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.1.1",
     "electron-redux": "TanninOne/electron-redux",
-    "electron-updater": "^4.2.0",
+    "electron-updater": "^6.3.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.9",
