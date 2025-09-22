@@ -24,7 +24,7 @@ export const nexusIdsFromDownloadId = createSelector(
     if (dl?.modInfo?.nexus?.ids?.gameId == null && dl?.modInfo?.meta?.gameId == null) {
       return undefined;
     }
-    const numericGameId = nexusGames().find(g => g.domain_name === dl.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.gameId);
+    const numericGameId = nexusGames().find(g => g.domain_name === (dl.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName));
     return {
       gameDomainName: dl?.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName,
       fileId: dl?.modInfo?.nexus?.ids?.fileId,
