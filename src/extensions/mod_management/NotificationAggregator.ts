@@ -1,6 +1,12 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
+// Jest doesn't support setImmediate, so we provide a polyfill
+// This ensures compatibility across environments
+const setImmediatePolyfill = (typeof setImmediate !== 'undefined') 
+  ? setImmediate 
+  : (fn: () => void) => setTimeout(fn, 0);
+
 export interface IAggregatedNotification {
   id: string;
   type: 'error' | 'warning' | 'info';
@@ -42,9 +48,9 @@ export class NotificationAggregator {
   /**
    * Start aggregating notifications for a specific operation
    * @param aggregationId Unique identifier for the aggregation session
-   * @param timeoutMs Optional timeout in milliseconds to auto-flush notifications (default: 10000ms)
+   * @param timeoutMs Optional timeout in milliseconds to auto-flush notifications (default: 1000ms)
    */
-  public startAggregation(aggregationId: string, timeoutMs: number = 10000): void {
+  public startAggregation(aggregationId: string, timeoutMs: number = 1000): void {
     if (this.mActiveAggregations.has(aggregationId)) {
       return;
     }
@@ -78,7 +84,7 @@ export class NotificationAggregator {
     options: { allowReport?: boolean; actions?: any[] } = {}
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
-      setImmediate(() => {
+      setImmediatePolyfill(() => {
         this.mApi.showErrorNotification(title, message, {
           message: item,
           allowReport: options.allowReport,
@@ -125,7 +131,7 @@ export class NotificationAggregator {
   private async processNotificationsAsync(notifications: IPendingNotification[], aggregationId: string): Promise<void> {
     try {
       // Process aggregation in next tick to prevent blocking
-      await new Promise<void>(resolve => setImmediate(resolve));
+      await new Promise<void>(resolve => setImmediatePolyfill(resolve));
       
       // Circuit breaker: For very large batches, show a simple summary instead of processing all
       if (notifications.length > 500) {
@@ -293,7 +299,7 @@ export class NotificationAggregator {
   }
 
   private showAggregatedNotification(notification: IAggregatedNotification): void {
-    setImmediate(() => {
+    setImmediatePolyfill(() => {
       const options: any = {
         id: notification.id,
         allowReport: notification.allowReport,
