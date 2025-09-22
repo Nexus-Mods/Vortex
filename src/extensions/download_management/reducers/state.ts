@@ -17,8 +17,8 @@ export const stateReducer: IReducerSpec = {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] != null) {
-        const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId;
-        const existingFileId = state.files[payload.id].modInfo?.meta?.details?.fileId ?? state.files[payload.id].modInfo?.meta?.fileId;
+        const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId ?? payload.modInfo?.nexus?.ids?.fileId;
+        const existingFileId = state.files[payload.id].modInfo?.meta?.details?.fileId ?? state.files[payload.id].modInfo?.meta?.fileId ?? state.files[payload.id].modInfo?.nexus?.ids?.fileId;
         const payloadRevisionId = payload.modInfo?.nexus?.ids?.revisionId;
         const existingRevisionId = state.files[payload.id].modInfo?.nexus?.ids?.revisionId;
         if (payloadFileId != null && existingFileId != null && existingFileId === payloadFileId) {
