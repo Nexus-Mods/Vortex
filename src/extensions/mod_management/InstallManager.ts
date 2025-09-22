@@ -1202,9 +1202,7 @@ class InstallManager {
     log('info', 'start installing dependencies', { modId });
 
     const aggregationId = `install-dependencies-${modId}`;
-    if (!silent) {
-      this.mNotificationAggregator.startAggregation(aggregationId, this.mNotificationAggregationTimeoutMS);
-    }
+    this.mNotificationAggregator.startAggregation(aggregationId, this.mNotificationAggregationTimeoutMS);
 
     api.store.dispatch(startActivity('installing_dependencies', mod.id));
     return this.withDependenciesContext('install-dependencies', () =>
@@ -1214,9 +1212,7 @@ class InstallManager {
           installPath, silent))
         .finally(() => {
           log('info', 'done installing dependencies', { modId });
-          if (!silent) {
-            this.mNotificationAggregator.stopAggregation(aggregationId);
-          }
+          this.mNotificationAggregator.stopAggregation(aggregationId);
           api.store.dispatch(stopActivity('installing_dependencies', mod.id));
         }));
   }
@@ -1379,7 +1375,7 @@ class InstallManager {
     gameId: string, sourceModId: string, recommended: boolean,
     phase: number): void {
     const phaseState = this.mInstallPhaseState.get(sourceModId);
-    const installKey = `${dep.reference.tag || downloadId}_${Date.now()}`;
+    const installKey = `${sourceModId}:${dep.reference.tag || downloadId}_${Date.now()}`;
     this.mPendingInstalls.set(installKey, dep);
 
     // Track active count for the phase
@@ -3041,7 +3037,6 @@ class InstallManager {
             return Bluebird.resolve(updatedDep);
           }
           log('info', 'installed as dependency', { modId });
-
           if (!alreadyInstalled) {
             api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
           }
@@ -3422,7 +3417,6 @@ class InstallManager {
 
     const doDownload = (dep: IDependency): Bluebird<{ updatedDep: IDependency, downloadId: string }> => {
       let dlPromise = Bluebird.resolve(dep.download);
-
       if ((dep.download === undefined) || (downloads[dep.download] === undefined)) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
@@ -4322,8 +4316,7 @@ class InstallManager {
         dependencyRef,
         { allowReport: options.allowReport }
       );
-    } else if (!options.silent) {
-      // Fallback to immediate notification if aggregation is not active and not silent
+    } else {
       api.showErrorNotification(title, message, {
         id: `failed-install-dependency-${dependencyRef}`,
         message: dependencyRef,
