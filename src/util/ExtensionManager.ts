@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
+import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification, dismissAllNotifications,
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
@@ -987,6 +987,8 @@ class ExtensionManager {
       store.dispatch(closeDialog(id, actionKey, input));
     this.mApi.dismissNotification = (id: string) =>
       store.dispatch(dismissNotification(id));
+    this.mApi.dismissAllNotifications = () =>
+      store.dispatch(dismissAllNotifications());
     this.mApi.suppressNotification = (id: string, suppress: boolean) => {
       if (suppress !== false) {
         store.dispatch(dismissNotification(id));
