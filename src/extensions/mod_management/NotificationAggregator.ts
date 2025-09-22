@@ -6,6 +6,7 @@ export interface IAggregatedNotification {
   type: 'error' | 'warning' | 'info';
   title: string;
   message: string;
+  text: string;
   items: string[];
   count: number;
   allowReport?: boolean;
@@ -31,6 +32,8 @@ export class NotificationAggregator {
   private mActiveAggregations: Set<string> = new Set();
   private mTimeouts: { [key: string]: NodeJS.Timeout } = {};
   private mApi: IExtensionApi;
+  private mNormalizedMessageCache: Map<string, string> = new Map();
+  private mAddNotificationQueue: { [aggregationId: string]: NodeJS.Timeout } = {};
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
@@ -43,7 +46,6 @@ export class NotificationAggregator {
    */
   public startAggregation(aggregationId: string, timeoutMs: number = 10000): void {
     if (this.mActiveAggregations.has(aggregationId)) {
-      log('warn', 'Aggregation already active', { aggregationId });
       return;
     }
 
@@ -56,8 +58,6 @@ export class NotificationAggregator {
         this.flushAggregation(aggregationId);
       }, timeoutMs);
     }
-
-    log('debug', 'Started notification aggregation', { aggregationId, timeoutMs });
   }
 
   /**
@@ -78,16 +78,18 @@ export class NotificationAggregator {
     options: { allowReport?: boolean; actions?: any[] } = {}
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
-      // If aggregation is not active, show notification immediately
-      this.mApi.showErrorNotification(title, message, {
-        message: item,
-        allowReport: options.allowReport,
-        actions: options.actions,
+      setImmediate(() => {
+        this.mApi.showErrorNotification(title, message, {
+          message: item,
+          allowReport: options.allowReport,
+          actions: options.actions,
+        });
       });
       return;
     }
 
-    this.mPendingNotifications[aggregationId].push({
+    // Batch notifications to prevent UI blocking on rapid additions
+    this.addNotificationBatched(aggregationId, {
       type,
       title,
       message,
@@ -95,14 +97,10 @@ export class NotificationAggregator {
       allowReport: options.allowReport,
       actions: options.actions,
     });
+  }
 
-    log('debug', 'Added notification to aggregation', {
-      aggregationId,
-      type,
-      title,
-      item,
-      totalPending: this.mPendingNotifications[aggregationId].length,
-    });
+  private addNotificationBatched(aggregationId: string, notification: IPendingNotification): void {
+    this.mPendingNotifications[aggregationId].push(notification);
   }
 
   /**
@@ -120,20 +118,59 @@ export class NotificationAggregator {
       return;
     }
 
-    const aggregated = this.aggregateNotifications(pending);
-    
-    // Show aggregated notifications
-    aggregated.forEach(notification => {
-      this.showAggregatedNotification(notification);
-    });
-
-    log('info', 'Flushed aggregated notifications', {
-      aggregationId,
-      originalCount: pending.length,
-      aggregatedCount: aggregated.length,
-    });
-
+    this.processNotificationsAsync(pending, aggregationId);
     this.cleanupAggregation(aggregationId);
+  }
+
+  private async processNotificationsAsync(notifications: IPendingNotification[], aggregationId: string): Promise<void> {
+    try {
+      // Process aggregation in next tick to prevent blocking
+      await new Promise<void>(resolve => setImmediate(resolve));
+      
+      // Circuit breaker: For very large batches, show a simple summary instead of processing all
+      if (notifications.length > 500) {
+        log('warn', 'Very large notification batch detected, showing summary instead', {
+          aggregationId,
+          count: notifications.length,
+        });
+        
+        const errorCount = notifications.filter(n => n.type === 'error').length;
+        const warningCount = notifications.filter(n => n.type === 'warning').length;
+        
+        if (errorCount > 0) {
+          this.mApi.showErrorNotification(
+            `Multiple dependency errors (${errorCount} errors)`,
+            `${errorCount} dependencies failed to install. Check the log for details.`,
+            { id: `bulk-errors-${aggregationId}` }
+          );
+        }
+        
+        if (warningCount > 0) {
+          this.mApi.sendNotification({
+            id: `bulk-warnings-${aggregationId}`,
+            type: 'warning',
+            title: `Multiple dependency warnings (${warningCount} warnings)`,
+            message: `${warningCount} dependencies had warnings. Check the log for details.`,
+          });
+        }
+        
+        return;
+      }
+      
+      const aggregated = this.aggregateNotifications(notifications);
+
+      // Show notifications one by one with brief delays to prevent UI blocking
+      for (let i = 0; i < aggregated.length; i++) {
+        this.showAggregatedNotification(aggregated[i]);
+        
+        // Add small delay between notifications to prevent UI blocking
+        if (i < aggregated.length - 1) {
+          await new Promise<void>(resolve => setTimeout(resolve, 1));
+        }
+      }
+    } catch (error) {
+      log('error', 'Failed to process aggregated notifications', { aggregationId, error: error.message });
+    }
   }
 
   /**
@@ -160,6 +197,16 @@ export class NotificationAggregator {
       clearTimeout(this.mTimeouts[aggregationId]);
       delete this.mTimeouts[aggregationId];
     }
+
+    if (this.mAddNotificationQueue[aggregationId]) {
+      clearTimeout(this.mAddNotificationQueue[aggregationId]);
+      delete this.mAddNotificationQueue[aggregationId];
+    }
+
+    // Clean up message cache periodically to prevent memory leaks
+    if (this.mNormalizedMessageCache.size > 500) {
+      this.mNormalizedMessageCache.clear();
+    }
   }
 
   private aggregateNotifications(notifications: IPendingNotification[]): IAggregatedNotification[] {
@@ -178,14 +225,15 @@ export class NotificationAggregator {
     return Object.keys(grouped).map(key => {
       const group = grouped[key];
       const first = group[0];
-      const items = group.map(n => n.item).filter((item, index, array) => array.indexOf(item) === index);
+      const uniqueItems = Array.from(new Set(group.map(n => n.item)));
       
       return {
         id: `aggregated-${key}-${Date.now()}`,
         type: first.type,
         title: first.title,
-        message: this.buildAggregatedMessage(first, items),
-        items,
+        message: this.buildAggregatedMessage(first, uniqueItems),
+        text: uniqueItems.join('\n'),
+        items: uniqueItems,
         count: group.length,
         allowReport: first.allowReport,
         actions: first.actions,
@@ -194,20 +242,40 @@ export class NotificationAggregator {
   }
 
   private getGroupingKey(notification: IPendingNotification): string {
-    // Create a key based on title and normalized message for grouping similar notifications
-    const normalizedMessage = this.normalizeMessage(notification.message);
-    return `${notification.type}-${notification.title}-${normalizedMessage}`;
+    // For performance, use a simpler grouping key that avoids expensive normalization
+    // Only normalize if we have time (small batches)
+    const simpleKey = `${notification.type}-${notification.title}`;
+
+    // Only do expensive normalization for smaller batches to avoid UI blocking
+    if (this.mPendingNotifications && Object.keys(this.mPendingNotifications).length < 100) {
+      const normalizedMessage = this.normalizeMessage(notification.message);
+      return `${simpleKey}-${normalizedMessage}`;
+    }
+
+    return simpleKey;
   }
 
   private normalizeMessage(message: string): string {
+    // Check cache first to avoid expensive regex operations
+    if (this.mNormalizedMessageCache.has(message)) {
+      return this.mNormalizedMessageCache.get(message)!;
+    }
+
     // Remove variable parts from messages to enable better grouping
-    return message
+    const normalized = message
       .replace(/\{\{[^}]+\}\}/g, 'PLACEHOLDER') // Replace template variables
       .replace(/https?:\/\/[^\s]+/g, 'URL') // Replace URLs
       .replace(/\d+/g, 'NUMBER') // Replace numbers
       .replace(/['""][^'"]*['"]/g, 'QUOTED') // Replace quoted strings
       .toLowerCase()
       .trim();
+
+    // Cache the result (limit cache size to prevent memory leaks)
+    if (this.mNormalizedMessageCache.size < 1000) {
+      this.mNormalizedMessageCache.set(message, normalized);
+    }
+
+    return normalized;
   }
 
   private buildAggregatedMessage(notification: IPendingNotification, items: string[]): string {
@@ -225,42 +293,46 @@ export class NotificationAggregator {
   }
 
   private showAggregatedNotification(notification: IAggregatedNotification): void {
-    const options: any = {
-      id: notification.id,
-      allowReport: notification.allowReport,
-    };
+    setImmediate(() => {
+      const options: any = {
+        id: notification.id,
+        allowReport: notification.allowReport,
+      };
 
-    if (notification.actions) {
-      options.actions = notification.actions;
-    }
+      if (notification.actions) {
+        options.actions = notification.actions;
+      }
 
-    // Add count information to the title if multiple items
-    const displayTitle = notification.count > 1 
-      ? `${notification.title} (${notification.count} dependencies)`
-      : notification.title;
+      // Add count information to the title if multiple items
+      const displayTitle = notification.count > 1 
+        ? `${notification.title} (${notification.count} dependencies)`
+        : notification.title;
 
-    switch (notification.type) {
-      case 'error':
-        this.mApi.showErrorNotification(displayTitle, notification.message, options);
-        break;
-      case 'warning':
-        this.mApi.sendNotification({
-          id: notification.id,
-          type: 'warning',
-          title: displayTitle,
-          message: notification.message,
-          ...options,
-        });
-        break;
-      case 'info':
-        this.mApi.sendNotification({
-          id: notification.id,
-          type: 'info',
-          title: displayTitle,
-          message: notification.message,
-          ...options,
-        });
-        break;
-    }
+      switch (notification.type) {
+        case 'error':
+          this.mApi.showErrorNotification(displayTitle, { message: notification.message, text: notification.text }, options);
+          break;
+        case 'warning':
+          this.mApi.sendNotification({
+            id: notification.id,
+            type: 'warning',
+            title: displayTitle,
+            message: notification.message,
+            text: notification.text,
+            ...options,
+          });
+          break;
+        case 'info':
+          this.mApi.sendNotification({
+            id: notification.id,
+            type: 'info',
+            title: displayTitle,
+            message: notification.message,
+            text: notification.text,
+            ...options,
+          });
+          break;
+      }
+    });
   }
 }
