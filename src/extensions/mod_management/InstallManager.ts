@@ -3418,11 +3418,11 @@ class InstallManager {
     const doDownload = (dep: IDependency): Bluebird<{ updatedDep: IDependency, downloadId: string }> => {
       let dlPromise = Bluebird.resolve(dep.download);
       // Alternate between ProcessCanceled and NotFound for failed download URL
-      if (Math.random() < 0.5) {
-        return Bluebird.reject(new ProcessCanceled('Failed to determine download url'));
-      } else {
-        return Bluebird.reject(new NotFound('Failed to determine download url'));
-      }
+      // if (Math.random() < 0.5) {
+      //   return Bluebird.reject(new ProcessCanceled('Failed to determine download url'));
+      // } else {
+      //   return Bluebird.reject(new NotFound('Failed to determine download url'));
+      // }
       if ((dep.download === undefined) || (downloads[dep.download] === undefined)) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
