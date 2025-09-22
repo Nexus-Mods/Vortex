@@ -310,7 +310,7 @@ export class NotificationAggregator {
 
       switch (notification.type) {
         case 'error':
-          this.mApi.showErrorNotification(displayTitle, { message: notification.message, text: notification.text }, options);
+          this.mApi.showErrorNotification(displayTitle, { message: notification.message, affectedDependencies: `\n${notification.text}` }, options);
           break;
         case 'warning':
           this.mApi.sendNotification({
