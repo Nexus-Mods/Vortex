@@ -1463,7 +1463,6 @@ class InstallManager {
       } catch (err) {
         const endTime = Date.now();
         this.mActiveInstalls.delete(installKey);
-        this.showDependencyError(api, sourceModId, 'Failed to install dependency', err.message, renderModReference(dep.reference));
         log('warn', 'Failed to install dependency', {
           downloadId,
           error: err.message,
