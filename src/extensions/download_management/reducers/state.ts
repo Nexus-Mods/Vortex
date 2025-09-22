@@ -19,15 +19,15 @@ export const stateReducer: IReducerSpec = {
       if (state.files[payload.id] != null) {
         const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId;
         const existingFileId = state.files[payload.id].modInfo?.meta?.details?.fileId ?? state.files[payload.id].modInfo?.meta?.fileId;
-        const payloadCollectionId = payload.modInfo?.nexus?.ids?.collectionId;
-        const existingCollectionId = state.files[payload.id].modInfo?.nexus?.ids?.collectionId;
+        const payloadRevisionId = payload.modInfo?.nexus?.ids?.revisionId;
+        const existingRevisionId = state.files[payload.id].modInfo?.nexus?.ids?.revisionId;
         if (payloadFileId != null && existingFileId != null && existingFileId === payloadFileId) {
           // If it's the same id for the same file, just ignore the request - it's probably the
           //  redux module replaying actions. (appears to be the redux devtools)
           return state;
         }
 
-        if (payloadCollectionId != null && existingCollectionId != null && existingCollectionId === payloadCollectionId) {
+        if (payloadRevisionId != null && existingRevisionId != null && existingRevisionId === payloadRevisionId) {
           // Same as above, but for collections
           return state;
         }
