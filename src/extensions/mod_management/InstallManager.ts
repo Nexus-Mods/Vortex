@@ -1479,6 +1479,7 @@ class InstallManager {
         this.maybeAdvancePhase(sourceModId);
       }
     }).catch(err => {
+      this.showDependencyError(api, sourceModId, 'Critical error in dependency installation', err.message, renderModReference(dep.reference));
       log('error', 'Critical error in dependency installation', {
         downloadId,
         error: err.message,
