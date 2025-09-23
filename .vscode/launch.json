@@ -12,7 +12,7 @@
         "group": "",
         "order": 1
       },
-      "stopAll": true,
+      "stopAll": true
     },
     {
       "name": "Debug Electron (Staging)",
@@ -46,23 +46,27 @@
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/out/main.js",
-      "cwd": "${workspaceRoot}",
       "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
       "windows": {
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [
-        "."
+        ".",
+        "--remote-debugging-port=9222"
       ],
+      "cwd": "${workspaceRoot}",
       "env": {
         "NODE_ENV": "development",
-        "START_DEVTOOLS": "true",
+        "START_DEVTOOLS": "true"
       },
       "envFile": "${workspaceFolder}/.env",
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "outFiles": []
+      "console": "internalConsole",
+      "autoAttachChildProcesses": true,
+      "timeout": 60000,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**"
+      ]
     },
     {
       "name": "Debug Main Process (Staging)",
@@ -83,9 +87,17 @@
         "IS_PREVIEW_BUILD": "true"
       },
       "envFile": "${workspaceFolder}/.env",
-      "console": "integratedTerminal",
+      "console": "internalConsole",
       "sourceMaps": true,
-      "outFiles": []
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**"
+      ],
+      "autoAttachChildProcesses": true,
+      "timeout": 60000
     },
     {
       "name": "Debug Main Process (Nexus Next)",
@@ -102,19 +114,32 @@
       ],
       "env": {
         "NODE_ENV": "development",
-        "START_DEVTOOLS": "true",
+        "START_DEVTOOLS": "true"
       },
       "envFile": "${workspaceFolder}/.env",
-      "console": "integratedTerminal",
+      "console": "internalConsole",
       "sourceMaps": true,
-      "outFiles": []
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**"
+      ],
+      "autoAttachChildProcesses": true,
+      "timeout": 60000
     },
     {
       "name": "Debug Renderer Process",
-      "port": 9230,
-      "request": "attach",
       "type": "chrome",
+      "request": "attach",
+      "port": 9222,
       "timeout": 60000,
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "skipFiles": [
         "<node_internals>/**",
         "${workspaceRoot}/node_modules/**",
@@ -127,8 +152,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
       "args": [
-        "__tests__/fblo.updateset.test.js",
         // "${file}", specify the test file to run or leave empty to run all tests
+        "__tests__/fblo.updateset.test.js",
         "--runInBand"
       ],
       "console": "integratedTerminal",
