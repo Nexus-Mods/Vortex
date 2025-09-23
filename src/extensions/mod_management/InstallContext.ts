@@ -221,7 +221,7 @@ class InstallContext implements IInstallContext {
 
     const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
 
-    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
+    const isCollection = nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
 
     if (nexusIds !== undefined && !isCollection) {
       const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
