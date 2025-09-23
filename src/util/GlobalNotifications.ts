@@ -57,8 +57,10 @@ class GlobalNotifications {
       }
     });
 
-    const state: IState = api.store.getState();
-    this.mIsEnabled = () => state.settings.interface.desktopNotifications;
+    this.mIsEnabled = () => {
+      const state: IState = api.store.getState();
+      return state.settings.interface.desktopNotifications;
+    };
   }
 
   private showNotification(notification: INotification): void {
