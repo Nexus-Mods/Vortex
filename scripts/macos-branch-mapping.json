@@ -1,0 +1,9 @@
+{
+  "submoduleBranchMapping": {
+    "extensions/changelog-dashlet": "macos-experimental",
+    "extensions/issue-tracker": "macos-experimental",
+    "extensions/collections": "macos-experimental",
+    "extensions/theme-switcher": "macos-tahoe-theme"
+  },
+  "defaultBranch": "master"
+}

@@ -46,7 +46,7 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   // webpack will replace every occurrence of process.env.NODE_ENV in its endeavour to eliminate
   // dead code. It doesn't however set the environment variable itself for externals and the
-  // replacement means I can't set the actual environment variable directly anymore because
+  // the replacement means I can't set the actual environment variable directly anymore because
   // "process.env.NODE_ENV = 'production'" would be converted to 'production' = 'production' at
   // build time. So FU very much webpack
   const key = 'NODE_ENV';
@@ -560,6 +560,30 @@ function init() {
 
   eventEmitter.on('relaunch-application', (gameId: string, ) => {
     relaunch(['--game', gameId]);
+  });
+
+  // Add event listeners for touch bar events
+  ipcRenderer.on('refresh-main-window', (event) => {
+    // Emit an event that can be handled by the main application components
+    eventEmitter.emit('refresh-main-window');
+  });
+
+  ipcRenderer.on('show-settings', (event) => {
+    // Emit an event that can be handled by the main application components
+    eventEmitter.emit('show-settings');
+  });
+  
+  // Add event listener for high contrast toggle
+  ipcRenderer.on('toggle-high-contrast', (event, enabled) => {
+    // Emit an event that can be handled by the main application components
+    eventEmitter.emit('toggle-high-contrast', enabled);
+    
+    // Also toggle a CSS class on the body for styling
+    if (enabled) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
   });
 
   ipcRenderer.on(

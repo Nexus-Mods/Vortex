@@ -103,6 +103,20 @@ class GameModeManager {
   }
 
   /**
+   * refresh the known games list in the store
+   *
+   * @memberOf GameModeManager
+   */
+  public refreshKnownGames() {
+    if (this.mStore !== null) {
+      const gamesStored: IGameStored[] = this.mKnownGames
+        .map(this.storeGame)
+        .filter(this.isValidGame);
+      this.mStore.dispatch(setKnownGames(gamesStored));
+    }
+  }
+
+  /**
    * update the game mode being managed
    *
    * @param {string} newMode

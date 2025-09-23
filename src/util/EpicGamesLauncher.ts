@@ -161,6 +161,7 @@ class EpicGamesLauncher implements IGameStore {
         const crossoverEpicPath = path.join(bottlePath, 'drive_c', 'Program Files (x86)', 'Epic Games', 'Launcher');
         try {
           if (await fs.statAsync(crossoverEpicPath)) {
+            // The data path would be in the Public folder within the bottle
             return path.join(bottlePath, 'users', 'Public', 'Epic Games');
           }
         } catch (err) {
@@ -179,6 +180,7 @@ class EpicGamesLauncher implements IGameStore {
         const vmwareEpicPath = path.join(vmPath, 'drive_c', 'Program Files (x86)', 'Epic Games', 'Launcher');
         try {
           if (await fs.statAsync(vmwareEpicPath)) {
+            // The data path would be in the Public folder within the VM
             return path.join(vmPath, 'users', 'Public', 'Epic Games');
           }
         } catch (err) {
@@ -197,6 +199,7 @@ class EpicGamesLauncher implements IGameStore {
         const virtualboxEpicPath = path.join(vmPath, 'drive_c', 'Program Files (x86)', 'Epic Games', 'Launcher');
         try {
           if (await fs.statAsync(virtualboxEpicPath)) {
+            // The data path would be in the Public folder within the VM
             return path.join(vmPath, 'users', 'Public', 'Epic Games');
           }
         } catch (err) {

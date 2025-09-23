@@ -2,8 +2,10 @@ import { DialogActions, DialogType, IConditionResult, IDialogContent,
          IDialogResult, IInput, showDialog } from '../actions/notifications';
 
 import { IState } from '../types/IState';
+import { ConditionResults } from '../types/IDialog';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { truthy } from '../util/util';
+import { isMacOS } from '../util/platform';
 
 import Icon from './Icon';
 
@@ -48,7 +50,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 class Dropzone extends ComponentEx<IProps, IComponentState> {
   private mWrapperMode: boolean = false;
   private mLeaveDelay: NodeJS.Timeout;
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.initState({
@@ -57,105 +59,110 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
-    // styling is considerably different depending on whether this is
-    // a stand-alone control or a wrapper for other controls
-    this.mWrapperMode = React.Children.count(this.props.children) > 0;
+    // Add macOS-specific event listener for file drops
+    if (isMacOS() && this.context.api) {
+      this.context.api.events.on('open-file', this.handleMacOSFileDrop);
+    }
+  }
+
+  public componentWillUnmount() {
+    // Clean up macOS-specific event listener
+    if (isMacOS() && this.context.api) {
+      this.context.api.events.removeListener('open-file', this.handleMacOSFileDrop);
+    }
   }
 
   public render(): JSX.Element {
-    const { t, clickable, dragOverlay, style } = this.props;
+    const { t, dropText, clickText, icon, clickable, style, dragOverlay } = this.props;
+    const { dropActive } = this.state;
 
-    const classes = [ 'dropzone' ];
-    if (!this.mWrapperMode) {
-      classes.push('stand-alone');
-    } else {
-      classes.push('wrapper');
-    }
-
-    if (this.state.dropActive === 'hover') {
-      classes.push('hover-click');
-    } else if (['no', 'invalid'].indexOf(this.state.dropActive) === -1) {
-      classes.push('hover-valid');
-    }
+    const dropModeToStyle: { [key in DropMode]: string } = {
+      'no': 'stand-alone',
+      'url': 'stand-alone hover-valid',
+      'file': 'stand-alone hover-valid',
+      'hover': 'stand-alone hover-click',
+      'invalid': 'stand-alone hover-invalid',
+    };
 
     return (
       <div
-        className={classes.join(' ')}
-        onDragEnter={this.onDragEnter}
+        className={`dropzone ${dropModeToStyle[dropActive]}`}
+        style={style}
         onDragOver={this.onDragOver}
         onDragLeave={this.onDragLeave}
+        onDragEnd={this.onDragLeave}
         onDrop={this.onDrop}
-        onMouseOver={(clickable !== false) ? this.onHover : undefined}
-        onMouseLeave={(clickable !== false) ? this.onHoverLeave : undefined}
-        onClick={(clickable !== false) ? this.onClick : undefined}
-        style={{ ...style, position: 'relative' }}
+        onClick={clickable ? this.onClick : undefined}
       >
-        {React.Children.count(this.props.children) > 0
-          ? this.props.children
-          : this.renderContent()}
-        {(dragOverlay !== undefined) && (['no', 'invalid'].indexOf(this.state.dropActive) === -1)
-          ? <div className='drag-overlay'>{dragOverlay}</div>
-          : null}
+        <div className='dropzone-content'>
+          {icon !== undefined ? <Icon name={icon} /> : null}
+          <p>{dropActive === 'no' ? (dropText || t('Drop files or links here')) : t('Drop now')}</p>
+          {clickText !== undefined ? <p>{clickText}</p> : null}
+        </div>
+        {dropActive !== 'no' ? dragOverlay : null}
       </div>
     );
   }
 
-  private renderContent(): JSX.Element {
-    const { t, accept, clickText, dropText, icon } = this.props;
-    const { dropActive } = this.state;
+  private handleMacOSFileDrop = (filePath: string) => {
+    // Handle file dropped on macOS dock icon
+    if (this.props.accept.includes('files')) {
+      this.props.drop('files', [filePath]);
+    }
+  }
 
-    const acceptList = accept.map(mode => {
-      return {
-        urls: t('URL(s)'),
-        files: t('File(s)'),
-      }[mode];
-    });
+  private validateURL = (content: IDialogContent): ConditionResults => {
+    const { t } = this.props;
+    const urlInput = content.input?.find(input => input.id === 'url');
+    const urlValue = urlInput?.value || '';
+    
+    if (!truthy(urlValue)) {
+      return [{ 
+        actions: ['confirm'], 
+        errorText: t('Please enter a URL'), 
+        id: 'url' 
+      }];
+    }
+    try {
+      const parsed = url.parse(urlValue);
+      if ((parsed.protocol !== 'http:') && (parsed.protocol !== 'https:')) {
+        return [{ 
+          actions: ['confirm'], 
+          errorText: t('Invalid protocol "{{proto}}", only http and https are supported',
+                      { replace: { proto: parsed.protocol } }), 
+          id: 'url' 
+        }];
+      }
+    } catch (err) {
+      return [{ 
+        actions: ['confirm'], 
+        errorText: t('Invalid URL'), 
+        id: 'url' 
+      }];
+    }
 
-    const clickMode = accept[0] === 'urls'
-      ? t('enter URL')
-      : t('browse for file');
-
-    return (
-      <div className='dropzone-content'>
-        {(icon !== undefined) ? <Icon name={icon} /> : null}
-        {dropActive === 'hover'
-          ? t(clickText || 'Click to {{ clickMode }}', { replace: { clickMode } })
-          : t(dropText || 'Drop {{ accept }}',
-              { replace: { accept: acceptList.join(` ${t('or')} `) } }) }
-      </div>
-    );
+    return [];
   }
 
   private setDropMode(evt: React.DragEvent<any>) {
-    let type: DropMode = 'invalid';
-    if ((evt.dataTransfer.types.indexOf('text/uri-list') !== -1)
-        && (this.props.accept.indexOf('urls') !== -1)) {
-      type = 'url';
-    } else if ((evt.dataTransfer.types.indexOf('Files') !== -1)
-               && (this.props.accept.indexOf('files') !== -1)) {
-      type = 'file';
+    const { accept } = this.props;
+
+    let newMode: DropMode = 'invalid';
+
+    if ((evt.dataTransfer.types.indexOf('Url') !== -1)
+        && (accept.indexOf('urls') !== -1)) {
+      newMode = 'url';
+    } else if ((evt.dataTransfer.files.length > 0)
+        && (accept.indexOf('files') !== -1)) {
+      newMode = 'file';
     }
 
-    this.nextState.dropActive = type;
-    return type !== 'invalid';
-  }
-
-  private onDragEnter = (evt: React.DragEvent<any>) => {
-    evt.preventDefault();
-    this.setDropMode(evt);
+    this.nextState.dropActive = newMode;
   }
 
   private onDragOver = (evt: React.DragEvent<any>) => {
-    if (this.state.dropActive === 'invalid') {
-      return;
-    }
-
+    const { dropActive } = this.state;
     evt.preventDefault();
-    evt.stopPropagation();
-
-    if (this.mLeaveDelay !== undefined) {
-      clearTimeout(this.mLeaveDelay);
-    }
 
     if (this.state.dropActive === 'no') {
       this.setDropMode(evt);
@@ -249,40 +256,14 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       });
     }
   }
-
-  private hasEmptyInput = (input: IInput): IConditionResult => {
-    const { t } = this.props;
-    return (input.value === undefined) || ((input.value === ''))
-      ? {
-        id: input.id || 'url',
-        actions: ['Download'],
-        errorText: t('{{label}} cannot be empty.', {
-          replace: { label: input.label ? input.label : 'Field' },
-        }),
-      }
-      : undefined;
-  }
-
-  private validateURL = (content: IDialogContent): IConditionResult[] => {
-    const urlInput = content.input.find(inp => inp.id === 'url');
-    return [this.hasEmptyInput(urlInput)].filter(res => res !== undefined);
-  }
 }
 
-function mapStateToProps(state): IConnectedProps {
-  return {
-  };
-}
-
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
-  return {
-    onShowDialog: (type: DialogType, title: string,
-                   content: IDialogContent, actions: DialogActions) =>
-      dispatch(showDialog(type, title, content, actions)),
-  };
-}
-
-export default
-  translate(['common'])(
-    connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
-      Dropzone)) as React.ComponentClass<IBaseProps>;
+export default translate(['common'])(
+  connect<IConnectedProps, IActionProps, IBaseProps, IState>(
+    undefined,
+    (dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps => ({
+      onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                     actions: DialogActions) =>
+        dispatch(showDialog(type, title, content, actions)),
+    }),
+  )(Dropzone)) as React.ComponentClass<IBaseProps>;

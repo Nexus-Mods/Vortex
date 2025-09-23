@@ -44,6 +44,33 @@ class ContextProxyHandler implements ProxyHandler<any> {
           setShowInMenu() { /* ignore in this context */ },
         },
       };
+    } else if (key === 'once') {
+      return (callback: () => void | Promise<void>) => {
+        // For dependency installation, we can execute the callback immediately
+        // since this is a simplified context for dependency resolution
+        try {
+          const result = callback();
+          if (result && typeof result.then === 'function') {
+            result.catch((err: Error) => {
+              log('warn', 'Extension once callback failed', { error: err.message });
+            });
+          }
+        } catch (err) {
+          log('warn', 'Extension once callback failed', { error: err.message });
+        }
+      };
+    } else if (key === 'onceMain') {
+      return (callback: () => void) => {
+        // For dependency installation, we can execute the callback immediately if in main process
+        // or skip it if in renderer process
+        if (process.type !== 'renderer') {
+          try {
+            callback();
+          } catch (err) {
+            log('warn', 'Extension onceMain callback failed', { error: err.message });
+          }
+        }
+      };
     } else if (typeof key === 'string' && key.startsWith('register')) {
       // Provide stub functions for all register* methods during dependency detection
       return (...args: any[]) => {
@@ -118,6 +145,31 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
       },
       registerTest: (id: string, eventType: string, check: any) => {
         context.registerTest(id, eventType, check);
+      },
+      once: (callback: () => void | Promise<void>) => {
+        // For dependency installation, we can execute the callback immediately
+        // since this is a simplified context for dependency resolution
+        try {
+          const result = callback();
+          if (result && typeof result.then === 'function') {
+            result.catch((err: Error) => {
+              log('warn', 'Extension once callback failed', { error: err.message });
+            });
+          }
+        } catch (err) {
+          log('warn', 'Extension once callback failed', { error: err.message });
+        }
+      },
+      onceMain: (callback: () => void) => {
+        // For dependency installation, we can execute the callback immediately if in main process
+        // or skip it if in renderer process
+        if (process.type !== 'renderer') {
+          try {
+            callback();
+          } catch (err) {
+            log('warn', 'Extension onceMain callback failed', { error: err.message });
+          }
+        }
       },
       registerAPI: (name: string, func: any, options?: any) => {
         context.registerAPI(name, func, options);

@@ -62,8 +62,47 @@ require_macos_branch_here() {
   local cur
   cur=$(git_current_branch)
   if [[ -z "$cur" || "$cur" == "HEAD" ]]; then
-    error "$where: Detached HEAD. Please checkout a branch."
-    return 1
+    warn "$where: Detached HEAD detected. Attempting to checkout appropriate macOS branch..."
+    
+    # Stash any untracked changes before branch operations
+    local STASHED=0
+    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+      info "$where: Stashing untracked changes before branch switch..."
+      git stash push -u -m "auto-stash before macOS branch switch by sweep script $(date +%F_%T)" || true
+      STASHED=1
+    fi
+    
+    # Determine target branch - default to macos-experimental for superproject
+    local target_branch="${MACOS_BRANCH:-macos-experimental}"
+    
+    # Try to checkout the target branch
+    if git rev-parse --verify "$target_branch" >/dev/null 2>&1; then
+      info "$where: Checking out existing branch $target_branch"
+      git checkout "$target_branch" || {
+        error "$where: Failed to checkout $target_branch. Please resolve manually."
+        return 1
+      }
+      cur="$target_branch"
+    else
+      # Try to create the branch from current HEAD
+      info "$where: Creating new branch $target_branch from current HEAD"
+      git checkout -b "$target_branch" || {
+        error "$where: Failed to create branch $target_branch. Please resolve manually."
+        return 1
+      }
+      cur="$target_branch"
+    fi
+    
+    # Pop stashed changes after successful branch switch
+    if [ "$STASHED" = "1" ]; then
+      info "$where: Restoring stashed changes after branch switch..."
+      if ! git stash pop; then
+        warn "$where: Conflicts while popping stash. Keeping stash for manual resolution."
+        warn "$where: Use git stash list and git stash pop to resolve manually."
+      else
+        info "$where: Successfully restored stashed changes."
+      fi
+    fi
   fi
   if [[ -n "$MACOS_BRANCH" ]]; then
     if [[ "$cur" != "$MACOS_BRANCH" ]]; then
@@ -81,13 +120,15 @@ require_macos_branch_here() {
 }
 
 extract_owner_from_url() {
-  # Prints the GitHub owner extracted from a remote URL, or empty if not GitHub.
   local url="$1"
   local owner=""
-  if [[ "$url" =~ github\.com[:/]+([^/]+)/ ]]; then
+  # Handle both SSH and HTTPS GitHub URLs
+  if [[ "$url" =~ git@github\.com:([^/]+)/ ]]; then 
+    owner="${BASH_REMATCH[1]}"
+  elif [[ "$url" =~ https://github\.com/([^/]+)/ ]]; then 
     owner="${BASH_REMATCH[1]}"
   fi
-  printf "%s" "$owner"
+  echo "$owner"
 }
 
 require_remote_targets_fork() {
@@ -104,8 +145,20 @@ require_remote_targets_fork() {
     return 1
   fi
 
-  local owner
-  owner=$(extract_owner_from_url "$push_url")
+  local owner=""
+  if [[ "$push_url" == git@github.com:* ]]; then
+    local temp="${push_url#git@github.com:}"
+    owner="${temp%%/*}"
+  elif [[ "$push_url" == https://github.com/* ]]; then
+    local temp="${push_url#https://github.com/}"
+    owner="${temp%%/*}"
+  fi
+  
+  if [[ -z "$owner" ]]; then
+    warn "$where: Remote '$remote' does not point to GitHub. URL: $push_url"
+    return 0  # Don't fail for non-GitHub remotes
+  fi
+  
   if [[ -z "$FORK_USER" ]]; then
     # Try to infer FORK_USER once from SUPER_REMOTE in the superproject
     if [[ "$where" == "superproject" ]]; then
@@ -160,10 +213,62 @@ info "Using remote '$REMOTE_NAME' for submodules and '$SUPER_REMOTE' for superpr
 # Preserve current submodule remote configurations before any operations
 preserve_submodule_remotes
 
+# Auto-setup submodules to point to forks if needed
+setup_submodules_to_forks() {
+  info "Checking if submodules need to be pointed to forks..."
+  
+  # Check if any submodules are not pointing to the expected fork user
+  local needs_setup=false
+  
+  # shellcheck disable=SC2016
+  git submodule foreach --quiet '
+    push_url=$(git remote get-url --push origin 2>/dev/null || git remote get-url origin 2>/dev/null || true)
+    if [ -n "$push_url" ]; then
+      owner=""
+       if [[ "$push_url" == git@github.com:* ]]; then
+         temp="${push_url#git@github.com:}"
+         owner="${temp%%/*}"
+       elif [[ "$push_url" == https://github.com/* ]]; then
+         temp="${push_url#https://github.com/}"
+         owner="${temp%%/*}"
+       fi
+      if [ -n "${FORK_USER:-}" ] && [ -n "$owner" ] && [ "$owner" != "$FORK_USER" ]; then
+        echo "NEEDS_SETUP:$name:$owner:$FORK_USER"
+      fi
+    fi
+  ' | grep -q "NEEDS_SETUP:" && needs_setup=true
+  
+  if [ "$needs_setup" = true ]; then
+    info "Some submodules need to be pointed to forks. Running setup script..."
+    if [[ -f "scripts/point_submodules_to_user_forks_and_ignore_dsstore.sh" ]]; then
+      # Set GH_USER to match FORK_USER for consistency
+      export GH_USER="$FORK_USER"
+      if [[ "$DRY_RUN" == "true" ]]; then
+        info "[dry-run] Would run: bash scripts/point_submodules_to_user_forks_and_ignore_dsstore.sh"
+      else
+        bash scripts/point_submodules_to_user_forks_and_ignore_dsstore.sh || {
+          warn "Fork setup script failed. Some submodules may have uncommitted changes."
+          warn "Please commit or stash changes in submodules and run the script manually:"
+          warn "  bash scripts/point_submodules_to_user_forks_and_ignore_dsstore.sh"
+          return 1
+        }
+      fi
+    else
+      error "Fork setup script not found. Please ensure scripts/point_submodules_to_user_forks_and_ignore_dsstore.sh exists."
+      return 1
+    fi
+  else
+    info "All submodules already point to the correct forks."
+  fi
+}
+
 # Ensure correct branch and remote ownership in superproject
 require_macos_branch_here "superproject"
 require_remote_targets_fork "$SUPER_REMOTE" "superproject"
 ensure_branch_upstream_here "$SUPER_REMOTE" "superproject"
+
+# Auto-setup submodules to point to forks if needed
+setup_submodules_to_forks
 
 info "== Submodules: sweep and push =="
 # Iterate all submodules recursively, commit & push if they have changes
@@ -172,11 +277,55 @@ git submodule foreach --recursive '
   set -e
   set +u
   st=$(git status --porcelain=v1 -uall)
-  # Check branch name in each submodule
+  
+  # Check branch name in each submodule and handle detached HEAD
   cur=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  STASHED=0
+  
   if [ -z "$cur" ] || [ "$cur" = "HEAD" ]; then
-    echo "[error] $name ($path): Detached HEAD. Please checkout your macOS branch."
-    exit 1
+    echo "[warn] $name ($path): Detached HEAD detected. Attempting to checkout appropriate branch..."
+    
+    # Stash any untracked changes before branch operations
+    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+      echo "[info] $name ($path): Stashing untracked changes before branch switch..."
+      git stash push -u -m "auto-stash before macOS branch switch by sweep script $(date +%F_%T)" || true
+      STASHED=1
+    fi
+    
+    # Determine target branch based on submodule
+    target_branch="macos-experimental"
+    if [[ "$name" == "extensions/theme-switcher" || "$path" == *"extensions/theme-switcher"* ]]; then
+      target_branch="macos-tahoe-theme"
+    fi
+    
+    # Try to checkout the target branch
+    if git rev-parse --verify "$target_branch" >/dev/null 2>&1; then
+      echo "[info] $name ($path): Checking out existing branch $target_branch"
+      git checkout "$target_branch" || {
+        echo "[error] $name ($path): Failed to checkout $target_branch. Please resolve manually."
+        exit 1
+      }
+      cur="$target_branch"
+    else
+      # Try to create the branch from current HEAD
+      echo "[info] $name ($path): Creating new branch $target_branch from current HEAD"
+      git checkout -b "$target_branch" || {
+        echo "[error] $name ($path): Failed to create branch $target_branch. Please resolve manually."
+        exit 1
+      }
+      cur="$target_branch"
+    fi
+    
+    # Pop stashed changes after successful branch switch
+    if [ "$STASHED" = "1" ]; then
+      echo "[info] $name ($path): Restoring stashed changes after branch switch..."
+      if ! git stash pop; then
+        echo "[warn] $name ($path): Conflicts while popping stash. Keeping stash for manual resolution."
+        echo "[warn] $name ($path): Use git stash list and git stash pop to resolve manually."
+      else
+        echo "[info] $name ($path): Successfully restored stashed changes."
+      fi
+    fi
   fi
   case "${MACOS_BRANCH:-}" in
     "")
@@ -195,19 +344,29 @@ git submodule foreach --recursive '
       ;;
   esac
   # Validate remote owner
-  push_url=$(git remote get-url --push "${REMOTE_NAME}" 2>/dev/null || git remote get-url "${REMOTE_NAME}" 2>/dev/null || true)
+  push_url=$(git remote get-url --push $REMOTE_NAME 2>/dev/null || git remote get-url $REMOTE_NAME 2>/dev/null || true)
   if [ -z "$push_url" ]; then
-    echo "[error] $name ($path): Remote '${REMOTE_NAME}' missing."
+    echo "[error] $name ($path): Remote $REMOTE_NAME missing."
     exit 1
   fi
+  # Extract owner using parameter expansion for maximum compatibility
   owner=""
-  if [[ "$push_url" =~ github\.com[:/]+([^/]+)/ ]]; then owner="${BASH_REMATCH[1]}"; fi
-  if [ -z "${FORK_USER:-}" ]; then
+  case "$push_url" in
+    git@github.com:*)
+      temp=${push_url#git@github.com:}
+      owner=${temp%%/*}
+      ;;
+    https://github.com/*)
+      temp=${push_url#https://github.com/}
+      owner=${temp%%/*}
+      ;;
+  esac
+  if [ -z "$FORK_USER" ]; then
     echo "[error] $name ($path): FORK_USER not set and cannot be inferred in submodules. Set FORK_USER."
     exit 1
   fi
   if [ "$owner" != "$FORK_USER" ]; then
-    echo "[error] $name ($path): Remote '${REMOTE_NAME}' points to owner '$owner', expected '$FORK_USER'. URL: $push_url"
+    echo "[error] $name ($path): Remote $REMOTE_NAME points to owner $owner, expected $FORK_USER. URL: $push_url"
     exit 1
   fi
   # Ensure upstream tracking is set to the selected remote

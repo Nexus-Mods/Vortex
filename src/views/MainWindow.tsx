@@ -166,6 +166,32 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         showLayer: { $set: id },
       });
     });
+    
+    // Add event handlers for touch bar events
+    this.props.api.events.on('refresh-main-window', () => {
+      // Refresh the current view
+      this.forceUpdate();
+      // Also emit a general refresh event that other components can listen to
+      this.props.api.events.emit('refresh-content');
+    });
+
+    this.props.api.events.on('show-settings', () => {
+      // Show the settings page
+      this.setMainPage('Settings', false);
+    });
+    
+    // Add event handler for high contrast toggle
+    this.props.api.events.on('toggle-high-contrast', (enabled) => {
+      // Update the state to trigger a re-render with high contrast styling
+      if (enabled) {
+        document.body.classList.add('high-contrast');
+      } else {
+        document.body.classList.remove('high-contrast');
+      }
+      
+      // Force a re-render to apply the new styling
+      this.forceUpdate();
+    });
   }
 
   public getChildContext(): IComponentContext {

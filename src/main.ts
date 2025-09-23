@@ -10,11 +10,22 @@ import { setupMacOSPaths } from './util/macosPaths';
 import { app, dialog, Menu, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
 
+// Add TouchBar, systemPreferences, and autoUpdater imports for macOS
+import { TouchBar, systemPreferences, autoUpdater } from 'electron';
+
+// Add Spotlight integration import for macOS
+import { initializeSpotlight, indexVortexActions } from './util/macosSpotlight';
+const { TouchBarButton, TouchBarLabel, TouchBarSpacer } = TouchBar || {};
+
 const earlyErrHandler = (error) => {
   if (error.stack.includes('[as dlopen]')) {
     dialog.showErrorBox(
       'Vortex failed to start up',
-      `An unexpected error occurred while Vortex was initialising:\n\n${error.message}\n\n`
+      `An unexpected error occurred while Vortex was initialising:
+
+${error.message}
+
+`
 
       + 'This is often caused by a bad installation of the app, '
       + 'a security app interfering with Vortex '
@@ -212,7 +223,68 @@ async function main(): Promise<void> {
           { role: 'hideOthers' },
           { role: 'unhide' },
           { type: 'separator' },
+          { 
+            label: 'Preferences...',
+            accelerator: 'CmdOrCtrl+,',
+            click: () => {
+              // TODO: Implement preferences dialog
+            }
+          },
+          { type: 'separator' },
+          { 
+            label: 'Check for Updates...',
+            accelerator: 'Cmd+Shift+U',
+            click: () => {
+              // TODO: Implement update check
+            }
+          },
+          { type: 'separator' },
           { role: 'quit' }
+        ]
+      },
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'New',
+            submenu: [
+              {
+                label: 'Profile',
+                accelerator: 'CmdOrCtrl+N',
+                click: () => {
+                  // TODO: Implement new profile
+                }
+              }
+            ]
+          },
+          { type: 'separator' },
+          { 
+            label: 'Import',
+            accelerator: 'CmdOrCtrl+I',
+            click: () => {
+              // TODO: Implement import functionality
+            }
+          },
+          { 
+            label: 'Export',
+            accelerator: 'CmdOrCtrl+E',
+            click: () => {
+              // TODO: Implement export functionality
+            }
+          },
+          { type: 'separator' },
+          { 
+            label: 'Check for Updates...',
+            accelerator: 'Cmd+Shift+U',
+            click: () => {
+              // Check for updates
+              if (application && typeof application.checkForUpdates === 'function') {
+                application.checkForUpdates();
+              }
+            }
+          },
+          { type: 'separator' },
+          { role: 'close' }
         ]
       },
       {
@@ -224,7 +296,28 @@ async function main(): Promise<void> {
           { role: 'cut' },
           { role: 'copy' },
           { role: 'paste' },
-          { role: 'selectAll' }
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Find',
+            submenu: [
+              { label: 'Find', accelerator: 'CmdOrCtrl+F' },
+              { label: 'Find Next', accelerator: 'CmdOrCtrl+G' },
+              { label: 'Find Previous', accelerator: 'CmdOrCtrl+Shift+G' },
+              { type: 'separator' },
+              { label: 'Replace', accelerator: 'CmdOrCtrl+Alt+F' }
+            ]
+          },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startSpeaking' },
+              { role: 'stopSpeaking' }
+            ]
+          }
         ]
       },
       {
@@ -238,7 +331,20 @@ async function main(): Promise<void> {
           { role: 'zoomIn' },
           { role: 'zoomOut' },
           { type: 'separator' },
-          { role: 'togglefullscreen' }
+          { 
+            label: 'Toggle Sidebar',
+            accelerator: 'CmdOrCtrl+Shift+D',
+            click: () => {
+              // TODO: Implement sidebar toggle
+            }
+          },
+          { 
+            label: 'Enter Full Screen',
+            accelerator: 'Ctrl+Cmd+F',
+            click: () => {
+              // TODO: Implement full screen toggle
+            }
+          }
         ]
       },
       {
@@ -247,14 +353,168 @@ async function main(): Promise<void> {
           { role: 'minimize' },
           { role: 'zoom' },
           { type: 'separator' },
+          { 
+            label: 'Show Dashboard',
+            accelerator: 'CmdOrCtrl+Shift+H',
+            click: () => {
+              // TODO: Implement dashboard view
+            }
+          },
+          { 
+            label: 'Show Mods',
+            accelerator: 'CmdOrCtrl+Shift+M',
+            click: () => {
+              // TODO: Implement mods view
+            }
+          },
+          { type: 'separator' },
           { role: 'front' },
           { type: 'separator' },
           { role: 'window' }
+        ]
+      },
+      {
+        role: 'help',
+        submenu: [
+          {
+            label: 'Vortex Documentation',
+            accelerator: 'F1',
+            click: async () => {
+              // TODO: Implement documentation link
+            }
+          },
+          {
+            label: 'Vortex on Nexus Mods',
+            click: async () => {
+              // TODO: Implement Nexus Mods link
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Report an Issue',
+            accelerator: 'CmdOrCtrl+Shift+R',
+            click: async () => {
+              // TODO: Implement issue reporting
+            }
+          }
         ]
       }
     ];
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+
+    // Create custom dock menu for macOS
+    const dockMenu = Menu.buildFromTemplate([
+      {
+        label: 'New Profile',
+        click: () => {
+          // TODO: Implement new profile creation
+        }
+      },
+      {
+        label: 'Open Settings',
+        click: () => {
+          // TODO: Implement settings dialog
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Check for Updates',
+        click: () => {
+          // Check for updates
+          if (application && typeof application.checkForUpdates === 'function') {
+            application.checkForUpdates();
+          }
+        }
+      }
+    ]);
+    app.dock.setMenu(dockMenu);
+    
+    // Set up Touch Bar support for MacBook Pro users
+    if (TouchBar) {
+      try {
+        // Create Touch Bar items
+        const refreshButton = new TouchBarButton({
+          label: '🔄 Refresh',
+          backgroundColor: '#3c3c3c',
+          click: () => {
+            // Send refresh event to the main window
+            if (application && typeof application.refresh === 'function') {
+              application.refresh();
+            }
+          }
+        });
+
+        const settingsButton = new TouchBarButton({
+          label: '⚙️ Settings',
+          backgroundColor: '#3c3c3c',
+          click: () => {
+            // Send settings event to the main window
+            if (application && typeof application.openSettings === 'function') {
+              application.openSettings();
+            }
+          }
+        });
+
+        const profileLabel = new TouchBarLabel({
+          label: 'Vortex',
+          textColor: '#ffffff'
+        });
+
+        // Create the Touch Bar
+        const touchBar = new TouchBar({
+          items: [
+            profileLabel,
+            new TouchBarSpacer({ size: 'small' }),
+            refreshButton,
+            new TouchBarSpacer({ size: 'small' }),
+            settingsButton
+          ]
+        });
+
+        // Set the Touch Bar (will be applied to the main window when it's created)
+        // We'll set it on the app level so it can be applied to any window
+        app.whenReady().then(() => {
+          // The touch bar will be set on the window when it's created
+          // Store reference for later use
+          (global as any).vortexTouchBar = touchBar;
+        });
+      } catch (err) {
+        console.warn('Failed to initialize Touch Bar support:', err);
+      }
+    }
+    
+    // Add macOS-specific accessibility enhancements
+    try {
+      // Enable accessibility support for screen readers and other assistive technologies
+      // This will automatically enable when VoiceOver or other assistive tech is detected
+      // but we can also manually enable it if needed
+      
+      // Listen for accessibility support changes
+      if (systemPreferences) {
+        systemPreferences.subscribeNotification(
+          'AXManualAccessibility',
+          (event, userInfo) => {
+            console.log('Accessibility support changed:', userInfo);
+            // Could be used to update UI or behavior based on accessibility status
+          }
+        );
+        
+        // Note: isAccessibilitySupportEnabled is not available in current Electron version
+        // Accessibility features will be handled through other means
+      }
+    } catch (err) {
+      console.warn('Failed to initialize accessibility enhancements:', err);
+    }
+    
+    // Set up auto-update for macOS
+    setupAutoUpdate();
+    
+    // Initialize Spotlight integration
+    initializeSpotlight().then(() => {
+      // Index common Vortex actions for Spotlight quick actions
+      indexVortexActions();
+    });
   }
 
   // --run has to be evaluated *before* we request the single instance lock!
@@ -343,3 +603,100 @@ async function main(): Promise<void> {
 }
 
 main();
+
+// Add auto-update functions
+function setupAutoUpdate() {
+  if (!isMacOS()) {
+    return;
+  }
+  
+  try {
+    // Set the update feed URL - this should point to your update server
+    // For now, we'll use a placeholder URL that you would replace with your actual update server
+    const updateFeedUrl = 'https://your-update-server.com/updates/mac'; // TODO: Replace with actual URL
+    
+    // Set the feed URL for auto updates
+    autoUpdater.setFeedURL({
+      url: updateFeedUrl,
+      serverType: 'json' // Use JSON format for updates (Squirrel.Mac format)
+    });
+    
+    // Set up event listeners for auto updater
+    autoUpdater.on('error', (error) => {
+      console.error('Auto update error:', error);
+      // Could show error notification to user
+    });
+    
+    autoUpdater.on('checking-for-update', () => {
+      console.log('Checking for updates...');
+      // Could show checking notification to user
+    });
+    
+    autoUpdater.on('update-available', () => {
+      console.log('Update available');
+      // Could show update available notification to user
+    });
+    
+    autoUpdater.on('update-not-available', () => {
+      console.log('No updates available');
+      // Could show up to date notification to user
+    });
+    
+    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+      console.log('Update downloaded:', releaseName);
+      // Show dialog to user asking if they want to restart and install
+      if (application) {
+        try {
+          const mainWindow = application.getMainWindow?.();
+          if (mainWindow) {
+            dialog.showMessageBox(mainWindow.getHandle(), {
+              type: 'info',
+              title: 'Update Available',
+              message: 'A new version of Vortex is available!',
+              detail: `Version ${releaseName} has been downloaded. Would you like to restart and install it now?`,
+              buttons: ['Later', 'Restart and Install'],
+              defaultId: 1,
+              cancelId: 0
+            }).then((result) => {
+              if (result.response === 1) {
+                // User wants to install now
+                autoUpdater.quitAndInstall();
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Failed to show update dialog:', err);
+        }
+      }
+    });
+    
+    // Check for updates periodically (every hour)
+    setInterval(() => {
+      checkForUpdates();
+    }, 60 * 60 * 1000); // 1 hour
+    
+    // Check for updates on app start
+    app.whenReady().then(() => {
+      // Delay the initial check to allow the app to fully start
+      setTimeout(() => {
+        checkForUpdates();
+      }, 30000); // 30 seconds after app start
+    });
+    
+  } catch (err) {
+    console.warn('Failed to set up auto update:', err);
+  }
+}
+
+function checkForUpdates() {
+  if (!isMacOS()) {
+    return;
+  }
+  
+  try {
+    console.log('Checking for updates...');
+    autoUpdater.checkForUpdates();
+  } catch (err) {
+    console.warn('Failed to check for updates:', err);
+  }
+}

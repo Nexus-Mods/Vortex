@@ -77,7 +77,10 @@ function checkForUpdates(api: IExtensionApi) {
         (request.modId !== undefined) && (ext.modId === request.modId));
 
       if (update !== undefined) {
-        forceRestart = true;
+        // Only force restart for non-game extensions
+        if (update.type !== 'game') {
+          forceRestart = true;
+        }
         updateable.push({
           current: {
             author: update.author,
@@ -108,23 +111,28 @@ function checkForUpdates(api: IExtensionApi) {
   return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
     .then((success: boolean[]) => {
       api.dismissNotification('extension-updates');
-      localState.reloadNecessary = true;
+      
+      // Check if any non-game extensions were updated
+      const nonGameUpdates = updateable.filter(update => update.update.type !== 'game');
+      const gameUpdates = updateable.filter(update => update.update.type === 'game');
+      
       if (success.find(iter => iter === true)) {
         if (forceRestart) {
           relaunch();
         } else {
+          // Show success notification for all extensions without restart requirement
+          const totalUpdates = nonGameUpdates.length + gameUpdates.length;
           api.sendNotification({
             id: 'extension-updates',
             type: 'success',
-            message: 'Extensions updated, please restart to apply them',
-            actions: [
-              {
-                title: 'Restart now', action: () => {
-                  relaunch();
-                },
-              },
-            ],
+            message: `Extension(s) updated successfully (${totalUpdates} extension${totalUpdates > 1 ? 's' : ''}).`,
+            displayMS: 5000,
           });
+          
+          // Trigger dynamic update of game list if game extensions were updated
+          if (gameUpdates.length > 0) {
+            api.events.emit('refresh-game-list');
+          }
         }
       }
     });
@@ -282,20 +290,33 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
       .then(ext => {
         const state: IState = api.store.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
-          if (!localState.reloadNecessary) {
-            localState.reloadNecessary = true;
+          // Check if only game extensions were added
+          const previousExtensions = state.session.extensions.installed || {};
+          const newExtensions = Object.keys(ext).filter(extId => !previousExtensions[extId]);
+          const newGameExtensions = newExtensions.filter(extId => ext[extId].type === 'game');
+          const newNonGameExtensions = newExtensions.filter(extId => ext[extId].type !== 'game');
+          
+          // Show success notification for all installed extensions without restart requirement
+          if (newExtensions.length > 0) {
+            // Create a more specific message based on the types of extensions installed
+            let message = `Extension(s) installed successfully (${newExtensions.length} extension${newExtensions.length > 1 ? 's' : ''}).`;
+            if (newGameExtensions.length > 0 && newNonGameExtensions.length === 0) {
+              message += ' Game extensions are available immediately.';
+            } else if (newGameExtensions.length > 0) {
+              message += ` ${newGameExtensions.length} game extension(s) are available immediately.`;
+            }
+            
             api.sendNotification({
-              id: 'extension-updates',
+              id: 'extension-installed',
               type: 'success',
-              message: 'Extensions installed, please restart to use them',
-              actions: [
-                {
-                  title: 'Restart now', action: () => {
-                    relaunch();
-                  },
-                },
-              ],
+              message: message,
+              displayMS: 5000,
             });
+            
+            // Trigger dynamic update of game list if game extensions were installed
+            if (newGameExtensions.length > 0) {
+              api.events.emit('refresh-game-list');
+            }
           }
         }
         api.store.dispatch(setInstalledExtensions(ext));

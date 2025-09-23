@@ -9,6 +9,13 @@ import { log, types, util } from 'vortex-api';
 
 const execAsync = promisify(exec);
 
+interface IAppBundleInfo {
+  name: string;
+  bundleId: string;
+  version: string;
+  isGame: boolean;
+}
+
 const STORE_ID = 'macappstore';
 const STORE_NAME = 'Mac App Store';
 const STORE_PRIORITY = 70;
@@ -176,6 +183,37 @@ class MacAppStore implements types.IGameStore {
     return matchesPattern;
   }
 
+  /**
+   * Get additional metadata from the app bundle's Info.plist
+   */
+  private async getAppBundleInfo(appPath: string) {
+    try {
+      // Use plutil to parse the Info.plist file
+      const infoPlistPath = path.join(appPath, 'Contents', 'Info.plist');
+      const { stdout } = await execAsync(`plutil -extract CFBundleName raw "${infoPlistPath}" 2>/dev/null || echo ""`);
+      const name = stdout.trim() || path.basename(appPath, '.app');
+      
+      const bundleIdResult = await execAsync(`plutil -extract CFBundleIdentifier raw "${infoPlistPath}" 2>/dev/null || echo ""`);
+      const bundleId = bundleIdResult.stdout.trim();
+      
+      const versionResult = await execAsync(`plutil -extract CFBundleShortVersionString raw "${infoPlistPath}" 2>/dev/null || echo ""`);
+      const version = versionResult.stdout.trim();
+      
+      // Check if it's likely a game by examining the bundle information
+      const isGame = this.isLikelyGame(name, '');
+      
+      return {
+        name,
+        bundleId,
+        version,
+        isGame
+      };
+    } catch (err) {
+      log('debug', 'Failed to get app bundle info', { path: appPath, error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
+  }
+
   private getGameEntries(): Promise<types.IGameStoreEntry[]> {
     if (!this.mHomeDir) {
       return Promise.resolve([]);
@@ -201,13 +239,29 @@ class MacAppStore implements types.IGameStore {
                   const stat = await fs.stat(fullPath);
                   
                   // Get metadata for the app
+                  const bundleInfo = await this.getAppBundleInfo(fullPath);
                   const metadata = await this.getAppMetadata(fullPath);
                   
+                  // Use bundle info if available, otherwise fall back to metadata
+                  let appName = file.replace('.app', '');
+                  let bundleId = '';
+                  let isGame = false;
+                  
+                  if (bundleInfo) {
+                    appName = bundleInfo.name || appName;
+                    bundleId = bundleInfo.bundleId || bundleId;
+                    isGame = bundleInfo.isGame;
+                  } else if (metadata) {
+                    appName = metadata.name || appName;
+                    bundleId = metadata.bundleId || bundleId;
+                    isGame = metadata.isGame;
+                  }
+                  
                   // Only include apps that are likely games
-                  if (metadata && metadata.isGame) {
+                  if (isGame) {
                     gameEntries.push({
-                      appid: metadata.bundleId || file.replace('.app', ''),
-                      name: metadata.name,
+                      appid: bundleId || file.replace('.app', ''),
+                      name: appName,
                       gamePath: fullPath,
                       gameStoreId: STORE_ID
                     });

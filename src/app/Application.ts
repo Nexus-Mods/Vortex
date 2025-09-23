@@ -21,6 +21,8 @@ import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
 import { isWindows, isMacOS } from '../util/platform';
+import { initializeMacOSPermissions } from '../util/macosPermissions';
+import { applyMacOSPerformanceOptimizations } from '../util/macosPerformance';
 import presetManager from '../util/PresetManager';
 import { StateError } from '../util/reduxSanity';
 import startupSettings from '../util/startupSettings';
@@ -122,6 +124,51 @@ class Application {
   private mStartupLogPath: string;
   private mDeinitCrashDump: () => void;
 
+  // Add methods for touch bar support
+  public refresh(): void {
+    if (this.mMainWindow) {
+      try {
+        this.mMainWindow.getHandle().webContents.send('refresh-main-window');
+      } catch (err) {
+        log('warn', 'Failed to send refresh command to main window', err.message);
+      }
+    }
+  }
+
+  public openSettings(): void {
+    if (this.mMainWindow) {
+      try {
+        this.mMainWindow.getHandle().webContents.send('show-settings');
+      } catch (err) {
+        log('warn', 'Failed to send settings command to main window', err.message);
+      }
+    }
+  }
+  
+  // Add method to get the main window for accessibility features
+  public getMainWindow(): MainWindowT {
+    return this.mMainWindow;
+  }
+  
+  // Add method to check for updates
+  public checkForUpdates(): void {
+    // This will be handled by the auto-update system in main.ts
+    // We can emit an event to show a checking notification in the UI
+    if (this.mExtensions) {
+      try {
+        this.mExtensions.getApi().sendNotification({
+          id: 'checking-for-updates',
+          type: 'info',
+          message: 'Checking for updates...',
+          noDismiss: true,
+          displayMS: 2000
+        });
+      } catch (err) {
+        log('warn', 'Failed to send checking updates notification', err.message);
+      }
+    }
+  }
+
   constructor(args: IParameters) {
     this.mArgs = args;
 
@@ -196,6 +243,17 @@ class Application {
       // Show the main window after everything is ready
       this.showMainWindow(this.mArgs?.startMinimized);
       
+      // Initialize macOS-specific permissions
+      if (isMacOS() && this.mMainWindow) {
+        try {
+          initializeMacOSPermissions(this.mMainWindow.getHandle());
+          // Apply macOS performance optimizations
+          applyMacOSPerformanceOptimizations(this.mMainWindow.getHandle());
+        } catch (err) {
+          log('warn', 'Failed to initialize macOS permissions', err.message);
+        }
+      }
+      
       // in the past we would process some command line arguments the same as we do when
       // they get passed in from a second instance but that was inconsistent
       // because we don't use most arguments from secondary instances and the
@@ -262,6 +320,10 @@ class Application {
       if (isMacOS()) {
         const iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
         app.dock.setIcon(iconPath);
+        
+        // Enable macOS-specific drag and drop enhancements
+        // This allows files to be dropped onto the Vortex dock icon
+        app.dock.setBadge('');
       }
 
       const vortexPath = process.env.NODE_ENV === 'development'
@@ -300,6 +362,18 @@ class Application {
         this.regularStart(args);
       }
     });
+
+    // Add macOS-specific event handlers for drag and drop
+    if (isMacOS()) {
+      app.on('open-file', (event: Electron.Event, path: string) => {
+        event.preventDefault();
+        log('info', 'File dropped on macOS dock', { path });
+        // Handle file dropped on dock icon
+        if (this.mExtensions) {
+          this.mExtensions.getApi().events.emit('open-file', path);
+        }
+      });
+    }
 
     app.on('web-contents-created', (event: Electron.Event, contents: Electron.WebContents) => {
       // tslint:disable-next-line:no-submodule-imports
