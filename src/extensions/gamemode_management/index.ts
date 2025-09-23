@@ -810,7 +810,6 @@ function init(context: IExtensionContext): boolean {
 
     const changeGameMode = (oldGameId: string, newGameId: string,
                             currentProfileId: string): Promise<void> => {
-      context.api.dismissAllNotifications();
       if (newGameId === undefined) {
         return Promise.resolve();
       }
