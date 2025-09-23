@@ -652,6 +652,7 @@ function startDownloadMod(api: IExtensionApi,
         title: 'Downloading from Nexus',
         message: nexusFileInfo.name,
         displayMS: 4000,
+        noToast: true,
       });
     })
     .then(downloadId => {
