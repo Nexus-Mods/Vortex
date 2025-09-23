@@ -13,6 +13,7 @@ import { getSafe } from '../../util/storeHelper';
 import { ModsInstallationCancelledEvent, ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
+import { NotificationAggregator } from './NotificationAggregator';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import NXMUrl from '../nexus_integration/NXMUrl';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
@@ -66,10 +67,14 @@ class InstallContext implements IInstallContext {
 
   private mApi: IExtensionApi;
   private mStartTime: number;
+  private mNotificationAggregator?: NotificationAggregator;
+  private mSourceModId?: string;
 
-  constructor(gameMode: string, api: IExtensionApi, silent: boolean) {
+  constructor(gameMode: string, api: IExtensionApi, silent: boolean, notificationAggregator?: NotificationAggregator, sourceModId?: string) {
     this.mStartTime = Date.now();
     this.mApi = api;
+    this.mNotificationAggregator = notificationAggregator;
+    this.mSourceModId = sourceModId;
     const store = api.store;
     const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
@@ -272,6 +277,25 @@ class InstallContext implements IInstallContext {
   public reportError(message: string, details?: string | Error, allowReport?: boolean,
     replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details, replace });
+
+    // Use NotificationAggregator if available and aggregating for this source mod
+    if (this.mNotificationAggregator && this.mSourceModId) {
+      const aggregationId = `install-dependencies-${this.mSourceModId}`;
+      if (this.mNotificationAggregator.isAggregating(aggregationId)) {
+        const errorMessage = details instanceof Error ? details.message : (details || message);
+        this.mNotificationAggregator.addNotification(
+          aggregationId,
+          'error',
+          message,
+          errorMessage,
+          this.mAddedId || this.mIndicatorId || 'unknown',
+          { allowReport }
+        );
+        return;
+      }
+    }
+
+    // Fallback to regular error reporting
     this.mShowError(message, details, allowReport, replace);
   }
 

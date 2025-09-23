@@ -257,6 +257,10 @@ class InstallManager {
   //  to inspect the state of ongoing installations
   private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
 
+  // Tracks retry counts for failed dependency installations
+  private mDependencyRetryCount: Map<string, number> = new Map();
+  private static readonly MAX_DEPENDENCY_RETRIES = 3;
+
   // Main installation concurrency limiter - replaces sequential mQueue
   private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(5);
 
@@ -312,6 +316,9 @@ class InstallManager {
       // Reset concurrency limiters
       this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
       this.mDependencyInstallsLimit = new ConcurrencyLimiter(3);
+      
+      // Clear all retry counters
+      this.mDependencyRetryCount.clear();
 
       return Bluebird.resolve();
     });
@@ -546,7 +553,8 @@ class InstallManager {
     fileList?: IFileListItem[],
     unattended?: boolean,
     forceInstaller?: string,
-    allowAutoDeploy?: boolean): void {
+    allowAutoDeploy?: boolean,
+    sourceModId?: string): void {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const installId = shortid();
     const dummyArchiveId = archiveId || 'direct-install-' + shortid();
@@ -717,7 +725,7 @@ class InstallManager {
               return api.emitAndAwait('install-extension-from-download', archiveId)
                 .then(() => Bluebird.reject(new UserCanceled()));
             }
-            installContext = new InstallContext(gameId, api, unattended);
+            installContext = new InstallContext(gameId, api, unattended, sourceModId ? this.mNotificationAggregator : undefined, sourceModId);
             installContext.startIndicator(baseName);
             let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
             if (Array.isArray(dlGame)) {
@@ -1320,6 +1328,13 @@ class InstallManager {
       key.includes(sourceModId)
     );
     activeKeysToRemove.forEach(key => this.mActiveInstalls.delete(key));
+    
+    // Clean up retry counters for this source mod
+    const retryKeysToRemove = Array.from(this.mDependencyRetryCount.keys()).filter(key =>
+      key.startsWith(`${sourceModId}:`)
+    );
+    retryKeysToRemove.forEach(key => this.mDependencyRetryCount.delete(key));
+    
     if (hard) {
       this.mMainInstallsLimit.clearQueue();
       this.mDependencyInstallsLimit.clearQueue();
@@ -1329,7 +1344,8 @@ class InstallManager {
     log('debug', 'Cleaned up pending and active installations', {
       sourceModId,
       pendingRemoved: pendingKeysToRemove.length,
-      activeRemoved: activeKeysToRemove.length
+      activeRemoved: activeKeysToRemove.length,
+      retryCountersRemoved: retryKeysToRemove.length
     });
   }
 
@@ -1433,7 +1449,7 @@ class InstallManager {
           recommended, () =>
           this.installModAsync(currentDep.reference, api, downloadId,
             { choices: currentDep.installerChoices, patches: currentDep.patches },
-            currentDep.fileList, gameId, true)
+            currentDep.fileList, gameId, true, sourceModId)
         );
 
         if (modId) {
@@ -1457,20 +1473,27 @@ class InstallManager {
 
           // Mark as installed as dependency
           api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
+          
+          // Clear retry counter on successful installation
+          this.mDependencyRetryCount.delete(installKey);
         }
 
         this.mActiveInstalls.delete(installKey);
       } catch (err) {
-        const endTime = Date.now();
         this.mActiveInstalls.delete(installKey);
-        log('warn', 'Failed to install dependency', {
-          downloadId,
-          error: err.message,
-          dependency: renderModReference(dep.reference),
-          installKey,
-          durationMs: endTime - startTime,
-          remainingActiveInstalls: this.mActiveInstalls.size
-        });
+
+        const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
+
+        if (currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES) {
+          this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
+          this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended, phase);
+        } else {
+          // Max retries exceeded, clean up and show error
+          this.mDependencyRetryCount.delete(installKey);
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency',
+            `Installation failed after ${InstallManager.MAX_DEPENDENCY_RETRIES} attempts: ${err.message}`,
+            renderModReference(dep.reference));
+        }
         // Don't rethrow to avoid crashing the concurrency limiter
       } finally {
         // Always decrement phase active counter and try to advance phases
@@ -3404,7 +3427,7 @@ class InstallManager {
               recommended, () =>
               this.installModAsync(dep.reference, api, downloadId,
                 { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
-                gameId, silent)).then(res => resolve(res))
+                gameId, silent, sourceModId)).then(res => resolve(res))
               .catch(err => {
                 if (err instanceof UserCanceled) {
                   err.skipped = true;
@@ -4172,7 +4195,8 @@ class InstallManager {
     modInfo?: any,
     fileList?: IFileListItem[],
     forceGameId?: string,
-    silent?: boolean): Bluebird<string> {
+    silent?: boolean,
+    sourceModId?: string): Bluebird<string> {
     return new Bluebird<string>(async (resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -4214,7 +4238,7 @@ class InstallManager {
           } else {
             return reject(error);
           }
-        }, forceGameId, fileList, silent, undefined, false);
+        }, forceGameId, fileList, silent, undefined, false, sourceModId);
     });
   }
 
