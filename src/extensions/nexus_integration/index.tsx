@@ -48,6 +48,7 @@ import FreeUserDLDialog from './views/FreeUserDLDialog';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
+import BrowseNexus from './views/BrowseNexus';
 import { } from './views/Settings';
 import FlexLayout from '../../controls/FlexLayout';
 import Image from '../../controls/Image';
@@ -1855,6 +1856,14 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
   context.registerAPI('ensureLoggedIn', () => ensureLoggedIn(context.api), {});
+
+context.registerMainPage('details', 'Browse', BrowseNexus, {
+  id: 'browse-nexus-page',
+    group: 'global',
+    props: () => ({
+      t: context.api.translate,
+    }),
+  });
 
   const extIntegrations: Array<(nex: NexusT) => void> = [
     (nex: NexusT) => tracking.once(nex),
