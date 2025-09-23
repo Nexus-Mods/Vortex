@@ -78,6 +78,13 @@ class ActivationButton extends ComponentEx<IProps, {}> {
         } else {
           this.props.onShowError('Failed to activate mods', err);
         }
+      } else {
+        this.context.api.sendNotification({
+          id: 'mods-deployed',
+          type: 'info',
+          message: 'Mods deployed',
+          displayMS: 3000,
+        });
       }
     }), this.props.profileId, undefined, { manual: true });
   }

@@ -943,8 +943,7 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
-      const invalidToastTypes = ['global', 'activity', 'warning'];
-      if (noti.displayMS != null && noti.noToast !== true && !invalidToastTypes.includes(noti.type)) {
+      if (this.canBeToast(noti)) {
         let toastFunc = noti.type === 'error' ? toast.error : toast.success;
         const toastOptions: ToastOptions = {
           id: noti.id,
@@ -1349,6 +1348,17 @@ class ExtensionManager {
         }
       });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private canBeToast = (notif: INotification) => {
+    const invalidToastTypes = ['activity', 'warning'];
+    if ((notif.displayMS != null && notif.displayMS <= 5000)
+      && notif.noToast !== true
+      && (notif.actions == null || notif.actions.length === 0)
+      && !invalidToastTypes.includes(notif.type)) {
+      return true;
+    }
+    return false;
   }
 
   private getMetaServerList(): modmetaT.IServer[] {

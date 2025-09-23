@@ -75,7 +75,7 @@ class InstallContext implements IInstallContext {
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
-      dispatch(addNotification(notification));
+      api.sendNotification(notification);
     this.mUpdateNotification = (id: string, progress: number, message: string) =>
       dispatch(updateNotification(id, progress, message));
     this.mDismissNotification = (id) =>
