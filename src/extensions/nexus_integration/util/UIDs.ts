@@ -1,3 +1,4 @@
+import { getGame, nexusGameId } from '../../../util/api';
 import { log } from '../../../util/log';
 import { IModRepoId } from '../../mod_management/types/IMod';
 import { nexusGames } from '../util';
@@ -12,7 +13,8 @@ const gameNum = (() => {
       }, {});
     }
 
-    return cache[gameId];
+    const game = getGame(gameId);
+    return cache[nexusGameId(game, gameId)];
   };
 })();
 
