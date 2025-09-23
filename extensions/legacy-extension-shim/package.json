@@ -1,0 +1,25 @@
+{
+  "name": "legacy-extension-shim",
+  "version": "1.0.0",
+  "description": "Compatibility shim for older community extensions that use legacy context.registerGame and context.once patterns",
+  "main": "index.js",
+  "author": "Vortex macOS Port",
+  "license": "GPL-3.0",
+  "keywords": [
+    "vortex",
+    "extension",
+    "compatibility",
+    "legacy",
+    "shim"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nexus-Mods/Vortex"
+  },
+  "dependencies": {
+    "fs-extra": "^10.0.0"
+  },
+  "peerDependencies": {
+    "vortex-api": "*"
+  }
+}

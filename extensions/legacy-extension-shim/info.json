@@ -1,0 +1,8 @@
+{
+  "name": "Legacy Extension Shim",
+  "author": "Vortex macOS Port",
+  "version": "1.0.0",
+  "description": "Compatibility shim for older community extensions that use legacy context.registerGame and context.once patterns",
+  "id": "legacy-extension-shim",
+  "namespace": "legacy-extension-shim"
+}

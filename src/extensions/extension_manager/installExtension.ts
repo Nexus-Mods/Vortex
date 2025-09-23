@@ -749,11 +749,11 @@ async function getPackaged7zPath(): globalThis.Promise<string | undefined> {
       candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'arm64', '7za'));
     } else if (process.platform === 'darwin') {
     // Prioritize 7zip-bin which has actual macOS binaries
-    candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'x64', '7za'));
-    candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'arm64', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'x64', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'arm64', '7za'));
     // 7z-bin is broken on macOS - only check as last resort
-    candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z'));
-  }
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z'));
+    }
 
     for (const p of candidates) {
       try {
