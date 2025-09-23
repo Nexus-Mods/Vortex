@@ -60,7 +60,7 @@
         "START_DEVTOOLS": "true"
       },
       "envFile": "${workspaceFolder}/.env",
-      "console": "internalConsole",
+      "console": "integratedTerminal",
       "autoAttachChildProcesses": true,
       "timeout": 60000,
       "skipFiles": [

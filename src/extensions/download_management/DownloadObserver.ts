@@ -39,7 +39,7 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
-import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadCancelledEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadCancelledEvent, CollectionsDownloadFailedEvent } from '../analytics/mixpanel/MixpanelEvents';
 import { isArray } from 'lodash';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 import { makeModAndFileUIDs } from '../nexus_integration/util/UIDs';
@@ -175,20 +175,20 @@ export class DownloadObserver {
 
       if (isCollection) {
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
       } else {
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
       }
 
     } else {
 
       if (isCollection) {
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+          new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
       } else {
         this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
       }
     }
 
