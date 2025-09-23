@@ -943,7 +943,8 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
-      if (noti.displayMS != null && noti.noToast !== true) {
+      const invalidToastTypes = ['global', 'activity', 'warning'];
+      if (noti.displayMS != null && noti.noToast !== true && !invalidToastTypes.includes(noti.type)) {
         let toastFunc = noti.type === 'error' ? toast.error : toast.success;
         const toastOptions: ToastOptions = {
           id: noti.id,
