@@ -318,17 +318,17 @@ class InstallContext implements IInstallContext {
 
     switch (outcome) {
       case 'success':
-        // TODO: bit of a hack, I'd prefer if we controlled this from the collections
-        //   extension
-        if ((mod?.type === 'collection') || this.mSilent) {
-          return null;
-        }
-
         
         if (nexusIds !== undefined && !isCollection) {
           const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
           this.mApi.events.emit('analytics-track-mixpanel-event',
             new ModsInstallationCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, Date.now() - this.mStartTime));
+        }
+
+        // TODO: bit of a hack, I'd prefer if we controlled this from the collections
+        //   extension
+        if ((mod?.type === 'collection') || this.mSilent) {
+          return null;
         }
 
         return {
