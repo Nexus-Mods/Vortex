@@ -915,6 +915,21 @@ function init(context: IExtensionContextExt): boolean {
     return undefined;
   });
 
+  const removeToastDebouncer = new Debouncer(() => {
+    context.api.sendNotification({
+      id: `download-removed`,
+      type: 'info',
+      message: 'Download(s) Removed',
+      displayMS: 3000,
+    });
+    return Promise.resolve();
+  }, 500, true, false)
+
+  context.registerActionCheck('REMOVE_DOWNLOAD', (state: IState, action: any) => {
+    removeToastDebouncer.schedule();
+    return undefined;
+  });
+
   context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
     t: context.api.translate,
     shutdownPending,
