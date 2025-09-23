@@ -4539,10 +4539,10 @@ xtend@^4.0.0, xtend@^4.0.2, xtend@~4.0.0, xtend@~4.0.1:
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.2.tgz#bb72779f5fa465186b1f438f674fa347fdb5db54"
   integrity sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==
 
-xxhash-addon@^1.3.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/xxhash-addon/-/xxhash-addon-1.5.0.tgz#1c2b4a4fb09b94b4bfc9b5715172d476409c74a8"
-  integrity sha512-ZkfBZMrrpbyT8/uw7x+2voPBXO2oczajlGo11+OOO1YqGbk6DuF7erwirCUPvydN17lEjilu3VGDWWG4+fV45Q==
+xxhash-addon@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/xxhash-addon/-/xxhash-addon-2.0.3.tgz#699ad9aaed123fbb46a6829389799c056d49b716"
+  integrity sha512-MIL+yTvK2HaVHe1VXfVtXd884pakIaNbjuNHAqIhVFrye87+ZCn0s3RSafqiYB1ASqrZoGsm8URjPiupGLuP+A==
 
 y18n@^5.0.5:
   version "5.0.8"
