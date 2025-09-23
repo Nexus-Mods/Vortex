@@ -92,6 +92,9 @@ interface IProvider {
 
 const gameInfoProviders: IProvider[] = [];
 
+// Add this at the top of the file with the other module-level variables
+let isRefreshingGameList = false;
+
 function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<void> {
   interface IKeyProvider {
     [key: string]: { priority: number, provider: string };
@@ -239,9 +242,19 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
 
   if (gameById(state, gameId) === undefined) {
-    return api.showDialog('question', 'Game support not installed', {
-      text: 'Support for this game is provided through an extension. '
-          + 'Please click "Manage" to install the extension and set it up.',
+    // Find the extension to get the game name
+    const extension = state.session.extensions.available.find(ext =>
+      (ext?.gameId === gameId) || (ext.name === gameId));
+    
+    // Get the game name for better user messaging
+    const gameName = extension?.gameName || extension?.name?.replace(/^Game: /, '') || 'this game';
+    
+    return api.showDialog('question', 'Game Support Not Installed', {
+      text: 'Support for {{gameName}} is provided through a community extension that is not included with the main Vortex application. '
+          + 'To manage mods for {{gameName}}, you need to download and install this extension.',
+      parameters: {
+        gameName
+      }
     }, [
       { label: 'Close' },
     ])
@@ -857,10 +870,169 @@ function init(context: IExtensionContext): boolean {
         .catch(err => callback(err));
     });
 
-    events.on('refresh-game-list', () => {
+    events.on('refresh-game-list', (forceFullDiscovery?: boolean) => {
       // Refresh the known games list when game extensions are installed
-      $.gameModeManager.refreshKnownGames();
-      log('info', 'Game list refreshed after extension installation');
+      if (forceFullDiscovery) {
+        // Force a complete refresh including re-reading game extensions
+        // Use the extension manager's exposed update function if available
+        if (context.api.ext['updateExtensions']) {
+          // Add a flag to prevent infinite loop
+          if (isRefreshingGameList) {
+            // Already refreshing, skip to prevent infinite loop
+            return;
+          }
+          
+          // Set the flag to indicate we're refreshing
+          isRefreshingGameList = true;
+          
+          context.api.ext['updateExtensions'](false)
+            .then(() => {
+              // After updating extensions, we need to ensure game extensions are properly registered
+              // Re-initialize the extension games list to capture any newly installed game extensions
+              $.extensionGames = [];
+              
+              // Get the current state and re-process all installed game extensions
+              const state = context.api.getState();
+              const installedExtensions = state.session.extensions.installed;
+              
+              // Process each installed game extension to ensure it's registered
+              return Promise.map(Object.keys(installedExtensions), extId => {
+                const ext = installedExtensions[extId];
+                if (ext.type === 'game' && ext.path) {
+                  try {
+                    // Try to load and register the game extension
+                    const indexPath = path.join(ext.path, 'index.js');
+                    return fs.statAsync(indexPath)
+                      .then(() => {
+                        const extensionModule = require(indexPath);
+                        if (typeof extensionModule.default === 'function') {
+                          // Create a minimal context for the extension to register its game
+                          const contextProxy = new Proxy({
+                            api: context.api,
+                            registerGame: (game: IGame) => {
+                              // Register the game in our extension games list
+                              game.extensionPath = ext.path;
+                              $.extensionGames.push(game);
+                            },
+                            registerGameStub: (game: IGame, extInfo: IExtensionDownloadInfo) => {
+                              // Handle game stubs if needed
+                              $.extensionStubs.push({ ext: extInfo, game });
+                            }
+                          }, {
+                            get: (target, prop) => {
+                              // Provide stub functions for other register methods
+                              if (prop === 'registerGame' || prop === 'registerGameStub') {
+                                return target[prop];
+                              } else if (typeof prop === 'string' && prop.startsWith('register')) {
+                                return () => {}; // Stub for other register methods
+                              }
+                              return target[prop];
+                            }
+                          });
+                          
+                          // Call the extension's init function
+                          extensionModule.default(contextProxy);
+                        }
+                        return Promise.resolve();
+                      })
+                      .catch(() => {
+                        // File doesn't exist or other error, skip this extension
+                        return Promise.resolve();
+                      });
+                  } catch (err) {
+                    log('warn', 'Failed to load game extension', { extension: ext.name, error: err.message });
+                    return Promise.resolve();
+                  }
+                }
+                return Promise.resolve();
+              })
+              .then(() => {
+                // Refresh the known games with the updated extension games list
+                const gamesStored: IGameStored[] = $.extensionGames
+                  .map(game => ({
+                    name: game.name,
+                    shortName: game.shortName,
+                    id: game.id,
+                    logo: game.logo,
+                    extensionPath: game.extensionPath,
+                    contributed: game.contributed,
+                    final: game.final,
+                    version: game.version,
+                    executable: game.executable?.(),
+                    requiredFiles: game.requiredFiles,
+                    environment: game.environment,
+                    details: game.details,
+                  }))
+                  .filter(game => 
+                    (game.executable !== undefined) &&
+                    (game.requiredFiles !== undefined) &&
+                    (game.name !== undefined)
+                  );
+                context.api.store.dispatch(setKnownGames(gamesStored));
+                
+                // Also run quick discovery to find the game paths
+                return $.gameModeManager.startQuickDiscovery(undefined, false);
+              });
+            })
+            .then(() => {
+              log('info', 'Game list fully refreshed after extension installation');
+              // Clear the flag when done
+              isRefreshingGameList = false;
+            })
+            .catch(err => {
+              log('error', 'Failed to refresh game list', err.message);
+              // Clear the flag on error
+              isRefreshingGameList = false;
+            });
+        } else {
+          // Fallback if the update function is not available
+          const gamesStored: IGameStored[] = $.extensionGames
+            .map(game => ({
+              name: game.name,
+              shortName: game.shortName,
+              id: game.id,
+              logo: game.logo,
+              extensionPath: game.extensionPath,
+              contributed: game.contributed,
+              final: game.final,
+              version: game.version,
+              executable: game.executable?.(),
+              requiredFiles: game.requiredFiles,
+              environment: game.environment,
+              details: game.details,
+            }))
+            .filter(game => 
+              (game.executable !== undefined) &&
+              (game.requiredFiles !== undefined) &&
+              (game.name !== undefined)
+            );
+          context.api.store.dispatch(setKnownGames(gamesStored));
+          log('info', 'Game list refreshed after extension installation');
+        }
+      } else {
+        const gamesStored: IGameStored[] = $.extensionGames
+          .map(game => ({
+            name: game.name,
+            shortName: game.shortName,
+            id: game.id,
+            logo: game.logo,
+            extensionPath: game.extensionPath,
+            contributed: game.contributed,
+            final: game.final,
+            version: game.version,
+            executable: game.executable?.(),
+            requiredFiles: game.requiredFiles,
+            environment: game.environment,
+            details: game.details,
+          }))
+          .filter(game => 
+            (game.executable !== undefined) &&
+            (game.requiredFiles !== undefined) &&
+            (game.name !== undefined)
+          );
+        context.api.store.dispatch(setKnownGames(gamesStored));
+        log('info', 'Game list refreshed after extension installation');
+      }
     });
 
     const changeGameMode = (oldGameId: string, newGameId: string,

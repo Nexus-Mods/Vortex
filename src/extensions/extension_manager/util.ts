@@ -255,6 +255,15 @@ export function downloadAndInstallExtension(api: IExtensionApi,
 
   let dlPromise: Promise<string[]>;
 
+  // Show activity notification for better UX
+  const notificationId = `installing-extension-${Date.now()}`;
+  api.sendNotification({
+    id: notificationId,
+    type: 'activity',
+    message: `Downloading ${ext.name}...`,
+    displayMS: 10000,
+  });
+
   if (truthy(ext.modId)) {
     dlPromise = downloadFromNexus(api, ext);
   } else if (truthy(ext.githubRawPath)) {
@@ -263,6 +272,8 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     dlPromise = downloadGithubRelease(api, ext);
   } else {
     // don't report an error if the extension list contains invalid data
+    // Dismiss the activity notification
+    api.dismissNotification(notificationId);
     return Promise.resolve(false);
   }
 
@@ -272,14 +283,26 @@ export function downloadAndInstallExtension(api: IExtensionApi,
 
   return dlPromise
     .then((dlIds: string[]) => {
+      // Update notification to show installation phase
+      api.sendNotification({
+        id: notificationId,
+        type: 'activity',
+        message: `Installing ${ext.name}...`,
+        displayMS: 10000,
+      });
+      
       const state: IState = api.store.getState();
 
       if ((dlIds === undefined) || (dlIds.length !== 1)) {
+        // Dismiss the activity notification
+        api.dismissNotification(notificationId);
         return Promise.reject(new ProcessCanceled('No download found'));
       }
       api.store.dispatch(setDownloadModInfo(dlIds[0], 'internal', true));
       download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined);
       if (download === undefined) {
+        // Dismiss the activity notification
+        api.dismissNotification(notificationId);
         return Promise.reject(new Error('Download not found'));
       }
 
@@ -304,9 +327,19 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       const downloadPath = downloadPathForGame(state, SITE_ID);
       return installExtension(api, path.join(downloadPath, download.localPath), info);
     })
-    .then(() => Promise.resolve(true))
-    .catch(UserCanceled, () => null)
+    .then(() => {
+      // Dismiss the activity notification
+      api.dismissNotification(notificationId);
+      return Promise.resolve(true);
+    })
+    .catch(UserCanceled, () => {
+      // Dismiss the activity notification
+      api.dismissNotification(notificationId);
+      return null;
+    })
     .catch(ProcessCanceled, () => {
+      // Dismiss the activity notification
+      api.dismissNotification(notificationId);
       api.showDialog('error', 'Installation failed', {
         text: 'Failed to install the extension "{{extensionName}}" from "{{sourceName}}", '
             + 'please check the notifications.',
@@ -323,10 +356,14 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       return Promise.resolve(false);
     })
     .catch(ServiceTemporarilyUnavailable, err => {
+      // Dismiss the activity notification
+      api.dismissNotification(notificationId);
       log('warn', 'Failed to download from github', { message: err.message });
       return Promise.resolve(false);
     })
     .catch(err => {
+      // Dismiss the activity notification
+      api.dismissNotification(notificationId);
       api.showDialog('error', 'Installation failed', {
         text: 'Failed to install the extension "{{extensionName}}" from "{{sourceName}}"',
         parameters: {

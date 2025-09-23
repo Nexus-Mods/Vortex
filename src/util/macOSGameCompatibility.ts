@@ -37,6 +37,13 @@ const MACOS_GAME_FIXES: MacOSGameFix[] = [
     windowsExecutable: 'Balatro.exe',
     macOSAppBundle: 'Balatro.app',
     alternativeFiles: ['liblovely.dylib', 'run_lovely_macos.sh']
+  },
+  // Add more games as needed
+  {
+    gameId: 'cyberpunk2077',
+    windowsExecutable: 'bin/x64/Cyberpunk2077.exe',
+    macOSAppBundle: 'Cyberpunk 2077.app',
+    alternativeFiles: ['REDprelauncher.app']
   }
 ];
 
@@ -66,6 +73,22 @@ const DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
     description: 'Lovely injector for Balatro - Windows to macOS conversion with architecture detection'
   }
   // Add more URL mappings as needed
+  ,
+  {
+    // Generic pattern for common Windows to macOS conversions
+    windowsPattern: /https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/(?:download\/[^\/]+\/|latest\/download\/).*\.(exe|msi|zip)$/,
+    getMacOSUrl: (windowsUrl: string) => {
+      // Try to convert common Windows file patterns to macOS equivalents
+      return windowsUrl
+        .replace(/\.(exe|msi)$/, '.app')
+        .replace(/windows/gi, 'macos')
+        .replace(/win/gi, 'mac')
+        .replace(/pc/gi, 'mac')
+        .replace(/x86_64-pc-windows-msvc/g, `macos-${getMacOSArchitecture()}`)
+        .replace(/x64-pc-windows-msvc/g, `macos-${getMacOSArchitecture()}`);
+    },
+    description: 'Generic Windows to macOS URL conversion'
+  }
 ];
 
 /**

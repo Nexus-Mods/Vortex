@@ -616,18 +616,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private iconForType(type: DialogType) {
-    switch (type) {
-      case 'info': return (
-        <Icon name='dialog-info' className='icon-info'/>
-      );
-      case 'error': return (
-        <Icon name='dialog-error' className='icon-error'/>
-      );
-      case 'question': return (
-        <Icon name='dialog-question' className='icon-question'/>
-      );
-      default: return null;
-    }
+    // Return null to remove icons completely for macOS Tahoe look
+    return null;
   }
 
   private dismiss = (action: string) => {

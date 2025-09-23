@@ -1,17 +1,30 @@
 .modal-dialog {
   max-width: 60%;
-  min-width: 400px;
+  min-width: 300px; // Reduced minimum width for better content fit
+}
+
+.modal-content {
+  border-radius: $border-radius-large;
+  border: 1px solid $border-color;
+}
+
+.modal-header {
+  border-bottom: none; // Remove horizontal border
+  padding: $half-gutter $gutter-width;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .modal-title {
   display: flex;
   align-items: center;
+  font-weight: 600;
+  margin: 0; // Remove default margin
 
-
+  // Remove the SVG icons completely
   svg {
-    width: 2em;
-    height: 2em;
-    margin-right: 1em;
+    display: none; // Hide icons instead of just reducing size
   }
 
   .icon-info,
@@ -24,16 +37,29 @@
   }
 }
 
+.modal-body {
+  padding: 0 $gutter-width $half-gutter; // Reduced top padding since there's no header border
+}
+
+.modal-footer {
+  border-top: none; // Remove horizontal border
+  padding: $half-gutter $gutter-width $gutter-width;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px; // Add spacing between buttons
+}
+
 .common-dialog-regular {
   display: flex !important;
   justify-content: center;
 
   .modal-dialog {
-    width: 60em;
+    width: auto; // Allow dialog to fit content
+    max-width: 600px; // Reasonable maximum width
     display: flex;
     margin: 0;
     align-items: center;
-    height: 100;
+    height: auto; // Allow height to fit content
   }
 }
 
@@ -41,6 +67,7 @@
   .modal-dialog {
     height: 80%;
     width: auto;
+    max-width: 90%; // Increase max width for wide dialogs
   }
 
   .modal-content {
@@ -53,7 +80,7 @@
   .modal-body {
     flex: 1 0%;
     display: flex;
-    padding: $half-gutter $gutter-width;
+    padding: 0 $gutter-width $half-gutter;
 
     div {
       display: flex;
@@ -69,23 +96,21 @@
 
 .dialog-container {
   width: 100%;
-  min-height: 300px;
-  max-height: 60vh;
+  min-height: auto; // Allow container to fit content
+  max-height: 70vh; // Reduce max height for better fit
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 0; // Remove padding to reduce wasted space
 
   // the flex sizing may not be optimal
   textarea {
     width: 100%;
     resize: none;
-    //border: none;
-    //padding: 4px 8px;
     border-radius: $border-radius-base;
     flex: 1 1 0%;
 
-    //resize: none;
     padding: 5px 8px;
     background-color: $brand-bg;
     border: 1px solid $border-color;
@@ -106,8 +131,6 @@
     }
 
     .bbcode-spoiler-tag {
-      
-
       .bbcode-spoiler-content {
         padding: 8px;
         border: 1px solid $border-color;
@@ -135,8 +158,6 @@
     white-space: pre-wrap;
   }
 
-  
-
   >.dialog-content-html {
     white-space: pre-wrap;
   }
@@ -145,7 +166,6 @@
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    //justify-content: flex-end;
 
     >div {
       overflow: auto;
@@ -156,44 +176,33 @@
       .radio label,
       .checkbox label {
         display: flex;
-        //align-items: center;
 
         input[type=radio],
         input[type=checkbox] {
-          margin: 2px 0 0 -20px; // 2px top border accounts for natural margins of text above when compared to the radio input
+          margin: 2px 0 0 -20px;
         }
-
       }
     }
 
     .choice-maintext {
       font-weight: bold;
     }
-
-    /*.choice-subtext {
-      //margin-bottom: 1em;
-    }*/
   }
 }
 
+// Specific adjustments for the update changelog dialog
 #new-update-changelog-dialog {
-
   .modal-dialog {
-    width: 600px;
-    min-width: 600px;
+    width: auto;
+    min-width: 500px;
+    max-width: 700px;
 
     .dialog-container {
-
       .dialog-content-html {
-
         gap: 8px;
         padding-right: 16px;
 
-        // need different sizes in case github releases markdown come in as h1's and h2's etc
-        // when really they should h4s, h5s for their level of importance and consistency
-
         .changelog-dialog-release {
-
           gap: 12px;
 
           h1 {
@@ -208,8 +217,6 @@
             font-size: 1.1em;
           }
 
-        // these are going to be set in code as each release heading
-  
           h4 {
             font-size: 1.6em;
             line-height: 1;
@@ -245,11 +252,7 @@
             width: 100%;
             display: block;
           }
-
-
-
         }
-
       }
     }
   }

@@ -474,16 +474,33 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);
     }
 
-    return api.showDialog('question', 'Game support not installed', {
-      text: 'Support for this game is provided through an extension. To use it you have to '
-        + 'download that extension and restart Vortex.',
+    // Get the game name for better user messaging
+    const gameName = extension.gameName || extension.name.replace(/^Game: /, '') || 'this game';
+    
+    return api.showDialog('question', 'Game Support Not Installed', {
+      text: 'Support for {{gameName}} is provided through a community extension that is not included with the main Vortex application. '
+        + 'To manage mods for {{gameName}}, you need to download and install this extension.',
+      parameters: {
+        gameName
+      }
     }, [
       { label: 'Cancel' },
       {
-        label: 'Download', action: () => {
-          api.store.dispatch(setUIBlocker(
-            'installing-game', 'download',
-            'Installing Game, Vortex will restart upon completion.', true));
+        label: 'Download Extension', action: () => {
+          // Only show the blocking UI for non-game extensions
+          if (extension.type !== 'game') {
+            api.store.dispatch(setUIBlocker(
+              'installing-game', 'download',
+              'Installing Game, Vortex will restart upon completion.', true));
+          } else {
+            // For game extensions, show a non-blocking notification instead
+            api.sendNotification({
+              id: 'installing-game-extension',
+              type: 'activity',
+              message: 'Installing game extension...',
+              displayMS: 5000,
+            });
+          }
 
           // Add timeout to prevent hanging on authentication
           let authTimeout: NodeJS.Timeout | null = null;
@@ -496,7 +513,10 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
             }
             if (!isCompleted) {
               isCompleted = true;
-              api.store.dispatch(clearUIBlocker('installing-game'));
+              // Only clear the UI blocker for non-game extensions
+              if (extension.type !== 'game') {
+                api.store.dispatch(clearUIBlocker('installing-game'));
+              }
             }
           };
 
@@ -524,15 +544,21 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
                 if (extension.type !== 'game') {
                   relaunch(['--game', gameId]);
                 } else {
-                  // For game extensions, just update the game list
-                  api.events.emit('refresh-game-list');
+                  // For game extensions, show success notification
+                  api.dismissNotification('installing-game-extension');
+                  api.sendNotification({
+                    type: 'success',
+                    message: 'Game extension installed successfully! The game is now available in the Managed Games section.',
+                    displayMS: 5000,
+                  });
+                  // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
+                  api.events.emit('refresh-game-list', true);
                 }
               }
-            })
-            .finally(() => {
               cleanup();
             })
             .catch(err => {
+
               cleanup();
               
               if (err instanceof UserCanceled) {
@@ -551,7 +577,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
     ])
       .then(result => {
         // Wait for the installation to complete if the user clicked Download
-        if (result.action === 'Download') {
+        if (result.action === 'Download Extension') {
           // Return a promise that resolves when the installation completes
           return new Promise<void>((resolve) => {
             // The installation process will handle restarting Vortex
