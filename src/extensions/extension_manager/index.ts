@@ -129,10 +129,8 @@ function checkForUpdates(api: IExtensionApi) {
             displayMS: 5000,
           });
           
-          // Trigger dynamic update of game list if game extensions were updated
-          if (gameUpdates.length > 0) {
-            api.events.emit('refresh-game-list');
-          }
+          // Don't emit refresh-game-list here to prevent infinite loop
+          // The refresh will be handled by the caller if needed
         }
       }
     });
@@ -313,10 +311,8 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
               displayMS: 5000,
             });
             
-            // Trigger dynamic update of game list if game extensions were installed
-            if (newGameExtensions.length > 0) {
-              api.events.emit('refresh-game-list');
-            }
+            // Don't emit refresh-game-list here to prevent infinite loop
+            // The refresh will be handled by the caller if needed
           }
         }
         api.store.dispatch(setInstalledExtensions(ext));
@@ -388,6 +384,10 @@ function init(context: IExtensionContext) {
     });
 
   context.once(() => {
+    // Expose the updateExtensions function so it can be called from other modules
+    // This must be done in the once callback where the API is available
+    context.api.ext['updateExtensions'] = updateExtensions;
+    
     let onDidFetch: () => void;
     const didFetchAvailableExtensions = new Promise((resolve => onDidFetch = resolve));
     updateExtensions(true)
@@ -404,7 +404,23 @@ function init(context: IExtensionContext) {
         .then(success => {
           if (success) {
             return updateExtensions(false)
-              .then(() => success);
+              .then(() => {
+                // Check if any of the newly installed extensions are game extensions
+                // If so, emit refresh-game-list to update the UI
+                const state = context.api.getState();
+                const previousExtensions = state.session.extensions.installed || {};
+                const newExtensions = Object.keys(state.session.extensions.installed)
+                  .filter(extId => !previousExtensions[extId]);
+                const newGameExtensions = newExtensions
+                  .filter(extId => state.session.extensions.installed[extId].type === 'game');
+                          
+                if (newGameExtensions.length > 0) {
+                  // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
+                  context.api.events.emit('refresh-game-list', true);
+                }
+                        
+                return success;
+              });
           } else {
             return Promise.resolve()
               .then(() => success);

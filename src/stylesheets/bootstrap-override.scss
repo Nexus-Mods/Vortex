@@ -250,6 +250,7 @@ textarea {
 
 .modal-header, .modal-footer {
   margin: 0;
+  border: none; // Remove borders completely for macOS Tahoe look
 }
 
 .modal-footer {

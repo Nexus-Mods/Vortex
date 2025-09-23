@@ -14,7 +14,21 @@ import * as path from 'path';
 import { TouchBar, systemPreferences, autoUpdater } from 'electron';
 
 // Add Spotlight integration import for macOS
-import { initializeSpotlight, indexVortexActions } from './util/macosSpotlight';
+let initializeSpotlight: () => Promise<void> = async () => {};
+let indexVortexActions: () => Promise<void> = async () => {};
+
+// Dynamically import Spotlight module without top-level await
+import('./util/macosSpotlight')
+  .then(spotlightModule => {
+    initializeSpotlight = spotlightModule.initializeSpotlight;
+    indexVortexActions = spotlightModule.indexVortexActions;
+  })
+  .catch(err => {
+    console.warn('Spotlight integration not available:', err);
+    // Provide no-op functions if module is not available
+    initializeSpotlight = async () => {};
+    indexVortexActions = async () => {};
+  });
 const { TouchBarButton, TouchBarLabel, TouchBarSpacer } = TouchBar || {};
 
 const earlyErrHandler = (error) => {
@@ -511,9 +525,13 @@ async function main(): Promise<void> {
     setupAutoUpdate();
     
     // Initialize Spotlight integration
-    initializeSpotlight().then(() => {
-      // Index common Vortex actions for Spotlight quick actions
-      indexVortexActions();
+    // Note: These functions might still be no-ops if the module hasn't loaded yet
+    // This is fine as they're non-critical features
+    initializeSpotlight().catch(err => {
+      console.warn('Failed to initialize Spotlight integration:', err);
+    });
+    indexVortexActions().catch(err => {
+      console.warn('Failed to index Vortex actions for Spotlight:', err);
     });
   }
 
