@@ -1,0 +1,18 @@
+{
+  "name": "example-legacy-extension",
+  "version": "1.0.0",
+  "description": "Example legacy extension demonstrating compatibility patterns",
+  "main": "index.js",
+  "author": "Example Author",
+  "license": "MIT",
+  "keywords": [
+    "vortex",
+    "extension",
+    "example",
+    "legacy"
+  ],
+  "vortex": {
+    "legacy": true,
+    "gameId": "example-game"
+  }
+}

@@ -1,129 +1,250 @@
-import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionContext, IDeploymentMethod, IDeployedFile, IUnavailableReason } from '../../types/api';
 import { IGame } from '../../types/IGame';
-import * as fs from '../../util/fs';
-import { log } from '../../util/log';
-
-import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import { getGame } from '../gamemode_management/util/getGame';
-import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { installPathForGame } from '../mod_management/selectors';
-import { IDeployedFile, IDeploymentMethod,
-         IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
-
-import Promise from 'bluebird';
-import { TFunction } from 'i18next';
+import { fs, log, util } from 'vortex-api';
+import { isMacOS } from '../../util/platform';
+import { TFunction } from '../../util/i18n';
+import { Normalize } from '../../util/getNormalizeFunc';
+import { IFileChange } from '../mod_management/types/IDeploymentMethod';
 import * as path from 'path';
+import Promise from 'bluebird';
 
-class DeploymentMethod extends LinkingDeployment {
-  public priority: number = 1; // Highest priority to make it default
+// Interface for tracking deployed files
+interface IDeployedFileRecord {
+  sourcePath: string;
+  targetPath: string;
+  relPath: string;
+  sourceName: string;
+}
 
-  constructor(api: IExtensionApi) {
-    super(
-      'copy_activator', 'Copy Deployment',
-      'Deploys mods by copying files to the destination directory.',
-      true,
-      api);
-  }
+// Global registry to track deployed files by mod
+const deployedFiles: { [modName: string]: IDeployedFileRecord[] } = {};
+
+class DeploymentMethod implements IDeploymentMethod {
+  public id: string = 'copy_activator';
+  public name: string = 'Copy Files (macOS)';
+  public description: string = 'Copies mod files directly to the game directory. Recommended for macOS.';
+  public priority: number = isMacOS() ? 5 : 15; // Higher priority than symlink on macOS, lower on other platforms
+  public isFallbackPurgeSafe: boolean = true;
 
   public detailedDescription(t: TFunction): string {
-    return t(
-      'This deployment method copies mod files directly to the game directory.\n'
-      + 'Advantages:\n'
-      + ' - Perfect game compatibility (no symlinks)\n'
-      + ' - Works across different drives/partitions\n'
-      + ' - No elevation required\n'
-      + ' - Compatible with all file systems\n'
-      + 'Disadvantages:\n'
-      + ' - Uses more disk space (files are duplicated)\n'
-      + ' - Slower deployment for large mods\n'
-      + ' - Changes to original mod files won\'t be reflected automatically');
-  }
-
-  public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
-    const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-    if ((discovery === undefined) || (discovery.path === undefined)) {
-      return { description: t => t('Game not discovered.') };
-    }
-
-    const game: IGame = getGame(gameId);
-    const modPaths = game.getModPaths(discovery.path);
-
-    if (modPaths[typeId] === undefined) {
-      return undefined;
-    }
-
-    try {
-      fs.accessSync(modPaths[typeId], fs.constants.W_OK);
-    } catch (err) {
-      log('info', 'copy deployment not supported due to lack of write access',
-          { typeId, path: modPaths[typeId] });
-      return {
-        description: t => t('Can\'t write to output directory'),
-        order: 3,
-        solution: t => t('To resolve this problem, the current user account needs to '
-                       + 'be given write permission to "{{modPath}}".', {
-          replace: {
-            modPath: modPaths[typeId],
-          },
-        }),
-      };
-    }
-
-    return undefined;
-  }
-
-  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
-    const basePath = path.dirname(linkPath);
-    return this.ensureDir(basePath, dirTags)
-      .then(() => fs.copyAsync(sourcePath, linkPath))
-      .catch(err => {
-        if (err.code === 'EEXIST') {
-          // File already exists, remove it and try again
-          return fs.removeAsync(linkPath)
-            .then(() => fs.copyAsync(sourcePath, linkPath));
-        }
-        return Promise.reject(err);
-      });
-  }
-
-  protected unlinkFile(linkPath: string): Promise<void> {
-    return fs.removeAsync(linkPath);
-  }
-
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
-    // For copy deployment, we check if the file exists and has the same content
-    return Promise.all([
-      fs.statAsync(linkPath).catch(() => null),
-      fs.statAsync(sourcePath).catch(() => null)
-    ])
-    .then(([linkStats, sourceStats]) => {
-      if (!linkStats || !sourceStats) {
-        return false;
-      }
-      // Simple check: same size and modification time
-      return linkStats.size === sourceStats.size;
+    return t('copy_activator_description', {
+      defaultValue: 'This deployment method copies mod files directly to the game directory. '
+        + 'This is the most compatible method for macOS, avoiding permission issues with symbolic links. '
+        + 'Files are physically copied, so changes to deployed files won\'t affect the original mod files. '
+        + 'This method requires more disk space but provides maximum compatibility.'
     });
   }
 
-  protected canRestore(): boolean {
-    return true;
+  public isSupported(state, gameId, modTypeId): IUnavailableReason {
+    // Only available on macOS to avoid symlink issues
+    if (!isMacOS()) {
+      return {
+        description: t => t('Copy deployment is only available on macOS'),
+        order: 100,
+      };
+    }
+    
+    // Return undefined when supported (TypeScript will infer this as valid)
+    return undefined as any;
   }
 
-  protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath);
+  public userGate(): Promise<void> {
+    return Promise.resolve();
   }
 
-  protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath);
+  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize): Promise<void> {
+    // Ensure the data path exists
+    return fs.ensureDirAsync(dataPath);
+  }
+
+  public finalize(gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+    // Return empty array as we don't need special purge handling for copied files
+    return Promise.resolve([]);
+  }
+
+  public activate(sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>): Promise<void> {
+    const fullDeployPath = path.join(deployPath);
+    
+    // Initialize tracking for this mod
+    deployedFiles[sourceName] = [];
+    
+    // Ensure target directory exists and copy all files from source to destination
+    return fs.ensureDirAsync(fullDeployPath)
+      .then(() => this.copyDirectory(sourcePath, fullDeployPath, blackList, sourceName));
+  }
+
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
+    // Remove all files that were deployed by this mod
+    const modFiles = deployedFiles[sourceName] || [];
+    
+    if (modFiles.length === 0) {
+      log('debug', 'No files to deactivate for mod', { sourceName });
+      return Promise.resolve();
+    }
+    
+    log('info', 'Deactivating mod files', { sourceName, fileCount: modFiles.length });
+    
+    return Promise.map(modFiles, (fileRecord) => {
+      return fs.removeAsync(fileRecord.targetPath)
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            log('debug', 'File already removed', { path: fileRecord.targetPath });
+          } else {
+            log('warn', 'Failed to remove file during deactivation', { 
+              path: fileRecord.targetPath, 
+              error: err.message 
+            });
+          }
+        });
+    })
+    .then(() => {
+      // Clean up empty directories
+      return this.removeEmptyDirectories(dataPath, modFiles);
+    })
+    .then(() => {
+      // Clear the tracking for this mod
+      delete deployedFiles[sourceName];
+      log('info', 'Mod deactivation completed', { sourceName });
+    });
+  }
+
+  public prePurge(installPath: string): Promise<void> {
+    return Promise.resolve();
+  }
+
+  public purge(installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void): Promise<void> {
+    // For copy deployment, purging means removing all copied files from all mods
+    log('info', 'Purging all copy-deployed files', { dataPath });
+    
+    const allFiles: IDeployedFileRecord[] = [];
+    Object.values(deployedFiles).forEach(modFiles => {
+      allFiles.push(...modFiles);
+    });
+    
+    if (allFiles.length === 0) {
+      log('debug', 'No files to purge');
+      return Promise.resolve();
+    }
+    
+    let processed = 0;
+    return Promise.map(allFiles, (fileRecord) => {
+      return fs.removeAsync(fileRecord.targetPath)
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            log('debug', 'File already removed during purge', { path: fileRecord.targetPath });
+          } else {
+            log('warn', 'Failed to remove file during purge', { 
+              path: fileRecord.targetPath, 
+              error: err.message 
+            });
+          }
+        })
+        .finally(() => {
+          processed++;
+          if (onProgress) {
+            onProgress(processed, allFiles.length);
+          }
+        });
+    })
+    .then(() => {
+      // Clean up empty directories
+      return this.removeEmptyDirectories(dataPath, allFiles);
+    })
+    .then(() => {
+      // Clear all tracking
+      Object.keys(deployedFiles).forEach(key => delete deployedFiles[key]);
+      log('info', 'Purge completed', { filesRemoved: allFiles.length });
+    });
+  }
+
+  public postPurge(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  public externalChanges(gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]): Promise<IFileChange[]> {
+    // Return empty array for now - detecting external changes for copied files
+    // would require maintaining checksums or timestamps
+    return Promise.resolve([]);
+  }
+
+  public getDeployedPath(input: string): string {
+    return input;
+  }
+
+  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Promise<boolean> {
+    const deployedPath = path.join(dataPath, file.relPath);
+    return fs.statAsync(deployedPath).then(() => true).catch(() => false);
+  }
+
+  private copyDirectory(source: string, target: string, blackList: Set<string>, sourceName: string, basePath: string = ''): Promise<void> {
+    return fs.readdirAsync(source)
+      .then(entries => Promise.map(entries, entry => {
+        if (blackList.has(entry)) {
+          return Promise.resolve();
+        }
+        
+        const sourcePath = path.join(source, entry);
+        const targetPath = path.join(target, entry);
+        const relPath = path.join(basePath, entry);
+        
+        return fs.statAsync(sourcePath)
+          .then(stat => {
+            if (stat.isDirectory()) {
+              return fs.ensureDirAsync(targetPath)
+                .then(() => this.copyDirectory(sourcePath, targetPath, blackList, sourceName, relPath));
+            } else {
+              // Track the deployed file
+              deployedFiles[sourceName].push({
+                sourcePath,
+                targetPath,
+                relPath,
+                sourceName
+              });
+              return fs.copyAsync(sourcePath, targetPath);
+            }
+          });
+      }))
+      .then(() => undefined);
+  }
+
+  private removeEmptyDirectories(dataPath: string, fileRecords: IDeployedFileRecord[]): Promise<void> {
+    // Get all unique directory paths from the file records
+    const dirPaths = new Set<string>();
+    fileRecords.forEach(record => {
+      let dir = path.dirname(record.targetPath);
+      while (dir !== dataPath && dir !== path.dirname(dir)) {
+        dirPaths.add(dir);
+        dir = path.dirname(dir);
+      }
+    });
+
+    // Sort directories by depth (deepest first) to remove from bottom up
+    const sortedDirs = Array.from(dirPaths).sort((a, b) => b.split(path.sep).length - a.split(path.sep).length);
+
+    return Promise.map(sortedDirs, (dirPath) => {
+      return fs.readdirAsync(dirPath)
+        .then(entries => {
+          if (entries.length === 0) {
+            return fs.rmdirAsync(dirPath)
+              .catch(err => {
+                if (err.code !== 'ENOENT' && err.code !== 'ENOTEMPTY') {
+                  log('debug', 'Failed to remove empty directory', { path: dirPath, error: err.message });
+                }
+              });
+          }
+        })
+        .catch(err => {
+          if (err.code !== 'ENOENT') {
+            log('debug', 'Error checking directory for cleanup', { path: dirPath, error: err.message });
+          }
+        });
+    })
+    .then(() => undefined);
   }
 }
 
-export interface IExtensionContextEx extends IExtensionContext {
-  registerDeploymentMethod: (activator: IDeploymentMethod) => void;
-}
-
-function init(context: IExtensionContextEx): boolean {
-  context.registerDeploymentMethod(new DeploymentMethod(context.api));
+function init(context: IExtensionContext): boolean {
+  context.registerDeploymentMethod(new DeploymentMethod());
   return true;
 }
 

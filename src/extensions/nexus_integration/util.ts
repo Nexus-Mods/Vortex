@@ -312,11 +312,35 @@ export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   return new Promise((resolve, reject) => {
     let isResolved = false;
     
-    // Reduced timeout since we've already checked for existing credentials
+    // Set up a state change listener to detect when credentials are added
+    const stateChangeHandler = () => {
+      if (!isResolved && isLoggedIn(api.getState())) {
+        isResolved = true;
+        clearTimeout(timeoutId);
+        api.events.removeListener('did-login', loginHandler);
+        resolve();
+      }
+    };
+
+    // Listen for state changes to OAuth credentials
+    const unsubscribe = api.store.subscribe(() => {
+      const currentState = api.getState();
+      const currentCredentials = currentState.confidential.account?.['nexus']?.['OAuthCredentials'];
+      if (!isResolved && currentCredentials && currentCredentials.token && currentCredentials.refreshToken) {
+        isResolved = true;
+        clearTimeout(timeoutId);
+        api.events.removeListener('did-login', loginHandler);
+        unsubscribe();
+        resolve();
+      }
+    });
+    
+    // Increased timeout to allow for OAuth flow completion
     const timeoutId = setTimeout(() => {
       if (!isResolved) {
         isResolved = true;
         api.events.removeListener('did-login', loginHandler);
+        unsubscribe();
         // Check one more time before rejecting in case login completed just before timeout
         if (isLoggedIn(api.getState())) {
           resolve();
@@ -324,12 +348,13 @@ export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
           reject(new Error('Authentication timeout: The login process took too long'));
         }
       }
-    }, 15000); // Reduced to 15 second timeout
+    }, 30000); // Increased to 30 second timeout for OAuth flow
 
     const loginHandler = (err: Error) => {
       if (!isResolved) {
         isResolved = true;
         clearTimeout(timeoutId);
+        unsubscribe();
         if (err !== null) {
           reject(err);
         } else {

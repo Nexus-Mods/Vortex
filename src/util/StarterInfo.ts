@@ -338,6 +338,7 @@ class StarterInfo implements IStarterInfo {
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
     this.name = gameDiscovery.name || game.name;
     const executable = gameDiscovery.executable || game.executable;
+    // Use the sync version for now to avoid making constructor async
     const executablePath = getExecutablePathForPlatform(gameDiscovery.path, this.gameId, executable);
     this.exePath = executablePath || path.join(gameDiscovery.path, executable);
     this.commandLine = getSafe(gameDiscovery, ['parameters'], getSafe(game, ['parameters'], []));
