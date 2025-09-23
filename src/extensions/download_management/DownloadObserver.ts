@@ -439,7 +439,7 @@ export class DownloadObserver {
           // this is so we know if it's a collection bundle/manifest downloading or an individual mod
           if (isCollection) {
             this.mApi.events.emit('analytics-track-mixpanel-event',
-              new CollectionsDownloadCompletedEvent(nexusIds.collectionSlug, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
+              new CollectionsDownloadCompletedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
           } else if (nexusIds?.modId !== undefined && nexusIds?.fileId !== undefined) {
             const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
             this.mApi.events.emit('analytics-track-mixpanel-event',

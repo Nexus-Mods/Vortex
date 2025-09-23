@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:   
       - uses: actions/checkout@v4
@@ -25,31 +25,7 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Print dotnet info
-        run: dotnet --info      
-
-      - name: Confirm SDK via vswhere
-        run: |
-          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
-            -products * `
-            -requires Microsoft.VisualStudio.Component.Windows10SDK.19041
-        shell: pwsh
-
-      - name: Verify Windows SDK 19041 installed
-        run: |
-          if (Test-Path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0") {
-            Write-Host "Windows SDK 19041 installed"
-          } else {
-            Write-Error "Windows SDK 19041 NOT found"
-            exit 1
-          }
-        shell: pwsh
-
-      - name: List all Windows SDK versions
-        run: |
-          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" |
-            Where-Object { $_.PSIsContainer } |
-            Select-Object -ExpandProperty Name
-        shell: pwsh
+        run: dotnet --info
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -60,12 +36,10 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
 
-      - name: Print debug info
-        run: dotnet --info
-
       - name: Build
         run: yarn build
 
       - name: Test
         run: yarn test
+
 
