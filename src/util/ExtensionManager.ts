@@ -953,6 +953,7 @@ class ExtensionManager {
           ? `${noti.title}:\n${noti.message}`
           : noti.message;
         toastFunc(message, toastOptions);
+        return noti.id;
       }
       if (notification.type === 'warning') {
         log('warn', 'warning notification',
