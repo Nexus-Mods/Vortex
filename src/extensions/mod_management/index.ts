@@ -109,6 +109,7 @@ import * as path from 'path';
 import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
+import { types } from '../..';
 
 interface IAppContext {
   isProfileChanging: boolean
@@ -1135,6 +1136,26 @@ function once(api: IExtensionApi) {
         deploymentTimer.runNow(callback, false, profileId, progressCB);
       }
     }
+  });
+
+  const removeModToastDebouncer = new Debouncer(() => {
+    api.sendNotification({
+      id: 'mod-removed',
+      type: 'info',
+      message: 'Mod(s) removed',
+      displayMS: 3000,
+    });
+
+    return Promise.resolve();
+  }, 500, true, false);
+
+  api.onAsync('did-remove-mod', (
+    gameMode: string,
+    removedId: string,
+    modId: string,
+    options: { willBeReplaced?: boolean, modData?: types.IMod }) => {
+    removeModToastDebouncer.schedule();
+    return Promise.resolve();
   });
 
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
