@@ -72,6 +72,8 @@ import { VCREDIST_URL } from '../constants';
 import { fileMD5 } from 'vortexmt';
 import * as fsVortex from '../util/fs'
 
+import { toast, ToastOptions } from 'react-hot-toast';
+
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
@@ -940,6 +942,17 @@ class ExtensionManager {
       const noti = { ...notification };
       if (noti.id === undefined) {
         noti.id = shortid();
+      }
+      if (noti.displayMS != null && noti.noToast !== true) {
+        let toastFunc = noti.type === 'error' ? toast.error : toast.success;
+        const toastOptions: ToastOptions = {
+          id: noti.id,
+          duration: noti.displayMS,
+        }
+        const message = noti.title !== undefined
+          ? `${noti.title}:\n${noti.message}`
+          : noti.message;
+        toastFunc(message, toastOptions);
       }
       if (notification.type === 'warning') {
         log('warn', 'warning notification',
