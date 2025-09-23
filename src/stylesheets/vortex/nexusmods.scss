@@ -346,12 +346,6 @@ $typography: (
   border: 1px solid rgba(196, 181, 253, 0.40);
   width: 365px;
   height: 104px;
-  border-radius: 8px;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin: 4px 8px 4px 4px;
-  flex-shrink: 0;
 
   button {
     background-color: transparent;

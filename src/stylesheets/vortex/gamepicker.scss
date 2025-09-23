@@ -31,7 +31,6 @@ $thumbnail-width: 256px;
   position: relative;
   height: auto;
   border: 0;
-  border-radius: 8px;
 
   box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);
   transition: $thumbnail-transition-duration ease-out;
@@ -175,7 +174,7 @@ $thumbnail-width: 256px;
   background-color: $brand-info;
   text-transform: uppercase;
   color: $white;
-  border-radius: 8px;
+  border-radius: 20px;
   font-family: $font-family-base;
 }
 
