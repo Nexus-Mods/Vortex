@@ -1,5 +1,3 @@
-@use 'sass:math';
-
 // the topmost button bar
 // (containing the quick launcher, login control, game-specific action buttons)
 #main-toolbar {
@@ -9,32 +7,19 @@
 
   #btn-quicklaunch-play,
   .main-toolbar-right .btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-width: 1px;
-    border-style: solid;
-    border-color: rgba(255, 255, 255, 0.2);
+    background-color: transparent;
+    border-width: 0px;
     color: $text-color;
     padding: 8px;
-    border-radius: 50%;
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.4);
+      background-color: transparent;
       color: $brand-clickable;
-      transform: scale(1.05);
     }
 
     >svg {
-      width: 18px;
-      height: 18px;
+      width: 24px;
+      height: 24px;
     }
 
     .icon-launch-application {
@@ -61,15 +46,6 @@
   .application-icons-group {
     display: flex;
     justify-content: flex-end;
-    background-color: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    padding: 4px;
-    margin: 4px;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    gap: 2px;
     align-items: center;
   }
 
@@ -166,16 +142,6 @@
   display: block;
 }
 
-// Show dragbar on macOS even without custom titlebar
-.macOS .dragbar {
-  -webkit-app-region: drag;
-  display: block;
-}
-
-// On macOS, position dragbar to avoid traffic lights
-.macOS #main-toolbar {
-  margin-left: 70px; // Space for traffic lights
-}
 
 .window-frame {
   border: 1px solid $gray;
@@ -183,9 +149,9 @@
 
 .application-icons,
 .global-icons {
-  display: flex;
-  gap: 2px;
-  margin: 0;
+  //margin-left: $half-gutter;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 // the naviation buttons on the left
@@ -323,7 +289,7 @@
   opacity: 1;
   &.mainpage-leave-active {
     opacity: 0;
-    transition: opacity floor(($transition-time-half / 2)) ease-out;
+    transition: opacity floor($transition-time-half / 2) ease-out;
   }
 }
 
@@ -436,7 +402,7 @@
     width: fit-content;
     margin-right: 8px; 
 
-    border-radius: 8px;
+    border-radius: 24px;
     border: none;
     padding: 4px 10px;
     font-weight: 800;
