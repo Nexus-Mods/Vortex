@@ -1545,3 +1545,243 @@ body * {
 #titlebar-starter {
   grid-template-rows: repeat(1, auto);
 }
+
+
+// Safari-style liquid glass button groups
+.application-icons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px; // Space between button groups
+  
+  .btn-group,
+  .application-icons,
+  .global-icons {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px; // Minimal gap between buttons in group
+    
+    // Hover effect for the entire group
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+      transition: all 0.2s ease;
+    }
+  }
+  
+  // Individual buttons within groups
+  .btn,
+  .toolbar-icon {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.15s ease !important;
+    
+    // Icon sizing
+    .icon,
+    svg {
+      width: 16px !important;
+      height: 16px !important;
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    // Hover state for individual buttons
+    &:hover {
+      background: rgba(255, 255, 255, 0.15) !important;
+      transform: scale(1.05);
+      
+      .icon,
+      svg {
+        color: rgba(255, 255, 255, 0.95) !important;
+      }
+    }
+    
+    // Active state
+    &:active {
+      background: rgba(255, 255, 255, 0.2) !important;
+      transform: scale(0.98);
+    }
+    
+    // Focus state
+    &:focus {
+      outline: none !important;
+      box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3) !important;
+    }
+  }
+  
+  // Special styling for notification button
+  #notification-button {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 4px;
+    
+    .btn {
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 8px !important;
+    }
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+  }
+}
+
+// Main toolbar adjustments for liquid glass effect
+#main-toolbar {
+  .main-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px; // Space between toolbar sections
+    
+    .toolbar-version {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 6px 12px;
+      
+      .toolbar-version-container {
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        padding: 2px 6px;
+        
+        .icon {
+          width: 14px;
+          height: 14px;
+        }
+        
+        .toolbar-version-text {
+          font-size: 11px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+  }
+}
+
+// Banner text sizing with proper typography
+#main-toolbar .nexus-main-banner div {
+  font-size: $font-size-xs !important;
+  font-family: $theme-font-family-base !important;
+  font-weight: $font-weight-medium;
+  letter-spacing: $letter-spacing-base;
+  
+  &:first-child {
+    font-size: $font-size-small !important;
+    font-weight: $font-weight-semibold;
+    margin-bottom: 0;
+  }
+}
+
+#main-toolbar .nexus-main-banner .right-center {
+  font-size: inherit;
+}
+
+// Table hover effects with macOS styling
+.table-hover > .xtbody > .xtr:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  transition: background-color $transition-fast;
+}
+
+// Form validation styling
+.has-success .control-label {
+  color: $success-color;
+  filter: none;
+}
+
+.has-error .control-label {
+  color: $danger-color;
+  filter: none;
+}
+
+// Titlebar starter grid adjustments
+#titlebar-starter {
+  grid-template-rows: repeat(1, auto);
+}
+
+
+// Button group specific styles for liquid glass effect
+.btn-group {
+  &.application-icons,
+  &.global-icons {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 4px;
+    
+    .btn:first-child {
+      border-top-left-radius: 8px !important;
+      border-bottom-left-radius: 8px !important;
+      border-top-right-radius: 8px !important;
+      border-bottom-right-radius: 8px !important;
+    }
+    
+    .btn:last-child {
+      border-top-left-radius: 8px !important;
+      border-bottom-left-radius: 8px !important;
+      border-top-right-radius: 8px !important;
+      border-bottom-right-radius: 8px !important;
+    }
+    
+    .btn:not(:first-child):not(:last-child) {
+      border-radius: 8px !important;
+    }
+  }
+}
+
+// Fix user icon color to match other icons
+.btn .icon[class*="user"],
+.toolbar-icon .icon[class*="user"],
+.icon.logout-avatar,
+.icon-user {
+  color: rgba(255, 255, 255, 0.8) !important;
+  
+  &:hover {
+    color: rgba(255, 255, 255, 0.95) !important;
+  }
+}
+
+// Ensure consistent border radius for all toolbar elements
+.toolbar-icon,
+.btn,
+.dropdown-toggle {
+  border-radius: 8px !important;
+}
+
+// IconBar specific adjustments
+.iconbar-actiongroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 4px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+// ... existing code ...

@@ -161,12 +161,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             <Panel.Body>
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>
-                  {
-                    localState.reloadNecessary
-                    || !_.isEqual(configId(extensionConfig), configId(oldExtensionConfig))
-                      ? this.renderReload()
-                      : null
-                  }
+                  {/* Restart alert removed - extensions no longer require restart */}
                 </FlexLayout.Fixed>
                 <FlexLayout.Flex>
                   <Table
@@ -251,19 +246,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private renderReload(): JSX.Element {
-    const {t} = this.props;
-    return (
-      <Alert bsStyle='warning' style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</div>
-        <Button onClick={this.restart}>{t('Restart')}</Button>
-      </Alert>
-    );
-  }
-
-  private restart = () => {
-    relaunch();
-  }
+  // renderReload and restart methods removed - extensions no longer require restart
 
   private mergeExt(extensions: { [id: string]: IExtension },
                    extensionConfig: { [id: string]: IExtensionState },

@@ -135,7 +135,23 @@ const showOpenDialog = makeRemoteCall('show-open-dialog',
       // nop
     }
 
-    return electron.dialog.showOpenDialog(window, options);
+    // Enhance options for macOS native file picker integration
+    const enhancedOptions: Electron.OpenDialogOptions = {
+      ...options,
+      // Enable macOS-specific properties for better native integration
+      properties: [
+        ...(options.properties || []),
+        // Add macOS-specific properties if running on macOS
+        ...(process.platform === 'darwin' ? ['treatPackageAsDirectory' as const] : [])
+      ] as Array<'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles' | 'createDirectory' | 'promptToCreate' | 'noResolveAliases' | 'treatPackageAsDirectory' | 'dontAddToRecent'>,
+      // Use native macOS file picker when available
+      ...(process.platform === 'darwin' ? { 
+        // Enable the macOS-native file picker with better integration
+        securityScopedBookmarks: true
+      } : {})
+    };
+
+    return electron.dialog.showOpenDialog(window, enhancedOptions);
   });
 
 const showSaveDialog = makeRemoteCall('show-save-dialog',
@@ -147,7 +163,17 @@ const showSaveDialog = makeRemoteCall('show-save-dialog',
     // nop
   }
 
-  return electron.dialog.showSaveDialog(window, options);
+  // Enhance options for macOS native file picker integration
+  const enhancedOptions: Electron.SaveDialogOptions = {
+    ...options,
+    // Use native macOS file picker when available
+    ...(process.platform === 'darwin' ? { 
+      // Enable the macOS-native file picker with better integration
+      securityScopedBookmarks: true
+    } : {})
+  };
+
+  return electron.dialog.showSaveDialog(window, enhancedOptions);
 });
 
 const appExit = makeRemoteCallSync('exit-application',
@@ -1162,7 +1188,7 @@ class ExtensionManager {
     if (this.mContextProxyHandler === undefined) {
       this.initExtensions();
     }
-    this.mContextProxyHandler.getCalls(funcName).forEach(call => {
+    this.mContextProxyHandler.getCalls(String(funcName)).forEach(call => {
       try {
         if (addExtInfo === true) {
           const ext = this.mExtensions.find(iter => iter.name === call.extension);

@@ -2,6 +2,7 @@ import * as RemoteT from '@electron/remote';
 import { BrowserWindow } from 'electron';
 import * as React from 'react';
 import { IconButton } from '../controls/TooltipControls';
+import { isMacOS } from '../util/platform';
 import lazyRequire from '../util/lazyRequire';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
@@ -31,12 +32,24 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
     window().on('maximize', this.onMaximize);
     window().on('unmaximize', this.onUnMaximize);
     window().on('close', this.onClose);
+    
+    // macOS-specific event handlers
+    if (isMacOS()) {
+      window().on('enter-full-screen', this.onEnterFullScreen);
+      window().on('leave-full-screen', this.onLeaveFullScreen);
+    }
   }
 
   public componentWillUnmount() {
     window().removeListener('maximize', this.onMaximize);
     window().removeListener('unmaximize', this.onUnMaximize);
     window().removeListener('close', this.onClose);
+    
+    // Clean up macOS-specific event handlers
+    if (isMacOS()) {
+      window().removeListener('enter-full-screen', this.onEnterFullScreen);
+      window().removeListener('leave-full-screen', this.onLeaveFullScreen);
+    }
   }
 
   public render(): JSX.Element {
@@ -44,6 +57,12 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
     if (this.mClosed) {
       return null;
     }
+    
+    // On macOS, we don't show the window controls in the UI as they're handled by the system
+    if (isMacOS()) {
+      return null;
+    }
+    
     return (
       <div id='window-controls'>
         <IconButton
@@ -87,6 +106,16 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
 
   private onClose = () => {
     this.mClosed = true;
+  }
+
+  private onEnterFullScreen = () => {
+    this.setState({ isMaximized: true });
+    this.forceUpdate();
+  }
+
+  private onLeaveFullScreen = () => {
+    this.setState({ isMaximized: window().isMaximized() });
+    this.forceUpdate();
   }
 
   private toggleMaximize = () => {

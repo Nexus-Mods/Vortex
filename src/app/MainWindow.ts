@@ -19,6 +19,10 @@ import * as Redux from 'redux';
 import { pathToFileURL } from 'url';
 import TrayIcon from './TrayIcon';
 
+// Add TouchBar import for macOS
+import { TouchBar } from 'electron';
+const { TouchBarButton, TouchBarLabel, TouchBarSpacer } = TouchBar || {};
+
 const MIN_HEIGHT = 700;
 const REQUEST_HEADER_FILTER = {
   urls: ['*://enbdev.com/*'],
@@ -96,6 +100,61 @@ class MainWindow {
     const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     this.mWindow = new BrowserWindow(this.getWindowSettings(store.getState().settings.window));
+
+    // Apply Touch Bar to the window on macOS
+    if (process.platform === 'darwin' && TouchBar) {
+      try {
+        // Create Touch Bar items specific to this window
+        const refreshButton = new TouchBarButton({
+          label: '🔄 Refresh',
+          backgroundColor: '#3c3c3c',
+          click: () => {
+            if (this.mWindow && !this.mWindow.isDestroyed()) {
+              try {
+                this.mWindow.webContents.send('refresh-main-window');
+              } catch (err) {
+                log('warn', 'Failed to send refresh command to main window', err.message);
+              }
+            }
+          }
+        });
+
+        const settingsButton = new TouchBarButton({
+          label: '⚙️ Settings',
+          backgroundColor: '#3c3c3c',
+          click: () => {
+            if (this.mWindow && !this.mWindow.isDestroyed()) {
+              try {
+                this.mWindow.webContents.send('show-settings');
+              } catch (err) {
+                log('warn', 'Failed to send settings command to main window', err.message);
+              }
+            }
+          }
+        });
+
+        const profileLabel = new TouchBarLabel({
+          label: 'Vortex',
+          textColor: '#ffffff'
+        });
+
+        // Create the Touch Bar
+        const touchBar = new TouchBar({
+          items: [
+            profileLabel,
+            new TouchBarSpacer({ size: 'small' }),
+            refreshButton,
+            new TouchBarSpacer({ size: 'small' }),
+            settingsButton
+          ]
+        });
+
+        // Apply the Touch Bar to the window
+        this.mWindow.setTouchBar(touchBar);
+      } catch (err) {
+        log('warn', 'Failed to set up Touch Bar for window', err.message);
+      }
+    }
 
     this.mWindow.loadURL(pathToFileURL(path.join(getVortexPath('base'), 'index.html')).href);
     // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
@@ -304,6 +363,21 @@ class MainWindow {
       iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
     }
     
+    // macOS-specific window configuration
+    const macOptions: Electron.BrowserWindowConstructorOptions = process.platform === 'darwin' ? {
+      // Enable macOS-specific window features
+      titleBarStyle: 'hiddenInset',
+      trafficLightPosition: { x: 16, y: 16 },
+      // Vibrancy effect for macOS
+      vibrancy: 'sidebar',
+      // Visual effect for better integration
+      visualEffectState: 'active',
+      // Transparent title bar
+      transparent: true,
+      // Enable fullscreen button behavior
+      fullscreenable: true,
+    } : {};
+    
     return {
       width,
       height,
@@ -326,6 +400,8 @@ class MainWindow {
         contextIsolation: false,
         backgroundThrottling: false,
       },
+      // Apply macOS-specific options
+      ...macOptions
     };
   }
 
@@ -343,6 +419,31 @@ class MainWindow {
         this.mMoveDebouncer.schedule(undefined, pos[0], pos[1]);
       }
     });
+    
+    // macOS-specific window event handlers
+    if (process.platform === 'darwin') {
+      // Handle macOS zoom event (green traffic light button)
+      this.mWindow.on('enter-full-screen', () => {
+        log('debug', 'Entered full screen mode');
+        // Dispatch action to update store with full screen state if needed
+      });
+      
+      this.mWindow.on('leave-full-screen', () => {
+        log('debug', 'Left full screen mode');
+        // Dispatch action to update store with full screen state if needed
+      });
+      
+      // Handle macOS window state changes for better integration
+      this.mWindow.on('focus', () => {
+        log('debug', 'Window focused');
+        // Could be used for theme updates or other macOS-specific behavior
+      });
+      
+      this.mWindow.on('blur', () => {
+        log('debug', 'Window blurred');
+        // Could be used for theme updates or other macOS-specific behavior
+      });
+    }
   }
 }
 

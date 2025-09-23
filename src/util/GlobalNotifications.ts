@@ -6,14 +6,17 @@ import { log } from '../util/log';
 import getVortexPath from './getVortexPath';
 
 import * as path from 'path';
+import { Notification } from 'electron';
 
 class GlobalNotifications {
   private mCurrentId: string;
-  private mCurrentNotification: any;
+  private mCurrentNotification: Electron.Notification;
   private mKnownNotifications: INotification[];
   private mIsEnabled: () => boolean;
+  private mApi: IExtensionApi;
 
   constructor(api: IExtensionApi) {
+    this.mApi = api;
     api.onStateChange([ 'session', 'notifications', 'global_notifications' ],
                       (oldState, newState) => {
                         this.mKnownNotifications = newState;
@@ -33,7 +36,7 @@ class GlobalNotifications {
       // close notification if it was dismissed
                         if ((this.mCurrentId === undefined) && (this.mCurrentNotification !== undefined)) {
                           log('debug', 'close notification',
-                              { id: this.mCurrentNotification.tag, name: this.mCurrentNotification.body });
+                              { id: this.mCurrentId, name: this.mCurrentNotification.body });
                           this.mCurrentNotification.close();
                           this.mCurrentNotification = undefined;
                         } else if ((this.mCurrentNotification !== undefined) &&
@@ -48,10 +51,7 @@ class GlobalNotifications {
             && (this.mCurrentId !== currentNotification.id)
             && (this.mIsEnabled())) {
                             log('debug', 'new notification', { id: currentNotification.id });
-          // using the js Notification api shows an application id and I'm not sure if I can/how to
-          // get rid of it. The electron api works fine for the moment
-          // this.showNotification(currentNotification);
-                            api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
+                            this.showNotification(currentNotification);
                             this.mCurrentId = currentNotification.id;
                           }
                         }
@@ -64,15 +64,36 @@ class GlobalNotifications {
   private showNotification(notification: INotification): void {
     this.mCurrentId = notification.id;
     try {
-      this.mCurrentNotification = new Notification(notification.title, {
-        tag: notification.id,
-        icon: notification.icon || path.resolve(getVortexPath('assets'), 'images', 'vortex.ico'),
+      // Create Electron Notification with macOS-specific styling
+      this.mCurrentNotification = new Notification({
+        title: notification.title || 'Vortex',
+        subtitle: notification.type.charAt(0).toUpperCase() + notification.type.slice(1),
         body: notification.message,
-        requireInteraction: true,
-        silent: true,
+        icon: notification.icon || path.resolve(getVortexPath('assets'), 'images', 'vortex.png'),
+        silent: notification.type !== 'error' && notification.type !== 'warning',
+        timeoutType: 'never',
+        actions: notification.actions ? notification.actions.map(action => ({
+          type: 'button',
+          text: action.title
+        })) : []
       });
+
+      // Handle notification events
+      this.mCurrentNotification.on('click', () => {
+        // Bring Vortex window to front when notification is clicked
+        this.mApi.events.emit('activate-window');
+      });
+
+      this.mCurrentNotification.on('close', () => {
+        this.mCurrentNotification = undefined;
+      });
+
+      // Show the notification
+      this.mCurrentNotification.show();
     } catch (err) {
       log('warn', 'failed to show desktop notification', { err: err.message });
+      // Fallback to balloon notification
+      this.mApi.events.emit('show-balloon', notification.title, notification.message);
     }
   }
 }

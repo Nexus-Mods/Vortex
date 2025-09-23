@@ -520,7 +520,13 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
             })
             .then((results: boolean[]) => {
               if (results.includes(true)) {
-                relaunch(['--game', gameId]);
+                // Only restart for non-game extensions
+                if (extension.type !== 'game') {
+                  relaunch(['--game', gameId]);
+                } else {
+                  // For game extensions, just update the game list
+                  api.events.emit('refresh-game-list');
+                }
               }
             })
             .finally(() => {

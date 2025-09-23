@@ -29,7 +29,8 @@ import { isWindows } from '../../util/platform';
 
 import { batchDispatch } from '../../util/util';
 
-import { IExtensionDownloadInfo } from '../extension_manager/types';
+import { IExtensionDownloadInfo, ExtensionType } from '../extension_manager/types';
+import { setInstalledExtensions } from '../extension_manager/actions';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { nexusGames } from '../nexus_integration/util';
@@ -37,6 +38,7 @@ import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
 import { addDiscoveredGame, clearDiscoveredGame, setGamePath, setGameSearchPaths } from './actions/settings';
+import { setKnownGames } from './actions/session';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -610,8 +612,44 @@ function init(context: IExtensionContext): boolean {
         throw new Error('Invalid game extension: ' + isIGame.errors.map(err => err.message).join(', '));
       }
       game.extensionPath = extensionPath;
+      const infoPath = path.join(extensionPath, 'info.json');
       const gameExtInfo = JSON.parse(
-        fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
+        fs.readFileSync(infoPath, { encoding: 'utf8' }));
+      
+      // Automatically set extension type to 'game' if not already set
+      if (gameExtInfo.type !== 'game') {
+        gameExtInfo.type = 'game';
+        try {
+          fs.writeFileSync(infoPath, JSON.stringify(gameExtInfo, null, 2), { encoding: 'utf8' });
+          log('info', 'automatically updated extension type to game', { 
+            extensionPath, 
+            gameName: game.name 
+          });
+          
+          // Update the in-memory extension state to reflect the type change
+          const state = context.api.getState();
+          const installedExtensions = state.session.extensions.installed;
+          const extensionId = path.basename(extensionPath);
+          
+          if (installedExtensions[extensionId]) {
+            const updatedExtensions = {
+               ...installedExtensions,
+               [extensionId]: {
+                 ...installedExtensions[extensionId],
+                 type: 'game' as ExtensionType
+               }
+             };
+            context.api.store.dispatch(setInstalledExtensions(updatedExtensions));
+            log('info', 'updated extension type in memory', { extensionId, gameName: game.name });
+          }
+        } catch (writeErr) {
+          log('warn', 'failed to update extension type to game', { 
+            extensionPath, 
+            error: writeErr.message 
+          });
+        }
+      }
+      
       game.contributed = (gameExtInfo.author === COMPANY_ID || gameExtInfo.author === NEXUSMODS_EXT_ID)
         ? undefined
         : gameExtInfo.author;
@@ -817,6 +855,12 @@ function init(context: IExtensionContext): boolean {
       browseGameLocation(context.api, gameId)
         .then(() => callback(null))
         .catch(err => callback(err));
+    });
+
+    events.on('refresh-game-list', () => {
+      // Refresh the known games list when game extensions are installed
+      $.gameModeManager.refreshKnownGames();
+      log('info', 'Game list refreshed after extension installation');
     });
 
     const changeGameMode = (oldGameId: string, newGameId: string,

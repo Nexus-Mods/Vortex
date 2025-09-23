@@ -1,0 +1,18 @@
+{
+  "name": "gamestore-ubisoft",
+  "version": "0.1.0",
+  "description": "Discovery and game launch support for the Ubisoft Connect game store",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/node": "^12.12.14",
+    "typescript": "^4.9.5",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

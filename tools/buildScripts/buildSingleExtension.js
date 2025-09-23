@@ -31,7 +31,7 @@ if (!fs.existsSync(extensionPath)) {
 console.log(`🔨 Found extension ${extensionPath}, building using "${buildScript}" script`);
 console.log(`🔨 Building...`);
 
-const exe = 'yarn.cmd';
+const exe = process.platform === 'win32' ? 'yarn.cmd' : 'yarn';
 const args = [ 'run', buildScript, '--mutex', 'file' ];
 // Using `shell: true and stdio: 'inherit'` to keep the console output from the build script without having to hook on proc.stdout.on
 const options = { cwd: `extensions/${extensionName}`, shell: true, stdio: 'inherit' };
@@ -42,9 +42,16 @@ proc.on('close', (code) => {
   console.log(`child process exited with code ${code}`);
 
   console.log(`✅ Build done`);
-  console.log(`🔨 Now copying "dist" to "out/bundledPlugins/${extensionName}"`);
-
-  fs.copy(path.join(extensionPath, 'dist'), path.resolve(rootPath, 'out', 'bundledPlugins', extensionName), { overwrite: true }).then(()=> {
-    console.log(`✅ Copy successful`)
-  })
+  
+  // Check if the extension already has files in bundledPlugins (meaning it handles its own copying)
+  const bundledPluginsPath = path.resolve(rootPath, 'out', 'bundledPlugins', extensionName);
+  
+  if (fs.existsSync(bundledPluginsPath) && fs.readdirSync(bundledPluginsPath).length > 0) {
+    console.log(`✅ Extension handled its own file copying to bundledPlugins`);
+  } else {
+    console.log(`🔨 Now copying "dist" to "out/bundledPlugins/${extensionName}"`);
+    fs.copy(path.join(extensionPath, 'dist'), bundledPluginsPath, { overwrite: true }).then(()=> {
+      console.log(`✅ Copy successful`)
+    })
+  }
 });

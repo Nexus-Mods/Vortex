@@ -93,7 +93,6 @@
       "type": "build-copy",
       "name": "gamestore-gog",
       "path": "extensions/gamestore-gog",
-      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "../../../src/util/platform.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-gog"
@@ -113,6 +112,14 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-uplay"
+    },
+    {
+      "type": "build-copy",
+      "name": "gamestore-ubisoft",
+      "path": "extensions/gamestore-ubisoft",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-ubisoft"
     },
     {
       "type": "build-copy",

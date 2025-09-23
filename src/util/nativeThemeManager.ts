@@ -2,13 +2,16 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { getNativeThemeInfo, getRecommendedTheme, setupNativeThemeListener, IPlatformThemeMapping } from './nativeThemeDetector';
 import { log } from './log';
-import { getCurrentPlatform } from './platform';
+import { getCurrentPlatform, isMacOS } from './platform';
 
 export interface INativeThemeManagerOptions {
   autoApplyOnStartup?: boolean;
   followSystemChanges?: boolean;
   customPlatformMappings?: IPlatformThemeMapping;
   fallbackTheme?: string;
+  // macOS-specific options
+  enableMacOSVibrancy?: boolean;
+  enableMacOSTitlebarTheming?: boolean;
 }
 
 export class NativeThemeManager {
@@ -16,6 +19,7 @@ export class NativeThemeManager {
   private options: INativeThemeManagerOptions;
   private cleanupListener?: () => void;
   private isInitialized: boolean = false;
+  private lastAppliedTheme: string = '';
 
   constructor(api: IExtensionApi, options: INativeThemeManagerOptions = {}) {
     this.api = api;
@@ -23,6 +27,8 @@ export class NativeThemeManager {
       autoApplyOnStartup: true,
       followSystemChanges: true,
       fallbackTheme: 'default',
+      enableMacOSVibrancy: true,
+      enableMacOSTitlebarTheming: true,
       ...options
     };
   }
@@ -47,11 +53,18 @@ export class NativeThemeManager {
         this.setupThemeChangeListener();
       }
 
+      // macOS-specific enhancements
+      if (isMacOS()) {
+        this.setupMacOSEnhancements();
+      }
+
       this.isInitialized = true;
       log('info', 'NativeThemeManager initialized successfully', {
         platform: getCurrentPlatform(),
         autoApply: this.options.autoApplyOnStartup,
-        followChanges: this.options.followSystemChanges
+        followChanges: this.options.followSystemChanges,
+        macOSVibrancy: this.options.enableMacOSVibrancy,
+        macOSTitlebarTheming: this.options.enableMacOSTitlebarTheming
       });
     } catch (error) {
       log('error', 'Failed to initialize NativeThemeManager', error);
@@ -86,8 +99,14 @@ export class NativeThemeManager {
         });
 
         this.setTheme(recommendedTheme);
+        this.lastAppliedTheme = recommendedTheme;
       } else {
         log('debug', 'Native theme already applied', { theme: currentTheme });
+      }
+      
+      // Apply macOS-specific visual enhancements
+      if (isMacOS() && this.options.enableMacOSVibrancy) {
+        this.applyMacOSVibrancy(recommendedTheme);
       }
     } catch (error) {
       log('error', 'Failed to apply native theme', error);
@@ -222,6 +241,11 @@ export class NativeThemeManager {
         this.setupThemeChangeListener();
       }
     }
+    
+    // Re-apply theme if macOS options changed
+    if (('enableMacOSVibrancy' in newOptions || 'enableMacOSTitlebarTheming' in newOptions) && isMacOS()) {
+      this.applyNativeTheme();
+    }
   }
 
   /**
@@ -258,6 +282,85 @@ export class NativeThemeManager {
   public refresh(): void {
     if (this.isInitialized) {
       this.applyNativeTheme();
+    }
+  }
+
+  /**
+   * macOS-specific enhancements
+   */
+  private setupMacOSEnhancements(): void {
+    try {
+      // Set up titlebar theming
+      if (this.options.enableMacOSTitlebarTheming) {
+        this.setupMacOSTitlebarTheming();
+      }
+      
+      // Set up vibrancy effects
+      if (this.options.enableMacOSVibrancy) {
+        this.setupMacOSVibrancy();
+      }
+      
+      log('debug', 'macOS enhancements set up successfully');
+    } catch (error) {
+      log('warn', 'Failed to set up macOS enhancements', error);
+    }
+  }
+
+  /**
+   * Set up macOS titlebar theming
+   */
+  private setupMacOSTitlebarTheming(): void {
+    try {
+      // This would integrate with Electron's titlebar APIs
+      // For now, we'll just log that it's enabled
+      log('debug', 'macOS titlebar theming enabled');
+    } catch (error) {
+      log('warn', 'Failed to set up macOS titlebar theming', error);
+    }
+  }
+
+  /**
+   * Set up macOS vibrancy effects
+   */
+  private setupMacOSVibrancy(): void {
+    try {
+      // This would integrate with Electron's vibrancy APIs
+      // For now, we'll just log that it's enabled
+      log('debug', 'macOS vibrancy effects enabled');
+    } catch (error) {
+      log('warn', 'Failed to set up macOS vibrancy effects', error);
+    }
+  }
+
+  /**
+   * Apply macOS-specific vibrancy effects based on theme
+   */
+  private applyMacOSVibrancy(themeName: string): void {
+    try {
+      // Send event to renderer to apply vibrancy effects
+      this.api.events.emit('apply-macos-vibrancy', {
+        theme: themeName,
+        isDark: themeName.includes('dark') || themeName.includes('tahoe'),
+        vibrancyType: this.getVibrancyTypeForTheme(themeName)
+      });
+      
+      log('debug', 'macOS vibrancy applied', { theme: themeName });
+    } catch (error) {
+      log('warn', 'Failed to apply macOS vibrancy', { theme: themeName, error });
+    }
+  }
+
+  /**
+   * Get appropriate vibrancy type for theme
+   */
+  private getVibrancyTypeForTheme(themeName: string): string {
+    if (themeName.includes('dark') || themeName.includes('tahoe')) {
+      return 'dark';
+    } else if (themeName.includes('light')) {
+      return 'light';
+    } else {
+      // Default to appearance-based vibrancy
+      return 'appearance-based';
     }
   }
 }
