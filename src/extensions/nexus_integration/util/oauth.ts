@@ -316,7 +316,7 @@ class OAuth {
       });
       
       req.on('error', err => {
-        console.error('token req error', err);
+        console.error('❌ Token request error', err);
         // Handle network errors that might be related to invalid_grant
         if (err.message.includes('certificate') || err.message.includes('SSL')) {
           const networkErr = new Error('Secure connection failed. This may be due to network issues or an expired OAuth token.');

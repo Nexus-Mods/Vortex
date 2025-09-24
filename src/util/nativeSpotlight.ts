@@ -45,9 +45,9 @@ class NativeSpotlight {
     try {
       // Ensure metadata directory exists
       await fs.ensureDir(this.metadataDir);
-      console.log('Native Spotlight integration initialized');
+      console.log('🔍 Native Spotlight integration initialized');
     } catch (err) {
-      console.warn('Failed to initialize native Spotlight integration:', err);
+      console.warn('⚠️ Failed to initialize native Spotlight integration:', err);
     }
   }
 
@@ -68,9 +68,9 @@ class NativeSpotlight {
       // Trigger Spotlight reindex of our metadata directory
       await this.triggerSpotlightReindex();
       
-      console.log(`Added ${items.length} items to native Spotlight index`);
+      console.log(`➕ Added ${items.length} items to native Spotlight index`);
     } catch (err) {
-      console.warn('Failed to add items to native Spotlight index:', err);
+      console.warn('⚠️ Failed to add items to native Spotlight index:', err);
     }
   }
 
@@ -91,9 +91,9 @@ class NativeSpotlight {
       // Trigger Spotlight reindex
       await this.triggerSpotlightReindex();
       
-      console.log(`Removed ${ids.length} items from native Spotlight index`);
+      console.log(`➖ Removed ${ids.length} items from native Spotlight index`);
     } catch (err) {
-      console.warn('Failed to remove items from native Spotlight index:', err);
+      console.warn('⚠️ Failed to remove items from native Spotlight index:', err);
     }
   }
 
@@ -113,9 +113,9 @@ class NativeSpotlight {
       // Trigger Spotlight reindex
       await this.triggerSpotlightReindex();
       
-      console.log('Removed all items from native Spotlight index');
+      console.log('🗑️ Removed all items from native Spotlight index');
     } catch (err) {
-      console.warn('Failed to remove all items from native Spotlight index:', err);
+      console.warn('⚠️ Failed to remove all items from native Spotlight index:', err);
     }
   }
 
@@ -143,7 +143,7 @@ class NativeSpotlight {
       await this.setExtendedAttributes(filepath, item);
     } catch (err) {
       // Extended attributes are optional, continue if they fail
-      console.warn('Failed to set extended attributes:', err);
+      console.warn('⚠️ Failed to set extended attributes:', err);
     }
   }
 
@@ -183,7 +183,7 @@ class NativeSpotlight {
       
     } catch (err) {
       // Extended attributes are optional
-      console.warn('Failed to set extended attributes for', filepath, ':', err);
+      console.warn('⚠️ Failed to set extended attributes for', filepath, ':', err);
     }
   }
 
@@ -196,7 +196,7 @@ class NativeSpotlight {
       await execFile('mdimport', ['-r', this.metadataDir]);
     } catch (err) {
       // Reindexing is optional, continue if it fails
-      console.warn('Failed to trigger Spotlight reindex:', err);
+      console.warn('⚠️ Failed to trigger Spotlight reindex:', err);
     }
   }
 

@@ -40,7 +40,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
       });
     };
         // tslint:disable-next-line:no-console
-    console.error('Elevated code failed', error.stack);
+    console.error('❌ Elevated code failed', error.stack);
     if (client !== undefined) {
       testIfScriptInvalid();
     }
@@ -73,7 +73,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
       if (err.code !== 'EPIPE') {
             // will anyone ever see this?
             // tslint:disable-next-line:no-console
-        console.error('Connection failed', err.message);
+        console.error('❌ Connection failed', err.message);
       }
     });
 }
@@ -131,7 +131,7 @@ function runElevated(ipcPath, func, args) {
           }
           catch (cleanupErr) {
                         // tslint:disable-next-line:no-console
-            console.error('failed to clean up temporary script', cleanupErr.message);
+            console.error('❌ Failed to clean up temporary script', cleanupErr.message);
           }
           return reject(writeErr);
         }

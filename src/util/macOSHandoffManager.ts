@@ -65,7 +65,7 @@ export class MacOSHandoffManager {
       this.setupHandoffHandlers();
       this.mInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize Handoff manager:', error);
+      console.error('❌ Failed to initialize Handoff manager:', error);
     }
   }
 
@@ -89,9 +89,9 @@ export class MacOSHandoffManager {
       // Create NSUserActivity equivalent
       await this.createUserActivity(activity);
 
-      console.log(`Started Handoff activity: ${activity.type}`);
+      console.log(`🔄 Started Handoff activity: ${activity.type}`);
     } catch (error) {
-      console.error('Failed to start Handoff activity:', error);
+      console.error('❌ Failed to start Handoff activity:', error);
     }
   }
 
@@ -110,9 +110,9 @@ export class MacOSHandoffManager {
       // Update the system activity
       await this.updateUserActivity(this.mState.currentActivity);
 
-      console.log('Updated Handoff activity');
+      console.log('🔄 Updated Handoff activity');
     } catch (error) {
-      console.error('Failed to update Handoff activity:', error);
+      console.error('❌ Failed to update Handoff activity:', error);
     }
   }
 
@@ -128,9 +128,9 @@ export class MacOSHandoffManager {
       await this.invalidateUserActivity();
       this.mState.currentActivity = undefined;
 
-      console.log('Stopped Handoff activity');
+      console.log('🛑 Stopped Handoff activity');
     } catch (error) {
-      console.error('Failed to stop Handoff activity:', error);
+      console.error('❌ Failed to stop Handoff activity:', error);
     }
   }
 
@@ -140,15 +140,15 @@ export class MacOSHandoffManager {
   public async handleIncomingActivity(type: string, userInfo: Record<string, any>): Promise<void> {
     const handler = this.mActivityHandlers.get(type);
     if (!handler) {
-      console.error(`No handler for activity type: ${type}`);
+      console.error(`❌ No handler for activity type: ${type}`);
       return;
     }
 
     try {
       await handler(userInfo);
-      console.log(`Handled incoming Handoff activity: ${type}`);
+      console.log(`🔄 Handled incoming Handoff activity: ${type}`);
     } catch (error) {
-      console.error(`Failed to handle Handoff activity ${type}:`, error);
+      console.error(`❌ Failed to handle Handoff activity ${type}:`, error);
     }
   }
 
@@ -273,7 +273,7 @@ export class MacOSHandoffManager {
       app.focus();
       
       // Navigate to the specified game and category
-      console.log(`Continuing browsing: ${gameId}/${category}`);
+      console.log(`🔄 Continuing browsing: ${gameId}/${category}`);
       
       // TODO: Integrate with actual navigation system
     });
@@ -286,7 +286,7 @@ export class MacOSHandoffManager {
       app.focus();
       
       // Continue or start mod installation
-      console.log(`Continuing installation: ${modName} (${modId}) for ${gameId}`);
+      console.log(`🔄 Continuing installation: ${modName} (${modId}) for ${gameId}`);
       
       // TODO: Integrate with actual installation system
     });
@@ -299,7 +299,7 @@ export class MacOSHandoffManager {
       app.focus();
       
       // Open sharing interface with the mod list
-      console.log(`Continuing sharing: ${modList.length} mods for ${gameId}`);
+      console.log(`🔄 Continuing sharing: ${modList.length} mods for ${gameId}`);
       
       // TODO: Integrate with actual sharing system
     });
@@ -351,7 +351,7 @@ export class MacOSHandoffManager {
 
     // Store activity data for potential continuation
     const activityId = crypto.randomUUID();
-    console.log(`Created user activity ${activityId}:`, activityData);
+    console.log(`🔄 Created user activity ${activityId}:`, activityData);
   }
 
   /**
@@ -359,7 +359,7 @@ export class MacOSHandoffManager {
    */
   private async updateUserActivity(activity: IHandoffActivity): Promise<void> {
     // Update the existing activity with new data
-    console.log('Updated user activity:', activity.type);
+    console.log('🔄 Updated user activity:', activity.type);
   }
 
   /**
@@ -367,6 +367,6 @@ export class MacOSHandoffManager {
    */
   private async invalidateUserActivity(): Promise<void> {
     // Invalidate the current activity
-    console.log('Invalidated user activity');
+    console.log('🔄 Invalidated user activity');
   }
 }

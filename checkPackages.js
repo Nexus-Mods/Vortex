@@ -26,52 +26,54 @@ function checkVersions() {
       ? iter.split('@')[0] === id[0]
       : iter === key);
     if (devKey === undefined) {
-      console.log('No entry in dev found', key);
+      console.log('❓ No entry in dev found:', key);
       return;
     }
 
     if (develLock[devKey].version !== releaseLock[key].version) {
-      console.error('Version mismatch!', key, releaseLock[key].version, 'vs', develLock[devKey].version);
+      console.error('❌ Version mismatch!', key, releaseLock[key].version, 'vs', develLock[devKey].version);
       valid = false;
     } else if (develLock[devKey].resolved !== releaseLock[key].resolved) {
-      console.error('Same version but different commit id', key);
+      console.error('⚠️ Same version but different commit id:', key);
     }
   });
   return valid;
 }
 
-function checkDevPackages() {
+function checkDevelPackages(develPackage, releasePackage) {
   let valid = true;
   Object.keys(develPackage).forEach(pkg => {
     if (releasePackage[pkg] === undefined) {
-      console.error('Package not referenced in release', pkg);
+      console.error('❌ Package not referenced in release:', pkg);
       valid = false;
-    } else if (!releasePackage[pkg].startsWith('file') && (releasePackage[pkg] !== develPackage[pkg])) {
-      console.error('Referenced version mismatch', pkg, releasePackage[pkg], 'vs', develPackage[pkg]);
+    } else if (releasePackage[pkg] !== develPackage[pkg]) {
+      console.error('❌ Referenced version mismatch:', pkg, releasePackage[pkg], 'vs', develPackage[pkg]);
       valid = false;
     }
   });
   return valid;
 }
 
-function checkRelPackages() {
+function checkReleasePackages(develPackage, releasePackage) {
   let valid = true;
   Object.keys(releasePackage).forEach(pkg => {
     if (develPackage[pkg] === undefined) {
-      console.error('Package not referenced in devel', pkg);
+      console.error('❌ Package not referenced in devel:', pkg);
       valid = false;
     }
   });
   return valid;
 }
 
-const success = checkRelPackages() && checkDevPackages() && checkVersions();
+const valid = checkVersions()
+  && checkDevelPackages(develPackage, releasePackage)
+  && checkReleasePackages(develPackage, releasePackage);
 
-if (success) {
-  console.log('packages are valid');
+if (valid) {
+  console.log('✅ Packages are valid');
+  process.exit(0);
 } else {
-  console.error('packages are invalid');
+  console.error('❌ Packages are invalid');
+  process.exit(1);
 }
-
-process.exit(success ? 0 : 1);
 

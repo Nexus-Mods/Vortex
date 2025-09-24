@@ -219,7 +219,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           };
 
           remote.contentTracing.startRecording(options).then(() => {
-            console.log('Tracing started');
+            console.log('📊 Tracing started');
             extensions.getApi().sendNotification({
               id: 'profiling',
               message: 'Profiling',

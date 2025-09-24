@@ -47,21 +47,21 @@ export class MacOSNotificationManager {
    */
   public initialize(): void {
     if (!isMacOS()) {
-      log('debug', 'MacOSNotificationManager: Not on macOS, skipping initialization');
+      log('debug', '🍎 MacOSNotificationManager: Not on macOS, skipping initialization');
       return;
     }
 
     if (this.isInitialized) {
-      log('warn', 'MacOSNotificationManager already initialized');
+      log('warn', '⚠️ MacOSNotificationManager already initialized');
       return;
     }
 
     try {
       this.setupNotificationHandlers();
       this.isInitialized = true;
-      log('info', 'MacOSNotificationManager initialized successfully');
+      log('info', '✅ MacOSNotificationManager initialized successfully');
     } catch (error) {
-      log('error', 'Failed to initialize MacOSNotificationManager', error);
+      log('error', '❌ Failed to initialize MacOSNotificationManager', error);
     }
   }
 
@@ -138,7 +138,7 @@ export class MacOSNotificationManager {
         // Show the notification
         notification.show();
 
-        log('debug', 'Enhanced notification shown', { 
+        log('debug', '🔔 Enhanced notification shown', { 
           title: options.title, 
           hasActions: !!options.actions?.length,
           hasReply: !!options.hasReply 
@@ -146,7 +146,7 @@ export class MacOSNotificationManager {
 
         resolve(notification);
       } catch (error) {
-        log('error', 'Failed to show enhanced notification', error);
+        log('error', '❌ Failed to show enhanced notification', error);
         reject(error);
       }
     });
@@ -268,7 +268,7 @@ export class MacOSNotificationManager {
   ): void {
     // Handle click
     notification.on('click', () => {
-      log('debug', 'Notification clicked', { title: options.title });
+      log('debug', '👆 Notification clicked', { title: options.title });
       
       // Bring app to front
       if (app.dock) {
@@ -298,7 +298,7 @@ export class MacOSNotificationManager {
           });
         }
       }
-      log('debug', 'Notification action triggered', { actionId: action?.id });
+      log('debug', '🎯 Notification action triggered', { actionId: action?.id });
     });
 
     // Handle reply
@@ -313,7 +313,7 @@ export class MacOSNotificationManager {
           });
         }
       }
-      log('debug', 'Notification reply received', { replyLength: reply.length });
+      log('debug', '💬 Notification reply received', { replyLength: reply.length });
     });
 
     // Handle close
@@ -324,7 +324,7 @@ export class MacOSNotificationManager {
           this.notificationHistory.delete(tag);
         }
       });
-      log('debug', 'Notification closed', { title: options.title });
+      log('debug', '❌ Notification closed', { title: options.title });
     });
   }
 
@@ -334,9 +334,9 @@ export class MacOSNotificationManager {
   private setupNotificationHandlers(): void {
     // Handle notification permission
     if (Notification.isSupported()) {
-      log('info', 'Notifications are supported');
+      log('info', '✅ Notifications are supported');
     } else {
-      log('warn', 'Notifications are not supported');
+      log('warn', '⚠️ Notifications are not supported');
     }
   }
 
@@ -349,7 +349,7 @@ export class MacOSNotificationManager {
       const iconPath = path.join(__dirname, '..', '..', 'assets', 'images', 'vortex.png');
       return iconPath;
     } catch (error) {
-      log('debug', 'Could not find app icon, using default');
+      log('debug', '🖼️ Could not find app icon, using default');
       return '';
     }
   }

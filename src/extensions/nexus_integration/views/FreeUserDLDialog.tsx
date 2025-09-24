@@ -104,7 +104,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     if (!show) return;
 
     const handleFocus = () => {
-      console.log('Window gained focus. Modal is open');
+      console.log('🔍 Window gained focus. Modal is open');
       checkStatus();
     };
 

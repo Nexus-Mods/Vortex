@@ -17,7 +17,7 @@ try {
   XXHash64 = xxhashAddon.XXHash64;
   xxhashAvailable = true;
 } catch (err) {
-  console.warn('xxhash-addon not available, using fallback:', err);
+  console.warn('⚠️ xxhash-addon not available, using fallback:', err);
   // Provide a fallback implementation
   XXHash64 = class {
     hash() {
@@ -46,7 +46,7 @@ function makeXXHash64() {
       })
       .catch(err => {
         // If xxhash fails, fall back to a simple hash or return a dummy value
-        console.warn('XXHash64 failed, using fallback:', err);
+        console.warn('⚠️ XXHash64 failed, using fallback:', err);
         return 'fallback_hash';
       });
   };
@@ -71,7 +71,7 @@ function makeListInstaller(extractList: IFileListItem[],
       lookupFunc = makeXXHash64();
       idxId = 'xxh64';
     } else {
-      console.warn('xxhash not available, falling back to MD5 checksums');
+      console.warn('⚠️ xxhash not available, falling back to MD5 checksums');
     }
   }
 

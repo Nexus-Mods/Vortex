@@ -53,7 +53,7 @@ function removeDir(dirPath) {
 // Main async function
 async function main() {
   try {
-    console.log('Running clean command...');
+    console.log('📦 Executing yarn clean...');
     
     // Execute the existing clean steps
     await execCommand('yarn add rm-local-modules');
@@ -63,7 +63,7 @@ async function main() {
     
     // Check if we need to clean dev data
     if (cleanDevData) {
-      console.log('Cleaning development data (--dev-data flag provided)');
+      console.log('🗑️  Cleaning development data (--dev-data flag provided)');
       
       // Check if we're on macOS
       if (os.platform() === 'darwin') {
@@ -71,20 +71,20 @@ async function main() {
         
         // Check if directory exists
         if (fs.existsSync(vortexDevDir)) {
-          console.log(`Removing ${vortexDevDir}...`);
+          console.log(`🗂️  Removing ${vortexDevDir}...`);
           await removeDir(vortexDevDir);
-          console.log('Successfully removed vortex_devel directory');
+          console.log('✅ Successfully removed vortex_devel directory');
         } else {
-          console.log('vortex_devel directory does not exist, nothing to remove');
+          console.log('ℹ️  vortex_devel directory does not exist, nothing to remove');
         }
       } else {
-        console.log('The --dev-data flag is only supported on macOS systems');
+        console.log('⚠️  The --dev-data flag is only supported on macOS systems');
       }
     } else {
-      console.log('Skipping development data cleanup (use --dev-data flag to also remove vortex_devel directory)');
+      console.log('ℹ️  Skipping development data cleanup (use --dev-data flag to also remove vortex_devel directory)');
     }
     
-    console.log('Clean process completed successfully');
+    console.log('🎉 Clean process completed successfully');
   } catch (error) {
     console.error('Error during clean process:', error.message);
     if (error.stack) {

@@ -19,7 +19,7 @@ const loggingHandler = {
       // tslint:disable-next-line:only-arrow-functions
       return function(...args) {
         // tslint:disable-next-line:no-console
-        console.log(prop, args);
+        log('debug', '🔧 ' + prop, args);
         return obj[prop](...args);
       };
     } else {

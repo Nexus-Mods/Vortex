@@ -292,7 +292,7 @@ function processProject(project, buildType, feedback, noparallel) {
 
 function main(args) {
   if (args.length === 0) {
-    console.error('No command line parameters specified');
+    console.error('❌ No command line parameters specified');
     return Promise.reject(1);
   }
 
@@ -361,7 +361,7 @@ function main(args) {
             console.log(`⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
             return Promise.resolve();
           } else {
-            console.error('failed ', project.name, err);
+            console.error('❌ failed ', project.name, err);
             failed = true;
             return Promise.resolve();
           }
@@ -377,10 +377,10 @@ main(args)
   .then(firstRunResult => {
     // only run a second time if there were failures in the first run
     if (firstRunResult === 1) {
-      console.log('\nRetrying failed builds...');
+      console.log('\n🔄 Retrying failed builds...');
       return main(args);
     } else {
-      console.log('\nAll builds completed successfully on first run.');
+      console.log('\n✅ All builds completed successfully on first run.');
       return firstRunResult;
     }
   })

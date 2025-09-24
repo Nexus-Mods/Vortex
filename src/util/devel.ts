@@ -31,7 +31,7 @@ export function installDevelExtensions(): Promise<void> {
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
       } catch (e) {
         // tslint:disable-next-line:no-console
-        console.error(e);
+        console.error('❌ Development error:', e);
       }
     }
     resolved();

@@ -54,7 +54,7 @@ export class MacOSQuickLookManager {
       this.registerQuickLookHandlers();
       this.mInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize Quick Look manager:', error);
+      console.error('❌ Failed to initialize Quick Look manager:', error);
     }
   }
 
@@ -77,7 +77,7 @@ export class MacOSQuickLookManager {
       // Use macOS Quick Look via shell
       await shell.openPath(filePath);
     } catch (error) {
-      console.error('Failed to show Quick Look preview:', error);
+      console.error('❌ Failed to show Quick Look preview:', error);
       // Fallback to opening with default application
       await shell.openPath(options.filePath);
     }
@@ -117,7 +117,7 @@ export class MacOSQuickLookManager {
         });
       });
     } catch (error) {
-      console.error('Failed to generate thumbnail:', error);
+      console.error('❌ Failed to generate thumbnail:', error);
       return false;
     }
   }
@@ -170,7 +170,7 @@ export class MacOSQuickLookManager {
       
       return previewPath;
     } catch (error) {
-      console.error('Failed to create mod preview:', error);
+      console.error('❌ Failed to create mod preview:', error);
       return '';
     }
   }
@@ -238,7 +238,7 @@ export class MacOSQuickLookManager {
   private registerQuickLookHandlers(): void {
     // Register file associations for better Quick Look integration
     // This would typically be done in the app's Info.plist
-    console.log('Quick Look handlers registered for supported file types');
+    console.log('🔍 Quick Look handlers registered for supported file types');
   }
 
   /**

@@ -25,7 +25,7 @@
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
-    "package-old": "electron-builder --config electron-builder-config-old.json --publish never",
+    "package-old": "electron-builder --config electron-builder-old.json --publish never",
     "preinstall": "",
     "postinstall": "node scripts/configure-native-modules.js && node scripts/patch-native-modules.js && node scripts/fix-7z-bin-macos.js && node postinstall.js && patch-package && bash scripts/setup-submodule-forks.sh || true",
     "postinstall:make-bsdiff-patch": "node scripts/patch-bsdiff.js && npx patch-package bsdiff-node",
@@ -151,7 +151,7 @@
     "babel-polyfill": "^6.26.0",
     "concurrently": "^5.0.0",
     "copyfiles": "^2.3.0",
-    "cross-env": "^6.0.3",
+    "cross-env": "^10.0.0",
     "css-loader": "^5.2.7",
     "electron": "^28.0.0",
     "electron-builder": "^23.6.0",
@@ -201,6 +201,7 @@
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "diskusage": "TanninOne/node-diskusage",
+    "drivelist": "TanninOne/drivelist",
     "native-errors": "Nexus-Mods/node-native-errors",
     "vortexmt": "file:vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
@@ -213,7 +214,7 @@
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
     "bootstrap-sass": "^3.4.1",
-    "bsdiff-node": "file:./vendor/bsdiff-node-js",
+    "bsdiff-node": "file:vendor/bsdiff-node-js",
     "cheerio": "1.0.0-rc.12",
     "classnames": "^2.5.1",
     "commander": "^4.0.1",
@@ -225,7 +226,6 @@
     "diskusage": "TanninOne/node-diskusage",
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
-    "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.6.1",
     "electron-redux": "file:vendor/electron-redux-compat",
     "electron-updater": "^4.2.0",
@@ -315,7 +315,7 @@
     "**/bsdiff-node": "file:vendor/bsdiff-node-js",
     "**/electron-redux": "file:vendor/electron-redux-compat",
     "**/fomod-installer": "file:vendor/fomod-installer-mac",
-    "bsdiff-node": "file:./vendor/bsdiff-node-js"
+    "bsdiff-node": "file:vendor/bsdiff-node-js"
   },
   "jest": {
     "testEnvironment": "jsdom",

@@ -616,7 +616,7 @@ function baseFunc(moduleRoot: string, ipcPath: string,
                   main: (ipc, req: NodeRequireFunction) => void | Promise<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
-    console.error('Elevated code failed', error.stack);
+    console.error('❌ Elevated code failed', error.stack);
   };
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
@@ -652,7 +652,7 @@ function baseFunc(moduleRoot: string, ipcPath: string,
       if (err.code !== 'EPIPE') {
         // will anyone ever see this?
         // tslint:disable-next-line:no-console
-        console.error('Connection failed', err.message);
+        console.error('❌ Connection failed', err.message);
       }
     });
 }

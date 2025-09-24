@@ -20,7 +20,7 @@ function isMacOS() {
 // Utility function to execute a command and return a promise
 function execCommand(command, options = {}) {
   return new Promise((resolve, reject) => {
-    console.log(`Executing: ${command}`);
+    console.log(`⚡ Executing: ${command}`);
     
     const [cmd, ...args] = command.split(' ');
     const proc = spawn(cmd, args, { 
@@ -54,11 +54,11 @@ function getSubmoduleBranch(submodulePath) {
     if (result.status === 0) {
       return result.stdout.trim();
     } else {
-      console.error(`Failed to get branch for ${submodulePath}: ${result.stderr}`);
+      console.error(`❌ Failed to get branch for ${submodulePath}: ${result.stderr}`);
       return null;
     }
   } catch (error) {
-    console.error(`Error getting branch for ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error getting branch for ${submodulePath}: ${error.message}`);
     return null;
   }
 }
@@ -84,7 +84,7 @@ function getConfiguredBranch(submodulePath) {
       return 'master';
     }
   } catch (error) {
-    console.error(`Error getting configured branch for ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error getting configured branch for ${submodulePath}: ${error.message}`);
     return 'master';
   }
 }
@@ -92,7 +92,7 @@ function getConfiguredBranch(submodulePath) {
 // Function to switch a submodule from detached HEAD to the correct branch
 async function fixDetachedHead(submodulePath) {
   const configuredBranch = getConfiguredBranch(submodulePath);
-  console.log(`Switching ${submodulePath} from detached HEAD to ${configuredBranch}`);
+  console.log(`🔄 Switching ${submodulePath} from detached HEAD to ${configuredBranch}`);
   
   try {
     // Fetch the latest changes
@@ -111,9 +111,9 @@ async function fixDetachedHead(submodulePath) {
       await execCommand(`git checkout -b ${configuredBranch} origin/${configuredBranch}`, { cwd: submodulePath });
     }
     
-    console.log(`Successfully switched ${submodulePath} to ${configuredBranch}`);
+    console.log(`✅ Successfully switched ${submodulePath} to ${configuredBranch}`);
   } catch (error) {
-    console.error(`Failed to switch ${submodulePath} to ${configuredBranch}: ${error.message}`);
+    console.error(`❌ Failed to switch ${submodulePath} to ${configuredBranch}: ${error.message}`);
   }
 }
 
@@ -127,14 +127,14 @@ function hasUncommittedChanges(submodulePath) {
     
     return result.stdout.trim() !== '';
   } catch (error) {
-    console.error(`Error checking for changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error checking for changes in ${submodulePath}: ${error.message}`);
     return false;
   }
 }
 
 // Function to commit changes in a submodule
 async function commitChanges(submodulePath) {
-  console.log(`Committing changes in ${submodulePath}`);
+  console.log(`💾 Committing changes in ${submodulePath}`);
   
   try {
     // Add all changes
@@ -143,9 +143,9 @@ async function commitChanges(submodulePath) {
     // Commit changes
     await execCommand('git commit -m "Commit untracked changes"', { cwd: submodulePath });
     
-    console.log(`Successfully committed changes in ${submodulePath}`);
+    console.log(`✅ Successfully committed changes in ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to commit changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Failed to commit changes in ${submodulePath}: ${error.message}`);
   }
 }
 
@@ -153,29 +153,29 @@ async function commitChanges(submodulePath) {
 async function pushChanges(submodulePath) {
   const branch = getSubmoduleBranch(submodulePath);
   if (!branch || branch === 'HEAD') {
-    console.log(`Cannot push from ${submodulePath}: not on a branch`);
+    console.log(`⚠️ Cannot push from ${submodulePath}: not on a branch`);
     return;
   }
   
-  console.log(`Pushing changes from ${submodulePath} on branch ${branch}`);
+  console.log(`📤 Pushing changes from ${submodulePath} on branch ${branch}`);
   
   try {
     await execCommand(`git push origin ${branch}`, { cwd: submodulePath });
-    console.log(`Successfully pushed changes from ${submodulePath}`);
+    console.log(`✅ Successfully pushed changes from ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to push changes from ${submodulePath}: ${error.message}`);
-    console.log(`You may need to manually push changes or fork the repository if you don't have push permissions`);
+    console.error(`❌ Failed to push changes from ${submodulePath}: ${error.message}`);
+    console.log(`ℹ️ You may need to manually push changes or fork the repository if you don't have push permissions`);
   }
 }
 
 // Main function to check and fix all submodules
 async function checkAndFixSubmodules() {
-  console.log('Checking and fixing submodule branches...');
+  console.log('🔍 Checking and fixing submodule branches...');
   
   // Read .gitmodules file to get all submodules
   const gitmodulesPath = path.join(process.cwd(), '.gitmodules');
   if (!fs.existsSync(gitmodulesPath)) {
-    console.error('No .gitmodules file found');
+    console.error('❌ No .gitmodules file found');
     process.exit(1);
   }
   
@@ -189,7 +189,7 @@ async function checkAndFixSubmodules() {
     submodulePaths.push(match[1]);
   }
   
-  console.log(`Found ${submodulePaths.length} submodules`);
+  console.log(`📋 Found ${submodulePaths.length} submodules`);
   
   // Process each submodule
   for (const submodulePath of submodulePaths) {
@@ -197,37 +197,37 @@ async function checkAndFixSubmodules() {
     
     // Check if submodule directory exists
     if (!fs.existsSync(fullPath)) {
-      console.log(`Skipping ${submodulePath}: directory does not exist`);
+      console.log(`⏭️ Skipping ${submodulePath}: directory does not exist`);
       continue;
     }
     
-    console.log(`\nProcessing ${submodulePath}...`);
+    console.log(`\n🔧 Processing ${submodulePath}...`);
     
     // Check if in detached HEAD state
     if (isDetachedHead(fullPath)) {
-      console.log(`${submodulePath} is in detached HEAD state`);
+      console.log(`⚠️ ${submodulePath} is in detached HEAD state`);
       await fixDetachedHead(fullPath);
     } else {
       const branch = getSubmoduleBranch(fullPath);
-      console.log(`${submodulePath} is on branch: ${branch}`);
+      console.log(`🌿 ${submodulePath} is on branch: ${branch}`);
     }
     
     // Check for uncommitted changes
     if (hasUncommittedChanges(fullPath)) {
-      console.log(`${submodulePath} has uncommitted changes`);
+      console.log(`📝 ${submodulePath} has uncommitted changes`);
       await commitChanges(fullPath);
       await pushChanges(fullPath);
     } else {
-      console.log(`${submodulePath} has no uncommitted changes`);
+      console.log(`✅ ${submodulePath} has no uncommitted changes`);
     }
   }
   
-  console.log('\n✅ Submodule branch check and fix completed!');
+  console.log('\n🎉 Submodule branch check and fix completed!');
 }
 
 // Run the script
 checkAndFixSubmodules()
   .catch(error => {
-    console.error('Error during submodule check:', error);
+    console.error('❌ Error during submodule check:', error);
     process.exit(1);
   });

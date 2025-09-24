@@ -90,7 +90,7 @@ function compileExtensionSCSS(targetDir) {
     }
   });
   
-  console.log('Extension SCSS compilation completed.');
+  console.log('✅ Extension SCSS compilation completed.');
 }
 
 // Get target directory from command line arguments

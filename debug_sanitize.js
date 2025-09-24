@@ -50,32 +50,32 @@ function sanitizeFilename(input) {
 }
 
 // Test cases
-console.log('Testing sanitizeFilename function:');
-console.log('Platform:', process.platform);
-console.log('INVALID_FILENAME_CHARACTERS:', INVALID_FILENAME_CHARACTERS);
-console.log('INVALID_FILENAME_RE:', INVALID_FILENAME_RE);
+console.log('🧪 Testing sanitizeFilename function:');
+console.log('🖥️ Platform:', process.platform);
+console.log('🚫 INVALID_FILENAME_CHARACTERS:', INVALID_FILENAME_CHARACTERS);
+console.log('🔍 INVALID_FILENAME_RE:', INVALID_FILENAME_RE);
 console.log('');
 
-console.log('Test 1: foo*bar');
+console.log('🧪 Test 1: foo*bar');
 const result1 = sanitizeFilename('foo*bar');
-console.log('Result:', result1);
-console.log('Expected: foo_42_bar');
-console.log('Match:', result1 === 'foo_42_bar');
+console.log('📤 Result:', result1);
+console.log('✅ Expected: foo_42_bar');
+console.log('🎯 Match:', result1 === 'foo_42_bar');
 console.log('');
 
-console.log('Test 2: LPT1.txt');
+console.log('🧪 Test 2: LPT1.txt');
 const result2 = sanitizeFilename('LPT1.txt');
-console.log('Result:', result2);
-console.log('Expected: _reserved_LPT1.txt');
-console.log('Match:', result2 === '_reserved_LPT1.txt');
+console.log('📤 Result:', result2);
+console.log('✅ Expected: _reserved_LPT1.txt');
+console.log('🎯 Match:', result2 === '_reserved_LPT1.txt');
 console.log('');
 
-console.log('Test 3: foobar.');
+console.log('🧪 Test 3: foobar.');
 const result3 = sanitizeFilename('foobar.');
-console.log('Result:', result3);
-console.log('Expected: foobar._');
-console.log('Match:', result3 === 'foobar._');
+console.log('📤 Result:', result3);
+console.log('✅ Expected: foobar._');
+console.log('🎯 Match:', result3 === 'foobar._');
 console.log('');
 
 // Debug character code for *
-console.log('Character code for *:', '*'.charCodeAt(0));
+console.log('🔢 Character code for *:', '*'.charCodeAt(0));

@@ -14,7 +14,7 @@ checker.init(
 
   function (err, json) {
     if (err) {
-      return console.error('error', err);
+      return console.error('❌ Error:', err);
     }
 
     const deleteKeys = ['vortex-api', 'vortex'];
@@ -37,7 +37,7 @@ checker.init(
 
     deleteKeys.forEach(key => delete json[key]);
 
-    console.log(`Writing ${Object.keys(json).length} modules`);
+    console.log(`📝 Writing ${Object.keys(json).length} modules`);
 
     fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2), { encoding: 'utf-8' }, () => null);
   });

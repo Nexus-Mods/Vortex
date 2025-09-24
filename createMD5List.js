@@ -34,7 +34,7 @@ async function walk(base, rel) {
       files = [].concat(files, rec);
     }));
   } catch (err) {
-    console.error('Failed to walk', base, err);
+    console.error('❌ Failed to walk', base, err);
   }
 
   return files;
@@ -42,7 +42,7 @@ async function walk(base, rel) {
 
 exports.default = async function(context) {
 
-  console.log('createMD5List.js');
+  console.log('📋 createMD5List.js');
 
   const assetsPath = path.join(context.appOutDir, 'resources', 'app.asar.unpacked', 'assets');
 
@@ -101,16 +101,16 @@ exports.default = async function(context) {
             appleIdPassword,
             teamId,
           });
-          console.log('Notarization complete, stapling ticket...');
+          console.log('✅ Notarization complete, stapling ticket...');
           await execFileAsync('xcrun', ['stapler', 'staple', '-v', appPath]);
-          console.log('Stapling completed');
+          console.log('✅ Stapling completed');
         } catch (err) {
-          console.error('Notarization failed:', err && (err.stack || err.message || err));
+          console.error('❌ Notarization failed:', err && (err.stack || err.message || err));
           // Re-throw to fail the build when notarization fails
           throw err;
         }
       } else {
-        console.warn('Could not determine appPath for notarization');
+        console.warn('⚠️ Could not determine appPath for notarization');
       }
     } else {
       // Fallback: use native notarytool via xcrun if credentials are present
@@ -132,10 +132,10 @@ exports.default = async function(context) {
 
         if (appPath) {
           const zipPath = path.join(context.appOutDir, path.basename(appPath, '.app') + '.zip');
-          console.log(`Zipping app for notarization: ${zipPath}`);
+          console.log(`📦 Zipping app for notarization: ${zipPath}`);
           try {
             await execFileAsync('ditto', ['-c', '-k', '--keepParent', appPath, zipPath]);
-            console.log('Submitting to Apple Notary Service using notarytool...');
+            console.log('📤 Submitting to Apple Notary Service using notarytool...');
             await execFileAsync('xcrun', [
               'notarytool', 'submit', zipPath,
               '--apple-id', appleId,
@@ -143,20 +143,20 @@ exports.default = async function(context) {
               '--team-id', teamId,
               '--wait'
             ], { maxBuffer: 10 * 1024 * 1024 });
-            console.log('Notarization complete, stapling ticket...');
+            console.log('✅ Notarization complete, stapling ticket...');
             await execFileAsync('xcrun', ['stapler', 'staple', '-v', appPath], { maxBuffer: 10 * 1024 * 1024 });
             console.log('Stapling completed');
           } catch (err) {
-            console.error('Native notarytool notarization failed:', err && (err.stack || err.message || err));
+            console.error('❌ Native notarytool notarization failed:', err && (err.stack || err.message || err));
             throw err;
           } finally {
             try { await fs.unlink(zipPath); } catch (_) {}
           }
         } else {
-          console.warn('Could not determine appPath for notarization');
+          console.warn('⚠️ Could not determine appPath for notarization');
         }
       } else {
-        console.warn('Skipping notarization: missing @electron/notarize or Apple credentials (APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID)');
+        console.warn('⚠️ Skipping notarization: missing @electron/notarize or Apple credentials (APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID)');
       }
     }
   }

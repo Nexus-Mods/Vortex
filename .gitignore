@@ -5,6 +5,7 @@ dist_custom
 dist_portable
 dist_web
 out
+force
 doc
 coverage
 .vscode/.BROWSE.VC.DB*

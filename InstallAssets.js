@@ -93,18 +93,18 @@ for (const spawn of data.spawn) {
     stdio: [0, 1, 2],
     env: Object.assign({}, process.env, spawn.env)
   });
-  console.log('spawned', cmdline);
+  console.log('🚀 Spawned:', cmdline);
   child.stdout.on('data', (output) => {
-    console.log(spawn.executable, output);
+    console.log('📤', spawn.executable, output);
   });
   child.stderr.on('data', (output) => {
-    console.log('Error:', spawn.executable, output);
+    console.log('❌ Error:', spawn.executable, output);
   });
   child.on('close', (code) => {
     if (code !== 0) {
       status = 1;
     }
-    console.log('finished', spawn.executable, code);
+    console.log('✅ Finished:', spawn.executable, code);
   });
   childProcesses.push(spawn.executable);
   child.on('exit', () => {
@@ -193,10 +193,10 @@ Promise.mapSeries(data.copy, file => {
       return fs.ensureDir(path.dirname(targetFile))
         .then(() => fs.copy(globResult, targetFile))
         .then(() => {
-          console.log('copied', globResult, targetFile);
+          console.log('📋 Copied:', globResult, targetFile);
         })
         .catch((copyErr) => {
-          console.log('failed to copy', globResult, targetFile, copyErr);
+          console.log('❌ Failed to copy:', globResult, targetFile, copyErr);
         })
         .finally(() => {
           --copies;

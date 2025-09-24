@@ -60,7 +60,7 @@ function getAllDirectories(searchPath: string): Promise<string[]> {
         .then(stat => stat.isDirectory())
         .catch(err => {
           if (err.code !== 'ENOENT') {
-            log('error', 'failed to stat file/directory', {
+            log('error', '❌ failed to stat file/directory', {
               searchPath, fileName, error: err.message,
             });
           }
@@ -166,7 +166,7 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
     }
   } catch (err) {
     // If we can't get the state, continue without filtering
-    log('debug', 'could not retrieve extension state for filtering', { error: err.message });
+    log('debug', '🔍 could not retrieve extension state for filtering', { error: err.message });
   }
 
   return Promise.all([readExtensionDir(bundledPath, true),
@@ -191,14 +191,14 @@ export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boo
 }
 
 function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
-  log('info', 'downloading extension list', { url: EXTENSION_URL });
+  log('info', '📥 downloading extension list', { url: EXTENSION_URL });
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then(manifest => {
-      log('debug', 'extension list received');
+      log('debug', '📋 extension list received');
       return manifest.extensions.filter(ext => ext.name !== undefined);
     })
     .tap(extensions => writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)))
-    .tapCatch(err => log('error', 'failed to download extension list', err));
+    .tapCatch(err => log('error', '❌ failed to download extension list', err));
 }
 
 function doFetchAvailableExtensions(forceDownload: boolean)
@@ -220,9 +220,9 @@ function doFetchAvailableExtensions(forceDownload: boolean)
   return checkCache
     .then(needsDownload => {
       if (needsDownload) {
-        log('info', 'extension list outdated, will update');
+        log('info', '🔄 extension list outdated, will update');
       } else {
-        log('info', 'extension list up-to-date');
+        log('info', '✅ extension list up-to-date');
       }
       return needsDownload
         ? downloadExtensionList(cachePath)
@@ -237,11 +237,11 @@ function doFetchAvailableExtensions(forceDownload: boolean)
           });
     })
     .catch({ code: 'ENOENT' }, () => {
-      log('info', 'extension list missing, will update');
+      log('info', '📋 extension list missing, will update');
       return downloadExtensionList(cachePath);
     })
     .catch(err => {
-      log('error', 'failed to fetch list of extensions', err);
+      log('error', '❌ failed to fetch list of extensions', err);
       return Promise.resolve([]);
     })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
@@ -358,7 +358,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     .catch(ServiceTemporarilyUnavailable, err => {
       // Dismiss the activity notification
       api.dismissNotification(notificationId);
-      log('warn', 'Failed to download from github', { message: err.message });
+      log('warn', '⚠️ Failed to download from github', { message: err.message });
       return Promise.resolve(false);
     })
     .catch(err => {
@@ -405,7 +405,7 @@ export function downloadFromNexus(api: IExtensionApi,
     }
   }
 
-  log('debug', 'download from nexus', archiveFileName(ext));
+  log('debug', '📥 download from nexus', archiveFileName(ext));
   return api.emitAndAwait('nexus-download',
                           SITE_ID, ext.modId, ext.fileId, archiveFileName(ext), false);
 }
@@ -462,7 +462,7 @@ function downloadGithubRawRecursive(repo: string, source: string, destination: s
         if ((typeof (data) === 'object') && (data.message !== undefined)) {
           return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
         } else {
-          log('info', 'unexpected response from github', content);
+          log('info', '⚠️ unexpected response from github', content);
           return Promise.reject(new Error('Unexpected response from github (see log file)'));
         }
       }

@@ -88,7 +88,7 @@ function runThreaded(func, moduleBase, ...args) {
           }
           catch (cleanupErr) {
                         // tslint:disable-next-line:no-console
-            console.error('failed to clean up temporary script', cleanupErr.message);
+            console.error('❌ Failed to clean up temporary script', cleanupErr.message);
           }
           return reject(writeErr);
         }

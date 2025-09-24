@@ -66,7 +66,7 @@ const setJumpList = makeRemoteCallSync('set-jump-list', (electron, window, categ
   try {
     electron.app.setJumpList(categories);
   } catch (err) {
-    console.error(err);
+    console.error('❌ Jump list error:', err);
   }
 });
 

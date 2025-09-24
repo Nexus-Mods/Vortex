@@ -2,16 +2,21 @@
 // adding -fexceptions and NAPI_CPP_EXCEPTIONS to binding.gyp
 const fs = require('fs');
 const path = require('path');
+const { 
+  isMacOS, 
+  logNativeImplementation,
+  logMockImplementation,
+  logInstallationSuccess,
+  logSummary,
+  hasNativeImplementation,
+  hasMockImplementation
+} = require('./native-module-messages');
 
 const pkgRoot = process.cwd();
 
 // Platform detection utilities
 function isWindows() {
   return process.platform === 'win32';
-}
-
-function isMacOS() {
-  return process.platform === 'darwin';
 }
 
 // List of native modules that need patching
@@ -23,21 +28,14 @@ const modulesToPatch = [
 
 // List of modules that need mocks on macOS
 const macOnlyMocks = [
-  'bsdiff-node',
   'leveldown',
   'modmeta-db',
   'native-errors',
-  'node-7z',
   'original-fs',
-  'permissions',
-  'ref',
-  'ref-struct',
-  'ref-union',
   'turbowalk',
   'vortex-api',
   'wholocks',
   'winapi-bindings',
-  'ffi',
   'node-addon-api',
   'vortexmt',
   'xxhash-addon'
@@ -105,7 +103,7 @@ if (fs.existsSync(nodeAddonApiPath)) {
   }
 }`;
   fs.writeFileSync(configPath, configContent, 'utf8');
-  console.log('Updated node-addon-api configuration');
+  console.log('⚙️  Updated node-addon-api configuration for C++ exceptions support');
 }
 
 // Handle macOS-specific mocks and native module compilation
@@ -115,7 +113,17 @@ if (isMacOS()) {
   const realImplementations = {
     'drivelist': path.join(pkgRoot, 'src', 'util', 'drivelist-macos.js'),
     'diskusage': path.join(pkgRoot, 'src', 'util', 'diskusage-macos.js'),
-    'exe-version': path.join(pkgRoot, 'src', 'util', 'exe-version-macos.js')
+    'exe-version': path.join(pkgRoot, 'src', 'util', 'exe-version-macos.js'),
+    'turbowalk': path.join(pkgRoot, 'scripts', 'turbowalk-macos.js'),
+    'wholocks': path.join(pkgRoot, 'scripts', 'wholocks-macos.js'),
+    'permissions': path.join(pkgRoot, 'scripts', 'permissions-macos.js'),
+    // New native macOS implementations
+    'bsdiff-node': path.join(pkgRoot, 'scripts', 'bsdiff-macos.js'),
+    'ffi': path.join(pkgRoot, 'scripts', 'ffi-macos.js'),
+    'ref': path.join(pkgRoot, 'scripts', 'ref-macos.js'),
+    'ref-struct': path.join(pkgRoot, 'scripts', 'ref-struct-macos.js'),
+    'ref-union': path.join(pkgRoot, 'scripts', 'ref-union-macos.js'),
+    'node-7z': path.join(pkgRoot, 'scripts', 'node-7z-macos.js')
   };
 
   // Create node_modules directory if it doesn't exist
@@ -124,9 +132,17 @@ if (isMacOS()) {
     fs.mkdirSync(nodeModulesPath, { recursive: true });
   }
 
-  // Link our real implementations
+  // Also handle app/node_modules
+  const appNodeModulesPath = path.join(pkgRoot, 'app', 'node_modules');
+  if (!fs.existsSync(appNodeModulesPath)) {
+    fs.mkdirSync(appNodeModulesPath, { recursive: true });
+  }
+
+  // Link our real implementations to both node_modules and app/node_modules
+  let installedCount = 0;
   for (const [moduleName, implPath] of Object.entries(realImplementations)) {
     if (fs.existsSync(implPath)) {
+      // Install in node_modules
       const modulePath = path.join(nodeModulesPath, moduleName);
       const moduleIndexPath = path.join(modulePath, 'index.js');
       
@@ -144,14 +160,33 @@ if (isMacOS()) {
         "name": moduleName,
         "version": "1.0.0",
         "main": "index.js",
-        "description": `Real implementation of ${moduleName} for macOS`,
+        "description": `Native macOS implementation of ${moduleName}`,
         "gypfile": false
       };
       fs.writeFileSync(path.join(modulePath, 'package.json'), JSON.stringify(packageJson, null, 2), 'utf8');
       
-      console.log(`Installed real implementation for ${moduleName} on macOS`);
+      logInstallationSuccess(moduleName, 'node_modules');
+      installedCount++;
+      
+      // Also install in app/node_modules
+      const appModulePath = path.join(appNodeModulesPath, moduleName);
+      const appModuleIndexPath = path.join(appModulePath, 'index.js');
+      
+      // Create module directory if it doesn't exist
+      if (!fs.existsSync(appModulePath)) {
+        fs.mkdirSync(appModulePath, { recursive: true });
+      }
+      
+      // Copy our implementation to the module
+      fs.writeFileSync(appModuleIndexPath, implContent, 'utf8');
+      
+      // Create package.json for the module
+      fs.writeFileSync(path.join(appModulePath, 'package.json'), JSON.stringify(packageJson, null, 2), 'utf8');
+      
+      logInstallationSuccess(moduleName, 'app/node_modules');
     }
   }
+  logSummary(installedCount, 'native macOS implementations');
 
   // Handle mocked modules that still need mocks
   for (const moduleName of macOnlyMocks) {
@@ -162,7 +197,8 @@ if (isMacOS()) {
     
     const mockPath = path.join(pkgRoot, '__mocks__', moduleName + '.js');
     if (fs.existsSync(mockPath)) {
-      console.log(`Using mock for ${moduleName} on macOS`);
+      logMockImplementation(moduleName);
+      
       // Skip native module compilation for mocked modules on macOS
       const upperModuleName = moduleName.toUpperCase().replace(/-/g, '_');
       process.env[`npm_config_${moduleName}_binary_host_mirror`] = 'none';
@@ -178,6 +214,7 @@ if (isMacOS()) {
   }
   
   // Additional drivelist-specific configuration to prevent Windows binary compilation
+  // Also ensure drivelist doesn't try to build on macOS when we have a real implementation
   process.env.npm_config_drivelist_skip_build = 'true';
   process.env.npm_config_drivelist_binary_host_mirror = 'none';
   process.env.DRIVELIST_SKIP_BUILD = '1';
@@ -186,6 +223,40 @@ if (isMacOS()) {
   process.env.SKIP_DRIVELIST_DOWNLOAD = '1';
   process.env.DRIVELIST_SKIP_DOWNLOAD = '1';
   process.env.DRIVELIST_SKIP_INSTALL = '1';
+  
+  // Make sure all native modules use our node-addon-api configuration
+  process.env.NODE_ADDON_API_REQUIRE_CPP_EXCEPTIONS = '1';
+  
+  // Additional environment variables to prevent drivelist from building
+  process.env.npm_config_drivelist_build_from_source = 'false';
+  process.env.PREBUILD_INSTALL = '1';
+  process.env.npm_config_prefer_binary = 'true';
+  
+  // Prevent drivelist from building in both node_modules and app/node_modules
+  const drivelistPaths = [
+    path.join(pkgRoot, 'node_modules', 'drivelist'),
+    path.join(pkgRoot, 'app', 'node_modules', 'drivelist')
+  ];
+  
+  for (const drivelistPath of drivelistPaths) {
+    if (fs.existsSync(drivelistPath)) {
+      // Create a .npmignore file to prevent building
+      const npmIgnorePath = path.join(drivelistPath, '.npmignore');
+      const npmIgnoreContent = `binding.gyp
+build/
+src/
+*.cc
+*.cpp
+*.h`;
+      fs.writeFileSync(npmIgnorePath, npmIgnoreContent, 'utf8');
+      
+      // Also create a .gitignore to be safe
+      const gitIgnorePath = path.join(drivelistPath, '.gitignore');
+      fs.writeFileSync(gitIgnorePath, npmIgnoreContent, 'utf8');
+      
+      console.log(`🔒 Created .npmignore and .gitignore for drivelist in ${drivelistPath} to prevent building`);
+    }
+  }
 }
 
 // Create a patched node-addon-api configuration
@@ -346,8 +417,49 @@ for (const moduleName of modulesToPatch) {
   }
 
   if (patched) {
-    console.log(`Patched ${moduleName}`);
+    console.log(`🔨 Successfully patched ${moduleName} for C++ exceptions support`);
   } else {
-    console.log(`Could not locate ${moduleName} to patch`);
+    console.log(`⚠️  Could not locate ${moduleName} to patch (module may not be installed)`);
+  }
+}
+
+// Additional check to ensure drivelist doesn't build in either location
+if (isMacOS()) {
+  const drivelistPaths = [
+    path.join(pkgRoot, 'node_modules', 'drivelist'),
+    path.join(pkgRoot, 'app', 'node_modules', 'drivelist')
+  ];
+  
+  for (const drivelistPath of drivelistPaths) {
+    if (fs.existsSync(drivelistPath)) {
+      // Create a .npmignore file to prevent building
+      const npmIgnorePath = path.join(drivelistPath, '.npmignore');
+      const npmIgnoreContent = `binding.gyp
+build/
+src/
+*.cc
+*.cpp
+*.h`;
+      fs.writeFileSync(npmIgnorePath, npmIgnoreContent, 'utf8');
+      
+      // Also create a .gitignore to be safe
+      const gitIgnorePath = path.join(drivelistPath, '.gitignore');
+      fs.writeFileSync(gitIgnorePath, npmIgnoreContent, 'utf8');
+      
+      // Also modify package.json to set gypfile to false
+      const packageJsonPath = path.join(drivelistPath, 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        try {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+          packageJson.gypfile = false;
+          fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
+          console.log(`✅ Set gypfile to false for drivelist in ${drivelistPath}`);
+        } catch (err) {
+          console.log(`⚠️  Failed to modify drivelist package.json in ${drivelistPath}: ${err.message}`);
+        }
+      }
+      
+      console.log(`🔒 Created .npmignore and .gitignore for drivelist in ${drivelistPath} to prevent building`);
+    }
   }
 }

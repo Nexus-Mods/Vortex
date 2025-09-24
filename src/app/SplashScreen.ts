@@ -91,15 +91,15 @@ class SplashScreen {
           if (splashElement) {
             const computedStyle = window.getComputedStyle(splashElement);
             const backgroundImage = computedStyle.backgroundImage;
-            console.log('Splash background image:', backgroundImage);
+            console.log('🖼️ Splash background image:', backgroundImage);
             
             // Test if image exists
             const img = new Image();
-            img.onload = () => console.log('Splash image loaded successfully');
-            img.onerror = () => console.log('Splash image failed to load');
+            img.onload = () => console.log('✅ Splash image loaded successfully');
+            img.onerror = () => console.log('❌ Splash image failed to load');
             img.src = './assets/images/splash.png';
           } else {
-            console.log('Splash element not found');
+            console.log('❌ Splash element not found');
           }
         `).catch(err => log('warn', 'failed to execute splash debug script', err.message));
       });

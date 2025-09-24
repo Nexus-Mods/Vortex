@@ -24,7 +24,7 @@ import('./util/macosSpotlight')
     indexVortexActions = spotlightModule.indexVortexActions;
   })
   .catch(err => {
-    console.warn('Spotlight integration not available:', err);
+    console.warn('⚠️ Spotlight integration not available:', err);
     // Provide no-op functions if module is not available
     initializeSpotlight = async () => {};
     indexVortexActions = async () => {};
@@ -494,7 +494,7 @@ async function main(): Promise<void> {
           (global as any).vortexTouchBar = touchBar;
         });
       } catch (err) {
-        console.warn('Failed to initialize Touch Bar support:', err);
+        console.warn('⚠️ Failed to initialize Touch Bar support:', err);
       }
     }
     
@@ -509,7 +509,7 @@ async function main(): Promise<void> {
         systemPreferences.subscribeNotification(
           'AXManualAccessibility',
           (event, userInfo) => {
-            console.log('Accessibility support changed:', userInfo);
+            console.log('♿ Accessibility support changed:', userInfo);
             // Could be used to update UI or behavior based on accessibility status
           }
         );
@@ -518,7 +518,7 @@ async function main(): Promise<void> {
         // Accessibility features will be handled through other means
       }
     } catch (err) {
-      console.warn('Failed to initialize accessibility enhancements:', err);
+      console.warn('⚠️ Failed to initialize accessibility enhancements:', err);
     }
     
     // Set up auto-update for macOS
@@ -528,10 +528,10 @@ async function main(): Promise<void> {
     // Note: These functions might still be no-ops if the module hasn't loaded yet
     // This is fine as they're non-critical features
     initializeSpotlight().catch(err => {
-      console.warn('Failed to initialize Spotlight integration:', err);
+      console.warn('⚠️ Failed to initialize Spotlight integration:', err);
     });
     indexVortexActions().catch(err => {
-      console.warn('Failed to index Vortex actions for Spotlight:', err);
+      console.warn('⚠️ Failed to index Vortex actions for Spotlight:', err);
     });
   }
 
@@ -641,27 +641,27 @@ function setupAutoUpdate() {
     
     // Set up event listeners for auto updater
     autoUpdater.on('error', (error) => {
-      console.error('Auto update error:', error);
+      console.error('❌ Auto update error:', error);
       // Could show error notification to user
     });
     
     autoUpdater.on('checking-for-update', () => {
-      console.log('Checking for updates...');
+      console.log('🔍 Checking for updates...');
       // Could show checking notification to user
     });
     
     autoUpdater.on('update-available', () => {
-      console.log('Update available');
+      console.log('📦 Update available');
       // Could show update available notification to user
     });
     
     autoUpdater.on('update-not-available', () => {
-      console.log('No updates available');
+      console.log('✅ No updates available');
       // Could show up to date notification to user
     });
     
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-      console.log('Update downloaded:', releaseName);
+      console.log('⬇️ Update downloaded:', releaseName);
       // Show dialog to user asking if they want to restart and install
       if (application) {
         try {
@@ -683,7 +683,7 @@ function setupAutoUpdate() {
             });
           }
         } catch (err) {
-          console.warn('Failed to show update dialog:', err);
+          console.warn('⚠️ Failed to show update dialog:', err);
         }
       }
     });
@@ -702,7 +702,7 @@ function setupAutoUpdate() {
     });
     
   } catch (err) {
-    console.warn('Failed to set up auto update:', err);
+    console.warn('⚠️ Failed to set up auto update:', err);
   }
 }
 
@@ -712,9 +712,9 @@ function checkForUpdates() {
   }
   
   try {
-    console.log('Checking for updates...');
+    console.log('🔍 Checking for updates...');
     autoUpdater.checkForUpdates();
   } catch (err) {
-    console.warn('Failed to check for updates:', err);
+    console.warn('⚠️ Failed to check for updates:', err);
   }
 }

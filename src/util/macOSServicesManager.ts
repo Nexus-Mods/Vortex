@@ -64,7 +64,7 @@ export class MacOSServicesManager {
       this.setupFinderIntegration();
       this.mInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize Services manager:', error);
+      console.error('❌ Failed to initialize Services manager:', error);
     }
   }
 
@@ -114,14 +114,14 @@ export class MacOSServicesManager {
   public async handleServiceInvocation(serviceId: string, input: string | string[]): Promise<void> {
     const service = this.mServices.get(serviceId);
     if (!service) {
-      console.error(`Unknown service: ${serviceId}`);
+      console.error(`❌ Unknown service: ${serviceId}`);
       return;
     }
 
     try {
       await service.handler(input);
     } catch (error) {
-      console.error(`Service ${serviceId} failed:`, error);
+      console.error(`❌ Service ${serviceId} failed:`, error);
     }
   }
 
@@ -135,7 +135,7 @@ export class MacOSServicesManager {
       label: service.title,
       click: () => {
         // This would typically be triggered by the system
-        console.log(`Service ${service.id} clicked`);
+        console.log(`🔧 Service ${service.id} clicked`);
       }
     }));
   }
@@ -254,7 +254,7 @@ export class MacOSServicesManager {
   private updateServicesMenu(): void {
     // This would update the system Services menu
     // Implementation depends on how the app integrates with the system menu
-    console.log('Services menu updated');
+    console.log('🔄 Services menu updated');
   }
 
   /**
@@ -286,11 +286,11 @@ export class MacOSServicesManager {
 
       // Send install command to main window
       // This would typically trigger the mod installation process
-      console.log(`Installing mod from: ${filePath}`);
+      console.log(`📦 Installing mod from: ${filePath}`);
       
       // TODO: Integrate with actual mod installation system
     } catch (error) {
-      console.error('Failed to install mod:', error);
+      console.error('❌ Failed to install mod:', error);
     }
   }
 
@@ -307,11 +307,11 @@ export class MacOSServicesManager {
       app.focus();
 
       // Navigate to the specified path
-      console.log(`Opening in Vortex: ${folderPath}`);
+      console.log(`📂 Opening in Vortex: ${folderPath}`);
       
       // TODO: Integrate with actual navigation system
     } catch (error) {
-      console.error('Failed to open in Vortex:', error);
+      console.error('❌ Failed to open in Vortex:', error);
     }
   }
 
@@ -331,11 +331,11 @@ export class MacOSServicesManager {
       app.focus();
 
       // Start mod creation process
-      console.log(`Creating mod from ${validFiles.length} files`);
+      console.log(`🛠️ Creating mod from ${validFiles.length} files`);
       
       // TODO: Integrate with actual mod creation system
     } catch (error) {
-      console.error('Failed to create mod:', error);
+      console.error('❌ Failed to create mod:', error);
     }
   }
 
@@ -345,11 +345,11 @@ export class MacOSServicesManager {
   private async shareConfiguration(configText: string): Promise<void> {
     try {
       // Process configuration text
-      console.log('Sharing configuration:', configText.substring(0, 100) + '...');
+      console.log('📤 Sharing configuration:', configText.substring(0, 100) + '...');
       
       // TODO: Integrate with actual sharing system
     } catch (error) {
-      console.error('Failed to share configuration:', error);
+      console.error('❌ Failed to share configuration:', error);
     }
   }
 }

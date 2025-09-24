@@ -26,9 +26,9 @@ export async function initializeSpotlight(): Promise<void> {
 
   try {
     await initNativeSpotlight();
-    console.log('Native Spotlight integration initialized');
+    console.log('🔍 Native Spotlight integration initialized');
   } catch (err) {
-    console.warn('Failed to initialize native Spotlight integration:', err);
+    console.warn('⚠️ Failed to initialize native Spotlight integration:', err);
   }
 }
 
@@ -52,9 +52,9 @@ export async function addSpotlightItems(items: Array<{id: string, title: string,
     }));
 
     await addNativeSpotlightItems(spotlightItems);
-    console.log(`Added ${items.length} items to native Spotlight index`);
+    console.log(`➕ Added ${items.length} items to native Spotlight index`);
   } catch (err) {
-    console.warn('Failed to add items to native Spotlight index:', err);
+    console.warn('⚠️ Failed to add items to native Spotlight index:', err);
   }
 }
 
@@ -69,9 +69,9 @@ export async function removeSpotlightItems(ids: string[]): Promise<void> {
 
   try {
     await removeNativeSpotlightItems(ids);
-    console.log(`Removed ${ids.length} items from native Spotlight index`);
+    console.log(`➖ Removed ${ids.length} items from native Spotlight index`);
   } catch (err) {
-    console.warn('Failed to remove items from native Spotlight index:', err);
+    console.warn('⚠️ Failed to remove items from native Spotlight index:', err);
   }
 }
 
@@ -85,9 +85,9 @@ export async function removeAllSpotlightItems(): Promise<void> {
 
   try {
     await removeAllNativeSpotlightItems();
-    console.log('Removed all items from native Spotlight index');
+    console.log('🗑️ Removed all items from native Spotlight index');
   } catch (err) {
-    console.warn('Failed to remove all items from native Spotlight index:', err);
+    console.warn('⚠️ Failed to remove all items from native Spotlight index:', err);
   }
 }
 

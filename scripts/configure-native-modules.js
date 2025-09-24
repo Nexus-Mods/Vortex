@@ -4,19 +4,19 @@
 
 const fs = require('fs');
 const path = require('path');
+const { 
+  isMacOS, 
+  logSkipMessage, 
+  processModule 
+} = require('./native-module-messages');
 
 // Platform detection utilities
 function isWindows() {
   return process.platform === 'win32';
 }
 
-function isMacOS() {
-  return process.platform === 'darwin';
-}
-
 // List of modules that need mocks on macOS
 const macOnlyMocks = [
-  'drivelist',
   'bsdiff-node',
   'diskusage',
   'leveldown',
@@ -82,7 +82,7 @@ for (const moduleName of [...macOnlyMocks, ...windowsOnlyModules]) {
 // Handle macOS-specific mocks and native module compilation
 if (isMacOS()) {
   // Aggressively skip drivelist building on macOS to reduce build errors
-  console.log('Skipping drivelist native module building on macOS');
+  logSkipMessage('drivelist', 'using real implementation instead');
   process.env.npm_config_drivelist_binary_host_mirror = 'none';
   process.env.npm_config_drivelist_skip_build = 'true';
   process.env.npm_config_drivelist_prebuild = 'false';
@@ -96,18 +96,9 @@ if (isMacOS()) {
   
   // Then handle mocked modules
   for (const moduleName of macOnlyMocks) {
-    // Skip drivelist if we have a real implementation
-    if (moduleName === 'drivelist') {
-      const realImplPath = path.join(process.cwd(), 'src', 'util', 'drivelist-macos.js');
-      if (fs.existsSync(realImplPath)) {
-        console.log(`Using real implementation for ${moduleName} on macOS`);
-        continue;
-      }
-    }
+    const moduleType = processModule(moduleName);
     
-    const mockPath = path.join(process.cwd(), '__mocks__', moduleName + '.js');
-    if (fs.existsSync(mockPath)) {
-      console.log(`Using mock for ${moduleName} on macOS`);
+    if (moduleType === 'native' || moduleType === 'mock') {
       // Skip native module compilation for mocked modules on macOS
       const upperModuleName = moduleName.toUpperCase().replace(/-/g, '_');
       process.env[`npm_config_${moduleName}_binary_host_mirror`] = 'none';
@@ -123,4 +114,4 @@ if (isMacOS()) {
   }
 }
 
-console.log('Native module environment configuration completed');
+console.log('✅ Native module environment configuration completed for macOS');

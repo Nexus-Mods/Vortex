@@ -37,9 +37,9 @@ export function applyMacOSPerformanceOptimizations(mainWindow: BrowserWindow): v
     optimizeBackgroundBehavior(mainWindow);
     
     optimizationsApplied = true;
-    console.log('macOS performance optimizations applied');
+    console.log('🚀 macOS performance optimizations applied');
   } catch (err) {
-    console.warn('Failed to apply macOS performance optimizations:', err);
+    console.warn('⚠️ Failed to apply macOS performance optimizations:', err);
   }
 }
 
@@ -51,9 +51,9 @@ function setupPowerSaveBlocker(): void {
     // Prevent the application from being suspended during critical operations
     // This is especially important for long-running tasks like mod installations
     powerSaveBlockerId = powerSaveBlocker.start('prevent-app-suspension');
-    console.log('Power save blocker started with ID:', powerSaveBlockerId);
-  } catch (err) {
-    console.warn('Failed to start power save blocker:', err);
+    console.log('🔋 Power save blocker started with ID:', powerSaveBlockerId);
+    } catch (err) {
+      console.warn('⚠️ Failed to start power save blocker:', err);
   }
 }
 
@@ -85,12 +85,12 @@ function optimizeWindowSettings(mainWindow: BrowserWindow): void {
             };
           }
         `).catch(err => {
-          console.warn('Failed to set up idle task handler:', err);
+          console.warn('⚠️ Failed to set up idle task handler:', err);
         });
       });
     }
   } catch (err) {
-    console.warn('Failed to optimize window settings:', err);
+    console.warn('⚠️ Failed to optimize window settings:', err);
   }
 }
 
@@ -105,7 +105,7 @@ function setupPerformanceEventListeners(mainWindow: BrowserWindow): void {
       // Clean up power save blocker when app quits
       if (powerSaveBlockerId !== null && powerSaveBlocker.isStarted(powerSaveBlockerId)) {
         powerSaveBlocker.stop(powerSaveBlockerId);
-        console.log('Power save blocker stopped');
+        console.log('🔋 Power save blocker stopped');
       }
     });
     
@@ -113,16 +113,16 @@ function setupPerformanceEventListeners(mainWindow: BrowserWindow): void {
     if (mainWindow) {
       mainWindow.on('focus', () => {
         // When window gains focus, we can enable more aggressive updates
-        console.log('Window focused - enabling full performance mode');
+        console.log('🎯 Window focused - enabling full performance mode');
       });
       
       mainWindow.on('blur', () => {
         // When window loses focus, we can reduce some non-critical updates
-        console.log('Window blurred - enabling power saving mode');
+        console.log('💤 Window blurred - enabling power saving mode');
       });
     }
   } catch (err) {
-    console.warn('Failed to set up performance event listeners:', err);
+    console.warn('⚠️ Failed to set up performance event listeners:', err);
   }
 }
 
@@ -149,7 +149,7 @@ function optimizeBackgroundBehavior(mainWindow: BrowserWindow): void {
           mainWindow.webContents.setBackgroundThrottling(false);
         }
       } catch (err) {
-        console.warn('Failed to get web preferences:', err);
+        console.warn('⚠️ Failed to get web preferences:', err);
         // Fallback: directly set background throttling on webContents
         mainWindow.webContents.setBackgroundThrottling(false);
       }
@@ -158,11 +158,11 @@ function optimizeBackgroundBehavior(mainWindow: BrowserWindow): void {
       if (app.dock) {
         // Set up dock menu with performance-related options
         // This allows users to quickly access performance settings
-        console.log('Background behavior optimizations applied');
+        console.log('🎛️ Background behavior optimizations applied');
       }
     }
   } catch (err) {
-    console.warn('Failed to optimize background behavior:', err);
+    console.warn('⚠️ Failed to optimize background behavior:', err);
   }
 }
 
@@ -177,21 +177,21 @@ export function boostPerformance(operationName: string, duration: number = 30000
     return () => {}; // No-op on non-macOS platforms
   }
 
-  console.log(`Boosting performance for operation: ${operationName}`);
+  console.log(`⚡ Boosting performance for operation: ${operationName}`);
   
   // Start a more aggressive power save blocker
   let boostBlockerId: number | null = null;
   try {
     boostBlockerId = powerSaveBlocker.start('prevent-display-sleep');
   } catch (err) {
-    console.warn('Failed to start performance boost blocker:', err);
+    console.warn('⚠️ Failed to start performance boost blocker:', err);
   }
   
   // Set timeout to automatically stop the boost
   const timeoutId = setTimeout(() => {
     if (boostBlockerId !== null && powerSaveBlocker.isStarted(boostBlockerId)) {
       powerSaveBlocker.stop(boostBlockerId);
-      console.log(`Performance boost for ${operationName} ended`);
+      console.log(`⚡ Performance boost for ${operationName} ended`);
     }
   }, duration);
   
@@ -200,7 +200,7 @@ export function boostPerformance(operationName: string, duration: number = 30000
     clearTimeout(timeoutId);
     if (boostBlockerId !== null && powerSaveBlocker.isStarted(boostBlockerId)) {
       powerSaveBlocker.stop(boostBlockerId);
-      console.log(`Performance boost for ${operationName} manually stopped`);
+      console.log(`⚡ Performance boost for ${operationName} manually stopped`);
     }
   };
 }
@@ -218,10 +218,10 @@ export function cleanupPerformanceOptimizations(): void {
     if (powerSaveBlockerId !== null && powerSaveBlocker.isStarted(powerSaveBlockerId)) {
       powerSaveBlocker.stop(powerSaveBlockerId);
       powerSaveBlockerId = null;
-      console.log('Performance optimizations cleaned up');
+      console.log('🧹 Performance optimizations cleaned up');
     }
   } catch (err) {
-    console.warn('Failed to clean up performance optimizations:', err);
+    console.warn('⚠️ Failed to clean up performance optimizations:', err);
   }
 }
 
@@ -239,9 +239,9 @@ export function optimizeFileIO(): void {
     // 2. Batching file operations
     // 3. Using efficient file system APIs
     
-    console.log('File I/O optimizations applied');
+    console.log('📁 File I/O optimizations applied');
   } catch (err) {
-    console.warn('Failed to apply file I/O optimizations:', err);
+    console.warn('⚠️ Failed to apply file I/O optimizations:', err);
   }
 }
 
@@ -261,7 +261,7 @@ export function monitorPerformance(mainWindow: BrowserWindow): void {
       setInterval(() => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           const memoryUsage = process.memoryUsage();
-          console.log('Memory usage:', {
+          console.log('📊 Memory usage:', {
             rss: Math.round(memoryUsage.rss / 1024 / 1024) + ' MB',
             heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB',
             heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
@@ -270,9 +270,9 @@ export function monitorPerformance(mainWindow: BrowserWindow): void {
         }
       }, 30000); // Log every 30 seconds
       
-      console.log('Performance monitoring started');
+      console.log('📈 Performance monitoring started');
     }
   } catch (err) {
-    console.warn('Failed to start performance monitoring:', err);
+    console.warn('⚠️ Failed to start performance monitoring:', err);
   }
 }

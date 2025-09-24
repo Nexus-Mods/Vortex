@@ -23,7 +23,7 @@ export function initializeMacOSPermissions(mainWindow: BrowserWindow): void {
 
   // Set up permission request handler for various permissions
   ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    console.log('Permission requested:', permission, details);
+    console.log('🔐 Permission requested:', permission, details);
     
     // Handle different types of permissions
     switch (permission) {
@@ -51,7 +51,7 @@ export function initializeMacOSPermissions(mainWindow: BrowserWindow): void {
 
   // Set up permission check handler
   ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
-    console.log('Permission check:', permission, requestingOrigin, details);
+    console.log('🔍 Permission check:', permission, requestingOrigin, details);
     
     // Allow all permissions by default for the main application
     // In a production app, you might want more granular control
@@ -60,7 +60,7 @@ export function initializeMacOSPermissions(mainWindow: BrowserWindow): void {
 
   // Handle file system access restrictions
   ses.on('file-system-access-restricted' as any, async (event, details, callback) => {
-    console.log('File system access restricted:', details);
+    console.log('🚫 File system access restricted:', details);
     
     try {
       const { origin, path: restrictedPath } = details;
@@ -88,12 +88,12 @@ export function initializeMacOSPermissions(mainWindow: BrowserWindow): void {
           break;
       }
     } catch (err) {
-      console.warn('Failed to handle file system access restriction:', err);
+      console.warn('⚠️ Failed to handle file system access restriction:', err);
       callback('deny');
     }
   });
 
-  console.log('macOS permission handling initialized');
+  console.log('✅ macOS permission handling initialized');
 }
 
 /**
@@ -144,10 +144,10 @@ async function handleGenericPermission(
   try {
     // For unknown permissions, we'll deny by default for security
     // In a real application, you might want to show a dialog to the user
-    console.warn('Unknown permission requested:', permission, details);
+    console.warn('⚠️ Unknown permission requested:', permission, details);
     callback(false);
   } catch (err) {
-    console.warn('Failed to handle generic permission:', err);
+    console.warn('⚠️ Failed to handle generic permission:', err);
     callback(false);
   }
 }
@@ -177,10 +177,10 @@ export async function requestDirectoryAccess(directoryPath: string): Promise<boo
 
     // The selected directory is now accessible
     // Electron automatically handles security scoped bookmarks for us
-    console.log('Directory access granted:', result.filePaths[0]);
+    console.log('✅ Directory access granted:', result.filePaths[0]);
     return true;
   } catch (err) {
-    console.warn('Failed to request directory access:', err);
+    console.warn('⚠️ Failed to request directory access:', err);
     return false;
   }
 }
@@ -238,6 +238,6 @@ export async function requestSecurityPrivacyAccess(): Promise<void> {
       buttons: ['OK']
     });
   } catch (err) {
-    console.warn('Failed to show security privacy access dialog:', err);
+    console.warn('⚠️ Failed to show security privacy access dialog:', err);
   }
 }

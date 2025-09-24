@@ -187,7 +187,7 @@ const sendRequest = (endpoint, payload, mode = 'browser', opts = {}) => {
         });
       })
       .on('error', (err) => {
-        console.log('Error: ' + err.message);
+        console.log('❌ Error: ' + err.message);
       });
     request.on('timeout', () => {
       request.destroy();

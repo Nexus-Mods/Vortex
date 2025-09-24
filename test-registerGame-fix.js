@@ -19,7 +19,7 @@ const mockEventEmitter = {
 // Import the ExtensionManager
 const ExtensionManager = require('./lib/src/util/ExtensionManager').default;
 
-console.log('Testing registerGame fix...');
+console.log('🧪 Testing registerGame fix...');
 
 try {
   // Create an instance of ExtensionManager
@@ -36,7 +36,7 @@ try {
       path: '/test/path',
       dynamic: true,
       initFunc: () => (context) => {
-        console.log('Testing registerGame call...');
+        console.log('🧪 Testing registerGame call...');
         if (typeof context.registerGame === 'function') {
           console.log('✅ registerGame is available as a function');
           try {
@@ -52,9 +52,9 @@ try {
     }
   ];
   
-  console.log('Test completed successfully!');
+  console.log('✅ Test completed successfully!');
   
 } catch (err) {
-  console.error('Test failed:', err.message);
+  console.error('❌ Test failed:', err.message);
   console.error(err.stack);
 }

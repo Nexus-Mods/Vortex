@@ -1729,7 +1729,7 @@ function init(context: IExtensionContextExt): boolean {
 
   const resolveFunc = makeNXMProtocol(context.api,
     (gameId: string, modId: number, fileId: number) => new Promise(resolve => {
-      console.log('makeNXMProtocol', {
+      console.log('🔗 makeNXMProtocol', {
         gameId: gameId,
         modId: modId,
         fileId: fileId

@@ -14,7 +14,7 @@ const { execSync } = require('child_process');
 function fix7zBinMacOS() {
   // Only run on macOS
   if (process.platform !== 'darwin') {
-    console.log('7z-bin macOS fix: Skipping (not macOS)');
+    console.log('ℹ️  7z-bin macOS fix: Skipping (not macOS)');
     return;
   }
 
@@ -25,13 +25,14 @@ function fix7zBinMacOS() {
 
   // Check if 7z-bin package exists
   if (!fs.existsSync(sevenZipBinPath)) {
-    console.log('7z-bin macOS fix: 7z-bin package not found, skipping');
+    console.log('📦 7z-bin macOS fix: Checking 7z-bin package...');
+    console.log('⚠️  7z-bin macOS fix: 7z-bin package not found, skipping');
     return;
   }
 
   // Check if darwin directory already exists and has the binary
   if (fs.existsSync(darwinBinaryPath)) {
-    console.log('7z-bin macOS fix: darwin/7z already exists');
+    console.log('✅ 7z-bin macOS fix: darwin/7z already exists');
     return;
   }
 
@@ -60,7 +61,7 @@ function fix7zBinMacOS() {
   }
 
   if (!systemSevenZipPath) {
-    console.warn('7z-bin macOS fix: System 7z binary not found. Please install 7-Zip via Homebrew: brew install p7zip');
+    console.warn('⚠️  7z-bin macOS fix: System 7z binary not found. Please install 7-Zip via Homebrew: brew install p7zip');
     return;
   }
 
@@ -68,21 +69,21 @@ function fix7zBinMacOS() {
     // Create darwin directory if it doesn't exist
     if (!fs.existsSync(darwinPath)) {
       fs.mkdirSync(darwinPath, { recursive: true });
-      console.log('7z-bin macOS fix: Created darwin directory');
+      console.log('📁 7z-bin macOS fix: Created darwin directory');
     }
 
     // Create symlink to system 7z binary
     fs.symlinkSync(systemSevenZipPath, darwinBinaryPath);
-    console.log(`7z-bin macOS fix: Created symlink from ${darwinBinaryPath} to ${systemSevenZipPath}`);
+    console.log(`🔗 7z-bin macOS fix: Created symlink from ${darwinBinaryPath} to ${systemSevenZipPath}`);
 
     // Verify the symlink works
     if (fs.existsSync(darwinBinaryPath)) {
-      console.log('7z-bin macOS fix: Successfully fixed 7z-bin for macOS');
+      console.log('✅ 7z-bin macOS fix: Successfully fixed 7z-bin for macOS');
     } else {
-      console.error('7z-bin macOS fix: Failed to create working symlink');
+      console.error('❌ 7z-bin macOS fix: Failed to create working symlink');
     }
   } catch (error) {
-    console.error('7z-bin macOS fix: Error creating symlink:', error.message);
+    console.error('❌ 7z-bin macOS fix: Error creating symlink:', error.message);
   }
 }
 

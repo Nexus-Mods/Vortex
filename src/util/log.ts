@@ -82,7 +82,7 @@ if ((process as any).type === 'renderer') {
   // TODO: very weird issue, getting an EPIPE error if log is called before setupLogging
   //   unless we do a console.log first.
   // tslint:disable-next-line:no-console
-  console.log('logging started');
+  console.log('📝 Logging started');
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -170,6 +170,6 @@ export function log(level: LogLevel, message: string, metadata?: any) {
     }
   } catch (err) {
     // tslint:disable-next-line:no-console
-    console.log('failed to log to file', { level, message, metadata });
+    console.log('❌ Failed to log to file', { level, message, metadata });
   }
 }

@@ -1,0 +1,2082 @@
+diff --git a/node_modules/drivelist/.DS_Store b/node_modules/drivelist/.DS_Store
+new file mode 100644
+index 0000000..ae6341a
+Binary files /dev/null and b/node_modules/drivelist/.DS_Store differ
+diff --git a/node_modules/drivelist/build/Makefile b/node_modules/drivelist/build/Makefile
+new file mode 100644
+index 0000000..6ca0776
+--- /dev/null
++++ b/node_modules/drivelist/build/Makefile
+@@ -0,0 +1,352 @@
++# We borrow heavily from the kernel build setup, though we are simpler since
++# we don't have Kconfig tweaking settings on us.
++
++# The implicit make rules have it looking for RCS files, among other things.
++# We instead explicitly write all the rules we care about.
++# It's even quicker (saves ~200ms) to pass -r on the command line.
++MAKEFLAGS=-r
++
++# The source directory tree.
++srcdir := ..
++abs_srcdir := $(abspath $(srcdir))
++
++# The name of the builddir.
++builddir_name ?= .
++
++# The V=1 flag on command line makes us verbosely print command lines.
++ifdef V
++  quiet=
++else
++  quiet=quiet_
++endif
++
++# Specify BUILDTYPE=Release on the command line for a release build.
++BUILDTYPE ?= Release
++
++# Directory all our build output goes into.
++# Note that this must be two directories beneath src/ for unit tests to pass,
++# as they reach into the src/ directory for data with relative paths.
++builddir ?= $(builddir_name)/$(BUILDTYPE)
++abs_builddir := $(abspath $(builddir))
++depsdir := $(builddir)/.deps
++
++# Object output directory.
++obj := $(builddir)/obj
++abs_obj := $(abspath $(obj))
++
++# We build up a list of every single one of the targets so we can slurp in the
++# generated dependency rule Makefiles in one pass.
++all_deps :=
++
++
++
++CC.target ?= $(CC)
++CFLAGS.target ?= $(CPPFLAGS) $(CFLAGS)
++CXX.target ?= $(CXX)
++CXXFLAGS.target ?= $(CPPFLAGS) $(CXXFLAGS)
++LINK.target ?= $(LINK)
++LDFLAGS.target ?= $(LDFLAGS)
++AR.target ?= $(AR)
++PLI.target ?= pli
++
++# C++ apps need to be linked with g++.
++LINK ?= $(CXX.target)
++
++# TODO(evan): move all cross-compilation logic to gyp-time so we don't need
++# to replicate this environment fallback in make as well.
++CC.host ?= gcc
++CFLAGS.host ?= $(CPPFLAGS_host) $(CFLAGS_host)
++CXX.host ?= g++
++CXXFLAGS.host ?= $(CPPFLAGS_host) $(CXXFLAGS_host)
++LINK.host ?= $(CXX.host)
++LDFLAGS.host ?= $(LDFLAGS_host)
++AR.host ?= ar
++PLI.host ?= pli
++
++# Define a dir function that can handle spaces.
++# http://www.gnu.org/software/make/manual/make.html#Syntax-of-Functions
++# "leading spaces cannot appear in the text of the first argument as written.
++# These characters can be put into the argument value by variable substitution."
++empty :=
++space := $(empty) $(empty)
++
++# http://stackoverflow.com/questions/1189781/using-make-dir-or-notdir-on-a-path-with-spaces
++replace_spaces = $(subst $(space),?,$1)
++unreplace_spaces = $(subst ?,$(space),$1)
++dirx = $(call unreplace_spaces,$(dir $(call replace_spaces,$1)))
++
++# Flags to make gcc output dependency info.  Note that you need to be
++# careful here to use the flags that ccache and distcc can understand.
++# We write to a dep file on the side first and then rename at the end
++# so we can't end up with a broken dep file.
++depfile = $(depsdir)/$(call replace_spaces,$@).d
++DEPFLAGS = -MMD -MF $(depfile).raw
++
++# We have to fixup the deps output in a few ways.
++# (1) the file output should mention the proper .o file.
++# ccache or distcc lose the path to the target, so we convert a rule of
++# the form:
++#   foobar.o: DEP1 DEP2
++# into
++#   path/to/foobar.o: DEP1 DEP2
++# (2) we want missing files not to cause us to fail to build.
++# We want to rewrite
++#   foobar.o: DEP1 DEP2 \
++#               DEP3
++# to
++#   DEP1:
++#   DEP2:
++#   DEP3:
++# so if the files are missing, they're just considered phony rules.
++# We have to do some pretty insane escaping to get those backslashes
++# and dollar signs past make, the shell, and sed at the same time.
++# Doesn't work with spaces, but that's fine: .d files have spaces in
++# their names replaced with other characters.
++define fixup_dep
++# The depfile may not exist if the input file didn't have any #includes.
++touch $(depfile).raw
++# Fixup path as in (1).
++sed -e "s|^$(notdir $@)|$@|" $(depfile).raw >> $(depfile)
++# Add extra rules as in (2).
++# We remove slashes and replace spaces with new lines;
++# remove blank lines;
++# delete the first line and append a colon to the remaining lines.
++sed -e 's|\\||' -e 'y| |\n|' $(depfile).raw |\
++  grep -v '^$$'                             |\
++  sed -e 1d -e 's|$$|:|'                     \
++    >> $(depfile)
++rm $(depfile).raw
++endef
++
++# Command definitions:
++# - cmd_foo is the actual command to run;
++# - quiet_cmd_foo is the brief-output summary of the command.
++
++quiet_cmd_cc = CC($(TOOLSET)) $@
++cmd_cc = $(CC.$(TOOLSET)) -o $@ $< $(GYP_CFLAGS) $(DEPFLAGS) $(CFLAGS.$(TOOLSET)) -c
++
++quiet_cmd_cxx = CXX($(TOOLSET)) $@
++cmd_cxx = $(CXX.$(TOOLSET)) -o $@ $< $(GYP_CXXFLAGS) $(DEPFLAGS) $(CXXFLAGS.$(TOOLSET)) -c
++
++quiet_cmd_objc = CXX($(TOOLSET)) $@
++cmd_objc = $(CC.$(TOOLSET)) $(GYP_OBJCFLAGS) $(DEPFLAGS) -c -o $@ $<
++
++quiet_cmd_objcxx = CXX($(TOOLSET)) $@
++cmd_objcxx = $(CXX.$(TOOLSET)) $(GYP_OBJCXXFLAGS) $(DEPFLAGS) -c -o $@ $<
++
++# Commands for precompiled header files.
++quiet_cmd_pch_c = CXX($(TOOLSET)) $@
++cmd_pch_c = $(CC.$(TOOLSET)) $(GYP_PCH_CFLAGS) $(DEPFLAGS) $(CXXFLAGS.$(TOOLSET)) -c -o $@ $<
++quiet_cmd_pch_cc = CXX($(TOOLSET)) $@
++cmd_pch_cc = $(CC.$(TOOLSET)) $(GYP_PCH_CXXFLAGS) $(DEPFLAGS) $(CXXFLAGS.$(TOOLSET)) -c -o $@ $<
++quiet_cmd_pch_m = CXX($(TOOLSET)) $@
++cmd_pch_m = $(CC.$(TOOLSET)) $(GYP_PCH_OBJCFLAGS) $(DEPFLAGS) -c -o $@ $<
++quiet_cmd_pch_mm = CXX($(TOOLSET)) $@
++cmd_pch_mm = $(CC.$(TOOLSET)) $(GYP_PCH_OBJCXXFLAGS) $(DEPFLAGS) -c -o $@ $<
++
++# gyp-mac-tool is written next to the root Makefile by gyp.
++# Use $(4) for the command, since $(2) and $(3) are used as flag by do_cmd
++# already.
++quiet_cmd_mac_tool = MACTOOL $(4) $<
++cmd_mac_tool = ./gyp-mac-tool $(4) $< "$@"
++
++quiet_cmd_mac_package_framework = PACKAGE FRAMEWORK $@
++cmd_mac_package_framework = ./gyp-mac-tool package-framework "$@" $(4)
++
++quiet_cmd_infoplist = INFOPLIST $@
++cmd_infoplist = $(CC.$(TOOLSET)) -E -P -Wno-trigraphs -x c $(INFOPLIST_DEFINES) "$<" -o "$@"
++
++quiet_cmd_touch = TOUCH $@
++cmd_touch = touch $@
++
++quiet_cmd_copy = COPY $@
++# send stderr to /dev/null to ignore messages when linking directories.
++cmd_copy = ln -f "$<" "$@" 2>/dev/null || (rm -rf "$@" && cp -af "$<" "$@")
++
++quiet_cmd_symlink = SYMLINK $@
++cmd_symlink = ln -sf "$<" "$@"
++
++quiet_cmd_alink = LIBTOOL-STATIC $@
++cmd_alink = rm -f $@ && ./gyp-mac-tool filter-libtool libtool $(GYP_LIBTOOLFLAGS) -static -o $@ $(filter %.o,$^)
++
++quiet_cmd_link = LINK($(TOOLSET)) $@
++cmd_link = $(LINK.$(TOOLSET)) $(GYP_LDFLAGS) $(LDFLAGS.$(TOOLSET)) -o "$@" $(LD_INPUTS) $(LIBS)
++
++quiet_cmd_solink = SOLINK($(TOOLSET)) $@
++cmd_solink = $(LINK.$(TOOLSET)) -shared $(GYP_LDFLAGS) $(LDFLAGS.$(TOOLSET)) -o "$@" $(LD_INPUTS) $(LIBS)
++
++quiet_cmd_solink_module = SOLINK_MODULE($(TOOLSET)) $@
++cmd_solink_module = $(LINK.$(TOOLSET)) -bundle $(GYP_LDFLAGS) $(LDFLAGS.$(TOOLSET)) -o $@ $(filter-out FORCE_DO_CMD, $^) $(LIBS)
++
++
++# Define an escape_quotes function to escape single quotes.
++# This allows us to handle quotes properly as long as we always use
++# use single quotes and escape_quotes.
++escape_quotes = $(subst ','\'',$(1))
++# This comment is here just to include a ' to unconfuse syntax highlighting.
++# Define an escape_vars function to escape '$' variable syntax.
++# This allows us to read/write command lines with shell variables (e.g.
++# $LD_LIBRARY_PATH), without triggering make substitution.
++escape_vars = $(subst $$,$$$$,$(1))
++# Helper that expands to a shell command to echo a string exactly as it is in
++# make. This uses printf instead of echo because printf's behaviour with respect
++# to escape sequences is more portable than echo's across different shells
++# (e.g., dash, bash).
++exact_echo = printf '%s\n' '$(call escape_quotes,$(1))'
++
++# Helper to compare the command we're about to run against the command
++# we logged the last time we ran the command.  Produces an empty
++# string (false) when the commands match.
++# Tricky point: Make has no string-equality test function.
++# The kernel uses the following, but it seems like it would have false
++# positives, where one string reordered its arguments.
++#   arg_check = $(strip $(filter-out $(cmd_$(1)), $(cmd_$@)) \
++#                       $(filter-out $(cmd_$@), $(cmd_$(1))))
++# We instead substitute each for the empty string into the other, and
++# say they're equal if both substitutions produce the empty string.
++# .d files contain ? instead of spaces, take that into account.
++command_changed = $(or $(subst $(cmd_$(1)),,$(cmd_$(call replace_spaces,$@))),\
++                       $(subst $(cmd_$(call replace_spaces,$@)),,$(cmd_$(1))))
++
++# Helper that is non-empty when a prerequisite changes.
++# Normally make does this implicitly, but we force rules to always run
++# so we can check their command lines.
++#   $? -- new prerequisites
++#   $| -- order-only dependencies
++prereq_changed = $(filter-out FORCE_DO_CMD,$(filter-out $|,$?))
++
++# Helper that executes all postbuilds until one fails.
++define do_postbuilds
++  @E=0;\
++  for p in $(POSTBUILDS); do\
++    eval $$p;\
++    E=$$?;\
++    if [ $$E -ne 0 ]; then\
++      break;\
++    fi;\
++  done;\
++  if [ $$E -ne 0 ]; then\
++    rm -rf "$@";\
++    exit $$E;\
++  fi
++endef
++
++# do_cmd: run a command via the above cmd_foo names, if necessary.
++# Should always run for a given target to handle command-line changes.
++# Second argument, if non-zero, makes it do asm/C/C++ dependency munging.
++# Third argument, if non-zero, makes it do POSTBUILDS processing.
++# Note: We intentionally do NOT call dirx for depfile, since it contains ? for
++# spaces already and dirx strips the ? characters.
++define do_cmd
++$(if $(or $(command_changed),$(prereq_changed)),
++  @$(call exact_echo,  $($(quiet)cmd_$(1)))
++  @mkdir -p "$(call dirx,$@)" "$(dir $(depfile))"
++  $(if $(findstring flock,$(word 2,$(cmd_$1))),
++    @$(cmd_$(1))
++    @echo "  $(quiet_cmd_$(1)): Finished",
++    @$(cmd_$(1))
++  )
++  @$(call exact_echo,$(call escape_vars,cmd_$(call replace_spaces,$@) := $(cmd_$(1)))) > $(depfile)
++  @$(if $(2),$(fixup_dep))
++  $(if $(and $(3), $(POSTBUILDS)),
++    $(call do_postbuilds)
++  )
++)
++endef
++
++# Declare the "all" target first so it is the default,
++# even though we don't have the deps yet.
++.PHONY: all
++all:
++
++# make looks for ways to re-generate included makefiles, but in our case, we
++# don't have a direct way. Explicitly telling make that it has nothing to do
++# for them makes it go faster.
++%.d: ;
++
++# Use FORCE_DO_CMD to force a target to run.  Should be coupled with
++# do_cmd.
++.PHONY: FORCE_DO_CMD
++FORCE_DO_CMD:
++
++TOOLSET := target
++# Suffix rules, putting all outputs into $(obj).
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.cc FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.cxx FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.s FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(srcdir)/%.S FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++# Try building from generated source, too.
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.cc FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.cxx FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.s FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(obj).$(TOOLSET)/%.S FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++$(obj).$(TOOLSET)/%.o: $(obj)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.cc FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.cxx FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.s FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++$(obj).$(TOOLSET)/%.o: $(obj)/%.S FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++
++ifeq ($(strip $(foreach prefix,$(NO_LOAD),\
++    $(findstring $(join ^,$(prefix)),\
++                 $(join ^,../node-addon-api/nothing.target.mk)))),)
++  include ../node-addon-api/nothing.target.mk
++endif
++ifeq ($(strip $(foreach prefix,$(NO_LOAD),\
++    $(findstring $(join ^,$(prefix)),\
++                 $(join ^,drivelist.target.mk)))),)
++  include drivelist.target.mk
++endif
++
++quiet_cmd_regen_makefile = ACTION Regenerating $@
++cmd_regen_makefile = cd $(srcdir); /Users/veland/.nvm/versions/node/v20.19.4/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/Users/veland/Library/Caches/node-gyp/24.0.0" "-Dnode_gyp_dir=/Users/veland/.nvm/versions/node/v20.19.4/lib/node_modules/npm/node_modules/node-gyp" "-Dnode_lib_file=/Users/veland/Library/Caches/node-gyp/24.0.0/<(target_arch)/node.lib" "-Dmodule_root_dir=/Users/veland/Downloads/vortex/node_modules/drivelist" "-Dnode_engine=v8" "--depth=." "-Goutput_dir=." "--generator-output=build" -I/Users/veland/Downloads/vortex/node_modules/drivelist/build/config.gypi -I/Users/veland/.nvm/versions/node/v20.19.4/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node/common.gypi "--toplevel-dir=." binding.gyp
++Makefile: $(srcdir)/binding.gyp $(srcdir)/../../../../Library/Caches/node-gyp/24.0.0/include/node/common.gypi $(srcdir)/../node-addon-api/node_api.gyp $(srcdir)/../../../../.nvm/versions/node/v20.19.4/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/build/config.gypi
++	$(call do_cmd,regen_makefile)
++
++# "all" is a concatenation of the "all" targets from all the included
++# sub-makefiles. This is just here to clarify.
++all:
++
++# Add in dependency-tracking rules.  $(all_deps) is the list of every single
++# target in our tree. Only consider the ones with .d (dependency) info:
++d_files := $(wildcard $(foreach f,$(all_deps),$(depsdir)/$(f).d))
++ifneq ($(d_files),)
++  include $(d_files)
++endif
+diff --git a/node_modules/drivelist/build/Release/.deps/Release/nothing.a.d b/node_modules/drivelist/build/Release/.deps/Release/nothing.a.d
+new file mode 100644
+index 0000000..5daaf58
+--- /dev/null
++++ b/node_modules/drivelist/build/Release/.deps/Release/nothing.a.d
+@@ -0,0 +1 @@
++cmd_Release/nothing.a := rm -f Release/nothing.a && ./gyp-mac-tool filter-libtool libtool  -static -o Release/nothing.a Release/obj.target/nothing/../node-addon-api/nothing.o
+diff --git a/node_modules/drivelist/build/Release/.deps/Release/obj.target/drivelist/src/drivelist.o.d.raw b/node_modules/drivelist/build/Release/.deps/Release/obj.target/drivelist/src/drivelist.o.d.raw
+new file mode 100644
+index 0000000..41e32f1
+--- /dev/null
++++ b/node_modules/drivelist/build/Release/.deps/Release/obj.target/drivelist/src/drivelist.o.d.raw
+@@ -0,0 +1,8 @@
++Release/obj.target/drivelist/src/drivelist.o: ../src/drivelist.cpp \
++  ../../node-addon-api/napi.h \
++  /Users/veland/Library/Caches/node-gyp/24.0.0/include/node/node_api.h \
++  /Users/veland/Library/Caches/node-gyp/24.0.0/include/node/js_native_api.h \
++  /Users/veland/Library/Caches/node-gyp/24.0.0/include/node/js_native_api_types.h \
++  /Users/veland/Library/Caches/node-gyp/24.0.0/include/node/node_api_types.h \
++  ../../node-addon-api/napi-inl.h \
++  ../../node-addon-api/napi-inl.deprecated.h ../src/drivelist.hpp
+diff --git a/node_modules/drivelist/build/Release/.deps/Release/obj.target/node-addon-api/nothing.o.d b/node_modules/drivelist/build/Release/.deps/Release/obj.target/node-addon-api/nothing.o.d
+new file mode 100644
+index 0000000..97764bb
+--- /dev/null
++++ b/node_modules/drivelist/build/Release/.deps/Release/obj.target/node-addon-api/nothing.o.d
+@@ -0,0 +1,4 @@
++cmd_Release/obj.target/nothing/../node-addon-api/nothing.o := cc -o Release/obj.target/nothing/../node-addon-api/nothing.o ../../node-addon-api/nothing.c '-DNODE_GYP_MODULE_NAME=nothing' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-DV8_DEPRECATION_WARNINGS' '-DV8_IMMINENT_DEPRECATION_WARNINGS' '-D_GLIBCXX_USE_CXX11_ABI=1' '-DELECTRON_ENSURE_CONFIG_GYPI' '-D_DARWIN_USE_64_BIT_INODE=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DUSING_ELECTRON_CONFIG_GYPI' '-DV8_COMPRESS_POINTERS' '-DV8_COMPRESS_POINTERS_IN_SHARED_CAGE' '-DV8_ENABLE_SANDBOX' '-DV8_31BIT_SMIS_ON_64BIT_ARCH' '-DOPENSSL_NO_PINSHARED' '-DOPENSSL_THREADS' '-DOPENSSL_NO_ASM' -I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node -I/Users/veland/Library/Caches/node-gyp/24.0.0/src -I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/config -I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/openssl/include -I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/uv/include -I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/zlib -I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/v8/include  -O3 -gdwarf-2 -mmacosx-version-min=10.15 -arch x86_64 -Wall -Wendif-labels -W -Wno-unused-parameter -fno-strict-aliasing -MMD -MF ./Release/.deps/Release/obj.target/nothing/../node-addon-api/nothing.o.d.raw   -c
++Release/obj.target/nothing/../node-addon-api/nothing.o: \
++  ../../node-addon-api/nothing.c
++../../node-addon-api/nothing.c:
+diff --git a/node_modules/drivelist/build/Release/nothing.a b/node_modules/drivelist/build/Release/nothing.a
+new file mode 100644
+index 0000000..853f2e0
+Binary files /dev/null and b/node_modules/drivelist/build/Release/nothing.a differ
+diff --git a/node_modules/drivelist/build/Release/obj.target/node-addon-api/nothing.o b/node_modules/drivelist/build/Release/obj.target/node-addon-api/nothing.o
+new file mode 100644
+index 0000000..a9010b4
+Binary files /dev/null and b/node_modules/drivelist/build/Release/obj.target/node-addon-api/nothing.o differ
+diff --git a/node_modules/drivelist/build/binding.Makefile b/node_modules/drivelist/build/binding.Makefile
+new file mode 100644
+index 0000000..50c1039
+--- /dev/null
++++ b/node_modules/drivelist/build/binding.Makefile
+@@ -0,0 +1,6 @@
++# This file is generated by gyp; do not edit.
++
++export builddir_name ?= ./build/.
++.PHONY: all
++all:
++	$(MAKE) drivelist
+diff --git a/node_modules/drivelist/build/config.gypi b/node_modules/drivelist/build/config.gypi
+new file mode 100644
+index 0000000..061d090
+--- /dev/null
++++ b/node_modules/drivelist/build/config.gypi
+@@ -0,0 +1,424 @@
++# Do not edit. File was generated by node-gyp's "configure" step
++{
++  "target_defaults": {
++    "cflags": [],
++    "default_configuration": "Release",
++    "defines": [],
++    "include_dirs": [],
++    "libraries": []
++  },
++  "variables": {
++    "arm_fpu": "neon",
++    "asan": 0,
++    "build_v8_with_gn": "false",
++    "built_with_electron": 1,
++    "coverage": "false",
++    "dcheck_always_on": 0,
++    "debug_nghttp2": "false",
++    "debug_node": "false",
++    "enable_lto": "false",
++    "enable_pgo_generate": "false",
++    "enable_pgo_use": "false",
++    "error_on_warn": "false",
++    "force_dynamic_crt": 0,
++    "host_arch": "x64",
++    "icu_data_in": "..\\..\\deps\\icu-tmp\\icudt72l.dat",
++    "icu_endianness": "l",
++    "icu_gyp_path": "tools/icu/icu-generic.gyp",
++    "icu_path": "deps/icu-small",
++    "icu_small": "false",
++    "icu_ver_major": "72",
++    "is_debug": 0,
++    "libdir": "lib",
++    "llvm_version": "0.0",
++    "napi_build_version": "8",
++    "node_builtin_shareable_builtins": [
++      "deps/cjs-module-lexer/lexer.js",
++      "deps/cjs-module-lexer/dist/lexer.js",
++      "deps/undici/undici.js"
++    ],
++    "node_byteorder": "little",
++    "node_debug_lib": "false",
++    "node_enable_d8": "false",
++    "node_enable_v8_vtunejit": "false",
++    "node_fipsinstall": "false",
++    "node_install_corepack": "true",
++    "node_install_npm": "true",
++    "node_library_files": [
++      "lib/_http_agent.js",
++      "lib/_http_client.js",
++      "lib/_http_common.js",
++      "lib/_http_incoming.js",
++      "lib/_http_outgoing.js",
++      "lib/_http_server.js",
++      "lib/_stream_duplex.js",
++      "lib/_stream_passthrough.js",
++      "lib/_stream_readable.js",
++      "lib/_stream_transform.js",
++      "lib/_stream_wrap.js",
++      "lib/_stream_writable.js",
++      "lib/_tls_common.js",
++      "lib/_tls_wrap.js",
++      "lib/assert.js",
++      "lib/assert/strict.js",
++      "lib/async_hooks.js",
++      "lib/buffer.js",
++      "lib/child_process.js",
++      "lib/cluster.js",
++      "lib/console.js",
++      "lib/constants.js",
++      "lib/crypto.js",
++      "lib/dgram.js",
++      "lib/diagnostics_channel.js",
++      "lib/dns.js",
++      "lib/dns/promises.js",
++      "lib/domain.js",
++      "lib/events.js",
++      "lib/fs.js",
++      "lib/fs/promises.js",
++      "lib/http.js",
++      "lib/http2.js",
++      "lib/https.js",
++      "lib/inspector.js",
++      "lib/internal/abort_controller.js",
++      "lib/internal/assert.js",
++      "lib/internal/assert/assertion_error.js",
++      "lib/internal/assert/calltracker.js",
++      "lib/internal/async_hooks.js",
++      "lib/internal/blob.js",
++      "lib/internal/blocklist.js",
++      "lib/internal/bootstrap/browser.js",
++      "lib/internal/bootstrap/loaders.js",
++      "lib/internal/bootstrap/node.js",
++      "lib/internal/bootstrap/switches/does_not_own_process_state.js",
++      "lib/internal/bootstrap/switches/does_own_process_state.js",
++      "lib/internal/bootstrap/switches/is_main_thread.js",
++      "lib/internal/bootstrap/switches/is_not_main_thread.js",
++      "lib/internal/buffer.js",
++      "lib/internal/child_process.js",
++      "lib/internal/child_process/serialization.js",
++      "lib/internal/cli_table.js",
++      "lib/internal/cluster/child.js",
++      "lib/internal/cluster/primary.js",
++      "lib/internal/cluster/round_robin_handle.js",
++      "lib/internal/cluster/shared_handle.js",
++      "lib/internal/cluster/utils.js",
++      "lib/internal/cluster/worker.js",
++      "lib/internal/console/constructor.js",
++      "lib/internal/console/global.js",
++      "lib/internal/constants.js",
++      "lib/internal/crypto/aes.js",
++      "lib/internal/crypto/certificate.js",
++      "lib/internal/crypto/cfrg.js",
++      "lib/internal/crypto/cipher.js",
++      "lib/internal/crypto/diffiehellman.js",
++      "lib/internal/crypto/ec.js",
++      "lib/internal/crypto/hash.js",
++      "lib/internal/crypto/hashnames.js",
++      "lib/internal/crypto/hkdf.js",
++      "lib/internal/crypto/keygen.js",
++      "lib/internal/crypto/keys.js",
++      "lib/internal/crypto/mac.js",
++      "lib/internal/crypto/pbkdf2.js",
++      "lib/internal/crypto/random.js",
++      "lib/internal/crypto/rsa.js",
++      "lib/internal/crypto/scrypt.js",
++      "lib/internal/crypto/sig.js",
++      "lib/internal/crypto/util.js",
++      "lib/internal/crypto/webcrypto.js",
++      "lib/internal/crypto/x509.js",
++      "lib/internal/debugger/inspect.js",
++      "lib/internal/debugger/inspect_client.js",
++      "lib/internal/debugger/inspect_repl.js",
++      "lib/internal/dgram.js",
++      "lib/internal/dns/callback_resolver.js",
++      "lib/internal/dns/promises.js",
++      "lib/internal/dns/utils.js",
++      "lib/internal/dtrace.js",
++      "lib/internal/encoding.js",
++      "lib/internal/error_serdes.js",
++      "lib/internal/errors.js",
++      "lib/internal/event_target.js",
++      "lib/internal/file.js",
++      "lib/internal/fixed_queue.js",
++      "lib/internal/freelist.js",
++      "lib/internal/freeze_intrinsics.js",
++      "lib/internal/fs/cp/cp-sync.js",
++      "lib/internal/fs/cp/cp.js",
++      "lib/internal/fs/dir.js",
++      "lib/internal/fs/promises.js",
++      "lib/internal/fs/read_file_context.js",
++      "lib/internal/fs/recursive_watch.js",
++      "lib/internal/fs/rimraf.js",
++      "lib/internal/fs/streams.js",
++      "lib/internal/fs/sync_write_stream.js",
++      "lib/internal/fs/utils.js",
++      "lib/internal/fs/watchers.js",
++      "lib/internal/heap_utils.js",
++      "lib/internal/histogram.js",
++      "lib/internal/http.js",
++      "lib/internal/http2/compat.js",
++      "lib/internal/http2/core.js",
++      "lib/internal/http2/util.js",
++      "lib/internal/idna.js",
++      "lib/internal/inspector_async_hook.js",
++      "lib/internal/js_stream_socket.js",
++      "lib/internal/legacy/processbinding.js",
++      "lib/internal/linkedlist.js",
++      "lib/internal/main/check_syntax.js",
++      "lib/internal/main/environment.js",
++      "lib/internal/main/eval_stdin.js",
++      "lib/internal/main/eval_string.js",
++      "lib/internal/main/inspect.js",
++      "lib/internal/main/mksnapshot.js",
++      "lib/internal/main/print_help.js",
++      "lib/internal/main/prof_process.js",
++      "lib/internal/main/repl.js",
++      "lib/internal/main/run_main_module.js",
++      "lib/internal/main/test_runner.js",
++      "lib/internal/main/watch_mode.js",
++      "lib/internal/main/worker_thread.js",
++      "lib/internal/mime.js",
++      "lib/internal/modules/cjs/helpers.js",
++      "lib/internal/modules/cjs/loader.js",
++      "lib/internal/modules/esm/assert.js",
++      "lib/internal/modules/esm/create_dynamic_module.js",
++      "lib/internal/modules/esm/fetch_module.js",
++      "lib/internal/modules/esm/formats.js",
++      "lib/internal/modules/esm/get_format.js",
++      "lib/internal/modules/esm/handle_process_exit.js",
++      "lib/internal/modules/esm/initialize_import_meta.js",
++      "lib/internal/modules/esm/load.js",
++      "lib/internal/modules/esm/loader.js",
++      "lib/internal/modules/esm/module_job.js",
++      "lib/internal/modules/esm/module_map.js",
++      "lib/internal/modules/esm/package_config.js",
++      "lib/internal/modules/esm/resolve.js",
++      "lib/internal/modules/esm/translators.js",
++      "lib/internal/modules/package_json_reader.js",
++      "lib/internal/modules/run_main.js",
++      "lib/internal/net.js",
++      "lib/internal/options.js",
++      "lib/internal/per_context/domexception.js",
++      "lib/internal/per_context/messageport.js",
++      "lib/internal/per_context/primordials.js",
++      "lib/internal/perf/event_loop_delay.js",
++      "lib/internal/perf/event_loop_utilization.js",
++      "lib/internal/perf/nodetiming.js",
++      "lib/internal/perf/observe.js",
++      "lib/internal/perf/performance.js",
++      "lib/internal/perf/performance_entry.js",
++      "lib/internal/perf/resource_timing.js",
++      "lib/internal/perf/timerify.js",
++      "lib/internal/perf/usertiming.js",
++      "lib/internal/perf/utils.js",
++      "lib/internal/policy/manifest.js",
++      "lib/internal/policy/sri.js",
++      "lib/internal/priority_queue.js",
++      "lib/internal/process/esm_loader.js",
++      "lib/internal/process/execution.js",
++      "lib/internal/process/per_thread.js",
++      "lib/internal/process/policy.js",
++      "lib/internal/process/pre_execution.js",
++      "lib/internal/process/promises.js",
++      "lib/internal/process/report.js",
++      "lib/internal/process/signal.js",
++      "lib/internal/process/task_queues.js",
++      "lib/internal/process/warning.js",
++      "lib/internal/process/worker_thread_only.js",
++      "lib/internal/promise_hooks.js",
++      "lib/internal/querystring.js",
++      "lib/internal/readline/callbacks.js",
++      "lib/internal/readline/emitKeypressEvents.js",
++      "lib/internal/readline/interface.js",
++      "lib/internal/readline/promises.js",
++      "lib/internal/readline/utils.js",
++      "lib/internal/repl.js",
++      "lib/internal/repl/await.js",
++      "lib/internal/repl/history.js",
++      "lib/internal/repl/utils.js",
++      "lib/internal/socket_list.js",
++      "lib/internal/socketaddress.js",
++      "lib/internal/source_map/prepare_stack_trace.js",
++      "lib/internal/source_map/source_map.js",
++      "lib/internal/source_map/source_map_cache.js",
++      "lib/internal/stream_base_commons.js",
++      "lib/internal/streams/add-abort-signal.js",
++      "lib/internal/streams/buffer_list.js",
++      "lib/internal/streams/compose.js",
++      "lib/internal/streams/destroy.js",
++      "lib/internal/streams/duplex.js",
++      "lib/internal/streams/duplexify.js",
++      "lib/internal/streams/end-of-stream.js",
++      "lib/internal/streams/from.js",
++      "lib/internal/streams/lazy_transform.js",
++      "lib/internal/streams/legacy.js",
++      "lib/internal/streams/operators.js",
++      "lib/internal/streams/passthrough.js",
++      "lib/internal/streams/pipeline.js",
++      "lib/internal/streams/readable.js",
++      "lib/internal/streams/state.js",
++      "lib/internal/streams/transform.js",
++      "lib/internal/streams/utils.js",
++      "lib/internal/streams/writable.js",
++      "lib/internal/structured_clone.js",
++      "lib/internal/test/binding.js",
++      "lib/internal/test/transfer.js",
++      "lib/internal/test_runner/harness.js",
++      "lib/internal/test_runner/mock.js",
++      "lib/internal/test_runner/runner.js",
++      "lib/internal/test_runner/tap_checker.js",
++      "lib/internal/test_runner/tap_lexer.js",
++      "lib/internal/test_runner/tap_parser.js",
++      "lib/internal/test_runner/tap_stream.js",
++      "lib/internal/test_runner/test.js",
++      "lib/internal/test_runner/utils.js",
++      "lib/internal/test_runner/yaml_parser.js",
++      "lib/internal/timers.js",
++      "lib/internal/tls/secure-context.js",
++      "lib/internal/tls/secure-pair.js",
++      "lib/internal/trace_events_async_hooks.js",
++      "lib/internal/tty.js",
++      "lib/internal/url.js",
++      "lib/internal/util.js",
++      "lib/internal/util/colors.js",
++      "lib/internal/util/comparisons.js",
++      "lib/internal/util/debuglog.js",
++      "lib/internal/util/inspect.js",
++      "lib/internal/util/inspector.js",
++      "lib/internal/util/iterable_weak_map.js",
++      "lib/internal/util/parse_args/parse_args.js",
++      "lib/internal/util/parse_args/utils.js",
++      "lib/internal/util/types.js",
++      "lib/internal/v8/startup_snapshot.js",
++      "lib/internal/v8_prof_polyfill.js",
++      "lib/internal/v8_prof_processor.js",
++      "lib/internal/validators.js",
++      "lib/internal/vm.js",
++      "lib/internal/vm/module.js",
++      "lib/internal/wasm_web_api.js",
++      "lib/internal/watch_mode/files_watcher.js",
++      "lib/internal/watchdog.js",
++      "lib/internal/webstreams/adapters.js",
++      "lib/internal/webstreams/compression.js",
++      "lib/internal/webstreams/encoding.js",
++      "lib/internal/webstreams/queuingstrategies.js",
++      "lib/internal/webstreams/readablestream.js",
++      "lib/internal/webstreams/transfer.js",
++      "lib/internal/webstreams/transformstream.js",
++      "lib/internal/webstreams/util.js",
++      "lib/internal/webstreams/writablestream.js",
++      "lib/internal/worker.js",
++      "lib/internal/worker/io.js",
++      "lib/internal/worker/js_transferable.js",
++      "lib/module.js",
++      "lib/net.js",
++      "lib/os.js",
++      "lib/path.js",
++      "lib/path/posix.js",
++      "lib/path/win32.js",
++      "lib/perf_hooks.js",
++      "lib/process.js",
++      "lib/punycode.js",
++      "lib/querystring.js",
++      "lib/readline.js",
++      "lib/readline/promises.js",
++      "lib/repl.js",
++      "lib/stream.js",
++      "lib/stream/consumers.js",
++      "lib/stream/promises.js",
++      "lib/stream/web.js",
++      "lib/string_decoder.js",
++      "lib/sys.js",
++      "lib/test.js",
++      "lib/timers.js",
++      "lib/timers/promises.js",
++      "lib/tls.js",
++      "lib/trace_events.js",
++      "lib/tty.js",
++      "lib/url.js",
++      "lib/util.js",
++      "lib/util/types.js",
++      "lib/v8.js",
++      "lib/vm.js",
++      "lib/wasi.js",
++      "lib/worker_threads.js",
++      "lib/zlib.js"
++    ],
++    "node_module_version": 114,
++    "node_no_browser_globals": "false",
++    "node_prefix": "/usr/local",
++    "node_release_urlbase": "",
++    "node_shared": "false",
++    "node_shared_brotli": "false",
++    "node_shared_cares": "false",
++    "node_shared_http_parser": "false",
++    "node_shared_libuv": "false",
++    "node_shared_nghttp2": "false",
++    "node_shared_nghttp3": "false",
++    "node_shared_ngtcp2": "false",
++    "node_shared_openssl": "false",
++    "node_shared_zlib": "false",
++    "node_tag": "",
++    "node_target_type": "executable",
++    "node_use_bundled_v8": "true",
++    "node_use_dtrace": "false",
++    "node_use_etw": "true",
++    "node_use_node_code_cache": "false",
++    "node_use_node_snapshot": "false",
++    "node_use_openssl": "true",
++    "node_use_v8_platform": "true",
++    "node_with_ltcg": "true",
++    "node_without_node_options": "false",
++    "openssl_is_fips": "false",
++    "openssl_no_asm": 1,
++    "openssl_quic": "true",
++    "ossfuzz": "false",
++    "shlib_suffix": "so.108",
++    "target_arch": "x64",
++    "using_electron_config_gypi": 1,
++    "v8_enable_31bit_smis_on_64bit_arch": 1,
++    "v8_enable_gdbjit": 0,
++    "v8_enable_hugepage": 0,
++    "v8_enable_i18n_support": 1,
++    "v8_enable_inspector": 1,
++    "v8_enable_javascript_promise_hooks": 1,
++    "v8_enable_lite_mode": 0,
++    "v8_enable_object_print": 1,
++    "v8_enable_pointer_compression": 1,
++    "v8_enable_sandbox": 1,
++    "v8_enable_shared_ro_heap": 0,
++    "v8_enable_webassembly": 1,
++    "v8_no_strict_aliasing": 1,
++    "v8_optimized_debug": 1,
++    "v8_promise_internal_field_count": 1,
++    "v8_random_seed": 0,
++    "v8_trace_maps": 0,
++    "v8_use_siphash": 1,
++    "want_separate_host_toolset": 1,
++    "nodedir": "/Users/veland/Library/Caches/node-gyp/24.0.0",
++    "python": "/usr/local/opt/python@3.13/bin/python3.13",
++    "standalone_static_library": 1,
++    "runtime": "electron",
++    "version_git_tag": "true",
++    "drivelist_prebuild": "",
++    "init_license": "MIT",
++    "registry": "https://registry.yarnpkg.com",
++    "drivelist_skip_build": "true",
++    "target": "24.0.0",
++    "drivelist_build_from_source": "",
++    "version_commit_hooks": "true",
++    "child_concurrency": "1",
++    "bin_links": "true",
++    "strict_ssl": "true",
++    "save_prefix": "^",
++    "version_git_message": "v%s",
++    "disturl": "https://electronjs.org/headers",
++    "user_agent": "yarn/1.22.5 npm/? node/v20.19.4 darwin arm64",
++    "ignore_scripts": "",
++    "version_git_sign": "",
++    "ignore_optional": "",
++    "init_version": "1.0.0",
++    "version_tag_prefix": "v"
++  }
++}
+diff --git a/node_modules/drivelist/build/drivelist.target.mk b/node_modules/drivelist/build/drivelist.target.mk
+new file mode 100644
+index 0000000..d601455
+--- /dev/null
++++ b/node_modules/drivelist/build/drivelist.target.mk
+@@ -0,0 +1,237 @@
++# This file is generated by gyp; do not edit.
++
++TOOLSET := target
++TARGET := drivelist
++DEFS_Debug := \
++	'-DNODE_GYP_MODULE_NAME=drivelist' \
++	'-DUSING_UV_SHARED=1' \
++	'-DUSING_V8_SHARED=1' \
++	'-DV8_DEPRECATION_WARNINGS=1' \
++	'-DV8_DEPRECATION_WARNINGS' \
++	'-DV8_IMMINENT_DEPRECATION_WARNINGS' \
++	'-D_GLIBCXX_USE_CXX11_ABI=1' \
++	'-DELECTRON_ENSURE_CONFIG_GYPI' \
++	'-D_DARWIN_USE_64_BIT_INODE=1' \
++	'-D_LARGEFILE_SOURCE' \
++	'-D_FILE_OFFSET_BITS=64' \
++	'-DUSING_ELECTRON_CONFIG_GYPI' \
++	'-DV8_COMPRESS_POINTERS' \
++	'-DV8_COMPRESS_POINTERS_IN_SHARED_CAGE' \
++	'-DV8_ENABLE_SANDBOX' \
++	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
++	'-DOPENSSL_NO_PINSHARED' \
++	'-DOPENSSL_THREADS' \
++	'-DOPENSSL_NO_ASM' \
++	'-DNAPI_CPP_EXCEPTIONS' \
++	'-DBUILDING_NODE_EXTENSION' \
++	'-DDEBUG' \
++	'-D_DEBUG' \
++	'-DV8_ENABLE_CHECKS'
++
++# Flags passed to all source files.
++CFLAGS_Debug := \
++	-O0 \
++	-gdwarf-2 \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-Wall \
++	-Wendif-labels \
++	-W \
++	-Wno-unused-parameter
++
++# Flags passed to only C files.
++CFLAGS_C_Debug := \
++	-fno-strict-aliasing
++
++# Flags passed to only C++ files.
++CFLAGS_CC_Debug := \
++	-std=gnu++17 \
++	-stdlib=libc++ \
++	-fno-rtti \
++	-fno-exceptions \
++	-stdlib=libc++
++
++# Flags passed to only ObjC files.
++CFLAGS_OBJC_Debug :=
++
++# Flags passed to only ObjC++ files.
++CFLAGS_OBJCC_Debug :=
++
++INCS_Debug := \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/src \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/config \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/openssl/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/uv/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/zlib \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/v8/include \
++	-I$(srcdir)/../node-addon-api \
++	-I$(srcdir)/.
++
++DEFS_Release := \
++	'-DNODE_GYP_MODULE_NAME=drivelist' \
++	'-DUSING_UV_SHARED=1' \
++	'-DUSING_V8_SHARED=1' \
++	'-DV8_DEPRECATION_WARNINGS=1' \
++	'-DV8_DEPRECATION_WARNINGS' \
++	'-DV8_IMMINENT_DEPRECATION_WARNINGS' \
++	'-D_GLIBCXX_USE_CXX11_ABI=1' \
++	'-DELECTRON_ENSURE_CONFIG_GYPI' \
++	'-D_DARWIN_USE_64_BIT_INODE=1' \
++	'-D_LARGEFILE_SOURCE' \
++	'-D_FILE_OFFSET_BITS=64' \
++	'-DUSING_ELECTRON_CONFIG_GYPI' \
++	'-DV8_COMPRESS_POINTERS' \
++	'-DV8_COMPRESS_POINTERS_IN_SHARED_CAGE' \
++	'-DV8_ENABLE_SANDBOX' \
++	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
++	'-DOPENSSL_NO_PINSHARED' \
++	'-DOPENSSL_THREADS' \
++	'-DOPENSSL_NO_ASM' \
++	'-DNAPI_CPP_EXCEPTIONS' \
++	'-DBUILDING_NODE_EXTENSION'
++
++# Flags passed to all source files.
++CFLAGS_Release := \
++	-O3 \
++	-gdwarf-2 \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-Wall \
++	-Wendif-labels \
++	-W \
++	-Wno-unused-parameter
++
++# Flags passed to only C files.
++CFLAGS_C_Release := \
++	-fno-strict-aliasing
++
++# Flags passed to only C++ files.
++CFLAGS_CC_Release := \
++	-std=gnu++17 \
++	-stdlib=libc++ \
++	-fno-rtti \
++	-fno-exceptions \
++	-stdlib=libc++
++
++# Flags passed to only ObjC files.
++CFLAGS_OBJC_Release :=
++
++# Flags passed to only ObjC++ files.
++CFLAGS_OBJCC_Release :=
++
++INCS_Release := \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/src \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/config \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/openssl/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/uv/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/zlib \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/v8/include \
++	-I$(srcdir)/../node-addon-api \
++	-I$(srcdir)/.
++
++OBJS := \
++	$(obj).target/$(TARGET)/src/drivelist.o \
++	$(obj).target/$(TARGET)/src/device-descriptor.o \
++	$(obj).target/$(TARGET)/src/darwin/list.o \
++	$(obj).target/$(TARGET)/src/darwin/REDiskList.o
++
++# Add to the list of files we specially track dependencies for.
++all_deps += $(OBJS)
++
++# Make sure our dependencies are built before any of us.
++$(OBJS): | $(builddir)/nothing.a
++
++# CFLAGS et al overrides must be target-local.
++# See "Target-specific Variable Values" in the GNU Make manual.
++$(OBJS): TOOLSET := $(TOOLSET)
++$(OBJS): GYP_CFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_C_$(BUILDTYPE))
++$(OBJS): GYP_CXXFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_CC_$(BUILDTYPE))
++$(OBJS): GYP_OBJCFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_C_$(BUILDTYPE)) $(CFLAGS_OBJC_$(BUILDTYPE))
++$(OBJS): GYP_OBJCXXFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_CC_$(BUILDTYPE)) $(CFLAGS_OBJCC_$(BUILDTYPE))
++
++# Suffix rules, putting all outputs into $(obj).
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++
++# Try building from generated source, too.
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.cpp FORCE_DO_CMD
++	@$(call do_cmd,cxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.mm FORCE_DO_CMD
++	@$(call do_cmd,objcxx,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.m FORCE_DO_CMD
++	@$(call do_cmd,objc,1)
++
++# End of this set of suffix rules
++### Rules for final target.
++LDFLAGS_Debug := \
++	-stdlib=libc++ \
++	-undefined dynamic_lookup \
++	-Wl,-search_paths_first \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-L$(builddir) \
++	-stdlib=libc++
++
++LIBTOOLFLAGS_Debug := \
++	-stdlib=libc++ \
++	-undefined dynamic_lookup \
++	-Wl,-search_paths_first
++
++LDFLAGS_Release := \
++	-stdlib=libc++ \
++	-undefined dynamic_lookup \
++	-Wl,-search_paths_first \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-L$(builddir) \
++	-stdlib=libc++
++
++LIBTOOLFLAGS_Release := \
++	-stdlib=libc++ \
++	-undefined dynamic_lookup \
++	-Wl,-search_paths_first
++
++LIBS := \
++	-framework Carbon,DiskArbitration
++
++$(builddir)/drivelist.node: GYP_LDFLAGS := $(LDFLAGS_$(BUILDTYPE))
++$(builddir)/drivelist.node: LIBS := $(LIBS)
++$(builddir)/drivelist.node: GYP_LIBTOOLFLAGS := $(LIBTOOLFLAGS_$(BUILDTYPE))
++$(builddir)/drivelist.node: TOOLSET := $(TOOLSET)
++$(builddir)/drivelist.node: $(OBJS) $(builddir)/nothing.a FORCE_DO_CMD
++	$(call do_cmd,solink_module)
++
++all_deps += $(builddir)/drivelist.node
++# Add target alias
++.PHONY: drivelist
++drivelist: $(builddir)/drivelist.node
++
++# Short alias for building this executable.
++.PHONY: drivelist.node
++drivelist.node: $(builddir)/drivelist.node
++
++# Add executable to "all" target.
++.PHONY: all
++all: $(builddir)/drivelist.node
++
+diff --git a/node_modules/drivelist/build/gyp-mac-tool b/node_modules/drivelist/build/gyp-mac-tool
+new file mode 100755
+index 0000000..ffef860
+--- /dev/null
++++ b/node_modules/drivelist/build/gyp-mac-tool
+@@ -0,0 +1,772 @@
++#!/usr/bin/env python3
++# Generated by gyp. Do not edit.
++# Copyright (c) 2012 Google Inc. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++"""Utility functions to perform Xcode-style build steps.
++
++These functions are executed via gyp-mac-tool when using the Makefile generator.
++"""
++
++
++import fcntl
++import fnmatch
++import glob
++import json
++import os
++import plistlib
++import re
++import shutil
++import struct
++import subprocess
++import sys
++import tempfile
++
++
++def main(args):
++    executor = MacTool()
++    exit_code = executor.Dispatch(args)
++    if exit_code is not None:
++        sys.exit(exit_code)
++
++
++class MacTool:
++    """This class performs all the Mac tooling steps. The methods can either be
++  executed directly, or dispatched from an argument list."""
++
++    def Dispatch(self, args):
++        """Dispatches a string command to a method."""
++        if len(args) < 1:
++            raise Exception("Not enough arguments")
++
++        method = "Exec%s" % self._CommandifyName(args[0])
++        return getattr(self, method)(*args[1:])
++
++    def _CommandifyName(self, name_string):
++        """Transforms a tool name like copy-info-plist to CopyInfoPlist"""
++        return name_string.title().replace("-", "")
++
++    def ExecCopyBundleResource(self, source, dest, convert_to_binary):
++        """Copies a resource file to the bundle/Resources directory, performing any
++    necessary compilation on each resource."""
++        convert_to_binary = convert_to_binary == "True"
++        extension = os.path.splitext(source)[1].lower()
++        if os.path.isdir(source):
++            # Copy tree.
++            # TODO(thakis): This copies file attributes like mtime, while the
++            # single-file branch below doesn't. This should probably be changed to
++            # be consistent with the single-file branch.
++            if os.path.exists(dest):
++                shutil.rmtree(dest)
++            shutil.copytree(source, dest)
++        elif extension == ".xib":
++            return self._CopyXIBFile(source, dest)
++        elif extension == ".storyboard":
++            return self._CopyXIBFile(source, dest)
++        elif extension == ".strings" and not convert_to_binary:
++            self._CopyStringsFile(source, dest)
++        else:
++            if os.path.exists(dest):
++                os.unlink(dest)
++            shutil.copy(source, dest)
++
++        if convert_to_binary and extension in (".plist", ".strings"):
++            self._ConvertToBinary(dest)
++
++    def _CopyXIBFile(self, source, dest):
++        """Compiles a XIB file with ibtool into a binary plist in the bundle."""
++
++        # ibtool sometimes crashes with relative paths. See crbug.com/314728.
++        base = os.path.dirname(os.path.realpath(__file__))
++        if os.path.relpath(source):
++            source = os.path.join(base, source)
++        if os.path.relpath(dest):
++            dest = os.path.join(base, dest)
++
++        args = ["xcrun", "ibtool", "--errors", "--warnings", "--notices"]
++
++        if os.environ["XCODE_VERSION_ACTUAL"] > "0700":
++            args.extend(["--auto-activate-custom-fonts"])
++            if "IPHONEOS_DEPLOYMENT_TARGET" in os.environ:
++                args.extend(
++                    [
++                        "--target-device",
++                        "iphone",
++                        "--target-device",
++                        "ipad",
++                        "--minimum-deployment-target",
++                        os.environ["IPHONEOS_DEPLOYMENT_TARGET"],
++                    ]
++                )
++            else:
++                args.extend(
++                    [
++                        "--target-device",
++                        "mac",
++                        "--minimum-deployment-target",
++                        os.environ["MACOSX_DEPLOYMENT_TARGET"],
++                    ]
++                )
++
++        args.extend(
++            ["--output-format", "human-readable-text", "--compile", dest, source]
++        )
++
++        ibtool_section_re = re.compile(r"/\*.*\*/")
++        ibtool_re = re.compile(r".*note:.*is clipping its content")
++        try:
++            stdout = subprocess.check_output(args)
++        except subprocess.CalledProcessError as e:
++            print(e.output)
++            raise
++        current_section_header = None
++        for line in stdout.splitlines():
++            if ibtool_section_re.match(line):
++                current_section_header = line
++            elif not ibtool_re.match(line):
++                if current_section_header:
++                    print(current_section_header)
++                    current_section_header = None
++                print(line)
++        return 0
++
++    def _ConvertToBinary(self, dest):
++        subprocess.check_call(
++            ["xcrun", "plutil", "-convert", "binary1", "-o", dest, dest]
++        )
++
++    def _CopyStringsFile(self, source, dest):
++        """Copies a .strings file using iconv to reconvert the input into UTF-16."""
++        input_code = self._DetectInputEncoding(source) or "UTF-8"
++
++        # Xcode's CpyCopyStringsFile / builtin-copyStrings seems to call
++        # CFPropertyListCreateFromXMLData() behind the scenes; at least it prints
++        #     CFPropertyListCreateFromXMLData(): Old-style plist parser: missing
++        #     semicolon in dictionary.
++        # on invalid files. Do the same kind of validation.
++        import CoreFoundation
++
++        with open(source, "rb") as in_file:
++            s = in_file.read()
++        d = CoreFoundation.CFDataCreate(None, s, len(s))
++        _, error = CoreFoundation.CFPropertyListCreateFromXMLData(None, d, 0, None)
++        if error:
++            return
++
++        with open(dest, "wb") as fp:
++            fp.write(s.decode(input_code).encode("UTF-16"))
++
++    def _DetectInputEncoding(self, file_name):
++        """Reads the first few bytes from file_name and tries to guess the text
++    encoding. Returns None as a guess if it can't detect it."""
++        with open(file_name, "rb") as fp:
++            try:
++                header = fp.read(3)
++            except Exception:
++                return None
++        if header.startswith(b"\xFE\xFF"):
++            return "UTF-16"
++        elif header.startswith(b"\xFF\xFE"):
++            return "UTF-16"
++        elif header.startswith(b"\xEF\xBB\xBF"):
++            return "UTF-8"
++        else:
++            return None
++
++    def ExecCopyInfoPlist(self, source, dest, convert_to_binary, *keys):
++        """Copies the |source| Info.plist to the destination directory |dest|."""
++        # Read the source Info.plist into memory.
++        with open(source) as fd:
++            lines = fd.read()
++
++        # Insert synthesized key/value pairs (e.g. BuildMachineOSBuild).
++        plist = plistlib.readPlistFromString(lines)
++        if keys:
++            plist.update(json.loads(keys[0]))
++        lines = plistlib.writePlistToString(plist)
++
++        # Go through all the environment variables and replace them as variables in
++        # the file.
++        IDENT_RE = re.compile(r"[_/\s]")
++        for key in os.environ:
++            if key.startswith("_"):
++                continue
++            evar = "${%s}" % key
++            evalue = os.environ[key]
++            lines = lines.replace(lines, evar, evalue)
++
++            # Xcode supports various suffices on environment variables, which are
++            # all undocumented. :rfc1034identifier is used in the standard project
++            # template these days, and :identifier was used earlier. They are used to
++            # convert non-url characters into things that look like valid urls --
++            # except that the replacement character for :identifier, '_' isn't valid
++            # in a URL either -- oops, hence :rfc1034identifier was born.
++            evar = "${%s:identifier}" % key
++            evalue = IDENT_RE.sub("_", os.environ[key])
++            lines = lines.replace(lines, evar, evalue)
++
++            evar = "${%s:rfc1034identifier}" % key
++            evalue = IDENT_RE.sub("-", os.environ[key])
++            lines = lines.replace(lines, evar, evalue)
++
++        # Remove any keys with values that haven't been replaced.
++        lines = lines.splitlines()
++        for i in range(len(lines)):
++            if lines[i].strip().startswith("<string>${"):
++                lines[i] = None
++                lines[i - 1] = None
++        lines = "\n".join(line for line in lines if line is not None)
++
++        # Write out the file with variables replaced.
++        with open(dest, "w") as fd:
++            fd.write(lines)
++
++        # Now write out PkgInfo file now that the Info.plist file has been
++        # "compiled".
++        self._WritePkgInfo(dest)
++
++        if convert_to_binary == "True":
++            self._ConvertToBinary(dest)
++
++    def _WritePkgInfo(self, info_plist):
++        """This writes the PkgInfo file from the data stored in Info.plist."""
++        plist = plistlib.readPlist(info_plist)
++        if not plist:
++            return
++
++        # Only create PkgInfo for executable types.
++        package_type = plist["CFBundlePackageType"]
++        if package_type != "APPL":
++            return
++
++        # The format of PkgInfo is eight characters, representing the bundle type
++        # and bundle signature, each four characters. If that is missing, four
++        # '?' characters are used instead.
++        signature_code = plist.get("CFBundleSignature", "????")
++        if len(signature_code) != 4:  # Wrong length resets everything, too.
++            signature_code = "?" * 4
++
++        dest = os.path.join(os.path.dirname(info_plist), "PkgInfo")
++        with open(dest, "w") as fp:
++            fp.write(f"{package_type}{signature_code}")
++
++    def ExecFlock(self, lockfile, *cmd_list):
++        """Emulates the most basic behavior of Linux's flock(1)."""
++        # Rely on exception handling to report errors.
++        fd = os.open(lockfile, os.O_RDONLY | os.O_NOCTTY | os.O_CREAT, 0o666)
++        fcntl.flock(fd, fcntl.LOCK_EX)
++        return subprocess.call(cmd_list)
++
++    def ExecFilterLibtool(self, *cmd_list):
++        """Calls libtool and filters out '/path/to/libtool: file: foo.o has no
++    symbols'."""
++        libtool_re = re.compile(
++            r"^.*libtool: (?:for architecture: \S* )?" r"file: .* has no symbols$"
++        )
++        libtool_re5 = re.compile(
++            r"^.*libtool: warning for library: "
++            + r".* the table of contents is empty "
++            + r"\(no object file members in the library define global symbols\)$"
++        )
++        env = os.environ.copy()
++        # Ref:
++        # http://www.opensource.apple.com/source/cctools/cctools-809/misc/libtool.c
++        # The problem with this flag is that it resets the file mtime on the file to
++        # epoch=0, e.g. 1970-1-1 or 1969-12-31 depending on timezone.
++        env["ZERO_AR_DATE"] = "1"
++        libtoolout = subprocess.Popen(cmd_list, stderr=subprocess.PIPE, env=env)
++        err = libtoolout.communicate()[1].decode("utf-8")
++        for line in err.splitlines():
++            if not libtool_re.match(line) and not libtool_re5.match(line):
++                print(line, file=sys.stderr)
++        # Unconditionally touch the output .a file on the command line if present
++        # and the command succeeded. A bit hacky.
++        if not libtoolout.returncode:
++            for i in range(len(cmd_list) - 1):
++                if cmd_list[i] == "-o" and cmd_list[i + 1].endswith(".a"):
++                    os.utime(cmd_list[i + 1], None)
++                    break
++        return libtoolout.returncode
++
++    def ExecPackageIosFramework(self, framework):
++        # Find the name of the binary based on the part before the ".framework".
++        binary = os.path.basename(framework).split(".")[0]
++        module_path = os.path.join(framework, "Modules")
++        if not os.path.exists(module_path):
++            os.mkdir(module_path)
++        module_template = (
++            "framework module %s {\n"
++            '  umbrella header "%s.h"\n'
++            "\n"
++            "  export *\n"
++            "  module * { export * }\n"
++            "}\n" % (binary, binary)
++        )
++
++        with open(os.path.join(module_path, "module.modulemap"), "w") as module_file:
++            module_file.write(module_template)
++
++    def ExecPackageFramework(self, framework, version):
++        """Takes a path to Something.framework and the Current version of that and
++    sets up all the symlinks."""
++        # Find the name of the binary based on the part before the ".framework".
++        binary = os.path.basename(framework).split(".")[0]
++
++        CURRENT = "Current"
++        RESOURCES = "Resources"
++        VERSIONS = "Versions"
++
++        if not os.path.exists(os.path.join(framework, VERSIONS, version, binary)):
++            # Binary-less frameworks don't seem to contain symlinks (see e.g.
++            # chromium's out/Debug/org.chromium.Chromium.manifest/ bundle).
++            return
++
++        # Move into the framework directory to set the symlinks correctly.
++        pwd = os.getcwd()
++        os.chdir(framework)
++
++        # Set up the Current version.
++        self._Relink(version, os.path.join(VERSIONS, CURRENT))
++
++        # Set up the root symlinks.
++        self._Relink(os.path.join(VERSIONS, CURRENT, binary), binary)
++        self._Relink(os.path.join(VERSIONS, CURRENT, RESOURCES), RESOURCES)
++
++        # Back to where we were before!
++        os.chdir(pwd)
++
++    def _Relink(self, dest, link):
++        """Creates a symlink to |dest| named |link|. If |link| already exists,
++    it is overwritten."""
++        if os.path.lexists(link):
++            os.remove(link)
++        os.symlink(dest, link)
++
++    def ExecCompileIosFrameworkHeaderMap(self, out, framework, *all_headers):
++        framework_name = os.path.basename(framework).split(".")[0]
++        all_headers = [os.path.abspath(header) for header in all_headers]
++        filelist = {}
++        for header in all_headers:
++            filename = os.path.basename(header)
++            filelist[filename] = header
++            filelist[os.path.join(framework_name, filename)] = header
++        WriteHmap(out, filelist)
++
++    def ExecCopyIosFrameworkHeaders(self, framework, *copy_headers):
++        header_path = os.path.join(framework, "Headers")
++        if not os.path.exists(header_path):
++            os.makedirs(header_path)
++        for header in copy_headers:
++            shutil.copy(header, os.path.join(header_path, os.path.basename(header)))
++
++    def ExecCompileXcassets(self, keys, *inputs):
++        """Compiles multiple .xcassets files into a single .car file.
++
++    This invokes 'actool' to compile all the inputs .xcassets files. The
++    |keys| arguments is a json-encoded dictionary of extra arguments to
++    pass to 'actool' when the asset catalogs contains an application icon
++    or a launch image.
++
++    Note that 'actool' does not create the Assets.car file if the asset
++    catalogs does not contains imageset.
++    """
++        command_line = [
++            "xcrun",
++            "actool",
++            "--output-format",
++            "human-readable-text",
++            "--compress-pngs",
++            "--notices",
++            "--warnings",
++            "--errors",
++        ]
++        is_iphone_target = "IPHONEOS_DEPLOYMENT_TARGET" in os.environ
++        if is_iphone_target:
++            platform = os.environ["CONFIGURATION"].split("-")[-1]
++            if platform not in ("iphoneos", "iphonesimulator"):
++                platform = "iphonesimulator"
++            command_line.extend(
++                [
++                    "--platform",
++                    platform,
++                    "--target-device",
++                    "iphone",
++                    "--target-device",
++                    "ipad",
++                    "--minimum-deployment-target",
++                    os.environ["IPHONEOS_DEPLOYMENT_TARGET"],
++                    "--compile",
++                    os.path.abspath(os.environ["CONTENTS_FOLDER_PATH"]),
++                ]
++            )
++        else:
++            command_line.extend(
++                [
++                    "--platform",
++                    "macosx",
++                    "--target-device",
++                    "mac",
++                    "--minimum-deployment-target",
++                    os.environ["MACOSX_DEPLOYMENT_TARGET"],
++                    "--compile",
++                    os.path.abspath(os.environ["UNLOCALIZED_RESOURCES_FOLDER_PATH"]),
++                ]
++            )
++        if keys:
++            keys = json.loads(keys)
++            for key, value in keys.items():
++                arg_name = "--" + key
++                if isinstance(value, bool):
++                    if value:
++                        command_line.append(arg_name)
++                elif isinstance(value, list):
++                    for v in value:
++                        command_line.append(arg_name)
++                        command_line.append(str(v))
++                else:
++                    command_line.append(arg_name)
++                    command_line.append(str(value))
++        # Note: actool crashes if inputs path are relative, so use os.path.abspath
++        # to get absolute path name for inputs.
++        command_line.extend(map(os.path.abspath, inputs))
++        subprocess.check_call(command_line)
++
++    def ExecMergeInfoPlist(self, output, *inputs):
++        """Merge multiple .plist files into a single .plist file."""
++        merged_plist = {}
++        for path in inputs:
++            plist = self._LoadPlistMaybeBinary(path)
++            self._MergePlist(merged_plist, plist)
++        plistlib.writePlist(merged_plist, output)
++
++    def ExecCodeSignBundle(self, key, entitlements, provisioning, path, preserve):
++        """Code sign a bundle.
++
++    This function tries to code sign an iOS bundle, following the same
++    algorithm as Xcode:
++      1. pick the provisioning profile that best match the bundle identifier,
++         and copy it into the bundle as embedded.mobileprovision,
++      2. copy Entitlements.plist from user or SDK next to the bundle,
++      3. code sign the bundle.
++    """
++        substitutions, overrides = self._InstallProvisioningProfile(
++            provisioning, self._GetCFBundleIdentifier()
++        )
++        entitlements_path = self._InstallEntitlements(
++            entitlements, substitutions, overrides
++        )
++
++        args = ["codesign", "--force", "--sign", key]
++        if preserve == "True":
++            args.extend(["--deep", "--preserve-metadata=identifier,entitlements"])
++        else:
++            args.extend(["--entitlements", entitlements_path])
++        args.extend(["--timestamp=none", path])
++        subprocess.check_call(args)
++
++    def _InstallProvisioningProfile(self, profile, bundle_identifier):
++        """Installs embedded.mobileprovision into the bundle.
++
++    Args:
++      profile: string, optional, short name of the .mobileprovision file
++        to use, if empty or the file is missing, the best file installed
++        will be used
++      bundle_identifier: string, value of CFBundleIdentifier from Info.plist
++
++    Returns:
++      A tuple containing two dictionary: variables substitutions and values
++      to overrides when generating the entitlements file.
++    """
++        source_path, provisioning_data, team_id = self._FindProvisioningProfile(
++            profile, bundle_identifier
++        )
++        target_path = os.path.join(
++            os.environ["BUILT_PRODUCTS_DIR"],
++            os.environ["CONTENTS_FOLDER_PATH"],
++            "embedded.mobileprovision",
++        )
++        shutil.copy2(source_path, target_path)
++        substitutions = self._GetSubstitutions(bundle_identifier, team_id + ".")
++        return substitutions, provisioning_data["Entitlements"]
++
++    def _FindProvisioningProfile(self, profile, bundle_identifier):
++        """Finds the .mobileprovision file to use for signing the bundle.
++
++    Checks all the installed provisioning profiles (or if the user specified
++    the PROVISIONING_PROFILE variable, only consult it) and select the most
++    specific that correspond to the bundle identifier.
++
++    Args:
++      profile: string, optional, short name of the .mobileprovision file
++        to use, if empty or the file is missing, the best file installed
++        will be used
++      bundle_identifier: string, value of CFBundleIdentifier from Info.plist
++
++    Returns:
++      A tuple of the path to the selected provisioning profile, the data of
++      the embedded plist in the provisioning profile and the team identifier
++      to use for code signing.
++
++    Raises:
++      SystemExit: if no .mobileprovision can be used to sign the bundle.
++    """
++        profiles_dir = os.path.join(
++            os.environ["HOME"], "Library", "MobileDevice", "Provisioning Profiles"
++        )
++        if not os.path.isdir(profiles_dir):
++            print(
++                "cannot find mobile provisioning for %s" % (bundle_identifier),
++                file=sys.stderr,
++            )
++            sys.exit(1)
++        provisioning_profiles = None
++        if profile:
++            profile_path = os.path.join(profiles_dir, profile + ".mobileprovision")
++            if os.path.exists(profile_path):
++                provisioning_profiles = [profile_path]
++        if not provisioning_profiles:
++            provisioning_profiles = glob.glob(
++                os.path.join(profiles_dir, "*.mobileprovision")
++            )
++        valid_provisioning_profiles = {}
++        for profile_path in provisioning_profiles:
++            profile_data = self._LoadProvisioningProfile(profile_path)
++            app_id_pattern = profile_data.get("Entitlements", {}).get(
++                "application-identifier", ""
++            )
++            for team_identifier in profile_data.get("TeamIdentifier", []):
++                app_id = f"{team_identifier}.{bundle_identifier}"
++                if fnmatch.fnmatch(app_id, app_id_pattern):
++                    valid_provisioning_profiles[app_id_pattern] = (
++                        profile_path,
++                        profile_data,
++                        team_identifier,
++                    )
++        if not valid_provisioning_profiles:
++            print(
++                "cannot find mobile provisioning for %s" % (bundle_identifier),
++                file=sys.stderr,
++            )
++            sys.exit(1)
++        # If the user has multiple provisioning profiles installed that can be
++        # used for ${bundle_identifier}, pick the most specific one (ie. the
++        # provisioning profile whose pattern is the longest).
++        selected_key = max(valid_provisioning_profiles, key=lambda v: len(v))
++        return valid_provisioning_profiles[selected_key]
++
++    def _LoadProvisioningProfile(self, profile_path):
++        """Extracts the plist embedded in a provisioning profile.
++
++    Args:
++      profile_path: string, path to the .mobileprovision file
++
++    Returns:
++      Content of the plist embedded in the provisioning profile as a dictionary.
++    """
++        with tempfile.NamedTemporaryFile() as temp:
++            subprocess.check_call(
++                ["security", "cms", "-D", "-i", profile_path, "-o", temp.name]
++            )
++            return self._LoadPlistMaybeBinary(temp.name)
++
++    def _MergePlist(self, merged_plist, plist):
++        """Merge |plist| into |merged_plist|."""
++        for key, value in plist.items():
++            if isinstance(value, dict):
++                merged_value = merged_plist.get(key, {})
++                if isinstance(merged_value, dict):
++                    self._MergePlist(merged_value, value)
++                    merged_plist[key] = merged_value
++                else:
++                    merged_plist[key] = value
++            else:
++                merged_plist[key] = value
++
++    def _LoadPlistMaybeBinary(self, plist_path):
++        """Loads into a memory a plist possibly encoded in binary format.
++
++    This is a wrapper around plistlib.readPlist that tries to convert the
++    plist to the XML format if it can't be parsed (assuming that it is in
++    the binary format).
++
++    Args:
++      plist_path: string, path to a plist file, in XML or binary format
++
++    Returns:
++      Content of the plist as a dictionary.
++    """
++        try:
++            # First, try to read the file using plistlib that only supports XML,
++            # and if an exception is raised, convert a temporary copy to XML and
++            # load that copy.
++            return plistlib.readPlist(plist_path)
++        except Exception:
++            pass
++        with tempfile.NamedTemporaryFile() as temp:
++            shutil.copy2(plist_path, temp.name)
++            subprocess.check_call(["plutil", "-convert", "xml1", temp.name])
++            return plistlib.readPlist(temp.name)
++
++    def _GetSubstitutions(self, bundle_identifier, app_identifier_prefix):
++        """Constructs a dictionary of variable substitutions for Entitlements.plist.
++
++    Args:
++      bundle_identifier: string, value of CFBundleIdentifier from Info.plist
++      app_identifier_prefix: string, value for AppIdentifierPrefix
++
++    Returns:
++      Dictionary of substitutions to apply when generating Entitlements.plist.
++    """
++        return {
++            "CFBundleIdentifier": bundle_identifier,
++            "AppIdentifierPrefix": app_identifier_prefix,
++        }
++
++    def _GetCFBundleIdentifier(self):
++        """Extracts CFBundleIdentifier value from Info.plist in the bundle.
++
++    Returns:
++      Value of CFBundleIdentifier in the Info.plist located in the bundle.
++    """
++        info_plist_path = os.path.join(
++            os.environ["TARGET_BUILD_DIR"], os.environ["INFOPLIST_PATH"]
++        )
++        info_plist_data = self._LoadPlistMaybeBinary(info_plist_path)
++        return info_plist_data["CFBundleIdentifier"]
++
++    def _InstallEntitlements(self, entitlements, substitutions, overrides):
++        """Generates and install the ${BundleName}.xcent entitlements file.
++
++    Expands variables "$(variable)" pattern in the source entitlements file,
++    add extra entitlements defined in the .mobileprovision file and the copy
++    the generated plist to "${BundlePath}.xcent".
++
++    Args:
++      entitlements: string, optional, path to the Entitlements.plist template
++        to use, defaults to "${SDKROOT}/Entitlements.plist"
++      substitutions: dictionary, variable substitutions
++      overrides: dictionary, values to add to the entitlements
++
++    Returns:
++      Path to the generated entitlements file.
++    """
++        source_path = entitlements
++        target_path = os.path.join(
++            os.environ["BUILT_PRODUCTS_DIR"], os.environ["PRODUCT_NAME"] + ".xcent"
++        )
++        if not source_path:
++            source_path = os.path.join(os.environ["SDKROOT"], "Entitlements.plist")
++        shutil.copy2(source_path, target_path)
++        data = self._LoadPlistMaybeBinary(target_path)
++        data = self._ExpandVariables(data, substitutions)
++        if overrides:
++            for key in overrides:
++                if key not in data:
++                    data[key] = overrides[key]
++        plistlib.writePlist(data, target_path)
++        return target_path
++
++    def _ExpandVariables(self, data, substitutions):
++        """Expands variables "$(variable)" in data.
++
++    Args:
++      data: object, can be either string, list or dictionary
++      substitutions: dictionary, variable substitutions to perform
++
++    Returns:
++      Copy of data where each references to "$(variable)" has been replaced
++      by the corresponding value found in substitutions, or left intact if
++      the key was not found.
++    """
++        if isinstance(data, str):
++            for key, value in substitutions.items():
++                data = data.replace("$(%s)" % key, value)
++            return data
++        if isinstance(data, list):
++            return [self._ExpandVariables(v, substitutions) for v in data]
++        if isinstance(data, dict):
++            return {k: self._ExpandVariables(data[k], substitutions) for k in data}
++        return data
++
++
++def NextGreaterPowerOf2(x):
++    return 2 ** (x).bit_length()
++
++
++def WriteHmap(output_name, filelist):
++    """Generates a header map based on |filelist|.
++
++  Per Mark Mentovai:
++    A header map is structured essentially as a hash table, keyed by names used
++    in #includes, and providing pathnames to the actual files.
++
++  The implementation below and the comment above comes from inspecting:
++    http://www.opensource.apple.com/source/distcc/distcc-2503/distcc_dist/include_server/headermap.py?txt
++  while also looking at the implementation in clang in:
++    https://llvm.org/svn/llvm-project/cfe/trunk/lib/Lex/HeaderMap.cpp
++  """
++    magic = 1751998832
++    version = 1
++    _reserved = 0
++    count = len(filelist)
++    capacity = NextGreaterPowerOf2(count)
++    strings_offset = 24 + (12 * capacity)
++    max_value_length = max(len(value) for value in filelist.values())
++
++    out = open(output_name, "wb")
++    out.write(
++        struct.pack(
++            "<LHHLLLL",
++            magic,
++            version,
++            _reserved,
++            strings_offset,
++            count,
++            capacity,
++            max_value_length,
++        )
++    )
++
++    # Create empty hashmap buckets.
++    buckets = [None] * capacity
++    for file, path in filelist.items():
++        key = 0
++        for c in file:
++            key += ord(c.lower()) * 13
++
++        # Fill next empty bucket.
++        while buckets[key & capacity - 1] is not None:
++            key = key + 1
++        buckets[key & capacity - 1] = (file, path)
++
++    next_offset = 1
++    for bucket in buckets:
++        if bucket is None:
++            out.write(struct.pack("<LLL", 0, 0, 0))
++        else:
++            (file, path) = bucket
++            key_offset = next_offset
++            prefix_offset = key_offset + len(file) + 1
++            suffix_offset = prefix_offset + len(os.path.dirname(path) + os.sep) + 1
++            next_offset = suffix_offset + len(os.path.basename(path)) + 1
++            out.write(struct.pack("<LLL", key_offset, prefix_offset, suffix_offset))
++
++    # Pad byte since next offset starts at 1.
++    out.write(struct.pack("<x"))
++
++    for bucket in buckets:
++        if bucket is not None:
++            (file, path) = bucket
++            out.write(struct.pack("<%ds" % len(file), file))
++            out.write(struct.pack("<s", "\0"))
++            base = os.path.dirname(path) + os.sep
++            out.write(struct.pack("<%ds" % len(base), base))
++            out.write(struct.pack("<s", "\0"))
++            path = os.path.basename(path)
++            out.write(struct.pack("<%ds" % len(path), path))
++            out.write(struct.pack("<s", "\0"))
++
++
++if __name__ == "__main__":
++    sys.exit(main(sys.argv[1:]))
+diff --git a/node_modules/drivelist/node-addon-api/node_api.Makefile b/node_modules/drivelist/node-addon-api/node_api.Makefile
+new file mode 100644
+index 0000000..73a7e58
+--- /dev/null
++++ b/node_modules/drivelist/node-addon-api/node_api.Makefile
+@@ -0,0 +1,6 @@
++# This file is generated by gyp; do not edit.
++
++export builddir_name ?= ./build/../node-addon-api/.
++.PHONY: all
++all:
++	$(MAKE) -C ../build nothing
+diff --git a/node_modules/drivelist/node-addon-api/nothing.target.mk b/node_modules/drivelist/node-addon-api/nothing.target.mk
+new file mode 100644
+index 0000000..b348e72
+--- /dev/null
++++ b/node_modules/drivelist/node-addon-api/nothing.target.mk
+@@ -0,0 +1,200 @@
++# This file is generated by gyp; do not edit.
++
++TOOLSET := target
++TARGET := nothing
++DEFS_Debug := \
++	'-DNODE_GYP_MODULE_NAME=nothing' \
++	'-DUSING_UV_SHARED=1' \
++	'-DUSING_V8_SHARED=1' \
++	'-DV8_DEPRECATION_WARNINGS=1' \
++	'-DV8_DEPRECATION_WARNINGS' \
++	'-DV8_IMMINENT_DEPRECATION_WARNINGS' \
++	'-D_GLIBCXX_USE_CXX11_ABI=1' \
++	'-DELECTRON_ENSURE_CONFIG_GYPI' \
++	'-D_DARWIN_USE_64_BIT_INODE=1' \
++	'-D_LARGEFILE_SOURCE' \
++	'-D_FILE_OFFSET_BITS=64' \
++	'-DUSING_ELECTRON_CONFIG_GYPI' \
++	'-DV8_COMPRESS_POINTERS' \
++	'-DV8_COMPRESS_POINTERS_IN_SHARED_CAGE' \
++	'-DV8_ENABLE_SANDBOX' \
++	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
++	'-DOPENSSL_NO_PINSHARED' \
++	'-DOPENSSL_THREADS' \
++	'-DOPENSSL_NO_ASM' \
++	'-DDEBUG' \
++	'-D_DEBUG' \
++	'-DV8_ENABLE_CHECKS'
++
++# Flags passed to all source files.
++CFLAGS_Debug := \
++	-O0 \
++	-gdwarf-2 \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-Wall \
++	-Wendif-labels \
++	-W \
++	-Wno-unused-parameter
++
++# Flags passed to only C files.
++CFLAGS_C_Debug := \
++	-fno-strict-aliasing
++
++# Flags passed to only C++ files.
++CFLAGS_CC_Debug := \
++	-std=gnu++17 \
++	-stdlib=libc++ \
++	-fno-rtti \
++	-fno-exceptions \
++	-fno-strict-aliasing
++
++# Flags passed to only ObjC files.
++CFLAGS_OBJC_Debug :=
++
++# Flags passed to only ObjC++ files.
++CFLAGS_OBJCC_Debug :=
++
++INCS_Debug := \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/src \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/config \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/openssl/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/uv/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/zlib \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/v8/include
++
++DEFS_Release := \
++	'-DNODE_GYP_MODULE_NAME=nothing' \
++	'-DUSING_UV_SHARED=1' \
++	'-DUSING_V8_SHARED=1' \
++	'-DV8_DEPRECATION_WARNINGS=1' \
++	'-DV8_DEPRECATION_WARNINGS' \
++	'-DV8_IMMINENT_DEPRECATION_WARNINGS' \
++	'-D_GLIBCXX_USE_CXX11_ABI=1' \
++	'-DELECTRON_ENSURE_CONFIG_GYPI' \
++	'-D_DARWIN_USE_64_BIT_INODE=1' \
++	'-D_LARGEFILE_SOURCE' \
++	'-D_FILE_OFFSET_BITS=64' \
++	'-DUSING_ELECTRON_CONFIG_GYPI' \
++	'-DV8_COMPRESS_POINTERS' \
++	'-DV8_COMPRESS_POINTERS_IN_SHARED_CAGE' \
++	'-DV8_ENABLE_SANDBOX' \
++	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
++	'-DOPENSSL_NO_PINSHARED' \
++	'-DOPENSSL_THREADS' \
++	'-DOPENSSL_NO_ASM'
++
++# Flags passed to all source files.
++CFLAGS_Release := \
++	-O3 \
++	-gdwarf-2 \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-Wall \
++	-Wendif-labels \
++	-W \
++	-Wno-unused-parameter
++
++# Flags passed to only C files.
++CFLAGS_C_Release := \
++	-fno-strict-aliasing
++
++# Flags passed to only C++ files.
++CFLAGS_CC_Release := \
++	-std=gnu++17 \
++	-stdlib=libc++ \
++	-fno-rtti \
++	-fno-exceptions \
++	-fno-strict-aliasing
++
++# Flags passed to only ObjC files.
++CFLAGS_OBJC_Release :=
++
++# Flags passed to only ObjC++ files.
++CFLAGS_OBJCC_Release :=
++
++INCS_Release := \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/include/node \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/src \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/config \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/openssl/openssl/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/uv/include \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/zlib \
++	-I/Users/veland/Library/Caches/node-gyp/24.0.0/deps/v8/include
++
++OBJS := \
++	$(obj).target/$(TARGET)/../node-addon-api/nothing.o
++
++# Add to the list of files we specially track dependencies for.
++all_deps += $(OBJS)
++
++# CFLAGS et al overrides must be target-local.
++# See "Target-specific Variable Values" in the GNU Make manual.
++$(OBJS): TOOLSET := $(TOOLSET)
++$(OBJS): GYP_CFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_C_$(BUILDTYPE))
++$(OBJS): GYP_CXXFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_CC_$(BUILDTYPE))
++$(OBJS): GYP_OBJCFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_C_$(BUILDTYPE)) $(CFLAGS_OBJC_$(BUILDTYPE))
++$(OBJS): GYP_OBJCXXFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_$(BUILDTYPE)) $(CFLAGS_CC_$(BUILDTYPE)) $(CFLAGS_OBJCC_$(BUILDTYPE))
++
++# Suffix rules, putting all outputs into $(obj).
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++# Try building from generated source, too.
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.c FORCE_DO_CMD
++	@$(call do_cmd,cc,1)
++
++# End of this set of suffix rules
++### Rules for final target.
++LDFLAGS_Debug := \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-L$(builddir) \
++	-stdlib=libc++
++
++LIBTOOLFLAGS_Debug :=
++
++LDFLAGS_Release := \
++	-mmacosx-version-min=10.15 \
++	-arch x86_64 \
++	-L$(builddir) \
++	-stdlib=libc++
++
++LIBTOOLFLAGS_Release :=
++
++LIBS :=
++
++$(builddir)/nothing.a: GYP_LDFLAGS := $(LDFLAGS_$(BUILDTYPE))
++$(builddir)/nothing.a: LIBS := $(LIBS)
++$(builddir)/nothing.a: GYP_LIBTOOLFLAGS := $(LIBTOOLFLAGS_$(BUILDTYPE))
++$(builddir)/nothing.a: TOOLSET := $(TOOLSET)
++$(builddir)/nothing.a: $(OBJS) FORCE_DO_CMD
++	$(call do_cmd,alink)
++
++all_deps += $(builddir)/nothing.a
++# Add target alias
++.PHONY: nothing
++nothing: $(builddir)/nothing.a
++
++# Add target alias to "all" target.
++.PHONY: all
++all: nothing
++
++# Add target alias
++.PHONY: nothing
++nothing: $(builddir)/nothing.a
++
++# Short alias for building this static library.
++.PHONY: nothing.a
++nothing.a: $(builddir)/nothing.a
++
++# Add static library to "all" target.
++.PHONY: all
++all: $(builddir)/nothing.a
++

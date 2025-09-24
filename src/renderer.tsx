@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-if (process.env.DEBUG_REACT_RENDERS === 'true') {
+if (process.env.DEBUG_RENDERS === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const whyDidYouRender = require('@welldone-software/why-did-you-render');
   whyDidYouRender?.(require('react'), {
@@ -398,7 +398,7 @@ function errorHandler(evt: any) {
     // user _if_ it managed to prevent the application start. Of course it would be nicer
     // if there was a proper api for that but it's quite the fringe case I think
     // tslint:disable-next-line:no-console
-    console.error(error.stack);
+    console.error('❌ Renderer error:', error.stack);
     return true;
   } else {
     terminateFromError(error);

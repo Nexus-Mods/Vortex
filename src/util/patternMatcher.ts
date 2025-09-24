@@ -61,7 +61,7 @@ export function findFiles(dir: string, pattern: string): string[] {
       }
     } catch (err) {
       // Handle permission errors or other issues
-      console.warn(`Could not read directory: ${currentDir}`, err);
+      console.warn(`⚠️ Could not read directory: ${currentDir}`, err);
     }
   }
   
@@ -95,7 +95,7 @@ export function findFilesWithExtensions(dir: string, extensions: string[]): stri
         }
       }
     } catch (err) {
-      console.warn(`Could not read directory: ${currentDir}`, err);
+      console.warn(`⚠️ Could not read directory: ${currentDir}`, err);
     }
   }
   

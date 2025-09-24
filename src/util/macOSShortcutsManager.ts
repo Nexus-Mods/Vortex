@@ -97,7 +97,7 @@ export class MacOSShortcutsManager {
       this.exportShortcutsDefinitions();
       this.mInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize Shortcuts manager:', error);
+      console.error('❌ Failed to initialize Shortcuts manager:', error);
     }
   }
 
@@ -197,7 +197,7 @@ export class MacOSShortcutsManager {
     try {
       await shell.openExternal('shortcuts://');
     } catch (error) {
-      console.error('Failed to open Shortcuts app:', error);
+      console.error('❌ Failed to open Shortcuts app:', error);
     }
   }
 
@@ -215,9 +215,9 @@ export class MacOSShortcutsManager {
       // Create example shortcut files
       await this.createExampleShortcuts(examplesPath);
       
-      console.log('Example shortcuts installed');
+      console.log('📱 Example shortcuts installed');
     } catch (error) {
-      console.error('Failed to install example shortcuts:', error);
+      console.error('❌ Failed to install example shortcuts:', error);
     }
   }
 
@@ -274,7 +274,7 @@ export class MacOSShortcutsManager {
       const { modId, gameId } = context.parameters;
       
       // TODO: Integrate with actual mod installation system
-      console.log(`Installing mod ${modId} for ${gameId}`);
+      console.log(`📦 Installing mod ${modId} for ${gameId}`);
       
       return {
         success: true,
@@ -356,7 +356,7 @@ export class MacOSShortcutsManager {
       const { profileName, gameId, copyFrom } = context.parameters;
       
       // TODO: Integrate with actual profile management system
-      console.log(`Creating profile ${profileName} for ${gameId}${copyFrom ? ` (copy from ${copyFrom})` : ''}`);
+      console.log(`👤 Creating profile ${profileName} for ${gameId}${copyFrom ? ` (copy from ${copyFrom})` : ''}`);
       
       return {
         success: true,
@@ -451,9 +451,9 @@ export class MacOSShortcutsManager {
       const result = await this.executeAction(actionId, parameters);
       
       // Return result to Shortcuts app
-      console.log('Shortcuts execution result:', result);
+      console.log('📱 Shortcuts execution result:', result);
     } catch (error) {
-      console.error('Failed to handle Shortcuts URL:', error);
+      console.error('❌ Failed to handle Shortcuts URL:', error);
     }
   }
 
@@ -516,9 +516,9 @@ export class MacOSShortcutsManager {
       const definitionsPath = path.join(this.mShortcutsPath, 'vortex-actions.json');
       fs.writeFileSync(definitionsPath, JSON.stringify(definitions, null, 2));
       
-      console.log(`Exported ${definitions.actions.length} Shortcuts actions to ${definitionsPath}`);
+      console.log(`📱 Exported ${definitions.actions.length} Shortcuts actions to ${definitionsPath}`);
     } catch (error) {
-      console.error('Failed to export Shortcuts definitions:', error);
+      console.error('❌ Failed to export Shortcuts definitions:', error);
     }
   }
 

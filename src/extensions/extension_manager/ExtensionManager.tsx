@@ -86,7 +86,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           const { extensions, onSetExtensionEnabled } = this.props;
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
-          log('info', 'user toggling extension manually', { extId, enabled });
+          log('info', '🔧 user toggling extension manually', { extId, enabled });
           onSetExtensionEnabled(extId, enabled);
         },
       onToggleExtensionEnabled:
@@ -95,7 +95,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
           const enabled = !getSafe(extensionConfig, [extId, 'enabled'], true);
-          log('info', 'user toggling extension manually', { extId, enabled });
+          log('info', '🔧 user toggling extension manually', { extId, enabled });
           onSetExtensionEnabled(extId, enabled);
         },
       onEndorseMod:
@@ -214,7 +214,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
     let success = false;
-    log('info', 'installing extension(s) via drag and drop', { extPaths });
+    log('info', '📦 installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
       ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
         .then(() => { success = true; })

@@ -20,7 +20,7 @@ function isMacOS() {
 // Utility function to execute a command and return a promise
 function execCommand(command, options = {}) {
   return new Promise((resolve, reject) => {
-    console.log(`Executing: ${command}`);
+    console.log(`⚡ Executing: ${command}`);
     
     const [cmd, ...args] = command.split(' ');
     const proc = spawn(cmd, args, { 
@@ -72,11 +72,11 @@ function getSubmoduleBranch(submodulePath) {
     if (result.status === 0) {
       return result.stdout.trim();
     } else {
-      console.error(`Failed to get branch for ${submodulePath}: ${result.stderr}`);
+      console.error(`❌ Failed to get branch for ${submodulePath}: ${result.stderr}`);
       return null;
     }
   } catch (error) {
-    console.error(`Error getting branch for ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error getting branch for ${submodulePath}: ${error.message}`);
     return null;
   }
 }
@@ -102,7 +102,7 @@ function getConfiguredBranch(submodulePath) {
       return 'master';
     }
   } catch (error) {
-    console.error(`Error getting configured branch for ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error getting configured branch for ${submodulePath}: ${error.message}`);
     return 'master';
   }
 }
@@ -110,7 +110,7 @@ function getConfiguredBranch(submodulePath) {
 // Function to switch a submodule from detached HEAD to the correct branch
 async function fixDetachedHead(submodulePath) {
   const configuredBranch = getConfiguredBranch(submodulePath);
-  console.log(`Switching ${submodulePath} from detached HEAD to ${configuredBranch}`);
+  console.log(`🔄 Switching ${submodulePath} from detached HEAD to ${configuredBranch}`);
   
   try {
     // Fetch the latest changes
@@ -129,9 +129,9 @@ async function fixDetachedHead(submodulePath) {
       await execCommand(`git checkout -b ${configuredBranch} origin/${configuredBranch}`, { cwd: submodulePath });
     }
     
-    console.log(`Successfully switched ${submodulePath} to ${configuredBranch}`);
+    console.log(`✅ Successfully switched ${submodulePath} to ${configuredBranch}`);
   } catch (error) {
-    console.error(`Failed to switch ${submodulePath} to ${configuredBranch}: ${error.message}`);
+    console.error(`❌ Failed to switch ${submodulePath} to ${configuredBranch}: ${error.message}`);
   }
 }
 
@@ -145,14 +145,14 @@ function hasUncommittedChanges(submodulePath) {
     
     return result.stdout.trim() !== '';
   } catch (error) {
-    console.error(`Error checking for changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error checking for changes in ${submodulePath}: ${error.message}`);
     return false;
   }
 }
 
 // Function to commit changes in a submodule
 async function commitChanges(submodulePath) {
-  console.log(`Committing changes in ${submodulePath}`);
+  console.log(`💾 Committing changes in ${submodulePath}`);
   
   try {
     // Add all changes
@@ -161,9 +161,9 @@ async function commitChanges(submodulePath) {
     // Commit changes
     await execCommand('git commit -m "Commit untracked changes"', { cwd: submodulePath });
     
-    console.log(`Successfully committed changes in ${submodulePath}`);
+    console.log(`✅ Successfully committed changes in ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to commit changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Failed to commit changes in ${submodulePath}: ${error.message}`);
   }
 }
 
@@ -171,29 +171,29 @@ async function commitChanges(submodulePath) {
 async function pushChanges(submodulePath) {
   const branch = getSubmoduleBranch(submodulePath);
   if (!branch || branch === 'HEAD') {
-    console.log(`Cannot push from ${submodulePath}: not on a branch`);
+    console.log(`⚠️  Cannot push from ${submodulePath}: not on a branch`);
     return;
   }
   
-  console.log(`Pushing changes from ${submodulePath} on branch ${branch}`);
+  console.log(`📤 Pushing changes from ${submodulePath} on branch ${branch}`);
   
   try {
     await execCommand(`git push origin ${branch}`, { cwd: submodulePath });
-    console.log(`Successfully pushed changes from ${submodulePath}`);
+    console.log(`✅ Successfully pushed changes from ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to push changes from ${submodulePath}: ${error.message}`);
-    console.log(`You may need to manually push changes or fork the repository if you don't have push permissions`);
+    console.error(`❌ Failed to push changes from ${submodulePath}: ${error.message}`);
+    console.log(`ℹ️  You may need to manually push changes or fork the repository if you don't have push permissions`);
   }
 }
 
 // Main function to check and fix all submodules
 async function checkAndFixSubmodules() {
-  console.log('Checking and fixing submodule branches...');
+  console.log('🔍 Checking and fixing submodule branches...');
   
   // Read .gitmodules file to get all submodules
   const gitmodulesPath = path.join(process.cwd(), '.gitmodules');
   if (!fs.existsSync(gitmodulesPath)) {
-    console.error('No .gitmodules file found');
+    console.error('❌ No .gitmodules file found');
     process.exit(1);
   }
   
@@ -207,7 +207,7 @@ async function checkAndFixSubmodules() {
     submodulePaths.push(match[1]);
   }
   
-  console.log(`Found ${submodulePaths.length} submodules`);
+  console.log(`📋 Found ${submodulePaths.length} submodules`);
   
   // Process each submodule
   for (const submodulePath of submodulePaths) {
@@ -215,42 +215,42 @@ async function checkAndFixSubmodules() {
     
     // Check if submodule directory exists
     if (!fs.existsSync(fullPath)) {
-      console.log(`Skipping ${submodulePath}: directory does not exist`);
+      console.log(`⏭️  Skipping ${submodulePath}: directory does not exist`);
       continue;
     }
     
-    console.log(`\nProcessing ${submodulePath}...`);
+    console.log(`\n🔧 Processing ${submodulePath}...`);
     
     // Check if in detached HEAD state
     if (isDetachedHead(fullPath)) {
-      console.log(`${submodulePath} is in detached HEAD state`);
+      console.log(`⚠️  ${submodulePath} is in detached HEAD state`);
       await fixDetachedHead(fullPath);
     } else {
       const branch = getSubmoduleBranch(fullPath);
-      console.log(`${submodulePath} is on branch: ${branch}`);
+      console.log(`🌿 ${submodulePath} is on branch: ${branch}`);
     }
     
     // Check for uncommitted changes
     if (hasUncommittedChanges(fullPath)) {
-      console.log(`${submodulePath} has uncommitted changes`);
+      console.log(`📝 ${submodulePath} has uncommitted changes`);
       await commitChanges(fullPath);
       await pushChanges(fullPath);
     } else {
-      console.log(`${submodulePath} has no uncommitted changes`);
+      console.log(`✅ ${submodulePath} has no uncommitted changes`);
     }
   }
   
-  console.log('\n✅ Submodule branch check and fix completed!');
+  console.log('\n🎉 Submodule branch check and fix completed!');
 }
 
 // Function to ensure TypeScript types are properly installed
 async function ensureTypesInstalled() {
-  console.log('Ensuring TypeScript types are properly installed...');
+  console.log('🔧 Ensuring TypeScript types are properly installed...');
   
   // Ensure rimraf types are properly installed
   const rimrafTypesPath = path.join(process.cwd(), 'node_modules', '@types', 'rimraf');
   if (!directoryExists(rimrafTypesPath) || fs.readdirSync(rimrafTypesPath).length === 0) {
-    console.log('@types/rimraf is missing or empty, reinstalling...');
+    console.log('📦 @types/rimraf is missing or empty, reinstalling...');
     await execCommand('yarn add --dev @types/rimraf@2.0.3', { cwd: process.cwd() });
   }
 }
@@ -268,7 +268,7 @@ function removeDirectory(dirPath) {
         resolve();
       } catch (err) {
         if (attempt < maxRetries) {
-          console.warn(`Warning: Could not remove ${dirPath} directly, retrying in ${retryDelay}ms...`);
+          console.warn(`⚠️  Warning: Could not remove ${dirPath} directly, retrying in ${retryDelay}ms...`);
           setTimeout(() => attemptRemove(attempt + 1), retryDelay);
         } else {
           // Last resort: try with shell command but with better error handling
@@ -288,8 +288,8 @@ function removeDirectory(dirPath) {
 
 // Main validation function
 async function validateCleanInstall() {
-  console.log('Starting Vortex Clean Install Validation...');
-  console.log(`Platform: ${process.platform}`);
+  console.log('🚀 Starting Vortex Clean Install Validation...');
+  console.log(`💻 Platform: ${process.platform}`);
   
   try {
     // Step 1: Verify we're in the correct directory
@@ -299,45 +299,45 @@ async function validateCleanInstall() {
     }
     
     // Step 2: Clean previous builds if they exist
-    console.log('Cleaning previous builds...');
+    console.log('🧹 Cleaning previous builds...');
     const buildDirs = ['node_modules', 'out', 'app/node_modules'];
     for (const dir of buildDirs) {
       const fullPath = path.join(process.cwd(), dir);
       if (directoryExists(fullPath)) {
-        console.log(`Removing ${dir}...`);
+        console.log(`🗑️  Removing ${dir}...`);
         // Use Node.js methods instead of shell commands for better cross-platform compatibility
         await removeDirectory(fullPath);
       }
     }
     
     // Step 3: Install dependencies
-    console.log('Installing dependencies...');
+    console.log('📦 Installing dependencies...');
     await execCommand('yarn install --frozen-lockfile', { cwd: process.cwd() });
     
     // Step 4: Ensure TypeScript types are properly installed
     await ensureTypesInstalled();
     
     // Step 5: Build the API
-    console.log('Building API...');
+    console.log('🔧 Building API...');
     const apiPath = path.join(process.cwd(), 'api');
     if (directoryExists(apiPath)) {
       await execCommand('yarn run build', { cwd: apiPath });
     }
     
     // Step 6: Build the main application
-    console.log('Building main application...');
+    console.log('🏗️  Building main application...');
     await execCommand('yarn run build', { cwd: process.cwd() });
     
     // Step 7: Build extensions
-    console.log('Building extensions...');
+    console.log('🧩 Building extensions...');
     await execCommand('yarn run subprojects', { cwd: process.cwd() });
     
     // Step 8: Compile themes
-    console.log('Compiling themes...');
+    console.log('🎨 Compiling themes...');
     await execCommand('yarn run compile_themes', { cwd: process.cwd() });
     
     // Step 9: Verify build output
-    console.log('Verifying build output...');
+    console.log('🔍 Verifying build output...');
     const requiredFiles = [
       'out/main.js',
       'out/renderer.js',
@@ -349,11 +349,11 @@ async function validateCleanInstall() {
       if (!fileExists(fullPath)) {
         throw new Error(`Required build output file missing: ${file}`);
       }
-      console.log(`✓ Found ${file}`);
+      console.log(`✅ Found ${file}`);
     }
     
     // Step 10: Verify bundled plugins
-    console.log('Verifying bundled plugins...');
+    console.log('🔌 Verifying bundled plugins...');
     const bundledPluginsDir = path.join(process.cwd(), 'out', 'bundledPlugins');
     if (!directoryExists(bundledPluginsDir)) {
       throw new Error('Bundled plugins directory missing');
@@ -367,46 +367,46 @@ async function validateCleanInstall() {
       throw new Error('No bundled plugins found');
     }
     
-    console.log(`✓ Found ${pluginDirs.length} bundled plugins`);
+    console.log(`✅ Found ${pluginDirs.length} bundled plugins`);
     
     // Step 11: Validate platform-specific handling
-    console.log('Validating platform-specific handling...');
+    console.log('🖥️  Validating platform-specific handling...');
     if (isMacOS()) {
-      console.log('✓ Running on macOS - verifying mock modules are used');
+      console.log('🍎 Running on macOS - verifying mock modules are used');
       // Check that mock modules exist
       const mocksDir = path.join(process.cwd(), '__mocks__');
       if (!directoryExists(mocksDir)) {
         throw new Error('Mocks directory missing on macOS');
       }
     } else if (isWindows()) {
-      console.log('✓ Running on Windows - verifying native modules');
+      console.log('🪟 Running on Windows - verifying native modules');
     }
     
-    console.log('\n✅ Clean install validation completed successfully!');
-    console.log('\nSummary of validation steps:');
-    console.log('1. Verified project directory structure');
-    console.log('2. Cleaned previous builds');
-    console.log('3. Installed dependencies with yarn');
-    console.log('4. Ensured TypeScript types are properly installed');
-    console.log('5. Built API');
-    console.log('6. Built main application');
-    console.log('7. Built extensions');
-    console.log('8. Compiled themes');
-    console.log('9. Verified build output files');
-    console.log('10. Verified bundled plugins');
-    console.log('11. Validated platform-specific handling');
+    console.log('\n🎉 Clean install validation completed successfully!');
+    console.log('\n📋 Summary of validation steps:');
+    console.log('1. ✅ Verified project directory structure');
+    console.log('2. ✅ Cleaned previous builds');
+    console.log('3. ✅ Installed dependencies with yarn');
+    console.log('4. ✅ Ensured TypeScript types are properly installed');
+    console.log('5. ✅ Built API');
+    console.log('6. ✅ Built main application');
+    console.log('7. ✅ Built extensions');
+    console.log('8. ✅ Compiled themes');
+    console.log('9. ✅ Verified build output files');
+    console.log('10. ✅ Verified bundled plugins');
+    console.log('11. ✅ Validated platform-specific handling');
     
     return true;
   } catch (error) {
     console.error('\n❌ Clean install validation failed!');
-    console.error(`Error: ${error.message}`);
+    console.error(`💥 Error: ${error.message}`);
     return false;
   }
 }
 
 // Main function that runs all validation steps
 async function main() {
-  console.log('Starting complete validation process...');
+  console.log('🚀 Starting complete validation process...');
   
   try {
     // Step 1: Check and fix submodule branches
@@ -423,7 +423,7 @@ async function main() {
       process.exit(1);
     }
   } catch (error) {
-    console.error('Unexpected error during validation:', error);
+    console.error('💥 Unexpected error during validation:', error);
     process.exit(1);
   }
 }

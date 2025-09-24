@@ -44,7 +44,7 @@ function checkForUpdates(api: IExtensionApi) {
         // as of Vortex 1.8 we expect to find all extension, including the bundled ones, in the
         // list of available extensions
         if (ext.modId !== undefined) {
-          log('warn', 'extension not available', { ext: JSON.stringify(ext) });
+          log('warn', '⚠️ extension not available', { ext: JSON.stringify(ext) });
         }
         return prev;
       }
@@ -53,7 +53,7 @@ function checkForUpdates(api: IExtensionApi) {
       const updateVer = semver.coerce(update.version);
 
       if ((extVer === null) || (updateVer === null)) {
-        log('warn', 'invalid version on extension', { local: ext.version, update: update.version });
+        log('warn', '⚠️ invalid version on extension', { local: ext.version, update: update.version });
         return prev;
       }
 
@@ -104,7 +104,7 @@ function checkForUpdates(api: IExtensionApi) {
     replace: { count: updateable.length },
   });
 
-  log('info', 'extensions can be updated', {
+  log('info', '🔄 extensions can be updated', {
     updateable: updateable.map(ext => `${ext.current.name} v${ext.current.version} `
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
@@ -368,7 +368,7 @@ function init(context: IExtensionContext) {
 
   context.registerActionCheck('SET_EXTENSION_ENABLED', (state, action: any) => {
     if (process.type === 'browser') {
-      log('info', 'changing extension enabled', action.payload);
+      log('info', '🔧 changing extension enabled', action.payload);
     }
     return undefined;
   });
@@ -395,7 +395,7 @@ function init(context: IExtensionContext) {
     .then(() => onDidFetch())
     .catch(err => {
       // If extension fetching fails, still resolve the promise to avoid blocking install-extension
-      log('error', 'Failed to fetch available extensions', err);
+      log('error', '❌ Failed to fetch available extensions', err);
       onDidFetch();
     });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {

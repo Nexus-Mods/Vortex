@@ -33,7 +33,7 @@ function isMacOS() {
 // Utility function to execute a command and return a promise
 function execCommand(command, options = {}) {
   return new Promise((resolve, reject) => {
-    console.log(`Executing: ${command}`);
+    console.log(`⚡ Executing: ${command}`);
     
     const [cmd, ...args] = command.split(' ');
     const proc = spawn(cmd, args, { 
@@ -67,11 +67,11 @@ function getSubmoduleBranch(submodulePath) {
     if (result.status === 0) {
       return result.stdout.trim();
     } else {
-      console.error(`Failed to get branch for ${submodulePath}: ${result.stderr}`);
+      console.error(`❌ Failed to get branch for ${submodulePath}: ${result.stderr}`);
       return null;
     }
   } catch (error) {
-    console.error(`Error getting branch for ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error getting branch for ${submodulePath}: ${error.message}`);
     return null;
   }
 }
@@ -90,7 +90,7 @@ function getExpectedBranch(submodulePath) {
 // Function to switch a submodule from detached HEAD to the correct branch
 async function fixDetachedHead(submodulePath) {
   const expectedBranch = getExpectedBranch(submodulePath);
-  console.log(`Switching ${submodulePath} from detached HEAD to ${expectedBranch}`);
+  console.log(`🔄 Switching ${submodulePath} from detached HEAD to ${expectedBranch}`);
   
   try {
     // Fetch the latest changes
@@ -115,13 +115,13 @@ async function fixDetachedHead(submodulePath) {
         // Branch exists remotely, create it locally
         await execCommand(`git checkout -b ${expectedBranch} origin/${expectedBranch}`, { cwd: submodulePath });
       } else {
-        console.log(`Remote branch ${expectedBranch} does not exist for ${submodulePath}, staying on current branch`);
+        console.log(`ℹ️ Remote branch ${expectedBranch} does not exist for ${submodulePath}, staying on current branch`);
       }
     }
     
-    console.log(`Successfully switched ${submodulePath} to ${expectedBranch}`);
+    console.log(`✅ Successfully switched ${submodulePath} to ${expectedBranch}`);
   } catch (error) {
-    console.error(`Failed to switch ${submodulePath} to ${expectedBranch}: ${error.message}`);
+    console.error(`❌ Failed to switch ${submodulePath} to ${expectedBranch}: ${error.message}`);
   }
 }
 
@@ -135,14 +135,14 @@ function hasUncommittedChanges(submodulePath) {
     
     return result.stdout.trim() !== '';
   } catch (error) {
-    console.error(`Error checking for changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Error checking for changes in ${submodulePath}: ${error.message}`);
     return false;
   }
 }
 
 // Function to commit changes in a submodule
 async function commitChanges(submodulePath) {
-  console.log(`Committing changes in ${submodulePath}`);
+  console.log(`💾 Committing changes in ${submodulePath}`);
   
   try {
     // Add all changes
@@ -151,9 +151,9 @@ async function commitChanges(submodulePath) {
     // Commit changes
     await execCommand('git commit -m "Commit untracked changes during project setup verification"', { cwd: submodulePath });
     
-    console.log(`Successfully committed changes in ${submodulePath}`);
+    console.log(`✅ Successfully committed changes in ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to commit changes in ${submodulePath}: ${error.message}`);
+    console.error(`❌ Failed to commit changes in ${submodulePath}: ${error.message}`);
   }
 }
 
@@ -161,29 +161,29 @@ async function commitChanges(submodulePath) {
 async function pushChanges(submodulePath) {
   const branch = getSubmoduleBranch(submodulePath);
   if (!branch || branch === 'HEAD') {
-    console.log(`Cannot push from ${submodulePath}: not on a branch`);
+    console.log(`⚠️ Cannot push from ${submodulePath}: not on a branch`);
     return;
   }
   
-  console.log(`Pushing changes from ${submodulePath} on branch ${branch}`);
+  console.log(`📤 Pushing changes from ${submodulePath} on branch ${branch}`);
   
   try {
     await execCommand(`git push origin ${branch}`, { cwd: submodulePath });
-    console.log(`Successfully pushed changes from ${submodulePath}`);
+    console.log(`✅ Successfully pushed changes from ${submodulePath}`);
   } catch (error) {
-    console.error(`Failed to push changes from ${submodulePath}: ${error.message}`);
-    console.log(`You may need to manually push changes or fork the repository if you don't have push permissions`);
+    console.error(`❌ Failed to push changes from ${submodulePath}: ${error.message}`);
+    console.log(`ℹ️ You may need to manually push changes or fork the repository if you don't have push permissions`);
   }
 }
 
 // Submodule verification function
 async function verifySubmodules() {
-  console.log('=== Submodule Verification ===');
+  console.log('🔍 === Submodule Verification ===');
   
   // Read .gitmodules file to get all submodules
   const gitmodulesPath = path.join(process.cwd(), '.gitmodules');
   if (!fs.existsSync(gitmodulesPath)) {
-    console.error('No .gitmodules file found');
+    console.error('❌ No .gitmodules file found');
     return false;
   }
   
@@ -197,7 +197,7 @@ async function verifySubmodules() {
     submodulePaths.push(match[1]);
   }
   
-  console.log(`Found ${submodulePaths.length} submodules`);
+  console.log(`📋 Found ${submodulePaths.length} submodules`);
   
   let verificationPassed = true;
   
@@ -207,15 +207,15 @@ async function verifySubmodules() {
     
     // Check if submodule directory exists
     if (!fs.existsSync(fullPath)) {
-      console.log(`Skipping ${submodulePath}: directory does not exist`);
+      console.log(`⏭️ Skipping ${submodulePath}: directory does not exist`);
       continue;
     }
     
-    console.log(`\nProcessing ${submodulePath}...`);
+    console.log(`\n🔧 Processing ${submodulePath}...`);
     
     // Check if in detached HEAD state
     if (isDetachedHead(fullPath)) {
-      console.log(`${submodulePath} is in detached HEAD state`);
+      console.log(`⚠️ ${submodulePath} is in detached HEAD state`);
       await fixDetachedHead(fullPath);
       verificationPassed = false; // Mark as needing fix
     } else {
@@ -223,30 +223,30 @@ async function verifySubmodules() {
       const expectedBranch = getExpectedBranch(submodulePath);
       
       if (branch !== expectedBranch) {
-        console.log(`${submodulePath} is on branch: ${branch}, expected: ${expectedBranch}`);
+        console.log(`🌿 ${submodulePath} is on branch: ${branch}, expected: ${expectedBranch}`);
         verificationPassed = false; // Mark as not matching expected
       } else {
-        console.log(`${submodulePath} is on the correct branch: ${branch}`);
+        console.log(`✅ ${submodulePath} is on the correct branch: ${branch}`);
       }
     }
     
     // Check for uncommitted changes
     if (hasUncommittedChanges(fullPath)) {
-      console.log(`${submodulePath} has uncommitted changes`);
+      console.log(`📝 ${submodulePath} has uncommitted changes`);
       // We don't automatically commit changes, just report them
       verificationPassed = false;
     } else {
-      console.log(`${submodulePath} has no uncommitted changes`);
+      console.log(`✅ ${submodulePath} has no uncommitted changes`);
     }
   }
   
-  console.log('\n✅ Submodule verification completed!');
+  console.log('\n🎉 Submodule verification completed!');
   return verificationPassed;
 }
 
 // SCSS compilation verification function
 async function verifySCSSCompilation() {
-  console.log('\n=== SCSS Compilation Verification ===');
+  console.log('\n🎨 === SCSS Compilation Verification ===');
   
   // List of all extension SCSS files to test
   const extensionSCSSFiles = [
@@ -284,7 +284,7 @@ async function verifySCSSCompilation() {
     path.join(__dirname, '..', 'src', 'stylesheets', 'bootstrap', 'bootstrap')
   ];
 
-  console.log('Testing SASS compilation for all extensions...\n');
+  console.log('🧪 Testing SASS compilation for all extensions...\n');
 
   let passed = 0;
   let failed = 0;
@@ -323,7 +323,7 @@ async function verifySCSSCompilation() {
     'src/stylesheets/loadingScreen.scss'
   ];
 
-  console.log('\nTesting core SCSS files...\n');
+  console.log('\n🎯 Testing core SCSS files...\n');
 
   for (const scssFile of coreSCSSFiles) {
     const fullPath = path.join(__dirname, '..', scssFile);
@@ -352,24 +352,24 @@ async function verifySCSSCompilation() {
     }
   }
 
-  console.log(`\n=== SCSS Compilation Summary ===`);
-  console.log(`${passed} files compiled successfully, ${failed} files failed`);
+  console.log(`\n📊 === SCSS Compilation Summary ===`);
+  console.log(`✅ ${passed} files compiled successfully, ❌ ${failed} files failed`);
 
   if (failed > 0) {
-    console.log('\nFailed files:');
+    console.log('\n❌ Failed files:');
     failedFiles.forEach(({ file, error }) => {
       console.log(`  ${file}: ${error.split('\n')[0]}`);
     });
     return false;
   }
   
-  console.log('✅ SCSS compilation verification completed!');
+  console.log('🎉 SCSS compilation verification completed!');
   return true;
 }
 
 // Main function to run all verification checks
 async function runProjectSetupVerification() {
-  console.log('Starting Project Setup Verification...\n');
+  console.log('🚀 Starting Project Setup Verification...\n');
   
   // Run submodule verification
   const submoduleVerificationPassed = await verifySubmodules();
@@ -377,9 +377,9 @@ async function runProjectSetupVerification() {
   // Run SCSS compilation verification
   const scssVerificationPassed = await verifySCSSCompilation();
   
-  console.log('\n=== Final Verification Results ===');
-  console.log(`Submodule Verification: ${submoduleVerificationPassed ? 'PASSED' : 'FAILED'}`);
-  console.log(`SCSS Compilation Verification: ${scssVerificationPassed ? 'PASSED' : 'FAILED'}`);
+  console.log('\n📋 === Final Verification Results ===');
+  console.log(`🔍 Submodule Verification: ${submoduleVerificationPassed ? '✅ PASSED' : '❌ FAILED'}`);
+  console.log(`🎨 SCSS Compilation Verification: ${scssVerificationPassed ? '✅ PASSED' : '❌ FAILED'}`);
   
   if (submoduleVerificationPassed && scssVerificationPassed) {
     console.log('\n🎉 All verifications passed! Project setup is correct.');
@@ -397,7 +397,7 @@ if (require.main === module) {
       process.exit(success ? 0 : 1);
     })
     .catch(error => {
-      console.error('Error during project setup verification:', error);
+      console.error('💥 Error during project setup verification:', error);
       process.exit(1);
     });
 }

@@ -125,7 +125,7 @@ export function safeRequire(moduleName: string): any {
   ];
 
   if (windowsModules.includes(moduleName)) {
-    console.warn(`Windows module '${moduleName}' requested on macOS - returning null`);
+    console.warn(`⚠️ Windows module '${moduleName}' requested on macOS - returning null`);
     return null;
   }
 

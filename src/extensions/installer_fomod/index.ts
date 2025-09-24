@@ -1415,7 +1415,7 @@ function init(context: IExtensionContext): boolean {
             // already received an error message about that.
             return invoke(SecurityLevel.Regular, INSTALLER_TRIES, ...args);
           } else if (err instanceof InstallerFailedException) {
-            console.log('installer failed', err.code);
+            console.log('❌ Installer failed', err.code);
             if ([0, 1].includes(err.code) && (tries > 0)) {
               return invoke(securityLevel, tries - 1, ...args);
             } else if ([0xC0000005, 0xC0000096, 0xC000041D, 0xCFFFFFFFFF].includes(err.code)) {

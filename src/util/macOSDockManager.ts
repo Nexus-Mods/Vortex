@@ -36,12 +36,12 @@ export class MacOSDockManager {
    */
   public initialize(): void {
     if (!isMacOS()) {
-      log('debug', 'MacOSDockManager: Not on macOS, skipping initialization');
+      log('debug', '🍎 MacOSDockManager: Not on macOS, skipping initialization');
       return;
     }
 
     if (this.isInitialized) {
-      log('warn', 'MacOSDockManager already initialized');
+      log('warn', '⚠️ MacOSDockManager already initialized');
       return;
     }
 
@@ -56,9 +56,9 @@ export class MacOSDockManager {
       this.setupBadgeListeners();
 
       this.isInitialized = true;
-      log('info', 'MacOSDockManager initialized successfully');
+      log('info', '✅ MacOSDockManager initialized successfully');
     } catch (error) {
-      log('error', 'Failed to initialize MacOSDockManager', error);
+      log('error', '❌ Failed to initialize MacOSDockManager', error);
     }
   }
 
@@ -100,7 +100,7 @@ export class MacOSDockManager {
         this.currentProgress = progress;
       }
     } catch (error) {
-      log('error', 'Failed to set dock progress', error);
+      log('error', '❌ Failed to set dock progress', error);
     }
   }
 
@@ -122,9 +122,9 @@ export class MacOSDockManager {
       app.dock.setBadge(badgeText);
       this.currentBadge = badgeText;
       
-      log('debug', 'Dock badge set', { badge: badgeText });
+      log('debug', '🏷️ Dock badge set', { badge: badgeText });
     } catch (error) {
-      log('error', 'Failed to set dock badge', error);
+      log('error', '❌ Failed to set dock badge', error);
     }
   }
 
@@ -137,9 +137,9 @@ export class MacOSDockManager {
     try {
       app.dock.setBadge('');
       this.currentBadge = '';
-      log('debug', 'Dock badge cleared');
+      log('debug', '🧹 Dock badge cleared');
     } catch (error) {
-      log('error', 'Failed to clear dock badge', error);
+      log('error', '❌ Failed to clear dock badge', error);
     }
   }
 
@@ -151,10 +151,10 @@ export class MacOSDockManager {
 
     try {
       const bounceId = app.dock.bounce(type);
-      log('debug', 'Dock icon bounced', { type, bounceId });
+      log('debug', '🏀 Dock icon bounced', { type, bounceId });
       return bounceId;
     } catch (error) {
-      log('error', 'Failed to bounce dock icon', error);
+      log('error', '❌ Failed to bounce dock icon', error);
       return -1;
     }
   }
@@ -167,9 +167,9 @@ export class MacOSDockManager {
 
     try {
       app.dock.cancelBounce(bounceId);
-      log('debug', 'Dock bounce cancelled', { bounceId });
+      log('debug', '🛑 Dock bounce cancelled', { bounceId });
     } catch (error) {
-      log('error', 'Failed to cancel dock bounce', error);
+      log('error', '❌ Failed to cancel dock bounce', error);
     }
   }
 
@@ -182,9 +182,9 @@ export class MacOSDockManager {
     try {
       const menu = this.buildMenuFromItems(menuItems);
       app.dock.setMenu(menu);
-      log('debug', 'Dock menu updated', { itemCount: menuItems.length });
+      log('debug', '📋 Dock menu updated', { itemCount: menuItems.length });
     } catch (error) {
-      log('error', 'Failed to set dock menu', error);
+      log('error', '❌ Failed to set dock menu', error);
     }
   }
 

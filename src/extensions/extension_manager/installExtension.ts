@@ -52,11 +52,11 @@ class ContextProxyHandler implements ProxyHandler<any> {
           const result = callback();
           if (result && typeof result.then === 'function') {
             result.catch((err: Error) => {
-              log('warn', 'Extension once callback failed', { error: err.message });
+              log('warn', '⚠️ Extension once callback failed', { error: err.message });
             });
           }
         } catch (err) {
-          log('warn', 'Extension once callback failed', { error: err.message });
+          log('warn', '⚠️ Extension once callback failed', { error: err.message });
         }
       };
     } else if (key === 'onceMain') {
@@ -67,7 +67,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
           try {
             callback();
           } catch (err) {
-            log('warn', 'Extension onceMain callback failed', { error: err.message });
+            log('warn', '⚠️ Extension onceMain callback failed', { error: err.message });
           }
         }
       };
@@ -153,11 +153,11 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
           const result = callback();
           if (result && typeof result.then === 'function') {
             result.catch((err: Error) => {
-              log('warn', 'Extension once callback failed', { error: err.message });
+              log('warn', '⚠️ Extension once callback failed', { error: err.message });
             });
           }
         } catch (err) {
-          log('warn', 'Extension once callback failed', { error: err.message });
+          log('warn', '⚠️ Extension once callback failed', { error: err.message });
         }
       },
       onceMain: (callback: () => void) => {
@@ -167,7 +167,7 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
           try {
             callback();
           } catch (err) {
-            log('warn', 'Extension onceMain callback failed', { error: err.message });
+            log('warn', '⚠️ Extension onceMain callback failed', { error: err.message });
           }
         }
       },
@@ -338,7 +338,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
                     || (info.modId !== undefined) && (installed[key].modId === info.modId)
                     || (installed[key].name === info.name)));
   if (previousVersions.length > 0) {
-    log('info', 'removing previous versions of the extension', {
+    log('info', '🗑️ removing previous versions of the extension', {
       previousVersions,
       newPath: info.path,
       paths: previousVersions.map(iter => installed[iter].path),
@@ -720,7 +720,7 @@ function tryCommands(cmds: Array<{ cmd: string, args: string[] }>, cwd?: string)
     }
     const { cmd, args } = cmds[idx];
     return runCommand(cmd, args, cwd).catch((err) => {
-      log('warn', 'archive extraction attempt failed', { cmd, args, error: err && err.message });
+      log('warn', '⚠️ archive extraction attempt failed', { cmd, args, error: err && err.message });
       return attempt(idx + 1);
     });
   };

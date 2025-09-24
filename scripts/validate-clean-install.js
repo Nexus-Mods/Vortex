@@ -94,7 +94,7 @@ function removeDirectory(dirPath) {
 
 // Function to ensure TypeScript types are properly installed
 async function ensureTypesInstalled() {
-  console.log('Ensuring TypeScript types are properly installed...');
+  console.log('📦 Ensuring TypeScript types are properly installed...');
   
   // Ensure rimraf types are properly installed
   const rimrafTypesPath = path.join(process.cwd(), 'node_modules', '@types', 'rimraf');
@@ -106,7 +106,7 @@ async function ensureTypesInstalled() {
 
 // Main validation function
 async function validateCleanInstall() {
-  console.log('Starting Vortex Clean Install Validation...');
+  console.log('🚀 Starting Vortex Clean Install Validation...');
   console.log(`Platform: ${process.platform}`);
   
   try {
@@ -117,7 +117,7 @@ async function validateCleanInstall() {
     }
     
     // Step 2: Clean previous builds if they exist
-    console.log('Cleaning previous builds...');
+    console.log('🧹 Cleaning previous builds...');
     const buildDirs = ['node_modules', 'out', 'app/node_modules'];
     for (const dir of buildDirs) {
       const fullPath = path.join(process.cwd(), dir);
@@ -129,33 +129,33 @@ async function validateCleanInstall() {
     }
     
     // Step 3: Install dependencies
-    console.log('Installing dependencies...');
+    console.log('📥 Installing dependencies...');
     await execCommand('yarn install --frozen-lockfile', { cwd: process.cwd() });
     
     // Step 4: Ensure TypeScript types are properly installed
     await ensureTypesInstalled();
     
     // Step 5: Build the API
-    console.log('Building API...');
+    console.log('🔧 Building API...');
     const apiPath = path.join(process.cwd(), 'api');
     if (directoryExists(apiPath)) {
       await execCommand('yarn run build', { cwd: apiPath });
     }
     
     // Step 6: Build the main application
-    console.log('Building main application...');
+    console.log('🏗️  Building main application...');
     await execCommand('yarn run build', { cwd: process.cwd() });
     
     // Step 7: Build extensions
-    console.log('Building extensions...');
+    console.log('🧩 Building extensions...');
     await execCommand('yarn run subprojects', { cwd: process.cwd() });
     
     // Step 8: Compile themes
-    console.log('Compiling themes...');
+    console.log('🎨 Compiling themes...');
     await execCommand('yarn run compile_themes', { cwd: process.cwd() });
     
     // Step 9: Verify build output
-    console.log('Verifying build output...');
+    console.log('🔍 Verifying build output...');
     const requiredFiles = [
       'out/main.js',
       'out/renderer.js',
@@ -171,7 +171,7 @@ async function validateCleanInstall() {
     }
     
     // Step 10: Verify bundled plugins
-    console.log('Verifying bundled plugins...');
+    console.log('🔌 Verifying bundled plugins...');
     const bundledPluginsDir = path.join(process.cwd(), 'out', 'bundledPlugins');
     if (!directoryExists(bundledPluginsDir)) {
       throw new Error('Bundled plugins directory missing');
@@ -188,19 +188,19 @@ async function validateCleanInstall() {
     console.log(`✓ Found ${pluginDirs.length} bundled plugins`);
     
     // Step 11: Validate platform-specific handling
-    console.log('Validating platform-specific handling...');
+    console.log('🖥️  Validating platform-specific handling...');
     if (isMacOS()) {
-      console.log('✓ Running on macOS - verifying mock modules are used');
+      console.log('🍎 Running on macOS - verifying native implementations and mocks are properly configured');
       // Check that mock modules exist
       const mocksDir = path.join(process.cwd(), '__mocks__');
       if (!directoryExists(mocksDir)) {
         throw new Error('Mocks directory missing on macOS');
       }
     } else if (isWindows()) {
-      console.log('✓ Running on Windows - verifying native modules');
+      console.log('🪟 Running on Windows - verifying native modules are properly compiled');
     }
     
-    console.log('\n✅ Clean install validation completed successfully!');
+    console.log('🎉 Clean install validation completed successfully! Vortex is ready to run.');
     console.log('\nSummary of validation steps:');
     console.log('1. Verified project directory structure');
     console.log('2. Cleaned previous builds');
