@@ -79,6 +79,33 @@ async function getExecutableVersion(filePath) {
   }
 }
 
+/**
+ * Default synchronous version function to match exe-version API
+ * @param {string} filePath - Path to the executable file
+ * @returns {string} Version string or '0.0.0' if not found
+ */
+function defaultVersionFunction(filePath) {
+  try {
+    // Use synchronous exec to get version information
+    const fileType = require('child_process').execSync(`file -b "${filePath}"`, { encoding: 'utf8' });
+    
+    if (fileType.includes('Mach-O')) {
+      try {
+        const metadata = require('child_process').execSync(`mdls -name kMDItemVersion -raw "${filePath}" 2>/dev/null`, { encoding: 'utf8' });
+        if (metadata && metadata.trim() && metadata.trim() !== '(null)') {
+          return metadata.trim();
+        }
+      } catch (metadataError) {
+        // Ignore metadata error
+      }
+    }
+    
+    return '0.0.0';
+  } catch (error) {
+    return '0.0.0';
+  }
+}
+
 module.exports = {
   /**
    * Get version information from an executable file
@@ -94,25 +121,10 @@ module.exports = {
    * @param {string} filePath - Path to the executable file
    * @returns {string} Version string or '0.0.0' if not found
    */
-  getVersionSync: (filePath) => {
-    try {
-      // Use synchronous exec to get version information
-      const fileType = require('child_process').execSync(`file -b "${filePath}"`, { encoding: 'utf8' });
-      
-      if (fileType.includes('Mach-O')) {
-        try {
-          const metadata = require('child_process').execSync(`mdls -name kMDItemVersion -raw "${filePath}" 2>/dev/null`, { encoding: 'utf8' });
-          if (metadata && metadata.trim() && metadata.trim() !== '(null)') {
-            return metadata.trim();
-          }
-        } catch (metadataError) {
-          // Ignore metadata error
-        }
-      }
-      
-      return '0.0.0';
-    } catch (error) {
-      return '0.0.0';
-    }
-  }
+  getVersionSync: defaultVersionFunction,
+  
+  /**
+   * Default export to match exe-version module API
+   */
+  default: defaultVersionFunction
 };

@@ -1,0 +1,69 @@
+{
+  "name": "drivelist",
+  "version": "10.0.2",
+  "description": "List all connected drives in your computer, in all major operating systems",
+  "main": "js/index.js",
+  "homepage": "https://github.com/balena-io-modules/drivelist",
+  "gypfile": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TanninOne/drivelist.git"
+  },
+  "keywords": [
+    "disk",
+    "cross",
+    "platform",
+    "physical",
+    "drive",
+    "list"
+  ],
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.spec.ts -R spec",
+    "lint": "npm run lint-cpp && npm run lint-ts",
+    "lint-cpp": "cpplint --recursive src",
+    "lint-ts": "balena-lint --typescript lib tests",
+    "prettier": "balena-lint --typescript --fix lib tests",
+    "readme": "jsdoc2md --template doc/README.hbs js/index.js > README.md",
+    "configure": "node-gyp configure",
+    "build": "node-gyp rebuild",
+    "build-ts": "tsc",
+    "rebuild": "node-gyp rebuild",
+    "install": "node-gyp rebuild",
+    "prepublishOnly": "npm run build-ts && npm run readme",
+    "update-prebuild": "prebuild.cmd -r napi -t 4 -a x64",
+    "install": "prebuild-install -r napi -t 4 -a x64 || node-gyp rebuild"
+  },
+  "binary": {
+    "napi_versions": [4]
+  },
+  "author": "Juan Cruz Viotti <juan@balena.io>",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=10"
+  },
+  "devDependencies": {
+    "@balena/lint": "^5.3.0",
+    "@types/bindings": "^1.3.0",
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
+    "@types/sinon": "^7.0.6",
+    "chai": "^4.2.0",
+    "eslint": "^4.19.1",
+    "jsdoc-to-markdown": "^4.0.1",
+    "mocha": "^6.0.0",
+    "node-gyp": "^9.0.0",
+    "prebuild": "^11.0.3",
+    "sinon": "^7.2.4",
+    "ts-node": "^8.0.2",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "debug": "^3.1.0",
+    "node-addon-api": "^4.0.0",
+    "prebuild-install": "7.1.0"
+  }
+}

@@ -2,6 +2,7 @@ import { IGame } from '../../../types/IGame';
 import { statAsync } from '../../../util/fs';
 import lazyRequire from '../../../util/lazyRequire';
 import { log } from '../../../util/log';
+import { normalizeGamePathForMacOS } from '../../../util/macOSGameCompatibility';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 
 import * as exeVersionT from 'exe-version';
@@ -33,8 +34,12 @@ export async function testExecProvider(game: IGame, discovery: IDiscoveryResult)
     // can be caused by a broken extension
     return Promise.resolve(false);
   }
-  const exePath = path.join(discovery.path, exeName);
+  
   try {
+    // Use macOS compatibility layer to resolve the correct executable path
+    const normalizedPath = await normalizeGamePathForMacOS(discovery.path, game.id, exeName);
+    const exePath = normalizedPath || path.join(discovery.path, exeName);
+    
     await statAsync(exePath);
     const version: string = exeVersion.default(exePath);
     return version === '0.0.0'
@@ -48,8 +53,12 @@ export async function testExecProvider(game: IGame, discovery: IDiscoveryResult)
 
 export async function getExecGameVersion(game: IGame,
                                          discovery: IDiscoveryResult): Promise<string> {
-  const exePath = path.join(discovery.path, discovery.executable || game.executable());
   try {
+    const exeName = discovery.executable || game.executable();
+    // Use macOS compatibility layer to resolve the correct executable path
+    const normalizedPath = await normalizeGamePathForMacOS(discovery.path, game.id, exeName);
+    const exePath = normalizedPath || path.join(discovery.path, exeName);
+    
     const version: string = exeVersion.default(exePath);
     return Promise.resolve(version);
   } catch (err) {

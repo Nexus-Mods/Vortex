@@ -3,22 +3,18 @@
  * 
  * This module provides integration with macOS Spotlight search,
  * allowing Vortex to index content and provide quick actions.
+ * 
+ * Now uses native macOS integration instead of electron-spotlight.
  */
 
 import { isMacOS } from './platform';
-import { app } from 'electron';
-
-// We'll use a dynamic import for electron-spotlight since it's macOS-only
-let spotlightModule: any = null;
-
-// Try to import type definitions if available
-let hasSpotlightTypes = false;
-try {
-  require('electron-spotlight');
-  hasSpotlightTypes = true;
-} catch (err) {
-  // No type definitions available
-}
+import { 
+  initializeSpotlight as initNativeSpotlight,
+  addSpotlightItems as addNativeSpotlightItems,
+  removeSpotlightItems as removeNativeSpotlightItems,
+  removeAllSpotlightItems as removeAllNativeSpotlightItems,
+  SpotlightItem
+} from './nativeSpotlight';
 
 /**
  * Initialize Spotlight integration
@@ -29,20 +25,10 @@ export async function initializeSpotlight(): Promise<void> {
   }
 
   try {
-    // Dynamically import the electron-spotlight module
-    // Use a more robust approach for TypeScript compatibility
-    try {
-      // Use a dynamic require with type assertion to avoid TypeScript errors
-      const modulePath = 'electron-spotlight';
-      spotlightModule = require(modulePath);
-    } catch (err) {
-      console.warn('Failed to import electron-spotlight:', err);
-    }
-    
-    // Set up any initial Spotlight integration
-    console.log('Spotlight integration initialized');
+    await initNativeSpotlight();
+    console.log('Native Spotlight integration initialized');
   } catch (err) {
-    console.warn('Failed to initialize Spotlight integration:', err);
+    console.warn('Failed to initialize native Spotlight integration:', err);
   }
 }
 
@@ -50,16 +36,25 @@ export async function initializeSpotlight(): Promise<void> {
  * Add items to Spotlight index
  * @param items Array of items to index in Spotlight
  */
-export async function addSpotlightItems(items: Array<{id: string, title: string, icon?: string}>): Promise<void> {
-  if (!isMacOS() || !spotlightModule) {
+export async function addSpotlightItems(items: Array<{id: string, title: string, subtitle?: string, icon?: string}>): Promise<void> {
+  if (!isMacOS()) {
     return;
   }
 
   try {
-    await spotlightModule.addItems(items);
-    console.log(`Added ${items.length} items to Spotlight index`);
+    // Convert to SpotlightItem format
+    const spotlightItems: SpotlightItem[] = items.map(item => ({
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      icon: item.icon,
+      keywords: ['Vortex', 'Mod Manager', 'Game Mods']
+    }));
+
+    await addNativeSpotlightItems(spotlightItems);
+    console.log(`Added ${items.length} items to native Spotlight index`);
   } catch (err) {
-    console.warn('Failed to add items to Spotlight index:', err);
+    console.warn('Failed to add items to native Spotlight index:', err);
   }
 }
 
@@ -68,15 +63,15 @@ export async function addSpotlightItems(items: Array<{id: string, title: string,
  * @param ids Array of item IDs to remove from Spotlight
  */
 export async function removeSpotlightItems(ids: string[]): Promise<void> {
-  if (!isMacOS() || !spotlightModule) {
+  if (!isMacOS()) {
     return;
   }
 
   try {
-    await spotlightModule.removeItems(ids);
-    console.log(`Removed ${ids.length} items from Spotlight index`);
+    await removeNativeSpotlightItems(ids);
+    console.log(`Removed ${ids.length} items from native Spotlight index`);
   } catch (err) {
-    console.warn('Failed to remove items from Spotlight index:', err);
+    console.warn('Failed to remove items from native Spotlight index:', err);
   }
 }
 
@@ -84,15 +79,15 @@ export async function removeSpotlightItems(ids: string[]): Promise<void> {
  * Remove all items from Spotlight index
  */
 export async function removeAllSpotlightItems(): Promise<void> {
-  if (!isMacOS() || !spotlightModule) {
+  if (!isMacOS()) {
     return;
   }
 
   try {
-    await spotlightModule.removeAllItems();
-    console.log('Removed all items from Spotlight index');
+    await removeAllNativeSpotlightItems();
+    console.log('Removed all items from native Spotlight index');
   } catch (err) {
-    console.warn('Failed to remove all items from Spotlight index:', err);
+    console.warn('Failed to remove all items from native Spotlight index:', err);
   }
 }
 

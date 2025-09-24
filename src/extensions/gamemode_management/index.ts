@@ -173,7 +173,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 }
 
 function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
-  return validateRequiredFilesWithMacOSCompat(gamePath, game.requiredFiles || [], game.id)
+  return Promise.resolve(validateRequiredFilesWithMacOSCompat(gamePath, game.requiredFiles || [], game.id))
     .catch(err => {
       // if the error is anything other than "the file doesn't exist" we assume
       // the file is there and can't be accessed because of permissions or something.
@@ -394,7 +394,7 @@ function removeDisappearedGames(api: IExtensionApi,
     if (requiredFiles === undefined) {
       return Promise.resolve();
     }
-    return validateRequiredFilesWithMacOSCompat(discovered[gameId].path, requiredFiles, gameId)
+    return Promise.resolve(validateRequiredFilesWithMacOSCompat(discovered[gameId].path, requiredFiles, gameId))
           .catch(err => {
             if (err.code === 'ENOENT') {
               return Promise.reject(err);

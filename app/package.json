@@ -39,7 +39,6 @@
     "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.6.1",
     "electron-redux": "file:../vendor/electron-redux-compat",
-    "electron-spotlight": "^1.0.0",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version#master",
