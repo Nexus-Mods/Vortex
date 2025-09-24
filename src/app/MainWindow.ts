@@ -386,7 +386,7 @@ class MainWindow {
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
       backgroundColor: '#fff',
-      autoHideMenuBar: true,
+      autoHideMenuBar: process.platform !== 'darwin', // Don't auto-hide menu bar on macOS
       frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',

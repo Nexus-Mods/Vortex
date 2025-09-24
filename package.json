@@ -37,7 +37,7 @@
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "testbuild": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-test.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
-    "clean": "yarn add rm-local-modules && rm-local-modules && rimraf out && yarn install --check-files",
+    "clean": "node scripts/clean-dev-data.js",
     "test": "jest --no-cache",
     "lint": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet",
     "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
@@ -201,7 +201,7 @@
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "diskusage": "TanninOne/node-diskusage",
-    "drivelist": "TanninOne/drivelist",
+    "drivelist": "^12.0.2",
     "native-errors": "Nexus-Mods/node-native-errors",
     "vortexmt": "file:vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
@@ -229,7 +229,6 @@
     "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.6.1",
     "electron-redux": "file:vendor/electron-redux-compat",
-    "electron-spotlight": "^1.0.0",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version#master",

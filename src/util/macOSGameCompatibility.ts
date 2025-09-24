@@ -9,7 +9,6 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import { log } from './log';
-import Promise from 'bluebird';
 
 export interface MacOSGameFix {
   /** Game ID to apply the fix to */
@@ -195,7 +194,7 @@ const DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
       
       // Detect architecture and select appropriate macOS binary
       const arch = getMacOSArchitecture();
-      const macOSFileName = arch === 'arm64' ? 'lovely-macos-arm64.zip' : 'lovely-macos-x64.zip';
+      const macOSFileName = arch === 'arm64' ? 'lovely-aarch64-apple-darwin.tar.gz' : 'lovely-x86_64-apple-darwin.tar.gz';
       
       // Handle both versioned and latest URLs
       if (windowsUrl.includes('/latest/download/')) {
@@ -205,6 +204,15 @@ const DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
       }
     },
     description: 'Lovely injector for Balatro - Windows to macOS conversion with architecture detection'
+  },
+  {
+    // Steammodded for Balatro - Source code downloads are platform-independent
+    windowsPattern: /https:\/\/github\.com\/[^\/]+\/[Ss]teamodded\/releases\/(?:download\/[^\/]+\/|latest\/download\/).*\.zip$/,
+    getMacOSUrl: (windowsUrl: string) => {
+      // Source code downloads are platform-independent, just return the same URL
+      return windowsUrl;
+    },
+    description: 'Steammodded for Balatro - Source code downloads (platform independent)'
   },
   // Generic pattern for common Windows to macOS conversions
   {
@@ -255,7 +263,7 @@ export async function checkFileWithMacOSFallback(
   basePath: string,
   fileName: string,
   gameId: string
-): Promise<boolean> {
+) {
   try {
     const filePath = path.join(basePath, fileName);
     
@@ -303,7 +311,7 @@ export async function validateRequiredFilesWithMacOSCompat(
   basePath: string,
   requiredFiles: string[],
   gameId: string
-): Promise<void> {
+) {
   if (!requiredFiles || requiredFiles.length === 0) {
     return;
   }
@@ -400,7 +408,7 @@ export function interceptDownloadURLForMacOS(url: string): string {
  * @param appBundleName Expected app bundle name
  * @returns Full path to app bundle or null if not found
  */
-export async function findMacOSAppBundle(basePath: string, appBundleName: string): Promise<string | null> {
+export async function findMacOSAppBundle(basePath: string, appBundleName: string) {
   try {
     const fullPath = path.join(basePath, appBundleName);
     const exists = await fs.pathExists(fullPath);
@@ -435,7 +443,7 @@ export async function findMacOSAppBundle(basePath: string, appBundleName: string
  * @param appBundlePath Path to the .app bundle
  * @returns Path to the actual executable inside the bundle
  */
-export async function getExecutableFromAppBundle(appBundlePath: string): Promise<string | null> {
+export async function getExecutableFromAppBundle(appBundlePath: string) {
   try {
     // Standard location for macOS app executables
     const executablePath = path.join(appBundlePath, 'Contents', 'MacOS');
@@ -470,7 +478,7 @@ export async function normalizeGamePathForMacOS(
   basePath: string, 
   gameId: string, 
   expectedExecutable?: string
-): Promise<string | null> {
+) {
   if (process.platform !== 'darwin') {
     return expectedExecutable ? path.join(basePath, expectedExecutable) : basePath;
   }

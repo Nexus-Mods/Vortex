@@ -10,6 +10,7 @@ import Bluebird from 'bluebird';
 import { isMacOS } from './platform';
 import { log } from './log';
 import { resolveGameExecutable, GameExecutableOptions, ExecutableCandidate } from './executableResolver';
+import { getMacOSGameFix, findMacOSAppBundle, normalizeGamePathForMacOS } from './macOSGameCompatibility';
 import { IGame } from '../types/IGame';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
@@ -317,11 +318,61 @@ export async function discoverMacOSGamesInternal(
 async function discoverNativeApps(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
   const candidates: MacOSGameCandidate[] = [];
   
+  // Check if we have a compatibility fix for this game
+  const gameFix = getMacOSGameFix(options.gameId);
+  
   for (const appDir of MACOS_APP_DIRECTORIES) {
     const expandedPath = appDir.replace('~', process.env.HOME || '');
     
     try {
-      // Look for app bundle
+      // Look for app bundle using compatibility system first
+      if (gameFix) {
+        const appBundlePath = await findMacOSAppBundle(expandedPath, gameFix.macOSAppBundle);
+        if (appBundlePath) {
+          candidates.push({
+            path: path.dirname(appBundlePath),
+            executable: appBundlePath,
+            type: 'app',
+            priority: MACOS_DISCOVERY_PRIORITIES.NATIVE_APP,
+            store: 'native'
+          });
+          
+          log('debug', 'Found native macOS app bundle via compatibility system', {
+            gameId: options.gameId,
+            appPath: appBundlePath,
+            directory: expandedPath
+          });
+        }
+        
+        // Also check alternative files
+        if (gameFix.alternativeFiles) {
+          for (const altFile of gameFix.alternativeFiles) {
+            const altPath = path.join(expandedPath, altFile);
+            try {
+              const stats = await stat(altPath);
+              if (stats.isFile() || (stats.isDirectory() && altFile.endsWith('.app'))) {
+                candidates.push({
+                  path: path.dirname(altPath),
+                  executable: altPath,
+                  type: altFile.endsWith('.app') ? 'app' : 'native',
+                  priority: MACOS_DISCOVERY_PRIORITIES.NATIVE_APP,
+                  store: 'native'
+                });
+                
+                log('debug', 'Found alternative file via compatibility system', {
+                  gameId: options.gameId,
+                  altPath,
+                  directory: expandedPath
+                });
+              }
+            } catch (err) {
+              // Alternative file not found, continue
+            }
+          }
+        }
+      }
+      
+      // Look for app bundle using original method as fallback
       if (options.appBundleName) {
         const appName = options.appBundleName.endsWith('.app') ? options.appBundleName : `${options.appBundleName}.app`;
         const appPath = path.join(expandedPath, appName);

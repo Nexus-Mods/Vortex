@@ -39,6 +39,13 @@ import { addNotification, setCommandLine, showDialog } from '../actions';
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
+import { MacOSDockManager } from '../util/macOSDockManager';
+import { MacOSWindowManager } from '../util/macOSWindowManager';
+import { MacOSNotificationManager } from '../util/macOSNotificationManager';
+import { MacOSQuickLookManager } from '../util/macOSQuickLookManager';
+import { MacOSServicesManager } from '../util/macOSServicesManager';
+import { MacOSHandoffManager } from '../util/macOSHandoffManager';
+import { MacOSShortcutsManager } from '../util/macOSShortcutsManager';
 
 import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
@@ -120,6 +127,13 @@ class Application {
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
+  private mDockManager: MacOSDockManager;
+  private mWindowManager: MacOSWindowManager;
+  private mNotificationManager: MacOSNotificationManager;
+  private mQuickLookManager: MacOSQuickLookManager;
+  private mServicesManager: MacOSServicesManager;
+  private mHandoffManager: MacOSHandoffManager;
+  private mShortcutsManager: MacOSShortcutsManager;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
   private mDeinitCrashDump: () => void;
@@ -144,12 +158,12 @@ class Application {
       }
     }
   }
-  
+
   // Add method to get the main window for accessibility features
   public getMainWindow(): MainWindowT {
     return this.mMainWindow;
   }
-  
+
   // Add method to check for updates
   public checkForUpdates(): void {
     // This will be handled by the auto-update system in main.ts
@@ -231,7 +245,7 @@ class Application {
       log('debug', 'window created');
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
-      
+
       // Initialize native theme manager after store and extensions are ready
       try {
         initializeNativeThemeManager(this.mExtensions.getApi());
@@ -239,10 +253,10 @@ class Application {
       } catch (error) {
         log('warn', 'failed to initialize native theme manager', error.message);
       }
-      
+
       // Show the main window after everything is ready
       this.showMainWindow(this.mArgs?.startMinimized);
-      
+
       // Initialize macOS-specific permissions
       if (isMacOS() && this.mMainWindow) {
         try {
@@ -253,7 +267,7 @@ class Application {
           log('warn', 'Failed to initialize macOS permissions', err.message);
         }
       }
-      
+
       // in the past we would process some command line arguments the same as we do when
       // they get passed in from a second instance but that was inconsistent
       // because we don't use most arguments from secondary instances and the
@@ -320,7 +334,7 @@ class Application {
       if (isMacOS()) {
         const iconPath = path.join(getVortexPath('assets'), 'images', 'vortex.png');
         app.dock.setIcon(iconPath);
-        
+
         // Enable macOS-specific drag and drop enhancements
         // This allows files to be dropped onto the Vortex dock icon
         app.dock.setBadge('');
@@ -587,21 +601,21 @@ class Application {
     /**
      * we are checking to see if an uninstaller exists as if it does, it means it was installed via our installer.
      * if it doesn't, then something else installed it. Maybe GOG, or EPIC, or something.
-     * 
+     *
      * TODO: we want to further check managed types to distiguish between anything that isn't us.
      * Quick research says we need to file pattern match the install directory to see what files gog or epic adds etc.
      * This should determine where it's from
-     * 
-     * GOG 
-     * 
+     *
+     * GOG
+     *
      * Maybe the existance of: (the number being the gog product id)
      * 'goggame-galaxyFileList.ini'
      * 'goggame-2053394557.info'
      * 'goggame-2053394557.hashdb'
-     * 
+     *
      * EPIC
-     * 
-     * 
+     *
+     *
      */
 
     return fs.statAsync(path.join(getVortexPath('application'), 'Uninstall Vortex.exe'))
@@ -627,12 +641,12 @@ class Application {
         return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
           title: 'Admin rights detected',
           message:
-              `Vortex has detected that it is being run with administrator rights. It is strongly 
-              advised to not run any application with admin rights as adverse effects may include 
+              `Vortex has detected that it is being run with administrator rights. It is strongly
+              advised to not run any application with admin rights as adverse effects may include
               permission issues or even security risks. Continue at your own risk`
               + (!uacEnabled
-                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
-                  operating system.  We strongly recommend you re-enable these to avoid file permissions 
+                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your
+                  operating system.  We strongly recommend you re-enable these to avoid file permissions
                   issues and potential security risks.`
                 : ''),
           buttons: [
@@ -667,14 +681,14 @@ class Application {
     if (this.mFirstStart || (process.env.NODE_ENV === 'development')) {
       // don't check version change in development builds or on first start
       return Promise.resolve();
-    } 
+    }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
       if (dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
-        message: `You're using a version of Vortex that is older than the version you ran previously. 
-        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this 
+        message: `You're using a version of Vortex that is older than the version you ran previously.
+        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this
         older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
         buttons: [
           'Quit',
@@ -806,6 +820,35 @@ class Application {
   private createTray(): Promise<void> {
     const TrayIcon = require('./TrayIcon').default;
     this.mTray = new TrayIcon(this.mExtensions.getApi());
+
+    // Initialize macOS Dock manager
+    this.mDockManager = new MacOSDockManager(this.mExtensions.getApi());
+    this.mDockManager.initialize();
+
+    // Initialize macOS Window manager
+    this.mWindowManager = new MacOSWindowManager();
+    this.mWindowManager.initialize();
+
+    // Initialize macOS Notification manager
+    this.mNotificationManager = new MacOSNotificationManager();
+    this.mNotificationManager.initialize();
+
+    // Initialize macOS Quick Look manager
+    this.mQuickLookManager = new MacOSQuickLookManager();
+    this.mQuickLookManager.initialize();
+
+    // Initialize macOS Services manager
+    this.mServicesManager = new MacOSServicesManager();
+    this.mServicesManager.initialize();
+
+    // Initialize macOS Handoff manager
+    this.mHandoffManager = new MacOSHandoffManager();
+    this.mHandoffManager.initialize();
+
+    // Initialize macOS Shortcuts manager
+    this.mShortcutsManager = new MacOSShortcutsManager();
+    this.mShortcutsManager.initialize();
+
     return Promise.resolve();
   }
 

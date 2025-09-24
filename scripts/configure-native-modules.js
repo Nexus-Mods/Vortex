@@ -81,6 +81,19 @@ for (const moduleName of [...macOnlyMocks, ...windowsOnlyModules]) {
 
 // Handle macOS-specific mocks and native module compilation
 if (isMacOS()) {
+  // Aggressively skip drivelist building on macOS to reduce build errors
+  console.log('Skipping drivelist native module building on macOS');
+  process.env.npm_config_drivelist_binary_host_mirror = 'none';
+  process.env.npm_config_drivelist_skip_build = 'true';
+  process.env.npm_config_drivelist_prebuild = 'false';
+  process.env.npm_config_drivelist_build_from_source = 'false';
+  process.env.SKIP_DRIVELIST_BUILD = '1';
+  process.env.SKIP_DRIVELIST_PREBUILD = '1';
+  process.env.SKIP_DRIVELIST_DOWNLOAD = '1';
+  process.env.DRIVELIST_SKIP_DOWNLOAD = '1';
+  process.env.DRIVELIST_SKIP_BUILD = '1';
+  process.env.DRIVELIST_SKIP_INSTALL = '1';
+  
   // Then handle mocked modules
   for (const moduleName of macOnlyMocks) {
     const mockPath = path.join(process.cwd(), '__mocks__', moduleName + '.js');

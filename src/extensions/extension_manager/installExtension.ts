@@ -770,56 +770,94 @@ async function getPackaged7zPath(): globalThis.Promise<string | undefined> {
       }
     }
 
-    // As a last resort, try resolving via the 7z-bin package export (may point into asar-unpacked)
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const sevenBinPath: string = require('7z-bin');
-      if (sevenBinPath) {
-        try {
-          const st = await fs.statAsync(sevenBinPath);
-          if (st && st.isFile()) {
-            if (process.platform !== 'win32') {
-              try { await fs.chmodAsync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
-            }
-            return sevenBinPath;
-          }
-        } catch (_) { 
-          // On macOS, the 7z-bin package may return a path like .../darwin/7z that doesn't exist
-          // but the actual binary is at .../bin/7z. Let's check if this is the case.
-          if (process.platform === 'darwin' && sevenBinPath.includes('/darwin/')) {
-            const correctedPath = sevenBinPath.replace('/darwin/', '/bin/');
+    // As a last resort, try resolving via package exports (may point into asar-unpacked)
+    // On macOS, prioritize 7zip-bin over 7z-bin since 7z-bin is broken
+    if (process.platform === 'darwin') {
+      // Try 7zip-bin package first on macOS
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenZipBin = require('7zip-bin');
+        if (sevenZipBin) {
+          // 7zip-bin exports an object with path7za property, not a string
+          const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
+          if (sevenZipBinPath) {
             try {
-              const st = await fs.statAsync(correctedPath);
+              const st = await fs.statAsync(sevenZipBinPath);
               if (st && st.isFile()) {
-                try { await fs.chmodAsync(correctedPath, 0o755 as any); } catch (_) { /* ignore */ }
-                return correctedPath;
+                try { await fs.chmodAsync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+                return sevenZipBinPath;
               }
             } catch (_) { /* ignore */ }
           }
         }
-      }
-    } catch (_) { /* ignore */ }
+      } catch (_) { /* ignore */ }
 
-    // Also try 7zip-bin package
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const sevenZipBin = require('7zip-bin');
-      if (sevenZipBin) {
-        // 7zip-bin exports an object with path7za property, not a string
-        const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
-        if (sevenZipBinPath) {
+      // Then try 7z-bin package as last resort on macOS
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenBinPath: string = require('7z-bin');
+        if (sevenBinPath) {
           try {
-            const st = await fs.statAsync(sevenZipBinPath);
+            const st = await fs.statAsync(sevenBinPath);
+            if (st && st.isFile()) {
+              try { await fs.chmodAsync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+              return sevenBinPath;
+            }
+          } catch (_) { 
+            // On macOS, the 7z-bin package may return a path like .../darwin/7z that doesn't exist
+            // but the actual binary is at .../bin/7z. Let's check if this is the case.
+            if (sevenBinPath.includes('/darwin/')) {
+              const correctedPath = sevenBinPath.replace('/darwin/', '/bin/');
+              try {
+                const st = await fs.statAsync(correctedPath);
+                if (st && st.isFile()) {
+                  try { await fs.chmodAsync(correctedPath, 0o755 as any); } catch (_) { /* ignore */ }
+                  return correctedPath;
+                }
+              } catch (_) { /* ignore */ }
+            }
+          }
+        }
+      } catch (_) { /* ignore */ }
+    } else {
+      // On non-macOS platforms, try 7z-bin first
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenBinPath: string = require('7z-bin');
+        if (sevenBinPath) {
+          try {
+            const st = await fs.statAsync(sevenBinPath);
             if (st && st.isFile()) {
               if (process.platform !== 'win32') {
-                try { await fs.chmodAsync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+                try { await fs.chmodAsync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
               }
-              return sevenZipBinPath;
+              return sevenBinPath;
             }
           } catch (_) { /* ignore */ }
         }
-      }
-    } catch (_) { /* ignore */ }
+      } catch (_) { /* ignore */ }
+
+      // Then try 7zip-bin package
+       try {
+         // eslint-disable-next-line @typescript-eslint/no-var-requires
+         const sevenZipBin = require('7zip-bin');
+         if (sevenZipBin) {
+           // 7zip-bin exports an object with path7za property, not a string
+           const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
+           if (sevenZipBinPath) {
+             try {
+               const st = await fs.statAsync(sevenZipBinPath);
+               if (st && st.isFile()) {
+                 if (process.platform !== 'win32') {
+                   try { await fs.chmodAsync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+                 }
+                 return sevenZipBinPath;
+               }
+             } catch (_) { /* ignore */ }
+           }
+         }
+       } catch (_) { /* ignore */ }
+     }
 
     return undefined;
   } catch (_) {

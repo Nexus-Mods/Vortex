@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import { promisify } from 'util';
 import { isMacOS, isWindows, isLinux } from './platform';
 import { log } from './log';
+import { getMacOSGameFix, findMacOSAppBundle, normalizeGamePathForMacOS } from './macOSGameCompatibility';
 
 const stat = promisify(fs.stat);
 const readdir = promisify(fs.readdir);
@@ -37,6 +38,54 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
   const candidates: ExecutableCandidate[] = [];
   
   if (isMacOS()) {
+    // Check if we have a compatibility fix for this game
+    const gameFix = getMacOSGameFix(options.gameId);
+    
+    if (gameFix) {
+      // Priority 0: Use compatibility system for known games
+      const appBundlePath = await findMacOSAppBundle(options.basePath, gameFix.macOSAppBundle);
+      if (appBundlePath) {
+        candidates.push({
+          path: appBundlePath,
+          type: 'app',
+          priority: 0,
+          platform: 'darwin'
+        });
+        
+        log('debug', 'Found game via compatibility system', {
+          gameId: options.gameId,
+          appBundlePath,
+          basePath: options.basePath
+        });
+      }
+      
+      // Check alternative files
+      if (gameFix.alternativeFiles) {
+        for (const altFile of gameFix.alternativeFiles) {
+          const altPath = path.join(options.basePath, altFile);
+          try {
+            const stats = await stat(altPath);
+            if (stats.isFile() || (stats.isDirectory() && altFile.endsWith('.app'))) {
+              candidates.push({
+                path: altPath,
+                type: altFile.endsWith('.app') ? 'app' : 'native',
+                priority: 0,
+                platform: 'darwin'
+              });
+              
+              log('debug', 'Found alternative file via compatibility system', {
+                gameId: options.gameId,
+                altPath,
+                basePath: options.basePath
+              });
+            }
+          } catch (err) {
+            // Alternative file not found, continue
+          }
+        }
+      }
+    }
+    
     // Priority 1: Native macOS executable
     if (options.macExecutable) {
       const nativeCandidate = await findNativeExecutable(options.basePath, options.macExecutable);

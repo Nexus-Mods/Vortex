@@ -364,11 +364,25 @@ export class DownloadObserver {
                                  allowInstall: boolean | 'force') {
     const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
-      // The only way for the download entry to be missing at this point
-      //  is if the user had canceled the download which would mean it was
-      //  removed from the state and the file no longer exists.
-      callback?.(new UserCanceled(), id);
-      return;
+      // Check if the download file actually exists - if it does, the download completed
+       // successfully but was removed from state (possibly due to cleanup or race condition)
+       if (res?.filePath) {
+        try {
+          fs.statSync(res.filePath);
+          log('warn', 'download completed but entry missing from state, continuing with file processing', { id, filePath: res.filePath });
+          // Continue processing the completed download even though state entry is missing
+        } catch (err) {
+          // The download entry is missing and no file exists - user likely canceled
+          log('debug', 'download canceled by user - no state entry and no file', { id });
+          callback?.(new UserCanceled(), id);
+          return;
+        }
+      } else {
+        // The download entry is missing and no file exists - user likely canceled
+        log('debug', 'download canceled by user - no state entry and no file', { id });
+        callback?.(new UserCanceled(), id);
+        return;
+      }
     }
     const fileName = path.basename(res.filePath);
     if (truthy(fileName)) {
