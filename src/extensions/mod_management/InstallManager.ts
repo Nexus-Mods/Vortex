@@ -144,7 +144,7 @@ import deriveModInstallName from './modIdManager';
 import { STAGING_DIR_TAG } from './stagingDirectory';
 
 import { HTTPError } from '@nexusmods/nexus-api';
-import Bluebird from 'bluebird';
+import Bluebird, { is } from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
@@ -1483,8 +1483,9 @@ class InstallManager {
         this.mActiveInstalls.delete(installKey);
 
         const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
-
-        if (!(err instanceof UserCanceled) && currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES) {
+        const isCanceled = (err instanceof UserCanceled) || (err instanceof ProcessCanceled);
+        const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
+        if (!isCanceled && hasRetriesLeft) {
           this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
           this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended, phase);
         } else {
