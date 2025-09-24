@@ -5,6 +5,7 @@ import * as ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import { FlexLayout, Icon, MainContext, tooltip, types } from 'vortex-api';
 import { IOverlay, IPosition } from '../../types/IState';
+import { getOverlayComponent } from './index';
 
 const BORDER = 8;
 
@@ -127,13 +128,14 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   const className = `instructions-overlay ${overlay?.options?.className ?? ''}`;
 
   const overlayComponentProps = {
-    ...(overlay?.options?.props?.() ?? {}),
+    ...(overlay?.options?.props && typeof overlay.options.props === 'function' 
+        ? overlay.options.props() 
+        : overlay?.options?.props ?? {}),
     closeOverlay: () => props.onClose(overlayId),
   };
 
-  return ReactDOM.createPortal([
+  return ReactDOM.createPortal(
     <div
-      key={overlay.title}
       ref={ref}
       className={className}
       style={{ left: pos.x, top: pos.y }}
@@ -170,23 +172,50 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
           {overlay.title ? <h3>{overlay.title}</h3> : null}
         </FlexLayout.Fixed>
         <FlexLayout.Fixed style={{ overflowY: 'auto' }}>
-          {open
-            ? typeof (overlay.content) === 'string' ?
-              (
-                <ReactMarkdown
-                  className='instructions-overlay-content' 
-                  allowedElements={['p', 'br', 'a', 'em', 'strong']} 
-                  unwrapDisallowed={true}
-                >
-                  {overlay.content}
-                </ReactMarkdown>
-              )
-              : <overlay.content {...overlayComponentProps} />
-            : null}
+          {open 
+            ? (() => {
+              if (overlay.componentId) {
+                  // Handle component rendering
+                  const registeredComponent = getOverlayComponent(overlay.componentId);
+                  if (registeredComponent) {
+                    let componentProps = overlayComponentProps;
+                    if (overlay.options?.props) {
+                      if (typeof overlay.options.props === 'function') {
+                        const additionalProps = overlay.options.props();
+                        componentProps = { ...overlayComponentProps, ...additionalProps };
+                      } else {
+                        componentProps = { ...overlayComponentProps, ...overlay.options.props };
+                      }
+                    }
+                    return React.createElement(registeredComponent, componentProps);
+                  } else {
+                    return (
+                      <div className='instructions-overlay-error'>
+                        Component not found for ID: {overlay.componentId}
+                      </div>
+                    );
+                  }
+                }
+                
+                if (overlay.content) {
+                  // Handle text/markdown content
+                  return (
+                    <ReactMarkdown
+                      className='instructions-overlay-content' 
+                      allowedElements={['p', 'br', 'a', 'em', 'strong']} 
+                      unwrapDisallowed={true}
+                    >
+                      {overlay.content}
+                    </ReactMarkdown>
+                  );
+                }
+                return <div className='instructions-overlay-error'>No content provided</div>;
+              })()
+            : <div className='instructions-overlay-error'>Overlay closed</div>}
         </FlexLayout.Fixed>
       </FlexLayout>
     </div>,
-  ], container,
+    container,
   );
 }
 
