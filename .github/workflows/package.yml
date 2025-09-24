@@ -12,8 +12,8 @@ on:
           required: true 
           type: boolean 
           default: true 
-        use-new-codesign: 
-            description: "Codesign?" 
+        use-codesigning: 
+            description: "Use codesigning?" 
             required: false 
             type: boolean 
             default: true
@@ -131,10 +131,14 @@ jobs:
       - name: Webpack 
         run: yarn build_dist 
            
-      - name: Package (new codesign) 
-        if: ${{ inputs.use-new-codesign == true }} 
+      - name: Package (with code signing)
+        if: ${{ inputs.use-codesigning == true }}
         run: yarn package
- 
+
+      - name: Package (without code signing)
+        if: ${{ inputs.use-codesigning == false }}
+        run: yarn package:nocodesign
+
       - name: Extract Sourcemaps 
         run: yarn extract_sourcemaps 
  
