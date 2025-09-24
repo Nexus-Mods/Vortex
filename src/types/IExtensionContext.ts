@@ -45,7 +45,7 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import Promise from 'bluebird';
-import { ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ComplexActionCreator } from 'redux-act';
@@ -467,6 +467,11 @@ export interface IExtensionApi {
    */
   dismissNotification?: (id: string) => void;
 
+  /*
+   * hides all active notifications
+   */
+  dismissAllNotifications?: () => void;
+
   /**
    * hides a notification and don't show it again
    * if this is called with the second parameter set to false, it re-enables the notification
@@ -616,6 +621,14 @@ export interface IExtensionApi {
    * with that id and setting it to undefined removes it
    */
   addMetaServer: (id: string, server: IServer) => void;
+
+  /**
+   * generate an md5 hash for the specified file
+   * @param filePath the path to the file
+   * @param progressFunc optional function to report progress
+   * @returns a promise resolving to the md5 hash result
+   */
+  genMd5Hash: (filePath: string, progressFunc?: (progress: number, total: number) => void) => Promise<IHashResult>;
 
   /**
    * find meta information about a mod

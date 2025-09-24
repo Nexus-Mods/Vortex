@@ -18,12 +18,10 @@ function testSupported(): Promise<ISupportedResult> {
 }
 
 function makeXXHash64() {
-  // using seed 0
-  const xxh64 = new XXHash64();
   return (filePath: string): Promise<string> => {
     return fs.readFileAsync(filePath)
       .then(data => {
-        const buf: Buffer = xxh64.hash(data);
+        const buf: Buffer = XXHash64.hash(data);
         return buf.toString('base64');
       });
   };

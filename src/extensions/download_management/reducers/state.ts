@@ -16,7 +16,21 @@ export const stateReducer: IReducerSpec = {
   reducers: {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
-      if (state.files[payload.id] !== undefined) {
+      if (state.files[payload.id] != null) {
+        const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId ?? payload.modInfo?.nexus?.ids?.fileId;
+        const existingFileId = state.files[payload.id].modInfo?.meta?.details?.fileId ?? state.files[payload.id].modInfo?.meta?.fileId ?? state.files[payload.id].modInfo?.nexus?.ids?.fileId;
+        const payloadRevisionId = payload.modInfo?.nexus?.ids?.revisionId;
+        const existingRevisionId = state.files[payload.id].modInfo?.nexus?.ids?.revisionId;
+        if (payloadFileId != null && existingFileId != null && existingFileId === payloadFileId) {
+          // If it's the same id for the same file, just ignore the request - it's probably the
+          //  redux module replaying actions. (appears to be the redux devtools)
+          return state;
+        }
+
+        if (payloadRevisionId != null && existingRevisionId != null && existingRevisionId === payloadRevisionId) {
+          // Same as above, but for collections
+          return state;
+        }
         // The code that called this action can't continue using this id.
         // We rely on the calling code to have a reliable way of generating unique id so
         // it's not worth the effort to code error handling for this.
@@ -24,7 +38,7 @@ export const stateReducer: IReducerSpec = {
           message: 'Invalid state change',
           details: 'An attempt was made to change application state in a way that '
                    + 'would destroy user data. The action was: \'initDownload\' '
-                   + 'with id \'' + payload.id + '\'.'
+                   + 'with id \'" + payload.id + "\'.'
                    + 'This is a bug in the calling code, please report it.',
         }, {});
         return state;

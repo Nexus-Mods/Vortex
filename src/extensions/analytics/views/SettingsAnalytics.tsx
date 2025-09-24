@@ -5,7 +5,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Toggle } from '../../..';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setAnalytics } from '../actions/analytics.action';
-import { HELP_ARTICLE } from '../constants';
+import { HELP_ARTICLE, PRIVACY_POLICY } from '../constants';
 
 interface IConnectedProps {
   analytics: boolean;
@@ -24,19 +24,22 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
     return (
       <form>
         <FormGroup controlId='analytics'>
-          <ControlLabel>{t('Diagnostics and usage data')}</ControlLabel>
+          <ControlLabel>{t('Data & Privacy')}</ControlLabel>
           <Toggle
             checked={analytics}
             onToggle={this.toggleAnalytics}
             disabled={!userInfo}
           >
-            {t('Allow tracking')}
+            {t('Allow this app to collect usage data to improve your experience')}
           </Toggle>
           <HelpBlock>
-            {t('This information is sent to our team entirely anonymously and only with your express consent')}
+            {t('Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.')}
+            <br /><br />
             <a style={{ marginLeft: '0.25rem' }} href={HELP_ARTICLE}>
-              {t('More about the data we track.')}
-            </a>
+              {t('More about the data we track')}
+            </a> | <a style={{ marginLeft: '0.25rem' }} href={PRIVACY_POLICY}>
+              {t('Privacy Policy')}
+            </a>            
           </HelpBlock>
         </FormGroup>
       </form>

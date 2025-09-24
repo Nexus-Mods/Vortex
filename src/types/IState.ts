@@ -316,7 +316,8 @@ export interface IModTable {
 
 export interface IOverlay {
   title: string;
-  content: string | React.ComponentType<any>;
+  content?: string; // Text/markdown content
+  componentId?: string; // Registry ID for React components
   position: IPosition;
   options?: IOverlayOptions;
 }

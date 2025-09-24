@@ -909,12 +909,12 @@ function init(context: IExtensionContext): boolean {
               && (game.name !== undefined)) {
             const t = context.api.translate;
 
-            context.api.sendNotification({
-              type: 'info',
-              title: 'Switched game mode',
-              message: game.name,
-              displayMS: 4000,
-            });
+            // context.api.sendNotification({
+            //   type: 'info',
+            //   title: 'Game',
+            //   message: game.name,
+            //   displayMS: 4000,
+            // });
           }
           return null;
         });

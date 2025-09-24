@@ -1,3 +1,13 @@
+jest.mock('vortex-api', () => {
+  const storeHelper = require('../src/util/storeHelper');
+  return {
+    util: {
+      setSafe: storeHelper.setSafe,
+      deleteOrNop: storeHelper.deleteOrNop,
+    },
+  };
+});
+
 import { sessionReducer } from '../extensions/feedback/src/reducers/session';
 
 describe('addFeedbackFile', () => {

@@ -65,6 +65,12 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
           if (err !== null) {
             reject(err);
           } else {
+            this.context.api.sendNotification({
+              id: 'mods-purged',
+              type: 'info',
+              message: 'Mods purged',
+              displayMS: 3000,
+            });
             resolve();
           }
         });

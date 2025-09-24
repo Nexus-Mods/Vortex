@@ -56,6 +56,8 @@ import { ThunkDispatch } from 'redux-thunk';
 import * as Tailwind from '../tailwind/components';
 import { tokens } from '../tailwind/tokens';
 
+import { Toaster } from 'react-hot-toast'; // at top
+
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
 addStyle(ReactButton, 'ghost');
@@ -280,6 +282,28 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <Dialog />
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
+
+              <Toaster
+                position="bottom-center"
+                reverseOrder={false}
+                toastOptions={{
+                  className: 'custom-toast',
+                  success: {
+                    className: 'custom-toast toast-success',
+                    iconTheme: {
+                      primary: 'var(--toast-success-primary)',
+                      secondary: 'var(--toast-success-secondary)',
+                    },
+                  },
+                  error: {
+                    className: 'custom-toast toast-error',
+                    iconTheme: {
+                      primary: 'var(--toast-error-primary)',
+                      secondary: 'var(--toast-error-secondary)',
+                    },
+                  }
+                }} />
+
               {customTitlebar ? <WindowControls /> : null}
             </div>
             {(uiBlocker !== undefined)

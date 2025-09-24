@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
+import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification, dismissAllNotifications,
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
@@ -46,7 +46,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { filteredEnvironment, isFunction, setdefault, timeout, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
+import { filteredEnvironment, isFunction, setdefault, timeout, toPromise, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -69,6 +69,10 @@ import * as winapiT from 'vortex-run';
 import { getApplication } from './application';
 import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
 import { VCREDIST_URL } from '../constants';
+import { fileMD5 } from 'vortexmt';
+import * as fsVortex from '../util/fs'
+
+import { toast, ToastOptions } from 'react-hot-toast';
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -833,6 +837,7 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
+      genMd5Hash: this.genMd5Hash,
       clearStylesheet: () => this.mStyleManager.clearCache(),
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
@@ -938,6 +943,18 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
+      if (this.canBeToast(noti)) {
+        let toastFunc = noti.type === 'error' ? toast.error : toast.success;
+        const toastOptions: ToastOptions = {
+          id: noti.id,
+          duration: noti.displayMS,
+        }
+        const message = noti.title !== undefined
+          ? `${noti.title}:\n${noti.message}`
+          : noti.message;
+        toastFunc(message, toastOptions);
+        return noti.id;
+      }
       if (notification.type === 'warning') {
         log('warn', 'warning notification',
             { message: notification.message, title: notification.title });
@@ -984,6 +1001,8 @@ class ExtensionManager {
       store.dispatch(closeDialog(id, actionKey, input));
     this.mApi.dismissNotification = (id: string) =>
       store.dispatch(dismissNotification(id));
+    this.mApi.dismissAllNotifications = () =>
+      store.dispatch(dismissAllNotifications());
     this.mApi.suppressNotification = (id: string, suppress: boolean) => {
       if (suppress !== false) {
         store.dispatch(dismissNotification(id));
@@ -1331,6 +1350,17 @@ class ExtensionManager {
         }
       });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private canBeToast = (notif: INotification) => {
+    const invalidToastTypes = ['activity', 'warning'];
+    if ((notif.displayMS != null && notif.displayMS <= 5000)
+      && notif.noToast !== true
+      && (notif.actions == null || notif.actions.length === 0)
+      && !invalidToastTypes.includes(notif.type)) {
+      return true;
+    }
+    return false;
   }
 
   private getMetaServerList(): modmetaT.IServer[] {
@@ -1719,7 +1749,7 @@ class ExtensionManager {
     let promise: Promise<void>;
 
     if (fileMD5 === undefined) {
-      promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
+      promise = this.genMd5Hash(detail.filePath).then((res: IHashResult) => {
         fileMD5 = res.md5sum;
         fileSize = res.numBytes;
         lookupId = this.modLookupId({
@@ -1744,7 +1774,7 @@ class ExtensionManager {
     return promise
       .then(() => this.getModDB())
       .then(modDB => (fileSize !== 0) && (fileMD5 !== undefined)
-        ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
+        ? modDB.lookup(undefined, fileMD5, fileSize, detail.gameId)
         : [])
       .then((result: ILookupResult[]) => {
         const resultSorter = this.makeSorter(detail);
@@ -1814,6 +1844,27 @@ class ExtensionManager {
           resolve();
         });
       });
+  }
+
+  private genMd5Hash = (filePath: string, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
+    let lastProgress: number = 0;
+    const progressHash = (progress: number, total: number) => {
+      progressFunc?.(progress, total);
+      if (lastProgress !== total) {
+        lastProgress = total;
+      }
+    };
+    return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
+      .then((result) => (lastProgress === 0)
+        ? fsVortex.statAsync(filePath).then(stats => stats.size).catch(() => 0)
+          .then(numBytes => Promise.resolve({
+            md5sum: result,
+            numBytes
+          }))
+        : Promise.resolve({
+          md5sum: result,
+          numBytes: lastProgress
+        }));
   }
 
   private openArchive = (archivePath: string,
@@ -1976,8 +2027,14 @@ class ExtensionManager {
                         ? lines[lines.length - 1]
                         : lines.join('\n');
                     }
+
+                    // Sanitize the error message to prevent crashpad issues
+                    const sanitizedExecutable = executable.replace(/[^\x20-\x7E]/g, '?');
+                    const sanitizedLastLine = lastLine.replace(/[^\x20-\x7E]/g, '?').substring(0, 500);
+                    const exitCodeHex = code.toString(16);
+
                     const err: any = new Error(
-                      `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                      `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`);
                     err.exitCode = code;
                     return reject(err);
                   }

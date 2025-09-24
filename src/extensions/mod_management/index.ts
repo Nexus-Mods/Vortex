@@ -31,6 +31,7 @@ import {
   activeProfile,
   currentGameDiscovery,
   downloadPathForGame,
+  knownGames,
   installPath,
   installPathForGame,
   modPathsForGame,
@@ -100,6 +101,7 @@ import mergeMods, { MERGED_PATH } from './modMerging';
 import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 import { findModByRef } from './util/dependencies';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
@@ -107,6 +109,7 @@ import * as path from 'path';
 import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
+import { types } from '../..';
 
 interface IAppContext {
   isProfileChanging: boolean
@@ -1135,6 +1138,26 @@ function once(api: IExtensionApi) {
     }
   });
 
+  const removeModToastDebouncer = new Debouncer(() => {
+    api.sendNotification({
+      id: 'mod-removed',
+      type: 'info',
+      message: 'Mod(s) removed',
+      displayMS: 3000,
+    });
+
+    return Promise.resolve();
+  }, 500, true, false);
+
+  api.onAsync('did-remove-mod', (
+    gameMode: string,
+    removedId: string,
+    modId: string,
+    options: { willBeReplaced?: boolean, modData?: types.IMod }) => {
+    removeModToastDebouncer.schedule();
+    return Promise.resolve();
+  });
+
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
   api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
@@ -1175,7 +1198,7 @@ function once(api: IExtensionApi) {
         const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
         Promise.map(modIds, modId =>
-          installManager.installDependencies(api, profile, gameId, modId, silent === true)
+          installManager.installDependencies(api, profile, gameId, modId, silent === true, false)
             .catch(ProcessCanceled, () => null))
           .catch(err => api.showErrorNotification('Failed to install dependencies', err));
       } catch (err) {
@@ -1213,7 +1236,7 @@ function once(api: IExtensionApi) {
       return;
     }
 
-    installManager.installDependencies(api, profile, profile.gameId, modId, false)
+    installManager.installDependencies(api, profile, profile.gameId, modId, true, false)
       .then(() => installManager.installRecommendations(api, profile, profile.gameId, modId))
       .catch(err => {
         if (!(err instanceof ProcessCanceled)) {
@@ -1300,7 +1323,10 @@ function once(api: IExtensionApi) {
      cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
-      const downloadPath: string = downloadPathForGame(state, download.game[0]);
+      const rawGameId = Array.isArray(download?.game) ? download.game[0] : download?.game;
+      const games = knownGames(state);
+      const internalGameId = rawGameId ? (convertGameIdReverse(games, rawGameId) || rawGameId) : activeGameId(state);
+      const downloadPath: string = downloadPathForGame(state, internalGameId);
       const archivePath: string = path.join(downloadPath, download.localPath);
       const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
       return installManager.simulate(api, gameId, archivePath, tempPath,
