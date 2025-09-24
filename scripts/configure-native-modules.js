@@ -96,6 +96,15 @@ if (isMacOS()) {
   
   // Then handle mocked modules
   for (const moduleName of macOnlyMocks) {
+    // Skip drivelist if we have a real implementation
+    if (moduleName === 'drivelist') {
+      const realImplPath = path.join(process.cwd(), 'src', 'util', 'drivelist-macos.js');
+      if (fs.existsSync(realImplPath)) {
+        console.log(`Using real implementation for ${moduleName} on macOS`);
+        continue;
+      }
+    }
+    
     const mockPath = path.join(process.cwd(), '__mocks__', moduleName + '.js');
     if (fs.existsSync(mockPath)) {
       console.log(`Using mock for ${moduleName} on macOS`);

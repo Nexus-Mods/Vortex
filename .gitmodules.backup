@@ -111,7 +111,7 @@
 [submodule "extensions/theme-switcher"]
 	path = extensions/theme-switcher
 	url = https://github.com/Nexus-Mods/extension-theme-switcher.git
-	branch = macos-tahoe-theme
+	branch = master
 	ignore = all
 [submodule "api"]
 	path = api

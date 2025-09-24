@@ -201,7 +201,6 @@
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "diskusage": "TanninOne/node-diskusage",
-    "drivelist": "^12.0.2",
     "native-errors": "Nexus-Mods/node-native-errors",
     "vortexmt": "file:vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"

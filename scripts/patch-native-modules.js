@@ -144,7 +144,8 @@ if (isMacOS()) {
         "name": moduleName,
         "version": "1.0.0",
         "main": "index.js",
-        "description": `Real implementation of ${moduleName} for macOS`
+        "description": `Real implementation of ${moduleName} for macOS`,
+        "gypfile": false
       };
       fs.writeFileSync(path.join(modulePath, 'package.json'), JSON.stringify(packageJson, null, 2), 'utf8');
       
@@ -175,6 +176,16 @@ if (isMacOS()) {
       process.env[`${upperModuleName}_SKIP_BUILD`] = '1';
     }
   }
+  
+  // Additional drivelist-specific configuration to prevent Windows binary compilation
+  process.env.npm_config_drivelist_skip_build = 'true';
+  process.env.npm_config_drivelist_binary_host_mirror = 'none';
+  process.env.DRIVELIST_SKIP_BUILD = '1';
+  process.env.SKIP_DRIVELIST_BUILD = '1';
+  process.env.SKIP_DRIVELIST_PREBUILD = '1';
+  process.env.SKIP_DRIVELIST_DOWNLOAD = '1';
+  process.env.DRIVELIST_SKIP_DOWNLOAD = '1';
+  process.env.DRIVELIST_SKIP_INSTALL = '1';
 }
 
 // Create a patched node-addon-api configuration
