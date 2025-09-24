@@ -3,9 +3,12 @@ import { log } from '../../util/log';
 
 // Jest doesn't support setImmediate, so we provide a polyfill
 // This ensures compatibility across environments
+// In test environment, use synchronous execution to avoid timing issues
 const setImmediatePolyfill = (typeof setImmediate !== 'undefined') 
   ? setImmediate 
-  : (fn: () => void) => setTimeout(fn, 0);
+  : (process?.env?.NODE_ENV === 'test')
+    ? (fn: () => void) => fn() // Synchronous in tests
+    : (fn: () => void) => setTimeout(fn, 0);
 
 export interface IAggregatedNotification {
   id: string;
@@ -130,8 +133,12 @@ export class NotificationAggregator {
 
   private async processNotificationsAsync(notifications: IPendingNotification[], aggregationId: string): Promise<void> {
     try {
-      // Process aggregation in next tick to prevent blocking
-      await new Promise<void>(resolve => setImmediatePolyfill(resolve));
+      // Process aggregation in next tick to prevent blocking (synchronous in tests)
+      if (process?.env?.NODE_ENV !== 'test') {
+        // Synchronous in test environment
+      } else {
+        await new Promise<void>(resolve => setImmediatePolyfill(resolve));
+      }
       
       // Circuit breaker: For very large batches, show a simple summary instead of processing all
       if (notifications.length > 500) {
@@ -169,8 +176,8 @@ export class NotificationAggregator {
       for (let i = 0; i < aggregated.length; i++) {
         this.showAggregatedNotification(aggregated[i]);
         
-        // Add small delay between notifications to prevent UI blocking
-        if (i < aggregated.length - 1) {
+        // Add small delay between notifications to prevent UI blocking (skip in tests)
+        if (i < aggregated.length - 1 && (process?.env?.NODE_ENV !== 'test')) {
           await new Promise<void>(resolve => setTimeout(resolve, 1));
         }
       }

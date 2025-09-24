@@ -11,11 +11,8 @@
  * This sucks but there's not much we can do about it without a refactor.
  */
 
-// Mock the circular dependency first
-jest.doMock('../src/util/storeHelper', () => ({
-  deleteOrNop: jest.fn((obj, path) => obj),
-  setSafe: jest.fn((obj, path, value) => ({ ...obj, [path[path.length - 1]]: value })),
-}));
+// Mock the circular dependency first - use the dedicated storeHelper mock
+jest.doMock('../src/util/storeHelper', () => require('./storeHelper'));
 
 // Now try to generate the mock from the actual module
 let actualModule;
@@ -78,6 +75,8 @@ if (actualModule) {
     ComponentEx,
     PureComponentEx,
     translate: actualModule.translate || ((namespace) => (component) => component),
+    connect: actualModule.connect || require('react-redux').connect,
+    extend: actualModule.extend || (() => (component) => component),
   };
 } else {
   // Fallback to manual mock if automatic generation fails
