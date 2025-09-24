@@ -12412,8 +12412,8 @@ wildcard@^2.0.0:
   integrity sha512-CC1bOL87PIWSBhDcTrdeLo6eGT7mCFtrg0uIJtqJUFyK+eJnzl8A1niH56uu7KMa5XFrtiV+AQuHO3n7DsHnLQ==
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.7.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/2e278fe19e8e7105b9e5baf445449f1aed495c72"
+  version "2.7.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3b34029279f0cb49c594f6a51df7057bd5bd52b8"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^8.0.0"
