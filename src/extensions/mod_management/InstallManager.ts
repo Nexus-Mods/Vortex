@@ -1484,7 +1484,7 @@ class InstallManager {
 
         const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
 
-        if (currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES) {
+        if (!(err instanceof UserCanceled) && currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES) {
           this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
           this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended, phase);
         } else {
