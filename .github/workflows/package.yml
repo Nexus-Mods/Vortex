@@ -119,33 +119,51 @@ jobs:
       - name: Build API 
         run: yarn --non-interactive build_api 
        
-      - name: Build Install 
+      - name: Install Production Dependencies 
         run: yarn --non-interactive _install_app 
        
-      - name: Build Subprojects 
+      - name: Build Extensions (Submodules)
         run: yarn --non-interactive subprojects_app 
        
-      - name: Build Assets 
+      - name: Build Static Assets 
         run: yarn --non-interactive _assets_app 
          
-      - name: Webpack 
-        run: yarn build_dist 
-           
-      - name: Package (with code signing)
+      - name: Bundle Application (Webpack)
+        run: yarn build_dist
+
+      - name: Test
+        run: yarn test
+
+      - name: Create Signed Installer
         if: ${{ inputs.use-codesigning == true }}
         run: yarn package
 
-      - name: Package (without code signing)
+      - name: Create Unsigned Installer
         if: ${{ inputs.use-codesigning == false }}
         run: yarn package:nocodesign
 
-      - name: Extract Sourcemaps 
-        run: yarn extract_sourcemaps 
- 
-      - name: Test 
-        run: yarn test 
-        
-      - name: Release 
+      - name: Extract Debug Sourcemaps
+        run: yarn extract_sourcemaps
+
+      - name: Validate Package Creation
+        shell: pwsh
+        run: |
+          $installerExists = Test-Path "./dist/vortex-setup-*.*.*.exe"
+          $latestYmlExists = Test-Path "./dist/latest.yml"
+
+          if (-not $installerExists) {
+            Write-Error "Installer executable not found in ./dist/"
+            exit 1
+          }
+
+          if (-not $latestYmlExists) {
+            Write-Error "latest.yml not found in ./dist/"
+            exit 1
+          }
+
+          Write-Output "✅ Package validation successful - installer and metadata files created"
+
+      - name: Create GitHub Release 
         uses: softprops/action-gh-release@v2.2.2 
         if: ${{ inputs.release == true }} 
         with: 
@@ -159,7 +177,7 @@ jobs:
           name: ${{ steps.setOutputs.outputs.rawVersion }} 
           tag_name: ${{ steps.setOutputs.outputs.tagVersion }} 
 
-      - name: Staging Release 
+      - name: Create GitHub Release on Vortex-Staging 
         uses: softprops/action-gh-release@v2.2.2 
         if: ${{ inputs.staging-release == true }} 
         with: 
