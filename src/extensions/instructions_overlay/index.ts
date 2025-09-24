@@ -5,6 +5,18 @@ import Reducer from './reducer';
 
 import { IOverlayOptions, IPosition } from '../../types/IState';
 
+const componentRegistry = new Map<string, React.ComponentType<any>>();
+
+function registerOverlayComponent(id: string, component: React.ComponentType<any>): void {
+  componentRegistry.set(id, component);
+}
+
+function getOverlayComponent(id: string): React.ComponentType<any> | undefined {
+  return componentRegistry.get(id);
+}
+
+export { getOverlayComponent };
+
 function init(context: IExtensionContext): boolean {
   const onClose = (id: string) => {
     const state = context.api.getState();
@@ -20,14 +32,26 @@ function init(context: IExtensionContext): boolean {
   }));
   context.registerReducer(['session', 'overlays'], Reducer);
 
-  // not yet ready to make these official parts of the api
   context.registerAPI('showOverlay',
-    (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) =>
-      context.api.store.dispatch(showOverlay(id, title, content, pos, options)), { minArguments: 3 });
+    (id: string, title: string, content: string | React.ComponentType<any>, pos: IPosition = undefined, options: IOverlayOptions) => {
+      // If content is a React component, register it and use an identifier
+      if (typeof content === 'function') {
+        const componentId = `component-${id}-${Date.now()}`;
+        registerOverlayComponent(componentId, content);
+        context.api.store.dispatch(showOverlay(id, title, undefined, componentId, pos, options));
+      } else {
+        context.api.store.dispatch(showOverlay(id, title, content, undefined, pos, options));
+      }
+    }, { minArguments: 3 });
 
   context.registerAPI('dismissOverlay', (id: string) => {
     onClose(id);
   }, { minArguments: 1 });
+
+  // Expose component registry functions to extensions that need them - not sure if there's a point to this
+  //  but it's easy enough to do.
+  context.registerAPI('registerOverlayComponent', registerOverlayComponent, { minArguments: 2 });
+  context.registerAPI('getOverlayComponent', getOverlayComponent, { minArguments: 1 });
 
   return true;
 }
