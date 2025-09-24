@@ -53,7 +53,8 @@
     "moduleNameMapper": {
       "^cheerio$": "<rootDir>/__mocks__/cheerio.js",
       "^cheerio/lib/utils$": "<rootDir>/__mocks__/cheerio-utils.js",
-      "^shortid$": "<rootDir>/__mocks__/shortid.js"
+      "^shortid$": "<rootDir>/__mocks__/shortid.js",
+      "^../util/ComponentEx$": "<rootDir>/__mocks__/ComponentEx.js"
     },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
     "testPathIgnorePatterns": [
