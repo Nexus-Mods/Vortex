@@ -919,7 +919,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.sendNotification({
       id: `download-removed`,
       type: 'info',
-      message: 'Download(s) Removed',
+      message: 'Download(s) deleted',
       displayMS: 3000,
     });
     return Promise.resolve();
