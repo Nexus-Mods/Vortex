@@ -144,7 +144,7 @@ import deriveModInstallName from './modIdManager';
 import { STAGING_DIR_TAG } from './stagingDirectory';
 
 import { HTTPError } from '@nexusmods/nexus-api';
-import Bluebird, { is } from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
