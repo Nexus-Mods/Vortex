@@ -60,14 +60,37 @@ async function verifyModulesInstalled() {
   for (const module of verifyModules) {
     // Skip verification if mock exists on macOS
     if (isMacOS()) {
-      const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
-      try {
-        await fs.stat(mockPath);
-        console.log(`Using mock for ${module[0]} on macOS`);
-        continue;
-      } catch (err) {
-        // No mock found, proceed with verification
-        console.log(`No mock found for ${module[0]} on macOS, proceeding with verification`);
+      // Special handling for drivelist - check if real implementation exists
+      if (module[0] === 'drivelist') {
+        const realImplPath = path.join(__dirname, 'src', 'util', 'drivelist-macos.js');
+        const realModulePath = path.join(__dirname, 'node_modules', 'drivelist', 'index.js');
+        try {
+          await fs.stat(realImplPath);
+          await fs.stat(realModulePath);
+          console.log(`Using real implementation for ${module[0]} on macOS`);
+          continue;
+        } catch (err) {
+          // Fall back to mock if real implementation doesn't exist
+          const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
+          try {
+            await fs.stat(mockPath);
+            console.log(`Using mock for ${module[0]} on macOS`);
+            continue;
+          } catch (mockErr) {
+            // No mock found, proceed with verification
+            console.log(`No implementation found for ${module[0]} on macOS, proceeding with verification`);
+          }
+        }
+      } else {
+        const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
+        try {
+          await fs.stat(mockPath);
+          console.log(`Using mock for ${module[0]} on macOS`);
+          continue;
+        } catch (err) {
+          // No mock found, proceed with verification
+          console.log(`No mock found for ${module[0]} on macOS, proceeding with verification`);
+        }
       }
     }
     
