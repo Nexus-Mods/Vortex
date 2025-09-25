@@ -3272,34 +3272,6 @@ class InstallManager {
               const idx = queuedDownloads.indexOf(dep.reference);
               queuedDownloads.splice(idx, 1);
 
-              // Handle AlreadyDownloaded exception specifically
-              if (err instanceof AlreadyDownloaded) {
-                if (err.downloadId !== undefined) {
-                  log('info', 'File already downloaded, using existing download ID', { downloadId: err.downloadId });
-                  return Bluebird.resolve(err.downloadId);
-                } else {
-                  // Try to find the download by filename
-                  const currentDownloads = api.getState().persistent.downloads.files;
-                  const downloadId = Object.keys(currentDownloads).find(dlId =>
-                    currentDownloads[dlId].localPath === err.fileName ||
-                    currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag);
-
-                  if (downloadId) {
-                    log('info', 'File already downloaded, found existing download', { downloadId, fileName: err.fileName });
-                    return Bluebird.resolve(downloadId);
-                  } else {
-                    // File exists but no download record found - treat as successful download
-                    // This can happen when files are manually placed or from previous sessions
-                    log('warn', 'File already exists but no download record found, treating as completed', {
-                      fileName: err.fileName,
-                      reference: dep.reference?.tag
-                    });
-                    // Create a placeholder download ID or return a special value that indicates file exists
-                    return Bluebird.resolve(err.downloadId || 'file-exists-' + Date.now());
-                  }
-                }
-              }
-
               // Check if this is a network error that might have caused the download to be paused
               const isNetworkError = err.message?.includes('socket hang up')
                 || err.message?.includes('ECONNRESET')
@@ -3308,23 +3280,35 @@ class InstallManager {
                 || err.code === 'ETIMEDOUT';
 
               // Check if this is a "File already downloaded" error (for cases where we get a generic error message)
-              const isAlreadyDownloaded = err.message?.includes('File already downloaded')
+              const isAlreadyDownloaded = err instanceof AlreadyDownloaded
+                || err.message?.includes('File already downloaded')
                 || err.message?.includes('already downloaded');
 
               if (isAlreadyDownloaded) {
+                if (err.downloadId !== undefined) {
+                  log('info', 'File already downloaded, using existing download ID', { downloadId: err.downloadId });
+                  return Bluebird.resolve(err.downloadId);
+                }
                 // If file is already downloaded, check if we can find the download
+                // Try to find the download by filename
                 const currentDownloads = api.getState().persistent.downloads.files;
                 const downloadId = Object.keys(currentDownloads).find(dlId =>
+                  currentDownloads[dlId].localPath === err.fileName ||
                   currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag);
 
                 if (downloadId) {
                   log('info', 'Download already completed, using existing download', { downloadId });
                   return Bluebird.resolve(downloadId);
                 } else {
-                  log('warn', 'File already downloaded but no download record found, treating as completed', {
-                    reference: dep.reference?.tag
+                  // The download file exists but we can't find its record - refresh downloads and try again
+                  return new Bluebird((resolve) => {
+                    api.events.emit('refresh-downloads', gameId, () => {
+                      const currentDownloads = api.getState().persistent.downloads.files;
+                      const downloadId = Object.keys(currentDownloads).find(dlId =>
+                        currentDownloads[dlId].localPath === err.fileName);
+                      return downloadId ? resolve(downloadId) : resolve(null);
+                    });
                   });
-                  return Bluebird.resolve('file-exists-' + Date.now());
                 }
               }
 

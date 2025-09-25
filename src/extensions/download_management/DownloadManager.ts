@@ -27,6 +27,7 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as url from 'url';
 import * as zlib from 'zlib';
+import { IExtensionApi } from '../../types/api';
 
 const getCookies = makeRemoteCall('get-cookies',
   (electron, webContents, filter: Electron.CookiesGetFilter) => {
@@ -138,6 +139,7 @@ class DownloadWorker {
   private static BUFFER_SIZE = 256 * 1024;
   private static BUFFER_SIZE_CAP = 4 * 1024 * 1024;
   private static MAX_NETWORK_RETRIES = 3; // Maximum number of network error retries
+  private mApi: IExtensionApi;
   private mJob: IDownloadJob;
   private mUrl: string;
   private mRequest: http.ClientRequest;
@@ -160,13 +162,15 @@ class DownloadWorker {
   private mURLResolve: Bluebird<void>;
   private mOnAbort: () => void;
 
-  constructor(job: IDownloadJob,
+  constructor(api: IExtensionApi,
+              job: IDownloadJob,
               progressCB: (bytes: number) => void,
               finishCB: FinishCallback,
               headersCB: (headers: any) => void,
               userAgent: string,
               throttle: () => stream.Transform,
               getAgent: (protocol: string) => http.Agent | https.Agent) {
+    this.mApi = api;
     this.mProgressCB = progressCB;
     this.mFinishCB = finishCB;
     this.mHeadersCB = headersCB;
@@ -347,7 +351,8 @@ class DownloadWorker {
           this.handleError(new Error('Invalid response received'));
           return;
         }
-
+        const { tag, urls, fileName } = this.mJob.options;
+        this.mApi.events.emit('did-start-download', { id: undefined, tag, urls, fileName });
         log('debug', 'downloading from',
           { address: `${res.socket.remoteAddress}:${res.socket.remotePort}` });
 
@@ -579,8 +584,7 @@ class DownloadWorker {
         networkRetries: this.mNetworkRetries,
         maxRetries: DownloadWorker.MAX_NETWORK_RETRIES
       });
-      this.mEnded = true;
-      this.mFinishCB(false);
+      this.abort(false);
     }
   }
 
@@ -848,6 +852,7 @@ const MAX_WORKER_RESTARTS = 3;                 // Maximum restarts per worker
  * @class DownloadManager
  */
 class DownloadManager {
+  private mApi: IExtensionApi;
   private mMinChunkSize: number;
   private mMaxWorkers: number;
   private mMaxChunks: number;
@@ -878,10 +883,11 @@ class DownloadManager {
    *
    * @memberOf DownloadManager
    */
-  constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
+  constructor(api: IExtensionApi, downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string,
               protocolHandlers: IProtocolHandlers,
               maxBandwidth: () => number) {
+    this.mApi = api;
     // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 20 * 1024 * 1024;
     this.mDownloadPath = downloadPath;
@@ -1527,7 +1533,7 @@ class DownloadManager {
       }
       download.assembler = assembler;
 
-      const worker = new DownloadWorker(job, this.makeProgressCB(job, download),
+      const worker = new DownloadWorker(this.mApi, job, this.makeProgressCB(job, download),
         (pause, replaceFileName) => replaceFileName !== undefined
           ? this.useExistingFile(download, job, replaceFileName)
           : this.finishChunk(download, job, pause),
