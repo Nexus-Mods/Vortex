@@ -14,6 +14,7 @@
     "inlineSources": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "downlevelIteration": true,
     "jsx": "react",
     "typeRoots": [
       "./types",

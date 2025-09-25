@@ -1,5 +1,6 @@
 
 import { log } from '../../util/log';
+import { checkAndLogDuplicateGameEntry } from '../loadOrderUtils';
 
 import { IGameLoadOrderEntry } from './types/types';
 
@@ -10,11 +11,7 @@ export function addGameEntry(gameEntry: IGameLoadOrderEntry) {
     return;
   }
 
-  const isDuplicate: boolean = SUPPORTED_GAMES.find(game =>
-    game.gameId === gameEntry.gameId) !== undefined;
-
-  if (isDuplicate) {
-    log('debug', 'attempted to add duplicate gameEntry to load order extension', gameEntry.gameId);
+  if (checkAndLogDuplicateGameEntry(gameEntry.gameId, SUPPORTED_GAMES, 'mod_load_order')) {
     return;
   }
 

@@ -96,12 +96,27 @@ interface DownloadURLMapping {
  * Known macOS compatibility fixes for popular games
  */
 const MACOS_GAME_FIXES: MacOSGameFix[] = [
-  // Balatro
+  // Balatro - Enhanced with comprehensive mod support detection
   {
     gameId: 'balatro',
     windowsExecutable: 'Balatro.exe',
     macOSAppBundle: 'Balatro.app',
-    alternativeFiles: ['liblovely.dylib', 'run_lovely_macos.sh']
+    alternativeFiles: [
+      // Lovely injector files
+      'liblovely.dylib',
+      'run_lovely_macos.sh',
+      'lovely',
+      'lovely.exe',
+      // SteamModded files
+      'steammodded.lua',
+      'steammodded',
+      // Alternative app bundle names
+      'balatro.app',
+      'BALATRO.app',
+      // Steam/platform specific
+      'Balatro.x86_64',
+      'Balatro.app/Contents/MacOS/Balatro'
+    ]
   },
   // Cyberpunk 2077
   {
@@ -413,8 +428,9 @@ const STATIC_DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
     description: 'redscript for Cyberpunk 2077 - Windows to macOS conversion'
   },
   {
-    // Lovely injector for Balatro - Windows to macOS URL mapping
-    windowsPattern: /https:\/\/github\.com\/ethangreen-dev\/lovely-injector\/releases\/(?:download\/v[\d.]+([-\w]*)?\/|latest\/download\/)lovely-(?:windows\.zip|x86_64-pc-windows-msvc\.zip)/,
+    // Lovely injector for Balatro - Enhanced Windows to macOS URL mapping
+    // Matches patterns used by Balatro extension: lovely-x86_64-pc-windows-msvc.zip, lovely-windows.zip
+    windowsPattern: /https:\/\/github\.com\/ethangreen-dev\/lovely-injector\/releases\/(?:download\/v[\d.]+([-\w]*)?\/|latest\/download\/)lovely-(?:x86_64-pc-windows-msvc\.zip|windows\.zip|win.*\.zip)/i,
     getMacOSUrl: (windowsUrl: string) => {
       try {
         // Extract version from Windows URL (including beta versions)
@@ -425,32 +441,43 @@ const STATIC_DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
         const arch = getMacOSArchitecture();
         const macOSFileName = arch === 'arm64' ? 'lovely-aarch64-apple-darwin.tar.gz' : 'lovely-x86_64-apple-darwin.tar.gz';
         
-        log('debug', 'Converting Lovely injector URL for macOS', {
+        log('info', 'Converting Lovely injector URL for Balatro macOS compatibility', {
           originalUrl: windowsUrl,
           version: version,
           architecture: arch,
-          targetFileName: macOSFileName
+          targetFileName: macOSFileName,
+          extensionContext: 'Balatro'
         });
         
         // Handle both versioned and latest URLs
         if (windowsUrl.includes('/latest/download/')) {
           const macUrl = `https://github.com/ethangreen-dev/lovely-injector/releases/latest/download/${macOSFileName}`;
-          log('debug', 'Generated latest download URL for Lovely injector', { macUrl });
+          log('info', 'Generated latest download URL for Lovely injector (Balatro)', { 
+            macUrl,
+            architecture: arch,
+            originalUrl: windowsUrl
+          });
           return macUrl;
         } else {
           const macUrl = `https://github.com/ethangreen-dev/lovely-injector/releases/download/v${version}/${macOSFileName}`;
-          log('debug', 'Generated versioned download URL for Lovely injector', { macUrl });
+          log('info', 'Generated versioned download URL for Lovely injector (Balatro)', { 
+            macUrl,
+            version,
+            architecture: arch,
+            originalUrl: windowsUrl
+          });
           return macUrl;
         }
       } catch (error) {
-        log('warn', 'Error converting Lovely injector URL, returning original', {
+        log('error', 'Error converting Lovely injector URL for Balatro, returning original', {
           url: windowsUrl,
-          error: error.message
+          error: error.message,
+          stack: error.stack
         });
         return windowsUrl;
       }
     },
-    description: 'Lovely injector for Balatro - Windows to macOS conversion with architecture detection'
+    description: 'Lovely injector for Balatro - Enhanced Windows to macOS conversion with architecture detection and Balatro-specific patterns'
   },
   {
     // Steammodded for Balatro - Source code downloads are platform-independent
@@ -614,7 +641,8 @@ export async function checkFileWithMacOSFallback(
     
     return false;
   } catch (err) {
-    log('debug', 'Error checking file existence', { basePath, fileName, gameId, error: err.message });
+      const error = err as Error;
+      log('debug', 'Error checking file existence', { basePath, fileName, gameId, error: error.message });
     return false;
   }
 }
@@ -679,7 +707,8 @@ function findMacOSAppBundleSync(basePath: string, appBundleName: string): string
     
     return null;
   } catch (err) {
-    log('debug', 'Error finding macOS app bundle (sync)', { basePath, appBundleName, error: err.message });
+      const error = err as Error;
+      log('debug', 'Error finding macOS app bundle (sync)', { basePath, appBundleName, error: error.message });
     return null;
   }
 }
@@ -935,7 +964,8 @@ export async function findMacOSAppBundle(basePath: string, appBundleName: string
     
     return null;
   } catch (err) {
-    log('debug', 'Error finding macOS app bundle', { basePath, appBundleName, error: err.message });
+      const error = err as Error;
+      log('debug', 'Error finding macOS app bundle', { basePath, appBundleName, error: error.message });
     return null;
   }
 }
@@ -963,7 +993,8 @@ export async function getExecutableFromAppBundle(appBundlePath: string) {
     
     return null;
   } catch (err) {
-    log('debug', 'Error getting executable from app bundle', { appBundlePath, error: err.message });
+      const error = err as Error;
+      log('debug', 'Error getting executable from app bundle', { appBundlePath, error: error.message });
     return null;
   }
 }
@@ -1055,7 +1086,8 @@ function hasRedscript(gamePath: string): boolean {
   try {
     return fileExists(launchScriptPath);
   } catch (err) {
-    console.log('Debug: Error checking for redscript installation', { error: err.message });
+      const error = err as Error;
+      console.log('Debug: Error checking for redscript installation', { error: error.message });
     return false;
   }
 }
@@ -1108,7 +1140,8 @@ async function setupSteamRedscript(gamePath: string): Promise<boolean> {
     
     return false;
   } catch (err) {
-    console.error('Error: Failed to setup Steam redscript integration', { error: err.message });
+      const error = err as Error;
+      console.error('Error: Failed to setup Steam redscript integration', { error: error.message });
     return false;
   }
 }
@@ -1298,7 +1331,8 @@ export function getCyberpunkRedscriptAwareExecutable(discoveredPath: string): st
           console.log('Warn: Steam redscript setup failed, falling back to manual launch');
         }
       }).catch(err => {
-        console.error('Error: Error during Steam redscript setup', { error: err.message });
+        const error = err as Error;
+        console.error('Error: Error during Steam redscript setup', { error: error.message });
       });
       
       // Return the renamed executable path for Steam
@@ -1400,7 +1434,7 @@ export async function validateCyberpunkMacOSCompatibility(
     }
 
     // Remove duplicates
-    const uniqueIncompatibleItems = [...new Set(incompatibleItems)];
+    const uniqueIncompatibleItems = Array.from(new Set(incompatibleItems));
 
     if (uniqueIncompatibleItems.length > 0) {
       const errorMessage = createMacOSCompatibilityErrorMessage(uniqueIncompatibleItems);
@@ -1489,4 +1523,180 @@ export function hasWindowsOnlyFrameworks(modFiles: string[]): boolean {
       return fileName.includes(frameworkLower) || filePath.includes(frameworkLower);
     });
   });
+}
+
+/**
+ * Balatro-specific helper functions for enhanced macOS compatibility
+ */
+
+/**
+ * Detect if Lovely injector is properly installed for Balatro on macOS
+ * @param gamePath - Path to the Balatro game installation
+ * @returns Promise<boolean> - True if Lovely injector is detected
+ */
+export async function detectLovelyInjectorForBalatro(gamePath: string): Promise<boolean> {
+  try {
+    const lovelyFiles = [
+      'liblovely.dylib',
+      'run_lovely_macos.sh',
+      'lovely',
+      'lovely.exe'
+    ];
+    
+    log('debug', 'Checking for Lovely injector in Balatro installation', {
+      gamePath,
+      checkingFiles: lovelyFiles
+    });
+    
+    for (const file of lovelyFiles) {
+      const filePath = path.join(gamePath, file);
+      if (await fs.pathExists(filePath)) {
+        log('info', 'Lovely injector detected for Balatro', {
+          gamePath,
+          detectedFile: file,
+          filePath
+        });
+        return true;
+      }
+    }
+    
+    log('debug', 'Lovely injector not detected in Balatro installation', { gamePath });
+    return false;
+  } catch (error) {
+     log('error', 'Error detecting Lovely injector for Balatro', {
+       gamePath,
+       error: error instanceof Error ? error.message : String(error),
+       stack: error instanceof Error ? error.stack : undefined
+     });
+     return false;
+   }
+}
+
+/**
+ * Detect if SteamModded is properly installed for Balatro on macOS
+ * @param gamePath - Path to the Balatro game installation
+ * @returns Promise<boolean> - True if SteamModded is detected
+ */
+export async function detectSteamModdedForBalatro(gamePath: string): Promise<boolean> {
+  try {
+    const steamModdedFiles = [
+      'steammodded.lua',
+      'steammodded',
+      'Mods/steammodded.lua'
+    ];
+    
+    log('debug', 'Checking for SteamModded in Balatro installation', {
+      gamePath,
+      checkingFiles: steamModdedFiles
+    });
+    
+    for (const file of steamModdedFiles) {
+      const filePath = path.join(gamePath, file);
+      if (await fs.pathExists(filePath)) {
+        log('info', 'SteamModded detected for Balatro', {
+          gamePath,
+          detectedFile: file,
+          filePath
+        });
+        return true;
+      }
+    }
+    
+    log('debug', 'SteamModded not detected in Balatro installation', { gamePath });
+    return false;
+  } catch (error) {
+     log('error', 'Error detecting SteamModded for Balatro', {
+       gamePath,
+       error: error instanceof Error ? error.message : String(error),
+       stack: error instanceof Error ? error.stack : undefined
+     });
+     return false;
+   }
+}
+
+/**
+ * Validate Balatro installation and provide detailed compatibility information
+ * @param gamePath - Path to the Balatro game installation
+ * @returns Promise<object> - Detailed compatibility information
+ */
+export async function validateBalatroPlatformCompatibility(gamePath: string): Promise<{
+  isValid: boolean;
+  hasLovelyInjector: boolean;
+  hasSteamModded: boolean;
+  appBundleFound: boolean;
+  executablePath: string | null;
+  recommendations: string[];
+  errors: string[];
+}> {
+  const result = {
+    isValid: false,
+    hasLovelyInjector: false,
+    hasSteamModded: false,
+    appBundleFound: false,
+    executablePath: null as string | null,
+    recommendations: [] as string[],
+    errors: [] as string[]
+  };
+  
+  try {
+    log('info', 'Validating Balatro installation for macOS compatibility', { gamePath });
+    
+    // Check if game path exists
+    if (!await fs.pathExists(gamePath)) {
+      result.errors.push('Game path does not exist');
+      return result;
+    }
+    
+    // Check for app bundle
+    const appBundlePath = await findMacOSAppBundle(gamePath, 'Balatro.app');
+    if (appBundlePath) {
+      result.appBundleFound = true;
+      result.executablePath = await getExecutableFromAppBundle(appBundlePath);
+      log('info', 'Balatro app bundle found', { appBundlePath, executablePath: result.executablePath });
+    } else {
+      result.recommendations.push('Balatro.app bundle not found - game may not launch properly on macOS');
+    }
+    
+    // Check for mod loaders
+    result.hasLovelyInjector = await detectLovelyInjectorForBalatro(gamePath);
+    result.hasSteamModded = await detectSteamModdedForBalatro(gamePath);
+    
+    // Provide recommendations
+    if (!result.hasLovelyInjector && !result.hasSteamModded) {
+      result.recommendations.push('No mod loaders detected - install Lovely injector or SteamModded for mod support');
+    }
+    
+    if (result.hasLovelyInjector) {
+      result.recommendations.push('Lovely injector detected - mods should work properly');
+    }
+    
+    if (result.hasSteamModded) {
+      result.recommendations.push('SteamModded detected - Steam Workshop mods should work properly');
+    }
+    
+    // Determine overall validity
+    result.isValid = result.appBundleFound || result.executablePath !== null;
+    
+    log('info', 'Balatro compatibility validation completed', {
+      gamePath,
+      result: {
+        isValid: result.isValid,
+        hasLovelyInjector: result.hasLovelyInjector,
+        hasSteamModded: result.hasSteamModded,
+        appBundleFound: result.appBundleFound,
+        recommendationCount: result.recommendations.length,
+        errorCount: result.errors.length
+      }
+    });
+    
+    return result;
+  } catch (error) {
+     result.errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
+     log('error', 'Error validating Balatro installation', {
+       gamePath,
+       error: error instanceof Error ? error.message : String(error),
+       stack: error instanceof Error ? error.stack : undefined
+     });
+     return result;
+   }
 }

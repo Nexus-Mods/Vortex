@@ -3,6 +3,7 @@ import path from 'path';
 import { COMPANY_ID } from '../../util/constants';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { checkAndLogDuplicateGameEntry } from '../loadOrderUtils';
 import { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from './types/types';
 
 const gameSupport: ILoadOrderGameInfoExt[] = [];
@@ -12,11 +13,7 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
     return;
   }
 
-  const isDuplicate: boolean = gameSupport.find(game =>
-    game.gameId === gameEntry.gameId) !== undefined;
-
-  if (isDuplicate) {
-    log('debug', 'attempted to add duplicate gameEntry to load order extension', gameEntry.gameId);
+  if (checkAndLogDuplicateGameEntry(gameEntry.gameId, gameSupport, 'file_based_loadorder')) {
     return;
   }
 

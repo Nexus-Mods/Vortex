@@ -26,7 +26,7 @@ export function valueReplacer() {
   };
 }
 
-function IPCTransport(options: winston.TransportOptions) {
+function IPCTransport(options: any) {
   this.name = 'IPCTransport';
   this.level = 'debug';
 }
@@ -40,7 +40,7 @@ if ((process as any).type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
   const { ipcRenderer } = require('electron');
   IPCTransport.prototype.log =
-    (level: string, message: string, meta: any[], callback: winston.LogCallback) => {
+    (level: string, message: string, meta: any[], callback: (error?: any, level?: string, message?: string, meta?: any) => void) => {
       ipcRenderer.send('log-message', level, message,
                        meta !== undefined ? JSON.stringify(meta, valueReplacer()) : undefined);
       callback(null);
@@ -48,7 +48,7 @@ if ((process as any).type === 'renderer') {
 
   // tslint:disable-next-line:no-var-requires
   logger = require('winston');
-  util.inherits(IPCTransport, logger.Transport);
+  util.inherits(IPCTransport, (logger as any).Transport);
   logger.configure({
     transports: [
       new IPCTransport({}),
@@ -138,7 +138,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
         level: 'debug',
         timestamp: () => new Date().toISOString(),
         formatter: (options: any) => {
-          return `${options.timestamp()} [${winston.config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+          return `${options.timestamp()} [${(winston as any).config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
             //(options.meta && Object.keys(options.meta).length ? '\n\t'+ JSON.stringify(options.meta) : '' );
         }
       });

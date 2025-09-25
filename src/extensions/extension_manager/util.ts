@@ -49,6 +49,24 @@ const EXTENSION_FILENAME = `extensions-manifest.json`;
 const EXTENSION_PATH = 'out/';
 const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex-Backend', 'main', EXTENSION_PATH + EXTENSION_FILENAME);
 
+/**
+ * Helper function to retrieve extension state with consistent error handling
+ * Reduces duplicated debug messages across multiple functions
+ */
+function getExtensionStateForFiltering(): any {
+  let persistentState = {};
+  try {
+    // Try to get the extension state from the main process
+    if (ipcRenderer !== undefined) {
+      persistentState = ipcRenderer.sendSync('__get_extension_state') || {};
+    }
+  } catch (err) {
+    // If we can't get the state, continue without filtering
+    log('debug', 'could not retrieve extension state for filtering', { error: err.message });
+  }
+  return persistentState;
+}
+
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
     .filter((fileName: string) => {
@@ -158,16 +176,7 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
   // Get the current extension state to check for extensions marked for removal
-  let persistentState = {};
-  try {
-    // Try to get the extension state from the main process
-    if (ipcRenderer !== undefined) {
-      persistentState = ipcRenderer.sendSync('__get_extension_state') || {};
-    }
-  } catch (err) {
-    // If we can't get the state, continue without filtering
-    log('debug', '🔍 could not retrieve extension state for filtering', { error: err.message });
-  }
+  const persistentState = getExtensionStateForFiltering();
 
   return Promise.all([readExtensionDir(bundledPath, true),
     readExtensionDir(extensionsPath, false)])
@@ -622,16 +631,7 @@ export function readExtensionsSync(force: boolean = false): { [extId: string]: I
   const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
 
   // Get the current extension state to check for extensions marked for removal
-  let persistentState = {};
-  try {
-    // Try to get the extension state from the main process
-    if (ipcRenderer !== undefined) {
-      persistentState = ipcRenderer.sendSync('__get_extension_state') || {};
-    }
-  } catch (err) {
-    // If we can't get the state, continue without filtering
-    log('debug', 'could not retrieve extension state for filtering', { error: err.message });
-  }
+  const persistentState = getExtensionStateForFiltering();
 
   const bundledExtensions = readExtensionDirSync(bundledPath, true);
   const userExtensions = readExtensionDirSync(extensionsPath, false);
