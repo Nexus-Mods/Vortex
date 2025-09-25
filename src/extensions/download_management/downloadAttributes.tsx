@@ -102,7 +102,7 @@ function nameFromUrl(input: string) {
     return undefined;
   }
 
-  const pathname = url.parse(input).pathname;
+  const pathname = new URL(input).pathname;
   if (!truthy(pathname)) {
     return undefined;
   }

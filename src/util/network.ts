@@ -17,13 +17,15 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
   }
 
   return new Promise((resolve, reject) => {
-    const parsed = url.parse(apiURL);
+    const parsed = new URL(apiURL);
     const get = (parsed.protocol === 'http:')
       ? getHTTP
       : getHTTPS;
 
     get({
-      ...parsed,
+      hostname: parsed.hostname,
+      port: parsed.port,
+      path: parsed.pathname + parsed.search,
       headers: { 'User-Agent': 'Vortex' },
     } as any, (res: IncomingMessage) => {
       const { statusCode } = res;
@@ -88,13 +90,15 @@ export function request(method: Method,
                         reqURL: string,
                         headers: any,
                         cb: (res: IncomingMessage) => void): ClientRequest {
-  const parsed = url.parse(reqURL);
+  const parsed = new URL(reqURL);
   const reqFunc = (parsed.protocol === 'http:')
     ? requestHTTP
     : requestHTTPS;
 
   const result: ClientRequest = reqFunc({
-    ...parsed,
+    hostname: parsed.hostname,
+    port: parsed.port,
+    path: parsed.pathname + parsed.search,
     method,
     headers: { 'User-Agent': 'Vortex', ...headers },
   }, cb);
