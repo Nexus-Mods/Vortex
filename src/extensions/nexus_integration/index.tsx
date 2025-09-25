@@ -1683,8 +1683,6 @@ function init(context: IExtensionContextExt): boolean {
       return Promise.resolve();
     }
 
-    toast.success('User info refreshed!');
-
     context.api.events.emit('refresh-user-info');
 
     return Promise.resolve();

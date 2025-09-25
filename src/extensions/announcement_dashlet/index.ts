@@ -51,7 +51,12 @@ function readLocalSurveysFile() {
 }
 
 function getHTTPData<T>(link: string): Bluebird<T[]> {
-  const sanitizedURL = url.parse(link);
+  let sanitizedURL;
+  try {
+    sanitizedURL = new URL(link);
+  } catch (err) {
+    return Bluebird.reject(new Error(`Invalid URL: ${link}`));
+  }
   log('info', 'getHTTPData', sanitizedURL);
   return new Bluebird((resolve, reject) => {
     https.get(sanitizedURL.href, res => {

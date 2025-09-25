@@ -17,10 +17,18 @@ export const stateReducer: IReducerSpec = {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] != null) {
+        const existingDownload = state.files[payload.id];
+        const existingMd5 = existingDownload.modInfo?.meta?.fileMD5 ?? existingDownload.modInfo?.meta?.details?.fileMD5;
+        const payloadMd5 = payload.modInfo?.meta?.details?.fileMD5 ?? payload.modInfo?.meta?.fileMD5;
         const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId ?? payload.modInfo?.nexus?.ids?.fileId;
-        const existingFileId = state.files[payload.id].modInfo?.meta?.details?.fileId ?? state.files[payload.id].modInfo?.meta?.fileId ?? state.files[payload.id].modInfo?.nexus?.ids?.fileId;
+        const existingFileId = existingDownload.modInfo?.meta?.details?.fileId ?? existingDownload.modInfo?.meta?.fileId ?? existingDownload.modInfo?.nexus?.ids?.fileId;
         const payloadRevisionId = payload.modInfo?.nexus?.ids?.revisionId;
-        const existingRevisionId = state.files[payload.id].modInfo?.nexus?.ids?.revisionId;
+        const existingRevisionId = existingDownload.modInfo?.nexus?.ids?.revisionId;
+        if (payloadMd5 != null && existingMd5 != null && existingMd5 === payloadMd5) {
+          // If it's the same md5 for the same file, just ignore the request - it's probably the
+          //  redux module replaying actions. (appears to be the redux devtools)
+          return state;
+        }
         if (payloadFileId != null && existingFileId != null && existingFileId === payloadFileId) {
           // If it's the same id for the same file, just ignore the request - it's probably the
           //  redux module replaying actions. (appears to be the redux devtools)

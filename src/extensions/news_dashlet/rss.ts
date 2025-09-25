@@ -28,8 +28,17 @@ export interface IFeedMessage {
 
 function retrieve(rssUrl: string): Promise<IFeedMessage[]> {
   return new Promise<IFeedMessage[]>((resolve, reject) => {
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(rssUrl);
+    } catch (err) {
+      return reject(new Error(`Invalid RSS URL: ${rssUrl}`));
+    }
     get({
-      ...url.parse(rssUrl),
+      protocol: parsedUrl.protocol,
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port,
+      path: parsedUrl.pathname + parsedUrl.search,
       headers: { 'User-Agent': 'Vortex', Cookie: 'rd=true' },
 
     } as any, (res: IncomingMessage) => {

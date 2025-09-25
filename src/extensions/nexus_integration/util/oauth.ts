@@ -5,7 +5,7 @@ import { AddressInfo } from 'node:net';
 import * as querystring from 'node:querystring';
 import * as url from 'node:url';
 import { log } from '../../../util/log';
-import { OAUTH_REDIRECT_URL } from '../constants';
+import { OAUTH_REDIRECT_URL, OAUTH_REDIRECT_BASE, getOAuthRedirectUrl } from '../constants';
 import NEXUSMODS_LOGO from './nexusmodslogo';
 import { ArgumentInvalid } from '../../../util/CustomErrors';
 
@@ -25,7 +25,8 @@ export interface ITokenReply {
 interface IOAuthServerSettings {
   baseUrl: string;
   clientId: string;
-  redirectUrl: string;
+  redirectUrl: string;  // Deprecated - for backward compatibility
+  getRedirectUrl?: (port: number) => string;  // New way to get redirect URL
 }
 
 /* eslint-disable max-len */
@@ -92,7 +93,8 @@ class OAuth {
 
   constructor(settings: IOAuthServerSettings) {
     this.mServerSettings = settings;
-    this.mLocalhost = url.parse(OAUTH_REDIRECT_URL).protocol === 'http:';
+    // Check if we're using localhost redirect (http protocol)
+    this.mLocalhost = OAUTH_REDIRECT_BASE.startsWith('http:');
   }
 
   public async sendRequest(
@@ -187,7 +189,8 @@ class OAuth {
     req: http.IncomingMessage,
     resp: http.ServerResponse<http.IncomingMessage> & { req: http.IncomingMessage; }) {
 
-    const queryItems = url.parse(req.url, true).query;
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const queryItems = Object.fromEntries(parsedUrl.searchParams);
     const getQueryParam = (key: string): string => {
       const tmp = queryItems[key];
       return Array.isArray(tmp) ? tmp[0] : tmp;
@@ -230,8 +233,11 @@ class OAuth {
   private async postRequest(tokenUrl: string, request: any): Promise<string> {
     const requestStr = querystring.stringify(request);
     return new Promise((resolve, reject) => {
+      const parsedUrl = new URL(tokenUrl);
       const req = https.request({
-        ...url.parse(tokenUrl),
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.pathname + parsedUrl.search,
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -288,7 +294,9 @@ class OAuth {
       scope: 'openid profile email',
       code_challenge_method: 'S256',
       client_id: this.mServerSettings.clientId,
-      redirect_uri: this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
+      redirect_uri: this.mServerSettings.getRedirectUrl
+        ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
+        : this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
       state,
       code_challenge: OAuth.sanitizeBase64(challenge),
     };
@@ -299,7 +307,9 @@ class OAuth {
     const request = {
       grant_type: 'authorization_code',
       client_id: this.mServerSettings.clientId,
-      redirect_uri: this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
+      redirect_uri: this.mServerSettings.getRedirectUrl
+        ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
+        : this.mServerSettings.redirectUrl.replace('PORT', this.mLastServerPort.toString()),
       code,
       code_verifier: this.mVerifier,
     };
