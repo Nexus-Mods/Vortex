@@ -178,7 +178,7 @@ class DownloadWorker {
     this.mURLResolve = Bluebird.resolve(job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
-        if (jobUrl.startsWith('blob:')) {
+        if (jobUrl.toString().startsWith('blob:')) {
           // in the case of blob downloads (meaning: javascript already placed the entire file
           // in local storage) the main process has already downloaded this file, we just have
           // to use it now
