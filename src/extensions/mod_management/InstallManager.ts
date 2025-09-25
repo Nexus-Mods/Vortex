@@ -1661,13 +1661,21 @@ class InstallManager {
         });
   }
 
-  private determineModType(gameId: string, installInstructions: IInstruction[]): Bluebird<string> {
-    log('info', 'determine mod type', { gameId });
+  private determineModType(gameId: string, installInstructions: IInstruction[], retryCount: number = 0): Bluebird<string> {
+    log('info', 'determine mod type', { gameId, retryCount });
     const game = getGame(gameId);
     if (game === undefined) {
       return Bluebird.reject(new Error(`Invalid game "${gameId}"`));
     }
     const modTypes: IModType[] = game.modTypes;
+    
+    // If no mod types are available and this is the first attempt, 
+    // wait for community extensions to load and retry
+    if (modTypes.length === 0 && retryCount < 3) {
+      log('info', 'no mod types available, waiting for extensions to load', { gameId, retryCount });
+      return Bluebird.delay(1000).then(() => this.determineModType(gameId, installInstructions, retryCount + 1));
+    }
+    
     const sorted = modTypes.sort((lhs, rhs) => lhs.priority - rhs.priority);
     let found = false;
 
@@ -1690,7 +1698,17 @@ class InstallManager {
         log('error', 'invalid mod type', { typeId: type.typeId, error: err.message });
         return Bluebird.resolve(null);
       }
-    }).then(matches => matches.find(match => match !== null) || '');
+    }).then(matches => {
+      const result = matches.find(match => match !== null) || '';
+      
+      // If no match found and we have retries left, try again
+      if (result === '' && retryCount < 3 && modTypes.length > 0) {
+        log('info', 'no mod type match found, retrying', { gameId, retryCount, availableTypes: modTypes.map(t => t.typeId) });
+        return Bluebird.delay(500).then(() => this.determineModType(gameId, installInstructions, retryCount + 1));
+      }
+      
+      return result;
+    });
   }
 
   private queryContinue(api: IExtensionApi,

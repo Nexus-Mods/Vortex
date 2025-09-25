@@ -69,6 +69,7 @@ import { fallbackPurge, loadActivation,
 import allTypesSupported from './util/allTypesSupported';
 import BlacklistSet from './util/BlacklistSet';
 import * as basicInstaller from './util/basicInstaller';
+import * as cyberpunkInstaller from './util/cyberpunkInstaller';
 import { genSubDirFunc, purgeMods, purgeModsInPath } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
@@ -1717,6 +1718,7 @@ function init(context: IExtensionContext): boolean {
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
 
+  registerInstaller('cyberpunk2077', 50, cyberpunkInstaller.testSupported, cyberpunkInstaller.install);
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 
   context.registerStartHook(100, 'check-deployment',

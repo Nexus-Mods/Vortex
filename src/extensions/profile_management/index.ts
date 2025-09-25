@@ -150,15 +150,30 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
 function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> {
   const state: IState = store.getState();
   const gamePath = getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined);
+  
+  log('debug', 'activateGame called', { 
+    gameId, 
+    gamePath, 
+    platform: process.platform,
+    currentActiveProfile: state.settings.profiles.activeProfileId,
+    nextProfile: state.settings.profiles.nextProfileId
+  });
+  
   if (gamePath === undefined) {
+    log('error', 'game activation failed - game not discovered', { 
+      gameId,
+      discoveredGames: Object.keys(state.settings.gameMode.discovered || {})
+    });
+    
     store.dispatch(addNotification({
       type: 'warning',
       title: '{{gameId}} not enabled',
-      message: 'Game no longer discovered',
+      message: 'Game no longer discovered. Please re-scan for games.',
       replace: {
         gameId,
       },
     }));
+    
     log('info', 'unselecting profile because game no longer discovered', { gameId });
     store.dispatch(setNextProfile(undefined));
     return Promise.resolve();
@@ -166,14 +181,40 @@ function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> 
 
   log('info', 'activating game', { gameId, gamePath });
 
-  const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
-                            undefined);
+  const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId], undefined);
   const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+  
+  log('debug', 'profile lookup results', { 
+    gameId, 
+    profileId, 
+    profileExists: profile !== undefined,
+    profileGameId: profile?.gameId,
+    allProfiles: Object.keys(state.persistent.profiles || {})
+  });
+  
   if ((profileId === undefined) || (profile === undefined)) {
     const profiles = getSafe(state, ['persistent', 'profiles'], []);
     const gameProfiles: IProfile[] = Object.keys(profiles)
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
+      
+    log('debug', 'no last active profile found, showing profile selection dialog', { 
+      gameId, 
+      availableProfiles: gameProfiles.length,
+      profileNames: gameProfiles.map(p => p.name)
+    });
+    
+    if (gameProfiles.length === 0) {
+      log('error', 'no profiles found for game', { gameId });
+      store.dispatch(addNotification({
+        type: 'error',
+        title: 'No profiles found',
+        message: 'No profiles found for {{gameId}}. Please create a profile first.',
+        replace: { gameId },
+      }));
+      return Promise.resolve();
+    }
+    
     return store.dispatch(showDialog('question', 'Choose profile', {
       text: 'Please choose the profile to use with this game',
       choices: gameProfiles.map((iter: IProfile, idx: number) =>
@@ -183,19 +224,73 @@ function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> 
         if (dialogResult.action === 'Activate') {
           const selectedId = Object.keys(dialogResult.input).find(
             (id: string) => dialogResult.input[id]);
-          log('info', 'user selected profile', { selectedId });
+          
+          log('info', 'user selected profile for activation', { 
+            gameId, 
+            selectedId, 
+            profileName: gameProfiles.find(p => p.id === selectedId)?.name 
+          });
+          
+          // Ensure the profile activation persists
           store.dispatch(setNextProfile(selectedId));
+          
+          // Also update the current profile to ensure persistence
+          store.dispatch(setCurrentProfile(gameId, selectedId));
+          
+          log('debug', 'profile activation dispatched', { gameId, selectedId });
+        } else {
+          log('warn', 'user cancelled profile selection', { gameId });
         }
+      })
+      .catch(err => {
+        log('error', 'error in profile selection dialog', { gameId, error: err.message });
+        throw err;
       });
   } else {
-    log('info', 'using last active profile', { profileId });
-    // actually, we have to verify that game is still discovered, otherwise we can't
-    // activate it
+    log('info', 'using last active profile', { gameId, profileId, profileName: profile.name });
+    
+    // Verify that game is still discovered and profile is valid
     const fbProfile = state.persistent.profiles?.[profileId];
     const discovery = state.settings.gameMode.discovered?.[fbProfile?.gameId];
+    
+    log('debug', 'verifying profile and game discovery', {
+      gameId,
+      profileId,
+      profileGameId: fbProfile?.gameId,
+      discoveryPath: discovery?.path,
+      discoveryExists: discovery?.path !== undefined
+    });
+    
     if (discovery?.path !== undefined) {
+      log('info', 'activating verified profile', { gameId, profileId });
       store.dispatch(setNextProfile(profileId));
+      
+      // Ensure the current profile is also set to maintain persistence
+      store.dispatch(setCurrentProfile(gameId, profileId));
+      
+      log('debug', 'profile activation completed successfully', { 
+        gameId, 
+        profileId,
+        currentState: {
+          nextProfile: store.getState().settings.profiles.nextProfileId,
+          lastActiveProfile: store.getState().settings.profiles.lastActiveProfile?.[gameId]
+        }
+      });
     } else {
+      log('error', 'profile activation failed - game discovery invalid', { 
+        gameId, 
+        profileId, 
+        discoveryPath: discovery?.path,
+        profileGameId: fbProfile?.gameId
+      });
+      
+      store.dispatch(addNotification({
+        type: 'warning',
+        title: 'Profile activation failed',
+        message: 'Cannot activate profile - game discovery is invalid. Please re-scan for games.',
+        replace: { gameId },
+      }));
+      
       store.dispatch(setNextProfile(undefined));
     }
     return Promise.resolve();
@@ -289,16 +384,25 @@ function genOnProfileChange(api: IExtensionApi,
   };
 
   return (prev: string, current: string) => {
-    log('debug', 'profile change', { from: prev, to: current });
+    log('info', 'Profile switch initiated', { from: prev, to: current });
     finishProfileSwitchPromise.then(() => {
       const state: IState = store.getState();
       if (state.settings.profiles.nextProfileId !== current) {
         // cancel if there was another profile switch while we waited
+        log('info', 'Profile switch canceled - another switch was queued', { 
+          from: prev, 
+          to: current, 
+          nextProfileId: state.settings.profiles.nextProfileId 
+        });
         return null;
       }
 
       if (state.settings.profiles.activeProfileId === current) {
         // also do nothing if we're actually resetting the nextprofile
+        log('debug', 'Profile switch skipped - already active', { 
+          from: prev, 
+          to: current 
+        });
         return null;
       }
 
@@ -372,14 +476,34 @@ function genOnProfileChange(api: IExtensionApi,
 
       sanitizeProfile(store, profile);
 
-      return queue.then(() => refreshProfile(store, profile, 'export'))
+      return queue.then(() => {
+          log('info', 'Starting profile export phase', { from: prev, to: current });
+          return refreshProfile(store, profile, 'export');
+        })
         // ensure the old profile is synchronised before we switch, otherwise me might
         // revert some changes
-        .tap(() => log('info', 'will deploy previously active profile', prev))
+        .tap(() => log('info', 'Starting deployment of previously active profile', { 
+          profileId: prev, 
+          from: prev, 
+          to: current 
+        }))
         .then(() => deploy(api, prev))
-        .tap(() => log('info', 'will deploy next active profile', current))
+        .tap(() => log('info', 'Completed deployment of previously active profile', { 
+          profileId: prev, 
+          from: prev, 
+          to: current 
+        }))
+        .tap(() => log('info', 'Starting deployment of next active profile', { 
+          profileId: current, 
+          from: prev, 
+          to: current 
+        }))
         .then(() => deploy(api, current))
-        .tap(() => log('info', 'did deploy next active profile', current))
+        .tap(() => log('info', 'Completed deployment of next active profile', { 
+          profileId: current, 
+          from: prev, 
+          to: current 
+        }))
         .then(() => {
           const prof = profileById(api.store.getState(), current);
           if (prof === undefined) {
@@ -408,17 +532,49 @@ function genOnProfileChange(api: IExtensionApi,
         });
     })
       .catch(ProcessCanceled, err => {
+        log('warn', 'Profile switch canceled due to ProcessCanceled', { 
+          from: prev, 
+          to: current, 
+          error: err.message 
+        });
         cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err.message,
                   { allowReport: false });
       })
       .catch(SetupError, err => {
-        // For setup errors (like NoDeployment), don't cancel the switch
-        // The profile switch should complete, but show the error
-        const state = store.getState();
-        const currentProfile = state.persistent.profiles[current];
-        const profileGameId = currentProfile !== undefined ? currentProfile.gameId : undefined;
-        confirmProfile(profileGameId, current);
+        // For setup errors (like NoDeployment), we should be more careful
+        // Only confirm the profile if it's a non-critical setup error
+        log('error', 'Profile switch encountered setup error', { 
+          from: prev, 
+          to: current, 
+          error: err.message,
+          errorType: err.constructor.name 
+        });
+        
+        // Check if this is a critical error that should cancel the switch
+        const isCriticalError = err.message.includes('NoDeployment') === false;
+        
+        if (isCriticalError) {
+          log('warn', 'Canceling profile switch due to critical setup error', { 
+            from: prev, 
+            to: current, 
+            error: err.message 
+          });
+          cancelSwitch();
+        } else {
+          // Only for non-critical errors, allow the switch to complete
+          const state = store.getState();
+          const currentProfile = state.persistent.profiles[current];
+          const profileGameId = currentProfile !== undefined ? currentProfile.gameId : undefined;
+          log('info', 'Completing profile switch despite non-critical setup error', { 
+            from: prev, 
+            to: current, 
+            profileGameId,
+            error: err.message 
+          });
+          confirmProfile(profileGameId, current);
+        }
+        
         showError(store.dispatch, 'Failed to set profile', err.message,
                   { allowReport: false });
       })
@@ -428,13 +584,25 @@ function genOnProfileChange(api: IExtensionApi,
         //  fixed a long time ago. Corrupt profiles are automatically removed by
         //  our verifiers and the user will just have to create a new profile for
         //  their game - not much we can do to help him with that.
+        log('error', 'Profile switch failed due to corrupt active profile', { 
+          from: prev, 
+          to: current, 
+          error: err.message 
+        });
         cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
       })
       .catch(UserCanceled, () => {
+        log('info', 'Profile switch canceled by user', { from: prev, to: current });
         cancelSwitch();
       })
       .catch(err => {
+        log('error', 'Profile switch failed with unexpected error', { 
+          from: prev, 
+          to: current, 
+          error: err.message,
+          stack: err.stack 
+        });
         cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err);
       });

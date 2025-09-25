@@ -487,8 +487,8 @@ class Steam implements IGameStore {
     }
     
     const libFoldersFile = isWindows()
-      ? path.resolve(mainSteamPath, 'steamapps', 'libraryfolders.vdf')
-      : path.resolve(mainSteamPath, 'config', 'libraryfolders.vdf');
+      ? path.resolve(mainSteamPath, 'config', 'libraryfolders.vdf')
+      : path.resolve(mainSteamPath, 'steamapps', 'libraryfolders.vdf');
     
     return fs.readFileAsync(libFoldersFile)
       .then((data: Buffer) => {

@@ -15,7 +15,7 @@ import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from '../../util/constants';
 import {DataInvalid, ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import { validateRequiredFilesWithMacOSCompat } from '../../util/macOSGameCompatibility';
+import { validateRequiredFilesWithMacOSCompat, MACOS_GAME_FIXES } from '../../util/macOSGameCompatibility';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -776,6 +776,31 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
+
+    // Register games from macOS compatibility layer
+    const registerMacOSCompatibilityGames = () => {
+      MACOS_GAME_FIXES.forEach(fix => {
+        const game: IGame = {
+          id: fix.gameId,
+          name: fix.gameId.charAt(0).toUpperCase() + fix.gameId.slice(1), // Capitalize first letter
+          shortName: fix.gameId,
+          logo: 'gameart.jpg', // Default logo
+          executable: () => fix.windowsExecutable,
+          requiredFiles: [fix.windowsExecutable],
+          queryModPath: () => '.',  // Default to game directory
+          mergeMods: false, // Default to separate mod directories
+          contributed: 'macOS Compatibility Layer',
+          final: true,
+          version: '1.0.0',
+        };
+        
+        $.extensionGames.push(game);
+        log('info', 'registered macOS compatibility game', { gameId: fix.gameId, gameName: game.name });
+      });
+    };
+
+    // Register macOS compatibility games before GameModeManager initialization
+    registerMacOSCompatibilityGames();
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 

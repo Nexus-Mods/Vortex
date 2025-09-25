@@ -95,15 +95,22 @@ export interface MacOSGameCandidate {
   type: 'native' | 'app' | 'steam' | 'epic' | 'gog' | 'windows';
   priority: number;
   store?: string;
+  manifestData?: {
+    appId: string;
+    name: string;
+    installDir: string;
+    manifestPath: string;
+  };
 }
 
 /**
  * macOS game discovery priority levels
+ * Lower numbers = higher priority
  */
 export const MACOS_DISCOVERY_PRIORITIES = {
+  STEAM: 5,           // Highest priority - using manifest files for accurate detection
   NATIVE_APP: 10,
   APP_STORE: 20,
-  STEAM: 30,
   EPIC: 40,
   GOG: 50,
   OTHER_MAC_STORES: 60,
@@ -115,14 +122,66 @@ export const MACOS_DISCOVERY_PRIORITIES = {
 
 /**
  * Common macOS application directories
+ * Note: Excluding ~/Applications and /Applications/Utilities as they typically contain Steam shortcuts
  */
 const MACOS_APP_DIRECTORIES = [
-  '/Applications',
-  '/Applications/Utilities',
-  '~/Applications',
+  '/Applications', // Main applications directory (but we'll filter out Steam shortcuts)
   '/System/Applications',
   '/System/Applications/Utilities'
 ];
+
+/**
+ * Directories to ignore during game discovery (contain Steam shortcuts, not actual games)
+ */
+const IGNORED_DISCOVERY_DIRECTORIES = [
+  '~/Applications', // User applications folder - typically Steam shortcuts
+  '/Applications/Utilities' // System utilities - never contains games
+];
+
+/**
+ * Check if a path should be ignored during discovery
+ */
+function shouldIgnoreDiscoveryPath(targetPath: string): boolean {
+  const expandedIgnoredPaths = IGNORED_DISCOVERY_DIRECTORIES.map(dir => 
+    dir.replace('~', process.env.HOME || '')
+  );
+  
+  return expandedIgnoredPaths.some(ignoredPath => 
+    targetPath.startsWith(ignoredPath)
+  );
+}
+
+/**
+ * Check if an app bundle is likely a Steam shortcut
+ */
+async function isSteamShortcut(appPath: string): Promise<boolean> {
+  try {
+    const infoPlistPath = path.join(appPath, 'Contents', 'Info.plist');
+    const stats = await stat(infoPlistPath);
+    
+    if (!stats.isFile()) {
+      return false;
+    }
+    
+    // Read the Info.plist file to check for Steam-specific identifiers
+    const plistContent = await fs.promises.readFile(infoPlistPath, 'utf8');
+    
+    // Steam shortcuts typically have specific bundle identifiers or executable names
+    const steamIndicators = [
+      'com.valvesoftware.steam',
+      'steam_osx',
+      'SteamLaunch',
+      'steam://rungameid'
+    ];
+    
+    return steamIndicators.some(indicator => 
+      plistContent.toLowerCase().includes(indicator.toLowerCase())
+    );
+  } catch (err) {
+    // If we can't read the plist, assume it's not a Steam shortcut
+    return false;
+  }
+}
 
 /**
  * Steam library paths on macOS
@@ -324,6 +383,15 @@ async function discoverNativeApps(options: MacOSGameDiscoveryOptions): Promise<M
   for (const appDir of MACOS_APP_DIRECTORIES) {
     const expandedPath = appDir.replace('~', process.env.HOME || '');
     
+    // Skip ignored directories
+    if (shouldIgnoreDiscoveryPath(expandedPath)) {
+      log('debug', 'Skipping ignored discovery directory', {
+        gameId: options.gameId,
+        directory: expandedPath
+      });
+      continue;
+    }
+    
     try {
       // Look for app bundle using compatibility system first
       if (gameFix) {
@@ -383,6 +451,16 @@ async function discoverNativeApps(options: MacOSGameDiscoveryOptions): Promise<M
             // Verify it's a valid app bundle
             const infoPlistPath = path.join(appPath, 'Contents', 'Info.plist');
             await stat(infoPlistPath);
+            
+            // Check if this is a Steam shortcut and skip it
+            if (await isSteamShortcut(appPath)) {
+              log('debug', 'Skipping Steam shortcut app bundle', {
+                gameId: options.gameId,
+                appPath,
+                directory: expandedPath
+              });
+              continue;
+            }
             
             candidates.push({
               path: path.dirname(appPath),
@@ -507,49 +585,153 @@ async function discoverAppStoreApps(options: MacOSGameDiscoveryOptions): Promise
 }
 
 /**
- * Discover Steam games on macOS with retry logic for timing issues
+ * Discover Steam games on macOS using manifest files for better detection
  */
 async function discoverSteamGames(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
+  const candidates: MacOSGameCandidate[] = [];
+  
+  // First try manifest-based discovery (highest priority)
+  try {
+    const manifestCandidates = await discoverSteamGamesFromManifests(options);
+    candidates.push(...manifestCandidates);
+    
+    if (manifestCandidates.length > 0) {
+      log('debug', 'Found Steam games via manifest discovery', {
+        gameId: options.gameId,
+        count: manifestCandidates.length
+      });
+    }
+  } catch (err) {
+    log('debug', 'Steam manifest discovery failed, falling back to directory search', {
+      gameId: options.gameId,
+      error: err.message
+    });
+  }
+  
+  // Fallback to directory-based discovery if manifest discovery didn't find anything
+  if (candidates.length === 0) {
+    const dirCandidates = await discoverSteamGamesFromDirectories(options);
+    candidates.push(...dirCandidates);
+  }
+  
+  return candidates;
+}
+
+/**
+ * Discover Steam games using Steam manifest files (appmanifest_*.acf)
+ */
+async function discoverSteamGamesFromManifests(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
   const candidates: MacOSGameCandidate[] = [];
   
   for (const steamPath of MACOS_STEAM_PATHS) {
     const expandedPath = steamPath.replace('~', process.env.HOME || '');
     
     try {
-      const gameDir = path.join(expandedPath, options.gameName);
+      const steamAppsPath = path.join(expandedPath, 'steamapps');
+      const manifestFiles = await readdir(steamAppsPath);
+      
+      const appManifests = manifestFiles.filter(name => 
+        name.startsWith('appmanifest_') && name.endsWith('.acf')
+      );
+      
+      for (const manifestFile of appManifests) {
+        try {
+          const manifestPath = path.join(steamAppsPath, manifestFile);
+          const manifestContent = await fs.promises.readFile(manifestPath, 'utf8');
+          
+          // Parse Steam VDF format
+          const { parse } = await import('simple-vdf');
+          const manifestData = parse(manifestContent) as any;
+          
+          if (!manifestData?.AppState) {
+            continue;
+          }
+          
+          const appState = manifestData.AppState as any;
+          const gameName = appState.name?.toLowerCase() || '';
+          const installDir = appState.installdir;
+          
+          // Check if this manifest matches our target game
+          const targetGameName = options.gameName.toLowerCase();
+          if (gameName.includes(targetGameName) || targetGameName.includes(gameName)) {
+            const gameDir = path.join(steamAppsPath, 'common', installDir);
+            
+            // Verify the game directory exists
+            try {
+              const stats = await stat(gameDir);
+              if (stats.isDirectory()) {
+                // Try to find the executable
+                const execCandidates = await resolveGameExecutableWithRetry(options, gameDir);
+                const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
+                
+                if (bestExec) {
+                  candidates.push({
+                    path: gameDir,
+                    executable: bestExec.path,
+                    type: 'steam',
+                    priority: MACOS_DISCOVERY_PRIORITIES.STEAM,
+                    store: 'steam',
+                    manifestData: {
+                      appId: appState.appid,
+                      name: appState.name,
+                      installDir: installDir,
+                      manifestPath: manifestPath
+                    }
+                  });
+                  
+                  log('debug', 'Found Steam game via manifest', {
+                    gameId: options.gameId,
+                    appId: appState.appid,
+                    gameName: appState.name,
+                    gameDir,
+                    executable: bestExec.path,
+                    manifestFile
+                  });
+                }
+              }
+            } catch (dirErr) {
+              log('debug', 'Steam game directory not accessible', {
+                gameId: options.gameId,
+                gameDir,
+                error: dirErr.message
+              });
+            }
+          }
+        } catch (manifestErr) {
+          log('debug', 'Failed to parse Steam manifest', {
+            gameId: options.gameId,
+            manifestFile,
+            error: manifestErr.message
+          });
+        }
+      }
+    } catch (err) {
+      log('debug', 'Steam library not accessible for manifest discovery', {
+        gameId: options.gameId,
+        steamPath: expandedPath,
+        error: err.message
+      });
+    }
+  }
+  
+  return candidates;
+}
+
+/**
+ * Fallback Steam discovery using directory search (legacy method)
+ */
+async function discoverSteamGamesFromDirectories(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
+  const candidates: MacOSGameCandidate[] = [];
+  
+  for (const steamPath of MACOS_STEAM_PATHS) {
+    const expandedPath = steamPath.replace('~', process.env.HOME || '');
+    
+    try {
+      const gameDir = path.join(expandedPath, 'steamapps', 'common', options.gameName);
       const stats = await stat(gameDir);
       
       if (stats.isDirectory()) {
-        // Try to find the executable using our resolver with retry logic
-        let execCandidates: ExecutableCandidate[] = [];
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        while (retryCount < maxRetries) {
-          try {
-            const execOptions: GameExecutableOptions = {
-              gameName: options.gameName,
-              gameId: options.gameId,
-              basePath: gameDir,
-              windowsExecutable: options.windowsExecutable,
-              macExecutable: options.macExecutable,
-              appBundleName: options.appBundleName
-            };
-            
-            execCandidates = await resolveGameExecutable(execOptions);
-            if (execCandidates.length > 0) {
-              break; // Success, exit retry loop
-            }
-          } catch (execErr) {
-            retryCount++;
-            if (retryCount >= maxRetries) {
-              throw execErr; // Re-throw on final attempt
-            }
-            // Wait briefly before retry to allow file system operations to complete
-            await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
-          }
-        }
-        
+        const execCandidates = await resolveGameExecutableWithRetry(options, gameDir);
         const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
         
         if (bestExec) {
@@ -561,17 +743,16 @@ async function discoverSteamGames(options: MacOSGameDiscoveryOptions): Promise<M
             store: 'steam'
           });
           
-          log('debug', 'Found Steam game', {
+          log('debug', 'Found Steam game via directory search', {
             gameId: options.gameId,
             gameDir,
             executable: bestExec.path,
-            steamPath: expandedPath,
-            retryCount
+            steamPath: expandedPath
           });
         }
       }
     } catch (err) {
-      log('debug', 'Steam game not found', {
+      log('debug', 'Steam game not found via directory search', {
         gameId: options.gameId,
         steamPath: expandedPath,
         error: err.message
@@ -580,6 +761,42 @@ async function discoverSteamGames(options: MacOSGameDiscoveryOptions): Promise<M
   }
   
   return candidates;
+}
+
+/**
+ * Helper function to resolve game executable with retry logic
+ */
+async function resolveGameExecutableWithRetry(options: MacOSGameDiscoveryOptions, gameDir: string): Promise<ExecutableCandidate[]> {
+  let execCandidates: ExecutableCandidate[] = [];
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const execOptions: GameExecutableOptions = {
+        gameName: options.gameName,
+        gameId: options.gameId,
+        basePath: gameDir,
+        windowsExecutable: options.windowsExecutable,
+        macExecutable: options.macExecutable,
+        appBundleName: options.appBundleName
+      };
+      
+      execCandidates = await resolveGameExecutable(execOptions);
+      if (execCandidates.length > 0) {
+        break; // Success, exit retry loop
+      }
+    } catch (execErr) {
+      retryCount++;
+      if (retryCount >= maxRetries) {
+        throw execErr; // Re-throw on final attempt
+      }
+      // Wait briefly before retry to allow file system operations to complete
+      await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+    }
+  }
+  
+  return execCandidates;
 }
 
 /**

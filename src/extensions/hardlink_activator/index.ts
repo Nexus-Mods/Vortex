@@ -18,7 +18,8 @@ import * as util from 'util';
 import { setSettingsPage } from '../../actions/session';
 
 import * as winapiT from 'winapi-bindings';
-import { isWindows } from '../../util/platform';
+import { isWindows, isMacOS } from '../../util/platform';
+import { MacOSAdminAccessManager } from '../../util/macOSAdminAccess';
 const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : null;
 
 // Platform detection utilities
@@ -85,6 +86,13 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       log('info', 'hardlink deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
+      
+      // On macOS, allow the method to proceed with lower priority - admin access will be requested during deployment
+      if (isMacOS()) {
+        log('info', 'macOS detected - admin access will be prompted during deployment if needed');
+        return undefined; // Allow method to proceed with lower priority
+      }
+      
       return {
         description: t => t('Can\'t write to output directory.'),
         order: 3,
@@ -261,10 +269,33 @@ class DeploymentMethod extends LinkingDeployment {
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
-      .catch(err => (err.code !== 'EEXIST')
-        ? Promise.reject(err)
-        : fs.removeAsync(linkPath)
-          .then(() => fs.linkAsync(sourcePath, linkPath)));
+      .catch(async (err) => {
+        if (err.code === 'EEXIST') {
+          return fs.removeAsync(linkPath)
+            .then(() => fs.linkAsync(sourcePath, linkPath));
+        }
+        
+        // On macOS, if we get a permission error, try to request admin access
+        if (isMacOS() && (err.code === 'EACCES' || err.code === 'EPERM')) {
+          log('info', 'Hardlink creation failed due to permissions, requesting admin access', {
+            error: err.code,
+            path: linkPath
+          });
+          
+          const adminManager = MacOSAdminAccessManager.getInstance();
+          const granted = await adminManager.requestAdminAccess(path.dirname(linkPath));
+          
+          if (granted) {
+            log('info', 'Admin access granted, retrying hardlink creation');
+            return fs.linkAsync(sourcePath, linkPath);
+          } else {
+            log('warn', 'Admin access denied or failed');
+            throw err; // Re-throw original error to trigger fallback
+          }
+        }
+        
+        throw err;
+      });
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {

@@ -847,7 +847,7 @@ export function ensureDirWritableAsync(dirPath: string,
       //  as far as I understand fs-extra that is not supposed to happen! but I suppose
       //  it doesn't hurt to add some code to handle that use case.
       //  https://github.com/Nexus-Mods/Vortex/issues/6856
-      if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST'].indexOf(err.code) !== -1) {
+      if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST', 'EROFS'].indexOf(err.code) !== -1) {
         return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = permission.getUserId();

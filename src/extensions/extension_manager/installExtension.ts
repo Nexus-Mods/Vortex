@@ -19,6 +19,8 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as vortexRunT from 'vortex-run';
 import { spawn } from 'child_process';
+import { promisify } from 'util';
+import * as fsExtra from 'fs-extra';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
 
@@ -296,6 +298,102 @@ function sanitize(input: string): string {
   }
 }
 
+// Ensure extraction is complete by verifying directory accessibility and waiting for file system stability
+async function ensureExtractionComplete(extractPath: string): Promise<void> {
+  const maxRetries = process.platform === 'darwin' ? 15 : 10;
+  const baseDelay = process.platform === 'darwin' ? 200 : 100;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Check if directory exists and is accessible
+      const stat = await fs.statAsync(extractPath);
+      if (!stat.isDirectory()) {
+        throw new Error('Extract path is not a directory');
+      }
+
+      // List directory contents to ensure it's readable
+      const files = await fs.readdirAsync(extractPath);
+      if (files.length === 0) {
+        throw new Error('Extract directory is empty');
+      }
+
+      // Verify we can access at least one file
+      const testFile = files[0];
+      const testPath = path.join(extractPath, testFile);
+      await fsExtra.access(testPath);
+
+      // On macOS, also check file handles are released
+      if (process.platform === 'darwin') {
+        try {
+          const fd = await fs.openAsync(testPath, 'r');
+          await fs.closeAsync(fd);
+        } catch (err) {
+          if (attempt < maxRetries - 1) {
+            log('debug', 'File handle still locked, retrying', { 
+              attempt: attempt + 1, 
+              maxRetries, 
+              file: testPath,
+              error: err.message 
+            });
+            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(1.5, attempt)));
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      // Additional verification: try to read a small portion of the file
+      try {
+        const buffer = Buffer.alloc(10);
+        const fd = await fs.openAsync(testPath, 'r');
+        await fs.readAsync(fd, buffer, 0, 10, 0);
+        await fs.closeAsync(fd);
+      } catch (err) {
+        if (attempt < maxRetries - 1) {
+          log('debug', 'File not fully written, retrying', { 
+            attempt: attempt + 1, 
+            maxRetries, 
+            file: testPath,
+            error: err.message 
+          });
+          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(1.5, attempt)));
+          continue;
+        }
+        throw err;
+      }
+
+      log('debug', 'extraction completion verified', { 
+        extractPath, 
+        fileCount: files.length, 
+        attempts: attempt + 1,
+        platform: process.platform 
+      });
+      return;
+
+    } catch (err) {
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(1.5, attempt);
+        log('debug', 'extraction not complete, retrying', { 
+          attempt: attempt + 1, 
+          maxRetries, 
+          delay, 
+          error: err.message,
+          platform: process.platform 
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        log('error', 'extraction completion check failed after all retries', { 
+          extractPath, 
+          attempts: maxRetries, 
+          error: err.message,
+          platform: process.platform 
+        });
+        throw new Error(`Extraction completion verification failed: ${err.message}`);
+      }
+    }
+  }
+}
+
 // Attempt to flatten archives that contain a single visible top-level directory
 // (ignoring hidden files like .DS_Store and __MACOSX). This moves the contents of
 // that directory up into the root so that index.js and info.json are at the top level.
@@ -536,10 +634,10 @@ function installExtension(api: IExtensionApi,
       }
     })
     .then(() => {
-      // Add a delay to ensure file system operations complete after extraction
+      // Ensure file system operations are complete after extraction
       // This fixes a race condition where validation happens before files are fully written
-      // Increased from 100ms to 500ms to handle slower file systems and larger archives
-      return new Promise<void>(resolve => setTimeout(resolve, 500));
+      log('debug', 'starting extraction completion check', { tempPath, platform: process.platform });
+      return ensureExtractionComplete(tempPath);
     })
     .then(() => flattenNestedRoot(tempPath))
     .then(() => readExtensionInfo(tempPath, false, info))
@@ -639,24 +737,95 @@ function installExtension(api: IExtensionApi,
       }
     })
     .then(() => {
-      // Synchronously check for newly installed extensions to update the list immediately
-      try {
-        const extensionsPath = getVortexPath('bundledPlugins');
-        const userDataPath = getVortexPath('userData');
-        const userExtensionsPath = path.join(userDataPath, 'plugins');
-        
-        // Read extensions synchronously from both bundled and user directories
-         const extensions = readExtensionsSync(true);
-        
-        // Dispatch action to update the installed extensions list
-         api.store.dispatch(setInstalledExtensions(extensions));
-        
-        log('info', 'Extension list updated synchronously after installation', { 
-          extensionCount: Object.keys(extensions).length 
-        });
-      } catch (err) {
-        log('warn', 'Failed to update extension list synchronously', { error: err.message });
-      }
+      // Enhanced synchronous extension list update with better error handling
+      log('debug', 'updating extension list synchronously after installation', { 
+        extName, 
+        platform: process.platform,
+        destPath 
+      });
+      
+      const updateExtensionList = async (): Promise<void> => {
+        try {
+            // Verify the extension directory exists and is accessible
+            await fsExtra.access(destPath);
+          
+          // Additional delay on macOS to ensure file system operations are fully settled
+          if (process.platform === 'darwin') {
+            await new Promise<void>(resolve => setTimeout(resolve, 500));
+          }
+          
+          // Force a fresh read of extensions
+          const extensions = readExtensionsSync(true);
+          
+          // Verify our extension is in the list
+          if (!extensions[extName]) {
+            throw new Error(`Extension ${extName} not found in extension list after installation`);
+          }
+          
+          api.store.dispatch(setInstalledExtensions(extensions));
+          
+          log('info', 'Extension list updated synchronously after installation', { 
+            extensionCount: Object.keys(extensions).length,
+            installedExtension: extName,
+            platform: process.platform,
+            verified: true
+          });
+          
+          // Emit event to notify other components
+          api.events.emit('extension-installed', extName, extensions[extName]);
+          
+        } catch (err) {
+          log('warn', 'Failed to update extension list synchronously', { 
+            error: err.message, 
+            extName,
+            platform: process.platform,
+            destPath
+          });
+          
+          // Fallback: try again after a longer delay with exponential backoff
+          const maxRetries = 3;
+          for (let retry = 0; retry < maxRetries; retry++) {
+            const delay = 1000 * Math.pow(2, retry);
+            await new Promise<void>(resolve => setTimeout(resolve, delay));
+            
+            try {
+                await fsExtra.access(destPath);
+              const extensions = readExtensionsSync(true);
+              
+              if (extensions[extName]) {
+                api.store.dispatch(setInstalledExtensions(extensions));
+                log('info', 'Extension list updated on retry', { 
+                  extensionCount: Object.keys(extensions).length,
+                  installedExtension: extName,
+                  retryAttempt: retry + 1
+                });
+                api.events.emit('extension-installed', extName, extensions[extName]);
+                return;
+              } else {
+                throw new Error(`Extension ${extName} still not found after retry ${retry + 1}`);
+              }
+            } catch (retryErr) {
+              if (retry === maxRetries - 1) {
+                log('error', 'Failed to update extension list even after all retries', { 
+                  error: retryErr.message, 
+                  extName,
+                  maxRetries,
+                  destPath
+                });
+                // Don't throw here - installation succeeded, just list update failed
+              } else {
+                log('debug', 'Extension list update retry failed, trying again', {
+                  error: retryErr.message,
+                  retryAttempt: retry + 1,
+                  nextDelay: 1000 * Math.pow(2, retry + 1)
+                });
+              }
+            }
+          }
+        }
+      };
+      
+      return updateExtensionList();
     })
     .catch(err => {
       try {
@@ -711,21 +880,23 @@ function findEntryScript(extPath: string): Promise<string | undefined> {
     });
   };
 
-  // Try to find entry script with retry mechanism to handle file system timing issues
+  // Try to find entry script with minimal retry since extraction completion is now ensured
   return Promise.resolve(attemptFind().then(result => {
     if (result) {
+      log('debug', 'found entry script', { extPath, entryScript: result });
       return result;
     }
-    // If not found, wait a bit and try again (handles extraction timing issues)
-    return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 200)))
+    log('debug', 'entry script not found on first attempt, retrying', { extPath });
+    // Single retry with short delay for edge cases
+    return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 100)))
       .then(() => attemptFind())
-      .then(secondResult => {
-        if (secondResult) {
-          return secondResult;
+      .then(retryResult => {
+        if (retryResult) {
+          log('debug', 'found entry script on retry', { extPath, entryScript: retryResult });
+        } else {
+          log('debug', 'entry script not found after retry', { extPath });
         }
-        // Final retry with longer delay for very slow file systems
-        return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 300)))
-          .then(() => attemptFind());
+        return retryResult;
       });
   }));
 }

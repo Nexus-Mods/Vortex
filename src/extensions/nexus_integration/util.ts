@@ -322,31 +322,47 @@ export function ensureLoggedIn(api: IExtensionApi): Promise<void> {
       }
     };
 
-    // Listen for state changes to OAuth credentials
+    // Listen for state changes to OAuth credentials and API key
     const unsubscribe = api.store.subscribe(() => {
-      const currentState = api.getState();
-      const currentCredentials = currentState.confidential.account?.['nexus']?.['OAuthCredentials'];
-      if (!isResolved && currentCredentials && currentCredentials.token && currentCredentials.refreshToken) {
-        isResolved = true;
-        clearTimeout(timeoutId);
-        api.events.removeListener('did-login', loginHandler);
-        unsubscribe();
-        resolve();
+      if (!isResolved) {
+        const currentState = api.getState();
+        // Check both OAuth credentials and API key, and use the same logic as isLoggedIn
+        if (isLoggedIn(currentState)) {
+          isResolved = true;
+          clearTimeout(timeoutId);
+          api.events.removeListener('did-login', loginHandler);
+          unsubscribe();
+          resolve();
+        }
       }
     });
     
     // Increased timeout to allow for OAuth flow completion
     const timeoutId = setTimeout(() => {
       if (!isResolved) {
-        isResolved = true;
-        api.events.removeListener('did-login', loginHandler);
-        unsubscribe();
-        // Check one more time before rejecting in case login completed just before timeout
-        if (isLoggedIn(api.getState())) {
-          resolve();
-        } else {
-          reject(new Error('Authentication timeout: The login process took too long'));
-        }
+        // Add a small delay to allow for any pending state updates to complete
+        setTimeout(() => {
+          if (!isResolved) {
+            isResolved = true;
+            api.events.removeListener('did-login', loginHandler);
+            unsubscribe();
+            // Final check with current state after allowing time for updates
+            const finalState = api.getState();
+            if (isLoggedIn(finalState)) {
+              resolve();
+            } else {
+              // Log additional debug info to help diagnose false timeouts
+              const oauthCreds = finalState.confidential.account?.['nexus']?.['OAuthCredentials'];
+              const apiKey = finalState.confidential.account?.['nexus']?.['APIKey'];
+              console.warn('Authentication timeout despite login check:', {
+                hasOAuthCreds: !!(oauthCreds && oauthCreds.token && oauthCreds.refreshToken),
+                hasApiKey: !!apiKey,
+                isLoggedInResult: isLoggedIn(finalState)
+              });
+              reject(new Error('Authentication timeout: The login process took too long'));
+            }
+          }
+        }, 100); // 100ms delay to allow state updates to complete
       }
     }, 30000); // Increased to 30 second timeout for OAuth flow
 

@@ -26,7 +26,25 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
       { label: 'Allow access' },
     ]).then(result => (result.action === 'Cancel')
       ? Promise.reject(new UserCanceled())
-      : Promise.resolve()));
+      : Promise.resolve()))
+    .catch(err => {
+      if (err.code === 'EROFS') {
+        // Handle read-only file system error
+        return api.showDialog('error', 'Read-Only File System', {
+          text: 'The game directory is located on a read-only file system.\n\n'
+            + 'This usually happens when the game is installed on an external drive '
+            + 'or a network location that doesn\'t support file modifications.\n\n'
+            + 'To use mods with this game, you have a few options:\n'
+            + '• Move the game to a writable location (like your main drive)\n'
+            + '• Use a deployment method that doesn\'t require writing to the game directory\n'
+            + '• Check if the drive is mounted with write permissions',
+        }, [
+          { label: 'OK' },
+        ]).then(() => Promise.reject(new UserCanceled()));
+      }
+      // Re-throw other errors
+      return Promise.reject(err);
+    });
 }
 
 /**
