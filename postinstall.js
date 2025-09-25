@@ -4,23 +4,18 @@
 
 const https = require('https');
 const path = require('path');
-const fs = require('fs');
-const { promisify } = require('util');
+const fs = require('fs/promises');
 const { spawn } = require('child_process');
 const prebuildRC = require('prebuild-install/rc');
 const prebuildUtil = require('prebuild-install/util');
-const { 
-  isMacOS, 
-  logNativeImplementation,
-  logMockImplementation,
-  processModule
-} = require('./scripts/native-module-messages');
-
-const statAsync = promisify(fs.stat);
 
 // Platform detection utilities
 function isWindows() {
   return process.platform === 'win32';
+}
+
+function isMacOS() {
+  return process.platform === 'darwin';
 }
 
 const packageManager = 'yarn';
@@ -50,8 +45,8 @@ async function ensureTypesInstalled() {
   // Check if @types/rimraf is properly installed
   try {
     const rimrafTypesPath = path.join(__dirname, 'node_modules', '@types', 'rimraf');
-    await statAsync(rimrafTypesPath);
-    const files = await fs.promises.readdir(rimrafTypesPath);
+    await fs.stat(rimrafTypesPath);
+    const files = await fs.readdir(rimrafTypesPath);
     if (files.length === 0) {
       console.log('@types/rimraf is empty, may need reinstallation');
     }
@@ -60,100 +55,19 @@ async function ensureTypesInstalled() {
   }
 }
 
-// Function to prevent drivelist from building on macOS
-async function preventDrivelistBuild() {
-  if (!isMacOS()) return;
-  
-  // Paths to check for drivelist
-  const drivelistPaths = [
-    path.join(__dirname, 'node_modules', 'drivelist'),
-    path.join(__dirname, 'app', 'node_modules', 'drivelist')
-  ];
-  
-  for (const drivelistPath of drivelistPaths) {
-    const packageJsonPath = path.join(drivelistPath, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      try {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-        // Also set gypfile to false to prevent native compilation
-        packageJson.gypfile = false;
-        // Only add scripts if the package.json has more than just basic fields
-        if (Object.keys(packageJson).length > 5) {
-          // Ensure scripts object exists
-          if (!packageJson.scripts) {
-            packageJson.scripts = {};
-          }
-          // Change the install script to prevent building
-          packageJson.scripts.install = 'echo "Using native macOS implementation instead of building from source" && exit 0';
-        }
-        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
-        console.log(`✅ Prevented drivelist build in ${drivelistPath}`);
-      } catch (err) {
-        console.log(`⚠️  Failed to modify drivelist package.json in ${drivelistPath}: ${err.message}`);
-      }
-    }
-  }
-}
-
 async function verifyModulesInstalled() {
   console.log('checking native modules');
-  
-  // Prevent drivelist from building on macOS
-  await preventDrivelistBuild();
-  
   for (const module of verifyModules) {
     // Skip verification if mock exists on macOS
     if (isMacOS()) {
-      // Special handling for drivelist - check if real implementation exists
-      if (module[0] === 'drivelist') {
-        const realImplPath = path.join(__dirname, 'src', 'util', 'drivelist-macos.js');
-        const realModulePath = path.join(__dirname, 'node_modules', 'drivelist', 'index.js');
-        try {
-          await statAsync(realImplPath);
-          await statAsync(realModulePath);
-          processModule(module[0]);
-          continue;
-        } catch (err) {
-          // Fall back to mock if real implementation doesn't exist
-          const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
-          try {
-            await statAsync(mockPath);
-            processModule(module[0]);
-            continue;
-          } catch (mockErr) {
-            // No mock found, proceed with verification
-            console.log(`No implementation found for ${module[0]} on macOS, proceeding with verification`);
-          }
-        }
-      } else {
-        // Check if we have a native macOS implementation for this module
-        const nativeImplPaths = {
-          'diskusage': path.join(__dirname, 'src', 'util', 'diskusage-macos.js'),
-          'exe-version': path.join(__dirname, 'src', 'util', 'exe-version-macos.js'),
-          'turbowalk': path.join(__dirname, 'scripts', 'turbowalk-macos.js'),
-          'wholocks': path.join(__dirname, 'scripts', 'wholocks-macos.js'),
-          'permissions': path.join(__dirname, 'scripts', 'permissions-macos.js'),
-          'bsdiff-node': path.join(__dirname, 'scripts', 'bsdiff-macos.js'),
-          'ffi': path.join(__dirname, 'scripts', 'ffi-macos.js'),
-          'ref': path.join(__dirname, 'scripts', 'ref-macos.js'),
-          'ref-struct': path.join(__dirname, 'scripts', 'ref-struct-macos.js'),
-          'ref-union': path.join(__dirname, 'scripts', 'ref-union-macos.js'),
-          'node-7z': path.join(__dirname, 'scripts', 'node-7z-macos.js')
-        };
-        
-        if (nativeImplPaths[module[0]] && fs.existsSync(nativeImplPaths[module[0]])) {
-          processModule(module[0]);
-          continue;
-        }
-        
-        const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
-        if (fs.existsSync(mockPath)) {
-          processModule(module[0]);
-          continue;
-        } else {
-          // No mock found, proceed with verification
-          console.log(`No implementation found for ${module[0]} on macOS, proceeding with verification`);
-        }
+      const mockPath = path.join(__dirname, '__mocks__', module[0] + '.js');
+      try {
+        await fs.stat(mockPath);
+        console.log(`Using mock for ${module[0]} on macOS`);
+        continue;
+      } catch (err) {
+        // No mock found, proceed with verification
+        console.log(`No mock found for ${module[0]} on macOS, proceeding with verification`);
       }
     }
     
@@ -164,7 +78,7 @@ async function verifyModulesInstalled() {
     }
     const modPath = path.join(__dirname, 'node_modules', module[0], module[1]);
     try {
-      await statAsync(modPath);
+      await fs.stat(modPath);
     } catch (err) {
       console.log('missing native module', modPath);
       const pkgcli = isWindows() ? `${packageManager}.cmd` : packageManager;
@@ -173,7 +87,7 @@ async function verifyModulesInstalled() {
         proc.on('exit', resolve);
       });
       try {
-        await statAsync(modPath);
+        await fs.stat(modPath);
       } catch (err) {
         console.error('failed to build native module', modPath);
         process.exit(1);
@@ -227,10 +141,70 @@ async function verifyPrebuild() {
   }
 }
 
+async function restorePackageJsonFiles() {
+  if (!isMacOS()) {
+    return;
+  }
+  
+  console.log('Restoring package.json files on macOS...');
+  
+  const mainPackageJson = path.join(__dirname, 'package.json');
+  const appPackageJson = path.join(__dirname, 'app', 'package.json');
+  const mainBackup = mainPackageJson + '.backup';
+  const appBackup = appPackageJson + '.backup';
+  
+  try {
+    // Restore main package.json
+    if (await fs.stat(mainBackup).then(() => true).catch(() => false)) {
+      await fs.copyFile(mainBackup, mainPackageJson);
+      await fs.unlink(mainBackup);
+      console.log('Restored main package.json from backup');
+    }
+    
+    // Restore app/package.json
+    if (await fs.stat(appBackup).then(() => true).catch(() => false)) {
+      await fs.copyFile(appBackup, appPackageJson);
+      await fs.unlink(appBackup);
+      console.log('Restored app/package.json from backup');
+    }
+  } catch (err) {
+    console.log('Error restoring package.json files:', err.message);
+  }
+}
+
+// Function to remove drivelist package on macOS since we use a mock
+async function removeDrivelistOnMacOS() {
+  if (isMacOS()) {
+    console.log('Removing drivelist package on macOS (using mock instead)...');
+    try {
+      const drivelistPath = path.join(__dirname, 'node_modules', 'drivelist');
+      await fs.stat(drivelistPath);
+      await fs.rm(drivelistPath, { recursive: true, force: true });
+      console.log('Successfully removed drivelist package on macOS');
+    } catch (err) {
+      // Package might not exist, which is fine
+      console.log('drivelist package not found or already removed');
+    }
+    
+    // Also remove from app/node_modules if it exists
+    try {
+      const appDrivelistPath = path.join(__dirname, 'app', 'node_modules', 'drivelist');
+      await fs.stat(appDrivelistPath);
+      await fs.rm(appDrivelistPath, { recursive: true, force: true });
+      console.log('Successfully removed drivelist package from app/node_modules on macOS');
+    } catch (err) {
+      // Package might not exist, which is fine
+      console.log('drivelist package not found in app/node_modules or already removed');
+    }
+  }
+}
+
 async function main() {
-  await ensureTypesInstalled();
-  await verifyPrebuild();
-  await verifyModulesInstalled();
+  ensureTypesInstalled();
+  verifyPrebuild();
+  verifyModulesInstalled();
+  restorePackageJsonFiles();
+  removeDrivelistOnMacOS();
 }
 
 main();

@@ -251,11 +251,18 @@ function processCustom(project, buildType, feedback, noparallel) {
   
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
+    const distDir = path.join(project.path, 'dist');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
-    feedback.log('copying files', source, output);
-    res = res
-      .then(() => copyfilesAsync([source, output], project.depth || 3))
-      .then(() => updateSourceMap(path.join(output, 'index.js')));
+    
+    // Check if dist directory exists before copying
+    if (fs.existsSync(distDir)) {
+      feedback.log('copying files', source, output);
+      res = res
+        .then(() => copyfilesAsync([source, output], project.depth || 3))
+        .then(() => updateSourceMap(path.join(output, 'index.js')));
+    } else {
+      feedback.log('skipping copy - dist directory not found (extension may handle its own copying)', distDir);
+    }
   }
   
   res = res.then(() => {

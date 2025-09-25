@@ -696,9 +696,12 @@ function setupAutoUpdate() {
     // Check for updates on app start
     app.whenReady().then(() => {
       // Delay the initial check to allow the app to fully start
-      setTimeout(() => {
-        checkForUpdates();
-      }, 30000); // 30 seconds after app start
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          checkForUpdates();
+          resolve();
+        }, 30000); // 30 seconds after app start
+      });
     });
     
   } catch (err) {

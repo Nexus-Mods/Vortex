@@ -85,6 +85,27 @@ This codebase still use yarn 1 (classic). Any attempt to use yarn 2 or 3 ended u
 
 At the time of writing, electron doesn't support ES modules so everything is transpiled to commonjs. This has the consequence that some updated libraries supporting only esm can't be used (e.g. new versions of d3). It also means that asynchronous imports (`const foo = await import('bar')`) are actually synchronous at runtime. Doesn't really matter though since everything is baked into a single file on release builds anyway and code splitting isn't really needed.
 
+#### Clean Script
+
+The project includes a comprehensive clean script with multiple options for different cleanup scenarios:
+
+- **`yarn clean`** - Basic cleanup that removes node modules and build artifacts:
+  - Installs and runs `rm-local-modules` to clean local module dependencies
+  - Removes the `out` directory (main build output)
+  - Runs `yarn install --check-files` to verify package integrity
+
+- **`yarn clean --dev-data`** - Same as basic clean plus removes development data:
+  - Performs all basic cleanup operations
+  - Additionally removes the `vortex_devel` directory (development application data) on macOS
+
+- **`yarn clean --full`** - Complete cleanup that removes all build artifacts and development data:
+  - Performs all basic cleanup operations
+  - Removes additional build directories: `dist`, `dist_custom`, `dist_portable`, `dist_web`, `force`
+  - Removes development and testing directories: `app/bundledPlugins`, `sourcemaps`, `coverage`, `doc`
+  - Removes the `vortex_devel` directory (development application data) on macOS
+
+Use `yarn clean --full` when switching between different build configurations or when experiencing build issues that require a complete reset.
+
 #### Reporting Bugs
 
 Please report issues on GitHub and include at the very least the following information:

@@ -384,76 +384,154 @@ class Steam implements IGameStore {
 
   private parseManifests(): Bluebird<ISteamEntry[]> {
     return this.resolveSteamPaths()
-      .then((steamPaths: string[]) => Bluebird.mapSeries(steamPaths, steamPath => {
-        log('debug', 'reading steam install folder', { steamPath });
-        const steamAppsPath = path.join(steamPath, 'steamapps');
-        return Bluebird.resolve(fsOG.readdir(steamAppsPath))
-          .then(names => {
-            const filtered = names.filter(name =>
-              name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
-            log('debug', 'got steam manifests', { manifests: filtered });
-            return Bluebird.map(filtered, (name: string) =>
-              fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
-                manifestData, name,
-              })));
-          })
-          .then(appsData => {
-            return appsData
-              .map(appData => {
-                const { name, manifestData } = appData;
-                try {
-                  return { obj: parse(manifestData.toString()), name };
-                } catch (err) {
-                  log('warn', 'failed to parse steam manifest',
-                      { name, error: err.message });
+      .then((steamPaths: string[]) => {
+        // First, read libraryfolders.vdf to get app-to-library mapping
+        return this.getAppLibraryMapping(steamPaths)
+          .then((appLibraryMap: Map<string, string>) => {
+            return Bluebird.mapSeries(steamPaths, steamPath => {
+              log('debug', 'reading steam install folder', { steamPath });
+              const steamAppsPath = path.join(steamPath, 'steamapps');
+              return Bluebird.resolve(fsOG.readdir(steamAppsPath))
+                .then(names => {
+                  const filtered = names.filter(name =>
+                    name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
+                  log('debug', 'got steam manifests', { manifests: filtered });
+                  return Bluebird.map(filtered, (name: string) =>
+                    fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
+                      manifestData, name,
+                    })));
+                })
+                .then(appsData => {
+                  return appsData
+                    .map(appData => {
+                      const { name, manifestData } = appData;
+                      try {
+                        return { obj: parse(manifestData.toString()), name };
+                      } catch (err) {
+                        log('warn', 'failed to parse steam manifest',
+                            { name, error: err.message });
+                        return undefined;
+                      }
+                    })
+                    .map(res => {
+                      if (res === undefined) {
+                        return undefined;
+                      }
+                      const { obj, name } = res;
+                      if ((obj === undefined)
+                        || (obj['AppState'] === undefined)
+                        || (obj['AppState']['installdir'] === undefined)) {
+                        log('debug', 'invalid appmanifest', name);
+                        return undefined;
+                      }
+                      try {
+                        const appId = obj['AppState']['appid'];
+                        const installDir = obj['AppState']['installdir'];
+                        
+                        // Use the app-to-library mapping to find the correct library path
+                        const correctLibraryPath = appLibraryMap.get(appId) || steamPath;
+                        const gamePath = path.join(correctLibraryPath, 'steamapps', 'common', installDir);
+                        
+                        log('debug', 'resolved game path', { 
+                          appId, 
+                          installDir, 
+                          manifestLibrary: steamPath, 
+                          correctLibrary: correctLibraryPath, 
+                          gamePath 
+                        });
+                        
+                        return {
+                          appid: appId,
+                          gameStoreId: STORE_ID,
+                          name: obj['AppState']['name'],
+                          gamePath: gamePath,
+                          lastUser: obj['AppState']['LastOwner'],
+                          lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                          manifestData: obj,
+                        } as ISteamEntry;
+                      } catch (err) {
+                        log('warn', 'failed to parse steam manifest',
+                            { name, error: err.message });
+                        return undefined;
+                      }
+                    })
+                    .filter(obj => obj !== undefined) as ISteamEntry[];
+                })
+                .catch({ code: 'ENOENT' }, (err: any) => {
+                  // no biggy, this can happen for example if the steam library is on a removable medium
+                  // which is currently removed
+                  log('info', 'Steam library not found', { error: err.message });
                   return undefined;
-                }
-              })
-              .map(res => {
-                if (res === undefined) {
-                  return undefined;
-                }
-                const { obj, name } = res;
-                if ((obj === undefined)
-                  || (obj['AppState'] === undefined)
-                  || (obj['AppState']['installdir'] === undefined)) {
-                  log('debug', 'invalid appmanifest', name);
-                  return undefined;
-                }
-                try {
-                  return {
-                    appid: obj['AppState']['appid'],
-                    gameStoreId: STORE_ID,
-                    name: obj['AppState']['name'],
-                    gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
-                    lastUser: obj['AppState']['LastOwner'],
-                    lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
-                    manifestData: obj,
-                  } as ISteamEntry;
-                } catch (err) {
-                  log('warn', 'failed to parse steam manifest',
-                      { name, error: err.message });
-                  return undefined;
-                }
-              })
-              .filter(obj => obj !== undefined) as ISteamEntry[];
-          })
-          .catch({ code: 'ENOENT' }, (err: any) => {
-            // no biggy, this can happen for example if the steam library is on a removable medium
-            // which is currently removed
-            log('info', 'Steam library not found', { error: err.message });
-            return undefined;
-          })
-          .catch(err => {
-            log('warn', 'Failed to read steam library', { path: steamPath, error: err.message });
+                })
+                .catch(err => {
+                  log('warn', 'Failed to read steam library', { path: steamPath, error: err.message });
+                });
+            });
           });
       })
-        .then((games: ISteamEntry[][]) =>
-          games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-            current !== undefined ? prev.concat(current) : prev, []))
-        .tap(() => {
-          log('info', 'done reading steam libraries');
-        }));
+      .then((games: ISteamEntry[][]) =>
+        games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
+          current !== undefined ? prev.concat(current) : prev, []))
+      .tap(() => {
+        log('info', 'done reading steam libraries');
+      });
+  }
+
+  private getAppLibraryMapping(steamPaths: string[]): Bluebird<Map<string, string>> {
+    const appLibraryMap = new Map<string, string>();
+    
+    // Try to read libraryfolders.vdf from the main Steam installation
+    const mainSteamPath = steamPaths[0]; // First path is usually the main Steam installation
+    if (!mainSteamPath) {
+      return Bluebird.resolve(appLibraryMap);
+    }
+    
+    const libFoldersFile = isWindows()
+      ? path.resolve(mainSteamPath, 'steamapps', 'libraryfolders.vdf')
+      : path.resolve(mainSteamPath, 'config', 'libraryfolders.vdf');
+    
+    return fs.readFileAsync(libFoldersFile)
+      .then((data: Buffer) => {
+        try {
+          const parsedObj = parse(data.toString());
+          const libObj: any = getSafeCI(parsedObj, ['libraryfolders'], {});
+          
+          // Iterate through each library folder
+          let counter = libObj.hasOwnProperty('0') ? 0 : 1;
+          while (libObj.hasOwnProperty(`${counter}`)) {
+            const libraryEntry = libObj[`${counter}`];
+            const libraryPath = libraryEntry['path'];
+            const apps = libraryEntry['apps'] || {};
+            
+            // Map each app ID to this library path
+            Object.keys(apps).forEach(appId => {
+              appLibraryMap.set(appId, libraryPath);
+            });
+            
+            log('debug', 'mapped apps to library', { 
+              libraryPath, 
+              appCount: Object.keys(apps).length,
+              apps: Object.keys(apps)
+            });
+            
+            ++counter;
+          }
+          
+          log('debug', 'created app-to-library mapping', { 
+            totalApps: appLibraryMap.size,
+            libraries: Array.from(new Set(appLibraryMap.values()))
+          });
+          
+          return appLibraryMap;
+        } catch (err) {
+          log('warn', 'failed to parse libraryfolders.vdf for app mapping', err);
+          return appLibraryMap;
+        }
+      })
+      .catch(err => {
+        log('warn', 'failed to read libraryfolders.vdf for app mapping', err);
+        return appLibraryMap;
+      });
   }
 }
 

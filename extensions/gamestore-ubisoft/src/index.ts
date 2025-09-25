@@ -38,7 +38,10 @@ class UbisoftLauncher implements types.IGameStore {
       }
     } else if (process.platform === 'darwin') {
       // macOS implementation
-      this.mClientPath = this.findMacOSUbisoftPath();
+      this.mClientPath = this.findMacOSUbisoftPath().catch((err) => {
+        log('info', 'Ubisoft launcher not found on macOS', { error: err.message });
+        return Promise.resolve(undefined);
+      });
     } else {
       log('info', 'Ubisoft launcher not found', { error: 'unsupported platform' });
       this.mClientPath = Promise.resolve(undefined);

@@ -548,3 +548,102 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
     })
     .then(lists => [].concat(...lists));
 }
+
+// Synchronous versions of extension reading functions
+function getAllDirectoriesSync(searchPath: string): string[] {
+  try {
+    return fs.readdirSync(searchPath)
+      .filter((fileName: string) => {
+        if (path.extname(fileName) === '.installing') {
+          // ignore directories during installation
+          return false;
+        }
+        try {
+          const stat = fs.statSync(path.join(searchPath, fileName));
+          return stat.isDirectory();
+        } catch (err) {
+          if (err.code !== 'ENOENT') {
+            log('error', 'failed to stat file/directory', {
+              searchPath, fileName, error: err.message,
+            });
+          }
+          return false;
+        }
+      });
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+}
+
+function readExtensionDirSync(pluginPath: string, bundled: boolean): Array<{ id: string, info: IExtension }> {
+  const directories = getAllDirectoriesSync(pluginPath);
+  const results: Array<{ id: string, info: IExtension }> = [];
+  
+  for (const extPath of directories) {
+    const fullPath = path.join(pluginPath, extPath);
+    try {
+      // Use the synchronous version of readExtensionInfo
+      const extensionInfo = readExtensionInfoSync(fullPath, bundled);
+      results.push(extensionInfo);
+    } catch (err) {
+      log('warn', 'failed to read extension info synchronously', { fullPath, error: err.message });
+    }
+  }
+  
+  return results;
+}
+
+function readExtensionInfoSync(extensionPath: string, bundled: boolean, fallback: any = {}): { id: string, info: IExtension } {
+  const finalPath = extensionPath.replace(/\.installing$/, '');
+  
+  try {
+    const infoData = fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' });
+    const data: IExtension = JSON.parse(infoData);
+    data.path = finalPath;
+    const id = data.id || path.basename(finalPath);
+    return {
+      id,
+      info: applyExtensionInfo(id, bundled, data, fallback),
+    };
+  } catch (err) {
+    const id = path.basename(finalPath);
+    return {
+      id,
+      info: applyExtensionInfo(id, bundled, {}, fallback),
+    };
+  }
+}
+
+export function readExtensionsSync(force: boolean = false): { [extId: string]: IExtension } {
+  const bundledPath = getVortexPath('bundledPlugins');
+  const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
+
+  // Get the current extension state to check for extensions marked for removal
+  let persistentState = {};
+  try {
+    // Try to get the extension state from the main process
+    if (ipcRenderer !== undefined) {
+      persistentState = ipcRenderer.sendSync('__get_extension_state') || {};
+    }
+  } catch (err) {
+    // If we can't get the state, continue without filtering
+    log('debug', 'could not retrieve extension state for filtering', { error: err.message });
+  }
+
+  const bundledExtensions = readExtensionDirSync(bundledPath, true);
+  const userExtensions = readExtensionDirSync(extensionsPath, false);
+  const allExtensions = [...bundledExtensions, ...userExtensions];
+
+  const result: { [extId: string]: IExtension } = {};
+  for (const ext of allExtensions) {
+    // Skip extensions marked for removal in persistent state
+    if (!persistentState[ext.id]?.remove) {
+      result[ext.id] = ext.info;
+    }
+  }
+
+  return result;
+}

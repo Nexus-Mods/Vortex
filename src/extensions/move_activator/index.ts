@@ -4,6 +4,7 @@ import { IGame } from '../../types/IGame';
 import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { MacOSAdminAccessManager } from '../../util/macOSAdminAccess';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { getGame } from '../gamemode_management/util/getGame';
@@ -98,18 +99,27 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
-      log('info', 'move deployment not supported due to lack of write access',
-          { typeId, path: modPaths[typeId] });
-      return {
-        description: t => t('Can\'t write to output directory'),
-        order: 3,
-        solution: t => t('To resolve this problem, the current user account needs to '
-                       + 'be given write permission to "{{modPath}}".', {
-          replace: {
-            modPath: modPaths[typeId],
-          },
-        }),
-      };
+      // On macOS, we can potentially request admin access during deployment
+      if (isMacOS()) {
+        log('info', 'move deployment requires admin access, will prompt during deployment',
+            { typeId, path: modPaths[typeId] });
+        // Don't block the deployment method, but lower its priority
+        // The actual admin request will happen during activation
+        return undefined; // Allow the method but it will request admin access during deployment
+      } else {
+        log('info', 'move deployment not supported due to lack of write access',
+            { typeId, path: modPaths[typeId] });
+        return {
+          description: t => t('Can\'t write to output directory'),
+          order: 3,
+          solution: t => t('To resolve this problem, the current user account needs to '
+                         + 'be given write permission to "{{modPath}}".', {
+            replace: {
+              modPath: modPaths[typeId],
+            },
+          }),
+        };
+      }
     }
 
     try {
@@ -332,7 +342,28 @@ class DeploymentMethod extends LinkingDeployment {
           from: sourcePath, 
           to: linkPath 
         });
-        return fs.renameAsync(sourcePath, linkPath);
+        return fs.renameAsync(sourcePath, linkPath)
+          .catch(async (err) => {
+            // On macOS, if we get a permission error, try to request admin access
+            if (isMacOS() && (err.code === 'EACCES' || err.code === 'EPERM')) {
+              log('info', 'Move operation failed due to permissions, requesting admin access', {
+                error: err.code,
+                path: linkPath
+              });
+              
+              const adminManager = MacOSAdminAccessManager.getInstance();
+              const granted = await adminManager.requestAdminAccess(path.dirname(linkPath));
+              
+              if (granted) {
+                log('info', 'Admin access granted, retrying move operation');
+                return fs.renameAsync(sourcePath, linkPath);
+              } else {
+                log('warn', 'Admin access denied or failed');
+                throw err; // Re-throw original error to trigger fallback
+              }
+            }
+            throw err;
+          });
       });
   }
 

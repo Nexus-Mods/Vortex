@@ -14,10 +14,44 @@ async function getExecutableVersion(filePath) {
   try {
     // For macOS, we need to handle different executable formats:
     // 1. Mach-O binaries (native macOS executables)
-    // 2. Shell scripts with shebangs
-    // 3. Other executable formats
+    // 2. App bundles (.app directories)
+    // 3. Shell scripts with shebangs
+    // 4. Other executable formats
     
-    // First, check if it's a Mach-O binary using file command
+    // Check if the path points to an app bundle
+    if (filePath.includes('.app')) {
+      try {
+        // Extract the app bundle path
+        let appPath = filePath;
+        const appIndex = filePath.indexOf('.app');
+        if (appIndex !== -1) {
+          appPath = filePath.substring(0, appIndex + 4);
+        }
+        
+        // Try to get version from Info.plist
+        const plistPath = path.join(appPath, 'Contents', 'Info.plist');
+        try {
+          const { stdout: plistVersion } = await execAsync(`defaults read "${plistPath}" CFBundleShortVersionString 2>/dev/null`);
+          if (plistVersion && plistVersion.trim() && plistVersion.trim() !== '(null)') {
+            return plistVersion.trim().replace(/"/g, '');
+          }
+        } catch (plistError) {
+          // Try alternative version keys
+          try {
+            const { stdout: bundleVersion } = await execAsync(`defaults read "${plistPath}" CFBundleVersion 2>/dev/null`);
+            if (bundleVersion && bundleVersion.trim() && bundleVersion.trim() !== '(null)') {
+              return bundleVersion.trim().replace(/"/g, '');
+            }
+          } catch (bundleError) {
+            // Continue to other methods
+          }
+        }
+      } catch (appError) {
+        // Continue to other methods
+      }
+    }
+    
+    // Check if it's a Mach-O binary using file command
     const { stdout: fileType } = await execAsync(`file -b "${filePath}"`);
     
     if (fileType.includes('Mach-O')) {
@@ -32,17 +66,17 @@ async function getExecutableVersion(filePath) {
         // Ignore metadata error and try other methods
       }
       
-      // Try to get version from plist file if it's an app bundle
-      if (filePath.endsWith('.app/Contents/MacOS')) {
-        try {
-          const appPath = path.dirname(path.dirname(path.dirname(filePath)));
-          const { stdout: plistVersion } = await execAsync(`defaults read "${appPath}/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null`);
-          if (plistVersion) {
-            return plistVersion.trim().replace(/"/g, '');
+      // Try to get version from strings command (look for version patterns)
+      try {
+        const { stdout: stringsOutput } = await execAsync(`strings "${filePath}" | grep -E "^[0-9]+\\.[0-9]+\\.[0-9]+" | head -1 2>/dev/null`);
+        if (stringsOutput && stringsOutput.trim()) {
+          const versionMatch = stringsOutput.trim().match(/^([0-9]+\.[0-9]+\.[0-9]+)/);
+          if (versionMatch && versionMatch[1]) {
+            return versionMatch[1];
           }
-        } catch (plistError) {
-          // Ignore plist error and continue
         }
+      } catch (stringsError) {
+        // Ignore strings error
       }
     } else if (fileType.includes('shell script') || fileType.includes('script')) {
       // For shell scripts, try to extract version from shebang or comments
@@ -57,17 +91,6 @@ async function getExecutableVersion(filePath) {
         }
       } catch (scriptError) {
         // Ignore script parsing error
-      }
-    }
-    
-    // Fallback: try to get version using otool for Mach-O binaries
-    if (fileType.includes('Mach-O')) {
-      try {
-        const { stdout: otoolOutput } = await execAsync(`otool -L "${filePath}" 2>/dev/null | head -5`);
-        // This might give us some version information from linked libraries
-        // but it's not reliable for the executable version itself
-      } catch (otoolError) {
-        // Ignore otool error
       }
     }
     
@@ -122,6 +145,34 @@ module.exports = {
    * @returns {string} Version string or '0.0.0' if not found
    */
   getVersionSync: defaultVersionFunction,
+  
+  /**
+   * Get product version (same as file version on macOS)
+   * @param {string} filePath - Path to the executable file
+   * @returns {string} Version string or '0.0.0' if not found
+   */
+  getProductVersion: defaultVersionFunction,
+  
+  /**
+   * Get file version
+   * @param {string} filePath - Path to the executable file
+   * @returns {string} Version string or '0.0.0' if not found
+   */
+  getFileVersion: defaultVersionFunction,
+  
+  /**
+   * Get localized product version (same as product version on macOS)
+   * @param {string} filePath - Path to the executable file
+   * @returns {string} Version string or '0.0.0' if not found
+   */
+  getProductVersionLocalized: defaultVersionFunction,
+  
+  /**
+   * Get localized file version (same as file version on macOS)
+   * @param {string} filePath - Path to the executable file
+   * @returns {string} Version string or '0.0.0' if not found
+   */
+  getFileVersionLocalized: defaultVersionFunction,
   
   /**
    * Default export to match exe-version module API

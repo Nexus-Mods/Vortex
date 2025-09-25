@@ -58,6 +58,12 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 interface IComponentState {
   starter: StarterInfo;
   gameIconCache: { [gameId: string]: { icon: string, game: IGameStored } };
+  // Cache the last valid game state to prevent disappearing during profile transitions
+  cachedGameState: {
+    game: IGameStored;
+    gameDiscovery: IDiscoveryResult;
+    gameMode: string;
+  } | undefined;
 }
 
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
@@ -68,7 +74,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   constructor(props: IProps) {
     super(props);
-    this.initState({ starter: this.makeStarter(props), gameIconCache: this.genGameIconCache() });
+    this.initState({ 
+      starter: this.makeStarter(props), 
+      gameIconCache: this.genGameIconCache(),
+      cachedGameState: this.getCachedGameState(props)
+    });
   }
 
   public componentDidMount() {
@@ -80,6 +90,15 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
+    // Update cached game state when we have valid game data
+    if (nextProps.game && nextProps.gameDiscovery && nextProps.gameMode) {
+      this.nextState.cachedGameState = {
+        game: nextProps.game,
+        gameDiscovery: nextProps.gameDiscovery,
+        gameMode: nextProps.gameMode
+      };
+    }
+
     if ((nextProps.discoveredTools !== this.props.discoveredTools)
         || (nextProps.game !== this.props.game)
         || (nextProps.gameDiscovery !== this.props.primaryTool)) {
@@ -96,7 +115,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const { t, game, toolsRunning } = this.props;
     const { starter } = this.state;
 
-    if (starter === undefined) {
+    if (starter === undefined || game === undefined) {
       return null;
     }
 
@@ -146,6 +165,10 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
           />
         </MenuItem>
       );
+    }
+
+    if (game === undefined) {
+      return null;
     }
 
     return Object.keys(gameIconCache)
@@ -262,24 +285,48 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     StarterInfo.run(starter, this.context.api, onShowError);
   }
 
+  private getCachedGameState(props: IProps): { game: IGameStored; gameDiscovery: IDiscoveryResult; gameMode: string } | undefined {
+    if (props.game && props.gameDiscovery && props.gameMode) {
+      return {
+        game: props.game,
+        gameDiscovery: props.gameDiscovery,
+        gameMode: props.gameMode
+      };
+    }
+    return undefined;
+  }
+
   private makeStarter(props: IProps): StarterInfo {
     const { discoveredTools, game, gameDiscovery, primaryTool } = props;
-    if ((gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)
-        || ((game === undefined) && (gameDiscovery.id === undefined))) {
+    
+    // Use cached state if current state is undefined (during profile transitions)
+    let effectiveGame = game;
+    let effectiveGameDiscovery = gameDiscovery;
+    
+    if (!game || !gameDiscovery) {
+      const cached = this.state?.cachedGameState;
+      if (cached) {
+        effectiveGame = cached.game;
+        effectiveGameDiscovery = cached.gameDiscovery;
+      }
+    }
+    
+    if ((effectiveGameDiscovery === undefined)
+        || (effectiveGameDiscovery.path === undefined)
+        || ((effectiveGame === undefined) && (effectiveGameDiscovery.id === undefined))) {
       return undefined;
     }
 
     try {
       if (!truthy(primaryTool)
-        || ((game.supportedTools[primaryTool] === undefined)
+        || ((effectiveGame.supportedTools[primaryTool] === undefined)
           && (discoveredTools[primaryTool] === undefined))) {
-        return new StarterInfo(game, gameDiscovery);
+        return new StarterInfo(effectiveGame, effectiveGameDiscovery);
       } else {
         try {
           if (truthy(discoveredTools[primaryTool].path)) {
-            return new StarterInfo(game, gameDiscovery,
-                                   game !== undefined ? game.supportedTools[primaryTool] : undefined,
+            return new StarterInfo(effectiveGame, effectiveGameDiscovery,
+                                   effectiveGame !== undefined ? effectiveGame.supportedTools[primaryTool] : undefined,
                                    discoveredTools[primaryTool]);
           } else {
             // Annoying, but a valid issue where for some reason the tool's
@@ -288,7 +335,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
           }
         } catch (err) {
           log('warn', 'invalid primary tool', { err });
-          return new StarterInfo(game, gameDiscovery);
+          return new StarterInfo(effectiveGame, effectiveGameDiscovery);
         }
       }
     } catch (err) {

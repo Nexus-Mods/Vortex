@@ -13,10 +13,11 @@ import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
 import sessionReducer from './reducers';
 import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
-import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
+import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions, readExtensionsSync } from './util';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as path from 'path';
 import * as semver from 'semver';
 import { setDialogVisible, setExtensionEnabled } from '../../actions';
 import { getGame } from '../../util/api';
@@ -403,6 +404,22 @@ function init(context: IExtensionContext) {
         .then(() => downloadAndInstallExtension(context.api, ext))
         .then(success => {
           if (success) {
+            // Immediately update extension list synchronously for instant UI feedback
+            try {
+              const extensionsPath = context.api.getPath('bundledPlugins');
+              const userDataPath = context.api.getPath('userData');
+              const userExtensionsPath = path.join(userDataPath, 'plugins');
+              
+              const extensions = readExtensionsSync(true);
+              context.api.store.dispatch(setInstalledExtensions(extensions));
+              
+              log('info', 'Extension list updated synchronously in event handler', { 
+                extensionCount: Object.keys(extensions).length 
+              });
+            } catch (err) {
+              log('warn', 'Failed to update extension list synchronously in event handler', { error: err.message });
+            }
+            
             return updateExtensions(false)
               .then(() => {
                 // Check if any of the newly installed extensions are game extensions

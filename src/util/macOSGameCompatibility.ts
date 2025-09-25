@@ -10,6 +10,15 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import { log } from './log';
 
+// Cache for executable path results to avoid redundant file system checks
+interface ExecutablePathCacheEntry {
+  result: string | null;
+  timestamp: number;
+}
+
+const executablePathCache = new Map<string, ExecutablePathCacheEntry>();
+const CACHE_TTL_MS = 30000; // 30 seconds cache TTL
+
 export interface MacOSGameFix {
   /** Game ID to apply the fix to */
   gameId: string;
@@ -42,8 +51,8 @@ const MACOS_GAME_FIXES: MacOSGameFix[] = [
   {
     gameId: 'cyberpunk2077',
     windowsExecutable: 'bin/x64/Cyberpunk2077.exe',
-    macOSAppBundle: 'Cyberpunk 2077.app',
-    alternativeFiles: ['REDprelauncher.app']
+    macOSAppBundle: 'Cyberpunk2077.app',
+    alternativeFiles: ['REDprelauncher.app', 'Cyberpunk 2077.app']
   },
   // Stardew Valley
   {
@@ -177,6 +186,20 @@ const MACOS_GAME_FIXES: MacOSGameFix[] = [
     windowsExecutable: '7DaysToDie.exe',
     macOSAppBundle: '7 Days To Die.app',
     alternativeFiles: ['7DaysToDie.x86_64']
+  },
+  // The Elder Scrolls V: Skyrim Special Edition
+  {
+    gameId: 'skyrimse',
+    windowsExecutable: 'SkyrimSE.exe',
+    macOSAppBundle: 'The Elder Scrolls V Skyrim Special Edition.app',
+    alternativeFiles: ['SkyrimSE', 'Skyrim Special Edition.app']
+  },
+  // Fallout 4
+  {
+    gameId: 'fallout4',
+    windowsExecutable: 'Fallout4.exe',
+    macOSAppBundle: 'Fallout 4.app',
+    alternativeFiles: ['Fallout4', 'Fallout4Launcher.exe']
   }
 ];
 
@@ -334,6 +357,42 @@ export async function validateRequiredFilesWithMacOSCompat(
 }
 
 /**
+ * Synchronous version of findMacOSAppBundle for use in StarterInfo constructor
+ */
+function findMacOSAppBundleSync(basePath: string, appBundleName: string): string | null {
+  try {
+    const fullPath = path.join(basePath, appBundleName);
+    if (fs.existsSync(fullPath)) {
+      return fullPath;
+    }
+    
+    // Try common variations
+    const variations = [
+      appBundleName,
+      appBundleName.replace(/\.app$/, ''),
+      appBundleName.replace(/ /g, ''),
+      appBundleName.replace(/ /g, '-'),
+    ];
+    
+    for (const variation of variations) {
+      const variationPath = path.join(basePath, `${variation}.app`);
+      try {
+        if (fs.existsSync(variationPath)) {
+          return variationPath;
+        }
+      } catch (err) {
+        // Continue to next variation
+      }
+    }
+    
+    return null;
+  } catch (err) {
+    log('debug', 'Error finding macOS app bundle (sync)', { basePath, appBundleName, error: err.message });
+    return null;
+  }
+}
+
+/**
  * Get the appropriate executable path for the current platform
  */
 export function getExecutablePathForPlatform(
@@ -345,13 +404,138 @@ export function getExecutablePathForPlatform(
     return windowsExecutable ? path.join(basePath, windowsExecutable) : null;
   }
   
-  // For now, use the simpler approach to avoid async complexity
-  const fix = getMacOSGameFix(gameId);
-  if (fix && windowsExecutable === fix.windowsExecutable) {
-    return path.join(basePath, fix.macOSAppBundle);
+  if (!windowsExecutable) {
+    return null;
+  }
+
+  // Create cache key from parameters
+  const cacheKey = `${basePath}|${gameId}|${windowsExecutable}`;
+  const now = Date.now();
+  
+  // Check cache first
+  const cached = executablePathCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+    return cached.result;
   }
   
-  return windowsExecutable ? path.join(basePath, windowsExecutable) : null;
+  // Check if we have a specific fix for this game
+  const fix = getMacOSGameFix(gameId);
+  if (fix && windowsExecutable === fix.windowsExecutable) {
+    // Try to find the macOS app bundle using synchronous calls
+    const appBundlePath = findMacOSAppBundleSync(basePath, fix.macOSAppBundle);
+    if (appBundlePath) {
+      // Cache the result
+      executablePathCache.set(cacheKey, {
+        result: appBundlePath,
+        timestamp: now
+      });
+      
+      log('debug', 'Found macOS app bundle for game', { 
+        gameId, 
+        windowsExecutable, 
+        macOSPath: appBundlePath 
+      });
+      return appBundlePath;
+    }
+    
+    // Check alternative files if available
+    if (fix.alternativeFiles) {
+      for (const altFile of fix.alternativeFiles) {
+        const altPath = path.join(basePath, altFile);
+        try {
+          if (fs.existsSync(altPath)) {
+            // Cache the result
+            executablePathCache.set(cacheKey, {
+              result: altPath,
+              timestamp: now
+            });
+            
+            log('debug', 'Found alternative executable for game', { 
+              gameId, 
+              windowsExecutable, 
+              alternativePath: altPath 
+            });
+            return altPath;
+          }
+        } catch (err) {
+          // Continue to next alternative
+        }
+      }
+    }
+  }
+  
+  // Try the direct path first
+  const directPath = path.join(basePath, windowsExecutable);
+  try {
+    if (fs.existsSync(directPath)) {
+      // Cache the result
+      executablePathCache.set(cacheKey, {
+        result: directPath,
+        timestamp: now
+      });
+      return directPath;
+    }
+  } catch (err) {
+    // Continue with fallback logic
+  }
+  
+  // Try common macOS patterns for .exe files
+  if (windowsExecutable.endsWith('.exe')) {
+    const baseName = path.basename(windowsExecutable, '.exe');
+    const appBundleName = `${baseName}.app`;
+    const appBundlePath = findMacOSAppBundleSync(basePath, appBundleName);
+    if (appBundlePath) {
+      // Cache the result
+      executablePathCache.set(cacheKey, {
+        result: appBundlePath,
+        timestamp: now
+      });
+      
+      log('debug', 'Found macOS app bundle using pattern matching', { 
+        gameId, 
+        windowsExecutable, 
+        macOSPath: appBundlePath 
+      });
+      return appBundlePath;
+    }
+    
+    // Try just the base name as an executable
+    const baseNamePath = path.join(basePath, baseName);
+    try {
+      if (fs.existsSync(baseNamePath)) {
+        // Cache the result
+        executablePathCache.set(cacheKey, {
+          result: baseNamePath,
+          timestamp: now
+        });
+        
+        log('debug', 'Found executable using base name', { 
+          gameId, 
+          windowsExecutable, 
+          executablePath: baseNamePath 
+        });
+        return baseNamePath;
+      }
+    } catch (err) {
+      // Continue
+    }
+  }
+  
+  // Return the original path as fallback
+  const result = directPath;
+  
+  // Cache the result
+  executablePathCache.set(cacheKey, {
+    result,
+    timestamp: now
+  });
+  
+  log('debug', 'No macOS alternative found, using original path', { 
+    gameId, 
+    windowsExecutable, 
+    fallbackPath: result 
+  });
+  return result;
 }
 
 /**

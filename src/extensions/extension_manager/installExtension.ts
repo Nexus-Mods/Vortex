@@ -1,4 +1,5 @@
 import { removeExtension } from '../../actions';
+import { setInstalledExtensions } from './actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { DataInvalid } from '../../util/CustomErrors';
@@ -11,7 +12,7 @@ import { INVALID_FILENAME_RE } from '../../util/util';
 import { countryExists, languageExists } from '../settings_interface/languagemap';
 
 import { ExtensionType, IExtension } from './types';
-import { readExtensionInfo } from './util';
+import { readExtensionInfo, readExtensionsSync } from './util';
 
 import Bluebird from 'bluebird';
 import * as _ from 'lodash';
@@ -534,6 +535,12 @@ function installExtension(api: IExtensionApi,
                                      () => undefined, () => undefined).then(() => undefined);
       }
     })
+    .then(() => {
+      // Add a delay to ensure file system operations complete after extraction
+      // This fixes a race condition where validation happens before files are fully written
+      // Increased from 100ms to 500ms to handle slower file systems and larger archives
+      return new Promise<void>(resolve => setTimeout(resolve, 500));
+    })
     .then(() => flattenNestedRoot(tempPath))
     .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
@@ -631,6 +638,26 @@ function installExtension(api: IExtensionApi,
         }
       }
     })
+    .then(() => {
+      // Synchronously check for newly installed extensions to update the list immediately
+      try {
+        const extensionsPath = getVortexPath('bundledPlugins');
+        const userDataPath = getVortexPath('userData');
+        const userExtensionsPath = path.join(userDataPath, 'plugins');
+        
+        // Read extensions synchronously from both bundled and user directories
+         const extensions = readExtensionsSync(true);
+        
+        // Dispatch action to update the installed extensions list
+         api.store.dispatch(setInstalledExtensions(extensions));
+        
+        log('info', 'Extension list updated synchronously after installation', { 
+          extensionCount: Object.keys(extensions).length 
+        });
+      } catch (err) {
+        log('warn', 'Failed to update extension list synchronously', { error: err.message });
+      }
+    })
     .catch(err => {
       try {
         fs.removeSync(tempPath);
@@ -674,15 +701,33 @@ function findEntryScript(extPath: string): Promise<string | undefined> {
       })
       .catch(() => undefined as undefined);
 
-  return Promise.resolve(
-    tryExists(path.join(extPath, 'index.js')).then(idxExists => {
+  const attemptFind = () => {
+    return tryExists(path.join(extPath, 'index.js')).then(idxExists => {
       if (idxExists) { return path.join(extPath, 'index.js'); }
       return tryExists(path.join(extPath, 'dist', 'index.js')).then(distExists => {
         if (distExists) { return path.join(extPath, 'dist', 'index.js'); }
         return tryReadPkgMain();
       });
-    })
-  );
+    });
+  };
+
+  // Try to find entry script with retry mechanism to handle file system timing issues
+  return Promise.resolve(attemptFind().then(result => {
+    if (result) {
+      return result;
+    }
+    // If not found, wait a bit and try again (handles extraction timing issues)
+    return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 200)))
+      .then(() => attemptFind())
+      .then(secondResult => {
+        if (secondResult) {
+          return secondResult;
+        }
+        // Final retry with longer delay for very slow file systems
+        return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 300)))
+          .then(() => attemptFind());
+      });
+  }));
 }
 
 // Run a system command and resolve on exit code 0, otherwise reject with aggregated output

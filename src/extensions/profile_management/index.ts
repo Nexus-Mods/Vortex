@@ -407,14 +407,18 @@ function genOnProfileChange(api: IExtensionApi,
           return null;
         });
     })
-      .tapCatch(() => {
-        cancelSwitch();
-      })
       .catch(ProcessCanceled, err => {
+        cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err.message,
                   { allowReport: false });
       })
       .catch(SetupError, err => {
+        // For setup errors (like NoDeployment), don't cancel the switch
+        // The profile switch should complete, but show the error
+        const state = store.getState();
+        const currentProfile = state.persistent.profiles[current];
+        const profileGameId = currentProfile !== undefined ? currentProfile.gameId : undefined;
+        confirmProfile(profileGameId, current);
         showError(store.dispatch, 'Failed to set profile', err.message,
                   { allowReport: false });
       })
@@ -424,10 +428,14 @@ function genOnProfileChange(api: IExtensionApi,
         //  fixed a long time ago. Corrupt profiles are automatically removed by
         //  our verifiers and the user will just have to create a new profile for
         //  their game - not much we can do to help him with that.
+        cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
       })
-      .catch(UserCanceled, () => null)
+      .catch(UserCanceled, () => {
+        cancelSwitch();
+      })
       .catch(err => {
+        cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err);
       });
   };
