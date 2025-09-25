@@ -15,13 +15,12 @@ export interface INewFreeDownloadModal {
   openModPage: () => void;
   goPremium: () => void;
   onDownload: () => void;
+  positionText: string;
 }
 
 function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
-  const { t, fileInfo, openModPage, goPremium, onDownload } = props;
-
-
+  const { t, fileInfo, openModPage, goPremium, onDownload, positionText } = props;
 
   return (
     <div>
@@ -45,7 +44,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
               </FlexLayout.Flex>
 
               <FlexLayout.Fixed>
-                {/* <div id='mod-count'>1 / 233 mods</div> */}
+                <div id='mod-count'>{positionText}</div>
               </FlexLayout.Fixed>
 
             </FlexLayout>

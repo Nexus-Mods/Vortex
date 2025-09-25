@@ -92,10 +92,13 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const userInfo = useSelector<IState, IValidateKeyDataV2>(state =>
     state.persistent['nexus'].userInfo);
 
+  const collectionInstallSession = useSelector<IState, any>(state =>
+    state.session['collections'].activeSession);
   const context = React.useContext<IComponentContext>(MainContext);
 
   const [fileInfo, setFileInfo] = React.useState<any>(null);
   const [campaign, setCampaign] = React.useState<string>(undefined);
+  const [positionText, setPositionText] = React.useState<string>('1/1');
   const lastFetchUrl = React.useRef<string>();
 
   const show = urls.length > 0 && !userInfo?.isPremium;
@@ -115,6 +118,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     };
   }, [show]);
 
+  React.useEffect(() => {
+    if (collectionInstallSession?.downloadedCount != null) {
+      setPositionText(`${collectionInstallSession.downloadedCount}/${collectionInstallSession.totalRequired + collectionInstallSession.totalOptional}`);
+    }
+  }, [collectionInstallSession]);
 
   React.useEffect(() => {
     // if userInfo is updated, and isPremium is true, then retry
@@ -198,12 +206,13 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <NewFreeDownloadModal 
-        fileInfo={fileInfo} 
-        t={t} 
-        openModPage={openModPage} 
-        goPremium={goPremium} 
-        onDownload={download} />
+        <NewFreeDownloadModal
+          positionText={positionText}
+          fileInfo={fileInfo} 
+          t={t} 
+          openModPage={openModPage} 
+          goPremium={goPremium} 
+          onDownload={download} />
       </Modal.Body>
       <Modal.Footer>
         <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>
