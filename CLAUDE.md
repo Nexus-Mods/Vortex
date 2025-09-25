@@ -20,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `yarn dist` - Full production build creating installers (one-click and advanced)
 - `yarn ci` - Create unsigned release build for CI
 - `yarn package` - Build electron package without installer
+- `yarn package:nocodesign` - Build unsigned installer using `electron-builder-config-nocodesign.json`
 
 ### Utility Commands
 - `yarn check_packages` - Verify consistency between root and app package.json files
@@ -211,3 +212,11 @@ The `.vscode/launch.json` has been updated to work with Electron 37's debugging 
 - **"Waiting for debugger to disconnect"**: VS Code was passing extra arguments, fixed by separating runtime args
 - **Breakpoints not hitting**: Ensure source maps are enabled and `yarn build` was recent
 - **Process hangs on startup**: Check that no other Electron instance is running on debug ports
+
+## GitHub Actions Workflows
+
+### Package Workflow (.github/workflows/package.yml)
+- **No-code-sign builds**: Supports both signed and unsigned builds via `use-codesigning` parameter
+- **Optimized flow**: Tests run before packaging to catch issues early
+- **Validation**: Automatically validates that installer and metadata files were created successfully
+- **Clear step names**: Updated for better understanding of build process
