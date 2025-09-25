@@ -295,7 +295,7 @@ class DownloadWorker {
       return;
     }
 
-    let parsed: url.UrlWithStringQuery;
+    let parsed: URL;
     let referer: string;
     try {
       const [urlIn, refererIn] = jobUrl.split('<');
@@ -304,7 +304,7 @@ class DownloadWorker {
       // the url that required encoding.
       // Since all that was tested at some point I'm getting the feeling it's inconsistent in
       // the callers whether the url is encoded or not
-      parsed = url.parse(urlIn);
+      parsed = new URL(urlIn);
       referer = refererIn;
       jobUrl = urlIn;
     } catch (err) {
@@ -336,7 +336,7 @@ class DownloadWorker {
         protocol: parsed.protocol,
         port: parsed.port,
         hostname: parsed.hostname,
-        path: parsed.path,
+        path: parsed.pathname + parsed.search,
         headers,
         agent: this.mGetAgent(parsed.protocol),
         timeout: 30000,
@@ -978,7 +978,7 @@ class DownloadManager {
     let baseUrl: string;
     try {
       baseUrl = urls[0].toString().split('<')[0];
-      nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
+      nameTemplate = fileName || decodeURI(path.basename(new URL(baseUrl).pathname));
     } catch (err) {
       return Bluebird.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
     }
@@ -1178,7 +1178,13 @@ class DownloadManager {
       const cache = this.mResolveCache[input];
       return Bluebird.resolve({ urls: cache.urls, meta: cache.meta });
     }
-    const protocol = new URL(input).protocol;
+    let protocol: string;
+    try {
+      protocol = new URL(input).protocol;
+    } catch {
+      // Invalid URL, no protocol
+      return Bluebird.resolve({ urls: [], meta: {} });
+    }
     if (!truthy(protocol)) {
       return Bluebird.resolve({ urls: [], meta: {} });
     }
@@ -1245,7 +1251,7 @@ class DownloadManager {
             const [urlIn, fileName] = resolved.urls[0].toString().split('<')[0].split('|');
             fileNameFromURL = (fileName !== undefined)
               ? fileName
-              : decodeURI(path.basename(url.parse(urlIn).pathname));
+              : decodeURI(path.basename(new URL(urlIn).pathname));
           }
           return resolved.urls[0];
         }),
@@ -1722,7 +1728,7 @@ class DownloadManager {
     const job: IDownloadJob = {
       url: () => download.resolvedUrls().then(resolved => {
         if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
-          fileNameFromURL = decodeURI(path.basename(url.parse(resolved.urls[0]).pathname));
+          fileNameFromURL = decodeURI(path.basename(new URL(resolved.urls[0]).pathname));
         }
 
         return resolved.urls[0];

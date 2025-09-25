@@ -53,13 +53,16 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
     const { itemRendererOptions, item } = this.props;
     let effectiveURL;
     try {
-      effectiveURL = url.parse(item.imgUrl);
+      const parsedUrl = new URL(item.imgUrl);
+      effectiveURL = item.imgUrl; // If URL parsing succeeds, it already has a protocol
     } catch (err) {
-      return null;
+      // If URL parsing fails, it's likely a file path, convert to file URL
+      try {
+        effectiveURL = url.pathToFileURL(item.imgUrl).href;
+      } catch (pathErr) {
+        return null;
+      }
     }
-    effectiveURL = (effectiveURL.protocol !== null)
-      ? item.imgUrl
-      : url.pathToFileURL(item.imgUrl).href;
     return (itemRendererOptions.listViewType !== 'compact')
       ? <img src={effectiveURL} id='mod-img'/>
       : null;

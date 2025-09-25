@@ -125,9 +125,11 @@ class GitHub {
     const stackErr = new Error();
 
     return new Promise((resolve, reject) => {
-        const relUrl = url.parse(`${baseUrl}/${request}`);
+        const relUrl = new URL(`${baseUrl}/${request}`);
         const options: https.RequestOptions = {
-          ..._.pick(relUrl, ['port', 'hostname', 'path']),
+          port: relUrl.port,
+          hostname: relUrl.hostname,
+          path: relUrl.pathname + relUrl.search,
           headers: {
             'User-Agent': GitHub.USER_AGENT,
           },

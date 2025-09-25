@@ -113,7 +113,13 @@ function init(context: IExtensionContext): boolean {
 
     ipcRenderer.on('received-url',
         (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
-      if (url.parse(dlUrl).pathname === null) {
+      try {
+        const parsed = new URL(dlUrl);
+        if (parsed.pathname === null) {
+          // invalid url, not touching this
+          return;
+        }
+      } catch {
         // invalid url, not touching this
         return;
       }
