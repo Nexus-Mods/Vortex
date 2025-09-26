@@ -10,6 +10,7 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import opn from '../../../util/opn';
+import { isMacOS } from '../../../util/platform';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -25,6 +26,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
+import MacCompatibleButton from './MacCompatibleButton';
 import ShowHiddenButton from './ShowHiddenButton';
 
 import { IGameListEntry } from '@nexusmods/nexus-api';
@@ -88,6 +90,7 @@ interface IComponentState {
   currentFilterValue: string;
   expandManaged: boolean;
   expandUnmanaged: boolean;
+  showMacCompatibleOnly: boolean;
 }
 
 function nop() {
@@ -127,6 +130,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       currentFilterValue: '',
       expandManaged: true,
       expandUnmanaged: true,
+      showMacCompatibleOnly: false,
     });
 
     this.buttons = [
@@ -135,13 +139,18 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         props: () =>
           ({ t: this.props.t, showHidden: this.state.showHidden, toggleHidden: this.toggleHidden }),
       },
+      {
+        component: MacCompatibleButton,
+        props: () =>
+          ({ t: this.props.t, showMacCompatibleOnly: this.state.showMacCompatibleOnly, toggleMacCompatible: this.toggleMacCompatible }),
+      },
     ];
   }
 
   public render(): JSX.Element {
     const { t, discoveredGames, extensions, extensionsInstalled, knownGames,
       pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
-    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
+    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged, showMacCompatibleOnly } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
     const installedNames = new Set(Object.values(extensionsInstalled).map(ext => ext.name));
@@ -163,7 +172,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
-    const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue))
+    const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue) || showMacCompatibleOnly)
       ? knownGames
       : knownGames.filter((game: IGameStored) =>
         !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
@@ -246,6 +255,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
               showHidden={this.state.showHidden}
               toggleHidden={this.toggleHidden}
             />
+            {isMacOS() && (
+              <MacCompatibleButton
+                t={this.props.t}
+                showMacCompatibleOnly={this.state.showMacCompatibleOnly}
+                toggleMacCompatible={this.toggleMacCompatible}
+              />
+            )}
             <ToggleButton
               id='gamepicker-layout-list'
               onClick={this.setLayoutList}
@@ -409,9 +425,19 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyGameFilter = (game: IGameStored): boolean => {
-    const { currentFilterValue } = this.state;
-    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase())
+    const { currentFilterValue, showMacCompatibleOnly } = this.state;
+    
+    // Apply text filter
+    const textMatch = game.name.toLowerCase().includes(currentFilterValue.toLowerCase())
         || !currentFilterValue;
+    
+    // Apply macOS compatibility filter
+    if (showMacCompatibleOnly) {
+      const hasMacOSCompatibility = game.details?.macOSCompatibility !== undefined;
+      return textMatch && hasMacOSCompatibility;
+    }
+    
+    return textMatch;
   }
 
   private setRef = ref => {
@@ -427,6 +453,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private toggleHidden = () => {
     this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
+  }
+
+  private toggleMacCompatible = () => {
+    this.setState(update(this.state, { showMacCompatibleOnly: { $set: !this.state.showMacCompatibleOnly } }));
   }
 
   private setLayoutList = () => {
@@ -587,8 +617,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     pickerLayout: state.settings.gameMode.pickerLayout || 'list',
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
-    extensions: state.session.extensions.available,
-    extensionsInstalled: state.session.extensions.installed,
+    extensions: state.session.extensions?.available || [],
+    extensionsInstalled: state.session.extensions?.installed || {},
     sortManaged: state.settings.gameMode.sortManaged ?? 'alphabetical',
     sortUnmanaged: state.settings.gameMode.sortUnmanaged ?? 'alphabetical',
   };

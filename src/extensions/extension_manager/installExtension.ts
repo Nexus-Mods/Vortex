@@ -18,11 +18,56 @@ import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as vortexRunT from 'vortex-run';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { promisify } from 'util';
 import * as fsExtra from 'fs-extra';
+import * as fsNode from 'fs';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
+
+/**
+ * Retry utility for validation operations that may fail due to timing issues on macOS
+ * @param operation The operation to retry
+ * @param maxRetries Maximum number of retries (default: 3)
+ * @param delayMs Delay between retries in milliseconds (default: 200)
+ * @param operationName Name for logging purposes
+ */
+async function retryValidationOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 200,
+  operationName: string = 'validation operation'
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      log('debug', `Attempting ${operationName}`, { attempt, maxRetries });
+      const result = await operation();
+      if (attempt > 1) {
+        log('debug', `${operationName} succeeded on retry`, { attempt });
+      }
+      return result;
+    } catch (error) {
+      lastError = error;
+      log('debug', `${operationName} failed on attempt ${attempt}`, { 
+        attempt, 
+        maxRetries, 
+        error: error.message 
+      });
+      
+      if (attempt < maxRetries) {
+        log('debug', `Retrying ${operationName} in ${delayMs}ms`, { attempt, delayMs });
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  log('warn', `${operationName} failed after ${maxRetries} attempts`, { 
+    error: lastError.message 
+  });
+  throw lastError;
+}
 
 class ContextProxyHandler implements ProxyHandler<any> {
   private mDependencies: string[] = [];
@@ -298,101 +343,7 @@ function sanitize(input: string): string {
   }
 }
 
-// Ensure extraction is complete by verifying directory accessibility and waiting for file system stability
-async function ensureExtractionComplete(extractPath: string): Promise<void> {
-  const maxRetries = process.platform === 'darwin' ? 15 : 10;
-  const baseDelay = process.platform === 'darwin' ? 200 : 100;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      // Check if directory exists and is accessible
-      const stat = await fs.statAsync(extractPath);
-      if (!stat.isDirectory()) {
-        throw new Error('Extract path is not a directory');
-      }
 
-      // List directory contents to ensure it's readable
-      const files = await fs.readdirAsync(extractPath);
-      if (files.length === 0) {
-        throw new Error('Extract directory is empty');
-      }
-
-      // Verify we can access at least one file
-      const testFile = files[0];
-      const testPath = path.join(extractPath, testFile);
-      await fsExtra.access(testPath);
-
-      // On macOS, also check file handles are released
-      if (process.platform === 'darwin') {
-        try {
-          const fd = await fs.openAsync(testPath, 'r');
-          await fs.closeAsync(fd);
-        } catch (err) {
-          if (attempt < maxRetries - 1) {
-            log('debug', 'File handle still locked, retrying', { 
-              attempt: attempt + 1, 
-              maxRetries, 
-              file: testPath,
-              error: err.message 
-            });
-            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(1.5, attempt)));
-            continue;
-          }
-          throw err;
-        }
-      }
-
-      // Additional verification: try to read a small portion of the file
-      try {
-        const buffer = Buffer.alloc(10);
-        const fd = await fs.openAsync(testPath, 'r');
-        await fs.readAsync(fd, buffer, 0, 10, 0);
-        await fs.closeAsync(fd);
-      } catch (err) {
-        if (attempt < maxRetries - 1) {
-          log('debug', 'File not fully written, retrying', { 
-            attempt: attempt + 1, 
-            maxRetries, 
-            file: testPath,
-            error: err.message 
-          });
-          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(1.5, attempt)));
-          continue;
-        }
-        throw err;
-      }
-
-      log('debug', 'extraction completion verified', { 
-        extractPath, 
-        fileCount: files.length, 
-        attempts: attempt + 1,
-        platform: process.platform 
-      });
-      return;
-
-    } catch (err) {
-      if (attempt < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(1.5, attempt);
-        log('debug', 'extraction not complete, retrying', { 
-          attempt: attempt + 1, 
-          maxRetries, 
-          delay, 
-          error: err.message,
-          platform: process.platform 
-        });
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        log('error', 'extraction completion check failed after all retries', { 
-          extractPath, 
-          attempts: maxRetries, 
-          error: err.message,
-          platform: process.platform 
-        });
-        throw new Error(`Extraction completion verification failed: ${err.message}`);
-      }
-    }
-  }
-}
 
 // Attempt to flatten archives that contain a single visible top-level directory
 // (ignoring hidden files like .DS_Store and __MACOSX). This moves the contents of
@@ -625,19 +576,20 @@ function installExtension(api: IExtensionApi,
     .then(() => fs.ensureDirAsync(tempPath))
     .then(() => {
       if (process.platform === 'darwin') {
-        return extractArchiveNative(archivePath, tempPath);
+        log('debug', 'Starting synchronous extraction on macOS', { archivePath, tempPath });
+        extractArchiveNativeSync(archivePath, tempPath);
+        log('debug', 'Synchronous extraction completed, waiting for file system to settle', { tempPath });
+        // Add a delay to ensure file system operations are fully settled on macOS
+        return new Promise<void>(resolve => setTimeout(() => {
+          log('debug', 'File system settle delay completed, proceeding with validation', { tempPath });
+          resolve();
+        }, 1000));
       } else {
         const Zip: any = require('node-7z');
         const extractor = new Zip();
         return extractor.extractFull(archivePath, tempPath, { ssc: false },
                                      () => undefined, () => undefined).then(() => undefined);
       }
-    })
-    .then(() => {
-      // Ensure file system operations are complete after extraction
-      // This fixes a race condition where validation happens before files are fully written
-      log('debug', 'starting extraction completion check', { tempPath, platform: process.platform });
-      return ensureExtractionComplete(tempPath);
     })
     .then(() => flattenNestedRoot(tempPath))
     .then(() => readExtensionInfo(tempPath, false, info))
@@ -682,9 +634,19 @@ function installExtension(api: IExtensionApi,
         type = manifestInfo.info.type;
       }
       // Determine whether this is a manifest-only update (no acceptable entry script in archive)
-      return findEntryScript(tempPath).then(tempEntry => {
+      return retryValidationOperation(
+        () => findEntryScript(tempPath),
+        3, // 3 retries
+        300, // 300ms delay
+        `findEntryScript for temp path ${tempPath}`
+      ).then(tempEntry => {
         if (!tempEntry) {
-          return findEntryScript(destPath).then(destEntry => {
+          return retryValidationOperation(
+            () => findEntryScript(destPath),
+            3, // 3 retries
+            300, // 300ms delay
+            `findEntryScript for dest path ${destPath}`
+          ).then(destEntry => {
             if (destEntry) {
               manifestOnly = true;
               // Apply manifest update into existing install and remove temp
@@ -701,7 +663,12 @@ function installExtension(api: IExtensionApi,
       }).then(() => {
         // Only validate a full extension install (skip for manifest-only updates)
         if (!manifestOnly) {
-          return validateInstall(tempPath, info).then(guessedType => {
+          return retryValidationOperation(
+            () => validateInstall(tempPath, info),
+            3, // 3 retries
+            300, // 300ms delay
+            `validateInstall for ${tempPath}`
+          ).then(guessedType => {
             if (type === undefined) {
               type = guessedType;
             }
@@ -880,67 +847,54 @@ function findEntryScript(extPath: string): Promise<string | undefined> {
     });
   };
 
-  // Try to find entry script with minimal retry since extraction completion is now ensured
-  return Promise.resolve(attemptFind().then(result => {
-    if (result) {
-      log('debug', 'found entry script', { extPath, entryScript: result });
-      return result;
-    }
-    log('debug', 'entry script not found on first attempt, retrying', { extPath });
-    // Single retry with short delay for edge cases
-    return Promise.resolve().then(() => new Promise<void>(resolve => setTimeout(resolve, 100)))
-      .then(() => attemptFind())
-      .then(retryResult => {
-        if (retryResult) {
-          log('debug', 'found entry script on retry', { extPath, entryScript: retryResult });
-        } else {
-          log('debug', 'entry script not found after retry', { extPath });
-        }
-        return retryResult;
-      });
-  }));
+  // Use robust retry mechanism for finding entry script
+  return retryValidationOperation(
+    () => Promise.resolve(attemptFind()),
+    3, // 3 retries
+    300, // 300ms delay between retries
+    `findEntryScript for ${extPath}`
+  );
 }
 
-// Run a system command and resolve on exit code 0, otherwise reject with aggregated output
-function runCommand(cmd: string, args: string[], cwd?: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd });
-    let stdout = '';
-    let stderr = '';
-    child.stdout?.on('data', (d) => stdout += d.toString());
-    child.stderr?.on('data', (d) => stderr += d.toString());
-    child.on('error', (err) => {
-      (err as any).stdout = stdout;
-      (err as any).stderr = stderr;
-      reject(err);
-    });
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        const err: any = new Error(`Command failed: ${cmd} ${args.join(' ')} (exit ${code})`);
-        err.exitCode = code;
-        err.stdout = stdout;
-        err.stderr = stderr;
-        reject(err);
-      }
-    });
+// Run a system command synchronously and throw on non-zero exit code
+function runCommandSync(cmd: string, args: string[], cwd?: string): void {
+  const result = spawnSync(cmd, args, { 
+    cwd, 
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
   });
+  
+  if (result.error) {
+    (result.error as any).stdout = result.stdout;
+    (result.error as any).stderr = result.stderr;
+    throw result.error;
+  }
+  
+  if (result.status !== 0) {
+    const err: any = new Error(`Command failed: ${cmd} ${args.join(' ')} (exit ${result.status})`);
+    err.exitCode = result.status;
+    err.stdout = result.stdout;
+    err.stderr = result.stderr;
+    throw err;
+  }
 }
 
-// Try a list of commands in sequence until one succeeds
-function tryCommands(cmds: Array<{ cmd: string, args: string[] }>, cwd?: string): Promise<void> {
-  const attempt = (idx: number): Promise<void> => {
-    if (idx >= cmds.length) {
-      return Promise.reject(new Error('No suitable extractor available on this system.'));
-    }
+// Try a list of commands in sequence until one succeeds (synchronous)
+function tryCommandsSync(cmds: Array<{ cmd: string, args: string[] }>, cwd?: string): void {
+  for (let idx = 0; idx < cmds.length; idx++) {
     const { cmd, args } = cmds[idx];
-    return runCommand(cmd, args, cwd).catch((err) => {
-      log('warn', '⚠️ archive extraction attempt failed', { cmd, args, error: err && err.message });
-      return attempt(idx + 1);
-    });
-  };
-  return attempt(0);
+    try {
+      runCommandSync(cmd, args, cwd);
+      return; // Success, exit early
+    } catch (err) {
+      log('warn', 'archive extraction attempt failed', { cmd, args, error: err && err.message });
+      if (idx === cmds.length - 1) {
+        // Last command failed, throw error
+        throw new Error('No suitable extractor available on this system.');
+      }
+      // Continue to next command
+    }
+  }
 }
 
 // Resolve a packaged 7-Zip binary that we ship with the app (if present)
@@ -1081,10 +1035,148 @@ async function getPackaged7zPath(): globalThis.Promise<string | undefined> {
   }
 }
 
-// Check if a command exists in PATH (macOS/Unix)
-async function hasCommand(cmd: string): globalThis.Promise<boolean> {
+// Resolve a packaged 7-Zip binary that we ship with the app (if present) - synchronous version
+function getPackaged7zPathSync(): string | undefined {
   try {
-    await runCommand(process.platform === 'win32' ? 'where' : 'sh', process.platform === 'win32'
+    // Base node_modules path (handles dev and production/asar-unpacked)
+    const modulesBase = getVortexPath('modules_unpacked');
+    const candidates: string[] = [];
+    // Prefer platform-specific directory if present
+    if (process.platform === 'win32') {
+      candidates.push(path.join(modulesBase, '7z-bin', 'win32', '7z.exe'));
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z.exe'));
+      // Also check 7zip-bin package
+      candidates.push(path.join(modulesBase, '7zip-bin', 'win', 'x64', '7za.exe'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'win', 'ia32', '7za.exe'));
+    } else if (process.platform === 'linux') {
+      candidates.push(path.join(modulesBase, '7z-bin', 'linux', '7zzs'));
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7zzs'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'x64', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'ia32', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'arm', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'linux', 'arm64', '7za'));
+    } else if (process.platform === 'darwin') {
+    // Prioritize 7zip-bin which has actual macOS binaries
+      candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'x64', '7za'));
+      candidates.push(path.join(modulesBase, '7zip-bin', 'mac', 'arm64', '7za'));
+    // 7z-bin is broken on macOS - only check as last resort
+      candidates.push(path.join(modulesBase, '7z-bin', 'bin', '7z'));
+    }
+
+    for (const p of candidates) {
+      try {
+        const st = fs.statSync(p);
+        if (st && st.isFile()) {
+          // Ensure executable permissions on Unix
+          if (process.platform !== 'win32') {
+            try { fsNode.chmodSync(p, 0o755 as any); } catch (_) { /* ignore */ }
+          }
+          return p;
+        }
+      } catch (_) {
+        // continue
+      }
+    }
+
+    // As a last resort, try resolving via package exports (may point into asar-unpacked)
+    // On macOS, prioritize 7zip-bin over 7z-bin since 7z-bin is broken
+    if (process.platform === 'darwin') {
+      // Try 7zip-bin package first on macOS
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenZipBin = require('7zip-bin');
+        if (sevenZipBin) {
+          // 7zip-bin exports an object with path7za property, not a string
+          const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
+          if (sevenZipBinPath) {
+            try {
+              const st = fs.statSync(sevenZipBinPath);
+              if (st && st.isFile()) {
+                try { fsNode.chmodSync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+                return sevenZipBinPath;
+              }
+            } catch (_) { /* ignore */ }
+          }
+        }
+      } catch (_) { /* ignore */ }
+
+      // Then try 7z-bin package as last resort on macOS
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenBinPath: string = require('7z-bin');
+        if (sevenBinPath) {
+          try {
+            const st = fs.statSync(sevenBinPath);
+            if (st && st.isFile()) {
+              try { fsNode.chmodSync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+              return sevenBinPath;
+            }
+          } catch (_) { 
+            // On macOS, the 7z-bin package may return a path like .../darwin/7z that doesn't exist
+            // but the actual binary is at .../bin/7z. Let's check if this is the case.
+            if (sevenBinPath.includes('/darwin/')) {
+              const correctedPath = sevenBinPath.replace('/darwin/', '/bin/');
+              try {
+                const st = fs.statSync(correctedPath);
+                if (st && st.isFile()) {
+                  try { fsNode.chmodSync(correctedPath, 0o755 as any); } catch (_) { /* ignore */ }
+                  return correctedPath;
+                }
+              } catch (_) { /* ignore */ }
+            }
+          }
+        }
+      } catch (_) { /* ignore */ }
+    } else {
+      // On non-macOS platforms, try 7z-bin first
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const sevenBinPath: string = require('7z-bin');
+        if (sevenBinPath) {
+          try {
+            const st = fs.statSync(sevenBinPath);
+            if (st && st.isFile()) {
+              if (process.platform !== 'win32') {
+                try { fsNode.chmodSync(sevenBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+              }
+              return sevenBinPath;
+            }
+          } catch (_) { /* ignore */ }
+        }
+      } catch (_) { /* ignore */ }
+
+      // Then try 7zip-bin package
+       try {
+         // eslint-disable-next-line @typescript-eslint/no-var-requires
+         const sevenZipBin = require('7zip-bin');
+         if (sevenZipBin) {
+           // 7zip-bin exports an object with path7za property, not a string
+           const sevenZipBinPath = sevenZipBin.path7za || sevenZipBin;
+           if (sevenZipBinPath) {
+             try {
+               const st = fs.statSync(sevenZipBinPath);
+               if (st && st.isFile()) {
+                 if (process.platform !== 'win32') {
+                   try { fsNode.chmodSync(sevenZipBinPath, 0o755 as any); } catch (_) { /* ignore */ }
+                 }
+                 return sevenZipBinPath;
+               }
+             } catch (_) { /* ignore */ }
+           }
+         }
+       } catch (_) { /* ignore */ }
+     }
+
+    return undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+// Check if a command exists in PATH (macOS/Unix) - synchronous version
+function hasCommandSync(cmd: string): boolean {
+  try {
+    runCommandSync(process.platform === 'win32' ? 'where' : 'sh', process.platform === 'win32'
       ? [cmd]
       : ['-c', `command -v ${cmd} >/dev/null 2>&1`] );
     return true;
@@ -1093,13 +1185,25 @@ async function hasCommand(cmd: string): globalThis.Promise<boolean> {
   }
 }
 
-// Native macOS (and general CLI) archive extraction supporting .7z, .zip, .rar
-async function extractArchiveNative(archivePath: string, destPath: string): globalThis.Promise<void> {
+// Check if a command exists in PATH (macOS/Unix)
+async function hasCommand(cmd: string): globalThis.Promise<boolean> {
+  try {
+    runCommandSync(process.platform === 'win32' ? 'where' : 'sh', process.platform === 'win32'
+      ? [cmd]
+      : ['-c', `command -v ${cmd} >/dev/null 2>&1`] );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// Native macOS (and general CLI) archive extraction supporting .7z, .zip, .rar (synchronous)
+function extractArchiveNativeSync(archivePath: string, destPath: string): void {
   const ext = path.extname(archivePath).toLowerCase();
   const isDarwin = process.platform === 'darwin';
 
   // Resolve bundled 7z first so we can prefer it where appropriate
-  const packaged7z = await getPackaged7zPath();
+  const packaged7z = getPackaged7zPathSync();
 
   if (ext === '.zip') {
     // Prefer macOS-native ditto, fallback to unzip, then bundled 7z if present
@@ -1113,13 +1217,14 @@ async function extractArchiveNative(archivePath: string, destPath: string): glob
 
     // Preflight on macOS: ensure at least one tool is available
     if (isDarwin) {
-      const [c1, c2] = await Promise.all([hasCommand('ditto'), hasCommand('unzip')]);
+      const c1 = hasCommandSync('ditto');
+      const c2 = hasCommandSync('unzip');
       if (!packaged7z && !c1 && !c2) {
         throw new Error('No ZIP extractor found. Vortex requires either macOS "ditto", "unzip", or the bundled 7z tool.');
       }
     }
 
-    return tryCommands(cmds);
+    return tryCommandsSync(cmds);
   } else if (ext === '.7z') {
     const cmds: Array<{ cmd: string, args: string[] }> = [];
     if (packaged7z) {
@@ -1132,18 +1237,22 @@ async function extractArchiveNative(archivePath: string, destPath: string): glob
     );
 
     if (isDarwin) {
-      const avail = await Promise.all([hasCommand('7zz'), hasCommand('7z'), hasCommand('unar')]);
-      if (!packaged7z && !avail.some(Boolean)) {
+      const avail1 = hasCommandSync('7zz');
+      const avail2 = hasCommandSync('7z');
+      const avail3 = hasCommandSync('unar');
+      if (!packaged7z && !avail1 && !avail2 && !avail3) {
         throw new Error('No 7z extractor found. Vortex requires 7-Zip (7zz/7z), The Unarchiver (unar), or the bundled 7z tool to extract .7z archives.');
       }
     }
 
-    return tryCommands(cmds).catch((err) => {
+    try {
+      return tryCommandsSync(cmds);
+    } catch (err) {
       const help = 'Please install 7-Zip (7zz/7z) or The Unarchiver (unar), or use the bundled 7z tool to extract .7z archives on macOS.';
       const wrapped: any = new Error(`${err.message}\n${help}`);
       wrapped.cause = err;
       throw wrapped;
-    });
+    }
   } else if (ext === '.rar') {
     const cmds: Array<{ cmd: string, args: string[] }> = [
       { cmd: 'unar', args: ['-force-overwrite', '-o', destPath, archivePath] },
@@ -1155,24 +1264,27 @@ async function extractArchiveNative(archivePath: string, destPath: string): glob
     }
 
     if (isDarwin) {
-      const avail = await Promise.all([hasCommand('unar'), hasCommand('unrar')]);
-      if (!packaged7z && !avail.some(Boolean)) {
+      const avail1 = hasCommandSync('unar');
+      const avail2 = hasCommandSync('unrar');
+      if (!packaged7z && !avail1 && !avail2) {
         throw new Error('No RAR extractor found. Vortex requires The Unarchiver (unar), unrar, or the bundled 7z tool to extract .rar archives.');
       }
     }
 
-    return tryCommands(cmds).catch((err) => {
+    try {
+      return tryCommandsSync(cmds);
+    } catch (err) {
       const help = 'Please install The Unarchiver (unar) or unrar, or rely on the bundled 7z tool to extract .rar archives on macOS.';
       const wrapped: any = new Error(`${err.message}\n${help}`);
       wrapped.cause = err;
       throw wrapped;
-    });
+    }
   }
   // Fallback: try tar for common tarballs
   if (ext === '.tar' || ext === '.gz' || ext === '.bz2' || ext === '.xz' || archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
-    return tryCommands([
+    return tryCommandsSync([
       { cmd: 'tar', args: ['-xf', archivePath, '-C', destPath] },
     ]);
   }
-  return Promise.reject(new Error(`Unsupported archive type: ${ext}`));
+  throw new Error(`Unsupported archive type: ${ext}`);
 }

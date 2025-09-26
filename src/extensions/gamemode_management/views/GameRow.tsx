@@ -49,9 +49,23 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = game.extensionPath !== undefined
+    const logoPath: string = ((game.extensionPath !== undefined)
+                           && (game.logo !== undefined))
       ? path.join(game.extensionPath, game.logo)
       : game.imageURL;
+
+    let imgurl = null;
+    if (logoPath !== null && logoPath !== undefined && logoPath !== '') {
+      try {
+        const protocol = new URL(logoPath).protocol;
+        imgurl = ((protocol !== null) && (protocol.startsWith('http')))
+          ? logoPath
+          : pathToFileURL(logoPath).href;
+      } catch (error) {
+        // Invalid URL, fall back to null
+        imgurl = null;
+      }
+    }
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
       ? <a onClick={this.openLocation}>{discovery.path}</a>
@@ -90,17 +104,16 @@ class GameRow extends ComponentEx<IProps, {}> {
       </Popover>
     );
 
-    const protocol = new URL(logoPath).protocol;
-    const imgurl = ((protocol !== null) && (protocol.startsWith('http')))
-      ? logoPath
-      : pathToFileURL(logoPath).href;
-
     return (
       <ListGroupItem className={classes.join(' ')}>
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>
-              <img className='game-thumbnail-img-list' src={imgurl} />
+              <img 
+                className='game-thumbnail-img-list' 
+                src={imgurl || ''} 
+                onError={this.handleImageError}
+              />
             </div>
           </Media.Left>
           <Media.Body>
@@ -156,6 +169,10 @@ class GameRow extends ComponentEx<IProps, {}> {
         }
       }, 100);
     }
+  }
+
+  private handleImageError = (evt: React.SyntheticEvent<any>) => {
+    evt.currentTarget.style.display = 'none';
   }
 
   private openLocation = () => {

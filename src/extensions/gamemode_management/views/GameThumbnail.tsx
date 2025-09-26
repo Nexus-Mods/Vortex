@@ -54,7 +54,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, active, discovered, game, mods, profile, type } = this.props;
 
-    if (game === undefined) {
+    if (game === undefined || game === null) {
       return null;
     }
 
@@ -70,7 +70,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
                 id => profile.modState[id].enabled && (mods[id] !== undefined))
       : undefined;
 
-    const nameParts = game.name.split('\t');
+    const nameParts = (game.name || '').split('\t');
 
     const classes = [
       'game-thumbnail',
@@ -78,11 +78,16 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     ];
 
     let imgurl = null;
-    if (logoPath !== null) {
-      const protocol = url.parse(logoPath).protocol;
-      imgurl = ((protocol !== null) && (protocol.startsWith('http')))
-        ? logoPath
-        : url.pathToFileURL(logoPath).href;
+    if (logoPath !== null && logoPath !== undefined && logoPath !== '') {
+      try {
+        const protocol = url.parse(logoPath).protocol;
+        imgurl = ((protocol !== null) && (protocol.startsWith('http')))
+          ? logoPath
+          : url.pathToFileURL(logoPath).href;
+      } catch (error) {
+        // Invalid URL, fall back to null
+        imgurl = null;
+      }
     }
 
     return (
@@ -90,11 +95,12 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         <Panel.Body className='game-thumbnail-body'>
           <img
             className={'thumbnail-img'}
-            src={imgurl}
+            src={imgurl || ''}
+            onError={this.handleImageError}
           />
           <div className='bottom'>
             <div className='name'>
-              {game.name}
+              {game.name || 'Unknown Game'}
             </div>
             {
               modCount !== undefined
@@ -227,6 +233,11 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     if (this.mRef !== null) {
       this.mRef.forceUpdate();
     }
+  }
+
+  private handleImageError = (evt: React.SyntheticEvent<HTMLImageElement>) => {
+    // Set a placeholder or hide the image on error
+    evt.currentTarget.style.display = 'none';
   }
 }
 

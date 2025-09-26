@@ -243,7 +243,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 
   if (gameById(state, gameId) === undefined) {
     // Find the extension to get the game name
-    const extension = state.session.extensions.available.find(ext =>
+    const extension = state.session.extensions?.available?.find(ext =>
       (ext?.gameId === gameId) || (ext.name === gameId));
     
     // Get the game name for better user messaging
@@ -641,7 +641,7 @@ function init(context: IExtensionContext): boolean {
           
           // Update the in-memory extension state to reflect the type change
           const state = context.api.getState();
-          const installedExtensions = state.session.extensions.installed;
+          const installedExtensions = state.session.extensions?.installed || {};
           const extensionId = path.basename(extensionPath);
           
           if (installedExtensions[extensionId]) {
@@ -777,30 +777,43 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
 
-    // Register games from macOS compatibility layer
-    const registerMacOSCompatibilityGames = () => {
+    // Enhance existing games with macOS compatibility layer
+    const enhanceGamesWithMacOSCompatibility = () => {
       MACOS_GAME_FIXES.forEach(fix => {
-        const game: IGame = {
-          id: fix.gameId,
-          name: fix.gameId.charAt(0).toUpperCase() + fix.gameId.slice(1), // Capitalize first letter
-          shortName: fix.gameId,
-          logo: 'gameart.jpg', // Default logo
-          executable: () => fix.windowsExecutable,
-          requiredFiles: [fix.windowsExecutable],
-          queryModPath: () => '.',  // Default to game directory
-          mergeMods: false, // Default to separate mod directories
-          contributed: 'macOS Compatibility Layer',
-          final: true,
-          version: '1.0.0',
-        };
+        // Only enhance existing bundled or community extensions, never create game stubs
+        const existingGame = $.extensionGames.find(game => game.id === fix.gameId);
         
-        $.extensionGames.push(game);
-        log('info', 'registered macOS compatibility game', { gameId: fix.gameId, gameName: game.name });
+        if (existingGame) {
+          // If bundled/community extension exists, enhance it with macOS compatibility info
+          log('info', 'enhancing existing extension with macOS compatibility', { 
+            gameId: fix.gameId, 
+            gameName: existingGame.name 
+          });
+          
+          // Store the macOS compatibility info in the details property
+          if (!existingGame.details) {
+            existingGame.details = {};
+          }
+          if (!existingGame.details.macOSCompatibility) {
+            existingGame.details.macOSCompatibility = {
+              windowsExecutable: fix.windowsExecutable,
+              macOSAppBundle: fix.macOSAppBundle,
+              alternativeFiles: fix.alternativeFiles
+            };
+          }
+        } else {
+          // Log that we're skipping this game since no proper extension exists
+          // This allows community extensions to be downloaded and installed properly
+          log('debug', 'skipping macOS compatibility enhancement - no extension found', { 
+            gameId: fix.gameId,
+            message: 'Waiting for bundled or community extension to be available'
+          });
+        }
       });
     };
 
     // Register macOS compatibility games before GameModeManager initialization
-    registerMacOSCompatibilityGames();
+    enhanceGamesWithMacOSCompatibility();
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 
@@ -918,7 +931,7 @@ function init(context: IExtensionContext): boolean {
               
               // Get the current state and re-process all installed game extensions
               const state = context.api.getState();
-              const installedExtensions = state.session.extensions.installed;
+              const installedExtensions = state.session.extensions?.installed || {};
               
               // Process each installed game extension to ensure it's registered
               return Promise.map(Object.keys(installedExtensions), extId => {
@@ -972,6 +985,9 @@ function init(context: IExtensionContext): boolean {
                 return Promise.resolve();
               })
               .then(() => {
+                // Enhance newly loaded extensions with macOS compatibility
+                enhanceGamesWithMacOSCompatibility();
+                
                 // Refresh the known games with the updated extension games list
                 const gamesStored: IGameStored[] = $.extensionGames
                   .map(game => ({
