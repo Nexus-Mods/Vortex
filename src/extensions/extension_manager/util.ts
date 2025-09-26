@@ -141,14 +141,18 @@ export function readExtensionInfo(extensionPath: string,
     .then(info => {
       const data: IExtension = JSON.parse(info);
       data.path = finalPath;
-      const id = data.id || path.basename(finalPath);
+      // Strip archive extensions when falling back to path basename for ID
+      const baseName = path.basename(finalPath);
+      const id = data.id || baseName.replace(/\.(7z|zip|rar|tar|gz|bz2|xz|tgz)$/i, '');
       return {
         id,
         info: applyExtensionInfo(id, bundled, data, fallback),
       };
     })
     .catch(() => {
-      const id = path.basename(finalPath);
+      // Strip archive extensions when falling back to path basename for ID
+      const baseName = path.basename(finalPath);
+      const id = baseName.replace(/\.(7z|zip|rar|tar|gz|bz2|xz|tgz)$/i, '');
       return {
         id,
         info: applyExtensionInfo(id, bundled, {}, fallback),

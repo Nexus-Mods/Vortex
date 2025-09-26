@@ -16,10 +16,10 @@ class MacCompatibleButton extends ComponentEx<IBaseProps, {}> {
 
     return (
       <ToolbarIcon
-        id='show-mac-compatible-games'
+        id='btn-toggle-mac-compatible'
         text={showMacCompatibleOnly ? t('Show All Games') : t('Mac Compatible Only')}
         onClick={toggleMacCompatible}
-        icon={showMacCompatibleOnly ? 'feedback-success' : 'apple'}
+        icon={showMacCompatibleOnly ? 'feedback-success' : 'game'}
       />
     );
   }

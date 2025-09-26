@@ -38,7 +38,7 @@ import * as React from 'react';
 import { InputGroup, ListGroup, Panel, PanelGroup } from 'react-bootstrap';
 import Select from 'react-select';
 
-function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
+function gameFromDiscovery(id: string, discovered: IDiscoveryResult, knownGame?: IGameStored): IGameStored {
   return {
     id,
     name: discovered.name,
@@ -48,6 +48,8 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
     logo: discovered.logo,
     requiredFiles: [],
     supportedTools: [],
+    // Preserve details (including macOSCompatibility) from the known game extension
+    details: knownGame?.details,
   };
 }
 
@@ -208,7 +210,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       .filter(ext => showHidden || !getAttr(discoveredGames, ext.id, { hidden: false }).hidden));
 
     Object.keys(discoveredGames).forEach(gameId => {
-      if (knownGames.find(game => game.id === gameId) === undefined) {
+      const knownGame = knownGames.find(game => game.id === gameId);
+      if (knownGame === undefined) {
         if (discoveredGames[gameId].extensionPath === undefined) {
           return;
         }
@@ -216,6 +219,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
         } else {
           discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+        }
+      } else {
+        // For known games that are also discovered, preserve the Mac compatibility data
+        if (profileGames.has(gameId)) {
+          managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId], knownGame));
+        } else {
+          discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId], knownGame));
         }
       }
     });
@@ -434,6 +444,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     // Apply macOS compatibility filter
     if (showMacCompatibleOnly) {
       const hasMacOSCompatibility = game.details?.macOSCompatibility !== undefined;
+      
+      // Debug logging
+      console.log(`[Mac Filter Debug] Game: ${game.name}, ID: ${game.id}, Has Mac Compatibility: ${hasMacOSCompatibility}`);
+      if (game.details?.macOSCompatibility) {
+        console.log(`[Mac Filter Debug] Mac Compatibility Data:`, game.details.macOSCompatibility);
+      }
+      
       return textMatch && hasMacOSCompatibility;
     }
     

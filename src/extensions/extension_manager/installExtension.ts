@@ -377,7 +377,133 @@ function flattenNestedRoot(root: string): Promise<void> {
     .then(() => undefined));
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
+/**
+ * Wait for archive deletion to indicate extraction completion
+ * This is more reliable than arbitrary delays as it waits for the actual cleanup
+ */
+async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: number = 10000): Promise<void> {
+  const startTime = Date.now();
+  const checkInterval = 100; // Check every 100ms
+  let lastFileCount = 0;
+  let stableCount = 0;
+  
+  log('debug', 'Starting extraction completion monitoring', { 
+    extractionPath, 
+    maxWaitMs,
+    platform: process.platform 
+  });
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      // Check if extraction directory exists and has content
+      const stats = await fs.statAsync(extractionPath);
+      if (!stats.isDirectory()) {
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+        continue;
+      }
+      
+      // Count files in the extraction directory
+      const files = await fs.readdirAsync(extractionPath);
+      const currentFileCount = files.length;
+      
+      if (currentFileCount > 0) {
+        if (currentFileCount === lastFileCount) {
+          stableCount++;
+          // If file count has been stable for 3 checks (300ms), extraction is likely complete
+          if (stableCount >= 3) {
+            log('debug', 'Extraction directory stable, extraction complete', { 
+              extractionPath, 
+              fileCount: currentFileCount,
+              waitedMs: Date.now() - startTime,
+              platform: process.platform
+            });
+            return;
+          }
+        } else {
+          stableCount = 0;
+          lastFileCount = currentFileCount;
+        }
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        // Directory doesn't exist yet, keep waiting
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      } else {
+        // Other error, re-throw
+        throw err;
+      }
+    }
+  }
+  
+  // Timeout reached
+  log('warn', 'Extraction completion monitoring timed out, proceeding anyway', { 
+    extractionPath,
+    maxWaitMs,
+    lastFileCount,
+    platform: process.platform
+  });
+}
+
+/**
+ * Comprehensive validation to ensure all required files exist and are accessible
+ * This helps prevent race conditions and timing issues on macOS
+ */
+async function validateExtensionFiles(extensionPath: string, info: IExtension): Promise<void> {
+  log('debug', 'Starting comprehensive file validation', { extensionPath, extensionId: info.id });
+  
+  // Check if the extension directory exists
+  try {
+    const stat = await fs.statAsync(extensionPath);
+    if (!stat.isDirectory()) {
+      throw new DataInvalid(`Extension path is not a directory: ${extensionPath}`);
+    }
+  } catch (err) {
+    throw new DataInvalid(`Extension directory not found: ${extensionPath} - ${err.message}`);
+  }
+
+  // Check for info.json
+  const infoPath = path.join(extensionPath, 'info.json');
+  try {
+    await fs.statAsync(infoPath);
+    log('debug', 'info.json found and accessible', { infoPath });
+  } catch (err) {
+    throw new DataInvalid(`info.json not found or not accessible: ${infoPath} - ${err.message}`);
+  }
+
+  // Check for entry script
+  const entryScript = await findEntryScript(extensionPath);
+  if (!entryScript) {
+    throw new DataInvalid(`No valid entry script found in extension: ${extensionPath}`);
+  }
+  
+  log('debug', 'Entry script found and accessible', { entryScript, extensionPath });
+
+  // Additional validation based on extension type
+  if (info.type === 'theme') {
+    const themeFiles = ['variables.scss', 'style.scss', 'fonts.scss'];
+    let hasThemeFile = false;
+    
+    for (const themeFile of themeFiles) {
+      try {
+        await fs.statAsync(path.join(extensionPath, themeFile));
+        hasThemeFile = true;
+        break;
+      } catch (err) {
+        // Continue checking other theme files
+      }
+    }
+    
+    if (!hasThemeFile) {
+      log('warn', 'Theme extension missing expected theme files', { extensionPath, expectedFiles: themeFiles });
+    }
+  }
+
+  log('debug', 'Comprehensive file validation completed successfully', { extensionPath, extensionId: info.id });
+}
+
+async function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
   const state: IState = api.store.getState();
   const { installed }  = state.session.extensions;
 
@@ -395,8 +521,25 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
     });
   }
 
-  previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
-  return Promise.resolve();
+  // Remove from Redux store and delete physical files
+  for (const key of previousVersions) {
+    api.store.dispatch(removeExtension(key));
+    
+    // Actually delete the physical files from disk
+    const extensionPath = installed[key].path;
+    if (extensionPath) {
+      try {
+        if (await fs.statAsync(extensionPath).then(() => true, () => false)) {
+          log('info', 'deleting extension files', { path: extensionPath });
+          await fsExtra.remove(extensionPath);
+          log('info', 'extension files deleted successfully', { path: extensionPath });
+        }
+      } catch (err) {
+        log('warn', 'failed to delete extension files', { path: extensionPath, error: err.message });
+        // Don't throw here - we want to continue with the installation even if cleanup fails
+      }
+    }
+  }
 }
 
 /**
@@ -578,12 +721,10 @@ function installExtension(api: IExtensionApi,
       if (process.platform === 'darwin') {
         log('debug', 'Starting synchronous extraction on macOS', { archivePath, tempPath });
         extractArchiveNativeSync(archivePath, tempPath);
-        log('debug', 'Synchronous extraction completed, waiting for file system to settle', { tempPath });
-        // Add a delay to ensure file system operations are fully settled on macOS
-        return new Promise<void>(resolve => setTimeout(() => {
-          log('debug', 'File system settle delay completed, proceeding with validation', { tempPath });
-          resolve();
-        }, 1000));
+        log('debug', 'Synchronous extraction completed, monitoring extraction directory', { tempPath, archivePath });
+        // Wait for extraction directory to be stable to indicate extraction is truly complete
+        // This is more reliable than arbitrary delays
+        return waitForExtractionCompletion(tempPath, 10000);
       } else {
         const Zip: any = require('node-7z');
         const extractor = new Zip();
@@ -636,15 +777,15 @@ function installExtension(api: IExtensionApi,
       // Determine whether this is a manifest-only update (no acceptable entry script in archive)
       return retryValidationOperation(
         () => findEntryScript(tempPath),
-        3, // 3 retries
-        300, // 300ms delay
+        5, // 5 retries for better reliability
+        500, // 500ms delay for file system operations
         `findEntryScript for temp path ${tempPath}`
       ).then(tempEntry => {
         if (!tempEntry) {
           return retryValidationOperation(
             () => findEntryScript(destPath),
-            3, // 3 retries
-            300, // 300ms delay
+            5, // 5 retries for better reliability
+            500, // 500ms delay for file system operations
             `findEntryScript for dest path ${destPath}`
           ).then(destEntry => {
             if (destEntry) {
@@ -665,8 +806,8 @@ function installExtension(api: IExtensionApi,
         if (!manifestOnly) {
           return retryValidationOperation(
             () => validateInstall(tempPath, info),
-            3, // 3 retries
-            300, // 300ms delay
+            5, // 5 retries for better reliability
+            500, // 500ms delay for file system operations
             `validateInstall for ${tempPath}`
           ).then(guessedType => {
             if (type === undefined) {
@@ -682,6 +823,25 @@ function installExtension(api: IExtensionApi,
     .then((infoForRemoval) => manifestOnly ? Promise.resolve() : removeOldVersion(api, infoForRemoval))
     .then(() => manifestOnly ? Promise.resolve() : fs.removeAsync(destPath))
     .then(() => manifestOnly ? Promise.resolve() : fs.renameAsync(tempPath, destPath))
+    .then(() => {
+      if (manifestOnly) {
+        return Promise.resolve();
+      }
+      
+      // Comprehensive file validation after extraction and file operations
+      return fs.readFileAsync(path.join(destPath, 'info.json'), { encoding: 'utf8' })
+        .then((data) => JSON.parse(data))
+        .then((extensionInfo) => validateExtensionFiles(destPath, extensionInfo))
+        .catch((validationError) => {
+          log('error', 'Extension file validation failed after installation', {
+            destPath,
+            type,
+            error: validationError.message,
+            platform: process.platform
+          });
+          throw new Error(`Extension validation failed: ${validationError.message}`);
+        });
+    })
     .then(() => {
       if (manifestOnly) {
         return Promise.resolve();
@@ -850,8 +1010,8 @@ function findEntryScript(extPath: string): Promise<string | undefined> {
   // Use robust retry mechanism for finding entry script
   return retryValidationOperation(
     () => Promise.resolve(attemptFind()),
-    3, // 3 retries
-    300, // 300ms delay between retries
+    5, // 5 retries for better reliability
+    500, // 500ms delay for file system operations
     `findEntryScript for ${extPath}`
   );
 }

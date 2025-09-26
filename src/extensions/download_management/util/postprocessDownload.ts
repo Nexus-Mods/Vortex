@@ -8,6 +8,7 @@ import queryInfo from './queryDLInfo';
 import { batchDispatch } from '../../../util/util';
 import path from 'path';
 import { IHashResult } from 'modmeta-db';
+import * as fs from '../../../util/fs';
 
 export function finalizeDownload(api: IExtensionApi, id: string,
                                  filePath: string) {
@@ -21,7 +22,21 @@ export function finalizeDownload(api: IExtensionApi, id: string,
       api.store.dispatch(finalizingProgress(id, progress));
     }
   };
-  return api.genMd5Hash(filePath, progressHash)
+
+  // First, validate that the file exists and has content
+  return fs.statAsync(filePath)
+    .then(stats => {
+      if (stats.size === 0) {
+        const error = new Error(`Download failed: File is empty (0 bytes)`);
+        log('error', 'Download completed with empty file', { id, filePath, size: stats.size });
+        api.store.dispatch(finishDownload(id, 'failed', { message: error.message }));
+        api.events.emit('did-finish-download', id, 'failed');
+        return Promise.reject(error);
+      }
+      
+      log('debug', 'Download file validation passed', { id, filePath, size: stats.size });
+      return api.genMd5Hash(filePath, progressHash);
+    })
     .catch(err => {
       if (['EBUSY', 'ENOENT', 'EPERM'].includes(err.code)) {
         // try a second time, might be the AV interfering with the new file

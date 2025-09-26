@@ -779,6 +779,10 @@ function init(context: IExtensionContext): boolean {
 
     // Enhance existing games with macOS compatibility layer
     const enhanceGamesWithMacOSCompatibility = () => {
+      console.log(`[Mac Enhancement Debug] Starting enhancement, available games: ${$.extensionGames.length}`);
+      console.log(`[Mac Enhancement Debug] Available game IDs:`, $.extensionGames.map(g => g.id));
+      console.log(`[Mac Enhancement Debug] Mac fixes to apply:`, MACOS_GAME_FIXES.map(f => f.gameId));
+      
       MACOS_GAME_FIXES.forEach(fix => {
         // Only enhance existing bundled or community extensions, never create game stubs
         const existingGame = $.extensionGames.find(game => game.id === fix.gameId);
@@ -790,6 +794,8 @@ function init(context: IExtensionContext): boolean {
             gameName: existingGame.name 
           });
           
+          console.log(`[Mac Enhancement Debug] Enhancing game: ${existingGame.name} (${fix.gameId})`);
+          
           // Store the macOS compatibility info in the details property
           if (!existingGame.details) {
             existingGame.details = {};
@@ -800,6 +806,9 @@ function init(context: IExtensionContext): boolean {
               macOSAppBundle: fix.macOSAppBundle,
               alternativeFiles: fix.alternativeFiles
             };
+            console.log(`[Mac Enhancement Debug] Added Mac compatibility to ${existingGame.name}:`, existingGame.details.macOSCompatibility);
+          } else {
+            console.log(`[Mac Enhancement Debug] Game ${existingGame.name} already has Mac compatibility`);
           }
         } else {
           // Log that we're skipping this game since no proper extension exists
@@ -808,6 +817,7 @@ function init(context: IExtensionContext): boolean {
             gameId: fix.gameId,
             message: 'Waiting for bundled or community extension to be available'
           });
+          console.log(`[Mac Enhancement Debug] No extension found for game ID: ${fix.gameId}`);
         }
       });
     };
