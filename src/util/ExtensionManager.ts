@@ -29,6 +29,7 @@ import {
 import { ILookupOptions, IModLookupResult } from '../types/IModLookupResult';
 import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionOptional, IExtensionState, IState } from '../types/IState';
+import { IGame } from '../types/IGame';
 
 import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
@@ -1482,7 +1483,7 @@ class ExtensionManager {
     const context = {
       api: this.mApi,
       // Stub registerGame function that queues calls until real implementation is available
-      registerGame: (game: any, extensionPath: string) => {
+      registerGame: (game: IGame, extensionPath?: string) => {
         if (context.registerGame !== this.stubRegisterGame) {
           // Real implementation is now available, call it directly
           return (context.registerGame as any)(game, extensionPath);

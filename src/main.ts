@@ -629,9 +629,15 @@ function setupAutoUpdate() {
   }
   
   try {
-    // Set the update feed URL - this should point to your update server
-    // For now, we'll use a placeholder URL that you would replace with your actual update server
-    const updateFeedUrl = 'https://your-update-server.com/updates/mac'; // TODO: Replace with actual URL
+    // Set the update feed URL - configurable via environment variable or default to Nexus Mods
+    const updateFeedUrl = process.env.VORTEX_UPDATE_URL || 
+                         'https://api.nexusmods.com/v1/vortex/updates/mac';
+    
+    // Only set up auto-updater if we have a valid update URL
+    if (!updateFeedUrl || updateFeedUrl.includes('your-update-server.com')) {
+      console.warn('Auto-updater disabled: No valid update URL configured');
+      return;
+    }
     
     // Set the feed URL for auto updates
     autoUpdater.setFeedURL({
@@ -711,6 +717,19 @@ function setupAutoUpdate() {
 
 function checkForUpdates() {
   if (!isMacOS()) {
+    return;
+  }
+  
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development' || 
+                       process.env.VORTEX_DEV === 'true' ||
+                       !app.isPackaged ||
+                       process.defaultApp ||
+                       /[\\/]electron-prebuilt[\\/]/.test(process.execPath) ||
+                       /[\\/]electron[\\/]/.test(process.execPath);
+  
+  if (isDevelopment) {
+    console.log('Auto-updater disabled in development mode');
     return;
   }
   

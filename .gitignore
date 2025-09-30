@@ -122,3 +122,48 @@ pnpm-debug.log*
 
 # Optional Yarn Plug'n'Play files (if enabled locally)
 .pnp.*
+
+# Temporary test files and logs
+test_*.log
+test_*.json
+test_*.report
+debug_*.log
+final_*.log
+check_*.log
+*_test_*.log
+*_debug_*.log
+*_report.json
+*_summary.json
+
+# Temporary test directories
+test_*/
+debug_*/
+temp_*/
+tmp_*/
+
+# macOS specific temporary files
+MACOS_*.md
+MAC_*.md
+FINAL_*.md
+*_MACOS_*.md
+*_MAC_*.md
+
+# Build and extraction temporary files
+7z_*.log
+7z_*.json
+extracted/
+temp_extracted/
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/0.1.2.txt
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/balatro.jpg
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/CHANGELOG.md
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/downloader.js
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/downloader.js.map
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/index.js
+
+Balatro Vortex Extension-1315-0-1-2-1748486275/info.json

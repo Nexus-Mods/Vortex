@@ -64,6 +64,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as os from 'os';
+import * as child_process from 'child_process';
 import { log } from './log';
 
 // Cache for executable path results to avoid redundant file system checks
@@ -276,6 +277,314 @@ const MACOS_GAME_FIXES: MacOSGameFix[] = [
     windowsExecutable: 'Fallout4.exe',
     macOSAppBundle: 'Fallout 4.app',
     alternativeFiles: ['Fallout4', 'Fallout4Launcher.exe']
+  },
+  // Valheim
+  {
+    gameId: 'valheim',
+    windowsExecutable: 'valheim.exe',
+    macOSAppBundle: 'Valheim.app',
+    alternativeFiles: ['valheim', 'valheim.x86_64']
+  },
+  // Among Us
+  {
+    gameId: 'amongus',
+    windowsExecutable: 'Among Us.exe',
+    macOSAppBundle: 'Among Us.app',
+    alternativeFiles: ['Among Us']
+  },
+  // Hollow Knight
+  {
+    gameId: 'hollowknight',
+    windowsExecutable: 'hollow_knight.exe',
+    macOSAppBundle: 'Hollow Knight.app',
+    alternativeFiles: ['hollow_knight']
+  },
+  // Celeste
+  {
+    gameId: 'celeste',
+    windowsExecutable: 'Celeste.exe',
+    macOSAppBundle: 'Celeste.app',
+    alternativeFiles: ['Celeste']
+  },
+  // Hades II
+  {
+    gameId: 'hades2',
+    windowsExecutable: 'Hades2.exe',
+    macOSAppBundle: 'Hades II.app',
+    alternativeFiles: ['Hades2', 'Hades2.x86_64']
+  },
+  // Disco Elysium
+  {
+    gameId: 'discoelysium',
+    windowsExecutable: 'Disco Elysium.exe',
+    macOSAppBundle: 'Disco Elysium.app',
+    alternativeFiles: ['Disco Elysium']
+  },
+  // Outer Wilds
+  {
+    gameId: 'outerwilds',
+    windowsExecutable: 'Outer Wilds.exe',
+    macOSAppBundle: 'Outer Wilds.app',
+    alternativeFiles: ['OuterWilds']
+  },
+  // Return of the Obra Dinn
+  {
+    gameId: 'returnoftheobradinn',
+    windowsExecutable: 'Obra Dinn.exe',
+    macOSAppBundle: 'Return of the Obra Dinn.app',
+    alternativeFiles: ['obra_dinn']
+  },
+  // Papers, Please
+  {
+    gameId: 'papersplease',
+    windowsExecutable: 'PapersPlease.exe',
+    macOSAppBundle: 'PapersPlease.app',
+    alternativeFiles: ['PapersPlease']
+  },
+  // Into the Breach
+  {
+    gameId: 'intothebreach',
+    windowsExecutable: 'ITB.exe',
+    macOSAppBundle: 'Into the Breach.app',
+    alternativeFiles: ['ITB']
+  },
+  // FTL: Faster Than Light
+  {
+    gameId: 'ftl',
+    windowsExecutable: 'FTL.exe',
+    macOSAppBundle: 'FTL.app',
+    alternativeFiles: ['FTL']
+  },
+  // Don't Starve
+  {
+    gameId: 'dontstarve',
+    windowsExecutable: 'dontstarve.exe',
+    macOSAppBundle: "Don't Starve.app",
+    alternativeFiles: ['dontstarve']
+  },
+  // Don't Starve Together
+  {
+    gameId: 'dontstarvetogether',
+    windowsExecutable: 'dontstarve_steam.exe',
+    macOSAppBundle: "Don't Starve Together.app",
+    alternativeFiles: ['dontstarve_steam']
+  },
+  // The Stanley Parable
+  {
+    gameId: 'thestanleyparable',
+    windowsExecutable: 'The Stanley Parable.exe',
+    macOSAppBundle: 'The Stanley Parable.app',
+    alternativeFiles: ['The Stanley Parable']
+  },
+  // The Binding of Isaac: Rebirth
+  {
+    gameId: 'bindingofisaacrebirth',
+    windowsExecutable: 'isaac-ng.exe',
+    macOSAppBundle: 'The Binding of Isaac.app',
+    alternativeFiles: ['isaac-ng']
+  },
+  // Stardew Valley (GOG version)
+  {
+    gameId: 'stardewvalleygog',
+    windowsExecutable: 'Stardew Valley.exe',
+    macOSAppBundle: 'StardewValley.app',
+    alternativeFiles: ['Stardew Valley']
+  },
+  // Terraria (GOG version)
+  {
+    gameId: 'terrariagog',
+    windowsExecutable: 'Terraria.exe',
+    macOSAppBundle: 'Terraria.app',
+    alternativeFiles: ['Terraria']
+  },
+  // Risk of Rain 2
+  {
+    gameId: 'riskofrain2',
+    windowsExecutable: 'Risk of Rain 2.exe',
+    macOSAppBundle: 'Risk of Rain 2.app',
+    alternativeFiles: ['Risk of Rain 2']
+  },
+  // Dead Cells
+  {
+    gameId: 'deadcells',
+    windowsExecutable: 'deadcells.exe',
+    macOSAppBundle: 'Dead Cells.app',
+    alternativeFiles: ['deadcells']
+  },
+  // Katana ZERO
+  {
+    gameId: 'katanazero',
+    windowsExecutable: 'Katana ZERO.exe',
+    macOSAppBundle: 'Katana ZERO.app',
+    alternativeFiles: ['Katana ZERO']
+  },
+  // A Hat in Time
+  {
+    gameId: 'ahatintime',
+    windowsExecutable: 'HatinTimeGame.exe',
+    macOSAppBundle: 'A Hat in Time.app',
+    alternativeFiles: ['HatinTimeGame']
+  },
+  // Owlboy
+  {
+    gameId: 'owlboy',
+    windowsExecutable: 'Owlboy.exe',
+    macOSAppBundle: 'Owlboy.app',
+    alternativeFiles: ['Owlboy']
+  },
+  // A Short Hike
+  {
+    gameId: 'ashorthike',
+    windowsExecutable: 'AShortHike.exe',
+    macOSAppBundle: 'A Short Hike.app',
+    alternativeFiles: ['AShortHike']
+  },
+  // Sid Meier's Civilization VI
+  {
+    gameId: 'sidmeierscivilizationvi',
+    windowsExecutable: 'CivilizationVI.exe',
+    macOSAppBundle: 'Civilization VI.app',
+    alternativeFiles: ['CivilizationVI', 'CivilizationVI.app/Contents/MacOS/CivilizationVI']
+  },
+  // Sid Meier's Civilization VII
+  {
+    gameId: 'sidmeierscivilizationvii',
+    windowsExecutable: 'CivilizationVII.exe',
+    macOSAppBundle: 'Civilization VII.app',
+    alternativeFiles: ['CivilizationVII', 'CivilizationVII.app/Contents/MacOS/CivilizationVII']
+  },
+  // Europa Universalis IV
+  {
+    gameId: 'europauniversalisiv',
+    windowsExecutable: 'eu4.exe',
+    macOSAppBundle: 'Europa Universalis IV.app',
+    alternativeFiles: ['eu4', 'eu4.app/Contents/MacOS/eu4']
+  },
+  // Crusader Kings III
+  {
+    gameId: 'crusaderkingsiii',
+    windowsExecutable: 'CK3.exe',
+    macOSAppBundle: 'Crusader Kings III.app',
+    alternativeFiles: ['CK3', 'CK3.app/Contents/MacOS/CK3']
+  },
+  // Stellaris
+  {
+    gameId: 'stellaris',
+    windowsExecutable: 'stellaris.exe',
+    macOSAppBundle: 'Stellaris.app',
+    alternativeFiles: ['stellaris', 'stellaris.app/Contents/MacOS/stellaris']
+  },
+  // Hearts of Iron IV
+  {
+    gameId: 'heartsofironiv',
+    windowsExecutable: 'hoi4.exe',
+    macOSAppBundle: 'Hearts of Iron IV.app',
+    alternativeFiles: ['hoi4', 'hoi4.app/Contents/MacOS/hoi4']
+  },
+  // Total War: WARHAMMER III
+  {
+    gameId: 'totalwarwarhammer3',
+    windowsExecutable: 'Warhammer3.exe',
+    macOSAppBundle: 'Total War WARHAMMER III.app',
+    alternativeFiles: ['Warhammer3', 'Warhammer3.app/Contents/MacOS/Warhammer3']
+  },
+  // Age of Empires II: Definitive Edition
+  {
+    gameId: 'ageofempires2definitiveedition',
+    windowsExecutable: 'AoE2DE_s.exe',
+    macOSAppBundle: 'Age of Empires II Definitive Edition.app',
+    alternativeFiles: ['AoE2DE', 'AoE2DE.app/Contents/MacOS/AoE2DE']
+  },
+  // Age of Empires IV
+  {
+    gameId: 'ageofempires4',
+    windowsExecutable: 'AoE4.exe',
+    macOSAppBundle: 'Age of Empires IV.app',
+    alternativeFiles: ['AoE4', 'AoE4.app/Contents/MacOS/AoE4']
+  },
+  // Company of Heroes 2
+  {
+    gameId: 'companyofheroes2',
+    windowsExecutable: 'RelicCoH2.exe',
+    macOSAppBundle: 'Company of Heroes 2.app',
+    alternativeFiles: ['RelicCoH2', 'RelicCoH2.app/Contents/MacOS/RelicCoH2']
+  },
+  // War Thunder
+  {
+    gameId: 'warthunder',
+    windowsExecutable: 'win64.exe',
+    macOSAppBundle: 'War Thunder.app',
+    alternativeFiles: ['win64', 'win64.app/Contents/MacOS/win64']
+  },
+  // World of Warships
+  {
+    gameId: 'worldofwarships',
+    windowsExecutable: 'WorldOfWarships.exe',
+    macOSAppBundle: 'World of Warships.app',
+    alternativeFiles: ['WorldOfWarships', 'WorldOfWarships.app/Contents/MacOS/WorldOfWarships']
+  },
+  // World of Tanks
+  {
+    gameId: 'worldoftanks',
+    windowsExecutable: 'WorldOfTanks.exe',
+    macOSAppBundle: 'World of Tanks.app',
+    alternativeFiles: ['WorldOfTanks', 'WorldOfTanks.app/Contents/MacOS/WorldOfTanks']
+  },
+  // The Sims 4
+  {
+    gameId: 'thesims4',
+    windowsExecutable: 'TS4.exe',
+    macOSAppBundle: 'The Sims 4.app',
+    alternativeFiles: ['TS4', 'TS4.app/Contents/MacOS/TS4']
+  },
+  // Cities: Skylines II
+  {
+    gameId: 'citiesskylinesii',
+    windowsExecutable: 'Cities2.exe',
+    macOSAppBundle: 'Cities Skylines II.app',
+    alternativeFiles: ['Cities2', 'Cities2.app/Contents/MacOS/Cities2']
+  },
+  // Palworld
+  {
+    gameId: 'palworld',
+    windowsExecutable: 'Palworld.exe',
+    macOSAppBundle: 'Palworld.app',
+    alternativeFiles: ['Palworld', 'Palworld.app/Contents/MacOS/Palworld']
+  },
+  // Hogwarts Legacy
+  {
+    gameId: 'hogwartslegacy',
+    windowsExecutable: 'HogwartsLegacy.exe',
+    macOSAppBundle: 'Hogwarts Legacy.app',
+    alternativeFiles: ['HogwartsLegacy', 'HogwartsLegacy.app/Contents/MacOS/HogwartsLegacy']
+  },
+  // Elden Ring
+  {
+    gameId: 'eldenring',
+    windowsExecutable: 'eldenring.exe',
+    macOSAppBundle: 'Elden Ring.app',
+    alternativeFiles: ['eldenring', 'eldenring.app/Contents/MacOS/eldenring']
+  },
+  // God of War
+  {
+    gameId: 'godoFWar',
+    windowsExecutable: 'GoW.exe',
+    macOSAppBundle: 'God of War.app',
+    alternativeFiles: ['GoW', 'GoW.app/Contents/MacOS/GoW']
+  },
+  // Horizon Zero Dawn
+  {
+    gameId: 'horizonzerodawn',
+    windowsExecutable: 'HorizonZeroDawn.exe',
+    macOSAppBundle: 'Horizon Zero Dawn.app',
+    alternativeFiles: ['HorizonZeroDawn', 'HorizonZeroDawn.app/Contents/MacOS/HorizonZeroDawn']
+  },
+  // Ghost of Tsushima
+  {
+    gameId: 'ghostoftsushima',
+    windowsExecutable: 'GhostOfTsushima.exe',
+    macOSAppBundle: 'Ghost of Tsushima.app',
+    alternativeFiles: ['GhostOfTsushima', 'GhostOfTsushima.app/Contents/MacOS/GhostOfTsushima']
   }
 ];
 
@@ -583,6 +892,60 @@ const STATIC_DOWNLOAD_URL_MAPPINGS: DownloadURLMapping[] = [
       return windowsUrl;
     },
     description: 'Nexus Mods download URLs (platform independent)'
+  },
+  // Unity Mod Manager
+  {
+    windowsPattern: /https:\/\/github\.com\/newman55\/unity-mod-manager\/releases\/download\/v[\d.]+\/UnityModManager\.zip/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // Unity Mod Manager is platform-independent
+      return windowsUrl;
+    },
+    description: 'Unity Mod Manager download URLs (platform independent)'
+  },
+  // MelonLoader
+  {
+    windowsPattern: /https:\/\/github\.com\/LavaGang\/MelonLoader\/releases\/download\/v[\d.]+\/MelonLoader\.(?:x86_64|arm64)\.zip/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // MelonLoader has macOS versions
+      return windowsUrl.replace(/MelonLoader\.(x86_64|arm64)\.zip/, 'MelonLoader.$1.zip');
+    },
+    description: 'MelonLoader download URLs for macOS'
+  },
+  // BepInEx
+  {
+    windowsPattern: /https:\/\/github\.com\/BepInEx\/BepInEx\/releases\/download\/v[\d.]+\/BepInEx_(?:x64|arm64)_[\d.]+\.zip/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // BepInEx has macOS versions
+      return windowsUrl.replace(/BepInEx_(x64|arm64)_([\d.]+)\.zip/, 'BepInEx_$1_$2.zip');
+    },
+    description: 'BepInEx download URLs for macOS'
+  },
+  // xEdit (TES5Edit, FO4Edit, etc.)
+  {
+    windowsPattern: /https:\/\/github\.com\/TES5Edit\/TES5Edit\/releases\/download\/v[\d.]+\/TES5Edit\.exe/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // xEdit is Windows-only, no macOS equivalent
+      return windowsUrl;
+    },
+    description: 'xEdit download URLs (Windows-only tool)'
+  },
+  // Mod Organizer 2
+  {
+    windowsPattern: /https:\/\/github\.com\/ModOrganizer2\/modorganizer\/releases\/download\/v[\d.]+\/Mod.Organizer-[^-]+-installer\.exe/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // Mod Organizer 2 is Windows-only, no macOS equivalent
+      return windowsUrl;
+    },
+    description: 'Mod Organizer 2 download URLs (Windows-only tool)'
+  },
+  // Reshade
+  {
+    windowsPattern: /https:\/\/github\.com\/crosire\/reshade\/releases\/download\/v[\d.]+\/ReShade_Setup_[\d.]+\.exe/,  
+    getMacOSUrl: (windowsUrl: string) => {
+      // Reshade is Windows-only, no macOS equivalent
+      return windowsUrl;
+    },
+    description: 'Reshade download URLs (Windows-only tool)'
   }
 ];
 
@@ -715,6 +1078,7 @@ function findMacOSAppBundleSync(basePath: string, appBundleName: string): string
 
 /**
  * Get the appropriate executable path for the current platform
+ * Enhanced with integration to the path normalization system
  */
 export function getExecutablePathForPlatform(
   basePath: string,
@@ -737,6 +1101,40 @@ export function getExecutablePathForPlatform(
   const cached = executablePathCache.get(cacheKey);
   if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
     return cached.result;
+  }
+  
+  // Try to use the enhanced path normalization system first
+  try {
+    const pathNormalization = require('./macOSPathNormalization');
+    if (pathNormalization && typeof pathNormalization.normalizePathForCompatibility === 'function') {
+      const normalizedPath = pathNormalization.normalizePathForCompatibility(
+        path.join(basePath, windowsExecutable), 
+        { gameId, targetPlatform: 'darwin' }
+      );
+      
+      // Check if the normalized path exists
+      if (fs.existsSync(normalizedPath)) {
+        // Cache the result
+        executablePathCache.set(cacheKey, {
+          result: normalizedPath,
+          timestamp: now
+        });
+        
+        log('debug', 'Found executable using enhanced path normalization', { 
+          gameId, 
+          windowsExecutable, 
+          normalizedPath 
+        });
+        return normalizedPath;
+      }
+    }
+  } catch (err) {
+    log('debug', 'Could not use enhanced path normalization for executable, falling back to basic implementation', { 
+      error: err.message,
+      basePath,
+      windowsExecutable,
+      gameId
+    });
   }
   
   // Check if we have a specific fix for this game
@@ -879,6 +1277,36 @@ export function getMacOSArchitecture(): 'arm64' | 'x64' {
       log('debug', 'Detected Apple Silicon (ARM64) architecture');
       return 'arm64';
     } else if (arch === 'x64' || arch === 'x86_64' || arch === 'amd64') {
+      // Additional check for M4 Pro and other Apple Silicon Macs
+      // that might report x64 due to Rosetta or x64 Node.js
+      try {
+        // Use system command to check actual hardware architecture
+        // Try sysctl first as it's more reliable than arch command
+        let result = child_process.spawnSync('sysctl', ['-n', 'hw.optional.arm64'], { encoding: 'utf8' });
+        if (result.stdout && result.stdout.trim() === '1') {
+          log('debug', 'System reports ARM64 hardware via sysctl, overriding process architecture');
+          return 'arm64';
+        }
+        
+        // Fallback to arch command
+        result = child_process.spawnSync('arch', [], { encoding: 'utf8' });
+        if (result.stdout && result.stdout.trim() === 'arm64') {
+          log('debug', 'System reports ARM64, overriding process architecture');
+          return 'arm64';
+        }
+        
+        // Additional check using system_profiler for Apple Silicon detection
+        result = child_process.spawnSync('system_profiler', ['SPHardwareDataType'], { encoding: 'utf8' });
+        if (result.stdout && (result.stdout.includes('Apple M') || result.stdout.includes('Apple Silicon'))) {
+          log('debug', 'System reports Apple Silicon via system_profiler, overriding process architecture');
+          return 'arm64';
+        }
+      } catch (sysError) {
+        log('debug', 'Could not determine system architecture via command', { 
+          error: sysError.message 
+        });
+      }
+      
       log('debug', 'Detected Intel (x64) architecture');
       return 'x64';
     } else {
@@ -902,7 +1330,7 @@ export function interceptDownloadURLForMacOS(url: string): string {
   log('debug', 'URL interception called', {
     url: url,
     platform: os.platform(),
-    architecture: getMacOSArchitecture()
+    architecture: getMacOSArchitecture() // Use enhanced detection
   });
 
   if (os.platform() !== 'darwin') {
@@ -910,6 +1338,7 @@ export function interceptDownloadURLForMacOS(url: string): string {
     return url;
   }
 
+  // Ensure all URLs pass through interception, not just pattern-matched ones
   for (const mapping of getAllURLMappings()) {
     log('debug', 'Testing URL against pattern', {
       url: url,
@@ -923,7 +1352,7 @@ export function interceptDownloadURLForMacOS(url: string): string {
         originalUrl: url,
         macUrl: macUrl,
         description: mapping.description,
-        architecture: getMacOSArchitecture()
+        architecture: getMacOSArchitecture() // Enhanced detection
       });
       return macUrl;
     }
@@ -1002,6 +1431,7 @@ export async function getExecutableFromAppBundle(appBundlePath: string) {
 /**
  * Normalize a game path for macOS
  * This handles cases where the game might be in different locations
+ * Enhanced with integration to the path normalization system
  * @param basePath Base path where the game is expected to be
  * @param gameId Game ID for specific handling
  * @param expectedExecutable Expected executable name
@@ -1014,6 +1444,49 @@ export async function normalizeGamePathForMacOS(
 ) {
   if (process.platform !== 'darwin') {
     return expectedExecutable ? path.join(basePath, expectedExecutable) : basePath;
+  }
+  
+  // Try to use the enhanced path normalization system first
+  try {
+    const pathNormalization = require('./macOSPathNormalization');
+    if (pathNormalization && typeof pathNormalization.normalizePathForCompatibility === 'function') {
+      // Normalize the base path using the enhanced system
+      const normalizedBasePath = pathNormalization.normalizePathForCompatibility(basePath, { 
+        gameId,
+        targetPlatform: 'darwin'
+      });
+      
+      // If we have an expected executable, normalize that too
+      if (expectedExecutable) {
+        const normalizedExecutable = pathNormalization.normalizePathForCompatibility(
+          path.join(basePath, expectedExecutable), 
+          { gameId, targetPlatform: 'darwin' }
+        );
+        
+        // Check if the normalized executable path exists
+        if (await fs.pathExists(normalizedExecutable)) {
+          return normalizedExecutable;
+        }
+        
+        // If not, try to extract just the executable name and join with normalized base path
+        const executableName = path.basename(normalizedExecutable);
+        const joinedPath = path.join(normalizedBasePath, executableName);
+        if (await fs.pathExists(joinedPath)) {
+          return joinedPath;
+        }
+      }
+      
+      // If we only have a base path, return the normalized version
+      if (await fs.pathExists(normalizedBasePath)) {
+        return normalizedBasePath;
+      }
+    }
+  } catch (err) {
+    log('debug', 'Could not use enhanced path normalization, falling back to basic implementation', { 
+      error: err.message,
+      basePath,
+      gameId
+    });
   }
   
   // Check if we have a specific fix for this game
@@ -1619,6 +2092,328 @@ export async function detectSteamModdedForBalatro(gamePath: string): Promise<boo
  * @param gamePath - Path to the Balatro game installation
  * @returns Promise<object> - Detailed compatibility information
  */
+// Interface for executable name mapping
+export interface ExecutableNameMapping {
+  windowsExecutable: string;
+  macOSExecutable: string;
+  description: string;
+  gameId?: string; // Optional game-specific mapping
+}
+
+// Common executable name mappings for Windows to macOS
+const EXECUTABLE_NAME_MAPPINGS: ExecutableNameMapping[] = [
+  // Generic mappings
+  {
+    windowsExecutable: 'game.exe',
+    macOSExecutable: 'game',
+    description: 'Generic game executable mapping'
+  },
+  {
+    windowsExecutable: 'launcher.exe',
+    macOSExecutable: 'launcher',
+    description: 'Generic launcher executable mapping'
+  },
+  // Specific game mappings
+  {
+    windowsExecutable: 'Cyberpunk2077.exe',
+    macOSExecutable: 'Cyberpunk2077',
+    description: 'Cyberpunk 2077 executable mapping',
+    gameId: 'cyberpunk2077'
+  },
+  {
+    windowsExecutable: 'Balatro.exe',
+    macOSExecutable: 'Balatro',
+    description: 'Balatro executable mapping',
+    gameId: 'balatro'
+  },
+  {
+    windowsExecutable: 'StardewValley.exe',
+    macOSExecutable: 'StardewValley',
+    description: 'Stardew Valley executable mapping',
+    gameId: 'stardewvalley'
+  },
+  {
+    windowsExecutable: 'RimWorldWin64.exe',
+    macOSExecutable: 'RimWorld',
+    description: 'RimWorld executable mapping',
+    gameId: 'rimworld'
+  },
+  {
+    windowsExecutable: 'factorio.exe',
+    macOSExecutable: 'factorio',
+    description: 'Factorio executable mapping',
+    gameId: 'factorio'
+  },
+  {
+    windowsExecutable: 'valheim.exe',
+    macOSExecutable: 'valheim',
+    description: 'Valheim executable mapping',
+    gameId: 'valheim'
+  },
+  {
+    windowsExecutable: 'Among Us.exe',
+    macOSExecutable: 'Among Us',
+    description: 'Among Us executable mapping',
+    gameId: 'amongus'
+  },
+  {
+    windowsExecutable: 'hollow_knight.exe',
+    macOSExecutable: 'hollow_knight',
+    description: 'Hollow Knight executable mapping',
+    gameId: 'hollowknight'
+  },
+  {
+    windowsExecutable: 'Celeste.exe',
+    macOSExecutable: 'Celeste',
+    description: 'Celeste executable mapping',
+    gameId: 'celeste'
+  },
+  {
+    windowsExecutable: 'Hades2.exe',
+    macOSExecutable: 'Hades2',
+    description: 'Hades II executable mapping',
+    gameId: 'hades2'
+  },
+  {
+    windowsExecutable: 'Disco Elysium.exe',
+    macOSExecutable: 'Disco Elysium',
+    description: 'Disco Elysium executable mapping',
+    gameId: 'discoelysium'
+  },
+  {
+    windowsExecutable: 'Outer Wilds.exe',
+    macOSExecutable: 'Outer Wilds',
+    description: 'Outer Wilds executable mapping',
+    gameId: 'outerwilds'
+  },
+  {
+    windowsExecutable: 'Obra Dinn.exe',
+    macOSExecutable: 'obra_dinn',
+    description: 'Return of the Obra Dinn executable mapping',
+    gameId: 'returnoftheobradinn'
+  },
+  {
+    windowsExecutable: 'PapersPlease.exe',
+    macOSExecutable: 'PapersPlease',
+    description: 'Papers, Please executable mapping',
+    gameId: 'papersplease'
+  },
+  {
+    windowsExecutable: 'ITB.exe',
+    macOSExecutable: 'ITB',
+    description: 'Into the Breach executable mapping',
+    gameId: 'intothebreach'
+  },
+  {
+    windowsExecutable: 'FTL.exe',
+    macOSExecutable: 'FTL',
+    description: 'FTL: Faster Than Light executable mapping',
+    gameId: 'ftl'
+  },
+  {
+    windowsExecutable: 'dontstarve.exe',
+    macOSExecutable: 'dontstarve',
+    description: 'Don\'t Starve executable mapping',
+    gameId: 'dontstarve'
+  },
+  {
+    windowsExecutable: 'dontstarve_steam.exe',
+    macOSExecutable: 'dontstarve_steam',
+    description: 'Don\'t Starve Together executable mapping',
+    gameId: 'dontstarvetogether'
+  },
+  {
+    windowsExecutable: 'The Stanley Parable.exe',
+    macOSExecutable: 'The Stanley Parable',
+    description: 'The Stanley Parable executable mapping',
+    gameId: 'thestanleyparable'
+  },
+  {
+    windowsExecutable: 'isaac-ng.exe',
+    macOSExecutable: 'isaac-ng',
+    description: 'The Binding of Isaac: Rebirth executable mapping',
+    gameId: 'bindingofisaacrebirth'
+  },
+  {
+    windowsExecutable: 'Stardew Valley.exe',
+    macOSExecutable: 'Stardew Valley',
+    description: 'Stardew Valley (GOG) executable mapping',
+    gameId: 'stardewvalleygog'
+  },
+  {
+    windowsExecutable: 'Terraria.exe',
+    macOSExecutable: 'Terraria',
+    description: 'Terraria (GOG) executable mapping',
+    gameId: 'terrariagog'
+  },
+  {
+    windowsExecutable: 'Risk of Rain 2.exe',
+    macOSExecutable: 'Risk of Rain 2',
+    description: 'Risk of Rain 2 executable mapping',
+    gameId: 'riskofrain2'
+  },
+  {
+    windowsExecutable: 'deadcells.exe',
+    macOSExecutable: 'deadcells',
+    description: 'Dead Cells executable mapping',
+    gameId: 'deadcells'
+  },
+  {
+    windowsExecutable: 'Katana ZERO.exe',
+    macOSExecutable: 'Katana ZERO',
+    description: 'Katana ZERO executable mapping',
+    gameId: 'katanazero'
+  },
+  {
+    windowsExecutable: 'HatinTimeGame.exe',
+    macOSExecutable: 'HatinTimeGame',
+    description: 'A Hat in Time executable mapping',
+    gameId: 'ahatintime'
+  },
+  {
+    windowsExecutable: 'Owlboy.exe',
+    macOSExecutable: 'Owlboy',
+    description: 'Owlboy executable mapping',
+    gameId: 'owlboy'
+  },
+  {
+    windowsExecutable: 'AShortHike.exe',
+    macOSExecutable: 'AShortHike',
+    description: 'A Short Hike executable mapping',
+    gameId: 'ashorthike'
+  }
+];
+
+// Storage for custom executable name mappings registered by community extensions
+const customExecutableNameMappings: ExecutableNameMapping[] = [];
+
+/**
+ * Register a custom executable name mapping for community extensions
+ * @param mapping The executable name mapping to register
+ */
+export function registerCustomExecutableNameMapping(mapping: ExecutableNameMapping): void {
+  log('info', 'Registering custom executable name mapping for community extension', {
+    description: mapping.description,
+    windowsExecutable: mapping.windowsExecutable,
+    macOSExecutable: mapping.macOSExecutable
+  });
+  
+  // Check if mapping already exists
+  const existingIndex = customExecutableNameMappings.findIndex(
+    existing => existing.windowsExecutable === mapping.windowsExecutable && 
+                existing.gameId === mapping.gameId
+  );
+  
+  if (existingIndex >= 0) {
+    log('warn', 'Overriding existing executable name mapping', {
+      description: mapping.description,
+      previousDescription: customExecutableNameMappings[existingIndex].description
+    });
+    customExecutableNameMappings[existingIndex] = mapping;
+  } else {
+    customExecutableNameMappings.push(mapping);
+  }
+}
+
+/**
+ * Get all executable name mappings (both static and custom)
+ * @param gameId Optional game ID to filter mappings
+ * @returns Array of executable name mappings
+ */
+export function getExecutableNameMappings(gameId?: string): ExecutableNameMapping[] {
+  let mappings = [...customExecutableNameMappings, ...EXECUTABLE_NAME_MAPPINGS];
+  
+  if (gameId) {
+    mappings = mappings.filter(mapping => !mapping.gameId || mapping.gameId === gameId);
+  }
+  
+  return mappings;
+}
+
+/**
+ * Map a Windows executable name to its macOS equivalent
+ * @param windowsExecutable The Windows executable name
+ * @param gameId Optional game ID for game-specific mappings
+ * @returns The macOS executable name, or the original name if no mapping exists
+ */
+export function mapWindowsExecutableToMacOS(windowsExecutable: string, gameId?: string): string {
+  if (!windowsExecutable) {
+    return windowsExecutable;
+  }
+  
+  // Remove .exe extension if present
+  const baseName = windowsExecutable.toLowerCase().endsWith('.exe') 
+    ? windowsExecutable.slice(0, -4)
+    : windowsExecutable;
+  
+  // Get relevant mappings
+  const mappings = getExecutableNameMappings(gameId);
+  
+  // Look for an exact match
+  const exactMatch = mappings.find(mapping => 
+    mapping.windowsExecutable.toLowerCase() === windowsExecutable.toLowerCase() ||
+    mapping.windowsExecutable.toLowerCase() === baseName.toLowerCase()
+  );
+  
+  if (exactMatch) {
+    log('debug', 'Found executable name mapping', {
+      windowsExecutable,
+      macOSExecutable: exactMatch.macOSExecutable,
+      description: exactMatch.description,
+      gameId
+    });
+    return exactMatch.macOSExecutable;
+  }
+  
+  // If no exact match, try to remove .exe extension and match base name
+  if (windowsExecutable.toLowerCase().endsWith('.exe')) {
+    const genericMatch = mappings.find(mapping => 
+      mapping.windowsExecutable.toLowerCase() === baseName.toLowerCase()
+    );
+    
+    if (genericMatch) {
+      log('debug', 'Found generic executable name mapping', {
+        windowsExecutable,
+        macOSExecutable: genericMatch.macOSExecutable,
+        description: genericMatch.description,
+        gameId
+      });
+      return genericMatch.macOSExecutable;
+    }
+  }
+  
+  // If still no match, return the original executable name (with .exe removed for macOS)
+  return baseName;
+}
+
+/**
+ * Validate an executable name mapping
+ * @param mapping The mapping to validate
+ * @returns Validation result with success status and any errors
+ */
+export function validateExecutableNameMapping(mapping: ExecutableNameMapping): {
+  success: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  // Basic validation
+  if (!mapping.windowsExecutable) {
+    errors.push('windowsExecutable is required');
+  }
+  if (!mapping.macOSExecutable) {
+    errors.push('macOSExecutable is required');
+  }
+  if (!mapping.description) {
+    errors.push('description is required');
+  }
+
+  return {
+    success: errors.length === 0,
+    errors
+  };
+}
+
 export async function validateBalatroPlatformCompatibility(gamePath: string): Promise<{
   isValid: boolean;
   hasLovelyInjector: boolean;

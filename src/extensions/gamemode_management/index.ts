@@ -82,6 +82,64 @@ const $ = local<{
   extensionStubs: [],
 });
 
+// File to store discovered games persistently
+const DISCOVERED_GAMES_FILE = 'discovered_games.json';
+
+// Function to save discovered games to a persistent file
+async function saveDiscoveredGames(api: IExtensionApi) {
+  try {
+    const state = api.getState();
+    const discoveredGames = state.settings.gameMode.discovered;
+    
+    // Filter out games without paths (not actually discovered)
+    const validDiscoveredGames = {};
+    Object.keys(discoveredGames).forEach(gameId => {
+      if (discoveredGames[gameId].path !== undefined) {
+        validDiscoveredGames[gameId] = discoveredGames[gameId];
+      }
+    });
+    
+    // Save to a file in the user data directory
+    const userDataPath = api.store.getState().app.paths.userData;
+    const filePath = path.join(userDataPath, DISCOVERED_GAMES_FILE);
+    
+    await fs.writeFileAsync(filePath, JSON.stringify(validDiscoveredGames, null, 2));
+  } catch (err) {
+    // Don't fail if we can't save, just log it
+    log('warn', 'Failed to save discovered games', { error: err.message });
+  }
+}
+
+// Function to load discovered games from the persistent file
+async function loadDiscoveredGames(api: IExtensionApi) {
+  try {
+    const userDataPath = api.store.getState().app.paths.userData;
+    const filePath = path.join(userDataPath, DISCOVERED_GAMES_FILE);
+    
+    // Check if file exists
+    try {
+      await fs.statAsync(filePath);
+    } catch (err) {
+      // File doesn't exist, that's fine
+      return;
+    }
+    
+    // Read and parse the file
+    const data = await fs.readFileAsync(filePath, { encoding: 'utf8' });
+    const discoveredGames = JSON.parse(data);
+    
+    // Dispatch actions to restore discovered games
+    Object.keys(discoveredGames).forEach(gameId => {
+      api.store.dispatch(addDiscoveredGame(gameId, discoveredGames[gameId]));
+    });
+    
+    log('info', 'Restored discovered games from persistent storage', { count: Object.keys(discoveredGames).length });
+  } catch (err) {
+    // Don't fail if we can't load, just log it
+    log('warn', 'Failed to load discovered games', { error: err.message });
+  }
+}
+
 interface IProvider {
   id: string;
   priority: number;
@@ -762,18 +820,17 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
 
-  const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
-  const onSelectPath = (basePath: string): Promise<string> =>
-    Promise.resolve(context.api.selectDir({
-      defaultPath: basePath,
-    }));
-
-  context.registerDialog('game-search-paths', PathSelectionDialog, () => ({
-    onScan,
-    onSelectPath,
-  }));
-
   context.once(() => {
+    const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
+    const onSelectPath = (basePath: string): Promise<string> =>
+      Promise.resolve(context.api.selectDir({
+        defaultPath: basePath,
+      }));
+
+    context.registerDialog('game-search-paths', PathSelectionDialog, () => ({
+      onScan,
+      onSelectPath,
+    }));
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
 
@@ -822,36 +879,86 @@ function init(context: IExtensionContext): boolean {
       });
     };
 
-    // Register macOS compatibility games before GameModeManager initialization
-    enhanceGamesWithMacOSCompatibility();
+    // Load discovered games from persistent storage on startup
+    loadDiscoveredGames(context.api)
+      .then(() => {
+        // Register macOS compatibility games before GameModeManager initialization
+        enhanceGamesWithMacOSCompatibility();
 
-    const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+        const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
 
-    context.api.ext['awaitProfileSwitch'] = () => awaitProfileSwitch(context.api);
+        context.api.ext['awaitProfileSwitch'] = () => awaitProfileSwitch(context.api);
 
-    $.gameModeManager = new GameModeManagerImpl(
-      context.api,
-      $.extensionGames,
-      $.extensionStubs,
-      gameStoreLaunchers,
-      (gameMode: string) => {
-        log('debug', 'gamemode activated', gameMode);
-        events.emit('gamemode-activated', gameMode);
+        $.gameModeManager = new GameModeManagerImpl(
+          context.api,
+          $.extensionGames,
+          $.extensionStubs,
+          gameStoreLaunchers,
+          (gameMode: string) => {
+            log('debug', 'gamemode activated', gameMode);
+            events.emit('gamemode-activated', gameMode);
+          });
+        $.gameModeManager.attachToStore(store);
+        
+        // Run initial discovery after GameModeManager is initialized
+        const { discovered } = store.getState().settings.gameMode;
+        const discoveredGames = new Set(
+          Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
+        return $.gameModeManager.startQuickDiscovery(undefined, false)
+          .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
+            .reduce((prev, stub) => {
+              prev[stub.game.id] = stub.ext;
+              return prev;
+            }, {})));
+      })
+      .catch(err => {
+        log('warn', 'Failed to load persistent discovered games', { error: err.message });
+        
+        // Register macOS compatibility games before GameModeManager initialization
+        enhanceGamesWithMacOSCompatibility();
+
+        const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+
+        context.api.ext['awaitProfileSwitch'] = () => awaitProfileSwitch(context.api);
+
+        $.gameModeManager = new GameModeManagerImpl(
+          context.api,
+          $.extensionGames,
+          $.extensionStubs,
+          gameStoreLaunchers,
+          (gameMode: string) => {
+            log('debug', 'gamemode activated', gameMode);
+            events.emit('gamemode-activated', gameMode);
+          });
+        $.gameModeManager.attachToStore(store);
+        
+        // Run initial discovery after GameModeManager is initialized
+        const { discovered } = store.getState().settings.gameMode;
+        const discoveredGames = new Set(
+          Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
+        return $.gameModeManager.startQuickDiscovery(undefined, false)
+          .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
+            .reduce((prev, stub) => {
+              prev[stub.game.id] = stub.ext;
+              return prev;
+            }, {})));
       });
-    $.gameModeManager.attachToStore(store);
-    {
-      const { discovered } = store.getState().settings.gameMode;
-      const discoveredGames = new Set(
-        Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-      $.gameModeManager.startQuickDiscovery(undefined, false)
-        .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
-          .reduce((prev, stub) => {
-            prev[stub.game.id] = stub.ext;
-            return prev;
-          }, {})));
-    }
+
+    // Set up a listener to save discovered games whenever they change
+    let previousDiscoveredGames = {};
+    context.api.onStateChange(['settings', 'gameMode', 'discovered'], (previous, current) => {
+      // Only save if there are actual changes
+      if (JSON.stringify(previousDiscoveredGames) !== JSON.stringify(current)) {
+        previousDiscoveredGames = current;
+        saveDiscoveredGames(context.api);
+      }
+    });
 
     context.api.onAsync('discover-game', (gameId: string) => {
+      if ($.gameModeManager === undefined) {
+        // GameModeManager not initialized yet, return resolved promise
+        return Promise.resolve();
+      }
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
@@ -882,8 +989,13 @@ function init(context: IExtensionContext): boolean {
           cb?.(Array.from(discoveredGames));
         });
     });
-    context.api.onAsync('discover-tools', (gameId: string) =>
-      $.gameModeManager.startToolDiscovery(gameId));
+    context.api.onAsync('discover-tools', (gameId: string) => {
+      if ($.gameModeManager === undefined) {
+        // GameModeManager not initialized yet, return resolved promise
+        return Promise.resolve();
+      }
+      return $.gameModeManager.startToolDiscovery(gameId);
+    });
     events.on('start-discovery', () => {
       try {
         const state = context.api.getState();
@@ -902,6 +1014,10 @@ function init(context: IExtensionContext): boolean {
       }
     });
     events.on('cancel-discovery', () => {
+      if ($.gameModeManager === undefined) {
+        // GameModeManager not initialized yet, nothing to cancel
+        return;
+      }
       log('info', 'received cancel discovery');
       $.gameModeManager.stopSearchDiscovery();
     });
@@ -938,6 +1054,7 @@ function init(context: IExtensionContext): boolean {
               // After updating extensions, we need to ensure game extensions are properly registered
               // Re-initialize the extension games list to capture any newly installed game extensions
               $.extensionGames = [];
+              $.extensionStubs = [];
               
               // Get the current state and re-process all installed game extensions
               const state = context.api.getState();
@@ -946,45 +1063,182 @@ function init(context: IExtensionContext): boolean {
               // Process each installed game extension to ensure it's registered
               return Promise.map(Object.keys(installedExtensions), extId => {
                 const ext = installedExtensions[extId];
-                if (ext.type === 'game' && ext.path) {
+                // Enhanced condition to process game extensions
+                // Process extensions that are explicitly marked as 'game' type
+                // OR extensions that appear to be game extensions based on naming conventions
+                const isLikelyGameExtension = ext.name && 
+                  (ext.name.toLowerCase().startsWith('game:') || 
+                   ext.name.toLowerCase().includes('vortex extension') ||
+                   ext.name.toLowerCase().includes('game') ||
+                   // Additional patterns for common game extension naming conventions
+                   ext.name.toLowerCase().includes('mod manager') ||
+                   ext.name.toLowerCase().includes('game support') ||
+                   ext.name.toLowerCase().includes('game extension') ||
+                   // Check if the extension name contains common game-related terms
+                   /\b(balatro|skyrim|fallout|witcher|stardew|factorio|rimworld|subnautica|valheim|minecraft|cyberpunk|elden|elden ring|starfield|gta|grand theft auto)\b/i.test(ext.name));
+                
+                if ((ext.type === 'game' || isLikelyGameExtension) && ext.path) {
+                  log('debug', 'Processing potential game extension', { 
+                    extensionName: ext.name,
+                    extensionType: ext.type,
+                    isLikelyGameExtension,
+                    path: ext.path
+                  });
+                  
                   try {
                     // Try to load and register the game extension
                     const indexPath = path.join(ext.path, 'index.js');
                     return fs.statAsync(indexPath)
                       .then(() => {
+                        log('debug', 'Found extension index file', { indexPath });
+                        
+                        // Clear module cache to ensure we get the latest version
+                        delete require.cache[indexPath];
+                        
                         const extensionModule = require(indexPath);
-                        if (typeof extensionModule.default === 'function') {
+                        // Check if the module has a default export or a main function
+                        // Enhanced to handle various export patterns
+                        const initFunction = extensionModule.default || 
+                                           extensionModule.main || 
+                                           extensionModule.init ||
+                                           extensionModule.initialize ||
+                                           extensionModule.activate ||
+                                           extensionModule.load ||
+                                           extensionModule.setup ||
+                                           (typeof extensionModule === 'function' ? extensionModule : null);
+                        
+                        if (typeof initFunction === 'function') {
+                          log('debug', 'Found valid init function in extension', { 
+                            extensionName: ext.name,
+                            initFunctionType: typeof initFunction,
+                            hasDefault: !!extensionModule.default,
+                            hasMain: !!extensionModule.main,
+                            hasInit: !!extensionModule.init,
+                            hasInitialize: !!extensionModule.initialize,
+                            hasActivate: !!extensionModule.activate
+                          });
+                          
                           // Create a minimal context for the extension to register its game
+                          const onceCallbacks: Array<() => void> = [];
                           const contextProxy = new Proxy({
                             api: context.api,
                             registerGame: (game: IGame) => {
                               // Register the game in our extension games list
                               game.extensionPath = ext.path;
                               $.extensionGames.push(game);
+                              log('debug', 'Game registered by extension', { 
+                                gameName: game.name,
+                                gameId: game.id,
+                                extensionName: ext.name
+                              });
                             },
                             registerGameStub: (game: IGame, extInfo: IExtensionDownloadInfo) => {
                               // Handle game stubs if needed
                               $.extensionStubs.push({ ext: extInfo, game });
+                              log('debug', 'Game stub registered by extension', { 
+                                gameName: game.name,
+                                extensionName: ext.name
+                              });
+                            },
+                            once: (callback: () => void) => {
+                              // Queue the callback to be executed after the extension is loaded
+                              onceCallbacks.push(callback);
+                              log('debug', 'Queued once callback for extension', { extensionName: ext.name });
                             }
                           }, {
                             get: (target, prop) => {
                               // Provide stub functions for other register methods
-                              if (prop === 'registerGame' || prop === 'registerGameStub') {
+                              if (prop === 'registerGame' || prop === 'registerGameStub' || prop === 'once') {
                                 return target[prop];
                               } else if (typeof prop === 'string' && prop.startsWith('register')) {
+                                log('debug', 'Providing stub for register method', { method: prop });
                                 return () => {}; // Stub for other register methods
+                              }
+                              // Handle other common extension context properties
+                              if (prop === 'api') {
+                                return target.api;
+                              }
+                              if (prop === 'optional') {
+                                return {
+                                  registerGame: () => {},
+                                  registerGameStub: () => {},
+                                  registerModType: () => {},
+                                  // Add other common optional methods as needed
+                                };
                               }
                               return target[prop];
                             }
                           });
                           
                           // Call the extension's init function
-                          extensionModule.default(contextProxy);
+                          try {
+                            const result = initFunction(contextProxy);
+                            // Handle Promise return values
+                            if (result && typeof result.then === 'function') {
+                              log('debug', 'Extension init function returned promise', { extensionName: ext.name });
+                              return result.then(() => {
+                                log('debug', 'Extension init function completed successfully', { extensionName: ext.name });
+                                // Execute any queued once callbacks after the init function completes
+                                onceCallbacks.forEach(callback => {
+                                  try {
+                                    callback();
+                                    log('debug', 'Executed once callback successfully', { extensionName: ext.name });
+                                  } catch (err) {
+                                    log('warn', 'Error in extension once callback', { extension: ext.name, error: err.message });
+                                  }
+                                });
+                              }).catch((err) => {
+                                log('warn', 'Error in extension init function', { extension: ext.name, error: err.message });
+                                // Still execute once callbacks even if init function fails
+                                onceCallbacks.forEach(callback => {
+                                  try {
+                                    callback();
+                                    log('debug', 'Executed once callback after init failure', { extensionName: ext.name });
+                                  } catch (callbackErr) {
+                                    log('warn', 'Error in extension once callback after init failure', { 
+                                      extension: ext.name, 
+                                      error: callbackErr.message 
+                                    });
+                                  }
+                                });
+                              });
+                            } else {
+                              log('debug', 'Extension init function completed synchronously', { extensionName: ext.name });
+                              // Execute any queued once callbacks immediately for synchronous init functions
+                              onceCallbacks.forEach(callback => {
+                                try {
+                                  callback();
+                                  log('debug', 'Executed once callback successfully', { extensionName: ext.name });
+                                } catch (err) {
+                                  log('warn', 'Error in extension once callback', { extension: ext.name, error: err.message });
+                                }
+                              });
+                              return Promise.resolve();
+                            }
+                          } catch (initErr) {
+                            log('warn', 'Error calling extension init function', { extension: ext.name, error: initErr.message, stack: initErr.stack });
+                            // Still execute once callbacks even if init function throws
+                            onceCallbacks.forEach(callback => {
+                              try {
+                                callback();
+                                log('debug', 'Executed once callback after init error', { extensionName: ext.name });
+                              } catch (callbackErr) {
+                                log('warn', 'Error in extension once callback after init error', { 
+                                  extension: ext.name, 
+                                  error: callbackErr.message 
+                                });
+                              }
+                            });
+                            return Promise.resolve();
+                          }
+                        } else {
+                          log('warn', 'Extension module does not export a valid init function', { extension: ext.name, indexPath });
+                          return Promise.resolve();
                         }
-                        return Promise.resolve();
                       })
-                      .catch(() => {
-                        // File doesn't exist or other error, skip this extension
+                      .catch((err) => {
+                        // File doesn't exist or other error, log and skip this extension
+                        log('warn', 'Failed to load game extension file', { extension: ext.name, path: indexPath, error: err.message });
                         return Promise.resolve();
                       });
                   } catch (err) {
@@ -1021,8 +1275,37 @@ function init(context: IExtensionContext): boolean {
                   );
                 context.api.store.dispatch(setKnownGames(gamesStored));
                 
+                log('info', 'Refreshed known games list', { 
+                  gameCount: gamesStored.length,
+                  games: gamesStored.map(g => g.name)
+                });
+                
                 // Also run quick discovery to find the game paths
-                return $.gameModeManager.startQuickDiscovery(undefined, false);
+                if ($.gameModeManager === undefined) {
+                  // GameModeManager not initialized yet, defer discovery until it's ready
+                  log('info', 'GameModeManager not yet initialized, deferring discovery');
+                  // Set up a one-time listener to run discovery when GameModeManager is ready
+                  const runDiscoveryWhenReady = () => {
+                    if ($.gameModeManager !== undefined) {
+                      log('info', 'GameModeManager now ready, running deferred discovery');
+                      $.gameModeManager.startQuickDiscovery(undefined, false)
+                        .then((gameIds) => {
+                          log('info', 'Deferred discovery completed', { discoveredGames: gameIds });
+                        })
+                        .catch(err => log('warn', 'Deferred discovery failed', { error: err.message }));
+                    } else {
+                      // Try again in a short while
+                      setTimeout(runDiscoveryWhenReady, 100);
+                    }
+                  };
+                  setTimeout(runDiscoveryWhenReady, 100);
+                  return Promise.resolve([] as string[]);
+                }
+                return $.gameModeManager.startQuickDiscovery(undefined, false)
+                  .then((gameIds) => {
+                    log('info', 'Quick discovery completed', { discoveredGames: gameIds });
+                    return gameIds;
+                  });
               });
             })
             .then(() => {
@@ -1106,6 +1389,10 @@ function init(context: IExtensionContext): boolean {
       // Important: This happens after the profile has already been activated
       //   and while the ui is usable again so at this point the user can already
       //   switch the game/profile again. The code below has to be able to deal with that
+      if ($.gameModeManager === undefined) {
+        // GameModeManager not initialized yet, return resolved promise
+        return Promise.resolve();
+      }
       return $.gameModeManager.setupGameMode(newGameId)
         .then(() => {
           // only calling to check if it works, some game extensions might discover

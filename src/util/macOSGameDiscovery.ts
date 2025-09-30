@@ -92,7 +92,7 @@ export interface MacOSGameDiscoveryOptions {
 export interface MacOSGameCandidate {
   path: string;
   executable: string;
-  type: 'native' | 'app' | 'steam' | 'epic' | 'gog' | 'windows';
+  type: 'native' | 'app' | 'steam' | 'epic' | 'gog' | 'windows' | 'steam-crossover' | 'steam-parallels' | 'epic-crossover' | 'epic-parallels' | 'gog-crossover' | 'gog-parallels' | 'windows-crossover' | 'windows-parallels' | 'other-store' | 'windows-vmware';
   priority: number;
   store?: string;
   manifestData?: {
@@ -100,24 +100,40 @@ export interface MacOSGameCandidate {
     name: string;
     installDir: string;
     manifestPath: string;
+    matchConfidence?: string;
+    source?: string;
+    compatibilityLayer?: string;
+    bottlePath?: string;
+    vmPath?: string;
+    storePath?: string;
+    windowsExecutable?: string;
+    gameId?: string;
+    manifestFile?: string;
   };
 }
 
 /**
  * macOS game discovery priority levels
  * Lower numbers = higher priority
+ * Enhanced with more granular priorities for better source differentiation
  */
 export const MACOS_DISCOVERY_PRIORITIES = {
-  STEAM: 5,           // Highest priority - using manifest files for accurate detection
-  NATIVE_APP: 10,
-  APP_STORE: 20,
-  EPIC: 40,
-  GOG: 50,
-  OTHER_MAC_STORES: 60,
-  CROSSOVER: 70,
-  PARALLELS: 80,
-  VMWARE: 90,
-  OTHER_WINDOWS: 100
+  STEAM_NATIVE: 5,     // Native Steam macOS games (highest priority)
+  NATIVE_APP: 10,      // Native macOS applications
+  APP_STORE: 15,       // Mac App Store games
+  STEAM_CROSSOVER: 20, // Steam games running through CrossOver
+  EPIC_NATIVE: 25,     // Native Epic Games Store macOS games
+  GOG_NATIVE: 30,      // Native GOG Galaxy macOS games
+  STEAM_PARALLELS: 35, // Steam games running through Parallels
+  EPIC_CROSSOVER: 40,  // Epic games running through CrossOver
+  GOG_CROSSOVER: 45,   // GOG games running through CrossOver
+  OTHER_MAC_STORES: 50,// Other Mac game stores (Itch.io, Humble Bundle, etc.)
+  EPIC_PARALLELS: 55,  // Epic games running through Parallels
+  GOG_PARALLELS: 60,   // GOG games running through Parallels
+  CROSSOVER: 70,       // Generic CrossOver Windows games
+  PARALLELS: 80,       // Generic Parallels Windows games
+  VMWARE: 90,          // VMware Windows games
+  OTHER_WINDOWS: 100   // Other Windows compatibility layers
 };
 
 /**
@@ -314,13 +330,15 @@ export async function discoverMacOSGamesInternal(
   try {
     // Define discovery methods with their names for progress tracking
     const discoveryMethods = [
-      { name: 'Native Apps', method: () => discoverNativeApps(options) },
-      { name: 'App Store', method: () => discoverAppStoreApps(options) },
-      { name: 'Steam', method: () => discoverSteamGames(options) },
-      { name: 'Epic Games', method: () => discoverEpicGames(options) },
-      { name: 'GOG Galaxy', method: () => discoverGOGGames(options) },
-      { name: 'CrossOver', method: () => discoverCrossOverGames(options) },
-      { name: 'Parallels', method: () => discoverParallelsGames(options) }
+      { name: 'Native Apps', method: () => discoverNativeApps(options), priority: 1 },
+      { name: 'App Store', method: () => discoverAppStoreApps(options), priority: 2 },
+      { name: 'Steam', method: () => discoverSteamGames(options), priority: 3 },
+      { name: 'Epic Games', method: () => discoverEpicGames(options), priority: 4 },
+      { name: 'GOG Galaxy', method: () => discoverGOGGames(options), priority: 5 },
+      { name: 'Other Mac Stores', method: () => discoverOtherMacStores(options), priority: 6 },
+      { name: 'CrossOver', method: () => discoverCrossOverGames(options), priority: 7 },
+      { name: 'Parallels', method: () => discoverParallelsGames(options), priority: 8 },
+      { name: 'VMware', method: () => discoverVMwareGames(options), priority: 9 }
     ];
 
     // Run discovery methods in parallel with progress tracking
@@ -328,7 +346,10 @@ export async function discoverMacOSGamesInternal(
       discoveryMethods.map(async (discovery, index) => {
         try {
           onProgress?.(discovery.name, Math.floor((index / discoveryMethods.length) * 100));
-          log('debug', `Starting ${discovery.name} discovery for ${options.gameId}`);
+          log('debug', `Starting ${discovery.name} discovery for ${options.gameId}`, {
+            priority: discovery.priority,
+            method: discovery.name
+          });
           
           const startTime = Date.now();
           const result = await discovery.method();
@@ -336,7 +357,8 @@ export async function discoverMacOSGamesInternal(
           
           log('debug', `Completed ${discovery.name} discovery for ${options.gameId}`, {
             duration: `${duration}ms`,
-            found: result.length
+            found: result.length,
+            priority: discovery.priority
           });
           
           onProgress?.(discovery.name, Math.floor(((index + 1) / discoveryMethods.length) * 100));
@@ -344,7 +366,8 @@ export async function discoverMacOSGamesInternal(
         } catch (err) {
           log('warn', `Error in ${discovery.name} discovery`, { 
             gameId: options.gameId, 
-            error: err.message 
+            error: err.message,
+            priority: discovery.priority
           });
           return [];
         }
@@ -402,7 +425,16 @@ async function discoverNativeApps(options: MacOSGameDiscoveryOptions): Promise<M
             executable: appBundlePath,
             type: 'app',
             priority: MACOS_DISCOVERY_PRIORITIES.NATIVE_APP,
-            store: 'native'
+            store: 'native',
+            manifestData: {
+              appId: 'compatibility-system',
+              name: options.gameId,
+              installDir: path.dirname(appBundlePath),
+              manifestPath: 'compatibility-system',
+              source: 'compatibility-system',
+              gameId: options.gameId,
+              matchConfidence: 'high'
+            }
           });
           
           log('debug', 'Found native macOS app bundle via compatibility system', {
@@ -665,17 +697,28 @@ async function discoverSteamGamesFromManifests(options: MacOSGameDiscoveryOption
                 const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
                 
                 if (bestExec) {
+                  // Determine if this is a native Steam game or running through compatibility layer
+                  const isNativeSteam = gameDir.includes('steamapps/common') && !gameDir.includes('CrossOver') && !gameDir.includes('Parallels');
+                  const isCrossOverSteam = gameDir.includes('CrossOver');
+                  const isParallelsSteam = gameDir.includes('Parallels');
+                  
+                  const priority = isNativeSteam ? MACOS_DISCOVERY_PRIORITIES.STEAM_NATIVE : 
+                                 isCrossOverSteam ? MACOS_DISCOVERY_PRIORITIES.STEAM_CROSSOVER : 
+                                 isParallelsSteam ? MACOS_DISCOVERY_PRIORITIES.STEAM_PARALLELS : 
+                                 MACOS_DISCOVERY_PRIORITIES.STEAM_NATIVE; // fallback
+                  
                   candidates.push({
                     path: gameDir,
                     executable: bestExec.path,
-                    type: 'steam',
-                    priority: MACOS_DISCOVERY_PRIORITIES.STEAM,
+                    type: isNativeSteam ? 'steam' : isCrossOverSteam ? 'steam-crossover' : 'steam-parallels',
+                    priority: priority,
                     store: 'steam',
                     manifestData: {
                       appId: appState.appid,
                       name: appState.name,
                       installDir: installDir,
-                      manifestPath: manifestPath
+                      manifestPath: manifestPath,
+                      compatibilityLayer: isNativeSteam ? 'native' : isCrossOverSteam ? 'crossover' : 'parallels'
                     }
                   });
                   
@@ -739,7 +782,7 @@ async function discoverSteamGamesFromDirectories(options: MacOSGameDiscoveryOpti
             path: gameDir,
             executable: bestExec.path,
             type: 'steam',
-            priority: MACOS_DISCOVERY_PRIORITIES.STEAM,
+            priority: MACOS_DISCOVERY_PRIORITIES.STEAM_NATIVE,
             store: 'steam'
           });
           
@@ -839,12 +882,32 @@ async function discoverEpicGames(options: MacOSGameDiscoveryOptions): Promise<Ma
                     const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
                     
                     if (bestExec) {
+                      // Determine if this is a native Epic game or running through compatibility layer
+                      const isNativeEpic = installLocation.includes('Epic Games') && !installLocation.includes('CrossOver') && !installLocation.includes('Parallels');
+                      const isCrossOverEpic = installLocation.includes('CrossOver');
+                      const isParallelsEpic = installLocation.includes('Parallels');
+                      
+                      const priority = isNativeEpic ? MACOS_DISCOVERY_PRIORITIES.EPIC_NATIVE : 
+                                     isCrossOverEpic ? MACOS_DISCOVERY_PRIORITIES.EPIC_CROSSOVER : 
+                                     isParallelsEpic ? MACOS_DISCOVERY_PRIORITIES.EPIC_PARALLELS : 
+                                     MACOS_DISCOVERY_PRIORITIES.EPIC_NATIVE; // fallback
+                      
                       candidates.push({
                         path: installLocation,
                         executable: bestExec.path,
-                        type: 'epic',
-                        priority: MACOS_DISCOVERY_PRIORITIES.EPIC,
-                        store: 'epic'
+                        type: isNativeEpic ? 'epic' : isCrossOverEpic ? 'epic-crossover' : 'epic-parallels',
+                        priority: priority,
+                        store: 'epic',
+                        manifestData: {
+                          appId: manifestData.AppName || manifestData.DisplayName,
+                          name: manifestData.DisplayName,
+                          installDir: installLocation,
+                          manifestPath: manifestPath,
+                          source: 'epic-manifest',
+                          manifestFile: manifest,
+                          gameId: options.gameId,
+                          compatibilityLayer: isNativeEpic ? 'native' : isCrossOverEpic ? 'crossover' : 'parallels'
+                        }
                       });
                       
                       log('debug', 'Found Epic Games Store game', {
@@ -913,12 +976,31 @@ async function discoverGOGGames(options: MacOSGameDiscoveryOptions): Promise<Mac
           const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
           
           if (bestExec) {
+            // Determine if this is a native GOG game or running through compatibility layer
+            const isNativeGOG = gamePath.includes('GOG Galaxy') && !gamePath.includes('CrossOver') && !gamePath.includes('Parallels');
+            const isCrossOverGOG = gamePath.includes('CrossOver');
+            const isParallelsGOG = gamePath.includes('Parallels');
+            
+            const priority = isNativeGOG ? MACOS_DISCOVERY_PRIORITIES.GOG_NATIVE : 
+                           isCrossOverGOG ? MACOS_DISCOVERY_PRIORITIES.GOG_CROSSOVER : 
+                           isParallelsGOG ? MACOS_DISCOVERY_PRIORITIES.GOG_PARALLELS : 
+                           MACOS_DISCOVERY_PRIORITIES.GOG_NATIVE; // fallback
+            
             candidates.push({
               path: gamePath,
               executable: bestExec.path,
-              type: 'gog',
-              priority: MACOS_DISCOVERY_PRIORITIES.GOG,
-              store: 'gog'
+              type: isNativeGOG ? 'gog' : isCrossOverGOG ? 'gog-crossover' : 'gog-parallels',
+              priority: priority,
+              store: 'gog',
+              manifestData: {
+                appId: gameDir,
+                name: gameDir,
+                installDir: gamePath,
+                manifestPath: 'gog-galaxy',
+                source: 'gog-galaxy',
+                gameId: options.gameId,
+                compatibilityLayer: isNativeGOG ? 'native' : isCrossOverGOG ? 'crossover' : 'parallels'
+              }
             });
           }
         }
@@ -962,12 +1044,43 @@ async function discoverCrossOverGames(options: MacOSGameDiscoveryOptions): Promi
             const gameCandidate = await findWindowsGameInPath(searchPath, options);
             
             if (gameCandidate) {
+              // Determine the specific type of CrossOver game based on path
+              const isSteamGame = options.windowsExecutable && options.windowsExecutable.includes('Steam');
+              const isEpicGame = options.windowsExecutable && options.windowsExecutable.includes('Epic');
+              const isGOGGame = options.windowsExecutable && options.windowsExecutable.includes('GOG');
+              
+              const priority = isSteamGame ? MACOS_DISCOVERY_PRIORITIES.STEAM_CROSSOVER : 
+                             isEpicGame ? MACOS_DISCOVERY_PRIORITIES.EPIC_CROSSOVER : 
+                             isGOGGame ? MACOS_DISCOVERY_PRIORITIES.GOG_CROSSOVER : 
+                             MACOS_DISCOVERY_PRIORITIES.CROSSOVER;
+              
+              const store = isSteamGame ? 'steam-crossover' : 
+                           isEpicGame ? 'epic-crossover' : 
+                           isGOGGame ? 'gog-crossover' : 
+                           'crossover';
+              
+              const type = isSteamGame ? 'steam-crossover' : 
+                          isEpicGame ? 'epic-crossover' : 
+                          isGOGGame ? 'gog-crossover' : 
+                          'windows-crossover';
+              
               candidates.push({
                 path: gameCandidate.path,
                 executable: gameCandidate.executable,
-                type: 'windows',
-                priority: MACOS_DISCOVERY_PRIORITIES.CROSSOVER,
-                store: 'crossover'
+                type: type,
+                priority: priority,
+                store: store,
+                manifestData: {
+                  appId: bottle,
+                  name: bottle,
+                  installDir: bottlePath,
+                  manifestPath: 'crossover',
+                  source: 'crossover',
+                  bottlePath: bottlePath,
+                  gameId: options.gameId,
+                  windowsExecutable: options.windowsExecutable,
+                  compatibilityLayer: 'crossover'
+                }
               });
             }
           }
@@ -989,10 +1102,262 @@ async function discoverCrossOverGames(options: MacOSGameDiscoveryOptions): Promi
 async function discoverParallelsGames(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
   const candidates: MacOSGameCandidate[] = [];
   
-  // Parallels discovery would require parsing VM configurations
-  // This is a simplified implementation
+  // Enhanced Parallels discovery with VM configuration parsing
+  for (const parallelsPath of PARALLELS_PATHS) {
+    const expandedPath = parallelsPath.replace('~', process.env.HOME || '');
+    
+    try {
+      // Look for Parallels VM configurations
+      const vmDirs = await readdir(expandedPath);
+      
+      for (const vmDir of vmDirs) {
+        const vmPath = path.join(expandedPath, vmDir);
+        const stats = await stat(vmPath);
+        
+        if (stats.isDirectory()) {
+          // Look for Windows executables in the VM
+          // This is a simplified implementation - a full implementation would parse .pvm files
+          const gameCandidate = await findWindowsGameInParallelsVM(vmPath, options);
+          
+          if (gameCandidate) {
+            // Determine the specific type of Parallels game based on executable
+            const isSteamGame = options.windowsExecutable && options.windowsExecutable.includes('Steam');
+            const isEpicGame = options.windowsExecutable && options.windowsExecutable.includes('Epic');
+            const isGOGGame = options.windowsExecutable && options.windowsExecutable.includes('GOG');
+            
+            const priority = isSteamGame ? MACOS_DISCOVERY_PRIORITIES.STEAM_PARALLELS : 
+                           isEpicGame ? MACOS_DISCOVERY_PRIORITIES.EPIC_PARALLELS : 
+                           isGOGGame ? MACOS_DISCOVERY_PRIORITIES.GOG_PARALLELS : 
+                           MACOS_DISCOVERY_PRIORITIES.PARALLELS;
+            
+            const store = isSteamGame ? 'steam-parallels' : 
+                         isEpicGame ? 'epic-parallels' : 
+                         isGOGGame ? 'gog-parallels' : 
+                         'parallels';
+            
+            const type = isSteamGame ? 'steam-parallels' : 
+                        isEpicGame ? 'epic-parallels' : 
+                        isGOGGame ? 'gog-parallels' : 
+                        'windows-parallels';
+            
+            candidates.push({
+              path: gameCandidate.path,
+              executable: gameCandidate.executable,
+              type: type,
+              priority: priority,
+              store: store,
+              manifestData: {
+                appId: vmDir,
+                name: vmDir,
+                installDir: vmPath,
+                manifestPath: 'parallels',
+                source: 'parallels',
+                vmPath: vmPath,
+                gameId: options.gameId,
+                windowsExecutable: options.windowsExecutable,
+                compatibilityLayer: 'parallels'
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      // Parallels path doesn't exist or can't be accessed
+      log('debug', 'Parallels path not accessible', {
+        parallelsPath: expandedPath,
+        error: err.message
+      });
+    }
+  }
   
   return candidates;
+}
+
+/**
+ * Discover games from other Mac game stores (Itch.io, Humble Bundle, etc.)
+ */
+async function discoverOtherMacStores(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
+  const candidates: MacOSGameCandidate[] = [];
+  
+  // Common paths for other Mac game stores
+  const otherStorePaths = [
+    '~/Library/Application Support/itch',
+    '~/Library/Application Support/Humble App',
+    '~/Library/Application Support/Glyph', // Trion Worlds
+    '~/Library/Application Support/Origin', // EA App
+    '~/Library/Application Support/Uplay' // Ubisoft Connect
+  ];
+  
+  for (const storePath of otherStorePaths) {
+    const expandedPath = storePath.replace('~', process.env.HOME || '');
+    
+    try {
+      const stats = await stat(expandedPath);
+      if (stats.isDirectory()) {
+        // Look for game executables in common subdirectories
+        const commonDirs = ['games', 'Apps', 'Applications'];
+        
+        for (const dir of commonDirs) {
+          const searchPath = path.join(expandedPath, dir);
+          
+          try {
+            const entries = await readdir(searchPath);
+            
+            for (const entry of entries) {
+              const entryPath = path.join(searchPath, entry);
+              const entryStats = await stat(entryPath);
+              
+              if (entryStats.isDirectory() && entry.toLowerCase().includes(options.gameName.toLowerCase())) {
+                // Try to find the executable
+                const execOptions: GameExecutableOptions = {
+                  gameName: options.gameName,
+                  gameId: options.gameId,
+                  basePath: entryPath,
+                  windowsExecutable: options.windowsExecutable,
+                  macExecutable: options.macExecutable,
+                  appBundleName: options.appBundleName
+                };
+                
+                const execCandidates = await resolveGameExecutable(execOptions);
+                const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
+                
+                if (bestExec) {
+                  candidates.push({
+                    path: entryPath,
+                    executable: bestExec.path,
+                    type: 'other-store',
+                    priority: MACOS_DISCOVERY_PRIORITIES.OTHER_MAC_STORES,
+                    store: 'other',
+                    manifestData: {
+                      appId: entry,
+                      name: entry,
+                      installDir: entryPath,
+                      manifestPath: 'other-store',
+                      source: 'other-store',
+                      storePath: expandedPath,
+                      gameId: options.gameId
+                    }
+                  });
+                  
+                  log('debug', 'Found game in other Mac store', {
+                    gameId: options.gameId,
+                    storePath: expandedPath,
+                    gamePath: entryPath,
+                    executable: bestExec.path
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            // Directory doesn't exist or can't be accessed
+          }
+        }
+      }
+    } catch (err) {
+      // Store path doesn't exist
+    }
+  }
+  
+  return candidates;
+}
+
+/**
+ * Discover VMware Windows games
+ */
+async function discoverVMwareGames(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
+  const candidates: MacOSGameCandidate[] = [];
+  
+  // VMware paths
+  const vmwarePaths = [
+    '~/Documents/Virtual Machines',
+    '~/Virtual Machines'
+  ];
+  
+  for (const vmwarePath of vmwarePaths) {
+    const expandedPath = vmwarePath.replace('~', process.env.HOME || '');
+    
+    try {
+      const vmDirs = await readdir(expandedPath);
+      
+      for (const vmDir of vmDirs) {
+        const vmPath = path.join(expandedPath, vmDir);
+        const stats = await stat(vmPath);
+        
+        if (stats.isDirectory()) {
+          // Look for Windows executables in the VM
+          const gameCandidate = await findWindowsGameInVMwareVM(vmPath, options);
+          
+          if (gameCandidate) {
+            candidates.push({
+              path: gameCandidate.path,
+              executable: gameCandidate.executable,
+              type: 'windows-vmware',
+              priority: MACOS_DISCOVERY_PRIORITIES.VMWARE,
+              store: 'vmware',
+              manifestData: {
+                appId: vmDir,
+                name: vmDir,
+                installDir: vmPath,
+                manifestPath: 'vmware',
+                source: 'vmware',
+                vmPath: vmPath,
+                gameId: options.gameId,
+                windowsExecutable: options.windowsExecutable,
+                compatibilityLayer: 'vmware'
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      // VMware path doesn't exist or can't be accessed
+      log('debug', 'VMware path not accessible', {
+        vmwarePath: expandedPath,
+        error: err.message
+      });
+    }
+  }
+  
+  return candidates;
+}
+
+/**
+ * Helper function to find Windows games in a VMware VM
+ */
+async function findWindowsGameInVMwareVM(vmPath: string, options: MacOSGameDiscoveryOptions): Promise<{ path: string; executable: string } | null> {
+  if (!options.windowsExecutable) {
+    return null;
+  }
+  
+  try {
+    // VMware VMs typically have virtual disk files (.vmdk)
+    // This is a simplified approach - a full implementation would mount the VM disk
+    const windowsPaths = [
+      path.join(vmPath, 'Documents and Settings'), // Older Windows versions
+      path.join(vmPath, 'Users'), // Newer Windows versions
+      path.join(vmPath, 'Program Files'),
+      path.join(vmPath, 'Program Files (x86)')
+    ];
+    
+    for (const windowsPath of windowsPaths) {
+      try {
+        const gameCandidate = await findWindowsGameInPath(windowsPath, options);
+        if (gameCandidate) {
+          return gameCandidate;
+        }
+      } catch (err) {
+        // Continue to next path
+      }
+    }
+  } catch (err) {
+    // VM path doesn't exist or can't be accessed
+    log('debug', 'Could not access VMware VM path', {
+      vmPath,
+      error: err.message
+    });
+  }
+  
+  return null;
 }
 
 /**
@@ -1033,13 +1398,87 @@ async function findWindowsGameInPath(searchPath: string, options: MacOSGameDisco
 }
 
 /**
+ * Helper function to find Windows games in a Parallels VM
+ * This is a simplified implementation - a full implementation would parse .pvm files
+ */
+async function findWindowsGameInParallelsVM(vmPath: string, options: MacOSGameDiscoveryOptions): Promise<{ path: string; executable: string } | null> {
+  if (!options.windowsExecutable) {
+    return null;
+  }
+  
+  try {
+    // In a typical Parallels setup, Windows executables would be in the VM's drive
+    // This is a simplified approach - a full implementation would mount the VM disk
+    const windowsPaths = [
+      path.join(vmPath, 'Documents and Settings'), // Older Windows versions
+      path.join(vmPath, 'Users'), // Newer Windows versions
+      path.join(vmPath, 'Program Files'),
+      path.join(vmPath, 'Program Files (x86)')
+    ];
+    
+    for (const windowsPath of windowsPaths) {
+      try {
+        const gameCandidate = await findWindowsGameInPath(windowsPath, options);
+        if (gameCandidate) {
+          return gameCandidate;
+        }
+      } catch (err) {
+        // Continue to next path
+      }
+    }
+  } catch (err) {
+    // VM path doesn't exist or can't be accessed
+    log('debug', 'Could not access Parallels VM path', {
+      vmPath,
+      error: err.message
+    });
+  }
+  
+  return null;
+}
+
+/**
  * Get the best game candidate from discovery results
+ * Enhanced with more sophisticated selection logic based on priority and confidence
  */
 export function getBestMacOSGameCandidate(candidates: MacOSGameCandidate[]): MacOSGameCandidate | null {
   if (candidates.length === 0) {
     return null;
   }
   
-  // Return the highest priority candidate (lowest priority number)
+  // Sort by priority first (lowest number = highest priority)
+  candidates.sort((a, b) => a.priority - b.priority);
+  
+  // If we have multiple candidates with the same priority, try to select the best one
+  const highestPriority = candidates[0].priority;
+  const samePriorityCandidates = candidates.filter(c => c.priority === highestPriority);
+  
+  if (samePriorityCandidates.length > 1) {
+    // Prefer candidates with more detailed manifest data
+    const candidatesWithManifest = samePriorityCandidates.filter(c => c.manifestData);
+    if (candidatesWithManifest.length > 0) {
+      // Prefer candidates with higher confidence levels
+      candidatesWithManifest.sort((a, b) => {
+        const aConfidence = a.manifestData?.matchConfidence || 'low';
+        const bConfidence = b.manifestData?.matchConfidence || 'low';
+        
+        const confidenceLevels = { 'high': 3, 'medium': 2, 'low': 1 };
+        return confidenceLevels[bConfidence] - confidenceLevels[aConfidence];
+      });
+      
+      return candidatesWithManifest[0];
+    }
+    
+    // If no manifest data, prefer native over compatibility layers
+    const nativeCandidates = samePriorityCandidates.filter(c => 
+      c.type === 'app' || c.type === 'native' || c.type === 'steam' || c.type === 'epic' || c.type === 'gog'
+    );
+    
+    if (nativeCandidates.length > 0) {
+      return nativeCandidates[0];
+    }
+  }
+  
+  // Return the highest priority candidate
   return candidates[0];
 }

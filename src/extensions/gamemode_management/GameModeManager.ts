@@ -288,6 +288,84 @@ class GameModeManager {
         .then(() => getNormalizeFunc(discovery.path))
         .then(normalize => discoverRelativeTools(game, discovery.path, discoveredGames, this.onDiscoveredTool, normalize));
     } else {
+      // Check if this might be a game extension that hasn't been loaded yet
+      const state = this.mStore.getState();
+      const installedExtensions = state.session.extensions?.installed || {};
+      
+      // Look for a game extension with this ID
+      // Game extensions are identified by their type being 'game' and having a path
+      // The extension ID is typically the folder name
+      const gameExtension = Object.values(installedExtensions).find(ext => 
+        ext.type === 'game' && ext.path && 
+        (path.basename(ext.path) === gameId || 
+         (ext.name && ext.name.replace('Game: ', '') === gameId) ||
+         (ext.id && ext.id === gameId))
+      );
+      
+      if (gameExtension) {
+        // Try to load and register the game extension dynamically
+        log('info', 'Attempting to load missing game extension', { gameId, extensionPath: gameExtension.path });
+        
+        try {
+          // Clear module cache to ensure we get the latest version
+          const indexPath = path.join(gameExtension.path, 'index.js');
+          delete require.cache[indexPath];
+          
+          // Try to load the extension
+          const extensionModule = require(indexPath);
+          if (typeof extensionModule.default === 'function') {
+            // Create a minimal context for the extension to register its game
+            const contextProxy = new Proxy({
+              api: this.mApi,
+              registerGame: (game: IGame) => {
+                // Register the game temporarily
+                log('info', 'Dynamically registered game', { gameId: game.id });
+                this.mKnownGames.push(game);
+              },
+              registerGameStub: (game: IGame, extInfo: any) => {
+                // Handle game stubs if needed
+                log('info', 'Dynamically registered game stub', { gameId: game.id });
+              }
+            }, {
+              get: (target, prop) => {
+                // Provide stub functions for other register methods
+                if (prop === 'registerGame' || prop === 'registerGameStub') {
+                  return target[prop];
+                } else if (typeof prop === 'string' && prop.startsWith('register')) {
+                  return () => {}; // Stub for other register methods
+                }
+                return target[prop];
+              }
+            });
+            
+            // Call the extension's init function
+            log('debug', 'Loading game extension dynamically', { extension: gameExtension.name, path: indexPath });
+            extensionModule.default(contextProxy);
+            
+            // Now try again with the newly registered game
+            const newlyRegisteredGame = this.mKnownGames.find(iter => iter.id === gameId);
+            if (newlyRegisteredGame) {
+              const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
+              const discovery = this.mStore.getState().settings.gameMode.discovered[gameId];
+              return quickDiscoveryTools(gameId, newlyRegisteredGame.supportedTools, this.onDiscoveredTool)
+                .then(() => getNormalizeFunc(discovery.path))
+                .then(normalize => discoverRelativeTools(newlyRegisteredGame, discovery.path, discoveredGames, this.onDiscoveredTool, normalize));
+            }
+          }
+        } catch (err) {
+          log('warn', 'Failed to dynamically load game extension', { gameId, error: err.message, stack: err.stack });
+        }
+      }
+      
+      // Log detailed information about what games are known
+      log('warn', 'Game not found in known games list', { 
+        requestedGameId: gameId, 
+        knownGameIds: this.mKnownGames.map(g => g.id),
+        installedGameExtensions: Object.values(installedExtensions)
+          .filter(ext => ext.type === 'game')
+          .map(ext => ({ id: ext.name || path.basename(ext.path), path: ext.path }))
+      });
+      
       return Promise.reject(new Error('unknown game id: ' + gameId));
     }
   }

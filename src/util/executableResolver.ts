@@ -88,7 +88,7 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
     
     // Priority 1: Native macOS executable
     if (options.macExecutable) {
-      const nativeCandidate = await findNativeExecutable(options.basePath, options.macExecutable);
+      const nativeCandidate = await findNativeExecutable(options.basePath, options.macExecutable, options.gameId);
       if (nativeCandidate) {
         candidates.push({
           path: nativeCandidate,
@@ -114,7 +114,7 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
     
     // Priority 3: Windows executable via virtualization (CrossOver, Parallels, etc.)
     if (options.windowsExecutable) {
-      const windowsCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable);
+      const windowsCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable, options.gameId);
       if (windowsCandidate) {
         candidates.push({
           path: windowsCandidate,
@@ -127,7 +127,7 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
   } else if (isWindows()) {
     // Windows: prioritize native Windows executable
     if (options.windowsExecutable) {
-      const windowsCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable);
+      const windowsCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable, options.gameId);
       if (windowsCandidate) {
         candidates.push({
           path: windowsCandidate,
@@ -140,7 +140,7 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
   } else if (isLinux()) {
     // Linux: prioritize native Linux executable, then Wine
     if (options.linuxExecutable) {
-      const linuxCandidate = await findNativeExecutable(options.basePath, options.linuxExecutable);
+      const linuxCandidate = await findNativeExecutable(options.basePath, options.linuxExecutable, options.gameId);
       if (linuxCandidate) {
         candidates.push({
           path: linuxCandidate,
@@ -152,7 +152,7 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
     }
     
     if (options.windowsExecutable) {
-      const wineCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable);
+      const wineCandidate = await findWindowsExecutable(options.basePath, options.windowsExecutable, options.gameId);
       if (wineCandidate) {
         candidates.push({
           path: wineCandidate,
@@ -170,14 +170,51 @@ export async function resolveGameExecutable(options: GameExecutableOptions): Pro
 
 /**
  * Find native executable (macOS/Linux binary)
+ * Enhanced with executable name mapping for better cross-platform compatibility
  */
-async function findNativeExecutable(basePath: string, executableName: string): Promise<string | null> {
+async function findNativeExecutable(basePath: string, executableName: string, gameId?: string): Promise<string | null> {
   try {
+    // Try to map the Windows executable name to macOS equivalent
+    let mappedExecutableName = executableName;
+    
+    // Only try mapping if we're on macOS and the executable name looks like a Windows executable
+    if (process.platform === 'darwin' && executableName.toLowerCase().endsWith('.exe')) {
+      try {
+        const macOSGameCompatibility = require('./macOSGameCompatibility');
+        if (macOSGameCompatibility && typeof macOSGameCompatibility.mapWindowsExecutableToMacOS === 'function') {
+          mappedExecutableName = macOSGameCompatibility.mapWindowsExecutableToMacOS(executableName, gameId);
+          log('debug', 'Mapped Windows executable to macOS equivalent', { 
+            windowsExecutable: executableName, 
+            macOSExecutable: mappedExecutableName,
+            gameId
+          });
+        }
+      } catch (err) {
+        log('debug', 'Could not use executable name mapping, using original name', { 
+          executableName, 
+          error: err.message 
+        });
+      }
+    }
+    
     const candidates = [
-      path.join(basePath, executableName),
-      path.join(basePath, 'bin', executableName),
-      path.join(basePath, 'Contents', 'MacOS', executableName), // For app bundles
+      path.join(basePath, mappedExecutableName),
+      path.join(basePath, executableName), // Original name as fallback
+      path.join(basePath, 'bin', mappedExecutableName),
+      path.join(basePath, 'bin', executableName), // Original name as fallback
+      path.join(basePath, 'Contents', 'MacOS', mappedExecutableName), // For app bundles
+      path.join(basePath, 'Contents', 'MacOS', executableName), // Original name as fallback
     ];
+    
+    // Add candidates with .exe extension removed for macOS
+    if (mappedExecutableName.toLowerCase().endsWith('.exe')) {
+      const baseName = mappedExecutableName.slice(0, -4);
+      candidates.push(
+        path.join(basePath, baseName),
+        path.join(basePath, 'bin', baseName),
+        path.join(basePath, 'Contents', 'MacOS', baseName)
+      );
+    }
     
     for (const candidate of candidates) {
       try {
@@ -234,16 +271,68 @@ async function findAppBundle(basePath: string, appBundleName: string): Promise<s
 
 /**
  * Find Windows executable (native on Windows, or via virtualization on macOS/Linux)
+ * Enhanced with executable name mapping for better cross-platform compatibility
  */
-async function findWindowsExecutable(basePath: string, executableName: string): Promise<string | null> {
+async function findWindowsExecutable(basePath: string, executableName: string, gameId?: string): Promise<string | null> {
   try {
+    // Try to map the Windows executable name to a more appropriate name
+    let mappedExecutableName = executableName;
+    
+    // On macOS, try to map to a native equivalent when looking for Windows executables
+    if (process.platform === 'darwin') {
+      try {
+        const macOSGameCompatibility = require('./macOSGameCompatibility');
+        if (macOSGameCompatibility && typeof macOSGameCompatibility.mapWindowsExecutableToMacOS === 'function') {
+          mappedExecutableName = macOSGameCompatibility.mapWindowsExecutableToMacOS(executableName, gameId);
+          log('debug', 'Mapped Windows executable to potential macOS equivalent for CrossOver/Parallels', { 
+            windowsExecutable: executableName, 
+            mappedExecutable: mappedExecutableName,
+            gameId
+          });
+        }
+      } catch (err) {
+        log('debug', 'Could not use executable name mapping for Windows executable, using original name', { 
+          executableName, 
+          error: err.message 
+        });
+      }
+    }
+    
     const exeName = executableName.endsWith('.exe') ? executableName : `${executableName}.exe`;
+    const mappedExeName = mappedExecutableName.endsWith('.exe') ? mappedExecutableName : `${mappedExecutableName}.exe`;
+    
     const candidates = [
-      path.join(basePath, exeName),
-      path.join(basePath, 'bin', exeName),
-      path.join(basePath, 'Binaries', exeName),
-      path.join(basePath, 'Game', exeName),
+      path.join(basePath, mappedExeName),
+      path.join(basePath, exeName), // Original name as fallback
+      path.join(basePath, 'bin', mappedExeName),
+      path.join(basePath, 'bin', exeName), // Original name as fallback
+      path.join(basePath, 'Binaries', mappedExeName),
+      path.join(basePath, 'Binaries', exeName), // Original name as fallback
+      path.join(basePath, 'Game', mappedExeName),
+      path.join(basePath, 'Game', exeName), // Original name as fallback
     ];
+    
+    // On macOS, also add candidates for native executables
+    if (process.platform === 'darwin') {
+      candidates.push(
+        path.join(basePath, mappedExecutableName),
+        path.join(basePath, executableName), // Original name as fallback
+        path.join(basePath, 'bin', mappedExecutableName),
+        path.join(basePath, 'bin', executableName), // Original name as fallback
+        path.join(basePath, 'Binaries', mappedExecutableName),
+        path.join(basePath, 'Binaries', executableName) // Original name as fallback
+      );
+      
+      // Add candidates with .exe extension removed for macOS
+      if (mappedExecutableName.toLowerCase().endsWith('.exe')) {
+        const baseName = mappedExecutableName.slice(0, -4);
+        candidates.push(
+          path.join(basePath, baseName),
+          path.join(basePath, 'bin', baseName),
+          path.join(basePath, 'Binaries', baseName)
+        );
+      }
+    }
     
     for (const candidate of candidates) {
       try {

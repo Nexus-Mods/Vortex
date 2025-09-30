@@ -14,6 +14,7 @@ import { isMacOS } from '../../../util/platform';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
+import { MACOS_GAME_FIXES } from '../../../util/macOSGameCompatibility';
 import MainPage from '../../../views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
@@ -25,6 +26,7 @@ import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
 import GameRow from './GameRow';
+import GameRowErrorBoundary from './GameRowErrorBoundary';
 import GameThumbnail from './GameThumbnail';
 import MacCompatibleButton from './MacCompatibleButton';
 import ShowHiddenButton from './ShowHiddenButton';
@@ -36,7 +38,9 @@ import update from 'immutability-helper';
 import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import { InputGroup, ListGroup, Panel, PanelGroup } from 'react-bootstrap';
+import { List as VirtualizedList, CellMeasurer, CellMeasurerCache } from 'react-virtualized';
 import Select from 'react-select';
+import * as _ from 'lodash';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult, knownGame?: IGameStored): IGameStored {
   return {
@@ -92,6 +96,7 @@ interface IComponentState {
   currentFilterValue: string;
   expandManaged: boolean;
   expandUnmanaged: boolean;
+  expandDiscovered: boolean;
   showMacCompatibleOnly: boolean;
 }
 
@@ -109,6 +114,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
   public static SIMILARITY_RATIO: number = 90;
   public declare context: IComponentContext;
+
+  private debouncedFilter: _.DebouncedFunc<(input: string) => void>;
 
   private buttons: IActionDefinition[];
   private mRef: HTMLElement;
@@ -132,6 +139,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       currentFilterValue: '',
       expandManaged: true,
       expandUnmanaged: true,
+      expandDiscovered: true,
       showMacCompatibleOnly: false,
     });
 
@@ -147,12 +155,22 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           ({ t: this.props.t, showMacCompatibleOnly: this.state.showMacCompatibleOnly, toggleMacCompatible: this.toggleMacCompatible }),
       },
     ];
+
+    // Initialize debounced filter with 300ms delay for better performance during rapid typing
+    this.debouncedFilter = _.debounce((input: string) => {
+      this.nextState.currentFilterValue = input;
+    }, 300);
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, extensions, extensionsInstalled, knownGames,
-      pickerLayout, profiles, sortManaged, sortUnmanaged } = this.props;
-    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged, showMacCompatibleOnly } = this.state;
+    const { 
+      t, discoveredGames, extensions, extensionsInstalled, knownGames,
+      pickerLayout, profiles, sortManaged, sortUnmanaged 
+    } = this.props;
+    const { 
+      showHidden, currentFilterValue, expandManaged, expandUnmanaged, 
+      expandDiscovered, showMacCompatibleOnly 
+    } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
     const installedNames = new Set(Object.values(extensionsInstalled).map(ext => ext.name));
@@ -163,7 +181,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     // because we can't rely on authors to be consistent here.
     // Therefore we will also filter out based on game name, meaning there can only be one entry
     // for each game name, the one installed locally taking precedence.
-    const installedGameNames = new Set(knownGames.map(game => game.name.replace(/\t/g, ' ')));
+    const installedGameNames = new Set(knownGames.map(game => (game.name || '').replace(/\t/g, ' ')));
 
     // contains the extensions we don't have installed locally
     const extensionsUninstalled = extensions
@@ -230,6 +248,53 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
+    // Create a list of discovered Mac-compatible games
+    const discoveredMacGames: IGameStored[] = [];
+    if (isMacOS()) {
+      try {
+        // Get the macOS compatibility module
+        if (MACOS_GAME_FIXES) {
+          // For each discovered game, check if it has Mac compatibility
+          Object.keys(discoveredGames).forEach(gameId => {
+            const discovery = discoveredGames[gameId];
+            const knownGame = knownGames.find(game => game.id === gameId);
+            
+            // Check if this game has Mac compatibility
+            const hasMacCompatibility = MACOS_GAME_FIXES.some(fix => {
+              // Normalize the game ID for comparison
+              const normalizedGameId = gameId
+                .toLowerCase()
+                .replace(/sid meier's/g, '')
+                .replace(/civilization/g, 'civ')
+                .replace(/vortex extension/g, '')
+                .replace(/game:/g, '')
+                .replace(/[^a-z0-9]/g, '');
+              
+              const normalizedFixId = fix.gameId
+                .toLowerCase()
+                .replace(/sidmeiers/g, '')
+                .replace(/civilization/g, 'civ')
+                .replace(/[^a-z0-9]/g, '');
+              
+              // Check for matches
+              return normalizedGameId.includes(normalizedFixId) || 
+                     normalizedFixId.includes(normalizedGameId);
+            });
+            
+            // If the game has Mac compatibility and passes the current filter, add it to the list
+            if (hasMacCompatibility) {
+              const gameStored = gameFromDiscovery(gameId, discovery, knownGame);
+              if (this.applyGameFilter(gameStored)) {
+                discoveredMacGames.push(gameStored);
+              }
+            }
+          });
+        }
+      } catch (err) {
+        // Silently handle errors
+      }
+    }
+
     const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
 
     const filteredManaged =
@@ -237,11 +302,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const filteredUnmanaged =
         unmanagedGameList
           .filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortUnmanaged));
+    const filteredDiscovered = discoveredMacGames
+      .filter(game => this.applyGameFilter(game)).sort(this.sortBy('alphabetical'));
 
     const titleManaged = t('Managed ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
     const titleUnmanaged = t('Unmanaged ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
+    const titleDiscovered = t('Discovered Mac Games ({{filterCount}})', {
+      replace: { filterCount: this.getTabGameNumber(discoveredMacGames, filteredDiscovered) } });
 
     return (
       <MainPage domRef={this.setRef}>
@@ -307,7 +376,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       value={currentFilterValue}
                       placeholder={t('Search for a game...')}
                       onChange={this.onFilterInputChange}
-                      debounceTimer={100}
                       emptyIcon='search'
                       clearable
                     />
@@ -387,6 +455,45 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       />
                     </Panel.Body>
                   </Panel>
+                  {isMacOS() && (
+                    <Panel
+                      expanded={expandDiscovered}
+                      eventKey='discovered'
+                      onToggle={nop}
+                    >
+                      <Panel.Heading onClick={this.toggleDiscovered}>
+                        <Icon name={expandDiscovered ? 'showhide-down' : 'showhide-right'} />
+                        <Panel.Title>{titleDiscovered}</Panel.Title>
+                        <div className='flex-fill' />
+                        {expandDiscovered ? (
+                          <div className='game-sort-container' onClick={captureClick} >
+                            {t('Sort by:')}
+                            <Select
+                              className='select-compact'
+                              options={[
+                                { value: 'alphabetical', label: t('Name A-Z') },
+                              ]}
+                              value={'alphabetical'}
+                              onChange={() => { /* No sorting needed for discovered games */ }}
+                              clearable={false}
+                              autosize={false}
+                              searchable={false}
+                            />
+                          </div>
+                        ) : null}
+                      </Panel.Heading>
+                      <Panel.Body collapsible>
+                        {this.renderGames(filteredDiscovered, 'discovered')}
+                        {filteredDiscovered.length === 0 && (
+                          <EmptyPlaceholder
+                            icon='game'
+                            text={t('No Mac-compatible games discovered')}
+                            subtext={t('Try running a full game discovery or installing Mac-compatible game extensions')}
+                          />
+                        )}
+                      </Panel.Body>
+                    </Panel>
+                  )}
                 </PanelGroup>
               </div>
             </FlexLayout.Flex>
@@ -425,8 +532,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private toggleDiscovered = (evt: React.MouseEvent<any>) => {
+    if (!evt.isDefaultPrevented()) {
+      this.nextState.expandDiscovered = !this.state.expandDiscovered;
+    }
+  }
+
   private onFilterInputChange = (input) => {
-    this.nextState.currentFilterValue = input;
+    // Use debounced filter for better performance during rapid typing
+    this.debouncedFilter(input);
   }
 
   private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
@@ -437,21 +551,65 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   private applyGameFilter = (game: IGameStored): boolean => {
     const { currentFilterValue, showMacCompatibleOnly } = this.state;
     
-    // Apply text filter
-    const textMatch = game.name.toLowerCase().includes(currentFilterValue.toLowerCase())
+    // Apply text filter with null/undefined safety
+    const gameName = game.name || '';
+    const filterValue = currentFilterValue || '';
+    const textMatch = gameName.toLowerCase().includes(filterValue.toLowerCase())
         || !currentFilterValue;
     
     // Apply macOS compatibility filter
     if (showMacCompatibleOnly) {
-      const hasMacOSCompatibility = game.details?.macOSCompatibility !== undefined;
+      // Enhanced check for macOS compatibility that handles various data structures
+      const hasMacOSCompatibility = game.details?.macOSCompatibility !== undefined && 
+                                   game.details?.macOSCompatibility !== null;
       
-      // Debug logging
-      console.log(`[Mac Filter Debug] Game: ${game.name}, ID: ${game.id}, Has Mac Compatibility: ${hasMacOSCompatibility}`);
-      if (game.details?.macOSCompatibility) {
-        console.log(`[Mac Filter Debug] Mac Compatibility Data:`, game.details.macOSCompatibility);
+      // Additional check for games that might have macOS compatibility but in a different format
+      const hasAlternativeMacSupport = game.details?.macSupport === true || 
+                                      (game.details?.platforms && game.details.platforms.includes('mac'));
+      
+      // For available extensions (unmanaged games), check if they have Mac compatibility in MACOS_GAME_FIXES
+      const isAvailableExtension = game.extensionPath === undefined && game.imageURL !== undefined;
+      let hasMacCompatibilityFromFixes = false;
+      
+      if (isAvailableExtension) {
+        // For available extensions, check if their name/gameId matches any in MACOS_GAME_FIXES
+        try {
+          if (MACOS_GAME_FIXES) {
+            // Normalize the game name/id for comparison with null safety
+            const normalizedName = (game.name || '')
+              .toLowerCase()
+              .replace(/sid meier's/g, '')
+              .replace(/civilization/g, 'civ')
+              .replace(/[^a-z0-9]/g, '');
+            
+            const normalizedId = (game.id || '')
+              .toLowerCase()
+              .replace(/sid meier's/g, '')
+              .replace(/civilization/g, 'civ')
+              .replace(/vortex extension/g, '')
+              .replace(/game:/g, '')
+              .replace(/[^a-z0-9]/g, '');
+            
+            // Check if any fix matches this game
+            hasMacCompatibilityFromFixes = MACOS_GAME_FIXES.some(fix => {
+              const normalizedFixId = (fix.gameId || '')
+                .toLowerCase()
+                .replace(/sidmeiers/g, '')
+                .replace(/civilization/g, 'civ')
+                .replace(/[^a-z0-9]/g, '');
+              
+              // Check for matches
+              return normalizedId.includes(normalizedFixId) || 
+                     normalizedName.includes(normalizedFixId) ||
+                     normalizedFixId.includes(normalizedName);
+            });
+          }
+        } catch (err) {
+          // Silently handle errors
+        }
       }
       
-      return textMatch && hasMacOSCompatibility;
+      return textMatch && (hasMacOSCompatibility || hasAlternativeMacSupport || hasMacCompatibilityFromFixes);
     }
     
     return textMatch;
@@ -473,7 +631,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleMacCompatible = () => {
-    this.setState(update(this.state, { showMacCompatibleOnly: { $set: !this.state.showMacCompatibleOnly } }));
+    this.setState(update(this.state, { 
+      showMacCompatibleOnly: { $set: !this.state.showMacCompatibleOnly } 
+    }));
   }
 
   private setLayoutList = () => {
@@ -519,7 +679,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   private identifyGame(game: IGameStored): IGameListEntry {
     const { nexusGames } = this.props;
     return this.nexusGameById(nexusGames)[nexusGameId(game)]
-        ?? this.nexusGameByName(nexusGames)[this.lookupName(game.name)];
+        ?? this.nexusGameByName(nexusGames)[this.lookupName(game.name || '')];
 
   }
 
@@ -568,34 +728,85 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
 
     switch (pickerLayout) {
-      case 'list': return this.renderGamesList(games, type, gameMode);
+      case 'list': return this.renderGamesList(games, type);
       case 'small': return this.renderGamesSmall(games, type, gameMode);
       default: throw new Error('invalid picker layout ' + pickerLayout);
     }
   }
 
-  private renderGamesList(games: IGameStored[], type: string, gameMode: string): JSX.Element {
-    const { t, discoveredGames, onRefreshGameInfo } = this.props;
+  private renderGamesList(games: IGameStored[], type: string): JSX.Element {
+    const { t, discoveredGames, onRefreshGameInfo, gameMode } = this.props;
 
-    return (
-      <ListGroup>
-        {games.map(game => (
-          <GameRow
-            t={t}
-            getBounds={this.getBounds}
-            container={this.mScrollRef}
-            key={game.id}
-            game={game}
-            discovery={discoveredGames[game.id]}
-            type={type}
-            active={game.id === gameMode}
-            onRefreshGameInfo={onRefreshGameInfo}
-            onBrowseGameLocation={this.props.onBrowseGameLocation}
-          />
-        ))
-        }
-      </ListGroup>
-    );
+    // Use virtualization for large lists
+    if (games.length > 50) {
+      // Create a cache for measuring row heights
+      const cache = new CellMeasurerCache({
+        fixedWidth: true,
+        defaultHeight: 100,
+      });
+
+      const rowRenderer = ({ index, key, parent, style }) => {
+        const game = games[index];
+        return (
+          <CellMeasurer
+            key={key}
+            cache={cache}
+            parent={parent}
+            columnIndex={0}
+            rowIndex={index}
+          >
+            <GameRowErrorBoundary t={t} gameName={game.name}>
+              <GameRow
+                t={t}
+                getBounds={this.getBounds}
+                container={this.mScrollRef}
+                key={game.id}
+                game={game}
+                discovery={discoveredGames[game.id]}
+                type={type}
+                active={game.id === gameMode}
+                onRefreshGameInfo={onRefreshGameInfo}
+                onBrowseGameLocation={this.props.onBrowseGameLocation}
+                style={style}
+              />
+            </GameRowErrorBoundary>
+          </CellMeasurer>
+        );
+      };
+
+      return (
+        <VirtualizedList
+          deferredMeasurementCache={cache}
+          rowHeight={cache.rowHeight}
+          rowRenderer={rowRenderer}
+          rowCount={games.length}
+          width={this.mScrollRef?.offsetWidth || 800}
+          height={Math.min(games.length * 100, 600)}
+        />
+      );
+    } else {
+      // For smaller lists, use the standard approach
+      return (
+        <ListGroup>
+          {games.map(game => (
+            <GameRowErrorBoundary t={t} gameName={game.name} key={game.id}>
+              <GameRow
+                t={t}
+                getBounds={this.getBounds}
+                container={this.mScrollRef}
+                key={game.id}
+                game={game}
+                discovery={discoveredGames[game.id]}
+                type={type}
+                active={game.id === gameMode}
+                onRefreshGameInfo={onRefreshGameInfo}
+                onBrowseGameLocation={this.props.onBrowseGameLocation}
+              />
+            </GameRowErrorBoundary>
+          ))}
+        </ListGroup>
+      );
+    }
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {

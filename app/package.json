@@ -12,14 +12,14 @@
   },
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
-    "fomod-installer": "file:vendor/fomod-installer-mac",
-    "vortexmt": "file:vendor/vortexmt-js",
+    "fomod-installer": "file:../vendor/fomod-installer-mac",
+    "vortexmt": "file:../vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
     "cheerio": "1.0.0-rc.12",
-    "bsdiff-node": "file:vendor/bsdiff-node-js",
+    "bsdiff-node": "file:../vendor/bsdiff-node-js",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#master",
     "bbcode-to-react": "^0.2.9",
@@ -38,7 +38,7 @@
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",
     "electron-context-menu": "^3.6.1",
-    "electron-redux": "file:vendor/electron-redux-compat",
+    "electron-redux": "file:../vendor/electron-redux-compat",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
     "exe-version": "Nexus-Mods/node-exe-version#master",
@@ -97,12 +97,12 @@
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
     "tmp": "^0.1.0",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "turbowalk": "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295",
     "universal-analytics": "^0.4.23",
     "uuid": "^3.3.3",
-    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "vortex-run": "file:src/util/vortex-run",
-    "wholocks": "Nexus-Mods/node-wholocks#master",
+    "vortex-parse-ini": "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24",
+    "vortex-run": "file:../src/util/vortex-run",
+    "wholocks": "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f",
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
     "ws": "^7.5.10",
@@ -121,9 +121,9 @@
     "node-gyp": "^9.0.0",
     "**/dir-compare/minimatch": "3.0.5",
     "**/cheerio": "1.0.0-rc.12",
-    "vortexmt": "file:vendor/vortexmt-js",
-    "**/bsdiff-node": "file:vendor/bsdiff-node-js",
-    "**/electron-redux": "file:vendor/electron-redux-compat",
-    "**/fomod-installer": "file:vendor/fomod-installer-mac"
+    "vortexmt": "file:../vendor/vortexmt-js",
+    "**/bsdiff-node": "file:../vendor/bsdiff-node-js",
+    "**/electron-redux": "file:../vendor/electron-redux-compat",
+    "**/fomod-installer": "file:../vendor/fomod-installer-mac"
   }
 }

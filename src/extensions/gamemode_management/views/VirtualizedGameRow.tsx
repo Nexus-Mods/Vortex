@@ -4,7 +4,6 @@ import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { PureComponentEx } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
-import { isMacOS } from '../../../util/platform';
 
 import { IMod } from '../../mod_management/types/IMod';
 
@@ -36,11 +35,11 @@ export interface IProps {
 }
 
 /**
- * thumbnail + controls for a single game mode within the game picker
+ * Virtualized version of GameRow for better performance with large game lists
  *
- * @class GameThumbnail
+ * @class VirtualizedGameRow
  */
-class GameRow extends PureComponentEx<IProps, Record<string, never>> {
+class VirtualizedGameRow extends PureComponentEx<IProps, Record<string, never>> {
   private mRef = null;
 
   public render(): JSX.Element {
@@ -81,14 +80,6 @@ class GameRow extends PureComponentEx<IProps, Record<string, never>> {
       classes.push('game-list-undiscovered');
     }
 
-    // Check if the game has macOS compatibility data
-    const hasMacOSCompatibility = isMacOS() && game.details?.macOSCompatibility !== undefined;
-    
-    // Add macOS compatibility indicator to classes
-    if (hasMacOSCompatibility) {
-      classes.push('game-list-macos-compatible');
-    }
-
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <Provider store={this.context.api.store}>
@@ -125,22 +116,10 @@ class GameRow extends PureComponentEx<IProps, Record<string, never>> {
                   src={imgurl || ''} 
                   onError={this.handleImageError}
                 />
-                {hasMacOSCompatibility && (
-                  <div className='game-macos-indicator' title={t('macOS Compatible')}>
-                    <span className='macos-icon'>🍎</span>
-                  </div>
-                )}
               </div>
             </Media.Left>
             <Media.Body>
-              <Media.Heading>
-                {t((game.name || '').replace(/\t/g, ' '))}
-                {hasMacOSCompatibility && (
-                  <span className='game-macos-badge' title={t('macOS Compatible')}>
-                    {t('Mac')}
-                  </span>
-                )}
-              </Media.Heading>
+              <Media.Heading>{t((game.name || '').replace(/\t/g, ' '))}</Media.Heading>
               {(location !== null) ? (<p>{t('Location')}: {location}</p>) : null}
             </Media.Body>
             <Media.Right>
@@ -215,4 +194,4 @@ class GameRow extends PureComponentEx<IProps, Record<string, never>> {
     action.position >= 100
 }
 
-export default GameRow as React.ComponentClass<IProps>;
+export default VirtualizedGameRow as React.ComponentClass<IProps>;

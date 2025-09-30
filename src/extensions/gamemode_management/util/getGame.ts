@@ -74,7 +74,8 @@ const gvm = local<{
 // ...or this
 export function getGames(): IGame[] {
   if ($.gameModeManager === undefined) {
-    throw new Error('getGames only available in renderer process');
+    // GameModeManager not initialized yet, return empty array
+    return [];
   }
   return $.gameModeManager.games.map(makeGameProxy);
 }
@@ -92,12 +93,17 @@ export function getGame(gameId: string): IGame {
 
 export function getGameStores(): IGameStore[] {
   if ($.gameModeManager === undefined) {
-    throw new Error('getGameStores only available in renderer process');
+    // GameModeManager not initialized yet, return empty array
+    return [];
   }
 
   return $.gameModeManager.gameStores || [];
 }
 
 export function getGameStore(id: string): IGameStore {
+  if ($.gameModeManager === undefined) {
+    // GameModeManager not initialized yet, return undefined
+    return undefined;
+  }
   return $.gameModeManager.gameStores.find(store => store.id === id);
 }
