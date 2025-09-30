@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 const copyfiles = require('copyfiles');
 const fs = require('fs');
 const fsP = require('fs').promises;
-const glob = require('glob');
+const { glob } = require('glob');
 const minimist = require('minimist');
 const path = require('path');
 const rimraf = require('rimraf');
@@ -24,7 +24,7 @@ const globOptions = { };
 
 const copyfilesAsync = Promise.promisify(copyfiles);
 const rimrafAsync = Promise.promisify(rimraf);
-const globAsync = Promise.promisify(glob);
+const globAsync = (pattern, options) => glob(pattern, options);
 
 class Unchanged extends Error {
   constructor() {

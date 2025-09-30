@@ -109,6 +109,7 @@ import * as path from 'path';
 import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
+import { types } from '../..';
 
 interface IAppContext {
   isProfileChanging: boolean
@@ -1137,6 +1138,26 @@ function once(api: IExtensionApi) {
     }
   });
 
+  const removeModToastDebouncer = new Debouncer(() => {
+    api.sendNotification({
+      id: 'mod-removed',
+      type: 'info',
+      message: 'Mod(s) removed',
+      displayMS: 3000,
+    });
+
+    return Promise.resolve();
+  }, 500, true, false);
+
+  api.onAsync('did-remove-mod', (
+    gameMode: string,
+    removedId: string,
+    modId: string,
+    options: { willBeReplaced?: boolean, modData?: types.IMod }) => {
+    removeModToastDebouncer.schedule();
+    return Promise.resolve();
+  });
+
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
   api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
@@ -1177,7 +1198,7 @@ function once(api: IExtensionApi) {
         const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
         Promise.map(modIds, modId =>
-          installManager.installDependencies(api, profile, gameId, modId, silent === true)
+          installManager.installDependencies(api, profile, gameId, modId, silent === true, false)
             .catch(ProcessCanceled, () => null))
           .catch(err => api.showErrorNotification('Failed to install dependencies', err));
       } catch (err) {
@@ -1215,7 +1236,7 @@ function once(api: IExtensionApi) {
       return;
     }
 
-    installManager.installDependencies(api, profile, profile.gameId, modId, false)
+    installManager.installDependencies(api, profile, profile.gameId, modId, true, false)
       .then(() => installManager.installRecommendations(api, profile, profile.gameId, modId))
       .catch(err => {
         if (!(err instanceof ProcessCanceled)) {
@@ -1239,7 +1260,11 @@ function once(api: IExtensionApi) {
       if (previous[gameMode] !== current[gameMode]) {
         waitForCondition({
           callback: () => onceCB(() => onNeedToDeploy(api, current[gameMode])),
-          condition: () => getSafe(api.getState(), ['session', 'base', 'activity', 'installing_dependencies'], []).length === 0,
+          condition: () => {
+            const installingDeps = getSafe(api.getState(), ['session', 'base', 'activity', 'installing_dependencies'], []).length === 0;
+            const activeCollectionInstall = getSafe(api.getState(), ['session', 'collections', 'activeSession'], undefined);
+            return installingDeps && (activeCollectionInstall === undefined);
+          },
           required: () => getSafe(api.getState(), ['persistent', 'deployment', 'needToDeploy', gameMode], false),
         });
       }

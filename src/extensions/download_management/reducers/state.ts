@@ -16,7 +16,29 @@ export const stateReducer: IReducerSpec = {
   reducers: {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
-      if (state.files[payload.id] !== undefined) {
+      if (state.files[payload.id] != null) {
+        const existingDownload = state.files[payload.id];
+        const existingMd5 = existingDownload.modInfo?.meta?.fileMD5 ?? existingDownload.modInfo?.meta?.details?.fileMD5;
+        const payloadMd5 = payload.modInfo?.meta?.details?.fileMD5 ?? payload.modInfo?.meta?.fileMD5;
+        const payloadFileId = payload.modInfo?.meta?.details?.fileId ?? payload.modInfo?.meta?.fileId ?? payload.modInfo?.nexus?.ids?.fileId;
+        const existingFileId = existingDownload.modInfo?.meta?.details?.fileId ?? existingDownload.modInfo?.meta?.fileId ?? existingDownload.modInfo?.nexus?.ids?.fileId;
+        const payloadRevisionId = payload.modInfo?.nexus?.ids?.revisionId;
+        const existingRevisionId = existingDownload.modInfo?.nexus?.ids?.revisionId;
+        if (payloadMd5 != null && existingMd5 != null && existingMd5 === payloadMd5) {
+          // If it's the same md5 for the same file, just ignore the request - it's probably the
+          //  redux module replaying actions. (appears to be the redux devtools)
+          return state;
+        }
+        if (payloadFileId != null && existingFileId != null && existingFileId === payloadFileId) {
+          // If it's the same id for the same file, just ignore the request - it's probably the
+          //  redux module replaying actions. (appears to be the redux devtools)
+          return state;
+        }
+
+        if (payloadRevisionId != null && existingRevisionId != null && existingRevisionId === payloadRevisionId) {
+          // Same as above, but for collections
+          return state;
+        }
         // The code that called this action can't continue using this id.
         // We rely on the calling code to have a reliable way of generating unique id so
         // it's not worth the effort to code error handling for this.
@@ -24,7 +46,7 @@ export const stateReducer: IReducerSpec = {
           message: 'Invalid state change',
           details: 'An attempt was made to change application state in a way that '
                    + 'would destroy user data. The action was: \'initDownload\' '
-                   + 'with id \'' + payload.id + '\'.'
+                   + 'with id \'" + payload.id + "\'.'
                    + 'This is a bug in the calling code, please report it.',
         }, {});
         return state;

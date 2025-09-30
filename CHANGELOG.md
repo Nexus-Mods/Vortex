@@ -4,7 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.15.1 - 2025-09-10
+
+## [1.15.2] - 2025-09-16
+
+- Fixed objdiff potentially attempting to loop over null and arrays. ([#18243](https://github.com/Nexus-Mods/Vortex/issues/18243))
+- Fixed potential race condition if update is running but mod was removed. ([#18246](https://github.com/Nexus-Mods/Vortex/issues/18246))
+- Added error details sanitization to prevent crashpad issues ([#18251](https://github.com/Nexus-Mods/Vortex/issues/18251), [#18250](https://github.com/Nexus-Mods/Vortex/issues/18250))
+- Fixed nullish checks in mod reference match tests. ([#18252](https://github.com/Nexus-Mods/Vortex/issues/18252))
+- Fixed inconsistent promise chain potentially raising TypeError. ([#18288](https://github.com/Nexus-Mods/Vortex/issues/18288))
+- Fixed logging attempt of potentially nullish dependency reference. ([#18280](https://github.com/Nexus-Mods/Vortex/issues/18280))
+- Fixed crash if category data is corrupted. ([#18283](https://github.com/Nexus-Mods/Vortex/issues/18283))
+- Fixed downloads creating folders based on domain rather than internal id. ([#18262](https://github.com/Nexus-Mods/Vortex/issues/18262))
+- **halomasterchiefcollection**: Fixed unhandled event listener errors. ([#18257](https://github.com/Nexus-Mods/Vortex/issues/18257))
+- **7dtd**: Fixed fallbackPurge getting called during UDF setting. ([#18205](https://github.com/Nexus-Mods/Vortex/issues/18205))
+
+
+## [1.15.1] - 2025-09-10
 
 _Stable release based on 1.15.0-beta.3_ 
 
@@ -952,6 +967,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.15.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.2
+[1.15.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.1
 [1.14.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.4 
 [1.14.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.3 
 [1.14.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.2 

@@ -1,10 +1,10 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
-import {log} from '../../util/log';
-import {renderError, showError} from '../../util/message';
+import { log } from '../../util/log';
+import { renderError, showError } from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { flatten, setdefault, truthy } from '../../util/util';
@@ -23,8 +23,8 @@ import {
   setDownloadModInfo,
   setDownloadPausable,
 } from './actions/state';
-import {IChunk} from './types/IChunk';
-import {IDownload, IDownloadOptions} from './types/IDownload';
+import { IChunk } from './types/IChunk';
+import { IDownload, IDownloadOptions } from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
@@ -36,13 +36,17 @@ import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } fr
 import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-import {generate as shortid} from 'shortid';
+import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
+import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadCancelledEvent, CollectionsDownloadFailedEvent } from '../analytics/mixpanel/MixpanelEvents';
+import { isArray } from 'lodash';
+import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
+import { makeModAndFileUIDs } from '../nexus_integration/util/UIDs';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], chunkable: boolean,
-                        urls: string[], filePath: string, smallUpdate: boolean) {
+  total: number, chunks: IChunk[], chunkable: boolean,
+  urls: string[], filePath: string, smallUpdate: boolean) {
   const state = store.getState();
   const download: IDownload = state.persistent.downloads.files[dlId];
   if (download === undefined) {
@@ -51,7 +55,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   }
   const updates: any[] = [];
   if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
-    if (received < 0)  {
+    if (received < 0) {
       log('warn', 'invalid download progress', { received, total });
     }
     updates.push(downloadProgress(dlId, received, total, chunks, urls));
@@ -97,16 +101,16 @@ export class DownloadObserver {
     this.mManager = manager;
 
     events.on('remove-download',
-              (downloadId, callback?) => this.handleRemoveDownload(downloadId, callback));
+      (downloadId, callback?) => this.handleRemoveDownload(downloadId, callback));
     events.on('pause-download',
-              (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
+      (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
-              (downloadId, callback?, options?) =>
-                  this.handleResumeDownload(downloadId, callback, options));
+      (downloadId, callback?, options?) =>
+        this.handleResumeDownload(downloadId, callback, options));
     events.on('start-download',
-              (urls, modInfo, fileName?, callback?, redownload?, options?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, callback,
-                                           redownload, options));
+      (urls, modInfo, fileName?, callback?, redownload?, options?) =>
+        this.handleStartDownload(urls, modInfo, fileName, callback,
+          redownload, options));
     // this is a bit of a hack that lets callers intercept a queued download that was not started
     // yet (e.g. it may be waiting to ensure the download dir exists)
     // for this to work the modInfo of the download has to contain a referenceTag corresponding to
@@ -154,14 +158,40 @@ export class DownloadObserver {
     const t = this.mApi.translate;
 
     const details = renderError(err);
-    return `${t(details.text, {replace: details.parameters})}\n\n`
-         + `${t(details.message, { replace: details.parameters })}`;
+    return `${t(details.text, { replace: details.parameters })}\n\n`
+      + `${t(details.message, { replace: details.parameters })}`;
   }
 
   private handleDownloadError(err: Error, id: string, downloadPath: string,
-                              allowOpenHTML: boolean,
-                              callback?: (err: Error, id: string) => void): Promise<void> {
+    allowOpenHTML: boolean,
+    callback?: (err: Error, id: string) => void): Promise<void> {
     const innerState: IState = this.mApi.getState();
+
+    const nexusIds = nexusIdsFromDownloadId(innerState, id);
+    const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
+
+    if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
+      if (isCollection) {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+      } else {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+      }
+
+    } else {
+
+      if (isCollection) {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
+      } else {
+        this.mApi.events.emit('analytics-track-mixpanel-event',
+          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+      }
+    }
+
     if (err instanceof DownloadIsHTML) {
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
@@ -178,6 +208,7 @@ export class DownloadObserver {
           });
       }
     } else if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
       const filePath: string =
         getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
       const prom: Promise<void> = (filePath !== undefined)
@@ -223,16 +254,16 @@ export class DownloadObserver {
   }
 
   private extractNxmDomain(url: string): string | undefined {
-    const match = url.match(/^nxm:\/\/([^\/]+)/);
+    const match = url.toString().match(/^nxm:\/\/([^\/]+)/);
     return match ? match[1] : undefined;
   }
 
   private handleStartDownload(urls: string[],
-                              modInfo: any,
-                              fileName: string,
-                              callback?: (error: Error, id?: string) => void,
-                              redownload?: RedownloadMode,
-                              options?: IStartDownloadOptions) {
+    modInfo: any,
+    fileName: string,
+    callback?: (error: Error, id?: string) => void,
+    redownload?: RedownloadMode,
+    options?: IStartDownloadOptions) {
     let callbacked = false;
 
     const origCallback = callback;
@@ -244,7 +275,7 @@ export class DownloadObserver {
     }
 
     const id = shortid();
-    if (typeof(urls) !== 'function') {
+    if (typeof (urls) !== 'function') {
       if (!Array.isArray(urls)) {
         // could happen if triggered by foreign extensions, can't prevent that.
         // During beta it also happened in our own code but that should be fixed
@@ -270,9 +301,9 @@ export class DownloadObserver {
       if (callback !== undefined) {
         callback(new ProcessCanceled(
           'You need to select a game to manage before downloading this file'));
-        }
-        return;
       }
+      return;
+    }
     const downloadDomain = this.extractNxmDomain(urls[0]);
 
     // Convert nexus domain to internal game ID for proper path resolution
@@ -287,19 +318,18 @@ export class DownloadObserver {
       ? [downloadDomain, gameId]
       : [gameId];
     const gameIds = Array.from(new Set<string>(baseIds.concat(compatibleGames.map(game => game.id))));
+    const internalId = convertGameIdReverse(selectors.knownGames(state), gameIds[0]);
+    gameIds.sort((a, b) => (a === internalId ? -1 : (b === internalId ? 1 : 0)));
     this.mApi.store.dispatch(
-      initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
+      initDownload(id, typeof (urls) === 'function' ? [] : urls, modInfo, gameIds));
 
-    // Use the converted internal game ID for download path instead of the domain name
-    // This ensures downloads are saved to the correct directory based on Vortex's
-    // internal game identification rather than the Nexus domain name
-    const downloadPath = selectors.downloadPathForGame(state, downloadGameId);
+    const downloadPath = selectors.downloadPathForGame(state, internalId);
 
     const processCB = this.genProgressCB(id);
 
     const downloadOptions = this.getExtraDlOptions(modInfo ?? {}, redownload);
 
-    const urlIn = urls[0].split('<')[0];
+    const urlIn = urls[0].toString().split('<')[0];
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
       ensureDownloadsDirectory(this.mApi)
@@ -309,18 +339,29 @@ export class DownloadObserver {
               .filter(iter => iter.tag !== modInfo?.referenceTag);
             return Promise.reject(new UserCanceled());
           }
-
           log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           return this.mManager.enqueue(id, urls, fileName, processCB,
-                                       downloadPath, downloadOptions);
+            downloadPath, downloadOptions);
+        })
+        .catch(UserCanceled, err => {
+          return Promise.reject(err);
         })
         .catch(AlreadyDownloaded, err => {
           const downloads = this.mApi.getState().persistent.downloads.files;
           const dlId = Object.keys(downloads)
             .find(iter => downloads[iter].localPath === err.fileName);
           if ((dlId !== undefined) && (downloads[dlId].state !== 'failed')) {
-            err.downloadId = dlId;
-            return Promise.reject(err);
+            // File already exists and download is successful - return existing download as success
+            const existingDownload = downloads[dlId];
+            const downloadResult: IDownloadResult = {
+              filePath: path.join(downloadPath, existingDownload.localPath || err.fileName),
+              headers: existingDownload.modInfo?.headers || {},
+              unfinishedChunks: existingDownload.chunks || [],
+              hadErrors: false,
+              size: existingDownload.size || 0,
+              metaInfo: existingDownload.modInfo || {},
+            };
+            return Promise.resolve(downloadResult);
           } else if (this.wasIntercepted(modInfo?.referenceTag)) {
             this.mInterceptedDownloads = this.mInterceptedDownloads
               .filter(iter => iter.tag !== modInfo?.referenceTag);
@@ -329,7 +370,7 @@ export class DownloadObserver {
             // there is a file but with no meta data. force the download instead
             downloadOptions.redownload = 'replace';
             return this.mManager.enqueue(id, urls, fileName, processCB,
-                                         downloadPath, downloadOptions);
+              downloadPath, downloadOptions);
           }
         })
         .then((res: IDownloadResult) => {
@@ -337,13 +378,13 @@ export class DownloadObserver {
           return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath,
-                                               options?.allowOpenHTML ?? true, callback)));
+          options?.allowOpenHTML ?? true, callback)));
   }
 
   private handleDownloadFinished(id: string,
-                                 callback: (error: Error, id: string) => void,
-                                 res: IDownloadResult,
-                                 allowInstall: boolean | 'force') {
+    callback: (error: Error, id: string) => void,
+    res: IDownloadResult,
+    allowInstall: boolean | 'force') {
     const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
       // The only way for the download entry to be missing at this point
@@ -376,7 +417,7 @@ export class DownloadObserver {
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
       const batched = [
         downloadProgress(id, res.size, res.size, [], undefined),
-        finishDownload(id, 'redirect', {htmlFile: res.filePath})
+        finishDownload(id, 'redirect', { htmlFile: res.filePath })
       ];
       util.batchDispatch(this.mApi.store.dispatch, batched);
       this.mApi.events.emit('did-finish-download', id, 'redirect');
@@ -390,10 +431,28 @@ export class DownloadObserver {
           if (batchedActions.length > 0) {
             util.batchDispatch(this.mApi.store.dispatch, batchedActions);
           }
-          const state = this.mApi.getState();
+
+          const state: IState = this.mApi.getState();
+          
+          const duration_ms = Date.now() - download.fileTime;
+          const nexusIds = nexusIdsFromDownloadId(state, id);
+          const isCollection = nexusIds?.collectionSlug !== undefined && nexusIds?.revisionId !== undefined;
+
+          // this is so we know if it's a collection bundle/manifest downloading or an individual mod
+          if (isCollection) {
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new CollectionsDownloadCompletedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
+          } else if (nexusIds?.modId !== undefined && nexusIds?.fileId !== undefined) {
+            const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+            this.mApi.events.emit('analytics-track-mixpanel-event',
+              new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
+          } else {
+            alert('Download completed but missing nexus mod/file id: ' + JSON.stringify(nexusIds));
+            // This is a bundled mod - bye!
+          }
           if ((state.settings.automation?.install && (allowInstall === true))
-              || (allowInstall === 'force')
-              || (download.modInfo?.['startedAsUpdate'] === true)) {
+            || (allowInstall === 'force')
+            || (download.modInfo?.['startedAsUpdate'] === true)) {
             this.mApi.events.emit('start-install-download', id);
           }
 
@@ -409,7 +468,7 @@ export class DownloadObserver {
     let lastUpdatePerc = 0;
     let pendingUpdate = false;
     return (received: number, total: number, chunks: IChunk[], chunkable: boolean,
-            urls?: string[], filePath?: string) => {
+      urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
       const newPerc = total > 0 ? Math.floor((received * 100) / total) : 0;
@@ -425,13 +484,13 @@ export class DownloadObserver {
           setImmediate(() => {
             pendingUpdate = false;
             progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                          urls, filePath, false);
+              urls, filePath, false);
           });
         }
       } else if (small) {
         // For small updates, still call progressUpdate but mark as small
         progressUpdate(this.mApi.store, id, received, total, chunks, chunkable,
-                       urls, filePath, small);
+          urls, filePath, small);
       }
     };
   }
@@ -443,7 +502,7 @@ export class DownloadObserver {
     }
     const download = this.mApi.getState().persistent.downloads.files?.[downloadId];
     if (download === undefined) {
-      log('warn', 'failed to remove download: unknown', {downloadId});
+      log('warn', 'failed to remove download: unknown', { downloadId });
       return;
     }
 
@@ -506,7 +565,7 @@ export class DownloadObserver {
     const state: IState = this.mApi.store.getState();
     const download = state.persistent.downloads.files[downloadId];
     if (download === undefined) {
-      log('warn', 'failed to pause download: unknown', {downloadId});
+      log('warn', 'failed to pause download: unknown', { downloadId });
       if (callback !== undefined) {
         callback(new ProcessCanceled('invalid download id'));
       }
@@ -528,8 +587,8 @@ export class DownloadObserver {
   }
 
   private handleResumeDownload(downloadId: string,
-                               callback?: (error: Error, id: string) => void,
-                               options?: IStartDownloadOptions) {
+    callback?: (error: Error, id: string) => void,
+    options?: IStartDownloadOptions) {
     try {
       const download: IDownload =
         this.mApi.store.getState().persistent.downloads.files[downloadId];
@@ -567,10 +626,10 @@ export class DownloadObserver {
               .then(res => {
                 log('debug', 'download finished (re-tried)', { file: res.filePath });
                 return this.handleDownloadFinished(downloadId, callback, res,
-                                                   options?.allowInstall ?? true);
+                  options?.allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
-                                                     options?.allowOpenHTML ?? true, callback));
+                options?.allowOpenHTML ?? true, callback));
           } else {
             return ensureDownloadsDirectory(this.mApi)
               .then(() => this.mManager.resume(downloadId, fullPath, download.urls,
@@ -579,10 +638,10 @@ export class DownloadObserver {
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
                 return this.handleDownloadFinished(downloadId, callback, res,
-                                                   options?.allowInstall ?? true);
+                  options?.allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
-                                                     options?.allowOpenHTML ?? true, callback));
+                options?.allowOpenHTML ?? true, callback));
           }
         });
       }
@@ -604,13 +663,8 @@ export class DownloadObserver {
       return;
     }
     if (['paused'].includes(download.state)) {
-      if (download.chunks > 0) {
         log('debug', 'attempting to resume download', { id: downloadId, state: download.state });
         return this.handleResumeDownload(downloadId, callback);
-      } else {
-        return this.handleStartDownload(download.urls, download.modInfo,
-          download.localPath, callback, 'never');
-      }
     }
     log('debug', 'not resuming download', { id: downloadId, state: download.state })
     if (callback !== undefined) {
@@ -625,8 +679,8 @@ export class DownloadObserver {
   }
 
   private handleUnknownDownloadError(err: any,
-                                     downloadId: string,
-                                     callback?: (err: Error, id?: string) => void) {
+    downloadId: string,
+    callback?: (err: Error, id?: string) => void) {
     if (['ESOCKETTIMEDOUT', 'ECONNRESET', 'EBADF', 'EIO'].includes(err.code)) {
       // may be resumable
       this.handlePauseDownload(downloadId);
@@ -641,12 +695,12 @@ export class DownloadObserver {
             + 'This is likely a temporary issue, please try resuming later.', {
             allowReport: false,
           });
-        }  
+        }
       } else {
         return this.attemptResumeDownload(downloadId, callback);
       }
     } else if ((err.code === 'ERR_SSL_WRONG_VERSION_NUMBER')
-               || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
+      || (err.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
       // may be resumable
       this.handlePauseDownload(downloadId);
       if (callback !== undefined) {
@@ -672,7 +726,7 @@ export class DownloadObserver {
             err.message, {
             allowReport: false,
           });
-        }  
+        }
       } else {
         return this.attemptResumeDownload(downloadId, callback);
       }
@@ -702,6 +756,7 @@ export class DownloadObserver {
       referer: modInfo.referer,
       redownload,
       nameHint: modInfo.name,
+      tag: modInfo.referenceTag,
     };
   }
 }

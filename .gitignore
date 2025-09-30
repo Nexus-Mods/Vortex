@@ -57,6 +57,9 @@ changelog_*.txt
 eslint.log
 log.txt
 
+# Claude Code directory
+.claude
+
 # playright stuff
 playwright/playwright-report/
 playwright/run-*

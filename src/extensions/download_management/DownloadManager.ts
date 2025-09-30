@@ -27,6 +27,7 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as url from 'url';
 import * as zlib from 'zlib';
+import { IExtensionApi } from '../../types/api';
 
 const getCookies = makeRemoteCall('get-cookies',
   (electron, webContents, filter: Electron.CookiesGetFilter) => {
@@ -138,6 +139,7 @@ class DownloadWorker {
   private static BUFFER_SIZE = 256 * 1024;
   private static BUFFER_SIZE_CAP = 4 * 1024 * 1024;
   private static MAX_NETWORK_RETRIES = 3; // Maximum number of network error retries
+  private mApi: IExtensionApi;
   private mJob: IDownloadJob;
   private mUrl: string;
   private mRequest: http.ClientRequest;
@@ -160,13 +162,15 @@ class DownloadWorker {
   private mURLResolve: Bluebird<void>;
   private mOnAbort: () => void;
 
-  constructor(job: IDownloadJob,
+  constructor(api: IExtensionApi,
+              job: IDownloadJob,
               progressCB: (bytes: number) => void,
               finishCB: FinishCallback,
               headersCB: (headers: any) => void,
               userAgent: string,
               throttle: () => stream.Transform,
               getAgent: (protocol: string) => http.Agent | https.Agent) {
+    this.mApi = api;
     this.mProgressCB = progressCB;
     this.mFinishCB = finishCB;
     this.mHeadersCB = headersCB;
@@ -178,7 +182,7 @@ class DownloadWorker {
     this.mURLResolve = Bluebird.resolve(job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
-        if (jobUrl.startsWith('blob:')) {
+        if (jobUrl.toString().startsWith('blob:')) {
           // in the case of blob downloads (meaning: javascript already placed the entire file
           // in local storage) the main process has already downloaded this file, we just have
           // to use it now
@@ -295,7 +299,7 @@ class DownloadWorker {
       return;
     }
 
-    let parsed: url.UrlWithStringQuery;
+    let parsed: URL;
     let referer: string;
     try {
       const [urlIn, refererIn] = jobUrl.split('<');
@@ -304,7 +308,7 @@ class DownloadWorker {
       // the url that required encoding.
       // Since all that was tested at some point I'm getting the feeling it's inconsistent in
       // the callers whether the url is encoded or not
-      parsed = url.parse(urlIn);
+      parsed = new URL(urlIn);
       referer = refererIn;
       jobUrl = urlIn;
     } catch (err) {
@@ -336,7 +340,7 @@ class DownloadWorker {
         protocol: parsed.protocol,
         port: parsed.port,
         hostname: parsed.hostname,
-        path: parsed.path,
+        path: parsed.pathname + parsed.search,
         headers,
         agent: this.mGetAgent(parsed.protocol),
         timeout: 30000,
@@ -347,7 +351,8 @@ class DownloadWorker {
           this.handleError(new Error('Invalid response received'));
           return;
         }
-
+        const { tag, urls, fileName } = this.mJob.options;
+        this.mApi.events.emit('did-start-download', { id: undefined, tag, urls, fileName });
         log('debug', 'downloading from',
           { address: `${res.socket.remoteAddress}:${res.socket.remotePort}` });
 
@@ -579,8 +584,7 @@ class DownloadWorker {
         networkRetries: this.mNetworkRetries,
         maxRetries: DownloadWorker.MAX_NETWORK_RETRIES
       });
-      this.mEnded = true;
-      this.mFinishCB(false);
+      this.abort(false);
     }
   }
 
@@ -848,6 +852,7 @@ const MAX_WORKER_RESTARTS = 3;                 // Maximum restarts per worker
  * @class DownloadManager
  */
 class DownloadManager {
+  private mApi: IExtensionApi;
   private mMinChunkSize: number;
   private mMaxWorkers: number;
   private mMaxChunks: number;
@@ -878,10 +883,11 @@ class DownloadManager {
    *
    * @memberOf DownloadManager
    */
-  constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
+  constructor(api: IExtensionApi, downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string,
               protocolHandlers: IProtocolHandlers,
               maxBandwidth: () => number) {
+    this.mApi = api;
     // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 20 * 1024 * 1024;
     this.mDownloadPath = downloadPath;
@@ -977,8 +983,8 @@ class DownloadManager {
     let nameTemplate: string;
     let baseUrl: string;
     try {
-      baseUrl = urls[0].split('<')[0];
-      nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
+      baseUrl = urls[0].toString().split('<')[0];
+      nameTemplate = fileName || decodeURI(path.basename(new URL(baseUrl).pathname));
     } catch (err) {
       return Bluebird.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
     }
@@ -1178,7 +1184,13 @@ class DownloadManager {
       const cache = this.mResolveCache[input];
       return Bluebird.resolve({ urls: cache.urls, meta: cache.meta });
     }
-    const protocol = url.parse(input).protocol;
+    let protocol: string;
+    try {
+      protocol = new URL(input).protocol;
+    } catch {
+      // Invalid URL, no protocol
+      return Bluebird.resolve({ urls: [], meta: {} });
+    }
     if (!truthy(protocol)) {
       return Bluebird.resolve({ urls: [], meta: {} });
     }
@@ -1242,10 +1254,10 @@ class DownloadManager {
             download.urls = resolved.updatedUrls;
           }
           if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
-            const [urlIn, fileName] = resolved.urls[0].split('<')[0].split('|');
+            const [urlIn, fileName] = resolved.urls[0].toString().split('<')[0].split('|');
             fileNameFromURL = (fileName !== undefined)
               ? fileName
-              : decodeURI(path.basename(url.parse(urlIn).pathname));
+              : decodeURI(path.basename(new URL(urlIn).pathname));
           }
           return resolved.urls[0];
         }),
@@ -1527,7 +1539,7 @@ class DownloadManager {
       }
       download.assembler = assembler;
 
-      const worker = new DownloadWorker(job, this.makeProgressCB(job, download),
+      const worker = new DownloadWorker(this.mApi, job, this.makeProgressCB(job, download),
         (pause, replaceFileName) => replaceFileName !== undefined
           ? this.useExistingFile(download, job, replaceFileName)
           : this.finishChunk(download, job, pause),
@@ -1722,7 +1734,7 @@ class DownloadManager {
     const job: IDownloadJob = {
       url: () => download.resolvedUrls().then(resolved => {
         if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
-          fileNameFromURL = decodeURI(path.basename(url.parse(resolved.urls[0]).pathname));
+          fileNameFromURL = decodeURI(path.basename(new URL(resolved.urls[0]).pathname));
         }
 
         return resolved.urls[0];

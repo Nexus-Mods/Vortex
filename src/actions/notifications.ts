@@ -31,6 +31,8 @@ export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
  */
 export const stopNotification = safeCreateAction('STOP_NOTIFICATION', identity);
 
+export const stopAllNotifications = safeCreateAction('STOP_ALL_NOTIFICATIONS');
+
 /**
  * show a modal dialog to the user
  *
@@ -166,6 +168,18 @@ export function dismissNotification(id: string) {
     delete timers[id];
     delete notificationActions[id];
     dispatch(stopNotification(id));
+    resolve();
+  });
+}
+
+export function dismissAllNotifications() {
+  return dispatch => new Promise<void>((resolve, reject) => {
+    const ids = Array.from(new Set<string>([].concat(Object.keys(timers), Object.keys(notificationActions))));
+    ids.forEach(id => {
+      delete timers[id];
+      delete notificationActions[id];
+    });
+    dispatch(stopAllNotifications());
     resolve();
   });
 }

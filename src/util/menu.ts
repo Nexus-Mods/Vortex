@@ -102,8 +102,8 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         label: 'Toggle Developer Tools',
         accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
         click(item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.webContents.toggleDevTools();
+          if (focusedWindow && 'webContents' in focusedWindow) {
+            (focusedWindow as Electron.BrowserWindow).webContents.toggleDevTools();
           } else {
             extensions.getApi().showErrorNotification('Failed to open developer tools', 'no focused window');
           }
@@ -114,8 +114,8 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         label: 'Reload',
         accelerator: 'F5',
         click(item, focusedWindow) {
-          if (focusedWindow) {
-            focusedWindow.webContents.reload();
+          if (focusedWindow && 'webContents' in focusedWindow) {
+            (focusedWindow as Electron.BrowserWindow).webContents.reload();
           }
         },
       });

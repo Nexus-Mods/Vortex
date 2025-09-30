@@ -50,7 +50,12 @@ async function readLocalFile<T>(type: VideoEntryType): Promise<T[]> {
 }
 
 function getHTTPData<T>(link: string): Promise<T[]> {
-  const sanitizedURL = url.parse(link);
+  let sanitizedURL;
+  try {
+    sanitizedURL = new URL(link);
+  } catch (err) {
+    return Promise.reject(new Error(`Invalid URL: ${link}`));
+  }
   log('info', 'getHTTPData', sanitizedURL);
   return new Promise((resolve, reject) => {
     https.get(sanitizedURL.href, res => {

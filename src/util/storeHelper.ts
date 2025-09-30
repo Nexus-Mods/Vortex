@@ -11,7 +11,7 @@ import * as Redux from 'redux';
 
 function clone<T>(input: T): T {
   return Array.isArray(input)
-    ? [].concat(input)
+    ? input
     : { ...(input as any) };
 }
 
@@ -213,8 +213,8 @@ export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fal
 
   if (path.length === 0) {
     return ((copy !== undefined) && Array.isArray(copy))
-      ? copy
-      : fallback as any;
+      ? copy as T
+      : fallback as T;
   } else if (path.length === 1) {
     copy[firstElement] = (!Object.hasOwnProperty.call(copy, firstElement)
                           || !Array.isArray(copy[firstElement]))

@@ -17,6 +17,9 @@ export const REVALIDATION_FREQUENCY = 5 * 60 * 1000;
 export const OAUTH_URL = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth`;
 export const USERINFO_ENDPOINT = `https://${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}/oauth/userinfo`;
 // export const OAUTH_REDIRECT_URL = 'nxm://oauth/callback';
+export const OAUTH_REDIRECT_BASE = 'http://127.0.0.1';
+export const getOAuthRedirectUrl = (port: number) => `${OAUTH_REDIRECT_BASE}:${port}`;
+// Deprecated: Use getOAuthRedirectUrl() instead
 export const OAUTH_REDIRECT_URL = 'http://127.0.0.1:PORT';
 
 export const OAUTH_CLIENT_ID = 'vortex_loopback';

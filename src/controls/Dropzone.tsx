@@ -8,6 +8,7 @@ import { truthy } from '../util/util';
 import Icon from './Icon';
 
 import Promise from 'bluebird';
+import { webUtils } from 'electron';
 
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
@@ -197,8 +198,9 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
 
     if ((evt.dataTransfer.files.length > 0) && (accept.indexOf('files') !== -1)) {
       const fileList: string[] = [];
-      for (let i = 0; i < evt.dataTransfer.files.length; ++i) {
-        fileList.push((evt.dataTransfer.files.item(i) as any).path);
+      for (let i = 0; i < evt.dataTransfer.files.length; ++i) {        
+        const filePath = webUtils.getPathForFile(evt.dataTransfer.files.item(i))
+        fileList.push(filePath);
       }
       drop('files', fileList);
     }
@@ -231,8 +233,14 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       .then(result => {
           if (result.action === 'Download') {
             let inputUrl = result.input.url;
-            if (!truthy(url.parse(inputUrl).protocol)) {
-              // no protocol specified
+            try {
+              const parsed = new URL(inputUrl);
+              if (!truthy(parsed.protocol)) {
+                // no protocol specified
+                inputUrl = 'https://' + inputUrl;
+              }
+            } catch {
+              // invalid URL, assume no protocol
               inputUrl = 'https://' + inputUrl;
             }
             this.props.drop('urls', [inputUrl]);

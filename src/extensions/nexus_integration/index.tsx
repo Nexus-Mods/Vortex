@@ -51,6 +51,8 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 import FlexLayout from '../../controls/FlexLayout';
 import Image from '../../controls/Image';
+import { toast } from 'react-hot-toast';
+
 
 import {
   genCollectionIdAttribute,
@@ -1072,12 +1074,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
           allowReport: false,
         });
       });
-
-    // register when window is focussed to do a userinfo check?  
-    getApplication().window.on('focus', (event, win) => {
-      //console.log('browser-window-focus');         
-      //userInfoDebouncer.schedule();
-    })
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
@@ -1529,9 +1525,10 @@ function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
     .catch(() => null);
 }
 
-function onSkip(inputUrl: string) {
+function onSkip(api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
   if (queueItem !== undefined) {
+    api.events.emit('free-user-skipped-download', queueItem.name);
     queueItem.rej(new UserCanceled(true));
   }
 }
@@ -1680,13 +1677,14 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(clearOAuthCredentials(null));
   });*/
 
-
   userInfoDebouncer = new Debouncer(() => {
     if (!sel.isLoggedIn(context.api.getState())) {
       log('warn', 'Not logged in');
       return Promise.resolve();
-    } 
+    }
+
     context.api.events.emit('refresh-user-info');
+
     return Promise.resolve();
   }, 3000, true, false);
 
@@ -1752,10 +1750,10 @@ function init(context: IExtensionContextExt): boolean {
     nexus,
     onUpdated,
     onDownload,
-    onSkip,
+    onSkip: (inputUrl: string) => onSkip(context.api, inputUrl),
     onCancel,
     onRetry,
-    onCheckStatus
+    onCheckStatus,
   }));
 
   context.registerBanner('downloads', () => {

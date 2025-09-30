@@ -808,6 +808,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerActionCheck('SET_NEXT_PROFILE', (state: IState, action: any) => {
     const { profileId } = action.payload;
+    context.api.dismissAllNotifications();
     if (profileId === undefined) {
       // resetting must always work
       return undefined;

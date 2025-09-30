@@ -489,7 +489,12 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
   if ((previous[gameMode] !== current[gameMode])
       && !state.persistent.deployment.needToDeploy[gameMode]) {
     if (Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined) {
-      store.dispatch(setDeploymentNecessary(gameMode, true));
+      // Don't set deployment necessary during collection installation
+      const installingDeps = getSafe(state, ['session', 'base', 'activity', 'installing_dependencies'], []);
+      const activeCollectionInstall = getSafe(state, ['session', 'collections', 'activeSession'], undefined);
+      if (installingDeps.length === 0 && activeCollectionInstall === undefined) {
+        store.dispatch(setDeploymentNecessary(gameMode, true));
+      }
     }
   }
 }

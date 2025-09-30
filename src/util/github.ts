@@ -85,7 +85,7 @@ class GitHub {
 
   private static repoUrl() {
     
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
     const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
 
     return `https://api.github.com/repos/Nexus-Mods/${repo}`;
@@ -93,7 +93,7 @@ class GitHub {
 
   private static rawUrl() {
 
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true' ?? false
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
     const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
 
     return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;
@@ -125,9 +125,11 @@ class GitHub {
     const stackErr = new Error();
 
     return new Promise((resolve, reject) => {
-        const relUrl = url.parse(`${baseUrl}/${request}`);
+        const relUrl = new URL(`${baseUrl}/${request}`);
         const options: https.RequestOptions = {
-          ..._.pick(relUrl, ['port', 'hostname', 'path']),
+          port: relUrl.port,
+          hostname: relUrl.hostname,
+          path: relUrl.pathname + relUrl.search,
           headers: {
             'User-Agent': GitHub.USER_AGENT,
           },

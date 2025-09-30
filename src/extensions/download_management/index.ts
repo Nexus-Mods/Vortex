@@ -915,6 +915,21 @@ function init(context: IExtensionContextExt): boolean {
     return undefined;
   });
 
+  const removeToastDebouncer = new Debouncer(() => {
+    context.api.sendNotification({
+      id: `download-removed`,
+      type: 'info',
+      message: 'Download(s) deleted',
+      displayMS: 3000,
+    });
+    return Promise.resolve();
+  }, 500, true, false)
+
+  context.registerActionCheck('REMOVE_DOWNLOAD', (state: IState, action: any) => {
+    removeToastDebouncer.schedule();
+    return undefined;
+  });
+
   context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
     t: context.api.translate,
     shutdownPending,
@@ -1088,7 +1103,7 @@ function init(context: IExtensionContextExt): boolean {
         ? state.settings.downloads.maxParallelDownloads
         : 1;
 
-      manager = new DownloadManagerImpl(
+      manager = new DownloadManagerImpl(context.api,
           selectors.downloadPath(store.getState()),
           maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {

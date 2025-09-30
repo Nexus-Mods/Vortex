@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
+import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification, dismissAllNotifications,
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
@@ -71,6 +71,8 @@ import makeRemoteCall, { makeRemoteCallSync } from './electronRemote';
 import { VCREDIST_URL } from '../constants';
 import { fileMD5 } from 'vortexmt';
 import * as fsVortex from '../util/fs'
+
+import { toast, ToastOptions } from 'react-hot-toast';
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -941,6 +943,18 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
+      if (this.canBeToast(noti)) {
+        let toastFunc = noti.type === 'error' ? toast.error : toast.success;
+        const toastOptions: ToastOptions = {
+          id: noti.id,
+          duration: noti.displayMS,
+        }
+        const message = noti.title !== undefined
+          ? `${noti.title}:\n${noti.message}`
+          : noti.message;
+        toastFunc(message, toastOptions);
+        return noti.id;
+      }
       if (notification.type === 'warning') {
         log('warn', 'warning notification',
             { message: notification.message, title: notification.title });
@@ -987,6 +1001,8 @@ class ExtensionManager {
       store.dispatch(closeDialog(id, actionKey, input));
     this.mApi.dismissNotification = (id: string) =>
       store.dispatch(dismissNotification(id));
+    this.mApi.dismissAllNotifications = () =>
+      store.dispatch(dismissAllNotifications());
     this.mApi.suppressNotification = (id: string, suppress: boolean) => {
       if (suppress !== false) {
         store.dispatch(dismissNotification(id));
@@ -1334,6 +1350,17 @@ class ExtensionManager {
         }
       });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private canBeToast = (notif: INotification) => {
+    const invalidToastTypes = ['activity', 'warning'];
+    if ((notif.displayMS != null && notif.displayMS <= 5000)
+      && notif.noToast !== true
+      && (notif.actions == null || notif.actions.length === 0)
+      && !invalidToastTypes.includes(notif.type)) {
+      return true;
+    }
+    return false;
   }
 
   private getMetaServerList(): modmetaT.IServer[] {
@@ -2000,8 +2027,14 @@ class ExtensionManager {
                         ? lines[lines.length - 1]
                         : lines.join('\n');
                     }
+
+                    // Sanitize the error message to prevent crashpad issues
+                    const sanitizedExecutable = executable.replace(/[^\x20-\x7E]/g, '?');
+                    const sanitizedLastLine = lastLine.replace(/[^\x20-\x7E]/g, '?').substring(0, 500);
+                    const exitCodeHex = code.toString(16);
+
                     const err: any = new Error(
-                      `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                      `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`);
                     err.exitCode = code;
                     return reject(err);
                   }

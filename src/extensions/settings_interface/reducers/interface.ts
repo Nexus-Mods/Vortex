@@ -30,7 +30,7 @@ const settingsReducer: IReducerSpec = {
     language: 'en',
     advanced: false,
     profilesVisible: false,
-    desktopNotifications: true,
+    desktopNotifications: false,
     hideTopLevelCategory: false,
     relativeTimes: true,
     foregroundDL: true,
