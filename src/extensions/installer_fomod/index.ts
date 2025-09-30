@@ -6,6 +6,7 @@ import {
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
+import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import getVortexPath from '../../util/getVortexPath';
@@ -465,44 +466,46 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   return spawnRetry(api, fullPath, args);
 }
 
-// async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
-//   if (process.platform !== 'win32') {
-//     // currently only supported/tested on windows
-//     onFoundDotNet();
-//     return Promise.resolve(undefined);
-//   }
+function checkNetInstall(api: IExtensionApi): Bluebird<ITestResult> {
+  return Bluebird.resolve((async () => {
+    if (process.platform !== 'win32') {
+      // currently only supported/tested on windows
+      onFoundDotNet();
+      return undefined;
+    }
 
-//   const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
-//   let stderr: string = '';
-//   const exitCode = await new Promise<number>((resolve) => {
-//     const proc = execFile(probeExe).on('close', code => resolve(code));
-//     proc.stderr.on('data', dat => stderr += dat.toString());
-//   });
+    const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+    let stderr: string = '';
+    const exitCode = await new Promise<number>((resolve) => {
+      const proc = execFile(probeExe).on('close', code => resolve(code));
+      proc.stderr.on('data', dat => stderr += dat.toString());
+    });
 
-  
-//   if (exitCode === 0) {
-//     onFoundDotNet();
-//     return Promise.resolve(undefined);
-//   }
 
-//   const result: ITestResult = {
-//     description: {
-//       short: 'Microsoft .NET Desktop Runtime 6 required',
-//       long: 'Vortex requires .NET Desktop Runtime 6 to be installed even though you may already have a newer version. This is due to incompatible changes in the more recent versions.'
-//         + '[br][/br][br][/br]'
-//         + 'If you already have .NET Desktop Runtime 6 installed then there may be a problem with your installation and a reinstall might be needed.'
-//         + '[br][/br][br][/br]'
-//         + 'Click "Fix" below to install the required version.'
-//         + '[br][/br][br][/br]'
-//         + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
-//       replace: { stderr: stderr.replace('\n', '[br][/br]') },
-//     },
-//     automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
-//     severity: 'fatal',
-//   };
+    if (exitCode === 0) {
+      onFoundDotNet();
+      return undefined;
+    }
 
-//   return Promise.resolve(result);
-// }
+    const result: ITestResult = {
+      description: {
+        short: 'Microsoft .NET Desktop Runtime 9 required',
+        long: 'Vortex requires .NET Desktop Runtime 9 to be installed to run FOMOD mod installers.'
+          + '[br][/br][br][/br]'
+          + 'If you already have .NET Desktop Runtime 9 installed then there may be a problem with your installation and a reinstall might be needed.'
+          + '[br][/br][br][/br]'
+          + 'Click "Fix" below to install the required version.'
+          + '[br][/br][br][/br]'
+          + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+        replace: { stderr: stderr.replace('\n', '[br][/br]') },
+      },
+      automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
+      severity: 'fatal',
+    };
+
+    return result;
+  })());
+}
 
 interface IAwaitingPromise {
   resolve: (data: any) => void;
@@ -1431,6 +1434,9 @@ function init(context: IExtensionContext): boolean {
       maxListeners: 50
     });
   }
+
+  // Register .NET 9 Desktop Runtime check
+  context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
 
   initGameSupport(context.api);
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;

@@ -9,8 +9,8 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "scripts": {
-    "_assets_out": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
-    "_assets_app": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "_assets_out": "yarn run update_aboutpage && node tools/buildDotNetProbe.js && tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "_assets_app": "yarn run update_aboutpage && node tools/buildDotNetProbe.js && tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn autoclean --force",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
