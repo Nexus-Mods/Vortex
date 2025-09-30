@@ -11,7 +11,7 @@ jest.mock('../src/util/api');
 jest.mock('../src/util/log');
 
 // Mock the actual collection.json
-const COLLECTION_PATH = 'C:\\Users\\adria\\AppData\\Roaming\\vortex_devel\\stardewvalley\\mods\\Aesthetic-Valley--Witchcore-537417-45-1756796659\\collection.json';
+const COLLECTION_PATH = '../__mocks__/sdv_collection.json';
 
 interface CollectionMod {
   name: string;
