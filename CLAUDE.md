@@ -77,7 +77,8 @@ Development builds are faster to compile but slower at runtime. Production build
 Many native modules are included. Run `yarn install` to build them, and check `postinstall.js` output for any build failures.
 
 ### Log Files
-Application logs are located in `%appdata%/vortex_devel` with a `.log` suffix.
+- **Development**: `%appdata%/vortex_devel` with a `.log` suffix
+- **Production**: `%appdata%/vortex` with a `.log` suffix
 
 ## Electron Architecture & Startup
 
