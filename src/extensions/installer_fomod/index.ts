@@ -734,16 +734,24 @@ class ConnectionIPC {
       try {
         const onExit = (code: number) => {
           exitCode = code;
+
+          // Check if this is an intentional quit (connection exists and was marked as quitting)
+          const isIntentionalQuit = res?.['mIntentionalQuit'] === true && code === 1;
+          const effectiveCode = isIntentionalQuit ? 0 : code;
+
           log('debug', 'FOMOD installer process exited', {
             code,
+            effectiveCode,
             connectionId,
             hasConnection: res !== undefined,
-            wasConnected
+            wasConnected,
+            intentionalQuit: res?.['mIntentionalQuit']
           });
 
-          if (code !== 0) {
+          if (effectiveCode !== 0) {
             log('warn', 'FOMOD installer process failed', {
-              code,
+              code: effectiveCode,
+              originalCode: code,
               connectionId,
               hasConnection: res !== undefined
             });
@@ -757,7 +765,7 @@ class ConnectionIPC {
               setConnectOutcome(err, true);
             }
           }
-          onExitCBs?.(code);
+          onExitCBs?.(effectiveCode);
         };
 
         let msg: string = '';
@@ -970,6 +978,7 @@ class ConnectionIPC {
         res = new ConnectionIPC({ in: servSocket, out: servSocket }, pid, connectionId);
       }
       onExitCBs = code => {
+        // Pass the original code to onExit - it will handle the effective code internally
         res.onExit(code);
         // Clean up isolated IPC connections when process exits
         try {
@@ -995,6 +1004,7 @@ class ConnectionIPC {
   private mOnDrained: Array<() => void> = [];
   private mPid: number;
   private mConnectionId: string;
+  private mIntentionalQuit: boolean = false;
 
   constructor(socket: { in: net.Socket, out: net.Socket }, pid: number, connectionId?: string) {
     this.mSocket = socket;
@@ -1026,12 +1036,19 @@ class ConnectionIPC {
       socket.out.destroy();
       log('info', 'remote was disconnected', { connectionId: this.mConnectionId });
       try {
-        killProcessForConnection(this.mConnectionId);
-        this.interrupt(new Error(`Installer process disconnected unexpectedly`));
+        // Only treat as error if not an intentional quit
+        if (!this.mIntentionalQuit) {
+          killProcessForConnection(this.mConnectionId);
+          this.interrupt(new Error(`Installer process disconnected unexpectedly`));
+        } else {
+          // Clean shutdown - just clean up the process registration
+          killProcessForConnection(this.mConnectionId);
+        }
       } catch (err) {
         log('warn', 'Error during socket close cleanup', {
           connectionId: this.mConnectionId,
-          error: err.message
+          error: err.message,
+          intentionalQuit: this.mIntentionalQuit
         });
       }
     });
@@ -1073,6 +1090,7 @@ class ConnectionIPC {
 
   public quit(): boolean {
     log('debug', 'Quitting connection', { connectionId: this.mConnectionId, pid: this.mPid });
+    this.mIntentionalQuit = true;
     return killProcessForConnection(this.mConnectionId);
   }
 
@@ -1102,8 +1120,14 @@ class ConnectionIPC {
   }
 
   public async onExit(code: number) {
-    log(code === 0 ? 'info' : 'error', 'remote process exited', {
+    // If we intentionally quit the process, treat exit code 1 as success
+    const isIntentionalQuit = this.mIntentionalQuit && code === 1;
+    const effectiveCode = isIntentionalQuit ? 0 : code;
+
+    log(effectiveCode === 0 ? 'info' : 'error', 'remote process exited', {
       code,
+      effectiveCode,
+      intentionalQuit: this.mIntentionalQuit,
       connectionId: this.mConnectionId
     });
 
@@ -1142,7 +1166,10 @@ class ConnectionIPC {
         connectionId: this.mConnectionId
       });
     }
-    this.interrupt(new InstallerFailedException(code));
+    // Use the effective code (0 for intentional quits) when throwing the exception
+    if (effectiveCode !== 0) {
+      this.interrupt(new InstallerFailedException(effectiveCode));
+    }
   }
 
   private logAction(message: string) {
