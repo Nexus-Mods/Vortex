@@ -76,6 +76,9 @@ Development builds are faster to compile but slower at runtime. Production build
 ### Native Dependencies
 Many native modules are included. Run `yarn install` to build them, and check `postinstall.js` output for any build failures.
 
+### Log Files
+Application logs are located in `%appdata%/vortex_devel` with a `.log` suffix.
+
 ## Electron Architecture & Startup
 
 ### Application Startup Sequence
@@ -212,6 +215,251 @@ The `.vscode/launch.json` has been updated to work with Electron 37's debugging 
 - **"Waiting for debugger to disconnect"**: VS Code was passing extra arguments, fixed by separating runtime args
 - **Breakpoints not hitting**: Ensure source maps are enabled and `yarn build` was recent
 - **Process hangs on startup**: Check that no other Electron instance is running on debug ports
+
+## Testing
+
+### Test Structure
+- **Root-level tests**: `__tests__/` directory at project root for integration and cross-cutting tests
+- **Module-specific tests**: `src/**/__tests__/` for unit tests colocated with source code
+- **Test runner**: Jest with TypeScript support
+
+### Test File Locations and Import Paths
+When writing or moving test files, pay careful attention to relative paths:
+
+**Root-level tests** (`__tests__/*.test.ts`):
+```typescript
+// Correct imports from root __tests__/
+import InstallManager from '../src/extensions/mod_management/InstallManager';
+import { IExtensionApi } from '../src/types/api';
+
+// Correct jest.mock paths from root __tests__/
+jest.mock('../src/extensions/mod_management/util/dependencies');
+jest.mock('../src/util/api');
+jest.mock('../src/util/log');
+```
+
+**Module-specific tests** (`src/extensions/mod_management/__tests__/*.test.ts`):
+```typescript
+// Correct imports from module __tests__/
+import InstallManager from '../InstallManager';
+import { IExtensionApi } from '../../../types/api';
+
+// Correct jest.mock paths from module __tests__/
+jest.mock('../util/dependencies');
+jest.mock('../../../util/api');
+jest.mock('../../../util/log');
+```
+
+### Common Test Issues
+- **"Cannot find module" errors**: Check that `jest.mock()` paths match the actual file location relative to the test file
+- **Import paths vs jest.mock paths**: Import paths and jest.mock paths must both be updated when moving test files
+- **Missing mock parameters**: When method signatures change, ensure all test mock calls include required parameters
+
+### Running Tests
+- `yarn test` - Run all tests
+- `yarn test <path>` - Run specific test file or directory
+- `yarn test --watch` - Run tests in watch mode
+- Tests automatically run with `--no-cache` to prevent stale mock issues
+
+## Collections & Phased Installation System
+
+### Overview
+Vortex supports **Collections** - curated sets of mods that install in a specific order with dependency management. The phased installation system ensures mods install sequentially and can have dependencies that must be installed first.
+
+### Key Concepts
+
+**Phase-Gated Installation**: Mods are organized into numbered phases (0, 1, 2, 3...). Each phase must complete before the next begins:
+- Phase 0: Usually framework mods (e.g., SMAPI for Stardew Valley)
+- Phase 1+: Content mods that depend on Phase 0
+- Phase N: Mods that depend on Phase N-1
+
+**Deployment Blocking**: During deployment (applying mods to the game directory), new mod installations must be blocked to prevent file conflicts and race conditions.
+
+**Collection Session State**: Redux state tracking which mods are in which phase and their installation status.
+
+### Core Implementation: InstallManager.ts
+
+**Location**: `src/extensions/mod_management/InstallManager.ts` (5000+ lines)
+
+**Key Methods**:
+
+1. **`ensurePhaseState(sourceModId: string)`** - Initialize phase tracking for a collection
+   - Creates tracking maps for active/pending installations per phase
+   - Sets up deployment scheduling and re-queue prevention
+
+2. **`markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi)`** - Called when downloads for a phase complete
+   - Marks phase as ready for installation
+   - Sets `allowedPhase` if this is the first phase
+   - Calls `maybeAdvancePhase()` to check if we can progress
+
+3. **`maybeAdvancePhase(sourceModId: string, api: IExtensionApi)`** - Attempts to advance to next phase
+   - Checks if current phase is deployed
+   - Verifies no active installations in current phase
+   - Advances `allowedPhase` to next incomplete phase
+   - Starts pending installations for newly-allowed phase
+
+4. **`scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum)`** - Schedules deployment when phase completes
+   - Called with `options.deployOnSettle = true`
+   - Sets `isDeploying` flag to block new installations
+   - Runs deployment, then clears flag and resumes installations
+
+5. **`startPendingForPhase(sourceModId: string, phase: number)`** - Starts queued installations for a phase
+   - Called when phase becomes allowed or after deployment completes
+
+**Phase State Structure** (line ~1838):
+```typescript
+private mInstallPhaseState: Map<string, {
+  allowedPhase?: number;                           // Current phase that can install
+  downloadsFinished: Set<number>;                  // Phases with completed downloads
+  pendingByPhase: Map<number, Array<() => void>>;  // Queued installs per phase
+  activeByPhase: Map<number, number>;              // Active install count per phase
+  scheduledDeploy: Set<number>;                    // Phases scheduled for deployment
+  deployedPhases: Set<number>;                     // Phases that have been deployed
+  reQueueAttempted?: Map<number, number>;          // Re-queue attempt tracking
+  deploymentPromises?: Promise<void>[];            // Pending deployment operations
+  isDeploying?: boolean;                           // CRITICAL: Blocks installs during deployment
+}> = new Map();
+```
+
+### Deployment Blocking Pattern
+
+**Problem**: Installations were starting while deployment events were running, causing race conditions and file conflicts.
+
+**Solution** (lines 1704-1713, 1939-1951):
+```typescript
+// Check if deployment is blocking installations
+const canStartWithoutDeploymentBlock = canStartNow && !phaseState.isDeploying;
+
+// When deploying, set flag and clear it after
+if (options.deployOnSettle) {
+  if (phaseState) {
+    phaseState.isDeploying = true;  // BLOCK new installations
+  }
+
+  toPromise(cb => api.events.emit('deploy-mods', cb))
+    .then(() => {
+      if (phaseState) {
+        phaseState.isDeploying = false;  // UNBLOCK installations
+        this.startPendingForPhase(sourceModId, checkPhase);  // Start queued installs
+        this.maybeAdvancePhase(sourceModId, api);  // Check if we can advance
+      }
+    });
+}
+```
+
+**Critical**: Never remove the `isDeploying` check or change `installationsComplete` to ignore pending installations.
+
+### Phase Completion Logic (lines 1927-1932)
+
+```typescript
+// A phase is complete when:
+// 1. Collection session marks phase as logically complete (all downloads processed)
+const phaseLogicallyComplete = collectionStatus.phaseComplete;
+
+// 2. AND no active installations running
+// 3. AND no pending installations waiting
+const installationsComplete = active === 0 && pending === 0;
+
+if (phaseLogicallyComplete && installationsComplete) {
+  // Safe to deploy this phase
+}
+```
+
+**Important**: Both `active === 0` AND `pending === 0` must be checked. Checking only `active === 0` allows deployment to run while installations are queued, causing race conditions.
+
+### Common Pitfalls
+
+❌ **Don't bypass phase gating for optional mods** - This breaks the last phase advancement logic
+
+❌ **Don't check only `active === 0`** - Must check both active and pending to prevent deployment race conditions
+
+❌ **Don't start all pending phases at once** - This bypasses phase gating and causes chaos
+
+❌ **Don't remove the `isDeploying` flag** - It's critical for preventing installation/deployment conflicts
+
+✅ **Do respect phase gates** - Even optional/recommended mods must wait for their phase
+
+✅ **Do check both active and pending** - Before allowing deployment or phase advancement
+
+✅ **Do use the `isDeploying` flag** - Always set it during deployment and clear it after
+
+✅ **Do call `startPendingForPhase()` after deployment** - Resume queued installations after deployment completes
+
+### Refactoring Patterns
+
+When refactoring InstallManager.ts, several patterns have been extracted into helper functions:
+
+**Activity Tracking** (lines 316-332):
+```typescript
+private withActivityTracking<T>(
+  api: IExtensionApi,
+  activityId: string,
+  message: string,
+  promise: Promise<T>
+): Promise<T> {
+  // Wraps promise with startActivity/stopActivity
+}
+```
+
+**Collection Lookup** (lines 334-348):
+```typescript
+private findCollectionByDownloadTag(
+  api: IExtensionApi,
+  downloadId: string
+): { collectionId: string; collectionName: string } | undefined {
+  // Finds collection from download reference
+}
+```
+
+**Dependency Filtering** (lines 350-364):
+```typescript
+private filterDependencyRules(
+  modRules: IModRule[],
+  type: 'requires' | 'recommends'
+): IModRule[] {
+  // Filters rules by type, excluding incompatibilities
+}
+```
+
+**Cancellation Check** (lines 366-388):
+```typescript
+private checkAndEmitDependencyInstallStart(
+  api: IExtensionApi,
+  downloadId: string,
+  collectionId: string,
+  collectionName: string
+): boolean {
+  // Checks if user cancelled, emits events
+}
+```
+
+### Testing Collections
+
+**Test Files**:
+- `__tests__/PhasedInstaller.test.ts` - Unit tests for phase advancement logic (19 tests)
+- `__tests__/CollectionIntegration.test.ts` - Integration tests with real collection data (5 tests)
+
+**Key Test Patterns**:
+```typescript
+// Always pass mockApi to methods that require it
+installManager.maybeAdvancePhase(sourceModId, mockApi);
+installManager.markPhaseDownloadsFinished(sourceModId, phase, mockApi);
+
+// Mock collection session state for testing
+mockState.session.collections = {
+  activeSession: {
+    mods: {
+      'mod-id': { phase: 1, type: 'requires', status: 'pending' }
+    }
+  }
+};
+```
+
+**When Tests Fail After Refactoring**:
+1. Check if method signatures changed (e.g., added required parameters)
+2. Update all test calls to include new required parameters
+3. Verify jest.mock paths are correct for test file location
+4. Don't modify InstallManager unless absolutely necessary - fix tests first
 
 ## GitHub Actions Workflows
 
