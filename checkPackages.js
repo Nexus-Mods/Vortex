@@ -1,5 +1,6 @@
 const lockfile = require('@yarnpkg/lockfile');
 const fs = require('fs');
+const path = require('path');
 
 const develLock = lockfile.parse(fs.readFileSync('yarn.lock', { encoding: 'utf8' })).object;
 const develPackageJson = JSON.parse(fs.readFileSync('package.json', { encoding: 'utf8' }));
@@ -46,9 +47,39 @@ function checkDevelPackages(develPackage, releasePackage) {
     if (releasePackage[pkg] === undefined) {
       console.error('❌ Package not referenced in release:', pkg);
       valid = false;
-    } else if (releasePackage[pkg] !== develPackage[pkg]) {
-      console.error('❌ Referenced version mismatch:', pkg, releasePackage[pkg], 'vs', develPackage[pkg]);
-      valid = false;
+    } else {
+      const devSpec = develPackage[pkg];
+      const relSpec = releasePackage[pkg];
+
+      // Normalize local file dependencies by resolving absolute paths relative to their package roots
+      if (typeof devSpec === 'string' && typeof relSpec === 'string'
+        && devSpec.startsWith('file:') && relSpec.startsWith('file:')) {
+        // If specs are identical strings, accept immediately
+        if (devSpec === relSpec) {
+          return;
+        }
+
+        const devPath = devSpec.replace(/^file:/, '');
+        const relPath = relSpec.replace(/^file:/, '');
+
+        // Resolve release path relative to app/, but if that doesn't exist, fall back to repo root
+        const devResolved = path.resolve('.', devPath);
+        let relResolved = path.resolve('app', relPath);
+        if (!fs.existsSync(relResolved)) {
+          const altRel = path.resolve('.', relPath);
+          if (fs.existsSync(altRel)) {
+            relResolved = altRel;
+          }
+        }
+
+        if (devResolved !== relResolved) {
+          console.error('❌ Referenced file path mismatch:', pkg, relSpec, 'vs', devSpec);
+          valid = false;
+        }
+      } else if (relSpec !== devSpec) {
+        console.error('❌ Referenced version mismatch:', pkg, relSpec, 'vs', devSpec);
+        valid = false;
+      }
     }
   });
   return valid;

@@ -176,4 +176,5 @@ function getVortexPath(id: AppPath): string {
   }
 }
 
+export { getVortexPath };
 export default getVortexPath;

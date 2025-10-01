@@ -37,7 +37,7 @@ describe('MacAppStore', () => {
     (fs.pathExists as jest.Mock).mockReset();
     (fs.readdir as jest.Mock).mockReset();
     (fs.stat as jest.Mock).mockReset();
-    (exec as jest.Mock).mockReset();
+    (exec as unknown as jest.Mock).mockReset();
     
     // Set up environment
     process.env.HOME = '/Users/test';
@@ -98,7 +98,7 @@ describe('MacAppStore', () => {
       (fs.stat as jest.Mock).mockResolvedValue({ isDirectory: () => true });
       
       // Mock exec to return metadata
-      (exec as jest.Mock).mockImplementation((command, callback) => {
+      (exec as unknown as jest.Mock).mockImplementation((command, callback) => {
         if (command.includes('Civilization VI.app')) {
           callback(null, { stdout: 'Civilization VI\ncom.aspyr.civ6\nGame\n' });
         } else if (command.includes('World of Warcraft.app')) {

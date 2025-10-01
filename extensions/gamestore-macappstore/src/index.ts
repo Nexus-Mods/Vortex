@@ -292,4 +292,5 @@ function main(context: types.IExtensionContext) {
   return true;
 }
 
+export { MacAppStore };
 export default main;

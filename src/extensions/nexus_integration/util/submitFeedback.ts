@@ -3,15 +3,13 @@ import * as fs from '../../../util/fs';
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import ZipT = require('node-7z');
+import { addToArchive } from '../../../util/archive';
 import { tmpName } from 'tmp';
 
 function zipFiles(files: string[]): Promise<string> {
   if (files.length === 0) {
     return Promise.resolve(undefined);
   }
-  const Zip: typeof ZipT = require('node-7z');
-  const task: ZipT = new Zip();
-
   return new Promise<string>((resolve, reject) => {
     tmpName({
       postfix: '.7z',
@@ -20,7 +18,7 @@ function zipFiles(files: string[]): Promise<string> {
       : resolve(tmpPath));
   })
     .then(tmpPath =>
-      task.add(tmpPath, files, { ssw: true })
+      addToArchive(tmpPath, files, { ssw: true })
         .then(() => tmpPath));
 }
 

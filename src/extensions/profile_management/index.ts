@@ -1098,8 +1098,41 @@ function init(context: IExtensionContext): boolean {
 
     addDescriptionFeature();
 
+    // Serialize activation requests to avoid races during rapid installs
+    const activationQueue: string[] = [];
+    let isActivating = false;
+
+    function onceProfileDidChange(): Promise<void> {
+      return new Promise<void>((resolve) => {
+        const handler = (current: string) => {
+          context.api.events.removeListener('profile-did-change', handler as any);
+          resolve();
+        };
+        context.api.events.on('profile-did-change', handler as any);
+      });
+    }
+
+    async function processNext() {
+      if (isActivating || activationQueue.length === 0) {
+        return;
+      }
+      isActivating = true;
+      const nextGameId = activationQueue.shift();
+      try {
+        activateGame(store, nextGameId);
+        await onceProfileDidChange();
+      } finally {
+        isActivating = false;
+        // Continue with next queued activation
+        if (activationQueue.length > 0) {
+          processNext();
+        }
+      }
+    }
+
     context.api.events.on('activate-game', (gameId: string) => {
-      activateGame(store, gameId);
+      activationQueue.push(gameId);
+      processNext();
     });
 
     // promise used to ensure a new profile switch can't be started before the last one

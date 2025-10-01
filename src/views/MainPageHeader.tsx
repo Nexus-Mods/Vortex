@@ -33,7 +33,7 @@ class MainPageHeader extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    if (!truthy(this.context.headerPortal())) {
+    if (typeof this.context.headerPortal !== 'function' || !truthy(this.context.headerPortal())) {
       return null;
     }
     return (this.props.mainPage === this.context.page) ? (

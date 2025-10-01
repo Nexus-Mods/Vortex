@@ -49,7 +49,7 @@ import observe, { DownloadObserver } from './DownloadObserver';
 import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
-import Zip = require('node-7z');
+import { addToArchive } from '../../util/archive';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -496,7 +496,6 @@ function move(api: IExtensionApi,
 function importDirectory(api: IExtensionApi,
                          source: string, destination: string,
                          silent: boolean) {
-  const zipper = new Zip();
 
   const notiId = silent ? undefined : api.sendNotification({
     type: 'activity',
@@ -508,7 +507,7 @@ function importDirectory(api: IExtensionApi,
   addLocalInProgress.add(fileName);
 
   return fs.readdirAsync(source)
-    .then(files => zipper.add(destination, files.map(name => path.join(source, name))))
+    .then(files => addToArchive(destination, files.map(name => path.join(source, name))))
     .then(() => fs.statAsync(destination))
     .then((stat: fs.Stats) => postImport(api, destination, stat.size, silent))
     .catch(err => {

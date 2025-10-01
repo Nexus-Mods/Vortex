@@ -12153,9 +12153,9 @@ tunnel-agent@^0.6.0:
   dependencies:
     safe-buffer "^5.0.1"
 
-turbowalk@Nexus-Mods/node-turbowalk:
+"turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295":
   version "3.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295#a9a88ac8927e1a69d619e14d8def889abd1ea372"
   dependencies:
     fs-extra "^8.1.0"
     winapi-bindings Nexus-Mods/node-winapi-bindings
@@ -12616,9 +12616,9 @@ vortex-api@Nexus-Mods/vortex-api:
   version "1.8.15"
   resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/db5e5585b7492d7a0e07c76d4cf33e3d0dfbf3fb"
 
-vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
+"vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24":
   version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24#0c1a3234e93ccb9b5d54ed07ca928e0605d333c5"
   dependencies:
     lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings
@@ -12848,9 +12848,9 @@ which@^2.0.1, which@^2.0.2:
   dependencies:
     isexe "^2.0.0"
 
-wholocks@Nexus-Mods/node-wholocks#master:
+"wholocks@https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f":
   version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f"
+  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f#74c4a4cf7ab91c6d7f2aa8e65470ab86f0bcdcdf"
   dependencies:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 

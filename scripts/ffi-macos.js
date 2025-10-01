@@ -87,7 +87,10 @@ function createLibrary(name, functions) {
 
 // Export to match ffi API
 module.exports = {
-  Library: createLibrary,
+  // Export the actual class for tests expecting a constructor
+  Library,
+  // Keep factory available for API compatibility
+  createLibrary,
   
   // For testing purposes
   __setError: (err) => {

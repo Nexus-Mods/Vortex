@@ -145,7 +145,7 @@ import { HTTPError } from '@nexusmods/nexus-api';
 import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import Zip = require('node-7z');
+import * as SevenZip from 'node-7z';
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -438,8 +438,8 @@ class InstallManager {
                   installChoices?: any,
                   progress?: (entries: string[], percent: number) => void)
                   : Bluebird<IInstallResult> {
-    // Create a dedicated Zip instance for this simulation to prevent conflicts
-    const simulationZip = new Zip();
+    // Use node-7z module functions directly for simulation extraction
+    const simulationZip = SevenZip;
 
     let extractProm: Bluebird<any>;
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
@@ -600,7 +600,8 @@ class InstallManager {
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit.do(() => {
       return new Promise<string>((resolve, reject) => {
-        const installationZip = new Zip();
+        // node-7z provides functions, not a class. Use the module directly.
+        const installationZip = SevenZip;
 
         const currentProfile = activeProfile(api.store.getState());
 
@@ -672,6 +673,13 @@ class InstallManager {
         if (installGameId !== currentProfile?.gameId) {
           const installProfileId = lastActiveProfileForGame(state, installGameId);
           installProfile = profileById(state, installProfileId);
+          // Ensure the target game's profile is activated so enable/deploy affects the right profile
+          try {
+            api.events.emit('activate-game', installGameId);
+            log('info', 'activated target game for install', { installGameId, currentProfile: currentProfile?.id, installProfileId });
+          } catch (e) {
+            log('warn', 'failed to emit activate-game event', { installGameId, error: (e as Error)?.message });
+          }
         }
         // TODO make the download first functionality optional
         await api.emitAndAwait('will-install-mod', installGameId, archiveId, modId, fullInfo);
@@ -1502,7 +1510,7 @@ class InstallManager {
   private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
                        gameId: string, installContext: IInstallContext,
-                       installationZip: Zip,
+                       installationZip: any,
                        forceInstaller?: string,
                        installChoices?: any,
                        extractList?: IFileListItem[],
@@ -1883,7 +1891,8 @@ class InstallManager {
         const subContext = new InstallContext(gameId, api, unattended);
         subContext.startIndicator(api.translate('nested: {{modName}}',
           { replace: { modName: path.basename(mod.path) } }));
-        const submoduleZip = new Zip();
+        // Use node-7z module functions for submodule extraction
+        const submoduleZip = SevenZip;
         return this.installInner(api, mod.path, tempPath, destinationPath,
                                  gameId, subContext, submoduleZip, undefined,
                                  choices, undefined, unattended)

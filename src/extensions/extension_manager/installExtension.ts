@@ -1272,67 +1272,24 @@ async function installExtension(api: IExtensionApi,
     })
     .then(async () => {
       log('debug', 'Ensured temporary directory exists', { tempPath });
-      
-      if (process.platform === 'darwin') {
-        log('info', 'Starting synchronous extraction on macOS', { 
-          archivePath, 
-          tempPath,
-          archiveExtension: path.extname(archivePath).toLowerCase()
-        });
-        
-        const extractionStartTime = Date.now();
-        extractArchiveNativeSync(archivePath, tempPath);
-        const extractionDuration = Date.now() - extractionStartTime;
-        
-        log('info', 'Synchronous extraction completed on macOS', { 
-          tempPath, 
-          archivePath, 
-          duration: `${extractionDuration}ms`
-        });
-        
-        // Add a small delay to ensure file system operations are settled
-        log('debug', 'Adding delay for file system settlement', { delay: '500ms' });
-        await new Promise<void>(resolve => setTimeout(resolve, 500));
-        
-        // Wait for extraction directory to be stable to indicate extraction is truly complete
-        // This is more reliable than arbitrary delays
-        log('debug', 'Monitoring extraction completion', { tempPath, archivePath });
-        await waitForExtractionCompletion(tempPath, 5000); // Reduced from 10s to 5s since extraction is synchronous
-        
-        // Additional validation to ensure files are truly accessible
-        log('debug', 'Validating extraction completeness', { tempPath, archivePath });
-        await validateExtractionCompleteness(tempPath, 20000);
-        
-        // Additional delay to ensure file system operations are fully settled on macOS
-        log('debug', 'Adding additional delay for macOS file system settlement', { 
-          delay: '1000ms',
-          platform: process.platform
-        });
-        await new Promise<void>(resolve => setTimeout(resolve, 1000));
-      } else {
-        log('info', 'Starting asynchronous extraction on non-macOS platform', { 
-          archivePath, 
-          tempPath,
-          platform: process.platform
-        });
-        
-        const Zip: any = require('node-7z');
-        const extractor = new Zip();
-        const extractionStartTime = Date.now();
-        
-        return extractor.extractFull(archivePath, tempPath, { ssc: false },
-                                     () => undefined, () => undefined)
-          .then(() => {
-            const extractionDuration = Date.now() - extractionStartTime;
-            log('info', 'Asynchronous extraction completed', { 
-              tempPath, 
-              archivePath, 
-              platform: process.platform,
-              duration: `${extractionDuration}ms`
-            });
-            return undefined;
-          });
-      }
+      // Unified extraction using archive helper with platform-aware fallback and retries
+      const { extractArchive } = require('../../util/archive');
+      const extractionStartTime = Date.now();
+      await extractArchive(archivePath, tempPath, { ssc: false });
+      const extractionDuration = Date.now() - extractionStartTime;
+      log('info', 'Archive extraction completed', {
+        tempPath,
+        archivePath,
+        platform: process.platform,
+        duration: `${extractionDuration}ms`
+      });
+      // Validate and settle filesystem
+      log('debug', 'Monitoring extraction completion', { tempPath, archivePath });
+      await waitForExtractionCompletion(tempPath, 5000);
+      log('debug', 'Validating extraction completeness', { tempPath, archivePath });
+      await validateExtractionCompleteness(tempPath, 20000);
+      log('debug', 'Adding additional delay for file system settlement', { delay: '500ms' });
+      await new Promise<void>(resolve => setTimeout(resolve, 500));
     })
     .then(() => {
       log('debug', 'Flattening nested root directory if needed', { tempPath });
