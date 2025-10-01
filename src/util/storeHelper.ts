@@ -4,8 +4,6 @@
 
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 
-import { activeGameId } from './selectors';
-
 import Promise from 'bluebird';
 import * as Redux from 'redux';
 
@@ -350,9 +348,18 @@ function waitUntil(predicate: () => boolean, interval: number = 100): Promise<vo
  */
 export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
   const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
+  
+  // Helper function to get the active game ID without importing selectors
+  // This inlines the logic from activeGameId selector to break circular dependency
+  const getActiveGameId = (state: any): string => {
+    const profileId = getSafe(state, ['settings', 'profiles', 'activeProfileId'], undefined);
+    const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+    return profile !== undefined ? profile.gameId : undefined;
+  };
+  
   let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
   if ((knownGames !== null) && (knownGames !== undefined)) {
-    const gameMode = activeGameId(store.getState());
+    const gameMode = getActiveGameId(store.getState());
     const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
     return Promise.resolve(res || fallback);
   } else {
@@ -362,7 +369,7 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
              return (knownGames !== null) && (knownGames !== undefined);
            })
         .then(() => {
-          const gameMode = activeGameId(store.getState());
+          const gameMode = getActiveGameId(store.getState());
 
           const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
           return Promise.resolve(res || fallback);
