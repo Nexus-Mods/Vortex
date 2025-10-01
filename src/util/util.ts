@@ -210,7 +210,12 @@ export function spawnSelf(args: string[]) {
   }
   spawn(process.execPath, args, {
     detached: true,
-  });
+    stdio: 'ignore',
+  })
+  .on('error', (err) => {
+    log('error', 'Failed to spawn self', { execPath: process.execPath, args, error: err.message });
+  })
+  .unref();
 }
 
 const BYTE_LABELS = ['B', 'KB', 'MB', 'GB', 'TB'];

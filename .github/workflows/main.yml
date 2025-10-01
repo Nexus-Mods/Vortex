@@ -15,6 +15,10 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        dotnet-version: [ 9.0.x ]
+
     steps:   
       - uses: actions/checkout@v4
         with:
