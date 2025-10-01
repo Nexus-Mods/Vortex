@@ -26,7 +26,7 @@ Write-Host "Installing essential apps via Scoop"
 
 scoop install git
 scoop bucket add versions
-scoop install python310 nodejs18 cmake yarn
+scoop install python310 nodejs22 cmake yarn
 
 Write-Host "Downloading Visual Studio Build Tools..."
 
