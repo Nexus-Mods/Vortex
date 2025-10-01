@@ -5,6 +5,13 @@ const fs = require('fs');
 const projectDir = path.join(__dirname, 'dotnetprobe');
 const outputFile = path.join(__dirname, '..', 'assets', 'dotnetprobe.exe');
 
+// Check if dotnetprobe.exe already exists
+if (fs.existsSync(outputFile)) {
+  const stats = fs.statSync(outputFile);
+  console.log(`dotnetprobe.exe already exists (${Math.round(stats.size / 1024)}KB) - skipping build`);
+  process.exit(0);
+}
+
 console.log('Building dotnetprobe.exe for .NET 9...');
 
 try {
