@@ -18,6 +18,7 @@ import {
   addLocalDownload,
   downloadProgress,
   removeDownload,
+  removeDownloadSilent,
   setDownloadHash,
   setDownloadHashByFile,
   setDownloadInterrupted,
@@ -757,7 +758,7 @@ function removeDownloadsWithoutFile(store: Redux.Store,
   Object.keys(downloads)
     .filter(dlId => !truthy(downloads[dlId].localPath))
     .forEach(dlId => {
-      store.dispatch(removeDownload(dlId));
+      store.dispatch(removeDownloadSilent(dlId));
     });
 }
 
@@ -778,10 +779,10 @@ function processInterruptedDownloads(api: IExtensionApi,
       if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
         fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
           .then(() => {
-            api.store.dispatch(removeDownload(id));
+            api.store.dispatch(removeDownloadSilent(id));
           });
       } else {
-        api.store.dispatch(removeDownload(id));
+        api.store.dispatch(removeDownloadSilent(id));
       }
     } else {
       let realSize = (downloads[id].size !== 0)
