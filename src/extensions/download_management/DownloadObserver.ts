@@ -19,6 +19,7 @@ import {
   initDownload,
   pauseDownload,
   removeDownload,
+  removeDownloadSilent,
   setDownloadFilePath,
   setDownloadModInfo,
   setDownloadPausable,
@@ -27,6 +28,7 @@ import { IChunk } from './types/IChunk';
 import { IDownload, IDownloadOptions } from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IDownloadRemoveOptions } from './types/IDownloadRemoveOptions';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import { finalizeDownload } from './util/postprocessDownload';
@@ -101,7 +103,7 @@ export class DownloadObserver {
     this.mManager = manager;
 
     events.on('remove-download',
-      (downloadId, callback?) => this.handleRemoveDownload(downloadId, callback));
+      (downloadId, callback?, options?: IDownloadRemoveOptions) => this.handleRemoveDownload(downloadId, callback, options));
     events.on('pause-download',
       (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
@@ -126,7 +128,7 @@ export class DownloadObserver {
         const state = api.getState();
         const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach(dlId => {
-          this.handleRemoveDownload(dlId);
+          this.handleRemoveDownload(dlId, undefined, { silent: true });
         });
         if (newValue?.isPremium === true) {
           manager.setMaxConcurrentDownloads(10);
@@ -228,7 +230,8 @@ export class DownloadObserver {
           this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
         })
         .then(() => {
-          this.mApi.store.dispatch(removeDownload(id));
+          const isSkipped = (err instanceof UserCanceled) && err.skipped;
+          this.mApi.store.dispatch(isSkipped ? removeDownloadSilent(id) : removeDownload(id));
           if (callback !== undefined) {
             callback(err, id);
           } else {
@@ -493,7 +496,7 @@ export class DownloadObserver {
     };
   }
 
-  private handleRemoveDownload(downloadId: string, cb?: (err: Error) => void) {
+  private handleRemoveDownload(downloadId: string, cb?: (err: Error) => void, options?: IDownloadRemoveOptions) {
     if (downloadId === null) {
       log('warn', 'invalid download id');
       return;
@@ -524,7 +527,7 @@ export class DownloadObserver {
 
         return fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => {
-            this.mApi.store.dispatch(removeDownload(downloadId));
+            this.mApi.store.dispatch(options?.silent ? removeDownloadSilent(downloadId) : removeDownload(downloadId));
             callCB(null);
           })
           .catch(UserCanceled, callCB)
@@ -538,7 +541,7 @@ export class DownloadObserver {
             }
           });
       } else {
-        this.mApi.store.dispatch(removeDownload(downloadId));
+        this.mApi.store.dispatch(options?.silent ? removeDownloadSilent(downloadId) : removeDownload(downloadId));
         return Promise.resolve();
       }
     };

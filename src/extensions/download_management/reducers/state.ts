@@ -179,6 +179,8 @@ export const stateReducer: IReducerSpec = {
     },
     [action.removeDownload as any]: (state, payload) =>
       deleteOrNop(state, [ 'files', payload.id ]),
+    [action.removeDownloadSilent as any]: (state, payload) =>
+      deleteOrNop(state, [ 'files', payload.id ]),
     [action.addLocalDownload as any]: (state, payload) =>
       setSafe(state, [ 'files', payload.id ], {
         state: 'finished',
