@@ -141,6 +141,12 @@ TODO: Manual steps with dependencies and versions
 - [Vortex Forum](https://forums.nexusmods.com/index.php?/forum/4306-vortex-support/) or [Discord](https://discord.gg/nexusmods) for support and discussions with the community and the team.
 - [Vortex Wiki](https://github.com/Nexus-Mods/Vortex/wiki) for knowledge base, articles and troubleshooting
 - [Project Structure](structure.md) for an overview of how the codebase is organized.
+ - [Yarn Commands Reference](docs/development/yarn-commands.md) for scripts, flags, and guidance.
+ - [Scripts Overview](docs/development/scripts-overview.md) for install hooks, validation, and build utilities.
+ - [Clean Command](docs/clean-command.md) for cleanup options (`--dev-data`, `--full`).
+ - [macOS Guide](docs/macos/README.md) for macOS development, build, and packaging.
+ - [macOS Code Signing](docs/macos/code-signing.md) for signing and notarization steps.
+ - [Platform Text Usage](docs/platform-text-usage.md) for platform-specific UI text utilities.
 
 ## Contributing
 
@@ -154,4 +160,4 @@ The majority of Vortex code is open-source. We are committed to a transparent de
 
 ## License
 
-A this project is licensed under the [GPL-3.0](https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md) license.
+This project is licensed under the [GPL-3.0](https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md) license.

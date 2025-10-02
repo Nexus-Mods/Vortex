@@ -578,7 +578,7 @@ export function onGetNexusCollectionRevision(api: IExtensionApi, nexus: Nexus)
 
 function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
   const loggedIn = isLoggedIn(api.getState());
-  const expectedError = resolveGraphError(api.translate, loggedIn, err);
+  const expectedError = resolveGraphError(api.translate, err);
   if (expectedError !== undefined) {
     api.sendNotification({
       type: 'info',

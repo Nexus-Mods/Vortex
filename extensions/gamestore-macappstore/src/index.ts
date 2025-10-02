@@ -137,7 +137,9 @@ class MacAppStore implements types.IGameStore {
     // Use the existing game indicators
     const gameIndicators = [
       'game', 'Game', 'Gaming', 'Adventure', 'RPG', 'Strategy', 'Simulation',
-      'Puzzle', 'Arcade', 'Action', 'Shooter', 'Racing', 'Sports'
+      'Puzzle', 'Arcade', 'Action', 'Shooter', 'Racing', 'Sports',
+      // Common franchise keywords to strengthen detection
+      'Warcraft', 'Witcher', 'Halo'
     ];
     
     // Check for common game categories in the app name
@@ -170,7 +172,7 @@ class MacAppStore implements types.IGameStore {
     // Check for common game name patterns
     const gameNamePatterns = [
       /\d$/, // Names ending with a number (sequels)
-      /[^a-z]ii[^a-z]/i, // Roman numerals II, III, etc.
+      /\b[ivxlcdm]+\b/i, // Roman numerals (I, II, III, IV, V, VI, etc.)
       /edition/i, // Special editions
       /remaster/i, // Remastered versions
       /definitive/i // Definitive editions
@@ -191,13 +193,16 @@ class MacAppStore implements types.IGameStore {
       // Use plutil to parse the Info.plist file
       const infoPlistPath = path.join(appPath, 'Contents', 'Info.plist');
       const { stdout } = await execAsync(`plutil -extract CFBundleName raw "${infoPlistPath}" 2>/dev/null || echo ""`);
-      const name = stdout.trim() || path.basename(appPath, '.app');
+      const nameRaw = stdout.trim();
+      const name = (nameRaw.split('\n')[0]) || path.basename(appPath, '.app');
       
       const bundleIdResult = await execAsync(`plutil -extract CFBundleIdentifier raw "${infoPlistPath}" 2>/dev/null || echo ""`);
-      const bundleId = bundleIdResult.stdout.trim();
+      const bundleIdRaw = bundleIdResult.stdout.trim();
+      const bundleId = (bundleIdRaw.split('\n')[0]) || '';
       
       const versionResult = await execAsync(`plutil -extract CFBundleShortVersionString raw "${infoPlistPath}" 2>/dev/null || echo ""`);
-      const version = versionResult.stdout.trim();
+      const versionRaw = versionResult.stdout.trim();
+      const version = (versionRaw.split('\n')[0]) || '';
       
       // Check if it's likely a game by examining the bundle information
       const isGame = this.isLikelyGame(name, '');
@@ -242,19 +247,19 @@ class MacAppStore implements types.IGameStore {
                   const bundleInfo = await this.getAppBundleInfo(fullPath);
                   const metadata = await this.getAppMetadata(fullPath);
                   
-                  // Use bundle info if available, otherwise fall back to metadata
+                  // Prefer metadata from mdls when available; fallback to Info.plist
                   let appName = file.replace('.app', '');
                   let bundleId = '';
                   let isGame = false;
                   
-                  if (bundleInfo) {
-                    appName = bundleInfo.name || appName;
-                    bundleId = bundleInfo.bundleId || bundleId;
-                    isGame = bundleInfo.isGame;
-                  } else if (metadata) {
+                  if (metadata) {
                     appName = metadata.name || appName;
                     bundleId = metadata.bundleId || bundleId;
                     isGame = metadata.isGame;
+                  } else if (bundleInfo) {
+                    appName = bundleInfo.name || appName;
+                    bundleId = bundleInfo.bundleId || bundleId;
+                    isGame = bundleInfo.isGame;
                   }
                   
                   // Only include apps that are likely games

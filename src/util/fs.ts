@@ -428,6 +428,23 @@ const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => Promis
 const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fs.open);
 const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fs.readdir);
 const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fs.readFile);
+
+/**
+ * USAGE GUIDANCE:
+ * 
+ * Use statAsync() for most cases where you need file stats and want:
+ * - Automatic retries on transient errors (EBUSY, EPERM, etc.)
+ * - User-friendly error dialogs for permission issues
+ * - Consistent error handling across the application
+ * 
+ * Use statSilentAsync() only when:
+ * - You're checking file existence and expect failures (e.g., optional files)
+ * - You're in a tight loop where retries would be counterproductive
+ * - You need to handle errors in a very specific way
+ * 
+ * Consider migrating statSilentAsync() usage to statAsync() for better robustness,
+ * unless the silent behavior is specifically required.
+ */
 const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.stat);
 const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => PromiseBB.resolve(fs.stat(statPath));
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fs.symlink);

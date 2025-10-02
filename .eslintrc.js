@@ -1,3 +1,5 @@
+const isCI = process.env.CI === 'true';
+
 module.exports = {
   "env": {
     "browser": true,
@@ -143,6 +145,14 @@ module.exports = {
         "flatTernaryExpressions": true,
         "offsetTernaryExpressions": false,
         "ignoreComments": true,
+      }
+    ],
+    // Flag TODO/FIXME comments (error in CI, warn locally)
+    "no-warning-comments": [
+      isCI ? "error" : "warn",
+      {
+        "terms": ["todo", "fixme"],
+        "location": "anywhere"
       }
     ],
   },

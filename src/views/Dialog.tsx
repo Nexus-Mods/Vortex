@@ -23,7 +23,7 @@ import {
   Modal, Radio,
 } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = require('react-markdown');
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 

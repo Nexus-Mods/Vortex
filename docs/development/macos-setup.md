@@ -1,24 +1,23 @@
 # macOS Development Guide for Vortex
 
-## Automated Submodule Management
+## Submodule Management (macOS)
 
-This repository has been configured with automated tools to help manage submodules for macOS development. These tools ensure that submodules stay on the correct branches and that macOS-specific files (like `.DS_Store`) don't cause issues.
+This repository provides Yarn scripts to help manage submodules for macOS development. These ensure submodules stay on the correct branches and that macOS-specific files (like `.DS_Store`) don't cause issues.
 
 ### Setup
 
-The following setup has already been completed in this repository:
+The following setup is available via scripts:
 
-1. Git hooks have been installed to automatically run `fix_submodules.sh` after checkout, merge, and rewrite operations
-2. The `.gitmodules` file has been updated to use macOS-specific branches for relevant submodules
-3. Git has been configured to use the branches specified in `.gitmodules` when updating submodules
-4. A Git alias `git fix-submodules` has been created to easily run the fix script manually
+1. Use `yarn update-gitmodules-macos` to update `.gitmodules` for macOS-specific branches/remotes
+2. Keep submodules aligned by running `yarn sweep:all:dry` (dry-run) or `yarn sweep:all`
+3. Push macOS branches with `yarn push:macos`
 
 ### How It Works
 
-- When you switch branches, pull changes, or rebase, the Git hooks will automatically run `fix_submodules.sh`
-- The `fix_submodules.sh` script will:
+- When you switch branches, pull changes, or rebase, ensure submodules are clean and aligned by running the provided Yarn scripts.
+- The submodule utilities will:
   - Clean up `.DS_Store` and `yarn-error.log` files
-  - Check out the correct branch for each submodule (e.g., `macos-experimental` or `macos-tahoe-theme`)
+  - Check out the correct branch for each submodule as configured
   - Commit any actual changes to the macOS-specific branches
   - Try to push changes to the remote repositories (if you have permission)
   - Update and commit submodule references in the main project
@@ -28,26 +27,23 @@ The following setup has already been completed in this repository:
 If you need to manually update submodules, you can use the following commands:
 
 ```bash
-# Run the fix_submodules.sh script using the Git alias
-git fix-submodules
-
-# Or run the script directly
-./fix_submodules.sh
+# Update submodules to the branches specified in .gitmodules
+git submodule update --remote
 
 # Update all submodules to use the branches specified in .gitmodules
 git submodule update --remote
 
 # Update the .gitmodules file if new submodules need macOS-specific branches
-./update_gitmodules_for_macos.sh
+yarn update-gitmodules-macos
 ```
 
 ### Adding New Submodules with macOS-Specific Branches
 
 If you add a new submodule that needs a macOS-specific branch:
 
-1. Edit both `update_gitmodules_for_macos.sh` and `fix_submodules.sh` to add the submodule path and branch name
-2. Run `./update_gitmodules_for_macos.sh` to update the `.gitmodules` file
-3. Run `git fix-submodules` to update the submodule to use the specified branch
+1. Update the submodule path and branch name in `.gitmodules`
+2. Run `yarn update-gitmodules-macos` to apply the changes
+3. Run `git submodule update --remote` to sync locally
 
 ### Troubleshooting
 

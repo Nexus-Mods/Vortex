@@ -55,17 +55,45 @@ function byFile(input: IModWithState[]): IModWithState[][] {
   if (input.length === 1) {
     return [input];
   }
-  const groups: IModWithState[][] = [];
+  // Optimized to O(n) by computing a deterministic grouping key
+  // based on newestFileId/modId or logicalFileName, avoiding pairwise checks.
+  const groupsByKey: { [key: string]: IModWithState[] } = {};
+
+  const deriveKey = (mod: IModWithState): string | undefined => {
+    const attrs = mod?.attributes || {};
+
+    // Never group collections at the moment
+    if (attrs.collectionSlug !== undefined) {
+      return undefined;
+    }
+
+    // Prefer grouping by newestFileId when available alongside a modId
+    if (truthy(attrs.newestFileId) && truthy(attrs.modId !== undefined)) {
+      return `fid:${attrs.newestFileId}`;
+    }
+
+    // Fallback to grouping by logicalFileName (normalized without version)
+    if (truthy(attrs.logicalFileName)) {
+      return `lname:${logicalName(attrs)}`;
+    }
+
+    return undefined;
+  };
+
   input.forEach((mod: IModWithState) => {
-    // TODO: O(n^2)
-    const fileGroup = groups.find(iter => fileMatch(iter[0], mod));
-    if (fileGroup === undefined) {
-      groups.push([mod]);
+    const key = deriveKey(mod);
+    if (key === undefined) {
+      // Mods without a grouping key become their own group
+      const uniqueKey = `unique:${mod?.id ?? Math.random().toString(36)}`;
+      groupsByKey[uniqueKey] = [mod];
+    } else if (groupsByKey[key] === undefined) {
+      groupsByKey[key] = [mod];
     } else {
-      fileGroup.push(mod);
+      groupsByKey[key].push(mod);
     }
   });
-  return groups;
+
+  return Object.values(groupsByKey);
 }
 
 function newestFirst(lhs: IModWithState, rhs: IModWithState): number {

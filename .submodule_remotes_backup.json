@@ -1,94 +1,94 @@
 {
 ,
   "api": {
-    "origin": "https://github.com/ErikVeland/vortex-api.git",
+    "origin": "https://github.com/Nexus-Mods/vortex-api.git",
     "original": "https://github.com/Nexus-Mods/vortex-api.git",
     "upstream": "https://github.com/ErikVeland/vortex-api.git"
   }
 ,
   "extensions/changelog-dashlet": {
-    "origin": "https://github.com/ErikVeland/extension-changelog-dashlet.git",
+    "origin": "https://github.com/Nexus-Mods/extension-changelog-dashlet.git",
     "original": "https://github.com/Nexus-Mods/extension-changelog-dashlet.git",
     "upstream": "https://github.com/ErikVeland/extension-changelog-dashlet.git"
   }
 ,
   "extensions/collections": {
-    "origin": "https://github.com/ErikVeland/extension-collections.git",
+    "origin": "https://github.com/Nexus-Mods/extension-collections.git",
     "original": "https://github.com/Nexus-Mods/extension-collections.git",
     "upstream": "https://github.com/ErikVeland/extension-collections.git"
   }
 ,
   "extensions/common-interpreters": {
-    "origin": "https://github.com/ErikVeland/extension-common-interpreters.git",
+    "origin": "https://github.com/Nexus-Mods/extension-common-interpreters.git",
     "original": "https://github.com/Nexus-Mods/extension-common-interpreters.git",
     "upstream": "https://github.com/ErikVeland/extension-common-interpreters.git"
   }
 ,
   "extensions/documentation": {
-    "origin": "https://github.com/ErikVeland/extension-documentation.git",
+    "origin": "https://github.com/Nexus-Mods/extension-documentation.git",
     "original": "https://github.com/Nexus-Mods/extension-documentation.git",
     "upstream": "https://github.com/ErikVeland/extension-documentation.git"
   }
 ,
   "extensions/extension-dashlet": {
-    "origin": "https://github.com/ErikVeland/extension-extension-dashlet.git",
+    "origin": "https://github.com/Nexus-Mods/extension-extension-dashlet.git",
     "original": "https://github.com/Nexus-Mods/extension-extension-dashlet.git",
     "upstream": "https://github.com/ErikVeland/extension-extension-dashlet.git"
   }
 ,
   "extensions/feedback": {
-    "origin": "https://github.com/ErikVeland/extension-feedback.git",
+    "origin": "https://github.com/Nexus-Mods/extension-feedback.git",
     "original": "https://github.com/Nexus-Mods/extension-feedback.git",
     "upstream": "https://github.com/ErikVeland/extension-feedback.git"
   }
 ,
   "extensions/fnis-integration": {
-    "origin": "https://github.com/ErikVeland/fnis-integration.git",
+    "origin": "https://github.com/Nexus-Mods/fnis-integration.git",
     "original": "https://github.com/Nexus-Mods/fnis-integration.git",
     "upstream": "https://github.com/ErikVeland/fnis-integration.git"
   }
 ,
   "extensions/game-pillarsofeternity2": {
-    "origin": "https://github.com/ErikVeland/game-pillarsofeternity2.git",
+    "origin": "https://github.com/Nexus-Mods/game-pillarsofeternity2.git",
     "original": "https://github.com/Nexus-Mods/game-pillarsofeternity2.git",
     "upstream": "https://github.com/ErikVeland/game-pillarsofeternity2.git"
   }
 ,
   "extensions/gamebryo-archive-check": {
     "erik": "git@github.com:ErikVeland/bethesda-archive-check.git",
-    "origin": "https://github.com/ErikVeland/bethesda-archive-check.git",
+    "origin": "https://github.com/Nexus-Mods/bethesda-archive-check.git",
     "original": "https://github.com/Nexus-Mods/bethesda-archive-check.git",
     "upstream": "https://github.com/ErikVeland/bethesda-archive-check.git"
   }
 ,
   "extensions/gamebryo-archive-invalidation": {
-    "origin": "https://github.com/ErikVeland/extension-archive-invalidation.git",
+    "origin": "https://github.com/Nexus-Mods/extension-archive-invalidation.git",
     "original": "https://github.com/Nexus-Mods/extension-archive-invalidation.git",
     "upstream": "https://github.com/ErikVeland/extension-archive-invalidation.git"
   }
 ,
   "extensions/gamebryo-ba2-support": {
     "erik": "git@github.com:ErikVeland/extension-ba2-support.git",
-    "origin": "https://github.com/ErikVeland/extension-ba2-support.git",
+    "origin": "https://github.com/Nexus-Mods/extension-ba2-support.git",
     "original": "https://github.com/Nexus-Mods/extension-ba2-support.git",
     "upstream": "https://github.com/ErikVeland/extension-ba2-support.git"
   }
 ,
   "extensions/gamebryo-bsa-support": {
     "erik": "git@github.com:ErikVeland/extension-bsa-support.git",
-    "origin": "https://github.com/ErikVeland/extension-bsa-support.git",
+    "origin": "https://github.com/Nexus-Mods/extension-bsa-support.git",
     "original": "https://github.com/Nexus-Mods/extension-bsa-support.git",
     "upstream": "https://github.com/ErikVeland/extension-bsa-support.git"
   }
 ,
   "extensions/gamebryo-plugin-indexlock": {
-    "origin": "https://github.com/ErikVeland/extension-plugin-indexlock.git",
+    "origin": "https://github.com/Nexus-Mods/extension-plugin-indexlock.git",
     "original": "https://github.com/Nexus-Mods/extension-plugin-indexlock.git",
     "upstream": "https://github.com/ErikVeland/extension-plugin-indexlock.git"
   }
 ,
   "extensions/gamebryo-plugin-management": {
-    "origin": "https://github.com/ErikVeland/extension-plugin-management.git",
+    "origin": "https://github.com/Nexus-Mods/extension-plugin-management.git",
     "original": "https://github.com/Nexus-Mods/extension-plugin-management.git",
     "upstream": "https://github.com/ErikVeland/extension-plugin-management.git"
   }

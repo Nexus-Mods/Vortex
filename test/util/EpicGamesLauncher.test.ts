@@ -1,19 +1,23 @@
 import EpicGamesLauncher from '../../src/util/EpicGamesLauncher';
 import * as path from 'path';
 import * as fs from '../../src/util/fs';
-import { getVortexPath } from '../../src/util/getVortexPath';
+import getVortexPath from '../../src/util/getVortexPath';
 
 // Mock fs
-jest.mock('../../src/util/fs', () => ({
-  statAsync: jest.fn(),
-  readdirAsync: jest.fn(),
-  readFileAsync: jest.fn()
-}));
+jest.mock('../../src/util/fs', () => {
+  const statAsync = jest.fn(() => Promise.reject(new Error('not found')));
+  return {
+    statAsync,
+    statSilentAsync: statAsync,
+    readdirAsync: jest.fn(),
+    readFileAsync: jest.fn()
+  };
+});
 
 // Mock getVortexPath
 jest.mock('../../src/util/getVortexPath', () => ({
-  default: jest.fn(),
-  __esModule: true
+  __esModule: true,
+  default: (type: string) => (type === 'home' ? '/Users/test' : '/')
 }));
 
 // Mock platform detection
@@ -25,7 +29,8 @@ jest.mock('../../src/util/platform', () => ({
 
 // Mock lazyRequire
 jest.mock('../../src/util/lazyRequire', () => ({
-  default: () => undefined
+  __esModule: true,
+  default: () => undefined,
 }));
 
 // Mock opn
@@ -39,15 +44,7 @@ describe('EpicGamesLauncher', () => {
     (fs.statAsync as jest.Mock).mockReset();
     (fs.readdirAsync as jest.Mock).mockReset();
     (fs.readFileAsync as jest.Mock).mockReset();
-    (getVortexPath as jest.Mock).mockReset();
-    
-    // Mock getVortexPath to return test paths
-    (getVortexPath as jest.Mock).mockImplementation((type) => {
-      if (type === 'home') {
-        return '/Users/test';
-      }
-      return '/';
-    });
+    // getVortexPath is already mocked to return consistent paths
   });
   
   describe('getEpicDataPath on macOS', () => {

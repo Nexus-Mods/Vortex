@@ -117,7 +117,7 @@ jobs:
       - name: Use Node.js 
         uses: actions/setup-node@v4 
         with: 
-          node-version: '18.17.1' 
+          node-version: '22.x' 
           cache: "yarn" 
 
       - name: Install dependencies 
@@ -261,4 +261,4 @@ jobs:
           path: | 
             ./dist/vortex-setup-*.*.*.exe 
             ./dist/latest.yml 
-          if-no-files-found: error 
+          if-no-files-found: error

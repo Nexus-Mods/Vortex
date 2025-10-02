@@ -26,8 +26,8 @@
     - *package.json*: project file for production
   - **dist/**: production builds (one-click installer, updater) (unpacked and installers, created during packaging)
   - **dist_custom/**: production builds (lets user choose installation directory)
-  - **out/**: development build (created by *npm build*)
-  - **node_modules/**: dependencies (created by *npm install*)
+- **out/**: development build (created by *yarn build*)
+- **node_modules/**: dependencies (created by *yarn install*)
   - **typings/**: public typings auto-retrieved from public repositories
   - **typings.custom/**: custom typings for libraries that don't have any yet or where those that exist are incomplete or broken 
     - *index.d.ts*: top-level index, references the other typings
@@ -111,6 +111,16 @@
 - Mock implementations are provided in `__mocks__` directory for Windows-only functionalities
 - Some features may have limited functionality on macOS due to platform differences
 - File path handling may need special attention due to different path separators
+
+## Build and Platform Docs
+
+To avoid duplication and keep instructions up to date, refer to:
+
+- `docs/macos/README.md` for macOS development, build, and packaging
+- `docs/macos/code-signing.md` for code signing and notarization
+- `docs/development/scripts-overview.md` for development scripts and flows
+- `docs/development/yarn-commands.md` for Yarn scripts and flags
+- `docs/clean-command.md` for clean options
 
 ## Testing on macOS
 

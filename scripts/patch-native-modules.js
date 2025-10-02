@@ -23,7 +23,9 @@ function isWindows() {
 // Exclude modules that have mocks in __mocks__ directory
 const modulesToPatch = [
   'vortexmt',
-  'xxhash-addon'
+  'xxhash-addon',
+  // Ensure bsdiff-node builds or is replaced on macOS
+  'bsdiff-node'
 ];
 
 // List of modules that need mocks on macOS

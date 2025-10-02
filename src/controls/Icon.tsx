@@ -32,7 +32,10 @@ export interface IIconProps {
 export function installIconSet(set: string, setPath: string): Promise<Set<string>> {
   const newset = document.createElement('div');
   newset.id = 'iconset-' + set;
-  document.getElementById('icon-sets').appendChild(newset);
+  const container = document.getElementById('icon-sets');
+  if (container !== null) {
+    container.appendChild(newset);
+  }
   log('info', 'read font', setPath);
   return new Promise((resolve, reject) => {
     fs.readFile(setPath, {}, (err, data) => {

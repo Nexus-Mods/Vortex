@@ -204,6 +204,13 @@ async function updateSourceMap(filePath) {
 function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
   const instArgs = noparallel ? ['--network-concurrency', '1'] : [];
+  // Common macOS native build environment (Node-API C++ exceptions enabled)
+  const macosNativeEnv = isMacOS() ? {
+    GYP_DEFINES: `${process.env.GYP_DEFINES ? process.env.GYP_DEFINES + ' ' : ''}NAPI_CPP_EXCEPTIONS=1`,
+    CPPFLAGS: `${process.env.CPPFLAGS ? process.env.CPPFLAGS + ' ' : ''}-DNAPI_CPP_EXCEPTIONS`,
+    CXXFLAGS: `${process.env.CXXFLAGS ? process.env.CXXFLAGS + ' ' : ''}-DNAPI_CPP_EXCEPTIONS -std=c++17 -fexceptions`,
+    MACOSX_DEPLOYMENT_TARGET: process.env.MACOSX_DEPLOYMENT_TARGET || '10.15'
+  } : {};
   
   // Special handling for gamebryo-savegame-management extension
   let res;
@@ -217,8 +224,11 @@ function processCustom(project, buildType, feedback, noparallel) {
         npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
         // Add environment variables for macOS build
         LDFLAGS: "-L/usr/local/opt/zlib/lib",
-        CPPFLAGS: "-I/usr/local/opt/zlib/include",
-        PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig"
+        CPPFLAGS: `${macosNativeEnv.CPPFLAGS || ''} -I/usr/local/opt/zlib/include`.trim(),
+        CXXFLAGS: macosNativeEnv.CXXFLAGS,
+        PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig",
+        GYP_DEFINES: macosNativeEnv.GYP_DEFINES,
+        MACOSX_DEPLOYMENT_TARGET: macosNativeEnv.MACOSX_DEPLOYMENT_TARGET
       } 
     }, feedback)
       .then(() => {
@@ -237,7 +247,9 @@ function processCustom(project, buildType, feedback, noparallel) {
       cwd: project.path, 
       env: { 
         ...process.env, 
-        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
+        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
+        // Ensure Node-API C++ exceptions are enabled on macOS to avoid build failures
+        ...macosNativeEnv
       } 
     }, feedback)
       .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 

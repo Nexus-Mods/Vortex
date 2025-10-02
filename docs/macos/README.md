@@ -27,23 +27,15 @@ All features maintain full backward compatibility with existing functionality.
 
 ## Development Setup
 
-### Automated Submodule Management
+### Submodule and macOS Branch Utilities
 
-This repository includes automated tools for managing submodules on macOS:
+This repository provides Yarn scripts to keep submodules aligned with macOS-specific branches and expected remotes:
 
-- Git hooks automatically run `fix_submodules.sh` after checkout, merge, and rewrite operations
-- `.gitmodules` file configured for macOS-specific branches
-- Git alias `git fix-submodules` available for manual operations
+- `yarn update-gitmodules-macos` updates `.gitmodules` for macOS branches/remotes
+- `yarn push:macos` pushes macOS branches across repos/submodules
+- `yarn sweep:all` and `yarn sweep:all:dry` perform coordinated sweeps/pushes
 
-### Manual Submodule Operations
-
-```bash
-# Update all submodules to correct branches
-git fix-submodules
-
-# Or run the script directly
-./fix_submodules.sh
-```
+These utilities replace older ad-hoc scripts and Git aliases.
 
 ## Build Process
 
@@ -57,19 +49,22 @@ git fix-submodules
 ### Build Commands
 
 ```bash
-# Development build
-npm run build:macos
+# Standard development build
+yarn build
 
-# Production build with signing
-npm run build:macos:signed
+# macOS packaging build
+yarn build:macos
 
-# Build with notarization
-node build-macos.js --notarize
+# Notarize the packaged app (macOS only)
+yarn notarize:macos
+
+# Cross-platform distribution build
+yarn dist
 ```
 
 ### Build Script Features
 
-The `build-macos.js` script provides:
+The macOS build and notarization scripts provide:
 - Webpack application building
 - Electron-builder packaging
 - Automated code signing
@@ -166,13 +161,13 @@ test/
 ### Running Tests
 
 ```bash
-# Run all macOS tests
-npm test -- test/macos/
+# Run test suite
+yarn test
 
-# Run specific test
-node test/macos/test_macos_functionality.js
+# Lint code
+yarn lint
 
-# Debug architecture detection
+# Debug architecture detection (example utility)
 node test/debug/debug_architecture.js
 ```
 

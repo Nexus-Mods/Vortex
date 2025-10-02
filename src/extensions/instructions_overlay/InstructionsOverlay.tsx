@@ -2,7 +2,7 @@ import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = require('react-markdown');
 import { FlexLayout, Icon, MainContext, tooltip, types } from 'vortex-api';
 import { IOverlay, IPosition } from '../../types/IState';
 

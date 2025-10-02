@@ -18,6 +18,12 @@ CodeSignTool*
 BuildPatchTool*
 assets/modules.json
 
+# Ensure scripts/ is tracked
+!scripts/
+
+# Archive legacy helpers (ignored)
+tools/legacy/
+
 # User-specific files
 *.suo
 

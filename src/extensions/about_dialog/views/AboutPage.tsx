@@ -11,7 +11,7 @@ import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Image, Media, Panel } from 'react-bootstrap';
-import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = require('react-markdown');
 import { getApplication } from '../../../util/application';
 import getVortexPath from '../../../util/getVortexPath';
 

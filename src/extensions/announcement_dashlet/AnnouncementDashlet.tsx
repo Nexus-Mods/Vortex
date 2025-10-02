@@ -14,7 +14,7 @@ import * as selectors from '../../util/selectors';
 
 import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
-import ReactMarkdown from 'react-markdown';
+const ReactMarkdown = require('react-markdown');
 
 import dayjs from 'dayjs';
 import relativeTimePlugin from 'dayjs/plugin/relativeTime' // import plugin

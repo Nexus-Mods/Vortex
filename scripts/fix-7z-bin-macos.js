@@ -61,8 +61,32 @@ function fix7zBinMacOS() {
   }
 
   if (!systemSevenZipPath) {
-    console.warn('⚠️  7z-bin macOS fix: System 7z binary not found. Please install 7-Zip via Homebrew: brew install p7zip');
-    return;
+    // Attempt automatic installation via Homebrew if available
+    try {
+      const brewPath = execSync('which brew', { encoding: 'utf8' }).trim();
+      if (brewPath) {
+        console.log('📦 7z-bin macOS fix: Installing p7zip via Homebrew...');
+        try {
+          // Install p7zip if not already installed
+          execSync('brew ls --versions p7zip || brew install p7zip', { stdio: 'inherit' });
+        } catch (installErr) {
+          console.warn('⚠️  7z-bin macOS fix: Failed to install p7zip via Homebrew:', installErr.message);
+        }
+        // Re-check for 7z after attempted installation
+        try {
+          systemSevenZipPath = execSync('which 7z', { encoding: 'utf8' }).trim();
+        } catch (error) {
+          // still not found
+        }
+      }
+    } catch (brewErr) {
+      // Homebrew not available
+    }
+
+    if (!systemSevenZipPath) {
+      console.warn('⚠️  7z-bin macOS fix: System 7z binary not found. Please install 7-Zip via Homebrew: brew install p7zip');
+      return;
+    }
   }
 
   try {

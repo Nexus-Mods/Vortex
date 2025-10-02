@@ -1,6 +1,7 @@
 import Promise from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
+import { log } from './log';
 
 const MAX_PARALLEL_DIR = 16;
 const MAX_PARALLEL_FILE = 4;
@@ -50,10 +51,15 @@ function copyDir(sourcePath: string, destinationPath: string, relPath: string,
       files.forEach(file => {
         fs.stat(path.join(sourcePath, relPath, file), (statErr, stats) => {
           if (statErr === null) {
-            // TODO: ignoring error
             entries.push({
               relPath: path.join(relPath, file),
               isDir: stats.isDirectory(),
+            });
+          } else {
+            // Record stat errors but continue processing other entries
+            log('warn', 'copyRecursive: failed to stat entry', {
+              path: path.join(sourcePath, relPath, file),
+              error: statErr.message,
             });
           }
           ++numDone;

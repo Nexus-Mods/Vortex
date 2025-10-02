@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "main": "out/main.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "author": "Black Tree Gaming Ltd.",
   "repository": {
@@ -26,10 +26,11 @@
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
     "package-old": "electron-builder --config electron-builder-config-old.json --publish never",
-    "preinstall": "node scripts/preinstall-macos.js",
+    "preinstall": "node scripts/install-p7zip-macos.js && node scripts/preinstall-macos.js",
     "postinstall": "node scripts/configure-native-modules.js && node scripts/patch-native-modules.js && node scripts/fix-7z-bin-macos.js && node postinstall.js && patch-package && bash scripts/setup-submodule-forks.sh || true",
     "postinstall:make-bsdiff-patch": "node scripts/patch-bsdiff.js && npx patch-package bsdiff-node",
-    "postinstall:patch-native-modules": "node scripts/patch-native-modules.js && npx patch-package bsdiff-node diskusage exe-version leveldown native-errors node-7z permissions turbowalk vortexmt wholocks winapi-bindings xxhash-addon",
+    "postinstall:make-drivelist-patch": "node scripts/patch-drivelist.js && npx patch-package drivelist",
+    "postinstall:patch-native-modules": "node scripts/patch-native-modules.js && npx patch-package bsdiff-node drivelist diskusage exe-version leveldown native-errors node-7z permissions turbowalk vortexmt wholocks winapi-bindings xxhash-addon",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",
@@ -50,8 +51,11 @@
     "check-submodules": "node scripts/submodule-branch-check.js",
     "complete-validation": "node scripts/complete-validation.js",
     "verify-setup": "node scripts/project-setup-verification.js",
+    "build:macos": "node scripts/build-macos.js",
+    "notarize:macos": "node scripts/notarize-macos.js",
     "update-gitmodules-macos": "bash ./scripts/update-gitmodules-macos.sh",
     "start:dev": "cross-env NODE_ENV=development electron .",
+    "dev:full": "yarn clean --full && yarn build && yarn start:dev",
     "push:macos": "bash ./scripts/push_macos_branches.sh",
     "sweep:all": "bash ./scripts/sweep_and_push_all.sh",
     "sweep:all:dry": "bash ./scripts/sweep_and_push_all.sh --dry-run"
@@ -150,7 +154,7 @@
     "babel-polyfill": "^6.26.0",
     "concurrently": "^5.0.0",
     "copyfiles": "^2.3.0",
-    "cross-env": "^6.0.3",
+    "cross-env": "^10.0.0",
     "css-loader": "^5.2.7",
     "electron": "^28.0.0",
     "electron-builder": "^23.6.0",
@@ -200,6 +204,7 @@
   "optionalDependencies": {
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "diskusage": "TanninOne/node-diskusage",
+    "drivelist": "TanninOne/drivelist",
     "native-errors": "Nexus-Mods/node-native-errors",
     "vortexmt": "file:vendor/vortexmt-js",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
@@ -212,7 +217,7 @@
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
     "bootstrap-sass": "^3.4.1",
-    "bsdiff-node": "file:./vendor/bsdiff-node-js",
+    "bsdiff-node": "file:vendor/bsdiff-node-js",
     "cheerio": "1.0.0-rc.12",
     "classnames": "^2.5.1",
     "commander": "^4.0.1",
@@ -312,7 +317,7 @@
     "**/bsdiff-node": "file:vendor/bsdiff-node-js",
     "**/electron-redux": "file:vendor/electron-redux-compat",
     "**/fomod-installer": "file:vendor/fomod-installer-mac",
-    "bsdiff-node": "file:./vendor/bsdiff-node-js"
+    "bsdiff-node": "file:vendor/bsdiff-node-js"
   },
   "jest": {
     "testEnvironment": "jsdom",

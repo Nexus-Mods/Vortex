@@ -46,14 +46,14 @@ Ensure your Developer ID Application certificate is installed in your Keychain:
 
 ## Build Process
 
-### 1. Standard macOS Build (without notarization)
+### 1. Standard macOS Packaging Build (without notarization)
 ```bash
-yarn dist:macos
+yarn build:macos
 ```
 
-### 2. macOS Build with Notarization
+### 2. macOS Notarization (after packaging)
 ```bash
-yarn dist:macos:notarize
+yarn notarize:macos
 ```
 
 ## How It Works
@@ -85,7 +85,7 @@ Handles the complete code signing and notarization workflow:
 - Verifies the code signature
 - Creates zip archive for notarization
 - Submits to Apple notary service
-- Stapes notarization ticket
+- Staples notarization ticket
 - Verifies notarization
 
 ### build-macos.js
@@ -99,7 +99,7 @@ Orchestrates the complete build process:
 For automated builds in CI/CD environments:
 1. Store Apple credentials as secure environment variables
 2. Install certificates in the build environment
-3. Run `yarn dist:macos:notarize`
+3. Run `yarn build:macos && yarn notarize:macos`
 
 Example GitHub Actions workflow snippet:
 ```yaml
@@ -113,7 +113,9 @@ Example GitHub Actions workflow snippet:
     security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
 - name: Build and notarize
-  run: yarn dist:macos:notarize
+  run: |
+    yarn build:macos
+    yarn notarize:macos
   env:
     APPLE_ID: ${{ secrets.APPLE_ID }}
     APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}

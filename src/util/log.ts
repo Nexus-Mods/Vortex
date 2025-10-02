@@ -7,6 +7,12 @@ import * as path from 'path';
 import * as util from 'util';
 import winston from 'winston';
 
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+// Buffer logs until logging is fully initialized to avoid EPIPE/runtime issues
+let loggingReady: boolean = ((process as any).type === 'renderer');
+const pendingLogs: Array<{ level: LogLevel; message: string; metadata?: any }> = [];
+
 export function valueReplacer() {
   const known = new Map();
 
@@ -79,13 +85,26 @@ if ((process as any).type === 'renderer') {
                  }
                });
   } // otherwise we're not in electron
-  // TODO: very weird issue, getting an EPIPE error if log is called before setupLogging
-  //   unless we do a console.log first.
+  // Avoid EPIPE issues by deferring file logging until setupLogging completes.
+  // Also emit a console log for early visibility in development.
   // tslint:disable-next-line:no-console
-  console.log('📝 Logging started');
+  console.log('📝 Logging initialized (pending file transport)');
 }
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+function flushPendingLogs() {
+  if (pendingLogs.length === 0) return;
+  try {
+    pendingLogs.forEach(({ level, message, metadata }) => {
+      if (metadata === undefined) {
+        logger.log(level, message);
+      } else {
+        logger.log(level, message, metadata);
+      }
+    });
+  } finally {
+    pendingLogs.length = 0;
+  }
+}
 
 export function setLogPath(basePath: string) {
 
@@ -151,6 +170,10 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     // exists and it worked in past versions so it appears to be a bug in electron
     logger.log('error', 'Failed to set up logging to file', {error: err.message});
   }
+
+  // Mark logging as ready and flush any buffered logs
+  loggingReady = true;
+  flushPendingLogs();
 }
 
 /**
@@ -163,6 +186,13 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
  */
 export function log(level: LogLevel, message: string, metadata?: any) {
   try {
+    if (!loggingReady) {
+      // Buffer and also emit to console to avoid losing information before setup
+      pendingLogs.push({ level, message, metadata });
+      // tslint:disable-next-line:no-console
+      console.log(`[${level.toUpperCase()}] ${message}`, metadata || '');
+      return;
+    }
     if (metadata === undefined) {
       logger.log(level, message);
     } else {

@@ -619,9 +619,12 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     this.mRef = ref;
   }
 
-  private setScrollRef = ref => {
-    this.mScrollRef = ref;
-    this.forceUpdate();
+  private setScrollRef = (ref: HTMLElement) => {
+    // Only trigger a re-render when the ref changes and is non-null
+    if (ref && ref !== this.mScrollRef) {
+      this.mScrollRef = ref;
+      this.forceUpdate();
+    }
   }
 
   private getBounds = () => this.mRef.getBoundingClientRect();
@@ -739,51 +742,93 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
     // Use virtualization for large lists
     if (games.length > 50) {
-      // Create a cache for measuring row heights
-      const cache = new CellMeasurerCache({
-        fixedWidth: true,
-        defaultHeight: 100,
-      });
+      // Avoid measurement-driven update loops in non-browser test environments
+      const canMeasure = !!(this.mScrollRef && (this.mScrollRef.offsetWidth || 0) > 0);
 
-      const rowRenderer = ({ index, key, parent, style }) => {
-        const game = games[index];
+      if (canMeasure) {
+        // Use CellMeasurer when we have a real layout to measure
+        const cache = new CellMeasurerCache({
+          fixedWidth: true,
+          defaultHeight: 100,
+        });
+
+        const rowRenderer = ({ index, key, parent, style }) => {
+          const game = games[index];
+          return (
+            <CellMeasurer
+              key={key}
+              cache={cache}
+              parent={parent}
+              columnIndex={0}
+              rowIndex={index}
+            >
+              <GameRowErrorBoundary t={t} gameName={game.name}>
+                <GameRow
+                  t={t}
+                  getBounds={this.getBounds}
+                  container={this.mScrollRef}
+                  key={game.id}
+                  game={game}
+                  discovery={discoveredGames[game.id]}
+                  type={type}
+                  active={game.id === gameMode}
+                  onRefreshGameInfo={onRefreshGameInfo}
+                  onBrowseGameLocation={this.props.onBrowseGameLocation}
+                  style={style}
+                />
+              </GameRowErrorBoundary>
+            </CellMeasurer>
+          );
+        };
+
         return (
-          <CellMeasurer
-            key={key}
-            cache={cache}
-            parent={parent}
-            columnIndex={0}
-            rowIndex={index}
-          >
-            <GameRowErrorBoundary t={t} gameName={game.name}>
-              <GameRow
-                t={t}
-                getBounds={this.getBounds}
-                container={this.mScrollRef}
-                key={game.id}
-                game={game}
-                discovery={discoveredGames[game.id]}
-                type={type}
-                active={game.id === gameMode}
-                onRefreshGameInfo={onRefreshGameInfo}
-                onBrowseGameLocation={this.props.onBrowseGameLocation}
-                style={style}
-              />
-            </GameRowErrorBoundary>
-          </CellMeasurer>
+          <VirtualizedList
+            className={'ReactVirtualized__List'}
+            deferredMeasurementCache={cache}
+            rowHeight={cache.rowHeight}
+            rowRenderer={rowRenderer}
+            rowCount={games.length}
+            overscanRowCount={0}
+            width={this.mScrollRef?.offsetWidth || 800}
+            height={Math.min(games.length * 100, 600)}
+          />
         );
-      };
+      } else {
+        // Fall back to fixed row heights to prevent infinite update loops in tests
+        const rowRenderer = ({ index, key, style }) => {
+          const game = games[index];
+          return (
+            <div key={key} style={style}>
+              <GameRowErrorBoundary t={t} gameName={game.name}>
+                <GameRow
+                  t={t}
+                  getBounds={this.getBounds}
+                  container={this.mScrollRef}
+                  key={game.id}
+                  game={game}
+                  discovery={discoveredGames[game.id]}
+                  type={type}
+                  active={game.id === gameMode}
+                  onRefreshGameInfo={onRefreshGameInfo}
+                  onBrowseGameLocation={this.props.onBrowseGameLocation}
+                />
+              </GameRowErrorBoundary>
+            </div>
+          );
+        };
 
-      return (
-        <VirtualizedList
-          deferredMeasurementCache={cache}
-          rowHeight={cache.rowHeight}
-          rowRenderer={rowRenderer}
-          rowCount={games.length}
-          width={this.mScrollRef?.offsetWidth || 800}
-          height={Math.min(games.length * 100, 600)}
-        />
-      );
+        return (
+          <VirtualizedList
+            className={'ReactVirtualized__List'}
+            rowHeight={100}
+            rowRenderer={rowRenderer}
+            rowCount={games.length}
+            overscanRowCount={0}
+            width={this.mScrollRef?.offsetWidth || 800}
+            height={Math.min(games.length * 100, 600)}
+          />
+        );
+      }
     } else {
       // For smaller lists, use the standard approach
       return (
@@ -838,13 +883,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: IState, ownProps): IConnectedProps {
   return {
     gameMode: activeGameId(state),
     discoveredGames: state.settings.gameMode.discovered,
     pickerLayout: state.settings.gameMode.pickerLayout || 'list',
     profiles: state.persistent.profiles,
-    knownGames: state.session.gameMode.known,
+    knownGames: ownProps.knownGames ?? state.session.gameMode.known,
     extensions: state.session.extensions?.available || [],
     extensionsInstalled: state.session.extensions?.installed || {},
     sortManaged: state.settings.gameMode.sortManaged ?? 'alphabetical',
