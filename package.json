@@ -58,7 +58,8 @@
     "dev:full": "yarn clean --full && yarn build && yarn start:dev",
     "push:macos": "bash ./scripts/push_macos_branches.sh",
     "sweep:all": "bash ./scripts/sweep_and_push_all.sh",
-    "sweep:all:dry": "bash ./scripts/sweep_and_push_all.sh --dry-run"
+    "sweep:all:dry": "bash ./scripts/sweep_and_push_all.sh --dry-run",
+    "build:extensions": "node extensions/build-all.js"
   },
   "parserOptions": {
     "ecmaFeatures": {

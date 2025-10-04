@@ -6,7 +6,7 @@ import { log } from '../util/log';
 import getVortexPath from './getVortexPath';
 
 import * as path from 'path';
-import { Notification } from 'electron';
+import * as remote from '@electron/remote';
 
 class GlobalNotifications {
   private mCurrentId: string;
@@ -64,8 +64,15 @@ class GlobalNotifications {
   private showNotification(notification: INotification): void {
     this.mCurrentId = notification.id;
     try {
+      // Ensure Notification is available in renderer via @electron/remote
+      if ((remote as any).Notification === undefined
+          || (typeof (remote as any).Notification !== 'function')
+          || (((remote as any).Notification.isSupported !== undefined)
+              && !(remote as any).Notification.isSupported())) {
+        throw new Error('Desktop notifications not supported in renderer');
+      }
       // Create Electron Notification with macOS-specific styling
-      this.mCurrentNotification = new Notification({
+      this.mCurrentNotification = new (remote as any).Notification({
         title: notification.title || 'Vortex',
         subtitle: notification.type.charAt(0).toUpperCase() + notification.type.slice(1),
         body: notification.message,

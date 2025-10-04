@@ -1,6 +1,8 @@
 import * as path from 'path';
 import { spawn } from 'child_process';
-import ZipT = require('node-7z');
+// NOTE: node-7z can export either functions (extractFull, add)
+// or a default class with instance methods depending on platform/mocks.
+// We normalize here to a functional API and await the stream completion.
 import { log } from './log';
 
 type ExtractOptions = { ssc?: boolean, password?: string };
@@ -21,7 +23,10 @@ function extractWithTar(archivePath: string, destPath: string): Promise<void> {
   if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) {
     args[0] = '-xzf';
   }
-  const proc = spawn('tar', [...args, archivePath, '-C', destPath]);
+  // Exclude macOS metadata and disable extended attributes/xattrs restoration
+  const exclude = ['--exclude=__MACOSX', '--exclude=*/__MACOSX/*'];
+  const xattrs = process.platform === 'darwin' ? ['--no-xattrs'] : [];
+  const proc = spawn('tar', [...args, archivePath, '-C', destPath, ...exclude, ...xattrs]);
   return new Promise<void>((resolve, reject) => {
     let stderr = '';
     proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
@@ -38,7 +43,18 @@ function extractWithTar(archivePath: string, destPath: string): Promise<void> {
 }
 
 export function extractArchive(archivePath: string, destPath: string, options?: ExtractOptions): Promise<void> {
-  const SevenZip: typeof ZipT = require('node-7z');
+  const SevenZipMod = require('node-7z');
+  const getExtract = () => {
+    if (SevenZipMod && typeof SevenZipMod.extractFull === 'function') {
+      return SevenZipMod.extractFull as (a: string, d: string, o?: any) => { promise?: () => Promise<void>, on: Function };
+    }
+    const Ctor = SevenZipMod?.default ?? SevenZipMod;
+    if (typeof Ctor === 'function') {
+      const inst = new Ctor();
+      return (a: string, d: string, o?: any) => inst.extractFull(a, d, o);
+    }
+    throw new Error('node-7z module does not provide extractFull');
+  };
   const maxAttempts = 3;
   const baseDelay = 500;
   const ssc = options?.ssc ?? false;
@@ -51,7 +67,12 @@ export function extractArchive(archivePath: string, destPath: string, options?: 
         await extractWithTar(archivePath, destPath);
       } else {
         log('info', 'Using node-7z extractor for archive', { archivePath, destPath, ssc });
-        await SevenZip.extractFull(archivePath, destPath, { ssc, password }, () => undefined, () => undefined);
+        const extract = getExtract();
+        const stream = extract(archivePath, destPath, { ssc, password });
+        // Wait for completion (both our shim and mocks expose promise())
+        if (typeof stream?.promise === 'function') {
+          await stream.promise();
+        }
       }
     } catch (err) {
       if (n >= maxAttempts) {
@@ -69,14 +90,29 @@ export function extractArchive(archivePath: string, destPath: string, options?: 
 }
 
 export function addToArchive(destArchive: string, files: string[], options?: AddOptions): Promise<void> {
-  const SevenZip: typeof ZipT = require('node-7z');
+  const SevenZipMod = require('node-7z');
+  const getAdd = () => {
+    if (SevenZipMod && typeof SevenZipMod.add === 'function') {
+      return SevenZipMod.add as (a: string, f: string[], o?: any) => { promise?: () => Promise<void>, on: Function };
+    }
+    const Ctor = SevenZipMod?.default ?? SevenZipMod;
+    if (typeof Ctor === 'function') {
+      const inst = new Ctor();
+      return (a: string, f: string[], o?: any) => inst.add(a, f, o);
+    }
+    throw new Error('node-7z module does not provide add');
+  };
   const maxAttempts = 3;
   const baseDelay = 500;
   const ssw = options?.ssw ?? true;
 
   const attempt = async (n: number): Promise<void> => {
     try {
-      await SevenZip.add(destArchive, files, { ssw });
+      const add = getAdd();
+      const stream = add(destArchive, files, { ssw });
+      if (typeof stream?.promise === 'function') {
+        await stream.promise();
+      }
     } catch (err) {
       if (n >= maxAttempts) {
         log('error', 'Archive creation failed after max attempts', { destArchive, error: (err as Error)?.message });

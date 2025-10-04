@@ -122,20 +122,39 @@ if [[ "$SUB_NAME" == "extensions/theme-switcher" || "$SUB_PATH" == *"extensions/
   TARGET_BRANCH="macos-tahoe-theme"
 fi
 
-# Ensure we are on a branch (not detached)
+# Ensure we are on a branch (not detached), stashing local changes if we need to switch
 current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+needs_checkout=0
 if [[ "$current_branch" == "HEAD" ]]; then
+  needs_checkout=1
+elif [[ "$current_branch" != "$TARGET_BRANCH" ]]; then
+  if git rev-parse --verify "$TARGET_BRANCH" >/dev/null 2>&1; then
+    needs_checkout=1
+  else
+    echo "Staying on current branch '$current_branch' (no $TARGET_BRANCH)"
+  fi
+fi
+
+STASHED=0
+STASH_NAME=""
+if [[ $needs_checkout -eq 1 ]]; then
+  # Detect local changes (tracked or untracked) and stash if present
+  if [[ -n "$(git status --porcelain)" ]]; then
+    STASHED=1
+    STASH_NAME="auto-stash-before-branch-switch-$(date +%s)"
+    echo "Local changes detected; stashing before branch switch"
+    git stash push -u -m "$STASH_NAME" || true
+  fi
   if git rev-parse --verify "$TARGET_BRANCH" >/dev/null 2>&1; then
     git checkout "$TARGET_BRANCH"
   else
     git checkout -b "$TARGET_BRANCH"
   fi
-else
-  if [[ "$current_branch" != "$TARGET_BRANCH" ]]; then
-    if git rev-parse --verify "$TARGET_BRANCH" >/dev/null 2>&1; then
-      git checkout "$TARGET_BRANCH"
-    else
-      echo "Staying on current branch '$current_branch' (no $TARGET_BRANCH)"
+  if [[ $STASHED -eq 1 ]]; then
+    echo "Restoring stashed changes after branch switch"
+    # Try to pop the most recent stash; if it fails, keep the stash and warn
+    if ! git stash pop >/dev/null 2>&1; then
+      echo "[warn] Failed to auto-pop stash; leaving it in stash list"
     fi
   fi
 fi
@@ -173,9 +192,13 @@ fi
 # Untrack any tracked ignored files (use -z directly to xargs to preserve separators)
 git ls-files -z -i -c --exclude-standard | xargs -0 -r git rm --cached -f -- || true
 
-# Commit if needed
-if ! git diff --cached --quiet || ! git diff --quiet; then
-  git commit -m "chore(git): ignore .DS_Store (macOS) and untrack existing files"
+# Commit if needed, but only if there are no unresolved conflicts
+if [[ -z "$(git ls-files -u)" ]]; then
+  if ! git diff --cached --quiet; then
+    git commit -m "chore(git): ignore .DS_Store (macOS) and untrack existing files"
+  fi
+else
+  echo "[warn] Unresolved merge conflicts remain; skipping commit in $SUB_NAME"
 fi
 
 # Push and set upstream to the fork (only if available)
