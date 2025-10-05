@@ -1,4 +1,4 @@
-import Bluebird from 'bluebird';
+import Bluebird = require('bluebird');
 // Avoid assigning or shadowing global Promise; use Bluebird explicitly where needed
 
 import * as path from 'path';
@@ -19,8 +19,8 @@ class UbisoftLauncher implements types.IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mClientPath: Bluebird<string>;
-  private mCache: Bluebird<types.IGameStoreEntry[]>;
+  private mClientPath: Bluebird<string | undefined>;
+  private mCache: Bluebird<types.IGameStoreEntry[]> | undefined;
 
   constructor() {
     if (process.platform === 'win32') {
@@ -28,7 +28,7 @@ class UbisoftLauncher implements types.IGameStore {
       try {
         Bluebird.resolve(import('winapi-bindings')).then((winapi) => {
           const uplayPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-                                               'SOFTWARE\WOW6432Node\Ubisoft\Launcher', 'InstallDir');
+                                               'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher', 'InstallDir');
           this.mClientPath = Bluebird.resolve(path.join(uplayPath.value as string, 'UbisoftConnect.exe'));
         }).catch((err) => {
           log('info', 'Ubisoft launcher not found', { error: err.message });
@@ -91,14 +91,18 @@ class UbisoftLauncher implements types.IGameStore {
     // need to change this in the future to allow game extensions to choose the executable
     // they want to launch.
     const posixPath = `ubisoft://launch/${appId}/0`;
-    return util.opn(posixPath).catch(() => Bluebird.resolve());
+    try {
+      await util.opn(posixPath);
+    } catch (err) {
+      // swallow errors to satisfy contract
+    }
   }
 
   public allGames(): Bluebird<types.IGameStoreEntry[]> {
     if (this.mCache === undefined) {
       this.mCache = this.getGameEntries();
     }
-    return Bluebird.resolve(this.mCache);
+    return this.mCache;
   }
 
   public reloadGames(): Bluebird<void> {
