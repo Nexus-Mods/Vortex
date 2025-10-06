@@ -14,7 +14,8 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-
+    env:
+      NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
     steps:   
       - uses: actions/checkout@v4
         with:
