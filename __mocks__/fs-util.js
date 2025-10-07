@@ -35,5 +35,33 @@ jest.mock('original-fs', () => {
   };
 }, { virtual: true });
 
-// Now require the actual fs.ts which will use our mocked original-fs
-module.exports = jest.requireActual('../src/util/fs');
+const actualFs = jest.requireActual('../src/util/fs');
+
+// Provide a mock for readFileBOM that works with the test's fs-extra mock
+const readFileBOM = (filePath, fallbackEncoding = 'utf8') => {
+  const { decode } = require('iconv-lite');
+  
+  return require('fs-extra').readFile(filePath).then(buffer => {
+    const KNOWN_BOMS = [
+      { bom: Buffer.from([0xEF, 0xBB, 0xBF]), enc: 'utf8', length: 3 },
+      { bom: Buffer.from([0x00, 0x00, 0xFE, 0xFF]), enc: 'utf32-be', length: 4 },
+      { bom: Buffer.from([0xFF, 0xFE, 0x00, 0x00]), enc: 'utf32-le', length: 4 },
+      { bom: Buffer.from([0xFE, 0xFF]), enc: 'utf16be', length: 2 },
+      { bom: Buffer.from([0xFF, 0xFE]), enc: 'utf16le', length: 2 },
+    ];
+    
+    const detectedBom = KNOWN_BOMS.find(b =>
+      (b.bom.length <= buffer.length) && (b.bom.compare(buffer, 0, b.bom.length) === 0));
+    
+    if (detectedBom) {
+      return decode(buffer.slice(detectedBom.length), detectedBom.enc);
+    } else {
+      return decode(buffer, fallbackEncoding);
+    }
+  });
+};
+
+module.exports = {
+  ...actualFs,
+  readFileBOM,
+};
