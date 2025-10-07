@@ -68,6 +68,7 @@ jest.mock('../src/util/getVortexPath', () => {
 
 const fs = require('fs');
 const path = require('path');
+const Bluebird = require('bluebird');
 
 // Import MockTestAPI from vortex-api mock
 const { MockTestAPI } = require('vortex-api');
@@ -419,7 +420,6 @@ describe('Collections End-to-End Test - Real Implementation', () => {
 
     if (NexusApi && api.state?.confidential?.account?.nexus?.APIKey) {
       const nexusApiKey = api.state.confidential.account.nexus.APIKey;
-      const Bluebird = require('bluebird');
 
       api.registerProtocol('nxm', true, (url, name, friendlyName) => {
 
