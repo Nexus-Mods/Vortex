@@ -6133,9 +6133,9 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-fomod-installer@Nexus-Mods/fomod-installer#dotnet9:
+fomod-installer@Nexus-Mods/fomod-installer:
   version "0.9.0"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/6bb1ca6954730d062987745e1c93eed769a7aec8"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/4a36ea2d21151044f793954188e29a4a61e78b5c"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
