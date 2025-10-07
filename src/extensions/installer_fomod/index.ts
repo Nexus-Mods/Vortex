@@ -449,7 +449,7 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   const downloadsPath = downloadPathForGame(state, SITE_ID);
   const fullPath = path.join(downloadsPath, download.localPath);
 
-  api.showDialog('info', 'Microsoft .NET Desktop Runtime 6 is being installed', {
+  api.showDialog('info', 'Microsoft .NET Desktop Runtime 9 is being installed', {
     bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
     + '[br][/br][br][/br]'
         + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
@@ -466,44 +466,45 @@ async function installDotNet(api: IExtensionApi, repair: boolean): Promise<void>
   return spawnRetry(api, fullPath, args);
 }
 
-async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
-  
-  if (process.platform !== 'win32') {
-    // currently only supported/tested on windows
-    onFoundDotNet();
-    return Promise.resolve(undefined);
-  }
+function checkNetInstall(api: IExtensionApi): Bluebird<ITestResult> {
+  return Bluebird.resolve((async () => {
+    if (process.platform !== 'win32') {
+      // currently only supported/tested on windows
+      onFoundDotNet();
+      return undefined;
+    }
 
-  const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
-  let stderr: string = '';
-  const exitCode = await new Promise<number>((resolve) => {
-    const proc = execFile(probeExe).on('close', code => resolve(code));
-    proc.stderr.on('data', dat => stderr += dat.toString());
-  });
+    const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+    let stderr: string = '';
+    const exitCode = await new Promise<number>((resolve) => {
+      const proc = execFile(probeExe).on('close', code => resolve(code));
+      proc.stderr.on('data', dat => stderr += dat.toString());
+    });
 
-  
-  if (exitCode === 0) {
-    onFoundDotNet();
-    return Promise.resolve(undefined);
-  }
 
-  const result: ITestResult = {
-    description: {
-      short: 'Microsoft .NET Desktop Runtime 6 required',
-      long: 'Vortex requires .NET Desktop Runtime 6 to be installed even though you may already have a newer version. This is due to incompatible changes in the more recent versions.'
-        + '[br][/br][br][/br]'
-        + 'If you already have .NET Desktop Runtime 6 installed then there may be a problem with your installation and a reinstall might be needed.'
-        + '[br][/br][br][/br]'
-        + 'Click "Fix" below to install the required version.'
-        + '[br][/br][br][/br]'
-        + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
-      replace: { stderr: stderr.replace('\n', '[br][/br]') },
-    },
-    automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
-    severity: 'fatal',
-  };
+    if (exitCode === 0) {
+      onFoundDotNet();
+      return undefined;
+    }
 
-  return Promise.resolve(result);
+    const result: ITestResult = {
+      description: {
+        short: 'Microsoft .NET Desktop Runtime 9 required',
+        long: 'Vortex requires .NET Desktop Runtime 9 to be installed to run FOMOD mod installers.'
+          + '[br][/br][br][/br]'
+          + 'If you already have .NET Desktop Runtime 9 installed then there may be a problem with your installation and a reinstall might be needed.'
+          + '[br][/br][br][/br]'
+          + 'Click "Fix" below to install the required version.'
+          + '[br][/br][br][/br]'
+          + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+        replace: { stderr: stderr.replace('\n', '[br][/br]') },
+      },
+      automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
+      severity: 'fatal',
+    };
+
+    return result;
+  })());
 }
 
 interface IAwaitingPromise {
@@ -734,16 +735,24 @@ class ConnectionIPC {
       try {
         const onExit = (code: number) => {
           exitCode = code;
+
+          // Check if this is an intentional quit (connection exists and was marked as quitting)
+          const isIntentionalQuit = res?.['mIntentionalQuit'] === true && code === 1;
+          const effectiveCode = isIntentionalQuit ? 0 : code;
+
           log('debug', 'FOMOD installer process exited', {
             code,
+            effectiveCode,
             connectionId,
             hasConnection: res !== undefined,
-            wasConnected
+            wasConnected,
+            intentionalQuit: res?.['mIntentionalQuit']
           });
 
-          if (code !== 0) {
+          if (effectiveCode !== 0) {
             log('warn', 'FOMOD installer process failed', {
-              code,
+              code: effectiveCode,
+              originalCode: code,
               connectionId,
               hasConnection: res !== undefined
             });
@@ -757,7 +766,7 @@ class ConnectionIPC {
               setConnectOutcome(err, true);
             }
           }
-          onExitCBs?.(code);
+          onExitCBs?.(effectiveCode);
         };
 
         let msg: string = '';
@@ -970,6 +979,7 @@ class ConnectionIPC {
         res = new ConnectionIPC({ in: servSocket, out: servSocket }, pid, connectionId);
       }
       onExitCBs = code => {
+        // Pass the original code to onExit - it will handle the effective code internally
         res.onExit(code);
         // Clean up isolated IPC connections when process exits
         try {
@@ -995,6 +1005,7 @@ class ConnectionIPC {
   private mOnDrained: Array<() => void> = [];
   private mPid: number;
   private mConnectionId: string;
+  private mIntentionalQuit: boolean = false;
 
   constructor(socket: { in: net.Socket, out: net.Socket }, pid: number, connectionId?: string) {
     this.mSocket = socket;
@@ -1026,12 +1037,19 @@ class ConnectionIPC {
       socket.out.destroy();
       log('info', 'remote was disconnected', { connectionId: this.mConnectionId });
       try {
-        killProcessForConnection(this.mConnectionId);
-        this.interrupt(new Error(`Installer process disconnected unexpectedly`));
+        // Only treat as error if not an intentional quit
+        if (!this.mIntentionalQuit) {
+          killProcessForConnection(this.mConnectionId);
+          this.interrupt(new Error(`Installer process disconnected unexpectedly`));
+        } else {
+          // Clean shutdown - just clean up the process registration
+          killProcessForConnection(this.mConnectionId);
+        }
       } catch (err) {
         log('warn', 'Error during socket close cleanup', {
           connectionId: this.mConnectionId,
-          error: err.message
+          error: err.message,
+          intentionalQuit: this.mIntentionalQuit
         });
       }
     });
@@ -1073,6 +1091,7 @@ class ConnectionIPC {
 
   public quit(): boolean {
     log('debug', 'Quitting connection', { connectionId: this.mConnectionId, pid: this.mPid });
+    this.mIntentionalQuit = true;
     return killProcessForConnection(this.mConnectionId);
   }
 
@@ -1102,8 +1121,14 @@ class ConnectionIPC {
   }
 
   public async onExit(code: number) {
-    log(code === 0 ? 'info' : 'error', 'remote process exited', {
+    // If we intentionally quit the process, treat exit code 1 as success
+    const isIntentionalQuit = this.mIntentionalQuit && code === 1;
+    const effectiveCode = isIntentionalQuit ? 0 : code;
+
+    log(effectiveCode === 0 ? 'info' : 'error', 'remote process exited', {
       code,
+      effectiveCode,
+      intentionalQuit: this.mIntentionalQuit,
       connectionId: this.mConnectionId
     });
 
@@ -1142,7 +1167,10 @@ class ConnectionIPC {
         connectionId: this.mConnectionId
       });
     }
-    this.interrupt(new InstallerFailedException(code));
+    // Use the effective code (0 for intentional quits) when throwing the exception
+    if (effectiveCode !== 0) {
+      this.interrupt(new InstallerFailedException(effectiveCode));
+    }
   }
 
   private logAction(message: string) {
@@ -1407,6 +1435,9 @@ function init(context: IExtensionContext): boolean {
     });
   }
 
+  // Register .NET 9 Desktop Runtime check
+  context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
+
   initGameSupport(context.api);
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
 
@@ -1524,7 +1555,7 @@ function init(context: IExtensionContext): boolean {
             } else if ([0xC0000005, 0xC0000096, 0xC000041D, 0xCFFFFFFFFF].includes(err.code)) {
               context.api.sendNotification({
                 type: 'error',
-                message: 'Installer process crashed. This likely means your .NET 6 installation is damaged. '
+                message: 'Installer process crashed. This likely means your .NET 9 installation is damaged. '
                        + 'Vortex can try to repair .NET automatically here, this will require a download '
                        + 'of the .NET installer (~55MB).',
                 actions: [
@@ -1728,11 +1759,6 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 20, wrapper('test', testSupportedScripted), wrapper('install', installWrap));
   context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
 
-  if (process.platform === 'win32') {
-    context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
-  } else {
-    onFoundDotNet();
-  }
   context.registerDialog('fomod-installer', InstallerDialog);
 
   context.registerSettings('Workarounds', Workarounds, () => ({

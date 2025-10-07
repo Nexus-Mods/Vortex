@@ -14,6 +14,9 @@ export interface IDownloadOptions {
   // If available, will contain the user-friendly name of the mod. Will only be used in messages
   // to the user
   nameHint?: string;
+  tag?: string;
+  urls?: string[];
+  fileName?: string;
 }
 
 /**
