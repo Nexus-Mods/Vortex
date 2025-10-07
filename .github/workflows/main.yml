@@ -15,18 +15,10 @@ jobs:
   build:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        dotnet-version: [ 9.0.x ]
-
-    steps:   
+    steps:
       - uses: actions/checkout@v4
         with:
           submodules: "recursive"
-
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '6.0.x'
 
       - name: Print dotnet info
         run: dotnet --info
