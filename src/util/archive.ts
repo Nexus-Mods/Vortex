@@ -69,9 +69,31 @@ export function extractArchive(archivePath: string, destPath: string, options?: 
         log('info', 'Using node-7z extractor for archive', { archivePath, destPath, ssc });
         const extract = getExtract();
         const stream = extract(archivePath, destPath, { ssc, password });
-        // Wait for completion (both our shim and mocks expose promise())
+        // Wait for completion. If node-7z exposes promise(), await it; otherwise
+        // wrap the EventEmitter and wait for 'end' or 'error'. This prevents
+        // continuing before extraction finishes, especially on macOS.
         if (typeof stream?.promise === 'function') {
           await stream.promise();
+        } else if (typeof stream?.on === 'function') {
+          await new Promise<void>((resolve, reject) => {
+            let finished = false;
+            try {
+              stream.on('end', () => {
+                finished = true;
+                resolve();
+              });
+              stream.on('error', (err: any) => {
+                if (!finished) {
+                  reject(err);
+                }
+              });
+            } catch (err) {
+              reject(err as any);
+            }
+          });
+        } else {
+          // If we get here, the module returned an unexpected type; fail clearly
+          throw new Error('node-7z extract did not provide a promise or EventEmitter');
         }
       }
     } catch (err) {

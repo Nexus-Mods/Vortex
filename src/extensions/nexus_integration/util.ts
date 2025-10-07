@@ -734,10 +734,20 @@ function startDownloadMod(api: IExtensionApi,
       if (gameId === SITE_ID) {
         return downloadId;
       }
-      state = api.getState();
-      const download = state.persistent.downloads.files[downloadId];
-      // might be paused at this point
-      if (!state.settings.automation?.install && (download?.state === 'finished')) {
+      const initialState = api.getState();
+      const automationDisabled = !initialState.settings.automation?.install;
+
+      // Helper to safely emit the ready-to-install success once
+      let notified = false;
+      const notifyReadyToInstall = () => {
+        if (notified || !automationDisabled) return;
+        const curState = api.getState();
+        const dl = curState.persistent.downloads.files[downloadId];
+        const isFinished = dl?.state === 'finished';
+        const hasHash = typeof dl?.fileMD5 === 'string' && dl.fileMD5.length > 0;
+        const hasContent = (dl?.size ?? 0) > 0;
+        if (!isFinished || !hasHash || !hasContent) return;
+        notified = true;
         api.sendNotification({
           id: `ready-to-install-${downloadId}`,
           type: 'success',
@@ -759,7 +769,21 @@ function startDownloadMod(api: IExtensionApi,
             },
           ],
         });
-      }
+      };
+
+      // If already finished by the time we get here, notify immediately
+      notifyReadyToInstall();
+
+      // Also gate on the explicit finish event to avoid race conditions
+      const finishListener = (id: string, status: string) => {
+        if (id !== downloadId) return;
+        api.events.off('did-finish-download', finishListener);
+        if (status === 'finished') {
+          notifyReadyToInstall();
+        }
+      };
+      api.events.on('did-finish-download', finishListener);
+
       return downloadId;
     })
     .catch((err) => {

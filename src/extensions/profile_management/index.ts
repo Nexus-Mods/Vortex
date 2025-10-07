@@ -238,6 +238,14 @@ function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> 
           store.dispatch(setCurrentProfile(gameId, selectedId));
           
           log('debug', 'profile activation dispatched', { gameId, selectedId });
+          try {
+            const stateAfter = store.getState();
+            log('debug', 'profile activation state snapshot', {
+              nextProfileId: stateAfter.settings.profiles.nextProfileId,
+              activeProfileId: stateAfter.settings.profiles.activeProfileId,
+              lastActiveProfile: stateAfter.settings.profiles.lastActiveProfile?.[gameId],
+            });
+          } catch (_) { /* noop */ }
         } else {
           log('warn', 'user cancelled profile selection', { gameId });
         }
@@ -268,14 +276,15 @@ function activateGame(store: ThunkStore<IState>, gameId: string): Promise<void> 
       // Ensure the current profile is also set to maintain persistence
       store.dispatch(setCurrentProfile(gameId, profileId));
       
-      log('debug', 'profile activation completed successfully', { 
-        gameId, 
-        profileId,
-        currentState: {
+      try {
+        log('debug', 'profile activation completed successfully', { 
+          gameId, 
+          profileId,
           nextProfile: store.getState().settings.profiles.nextProfileId,
+          activeProfileId: store.getState().settings.profiles.activeProfileId,
           lastActiveProfile: store.getState().settings.profiles.lastActiveProfile?.[gameId]
-        }
-      });
+        });
+      } catch (_) { /* noop */ }
     } else {
       log('error', 'profile activation failed - game discovery invalid', { 
         gameId, 
@@ -385,6 +394,13 @@ function genOnProfileChange(api: IExtensionApi,
 
   return (prev: string, current: string) => {
     log('info', 'Profile switch initiated', { from: prev, to: current });
+    try {
+      const snapshot = store.getState().settings.profiles;
+      log('debug', 'Profile switch pre-state', {
+        nextProfileId: snapshot.nextProfileId,
+        activeProfileId: snapshot.activeProfileId,
+      });
+    } catch (_) { /* noop */ }
     finishProfileSwitchPromise.then(() => {
       const state: IState = store.getState();
       if (state.settings.profiles.nextProfileId !== current) {
@@ -412,6 +428,9 @@ function genOnProfileChange(api: IExtensionApi,
       }
 
       if (profile !== undefined) {
+        try {
+          log('debug', 'Profile switch resolving profile', { current, gameId: profile.gameId });
+        } catch (_) { /* noop */ }
         const { gameId } = profile;
         const game = getGame(gameId);
         if (game === undefined) {
@@ -706,6 +725,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
             }
           }, 35000); // Slightly longer timeout to let ensureLoggedIn handle its own timeout first
 
+          log('info', 'starting game extension install', { gameId, extension: extension.name });
           return api.ext.ensureLoggedIn()
             .then(() => {
               if (authTimeout) {
@@ -715,6 +735,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
               return api.emitAndAwait('install-extension', extension);
             })
             .then((results: boolean[]) => {
+              log('info', 'extension install completed', { gameId, extension: extension.name, results });
               if (results.includes(true)) {
                 // Only restart for non-game extensions
                 if (extension.type !== 'game') {
@@ -728,9 +749,24 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
                     displayMS: 5000,
                   });
                   // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
+                  log('info', 'refreshing game list after extension install', { gameId });
                   api.events.emit('refresh-game-list', true);
+                  // Attempt discovery and proceed to manage automatically
+                  return api.emitAndAwait('discover-game', gameId)
+                    .then(() => {
+                      log('info', 'attempting to manage game after install', { gameId });
+                      return manageGame(api, gameId);
+                    })
+                    .catch(err => {
+                      // If discovery fails, let the existing manual flow handle later
+                      log('warn', 'auto-discovery after install failed', { gameId, error: err?.message });
+                      return Promise.resolve();
+                    });
                 }
               }
+              return Promise.resolve();
+            })
+            .finally(() => {
               cleanup();
             })
             .catch(err => {

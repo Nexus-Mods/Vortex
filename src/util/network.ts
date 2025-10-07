@@ -133,6 +133,12 @@ export function upload(targetUrl: string, dataStream: Readable, dataSize: number
         return reject(reqErr);
       });
     });
+    // Ensure we don't hang on TLS/connection issues
+    req.setTimeout(5000, () => {
+      const err: any = new Error('ETIMEDOUT');
+      err.code = 'ETIMEDOUT';
+      req.destroy(err);
+    });
     req.on('error', err => {
       return reject(err);
     });

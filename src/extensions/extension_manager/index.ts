@@ -110,30 +110,54 @@ function checkForUpdates(api: IExtensionApi) {
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
   return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
-    .then((success: boolean[]) => {
+    .then((results: boolean[]) => {
       api.dismissNotification('extension-updates');
-      
+
+      const total = updateable.length;
+      const succeeded = results.filter(Boolean).length;
+      const failed = total - succeeded;
+
       // Check if any non-game extensions were updated
       const nonGameUpdates = updateable.filter(update => update.update.type !== 'game');
       const gameUpdates = updateable.filter(update => update.update.type === 'game');
-      
-      if (success.find(iter => iter === true)) {
-        if (forceRestart) {
-          relaunch();
-        } else {
-          // Show success notification for all extensions without restart requirement
-          const totalUpdates = nonGameUpdates.length + gameUpdates.length;
-          api.sendNotification({
-            id: 'extension-updates',
-            type: 'success',
-            message: `Extension(s) updated successfully (${totalUpdates} extension${totalUpdates > 1 ? 's' : ''}).`,
-            displayMS: 5000,
-          });
-          
-          // Don't emit refresh-game-list here to prevent infinite loop
-          // The refresh will be handled by the caller if needed
-        }
+
+      if (succeeded === 0) {
+        // No updates succeeded – avoid false success
+        api.sendNotification({
+          id: 'extension-updates',
+          type: 'warning',
+          message: 'No extensions were updated. Please check logs and try again.',
+          displayMS: 6000,
+        });
+        return;
       }
+
+      if (forceRestart && failed === 0) {
+        // All succeeded and restart required
+        relaunch();
+        return;
+      }
+
+      const totalUpdates = nonGameUpdates.length + gameUpdates.length;
+      if (failed === 0) {
+        // All succeeded – safe to show success
+        api.sendNotification({
+          id: 'extension-updates',
+          type: 'success',
+          message: `All ${totalUpdates} extension${totalUpdates > 1 ? 's' : ''} updated successfully.`,
+          displayMS: 5000,
+        });
+      } else {
+        // Partial success – avoid success wording/type
+        api.sendNotification({
+          id: 'extension-updates',
+          type: 'info',
+          message: `Updated ${succeeded} extension${succeeded !== 1 ? 's' : ''}; ${failed} failed.`,
+          displayMS: 7000,
+        });
+      }
+      // Don't emit refresh-game-list here to prevent infinite loop
+      // The refresh will be handled by the caller if needed
     });
 }
 
@@ -256,27 +280,52 @@ function checkMissingDependencies(api: IExtensionApi,
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
             Promise.map(Object.keys(installableMissing), depId =>
               installDependency(api, depId, updateInstalled)
-                .then(results => {
-                  if (results) {
-                    api.sendNotification({
-                      type: 'success',
-                      message: 'Missing dependencies were installed - please restart Vortex',
-                      actions: [
-                        {
-                          title: 'Restart now', action: () => {
-                            relaunch();
-                          },
-                        },
-                      ],
-                    });
-                    dismiss();
-                  }
-                })
+                .then(success => ({ depId, success }))
                 .catch(err => {
                   api.showErrorNotification('Failed to install extension', err, {
                     message: depId,
                   });
-                }));
+                  return { depId, success: false };
+                }))
+              .then(results => {
+                const total = results.length;
+                const succeeded = results.filter(r => r.success).length;
+                const failed = total - succeeded;
+
+                if (succeeded === 0) {
+                  api.sendNotification({
+                    type: 'warning',
+                    message: 'No dependencies were installed successfully. Please check logs and try again.',
+                    displayMS: 7000,
+                  });
+                } else if (failed === 0) {
+                  api.sendNotification({
+                    type: 'success',
+                    message: 'Missing dependencies were installed - please restart Vortex',
+                    actions: [
+                      {
+                        title: 'Restart now', action: () => {
+                          relaunch();
+                        },
+                      },
+                    ],
+                  });
+                } else {
+                  api.sendNotification({
+                    type: 'info',
+                    message: `Installed ${succeeded} dependenc${succeeded === 1 ? 'y' : 'ies'}; ${failed} failed. Some extensions may remain unavailable.`,
+                    displayMS: 7000,
+                    actions: [
+                      {
+                        title: 'Restart now', action: () => {
+                          relaunch();
+                        },
+                      },
+                    ],
+                  });
+                }
+                dismiss();
+              });
           } },
         ],
       });

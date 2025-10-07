@@ -118,12 +118,17 @@ export class DownloadObserver {
 
     api.onStateChange(['persistent', 'nexus', 'userInfo'], (old, newValue) => {
       if (old?.isPremium !== newValue?.isPremium) {
-        // User's premium status has changed
-        // Clear the download queue by pausing all active downloads
+        // User's premium status has changed; avoid losing progress.
+        // Pause ongoing downloads, adjust concurrency, and attempt resume.
         const state = api.getState();
         const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach(dlId => {
-          this.handleRemoveDownload(dlId);
+          try {
+            log('info', 'pausing download due to membership change', { id: dlId, premium: newValue?.isPremium });
+          } catch (_) { /* noop */ }
+          this.handlePauseDownload(dlId);
+          // Schedule a resume attempt shortly after user info refresh settles
+          setTimeout(() => this.attemptResumeDownload(dlId), 1500);
         });
         if (newValue?.isPremium === true) {
           manager.setMaxConcurrentDownloads(10);
@@ -245,6 +250,19 @@ export class DownloadObserver {
     }
 
     const id = shortid();
+
+    // Verbose: initial request context
+    try {
+      log('info', 'download request received', {
+        id,
+        fileName,
+        urlCount: Array.isArray(urls) ? urls.length : undefined,
+        redownload,
+        allowInstall: options?.allowInstall,
+        allowOpenHTML: options?.allowOpenHTML,
+        modInfoKeys: Object.keys(modInfo || {}),
+      });
+    } catch (_) { /* noop */ }
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
         // could happen if triggered by foreign extensions, can't prevent that.
@@ -304,6 +322,18 @@ export class DownloadObserver {
     // internal game identification rather than the Nexus domain name
     let downloadPath = selectors.downloadPathForGame(state, downloadGameId);
 
+    // Verbose: resolved download context
+    try {
+      log('debug', 'resolved download context', {
+        id,
+        gameId,
+        downloadDomain,
+        downloadGameId,
+        gameIds,
+        downloadPath,
+      });
+    } catch (_) { /* noop */ }
+
     const processCB = this.genProgressCB(id);
 
     const downloadOptions = this.getExtraDlOptions(modInfo ?? {}, redownload);
@@ -328,7 +358,13 @@ export class DownloadObserver {
             return Promise.reject(new UserCanceled());
           }
 
-          log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
+          log('info', 'about to enqueue', {
+            id,
+            tag: modInfo?.referenceTag,
+            fileName,
+            downloadPath,
+            urlCount: Array.isArray(urls) ? urls.length : undefined,
+          });
           return this.mManager.enqueue(id, urls, fileName, processCB,
                                        downloadPath, downloadOptions);
         })
@@ -351,7 +387,14 @@ export class DownloadObserver {
           }
         })
         .then((res: IDownloadResult) => {
-          log('debug', 'download finished', { id, file: res.filePath });
+          try {
+            log('debug', 'download finished', {
+              id,
+              file: res.filePath,
+              size: res.size,
+              unfinishedChunks: res.unfinishedChunks?.length,
+            });
+          } catch (_) { /* noop */ }
           return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath,
@@ -362,6 +405,14 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult,
                                  allowInstall: boolean | 'force') {
+    // Verbose: entry into finalize handler
+    try {
+      log('info', 'handleDownloadFinished entered', {
+        id,
+        filePath: res?.filePath,
+        allowInstall,
+      });
+    } catch (_) { /* noop */ }
     const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
       // Check if the download file actually exists - if it does, the download completed
@@ -401,8 +452,12 @@ export class DownloadObserver {
       }
     };
 
-    if (res.unfinishedChunks.length > 0) {
+    // Safety: never finalize or install if there are unfinished chunks
+    if (Array.isArray(res.unfinishedChunks) && res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      try { log('debug', 'deferring finalize due to unfinished chunks', { id, count: res.unfinishedChunks.length }); } catch (_) { /* noop */ }
+      // trigger a resume attempt to continue the download
+      setTimeout(() => this.attemptResumeDownload(id), 1000);
       callback?.(null, id);
       return onceFinished();
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
@@ -417,6 +472,9 @@ export class DownloadObserver {
     } else {
       // Defer download finalization to prevent blocking
       setImmediate(() => {
+        try {
+          log('debug', 'finalize download start', { id, filePath: res.filePath });
+        } catch (_) { /* noop */ }
         finalizeDownload(this.mApi, id, res.filePath)
           .then(() => {
             const flattened = flatten(res.metaInfo ?? {});
@@ -425,9 +483,22 @@ export class DownloadObserver {
               util.batchDispatch(this.mApi.store.dispatch, batchedActions);
             }
             const state = this.mApi.getState();
-            if ((state.settings.automation?.install && (allowInstall === true))
-                || (allowInstall === 'force')
-                || (download.modInfo?.['startedAsUpdate'] === true)) {
+            const autoInstallEnabled = state.settings.automation?.install === true;
+            const startedAsUpdate = download.modInfo?.['startedAsUpdate'] === true;
+            const shouldInstall = (autoInstallEnabled && (allowInstall === true))
+              || (allowInstall === 'force')
+              || startedAsUpdate;
+            try {
+              log('debug', 'postprocess completed; evaluating install trigger', {
+                id,
+                autoInstallEnabled,
+                allowInstall,
+                startedAsUpdate,
+                shouldInstall,
+              });
+            } catch (_) { /* noop */ }
+            if (shouldInstall) {
+              try { log('info', 'emitting start-install-download', { id }); } catch (_) { /* noop */ }
               this.mApi.events.emit('start-install-download', id);
             }
 

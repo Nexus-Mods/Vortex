@@ -7,6 +7,10 @@ import * as path from 'path';
 import * as util from 'util';
 import winston from 'winston';
 
+// Detect test environment (Jest) to adjust logging behavior
+const isTestEnv: boolean = (process && process.env &&
+  (process.env.JEST_WORKER_ID !== undefined || process.env.NODE_ENV === 'test'));
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 // Buffer logs until logging is fully initialized to avoid EPIPE/runtime issues
@@ -88,7 +92,10 @@ if ((process as any).type === 'renderer') {
   // Avoid EPIPE issues by deferring file logging until setupLogging completes.
   // Also emit a console log for early visibility in development.
   // tslint:disable-next-line:no-console
-  console.log('📝 Logging initialized (pending file transport)');
+  if (!isTestEnv) {
+    // In tests, avoid console output which may trip Jest's "Cannot log after tests".
+    console.log('📝 Logging initialized (pending file transport)');
+  }
 }
 
 function flushPendingLogs() {
@@ -190,7 +197,9 @@ export function log(level: LogLevel, message: string, metadata?: any) {
       // Buffer and also emit to console to avoid losing information before setup
       pendingLogs.push({ level, message, metadata });
       // tslint:disable-next-line:no-console
-      console.log(`[${level.toUpperCase()}] ${message}`, metadata || '');
+      if (!isTestEnv) {
+        console.log(`[${level.toUpperCase()}] ${message}`, metadata || '');
+      }
       return;
     }
     if (metadata === undefined) {

@@ -1,4 +1,5 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
+import { log } from '../../../util/log';
 
 import Bluebird from 'bluebird';
 import * as reduxAct from 'redux-act';
@@ -50,12 +51,34 @@ const setModsEnabled = (() => {
     if (ppFunc === undefined) {
       ppFunc = api.withPrePost('enable-mods',
                                (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
+                                 try {
+                                   log('info', 'mods enablement requested', {
+                                     profileId,
+                                     modIds,
+                                     enable,
+                                     options,
+                                     count: modIds.length,
+                                   });
+                                 } catch (_) { /* noop */ }
+
                                  if (modIds.length > 0) {
                                    const profile: IProfile = profileById(api.getState(), profileId);
                                    if (profile !== undefined) {
                                      batchDispatch(api.store, modIds.map(id => setModEnabled(profileId, id, enable)));
                                      api.events.emit('mods-enabled', modIds, enable, profile.gameId, options);
+                                     try {
+                                       log('debug', 'mods enablement applied', {
+                                         profileId,
+                                         gameId: profile.gameId,
+                                         enable,
+                                         modIds,
+                                       });
+                                     } catch (_) { /* noop */ }
                                    }
+                                 } else {
+                                   try {
+                                     log('debug', 'mods enablement noop', { profileId, enable });
+                                   } catch (_) { /* noop */ }
                                  }
 
                                  return Bluebird.resolve();
@@ -70,7 +93,24 @@ const setModsEnabled = (() => {
       const willChange = modIdsIn.filter(id =>
         (profile.modState?.[id]?.enabled ?? false) !== enableIn);
       return ppFunc(profileIdIn, willChange, enableIn, optionsIn)
+        .then(() => {
+          try {
+            log('info', 'mods enablement completed', {
+              profileId: profileIdIn,
+              enabled: enableIn,
+              modIds: willChange,
+              count: willChange.length,
+            });
+          } catch (_) { /* noop */ }
+        })
         .catch(err => {
+          try {
+            log('error', 'mods enablement failed', {
+              profileId: profileIdIn,
+              enabled: enableIn,
+              error: err?.message,
+            });
+          } catch (_) { /* noop */ }
           api.showErrorNotification('Failed to enable/disable mod', err);
         });
     }

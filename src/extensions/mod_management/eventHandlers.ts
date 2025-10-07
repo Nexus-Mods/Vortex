@@ -858,8 +858,45 @@ export async function onStartInstallDownload(api: IExtensionApi,
 
   const allowAutoDeploy = options.allowAutoEnable !== false;
   const { enable } = state.settings.automation;
+
+  // Verbose: install initiation context
+  try {
+    const prof = activeProfile(state);
+    const game = activeGameId(state);
+    log('info', 'install start', {
+      downloadId,
+      archivePath: fullPath,
+      convertedGameId,
+      downloadGame: download.game,
+      activeGameId: game,
+      activeProfileId: prof?.id,
+      activeProfileName: prof?.name,
+      autoEnableSetting: enable,
+      allowAutoDeploy,
+      unattended: options.unattended,
+      forceInstaller: options.forceInstaller,
+      fileListCount: options.fileList?.length,
+    });
+  } catch (_) { /* noop */ }
+
+  const wrappedCB = (err, id) => {
+    try {
+      const level = err ? 'error' : 'info';
+      const prof = activeProfile(api.store.getState());
+      log(level as any, err ? 'install failed' : 'install completed', {
+        downloadId,
+        id,
+        archivePath: fullPath,
+        error: err?.message,
+        activeProfileId: prof?.id,
+        activeProfileName: prof?.name,
+      });
+    } catch (_) { /* noop */ }
+    callback?.(err, id);
+  };
+
   installManager.install(downloadId, fullPath, download.game, api,
                          { download, choices: options.choices }, true, enable && allowAutoDeploy,
-                         callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
+                         wrappedCB, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
   return;
 }

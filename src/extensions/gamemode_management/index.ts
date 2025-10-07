@@ -1058,6 +1058,7 @@ function init(context: IExtensionContext): boolean {
               
               // Get the current state and re-process all installed game extensions
               const state = context.api.getState();
+              log('debug', 'Beginning game extension registration sweep');
               const installedExtensions = state.session.extensions?.installed || {};
               
               // Process each installed game extension to ensure it's registered
@@ -1306,6 +1307,8 @@ function init(context: IExtensionContext): boolean {
                     log('info', 'Quick discovery completed', { discoveredGames: gameIds });
                     return gameIds;
                   });
+              }).then(() => {
+                log('debug', 'Completed game extension registration sweep');
               });
             })
             .then(() => {

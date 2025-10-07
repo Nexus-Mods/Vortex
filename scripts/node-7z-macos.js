@@ -29,8 +29,9 @@ class Stream {
   }
 
   promise() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.on('end', () => resolve());
+      this.on('error', (err) => reject(err));
     });
   }
 }
@@ -88,36 +89,36 @@ class SevenZip {
   extractFull(archivePath, destPath, options = {}) {
     const stream = new Stream();
     
-    // 7z x archive.zip -o/path/to/destination
-    const args = ['x', archivePath, `-o${destPath}`, '-y', '-aoa'];
+    // Build 7z command: x archive.zip -o/path/to/destination
+    const argParts = ['x', `"${archivePath}"`, `-o"${destPath}"`, '-y', '-aoa'];
     // simple support for password
     if (options && options.password) {
-      args.push(`-p${options.password}`);
+      argParts.push(`-p${options.password}`);
     }
     // ssc flag if requested (best-effort; harmless if unsupported)
     if (options && options.ssc) {
-      args.push('-ssc');
+      argParts.push('-ssc');
     }
     // Reduce output noise to prevent buffer overflow; suppress progress/stderr
-    args.push('-bb0', '-bso0', '-bsp0', '-bse0');
+    argParts.push('-bb0', '-bso0', '-bsp0', '-bse0');
     // Exclude macOS metadata/junk folders
-    args.push('-xr!__MACOSX', '-xr!*/__MACOSX/*', '-xr!._*');
-    
+    argParts.push('-xr!__MACOSX', '-xr!*/__MACOSX/*', '-xr!._*');
+    const command = `${this.pathTo7zip} ${argParts.join(' ')}`;
+
     process.nextTick(() => {
       try {
         stream.emit('data', { status: 'Extracting', file: path.basename(archivePath) });
-        const cmd = [this.pathTo7zip, ...args].join(' ');
-        exec(cmd, { env: { ...process.env, LC_ALL: 'C' } }, (err, stdout, stderr) => {
+        const env = { ...process.env, LC_ALL: 'C' };
+        exec(command, { env }, (err) => {
           if (err) {
             if ((err && (err.message || '')).includes('ENOENT')) {
               stream.emit('error', new Error('7-Zip command not found. Install p7zip via Homebrew: brew install p7zip'));
             } else {
               stream.emit('error', err);
             }
-          } else {
-            stream.emit('progress', { percent: 100 });
-            stream.emit('end');
+            return;
           }
+          stream.emit('end');
         });
       } catch (error) {
         if ((error && (error.message || '')).includes('ENOENT')) {
@@ -141,40 +142,28 @@ class SevenZip {
     const stream = new Stream();
     
     // 7z l archive.zip (keep stdout to parse listing; suppress progress)
-    const args = ['l', archivePath, '-bb0', '-bsp0', '-bse0'];
+    const command = `${this.pathTo7zip} l "${archivePath}" -bb0 -bsp0 -bse0`;
     
     process.nextTick(() => {
       try {
         stream.emit('data', { status: 'Listing', file: path.basename(archivePath) });
-        const cmd = [this.pathTo7zip, ...args].join(' ');
-        exec(cmd, { env: { ...process.env, LC_ALL: 'C' } }, (error, stdout, stderr) => {
+        const env = { ...process.env, LC_ALL: 'C' };
+        exec(command, { env }, (error, stdout, stderr) => {
           if (error) {
             if ((error && (error.message || '')).includes('ENOENT')) {
               stream.emit('error', new Error('7-Zip command not found. Install p7zip via Homebrew: brew install p7zip'));
             } else {
               stream.emit('error', error);
             }
-            // Ensure completion for consumers expecting 'end' even if parse fails in tests
             stream.emit('end');
             return;
           }
-
-          // Jest mock may pass { stdout, stderr } as second arg instead of strings
-          let outStr = '';
-          let errStr = '';
-          if (typeof stdout === 'string') {
-            outStr = stdout;
-            errStr = typeof stderr === 'string' ? stderr : '';
-          } else if (stdout && typeof stdout === 'object' && typeof stdout.stdout === 'string') {
-            outStr = stdout.stdout;
-            errStr = typeof stdout.stderr === 'string' ? stdout.stderr : '';
-          }
-
           try {
+            const outStr = typeof stdout === 'string' ? stdout : ((stdout && stdout.stdout) || '');
             const files = this._parseListOutput(outStr || '');
             files.forEach(file => stream.emit('data', file));
           } catch (parseErr) {
-            // swallow parse errors in tests; still emit end to satisfy contract
+            // swallow parse errors; still emit end to satisfy contract
           }
           stream.emit('end');
         });
@@ -249,31 +238,31 @@ class SevenZip {
     const filesArray = Array.isArray(files) ? files : [files];
     
     // 7z a archive.zip file1 file2
-    const args = ['a', archivePath, ...filesArray.map(f => f), '-y', '-aoa'];
+    const argParts = ['a', `"${archivePath}"`, ...filesArray.map(f => `"${f}"`), '-y', '-aoa'];
     if (options && options.password) {
-      args.push(`-p${options.password}`);
+      argParts.push(`-p${options.password}`);
     }
     if (options && options.ssw) {
-      args.push('-ssw');
+      argParts.push('-ssw');
     }
     // Reduce output noise similar to extract
-    args.push('-bb0', '-bso0', '-bsp0', '-bse0');
+    argParts.push('-bb0', '-bso0', '-bsp0', '-bse0');
+    const command = `${this.pathTo7zip} ${argParts.join(' ')}`;
     
     process.nextTick(() => {
       try {
         stream.emit('data', { status: 'Compressing', file: path.basename(archivePath) });
-        const cmd = [this.pathTo7zip, ...args].join(' ');
-        exec(cmd, { env: { ...process.env, LC_ALL: 'C' } }, (err, stdout, stderr) => {
+        const env = { ...process.env, LC_ALL: 'C' };
+        exec(command, { env }, (err) => {
           if (err) {
             if ((err && (err.message || '')).includes('ENOENT')) {
               stream.emit('error', new Error('7-Zip command not found. Install p7zip via Homebrew: brew install p7zip'));
             } else {
               stream.emit('error', err);
             }
-          } else {
-            stream.emit('progress', { percent: 100 });
-            stream.emit('end');
+            return;
           }
+          stream.emit('end');
         });
       } catch (error) {
         if ((error && (error.message || '')).includes('ENOENT')) {

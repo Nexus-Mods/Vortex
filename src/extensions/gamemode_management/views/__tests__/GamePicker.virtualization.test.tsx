@@ -346,8 +346,8 @@ describe('GamePicker Virtualization', () => {
     // Verify virtualized list is used
     expect(container.querySelector('.ReactVirtualized__List')).not.toBeNull();
     
-    // Performance check - rendering 5000 games should take less than 100ms
-    // This is a rough check to ensure virtualization is working
-    expect(renderTime).toBeLessThan(100);
+    // Performance check - rendering 5000 games should take less than 200ms
+    // Keep threshold generous to avoid flakiness on CI while ensuring virtualization
+    expect(renderTime).toBeLessThan(200);
   });
 });

@@ -429,25 +429,49 @@ function postImport(api: IExtensionApi, destination: string,
     })
     .then(() => {
       if (!silent) {
-        api.sendNotification({
-          id: `ready-to-install-${dlId}`,
-          type: 'success',
-          title: 'File imported',
-          group: 'download-finished',
-          message: fileName,
-          actions: [
-            {
-              title: 'Install All', action: dismiss => {
-                api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
-                  if (err) {
-                    processInstallError(api, err, dlId, fileName);
-                  }
-                });
-                dismiss();
-              },
-            },
-          ],
-        });
+        let notified = false;
+        const tryNotify = () => {
+          if (notified) return;
+          const curState = api.getState();
+          const automationDisabled = !curState.settings?.automation?.install;
+          const dl = curState.persistent.downloads.files[dlId];
+          const isFinished = dl?.state === 'finished';
+          const hasContent = (dl?.size ?? 0) > 0;
+          const hasHash = typeof dl?.fileMD5 === 'string' && dl.fileMD5.length > 0;
+          if (automationDisabled && isFinished && hasContent && hasHash) {
+            notified = true;
+            api.sendNotification({
+              id: `ready-to-install-${dlId}`,
+              type: 'success',
+              title: 'File imported',
+              group: 'download-finished',
+              message: fileName,
+              actions: [
+                {
+                  title: 'Install All', action: dismiss => {
+                    api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
+                      if (err) {
+                        processInstallError(api, err, dlId, fileName);
+                      }
+                    });
+                    dismiss();
+                  },
+                },
+              ],
+            });
+          }
+        };
+
+        // Try immediately (in case hashing already happened)
+        tryNotify();
+
+        // Also send once the hash is calculated for this import
+        const hashListener = (fp: string, md5Hash: string, fileSize: number) => {
+          if (path.basename(fp) !== fileName) return;
+          api.events.off('filehash-calculated', hashListener);
+          tryNotify();
+        };
+        api.events.on('filehash-calculated', hashListener);
       }
 
       return dlId;
@@ -1194,14 +1218,29 @@ function init(context: IExtensionContextExt): boolean {
             log('error', 'download failed', { url: step.url, error: err.message });
           })
           .then((dlId: string) => {
-            log('info', 'download finished', { dlId });
+            // The start-download promise resolves when the download operation concludes
+            // (either finished, paused with unfinished chunks, redirect, or failed).
+            // Only trigger installation once we receive a did-finish-download with status 'finished'.
+            log('info', 'download completion signal received', { dlId });
             return new Promise((resolve) => {
-              if (isCollection) {
-                onDidInstallCollection(dlId, resolve);
-              } else {
-                onDidInstallDependencies(dlId, resolve);
-              }
-              context.api.events.emit('start-install-download', dlId);
+              const finishListener = (id: string, status: string) => {
+                if (id !== dlId) { return; }
+                // Stop listening once we handle this download id
+                context.api.events.off('did-finish-download', finishListener);
+                if (status === 'finished') {
+                  if (isCollection) {
+                    onDidInstallCollection(dlId, resolve);
+                  } else {
+                    onDidInstallDependencies(dlId, resolve);
+                  }
+                  context.api.events.emit('start-install-download', dlId);
+                } else {
+                  // Do not install on 'failed' or 'redirect' outcomes
+                  log('debug', 'skip install due to non-finished status', { dlId, status });
+                  resolve();
+                }
+              };
+              context.api.events.on('did-finish-download', finishListener);
             });
           });
       });
