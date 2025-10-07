@@ -2480,6 +2480,7 @@ class ExtensionManager {
       'symlink_activator',
       'symlink_activator_elevate',
       'hardlink_activator',
+      'health_check',
       'move_activator',
       'null_activator',
       'updater',

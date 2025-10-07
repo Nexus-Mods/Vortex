@@ -42,6 +42,7 @@ import { setdefault } from '../../util/util';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
+import { getHealthCheckRegistry, getLegacyAdapter } from '../health_check/index';
 
 interface ICheckEntry {
   id: string;
@@ -79,6 +80,21 @@ function applyFix(api: IExtensionApi, check: ICheckEntry, result: ITestResult) {
 }
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
+  // Check if health check system is available and handling this test
+  const healthCheckRegistry = getHealthCheckRegistry();
+  if (healthCheckRegistry) {
+    const healthCheckId = `legacy.test-runner.${check.id}`;
+    const healthCheckEntry = healthCheckRegistry.get(healthCheckId);
+
+    if (healthCheckEntry) {
+      log('debug', 'Skipping legacy test execution - handled by health check system', {
+        testId: check.id,
+        healthCheckId
+      });
+      return Promise.resolve();
+    }
+  }
+
   let res: Promise<ITestResult>;
   try {
     res = check.check();
@@ -208,8 +224,28 @@ function init(context: IExtensionContext): boolean {
       check,
       stack: () => stackErr.stack,
     });
+
+    try {
+      const legacyAdapter = getLegacyAdapter();
+      const healthCheckRegistry = getHealthCheckRegistry();
+
+      if (legacyAdapter && healthCheckRegistry) {
+        // Forward to health check system
+        const healthCheck = legacyAdapter.createLegacyHealthCheck(id, eventType, check);
+        healthCheckRegistry.register(healthCheck);
+      } else {
+        log('debug', 'Health check system not available, using legacy test runner only', { id });
+      }
+    } catch (error) {
+      const err = error as Error;
+      log('warn', 'Failed to forward test to health check system', { 
+        id, 
+        error: err.message 
+      });
+    }
   };
 
+  // TODO: add this to health check system
   context.registerAPI('withSuppressedTests', withSuppressedTests, {});
 
   context.once(() => {
