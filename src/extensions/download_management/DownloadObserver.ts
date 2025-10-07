@@ -342,10 +342,12 @@ export class DownloadObserver {
               .filter(iter => iter.tag !== modInfo?.referenceTag);
             return Promise.reject(new UserCanceled());
           }
-
           log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           return this.mManager.enqueue(id, urls, fileName, processCB,
             downloadPath, downloadOptions);
+        })
+        .catch(UserCanceled, err => {
+          return Promise.reject(err);
         })
         .catch(AlreadyDownloaded, err => {
           const downloads = this.mApi.getState().persistent.downloads.files;
@@ -757,6 +759,7 @@ export class DownloadObserver {
       referer: modInfo.referer,
       redownload,
       nameHint: modInfo.name,
+      tag: modInfo.referenceTag,
     };
   }
 }

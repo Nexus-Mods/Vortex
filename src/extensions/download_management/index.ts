@@ -1104,7 +1104,7 @@ function init(context: IExtensionContextExt): boolean {
         ? state.settings.downloads.maxParallelDownloads
         : 1;
 
-      manager = new DownloadManagerImpl(
+      manager = new DownloadManagerImpl(context.api,
           selectors.downloadPath(store.getState()),
           maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {
