@@ -84,6 +84,8 @@ import * as msgpackT from '@msgpack/msgpack';
 import Promise from 'bluebird';
 import { ipcRenderer, webFrame } from 'electron';
 import { forwardToMain, replayActionRenderer } from 'electron-redux';
+import safeForwardToMain from './util/safeForwardToMain';
+import safeReplayActionRenderer from './util/safeReplayActionRenderer';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as I18next from 'i18next';
@@ -429,16 +431,16 @@ if (process.env.NODE_ENV === 'development') {
     });
   enhancer = compose(
     applyMiddleware(
-      forwardToMain,
       ...middleware,
+      safeForwardToMain,
       freeze),
     devtool || (id => id),
   );
 } else {
   enhancer = compose(
     applyMiddleware(
-      forwardToMain,
       ...middleware,
+      safeForwardToMain,
     ),
   );
 }
@@ -476,7 +478,7 @@ function init() {
     initialState(),
     enhancer,
   );
-  replayActionRenderer(store);
+  safeReplayActionRenderer(store); // Safe IPC replay without double dispatch
   extensions.setStore(store);
   setOutdated(extensions.getApi());
   presetManager.setApi(extensions.getApi());
