@@ -313,8 +313,10 @@ class InstallContext implements IInstallContext {
       ? type.options.name
       : 'Mod';
 
-    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), mod.archiveId);
-    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
+    const nexusIds = mod !== undefined
+      ? nexusIdsFromDownloadId(this.mApi.getState(), mod.archiveId)
+      : undefined;
+    const isCollection = nexusIds?.collectionSlug !== undefined && nexusIds?.revisionId !== undefined;
 
     switch (outcome) {
       case 'success':
