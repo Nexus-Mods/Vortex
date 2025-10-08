@@ -20,7 +20,7 @@ export function safeReplayActionRenderer(store: Store) {
       // Don't replay actions that originated from ANY renderer
       // This prevents IPC loops between different renderer processes
       if (action.meta?.origin && action.meta.origin.startsWith('renderer-')) {
-        console.log(`[IPC] Skipping renderer-originated action: ${action.type} from ${action.meta.origin}`);
+        // console.log(`[IPC] Skipping renderer-originated action: ${action.type} from ${action.meta.origin}`);
         return;
       }
 
