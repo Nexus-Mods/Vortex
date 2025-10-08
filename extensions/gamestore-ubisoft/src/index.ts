@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 
 import { log, types, util } from 'vortex-api';
-import * as Bluebird from 'bluebird';
+import Bluebird = require('bluebird');
 
 const STORE_ID = 'ubisoft';
 const STORE_NAME = 'Ubisoft Connect';
@@ -33,7 +33,9 @@ class UbisoftLauncher implements types.IGameStore {
             'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher',
             'InstallDir',
           );
-          this.mClientPath = Bluebird.resolve(path.join(uplayPath.value as string, 'UbisoftConnect.exe'));
+          this.mClientPath = Bluebird.resolve(
+            path.join(uplayPath.value as string, 'UbisoftConnect.exe')
+          );
         }).catch((err: any) => {
           log('info', 'Ubisoft launcher not found', { error: (err as any)?.message });
           this.mClientPath = Bluebird.resolve(undefined);
@@ -64,21 +66,25 @@ class UbisoftLauncher implements types.IGameStore {
       path.join(process.env.HOME || '', 'Applications', 'Ubisoft Connect.app')
     ];
 
-    return Bluebird.all(possiblePaths.map((appPath) =>
-      Bluebird.resolve(fs.stat(appPath))
-        .then(stat => stat.isDirectory() ? appPath : undefined)
-        .catch(() => undefined)
-    )).then((results) => {
+    return Bluebird.all(
+      possiblePaths.map((appPath) =>
+        Bluebird.resolve(fs.stat(appPath))
+          .then(stat => (stat.isDirectory() ? appPath : undefined))
+          .catch(() => undefined)
+      )
+    ).then((results) => {
       const found = results.find(p => !!p) as string | undefined;
       if (found) {
-        return found;
+        return Bluebird.resolve(found as string);
       }
       return Bluebird.reject(new Error('Ubisoft Connect not found on macOS'));
     });
   }
 
-  public launchGame(appInfo: any, api?: types.IExtensionApi): Bluebird<void> {
-    return Bluebird.resolve(this.launchGameAsync(appInfo, api)).then(() => undefined);
+  public launchGame(appId: any, api?: types.IExtensionApi): Bluebird<void> {
+    return Bluebird.try(async () => {
+      await this.launchGameAsync(appId, api);
+    });
   }
 
   private async launchGameAsync(appInfo: any, api?: types.IExtensionApi): globalThis.Promise<void> {
@@ -159,7 +165,8 @@ class UbisoftLauncher implements types.IGameStore {
     return (!!this.mClientPath)
       ? Bluebird.resolve(import('winapi-bindings')).then((mod: any) => {
         const winapi: any = mod?.default ?? mod;
-        return new Bluebird<types.IGameStoreEntry[]>((resolve, reject) => {
+        return new (Bluebird as any).Promise((resolve: (v: types.IGameStoreEntry[]) => void,
+                                             reject: (err: any) => void) => {
           try {
             winapi.WithRegOpen('HKEY_LOCAL_MACHINE',
                                'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs', (hkey: any) => {
@@ -194,7 +201,7 @@ class UbisoftLauncher implements types.IGameStore {
           } catch (err) {
             return ((err as any)?.code === 'ENOENT') ? resolve([]) : reject(err);
           }
-        });
+        }) as Bluebird<types.IGameStoreEntry[]>;
       }).catch(() => Bluebird.resolve([]))
       : Bluebird.resolve([]);
   }
