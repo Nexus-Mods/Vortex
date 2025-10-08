@@ -22,10 +22,10 @@ import { ExtensionType, IAvailableExtension, IExtension,
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';
-import SevenZip from 'node-7z';
 import * as path from 'path';
 import { SemVer } from 'semver';
 import { generate as shortid } from 'shortid';
+import { addToArchive } from '../../util/archive';
 
 const caches: {
   __availableExtensions?: Promise<{ time: Date, extensions: IAvailableExtension[] }>,
@@ -89,6 +89,61 @@ function getAllDirectories(searchPath: string): Promise<string[]> {
         });
     })
     .catch({ code: 'ENOENT' }, () => []);
+}
+
+/**
+ * Retry helper for network operations with exponential backoff
+ * Adds slightly higher retries/delays on macOS to mitigate transient issues
+ */
+function retryNetworkOperation<T>(
+  operation: () => Promise<T>,
+  retries: number,
+  baseDelayMs: number,
+  maxDelayMs: number,
+  description: string,
+  isRetryable?: (err: Error) => boolean,
+): Promise<T> {
+  const platformFactor = (process.platform === 'darwin') ? 1.5 : 1;
+  let attempt = 0;
+  const maxAttempts = Math.max(1, Math.floor(retries * platformFactor));
+  const cappedMaxDelay = Math.floor(maxDelayMs * platformFactor);
+  const doAttempt = (): Promise<T> => {
+    return Promise.resolve()
+      .then(() => operation())
+      .catch((err: any) => {
+        attempt += 1;
+        const code = err?.code || err?.statusCode || err?.status || 'unknown';
+        const msg = err?.message || String(err);
+        const shouldRetry = (isRetryable !== undefined)
+          ? isRetryable(err)
+          : (
+              // default retryable network errors
+              ['ENOTFOUND', 'ETIMEDOUT', 'ESOCKETTIMEDOUT', 'ECONNRESET', 'ECONNABORTED', 'EAI_AGAIN']
+                .includes(code)
+              || /rate limit/i.test(msg)
+              || /timeout/i.test(msg)
+              || /temporarily unavailable/i.test(msg)
+              || (typeof code === 'number' && (code === 429 || (code >= 500 && code < 600)))
+            );
+        if (!shouldRetry || attempt >= maxAttempts) {
+          log('error', 'network operation failed', {
+            description,
+            attempt,
+            maxAttempts,
+            code,
+            message: msg,
+          });
+          return Promise.reject(err);
+        }
+        const delay = Math.min(
+          cappedMaxDelay,
+          Math.floor(baseDelayMs * Math.pow(2, attempt - 1) * platformFactor),
+        );
+        log('warn', 'retrying network operation', { description, attempt, delay });
+        return Promise.delay(delay).then(doAttempt);
+      });
+  };
+  return doAttempt();
 }
 
 function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {
@@ -460,15 +515,52 @@ export function downloadFile(url: string, outputPath: string): Promise<void> {
   
   // Apply macOS URL interception
   const interceptedUrl = interceptDownloadURLForMacOS(url);
-  
-  return Promise.resolve(rawRequest(interceptedUrl))
-    .then((data: Buffer) => fs.writeFileAsync(outputPath, data));
+
+  // Retry raw request with backoff for transient errors (more generous on macOS)
+  return retryNetworkOperation<Buffer>(
+    () => Promise.resolve(rawRequest(interceptedUrl))
+      .then((res: any) => Buffer.isBuffer(res) ? res : Buffer.from(res)),
+    6,
+    300,
+    4000,
+    `downloadFile ${outputPath}`,
+    (error: any) => {
+      const code = error?.code || error?.statusCode || error?.status;
+      const msg = error?.message || '';
+      return (
+        ['ENOTFOUND', 'ETIMEDOUT', 'ESOCKETTIMEDOUT', 'ECONNRESET', 'ECONNABORTED', 'EAI_AGAIN']
+          .includes(code)
+        || (typeof code === 'number' && (code === 429 || (code >= 500 && code < 600)))
+        || /timeout/i.test(msg)
+        || /temporarily unavailable/i.test(msg)
+      );
+    },
+  ).then((data: Buffer) => fs.writeFileAsync(outputPath, data));
 }
 
 function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
   const apiUrl = githubApiUrl(repo, 'contents', source) + '?ref=' + GAMES_BRANCH;
 
-  return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
+  // Retry github api listing with backoff for robustness
+  return retryNetworkOperation<string>(
+    () => Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
+      .then((res: any) => (typeof res === 'string') ? res : res.toString('utf8')),
+    6,
+    300,
+    4000,
+    `github contents ${repo}/${source}`,
+    (error: any) => {
+      const code = error?.code || error?.statusCode || error?.status;
+      const msg = error?.message || '';
+      return (
+        ['ENOTFOUND', 'ETIMEDOUT', 'ESOCKETTIMEDOUT', 'ECONNRESET', 'ECONNABORTED', 'EAI_AGAIN']
+          .includes(code)
+        || (typeof code === 'number' && (code === 429 || (code >= 500 && code < 600)))
+        || /timeout/i.test(msg)
+        || /temporarily unavailable/i.test(msg)
+      );
+    },
+  )
     .then((content: string) => {
       const data = JSON.parse(content);
       if (!Array.isArray(data)) {
@@ -526,8 +618,7 @@ export function downloadGithubRaw(api: IExtensionApi,
         return fs.readdirAsync(tmpPath);
       })
       .then((repoFiles: string[]) => {
-        const pack = new SevenZip();
-        return pack.add(archivePath, repoFiles.map(fileName => path.join(tmpPath, fileName)));
+        return addToArchive(archivePath, repoFiles.map(fileName => path.join(tmpPath, fileName)), { ssw: true });
       })
       .then(() => fs.moveAsync(archivePath, path.join(downloadPath, archiveName)))
       .then(() => {

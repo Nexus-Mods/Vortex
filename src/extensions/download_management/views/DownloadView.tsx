@@ -682,7 +682,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
                                                           (err: Error) => {
                                                             this.reportDownloadError(err, false);
-                                                          }));
+                                                          }, 'always'));
     } else {
       this.context.api.events.emit('import-downloads', dlPaths);
     }

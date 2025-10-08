@@ -36,7 +36,8 @@ import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, truthy } from '../../util/util';
 
 import { IExtension } from '../extension_manager/types';
-import { readExtensions } from '../extension_manager/util';
+import { readExtensions, readExtensionsSync } from '../extension_manager/util';
+import { setInstalledExtensions } from '../extension_manager/actions';
 import { getGame } from '../gamemode_management/util/getGame';
 import { ensureStagingDirectory } from '../mod_management/stagingDirectory';
 import { purgeMods } from '../mod_management/util/deploy';
@@ -663,6 +664,20 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
   const gameStored = knownGames.find(game => game.id === gameId);
 
   if (gameStored === undefined) {
+    // Proactively refresh installed extensions to avoid stale state before showing dialog
+    try {
+      const extensions = readExtensionsSync(true);
+      api.store.dispatch(setInstalledExtensions(extensions));
+      log('info', 'Synchronized installed extensions before showing missing support dialog', {
+        extensionCount: Object.keys(extensions).length,
+      });
+      // Additionally, trigger a lightweight extension update to hydrate session state
+      if (typeof api.ext?.updateExtensions === 'function') {
+        api.ext.updateExtensions(false).catch(() => undefined);
+      }
+    } catch (err) {
+      log('warn', 'Failed to synchronize installed extensions', { error: err.message });
+    }
     const extension = state.session.extensions.available.find(ext =>
       (ext?.gameId === gameId) || (ext.name === gameId));
     if (extension === undefined) {

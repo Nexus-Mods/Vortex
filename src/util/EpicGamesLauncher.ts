@@ -11,11 +11,10 @@ import getVortexPath from './getVortexPath';
 import opn from './opn';
 
 import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
-import lazyRequire from './lazyRequire';
 import { getCrossoverPaths, getVMwarePaths, getVirtualBoxPaths } from './macVirtualization';
 
-// Removed Bluebird alias to avoid TS2529 error with top-level Promise in async modules
-const winapi: typeof winapiT = lazyRequire(() => (isWindows() ? require('winapi-bindings') : undefined));
+// Use direct conditional require to avoid lazy loader issues in tests
+const winapi: typeof winapiT = isWindows() ? require('winapi-bindings') : undefined;
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';

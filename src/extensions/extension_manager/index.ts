@@ -338,6 +338,9 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
       .then(ext => {
         const state: IState = api.store.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
+          // Gate success notification on absence of load failures
+          const loadFailures = state.session.base?.extLoadFailures || {};
+          const hasFailures = Object.keys(loadFailures).some(id => (loadFailures[id] || []).length > 0);
           // Check if only game extensions were added
           const previousExtensions = state.session.extensions.installed || {};
           const newExtensions = Object.keys(ext).filter(extId => !previousExtensions[extId]);
@@ -353,11 +356,13 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
             } else if (newGameExtensions.length > 0) {
               message += ` ${newGameExtensions.length} game extension(s) are available immediately.`;
             }
-            
+            // Avoid showing success when there are load failures
             api.sendNotification({
               id: 'extension-installed',
-              type: 'success',
-              message: message,
+              type: hasFailures ? 'info' : 'success',
+              message: hasFailures
+                ? `${message} Some extensions reported load issues; check the Extensions tab.`
+                : message,
               displayMS: 5000,
             });
             
@@ -449,50 +454,109 @@ function init(context: IExtensionContext) {
       onDidFetch();
     });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) => {
+      // Snapshot currently installed extensions to detect newly added ones
+      const before = Object.keys(context.api.getState().session.extensions.installed || {});
       return didFetchAvailableExtensions
         .then(() => downloadAndInstallExtension(context.api, ext))
         .then(success => {
-          if (success) {
-            // Immediately update extension list synchronously for instant UI feedback
-            try {
-              const extensionsPath = context.api.getPath('bundledPlugins');
-              const userDataPath = context.api.getPath('userData');
-              const userExtensionsPath = path.join(userDataPath, 'plugins');
-              
-              const extensions = readExtensionsSync(true);
-              context.api.store.dispatch(setInstalledExtensions(extensions));
-              
-              log('info', 'Extension list updated synchronously in event handler', { 
-                extensionCount: Object.keys(extensions).length 
-              });
-            } catch (err) {
-              log('warn', 'Failed to update extension list synchronously in event handler', { error: err.message });
-            }
-            
-            return updateExtensions(false)
-              .then(() => {
-                // Check if any of the newly installed extensions are game extensions
-                // If so, emit refresh-game-list to update the UI
-                const state = context.api.getState();
-                const previousExtensions = state.session.extensions.installed || {};
-                const newExtensions = Object.keys(state.session.extensions.installed)
-                  .filter(extId => !previousExtensions[extId]);
-                const newGameExtensions = newExtensions
-                  .filter(extId => state.session.extensions.installed[extId].type === 'game');
-                          
-                if (newGameExtensions.length > 0) {
-                  // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
-                  context.api.events.emit('refresh-game-list', true);
-                }
-                        
-                return success;
-              });
-          } else {
-            return Promise.resolve()
-              .then(() => success);
+          // If the user canceled, don't emit failure notifications or events
+          if (success === null) {
+            log('info', 'Extension installation canceled by user');
+            return Promise.resolve();
           }
+          if (!success) {
+            // Emit failure event and show suppressible notification to avoid loops
+            try {
+              context.api.events.emit('extension-install-failed', (ext as any)?.id || (ext as any)?.modId || (ext as any)?.name || 'unknown');
+            } catch (_) { /* ignore */ }
+            context.api.sendNotification({
+              id: 'extension-install-failed',
+              type: 'error',
+              message: 'Failed to install extension',
+              allowSuppress: true,
+            });
+            return Promise.resolve();
+          }
+
+          // Immediately update extension list synchronously for instant UI feedback
+          try {
+            const extensions = readExtensionsSync(true);
+            context.api.store.dispatch(setInstalledExtensions(extensions));
+            log('info', 'Extension list updated synchronously in event handler', {
+              extensionCount: Object.keys(extensions).length,
+            });
+          } catch (err) {
+            log('warn', 'Failed to update extension list synchronously in event handler', { error: err.message });
+          }
+
+          return updateExtensions(false)
+            .then(() => {
+              const state = context.api.getState();
+              const after = Object.keys(state.session.extensions.installed || {});
+              // Detect newly installed extension ids
+              const newlyInstalled = after.filter(id => before.indexOf(id) === -1);
+              const newGameExtensions = newlyInstalled.filter(id =>
+                state.session.extensions.installed[id]?.type === 'game');
+              if (newGameExtensions.length > 0) {
+                // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
+                log('info', 'Detected new game extensions, refreshing game list', { ids: newGameExtensions });
+                context.api.events.emit('refresh-game-list', true);
+                const disableAutoActivate =
+                  ((process.env?.VORTEX_AUTO_ACTIVATE_ON_GAME_INSTALL ?? '1').toLowerCase() === '0')
+                  || ((process.env?.VORTEX_DISABLE_AUTO_ACTIVATE ?? '').toLowerCase() === '1')
+                  || ((process.env?.VORTEX_DISABLE_AUTO_ACTIVATE ?? '').toLowerCase() === 'true');
+                if (disableAutoActivate) {
+                  log('info', 'Auto-activation after game extension install disabled via env', {
+                    envFlags: {
+                      VORTEX_AUTO_ACTIVATE_ON_GAME_INSTALL: process.env?.VORTEX_AUTO_ACTIVATE_ON_GAME_INSTALL,
+                      VORTEX_DISABLE_AUTO_ACTIVATE: process.env?.VORTEX_DISABLE_AUTO_ACTIVATE,
+                    },
+                  });
+                  return Promise.resolve();
+                }
+                // After refresh, try discovery and then activate the game
+                Promise.map(newGameExtensions, (extId: string) => {
+                  const installedExt = state.session.extensions.installed[extId];
+                  const gameId = (installedExt as any)?.id || (installedExt as any)?.namespace || undefined;
+                  // We cannot rely on id/namespace for gameId; use extension path lookup via known games
+                  const knownGames = state.session.gameMode.known || [];
+                  const matched = knownGames.find(g => g.extensionPath === installedExt?.path);
+                  const targetGameId = matched?.id;
+                  if (!targetGameId) {
+                    log('debug', 'could not map installed game extension to gameId', { extId, path: installedExt?.path });
+                    return Promise.resolve();
+                  }
+                  log('info', 'attempting discovery for installed game extension', { extId, targetGameId });
+                  return context.api.emitAndAwait('discover-game', targetGameId)
+                    .then(() => {
+                      log('info', 'emitting activate-game after discovery', { targetGameId });
+                      context.api.events.emit('activate-game', targetGameId);
+                    })
+                    .catch(err => {
+                      log('warn', 'auto-discovery after game extension install failed', { targetGameId, error: err?.message });
+                      return Promise.resolve();
+                    });
+                }).catch(err => log('warn', 'post-install game activation flow error', { error: err?.message }));
+              }
+
+          return Promise.resolve();
+        })
+        .catch(err => {
+          // Gracefully handle unexpected errors to avoid prompting loops
+          log('error', 'install-extension handler error', { error: err.message });
+          try {
+            context.api.events.emit('extension-install-failed', (ext as any)?.id || (ext as any)?.modId || (ext as any)?.name || 'unknown', { error: err.message });
+          } catch (_) { /* ignore */ }
+          context.api.sendNotification({
+            id: 'extension-install-failed',
+            type: 'error',
+            message: 'Failed to install extension',
+            allowSuppress: true,
+          });
+          return Promise.resolve();
         });
-      });
+    });
+    });
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       const state = context.api.getState();
@@ -560,10 +624,44 @@ function init(context: IExtensionContext) {
 
       if ((modId !== undefined) && (ext !== undefined)) {
         return downloadAndInstallExtension(context.api, ext)
-          .tap(success => {
+          .then(success => {
             if (success) {
-              updateExtensions(false);
+              return updateExtensions(false)
+                .then(() => {
+                  const latestState = context.api.getState();
+                  // If this was a game extension, attempt discovery and activation
+                  if (ext.type === 'game') {
+                    const installedExt = Object.values(latestState.session.extensions.installed)
+                      .find(iter => iter.modId === ext.modId && iter.version === ext.version);
+                    const knownGames = latestState.session.gameMode.known || [];
+                    const matched = knownGames.find(g => g.extensionPath === installedExt?.path);
+                    const targetGameId = matched?.id;
+                  if (targetGameId) {
+                      const disableAutoActivate =
+                        ((process.env?.VORTEX_AUTO_ACTIVATE_ON_GAME_INSTALL ?? '1').toLowerCase() === '0')
+                        || ((process.env?.VORTEX_DISABLE_AUTO_ACTIVATE ?? '').toLowerCase() === '1')
+                        || ((process.env?.VORTEX_DISABLE_AUTO_ACTIVATE ?? '').toLowerCase() === 'true');
+                      log('info', 'refreshing game list post install-from-download', { targetGameId, disableAutoActivate });
+                      context.api.events.emit('refresh-game-list', true);
+                      if (disableAutoActivate) {
+                        log('info', 'Auto-activation after game extension install-from-download disabled via env');
+                        return Promise.resolve();
+                      }
+                      return context.api.emitAndAwait('discover-game', targetGameId)
+                        .then(() => {
+                          log('info', 'emitting activate-game after discover (from-download)', { targetGameId });
+                          context.api.events.emit('activate-game', targetGameId);
+                        })
+                        .catch(err => {
+                          log('warn', 'auto-discovery failed after install-from-download', { targetGameId, error: err?.message });
+                          return Promise.resolve();
+                        });
+                    }
+                  }
+                  return Promise.resolve();
+                });
             }
+            return Promise.resolve();
           });
       } else {
         context.api.sendNotification({

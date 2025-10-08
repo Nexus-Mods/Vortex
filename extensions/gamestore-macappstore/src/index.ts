@@ -139,7 +139,7 @@ class MacAppStore implements types.IGameStore {
       'game', 'Game', 'Gaming', 'Adventure', 'RPG', 'Strategy', 'Simulation',
       'Puzzle', 'Arcade', 'Action', 'Shooter', 'Racing', 'Sports',
       // Common franchise keywords to strengthen detection
-      'Warcraft', 'Witcher', 'Halo'
+      'Warcraft', 'Witcher', 'Halo', 'Civilization', 'Grand Theft Auto'
     ];
     
     // Check for common game categories in the app name

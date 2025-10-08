@@ -322,7 +322,7 @@ class DownloadWorker {
 
     try {
       const headers = {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          Range: `bytes=${job.offset}-${job.offset + job.size - 1}`,
           'User-Agent': this.mUserAgent,
           'Accept-Encoding': 'gzip, deflate',
           Cookie: allCookies,
@@ -699,6 +699,20 @@ class DownloadWorker {
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
         if ((sizeMatch?.length ?? 0) > 1) {
           fileSize = parseInt(sizeMatch[3], 10);
+          const start = parseInt(sizeMatch[1], 10);
+          if (!isNaN(start)) {
+            // Align offset with server-confirmed start to avoid drift
+            const delta = start - this.mJob.confirmedOffset;
+            if (delta !== 0) {
+              log('debug', 'aligning job offset with server content-range start', {
+                workerId: this.mJob.workerId,
+                prevConfirmedOffset: this.mJob.confirmedOffset,
+                newStart: start,
+              });
+              this.mJob.offset = start + (this.mJob.offset - this.mJob.confirmedOffset);
+              this.mJob.confirmedOffset = start;
+            }
+          }
         }
       } else {
         log('debug', 'download doesn\'t support partial requests');
@@ -841,6 +855,7 @@ const SLOW_WORKER_THRESHOLD = 10;              // Number of "starving" measureme
 const SLOW_WORKER_MIN_AGE_MS = 10000;          // Minimum time (10s) before allowing restart
 const SLOW_WORKER_RESTART_COOLDOWN_MS = 30000; // Cooldown period (30s) between restarts
 const MAX_WORKER_RESTARTS = 3;                 // Maximum restarts per worker
+const MAX_INTERNAL_AUTO_RESUMES = 5;           // Cap auto-resume cycles per job
 
 /**
  * manages downloads
@@ -1254,6 +1269,7 @@ class DownloadManager {
       confirmedReceived: 0,
       offset: 0,
       state: 'init',
+      restartCount: 0,
       received: 0,
       size: this.mMinChunkSize,
       options: download.options,
@@ -1678,7 +1694,7 @@ class DownloadManager {
       const chunkSize = Math.min(remainingSize,
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
-      let offset = this.mMinChunkSize + 1;
+      let offset = this.mMinChunkSize;
       while (offset < fileSize) {
         const previousChunk = download.chunks.find(chunk => chunk.extraCookies.length > 0);
         const extraCookies = (previousChunk !== undefined)
@@ -1732,6 +1748,7 @@ class DownloadManager {
       confirmedReceived: chunk.received,
       offset: chunk.offset,
       state: 'init',
+      restartCount: 0,
       size: chunk.size,
       received: chunk.received,
       options: download.options,
@@ -1797,8 +1814,32 @@ class DownloadManager {
     const hasRemainingData = job.size > 0;
 
     job.state = (paused || hasRemainingData) ? 'paused' : 'finished';
+
+    // If this wasn't an intentional pause and there is remaining data,
+    // auto-resume internally by re-queuing paused chunks instead of finalizing.
+    // This prevents the visible start -> pause -> resume cycle and retries in-place.
     if (!paused && hasRemainingData) {
-      download.error = true;
+      job.restartCount = (job.restartCount ?? 0) + 1;
+      if (job.restartCount > MAX_INTERNAL_AUTO_RESUMES) {
+        log('warn', 'auto-resume cap reached for chunk; finalizing with unfinishedChunks', {
+          downloadId: download.id,
+          workerId: job.workerId,
+          restartCount: job.restartCount,
+          maxResumes: MAX_INTERNAL_AUTO_RESUMES
+        });
+      } else {
+        // Prefer re-queuing the current job only to avoid unnecessary restarts
+        const hasOtherActive = download.chunks.some(
+          (chunk: IDownloadJob) => (chunk !== job) && !['paused', 'finished'].includes(chunk.state)
+        );
+        log('info', 'auto-resuming current chunk internally', {
+          downloadId: download.id,
+          workerId: job.workerId,
+          otherActive: hasOtherActive,
+        });
+        job.state = 'init';
+        return; // Do not finalize; tickQueue will restart this chunk
+      }
     }
 
     const activeChunk = download.chunks.find(

@@ -114,23 +114,42 @@ function flushPendingLogs() {
 }
 
 export function setLogPath(basePath: string) {
-
-  // remove the original transport so we can add the new one back again
-  logger.remove(logger.transports['File']);
-
-  // add the new transport
-  logger.add(logger.transports['File'], {
-    filename: path.join(basePath, 'vortex.log'),
-    json: false,
-    level: 'debug',
-    maxsize: 1024 * 1024,
-    maxFiles: 5,
-    tailable: true,
-    timestamp: () => new Date().toISOString(),
-    formatter: (options: any) => {
-      return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+  try {
+    // remove the original transport so we can add the new one back again
+    if ((logger as any)?.transports?.File !== undefined || (logger as any)?.transports?.['File'] !== undefined) {
+      // Winston v2 style
+      logger.remove((logger as any).transports['File']);
+    } else if ((logger as any)?.transports) {
+      // In case transports is a list in newer versions, try to remove any File transports gracefully
+      Object.keys((logger as any).transports)
+        .filter(key => key.toLowerCase().includes('file'))
+        .forEach(key => {
+          try { logger.remove((logger as any).transports[key]); } catch (err) { /* ignore */ }
+        });
     }
-  });
+
+    // add the new transport
+    logger.add((logger as any).transports['File'], {
+      filename: path.join(basePath, 'vortex.log'),
+      json: false,
+      level: 'debug',
+      maxsize: 1024 * 1024,
+      maxFiles: 5,
+      tailable: true,
+      timestamp: () => new Date().toISOString(),
+      formatter: (options: any) => {
+        return `${options.timestamp()} [${options.level.toUpperCase()}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
+      }
+    });
+  } catch (err) {
+    // Fall back gracefully if winston api differences break setup
+    try {
+      logger.log('error', 'Failed to set log path', { error: (err as any)?.message, basePath });
+    } catch (e) {
+      // tslint:disable-next-line:no-console
+      console.log('Failed to set log path', { basePath, error: (err as any)?.message });
+    }
+  }
 }
 
 /**

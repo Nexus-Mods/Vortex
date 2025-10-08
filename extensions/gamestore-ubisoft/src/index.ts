@@ -1,10 +1,10 @@
-import Bluebird = require('bluebird');
-// Avoid assigning or shadowing global Promise; use Bluebird explicitly where needed
+// Ensure return types align with IGameStore's Bluebird-based signatures
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
 
 import { log, types, util } from 'vortex-api';
+import * as Bluebird from 'bluebird';
 
 const STORE_ID = 'ubisoft';
 const STORE_NAME = 'Ubisoft Connect';
@@ -26,22 +26,26 @@ class UbisoftLauncher implements types.IGameStore {
     if (process.platform === 'win32') {
       // Windows implementation (existing Uplay functionality)
       try {
-        Bluebird.resolve(import('winapi-bindings')).then((winapi) => {
-          const uplayPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
-                                               'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher', 'InstallDir');
+        Bluebird.resolve(import('winapi-bindings')).then((mod: any) => {
+          const winapi: any = mod?.default ?? mod;
+          const uplayPath = winapi.RegGetValue(
+            'HKEY_LOCAL_MACHINE',
+            'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher',
+            'InstallDir',
+          );
           this.mClientPath = Bluebird.resolve(path.join(uplayPath.value as string, 'UbisoftConnect.exe'));
-        }).catch((err) => {
-          log('info', 'Ubisoft launcher not found', { error: err.message });
+        }).catch((err: any) => {
+          log('info', 'Ubisoft launcher not found', { error: (err as any)?.message });
           this.mClientPath = Bluebird.resolve(undefined);
         });
       } catch (err) {
-        log('info', 'Ubisoft launcher not found', { error: err.message });
+        log('info', 'Ubisoft launcher not found', { error: (err as any)?.message });
         this.mClientPath = Bluebird.resolve(undefined);
       }
     } else if (process.platform === 'darwin') {
       // macOS implementation
-      this.mClientPath = Bluebird.resolve(this.findMacOSUbisoftPath()).catch((err) => {
-        log('info', 'Ubisoft launcher not found on macOS', { error: err.message });
+      this.mClientPath = this.findMacOSUbisoftPath().catch((err: any) => {
+        log('info', 'Ubisoft launcher not found on macOS', { error: (err as any)?.message });
         return undefined;
       });
     } else {
@@ -53,32 +57,31 @@ class UbisoftLauncher implements types.IGameStore {
   /**
    * Find Ubisoft Connect on macOS
    */
-  private async findMacOSUbisoftPath(): Promise<string> {
+  private findMacOSUbisoftPath(): Bluebird<string> {
     // Check standard installation paths
     const possiblePaths = [
       '/Applications/Ubisoft Connect.app',
       path.join(process.env.HOME || '', 'Applications', 'Ubisoft Connect.app')
     ];
 
-    for (const appPath of possiblePaths) {
-      try {
-        const stat = await fs.stat(appPath);
-        if (stat.isDirectory()) {
-          return appPath;
-        }
-      } catch (err) {
-        // Continue to next path
+    return Bluebird.all(possiblePaths.map((appPath) =>
+      Bluebird.resolve(fs.stat(appPath))
+        .then(stat => stat.isDirectory() ? appPath : undefined)
+        .catch(() => undefined)
+    )).then((results) => {
+      const found = results.find(p => !!p) as string | undefined;
+      if (found) {
+        return found;
       }
-    }
-
-    throw new Error('Ubisoft Connect not found on macOS');
+      return Bluebird.reject(new Error('Ubisoft Connect not found on macOS'));
+    });
   }
 
   public launchGame(appInfo: any, api?: types.IExtensionApi): Bluebird<void> {
-    return Bluebird.resolve(this.launchGameAsync(appInfo, api));
+    return Bluebird.resolve(this.launchGameAsync(appInfo, api)).then(() => undefined);
   }
 
-  private async launchGameAsync(appInfo: any, api?: types.IExtensionApi): Promise<void> {
+  private async launchGameAsync(appInfo: any, api?: types.IExtensionApi): globalThis.Promise<void> {
     const appId = ((typeof(appInfo) === 'object') && ('appId' in appInfo))
       ? appInfo.appId : appInfo.toString();
 
@@ -137,9 +140,9 @@ class UbisoftLauncher implements types.IGameStore {
   }
 
   public getGameStorePath(): Bluebird<string> {
-    return (!!this.mClientPath)
-      ? Bluebird.resolve(this.mClientPath).then(x => x)
-      : Bluebird.resolve(undefined);
+    return this.mClientPath
+      ? this.mClientPath.then(x => (x ?? ''))
+      : Bluebird.resolve('');
   }
 
   private getGameEntries(): Bluebird<types.IGameStoreEntry[]> {
@@ -154,20 +157,21 @@ class UbisoftLauncher implements types.IGameStore {
 
   private getGameEntriesWindows(): Bluebird<types.IGameStoreEntry[]> {
     return (!!this.mClientPath)
-      ? Bluebird.resolve(import('winapi-bindings')).then((winapi) => {
+      ? Bluebird.resolve(import('winapi-bindings')).then((mod: any) => {
+        const winapi: any = mod?.default ?? mod;
         return new Bluebird<types.IGameStoreEntry[]>((resolve, reject) => {
           try {
             winapi.WithRegOpen('HKEY_LOCAL_MACHINE',
-                               'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs', hkey => {
-                                 let keys = [];
+                               'SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs', (hkey: any) => {
+                                 let keys: any[] = [];
                                  try {
                                    keys = winapi.RegEnumKeys(hkey);
                                  } catch (err) {
                 // Can't open the hive tree... weird.
-                                   log('error', 'gamestore-ubisoft: registry query failed', hkey);
+                                   log('error', 'gamestore-ubisoft: registry query failed', { hkey });
                                    return resolve([]);
                                  }
-                                 const gameEntries: types.IGameStoreEntry[] = keys.map(key => {
+                                 const gameEntries: types.IGameStoreEntry[] = keys.map((key: any) => {
                                    try {
                                      const gameEntry: types.IGameStoreEntry = {
                                        appid: key.key,
@@ -181,14 +185,14 @@ class UbisoftLauncher implements types.IGameStore {
                                      };
                                      return gameEntry;
                                    } catch (err) {
-                                     log('info', 'gamestore-ubisoft: registry query failed', key.key);
+                                     log('info', 'gamestore-ubisoft: registry query failed', { key: key.key });
                                      return undefined;
                                    }
                                  });
                                  return resolve(gameEntries.filter(entry => !!entry));
                                });
           } catch (err) {
-            return (err.code === 'ENOENT') ? resolve([]) : reject(err);
+            return ((err as any)?.code === 'ENOENT') ? resolve([]) : reject(err);
           }
         });
       }).catch(() => Bluebird.resolve([]))
@@ -258,13 +262,13 @@ class UbisoftLauncher implements types.IGameStore {
           }
         } catch (err) {
           // Failed to process game directory
-          log('debug', 'Failed to process Ubisoft game directory', { gameId, error: err.message });
+          log('debug', 'Failed to process Ubisoft game directory', { gameId, error: (err as any)?.message });
         }
       }
       
       return gameEntries;
     }).catch((err: any) => {
-      log('error', 'Failed to get Ubisoft games on macOS', { error: err.message });
+      log('error', 'Failed to get Ubisoft games on macOS', { error: (err as any)?.message });
       return [] as types.IGameStoreEntry[];
     });
   }
@@ -288,7 +292,7 @@ class UbisoftLauncher implements types.IGameStore {
     return gameNames[gameId] || `Ubisoft Game ${gameId}`;
   }
 
-  private async findGameInstallationPath(gameId: string): Promise<string | null> {
+  private async findGameInstallationPath(gameId: string): globalThis.Promise<string | null> {
     try {
       // Check common installation paths
       const homeDir = process.env.HOME || '';
@@ -331,7 +335,7 @@ class UbisoftLauncher implements types.IGameStore {
         }
       }
     } catch (err) {
-      log('debug', 'Failed to find game installation path', { gameId, error: err.message });
+      log('debug', 'Failed to find game installation path', { gameId, error: (err as any)?.message });
     }
     
     return null;

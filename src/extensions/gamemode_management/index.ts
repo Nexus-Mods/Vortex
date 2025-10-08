@@ -31,6 +31,7 @@ import { batchDispatch } from '../../util/util';
 
 import { IExtensionDownloadInfo, ExtensionType } from '../extension_manager/types';
 import { setInstalledExtensions } from '../extension_manager/actions';
+import { readExtensionsSync } from '../extension_manager/util';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { nexusGames } from '../nexus_integration/util';
@@ -300,6 +301,16 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
 
   if (gameById(state, gameId) === undefined) {
+    // Proactively refresh installed extensions to avoid stale state
+    try {
+      const extensions = readExtensionsSync(true);
+      api.store.dispatch(setInstalledExtensions(extensions));
+      log('info', 'Synchronized installed extensions before showing missing support dialog', {
+        extensionCount: Object.keys(extensions).length,
+      });
+    } catch (err) {
+      log('warn', 'Failed to synchronize installed extensions', { error: err.message });
+    }
     // Find the extension to get the game name
     const extension = state.session.extensions?.available?.find(ext =>
       (ext?.gameId === gameId) || (ext.name === gameId));
@@ -383,7 +394,16 @@ function installGameExtension(api: IExtensionApi,
                               gameId: string,
                               dlInfo: IExtensionDownloadInfo)
                               : Promise<void> {
+  // prevent re-entry: avoid showing the install dialog repeatedly while an install is ongoing
+  const installingGameExtensions = (installGameExtension as any).mInstallingGameExtensions
+    || ((installGameExtension as any).mInstallingGameExtensions = new Set<string>());
+
   if (dlInfo !== undefined) {
+    if (installingGameExtensions.has(gameId)) {
+      log('info', 'skipping duplicate install prompt for game extension', { gameId });
+      return Promise.resolve();
+    }
+    installingGameExtensions.add(gameId);
     log('info', 'installing missing game extension', { gameId });
     const name = dlInfo.name.replace(/^Game: /, '');
     return api.showDialog('info', dlInfo.name, {
@@ -404,21 +424,26 @@ function installGameExtension(api: IExtensionApi,
     ])
       .then(result => {
         if (result.action === 'Install') {
-          return api.emitAndAwait('install-extension', dlInfo);
+          return api.emitAndAwait('install-extension', dlInfo)
+            .finally(() => installingGameExtensions.delete(gameId));
         } else if (result.action === 'Stop managing') {
           api.events.emit(
             'analytics-track-click-event', 'Games', 'Stop managing game',
           );
-          return api.ext.unmanageGame?.(gameId, dlInfo.name);
+          return Promise.resolve(api.ext.unmanageGame?.(gameId, dlInfo.name))
+            .finally(() => installingGameExtensions.delete(gameId));
         } else {
+          installingGameExtensions.delete(gameId);
           return Promise.resolve(false);
         }
       })
       .catch(err => {
         if ((err instanceof UserCanceled)
           || (err instanceof ProcessCanceled)) {
+          installingGameExtensions.delete(gameId);
           return Promise.resolve();
         }
+        installingGameExtensions.delete(gameId);
         api.showErrorNotification('Failed to install game extension', err);
       });
   } else {

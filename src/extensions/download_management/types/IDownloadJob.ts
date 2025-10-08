@@ -6,6 +6,7 @@ import Promise from 'bluebird';
 export interface IDownloadJob extends IChunk {
   state: 'init' | 'running' | 'paused' | 'finished';
   workerId?: number;
+  restartCount?: number;
   options: IDownloadOptions;
   confirmedReceived: number;
   confirmedOffset: number;

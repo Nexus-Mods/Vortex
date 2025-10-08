@@ -211,6 +211,7 @@
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
   },
   "dependencies": {
+    "7zip-bin": "^5.1.1",
     "@electron/remote": "^2.0.12",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#master",

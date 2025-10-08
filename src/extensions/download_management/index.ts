@@ -964,7 +964,7 @@ function init(context: IExtensionContextExt): boolean {
                                 if (install && (err === null)) {
                                   context.api.events.emit('start-install-download', dlId);
                                 }
-                              });
+                              }, 'always');
     });
 
     context.api.registerProtocol('https', false, (url, install) => {
@@ -973,7 +973,7 @@ function init(context: IExtensionContextExt): boolean {
                                 if (install && (err === null)) {
                                   context.api.events.emit('start-install-download', dlId);
                                 }
-                              });
+                              }, 'always');
     });
 
     context.api.events.on('will-move-downloads', () => {

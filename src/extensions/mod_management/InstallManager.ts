@@ -145,7 +145,7 @@ import { HTTPError } from '@nexusmods/nexus-api';
 import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import * as SevenZip from 'node-7z';
+// Unified archive extraction handled via util/archive
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -438,19 +438,19 @@ class InstallManager {
                   installChoices?: any,
                   progress?: (entries: string[], percent: number) => void)
                   : Bluebird<IInstallResult> {
-    // Use node-7z module functions directly for simulation extraction
-    const simulationZip = SevenZip;
-
+    // Use centralized extractor from util/archive for all platforms
     let extractProm: Bluebird<any>;
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
     } else {
-      extractProm = simulationZip.extractFull(archivePath, tempPath, {ssc: false},
-                                    progress,
-                                    () => this.queryPassword(api.store) as any)
-          .catch((err: Error) => this.isCritical(err.message)
-            ? Bluebird.reject(new ArchiveBrokenError(err.message))
-            : Bluebird.reject(err));
+      extractProm = Bluebird.resolve()
+        .then(() => {
+          const { extractArchive } = require('../../util/archive');
+          return extractArchive(archivePath, tempPath, { ssc: false });
+        })
+        .catch((err: Error) => this.isCritical(err.message)
+          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          : Bluebird.reject(err));
     }
 
     const fileList: string[] = [];
@@ -600,8 +600,7 @@ class InstallManager {
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit.do(() => {
       return new Promise<string>((resolve, reject) => {
-        // node-7z provides functions, not a class. Use the module directly.
-        const installationZip = SevenZip;
+        // Use centralized extractor; no direct node-7z usage here
 
         const currentProfile = activeProfile(api.store.getState());
 
@@ -911,7 +910,7 @@ class InstallManager {
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
                                  tempPath, destinationPath, installGameId, installContext,
-                                 installationZip, forceInstaller, fullInfo.choices, fileList, unattended);
+                                 undefined, forceInstaller, fullInfo.choices, fileList, unattended);
       })
       .then(result => {
         const state: IState = api.store.getState();
@@ -1056,7 +1055,7 @@ class InstallManager {
                       api.events.emit('remove-download', archiveId, () => {
                         dismiss();
                         api.events.emit('start-download', download.urls, info.download,
-                          path.basename(archivePath));
+                          path.basename(archivePath), undefined, 'replace');
                       });
                       dismiss();
                     } },
@@ -1529,12 +1528,14 @@ class InstallManager {
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
       extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
     } else {
-      extractProm = installationZip.extractFull(archivePath, tempPath, {ssc: false},
-                                    progress,
-                                    () => this.queryPassword(api.store) as any)
-          .catch((err: Error) => this.isCritical(err.message)
-            ? Bluebird.reject(new ArchiveBrokenError(err.message))
-            : Bluebird.reject(err));
+      extractProm = Bluebird.resolve()
+        .then(() => {
+          const { extractArchive } = require('../../util/archive');
+          return extractArchive(archivePath, tempPath, { ssc: false });
+        })
+        .catch((err: Error) => this.isCritical(err.message)
+          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          : Bluebird.reject(err));
       (extractProm as any).startTime = extractionStart;
     }
 
@@ -1891,10 +1892,9 @@ class InstallManager {
         const subContext = new InstallContext(gameId, api, unattended);
         subContext.startIndicator(api.translate('nested: {{modName}}',
           { replace: { modName: path.basename(mod.path) } }));
-        // Use node-7z module functions for submodule extraction
-        const submoduleZip = SevenZip;
+        // Submodule extraction uses centralized extractor from util/archive
         return this.installInner(api, mod.path, tempPath, destinationPath,
-                                 gameId, subContext, submoduleZip, undefined,
+                                 gameId, subContext, undefined, undefined,
                                  choices, undefined, unattended)
           .then((resultInner) => this.processInstructions(
             api, installContext, mod.path, tempPath, destinationPath,

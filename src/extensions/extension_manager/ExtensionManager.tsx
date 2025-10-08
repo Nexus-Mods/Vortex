@@ -237,7 +237,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                                          .finally(() => {
                                            resolve();
                                          });
-                                     }, undefined, { allowInstall: 'force' });
+                                     }, 'always', { allowInstall: 'force' });
       }));
     prop.then(() => {
       if (success) {

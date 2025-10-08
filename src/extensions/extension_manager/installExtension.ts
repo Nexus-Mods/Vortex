@@ -521,11 +521,16 @@ async function hasExtensionFiles(extractionPath: string): Promise<boolean> {
 }
 
 async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: number = 15000): Promise<void> {
+  // On macOS, filesystem changes may take longer to settle
+  const platformFactor = (process.platform === 'darwin') ? 1.5 : 1;
+  const effectiveMaxWaitMs = Math.ceil(maxWaitMs * platformFactor);
   const startTime = Date.now();
-  const checkInterval = 200; // Increased to 200ms for better stability
+  const initialCheckInterval = 100;
+  const maxCheckInterval = 500; // cap polling to reduce churn
+  let checkInterval = initialCheckInterval;
   let lastFileCount = 0;
   let stableCount = 0;
-  const stabilityThreshold = 3; // Need 3 consecutive stable checks (600ms total)
+  const stabilityThreshold = 3; // Need 3 consecutive stable checks (>= 300ms)
   let hasFoundFiles = false;
   let lastFileList: string[] = [];
   
@@ -538,7 +543,7 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
   // Add a small initial delay to allow file system to settle
   await new Promise(resolve => setTimeout(resolve, 100));
   
-  while (Date.now() - startTime < maxWaitMs) {
+  while (Date.now() - startTime < effectiveMaxWaitMs) {
     try {
       // Check if extraction directory exists and has content
       const stats = await fs.statAsync(extractionPath);
@@ -548,8 +553,9 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
         continue;
       }
       
-      // Count files in the extraction directory
-      const files = await fs.readdirAsync(extractionPath);
+      // Count files in the extraction directory, skipping hidden and macOS helper dirs
+      const files = (await fs.readdirAsync(extractionPath))
+        .filter(f => !f.startsWith('.') && (f !== '__MACOSX'));
       const currentFileCount = files.length;
       
       // Additional check to ensure we can access the files
@@ -597,6 +603,58 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
           return;
         }
         
+        // Also check first-level subdirectories for key files (common nested-root archives)
+        for (const entry of files) {
+          try {
+            const entryPath = path.join(extractionPath, entry);
+            const entryStat = await fs.statAsync(entryPath);
+            if (entryStat.isDirectory()) {
+              const subFiles = (await fs.readdirAsync(entryPath))
+                .filter(f => !f.startsWith('.') && (f !== '__MACOSX'));
+              if (subFiles.length === 0) continue;
+              const subKeyFiles = ['index.js', 'info.json'];
+              const presentSubKeys = subKeyFiles.filter(f => subFiles.includes(f));
+              if (presentSubKeys.length > 0) {
+                let subAllAccessible = true;
+                for (const kf of presentSubKeys) {
+                  try {
+                    await fs.statAsync(path.join(entryPath, kf));
+                  } catch {
+                    subAllAccessible = false;
+                    break;
+                  }
+                }
+                if (subAllAccessible) {
+                  log('debug', 'Key files found in subdirectory during extraction monitoring', {
+                    extractionPath,
+                    subdir: entry,
+                    keyFiles: presentSubKeys,
+                    waitedMs: Date.now() - startTime,
+                  });
+                  return;
+                }
+              }
+              const subJs = subFiles.find(f => f.endsWith('.js'));
+              if (subJs) {
+                try {
+                  await fs.statAsync(path.join(entryPath, subJs));
+                  log('debug', 'JS file accessible in subdirectory during extraction monitoring', {
+                    extractionPath,
+                    subdir: entry,
+                    sampleFile: subJs,
+                    waitedMs: Date.now() - startTime,
+                  });
+                  return;
+                } catch {
+                  // not yet accessible; continue
+                }
+              }
+            }
+          } catch {
+            // ignore entry errors and continue
+          }
+        }
+
         // Check if both file count and file list are stable
         const filesEqual = JSON.stringify(files.sort()) === JSON.stringify(lastFileList.sort());
         
@@ -629,11 +687,13 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
       }
       
       await new Promise(resolve => setTimeout(resolve, checkInterval));
+      checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
     } catch (err) {
       if (err.code === 'ENOENT') {
         // Directory doesn't exist yet, keep waiting
         log('debug', 'Directory not found, continuing to wait', { extractionPath, error: err.code });
         await new Promise(resolve => setTimeout(resolve, checkInterval));
+        checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
       } else {
         // Other error, log and re-throw
         log('error', 'Error during extraction monitoring', { extractionPath, error: err.message });
@@ -644,19 +704,23 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
   
   // Timeout reached - but check one more time if files exist
   try {
-    const finalFiles = await fs.readdirAsync(extractionPath);
+    const finalFiles = (await fs.readdirAsync(extractionPath))
+      .filter(f => !f.startsWith('.') && (f !== '__MACOSX'));
+    // Final sanity: if we can detect extension files, proceed
+    const hasExt = await hasExtensionFiles(extractionPath);
     log('warn', 'Extraction completion monitoring timed out, but files exist - proceeding', { 
       extractionPath,
-      maxWaitMs,
+      maxWaitMs: effectiveMaxWaitMs,
       finalFileCount: finalFiles.length,
       hasFoundFiles,
+      hasExtensionFiles: hasExt,
       platform: process.platform,
       finalFiles: finalFiles.slice(0, 10) // Log first 10 files
     });
   } catch (err) {
     log('warn', 'Extraction completion monitoring timed out, and directory check failed', { 
       extractionPath,
-      maxWaitMs,
+      maxWaitMs: effectiveMaxWaitMs,
       lastFileCount,
       hasFoundFiles,
       platform: process.platform,
@@ -670,6 +734,8 @@ async function waitForExtractionCompletion(extractionPath: string, maxWaitMs: nu
  * This function checks for the presence of key files and their accessibility
  */
 async function validateExtractionCompleteness(extractionPath: string, maxWaitMs: number = 10000): Promise<void> {
+  const platformFactor = (process.platform === 'darwin') ? 1.5 : 1;
+  const effectiveMaxWaitMs = Math.ceil(maxWaitMs * platformFactor);
   const startTime = Date.now();
   const initialCheckInterval = 50; // Start with 50ms
   const maxCheckInterval = 500; // Max 500ms between checks
@@ -677,11 +743,16 @@ async function validateExtractionCompleteness(extractionPath: string, maxWaitMs:
   
   log('debug', 'Starting extraction completeness validation', { 
     extractionPath, 
-    maxWaitMs,
+    maxWaitMs: effectiveMaxWaitMs,
     platform: process.platform 
   });
   
-  while (Date.now() - startTime < maxWaitMs) {
+  // On macOS, allow a brief initial settle
+  if (process.platform === 'darwin') {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  while (Date.now() - startTime < effectiveMaxWaitMs) {
     try {
       // Check if extraction directory exists and has content
       const stats = await fs.statAsync(extractionPath);
@@ -690,23 +761,26 @@ async function validateExtractionCompleteness(extractionPath: string, maxWaitMs:
         continue;
       }
       
-      // Check for presence of key files
-      const files = await fs.readdirAsync(extractionPath);
+      // Check for presence of key files (skip hidden and macOS helper dirs)
+      const files = (await fs.readdirAsync(extractionPath))
+        .filter(f => !f.startsWith('.') && (f !== '__MACOSX'));
       
       // If directory is empty, continue waiting
       if (files.length === 0) {
         await new Promise(resolve => setTimeout(resolve, checkInterval));
+        // increase interval slightly to reduce churn
+        checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
         continue;
       }
       
       const keyFiles = ['index.js', 'info.json'];
-      const missingFiles = keyFiles.filter(file => files.includes(file));
+      const presentKeyFiles = keyFiles.filter(file => files.includes(file));
       
       // If we have at least one key file, check if it's accessible
-      if (missingFiles.length > 0) {
+      if (presentKeyFiles.length > 0) {
         // Check if key files are accessible
         let allAccessible = true;
-        for (const file of missingFiles) {
+        for (const file of presentKeyFiles) {
           try {
             await fs.statAsync(path.join(extractionPath, file));
           } catch (accessErr) {
@@ -720,7 +794,7 @@ async function validateExtractionCompleteness(extractionPath: string, maxWaitMs:
             extractionPath, 
             waitedMs: Date.now() - startTime,
             platform: process.platform,
-            keyFiles: missingFiles
+            keyFiles: presentKeyFiles
           });
           return;
         }
@@ -746,12 +820,66 @@ async function validateExtractionCompleteness(extractionPath: string, maxWaitMs:
           }
         }
       }
+
+      // Check first-level subdirectories for key files (common when archives have a nested root)
+      for (const entry of files) {
+        try {
+          const entryPath = path.join(extractionPath, entry);
+          const entryStat = await fs.statAsync(entryPath);
+          if (entryStat.isDirectory()) {
+            const subFiles = (await fs.readdirAsync(entryPath))
+              .filter(f => !f.startsWith('.') && (f !== '__MACOSX'));
+            if (subFiles.length === 0) continue;
+            const subKeyFiles = ['index.js', 'info.json'];
+            const presentSubKeys = subKeyFiles.filter(f => subFiles.includes(f));
+            if (presentSubKeys.length > 0) {
+              let subAllAccessible = true;
+              for (const kf of presentSubKeys) {
+                try {
+                  await fs.statAsync(path.join(entryPath, kf));
+                } catch {
+                  subAllAccessible = false;
+                  break;
+                }
+              }
+              if (subAllAccessible) {
+                log('debug', 'Key files found in subdirectory, extraction complete', {
+                  extractionPath,
+                  subdir: entry,
+                  keyFiles: presentSubKeys,
+                  waitedMs: Date.now() - startTime,
+                });
+                return;
+              }
+            }
+            const subJs = subFiles.find(f => f.endsWith('.js'));
+            if (subJs) {
+              try {
+                await fs.statAsync(path.join(entryPath, subJs));
+                log('debug', 'JS file accessible in subdirectory, extraction complete', {
+                  extractionPath,
+                  subdir: entry,
+                  sampleFile: subJs,
+                  waitedMs: Date.now() - startTime,
+                });
+                return;
+              } catch {
+                // not yet accessible; continue
+              }
+            }
+          }
+        } catch {
+          // ignore entry errors and continue
+        }
+      }
       
       await new Promise(resolve => setTimeout(resolve, checkInterval));
+      checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
     } catch (err) {
       if (err.code === 'ENOENT') {
         // Directory doesn't exist yet, keep waiting
         await new Promise(resolve => setTimeout(resolve, checkInterval));
+        checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
       } else {
         // Other error, log and continue waiting
         log('debug', 'Error during completeness validation, continuing to wait', { 
@@ -759,14 +887,29 @@ async function validateExtractionCompleteness(extractionPath: string, maxWaitMs:
           error: err.message 
         });
         await new Promise(resolve => setTimeout(resolve, checkInterval));
+        checkInterval = Math.min(maxCheckInterval, checkInterval * 2);
       }
     }
   }
   
   // Timeout reached
+  // Final sanity check: if typical extension files are present, proceed
+  try {
+    const hasExt = await hasExtensionFiles(extractionPath);
+    if (hasExt) {
+      log('warn', 'Completeness validation timed out, but extension files detected - proceeding', {
+        extractionPath,
+        maxWaitMs: effectiveMaxWaitMs,
+        platform: process.platform,
+      });
+      return;
+    }
+  } catch (_) {
+    // ignore
+  }
   log('warn', 'Extraction completeness validation timed out, proceeding anyway', { 
     extractionPath,
-    maxWaitMs,
+    maxWaitMs: effectiveMaxWaitMs,
     platform: process.platform
   });
 }
@@ -1274,8 +1417,48 @@ async function installExtension(api: IExtensionApi,
       log('debug', 'Ensured temporary directory exists', { tempPath });
       // Unified extraction using archive helper with platform-aware fallback and retries
       const { extractArchive } = require('../../util/archive');
+      // Predict extraction method for logging visibility
+      const lower = archivePath.toLowerCase();
+      const predicted:
+        'macOS-zip-ditto' | 'macOS-7z/rar-native' | 'tar' | 'node-7z' =
+        (process.platform === 'darwin' && (lower.endsWith('.zip'))) ? 'macOS-zip-ditto'
+        : ((process.platform === 'darwin') && (lower.endsWith('.7z') || lower.endsWith('.rar'))) ? 'macOS-7z/rar-native'
+        : ((lower.endsWith('.tar') || lower.endsWith('.tar.gz') || lower.endsWith('.tgz'))) ? 'tar'
+        : 'node-7z';
+      log('info', 'Predicted extraction method', {
+        archivePath,
+        tempPath,
+        platform: process.platform,
+        predicted,
+        ext: path.extname(archivePath).toLowerCase(),
+        arch: process.arch,
+      });
       const extractionStartTime = Date.now();
-      await extractArchive(archivePath, tempPath, { ssc: false });
+      // macOS health check wrapper to reduce transient failures
+      if (process.platform === 'darwin') {
+        await retryValidationOperation(
+          () => extractArchive(archivePath, tempPath, { ssc: false }),
+          3, // a few retries around the core extractor
+          400, // base delay
+          3000, // max delay
+          `macOS extractArchive for ${archivePath}`,
+          (error) => {
+            const msg = (error?.message || '').toLowerCase();
+            return (
+              msg.includes('enoent') ||
+              msg.includes('ebusy') ||
+              msg.includes('eperm') ||
+              msg.includes('eacces') ||
+              msg.includes('resource busy') ||
+              msg.includes('operation not permitted') ||
+              msg.includes('failed') ||
+              msg.includes('exit')
+            );
+          }
+        );
+      } else {
+        await extractArchive(archivePath, tempPath, { ssc: false });
+      }
       const extractionDuration = Date.now() - extractionStartTime;
       log('info', 'Archive extraction completed', {
         tempPath,
@@ -1748,7 +1931,12 @@ async function installExtension(api: IExtensionApi,
         tempPath,
         extName
       });
-      
+
+      try {
+        // Emit a failure event so UI/manager can suppress loops or show a single notification
+        api.events.emit('extension-install-failed', extName, { error: err.message });
+      } catch (_) { /* ignore */ }
+
       try {
         fs.removeSync(tempPath);
         log('debug', 'Cleaned up temporary directory after failure', { tempPath });
@@ -3064,445 +3252,4 @@ async function hasCommand(cmd: string): globalThis.Promise<boolean> {
   } catch (_) {
     return false;
   }
-}
-
-// Native macOS (and general CLI) archive extraction supporting .7z, .zip, .rar (synchronous)
-function extractArchiveNativeSync(archivePath: string, destPath: string): void {
-  const ext = path.extname(archivePath).toLowerCase();
-  const isDarwin = process.platform === 'darwin';
-
-  // Resolve bundled 7z first so we can prefer it where appropriate
-  const packaged7z = getPackaged7zPathSync();
-
-  // Enhanced logging with archive details
-  log('info', 'Starting native archive extraction', {
-    archivePath,
-    destPath,
-    extension: ext,
-    platform: process.platform,
-    hasPackaged7z: !!packaged7z
-  });
-
-  if (ext === '.zip') {
-    // Prefer macOS-native ditto, fallback to unzip, then bundled 7z if present
-    const cmds: Array<{ cmd: string, args: string[] }> = [
-      { cmd: 'ditto', args: ['-x', '-k', archivePath, destPath] },
-      { cmd: 'unzip', args: ['-oq', archivePath, '-d', destPath] },
-    ];
-    if (packaged7z) {
-      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
-    }
-
-    // Preflight on macOS: ensure at least one tool is available
-    if (isDarwin) {
-      const hasDitto = hasCommandSync('ditto');
-      const hasUnzip = hasCommandSync('unzip');
-      
-      // Log which tools are available
-      log('debug', 'Available ZIP extraction tools', {
-        ditto: hasDitto,
-        unzip: hasUnzip,
-        packaged7z: !!packaged7z
-      });
-      
-      if (!packaged7z && !hasDitto && !hasUnzip) {
-        const detailedError = new Error([
-          'No ZIP extraction tools found on your macOS system.',
-          'Vortex requires one of the following tools to extract extension archives:',
-          '  • macOS built-in "ditto" command (usually pre-installed)',
-          '  • "unzip" command (usually pre-installed)',
-          '  • Bundled 7-Zip tool (included with Vortex)',
-          '',
-          'To resolve this issue, you can:',
-          '  1. Ensure your system has the standard macOS command-line tools installed',
-          '     (These are typically included with Xcode Command Line Tools)',
-          '  2. Reinstall Vortex to ensure the bundled 7-Zip tool is properly included',
-          '  3. Install additional extraction tools like The Unarchiver from the App Store',
-          '',
-          'If you continue to experience issues, please check the Vortex documentation',
-          'or contact support with the detailed logs from this installation attempt.'
-        ].join('\n'));
-        
-        log('error', 'No ZIP extraction tools available on macOS', {
-          hasDitto,
-          hasUnzip,
-          hasPackaged7z: !!packaged7z,
-          systemPath: process.env.PATH
-        });
-        
-        throw detailedError;
-      }
-    }
-
-    try {
-    const result = tryCommandsSync(cmds);
-    log('info', 'ZIP extraction completed', { archivePath, destPath });
-    
-    // Add a small delay and verification to ensure files are written
-    const verifyStartTime = Date.now();
-    let verifyAttempts = 0;
-    const maxVerifyAttempts = 10;
-    
-    while (verifyAttempts < maxVerifyAttempts) {
-      try {
-        const stats = fsNode.statSync(destPath);
-        if (stats.isDirectory()) {
-          const files = fsNode.readdirSync(destPath);
-          if (files.length > 0) {
-            log('debug', 'Extraction verification successful', { 
-              destPath, 
-              fileCount: files.length,
-              duration: `${Date.now() - verifyStartTime}ms`
-            });
-            break;
-          }
-        }
-      } catch (verifyErr) {
-        // Ignore verification errors and continue waiting
-      }
-      
-      verifyAttempts++;
-      if (verifyAttempts < maxVerifyAttempts) {
-        // Wait 100ms before next verification attempt
-        const waitStart = Date.now();
-        while (Date.now() - waitStart < 100) {
-          // Busy wait (synchronous delay)
-        }
-      }
-    }
-    
-    return result;
-  } catch (err) {
-    log('error', 'ZIP extraction failed', { 
-      archivePath, 
-      destPath, 
-      error: err.message,
-      platform: process.platform
-    });
-    
-    // Re-throw with additional context
-    const wrappedError = new Error(`Failed to extract ZIP archive: ${err.message}`);
-    (wrappedError as any).cause = err;
-    throw wrappedError;
-  }
-  } else if (ext === '.7z') {
-    const cmds: Array<{ cmd: string, args: string[] }> = [];
-    if (packaged7z) {
-      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
-    }
-    cmds.push(
-      { cmd: '7zz', args: ['x', '-y', archivePath, `-o${destPath}`] },
-      { cmd: '7z', args: ['x', '-y', archivePath, `-o${destPath}`] },
-      { cmd: 'unar', args: ['-force-overwrite', '-o', destPath, archivePath] },
-    );
-
-    if (isDarwin) {
-      const has7zz = hasCommandSync('7zz');
-      const has7z = hasCommandSync('7z');
-      const hasUnar = hasCommandSync('unar');
-      
-      // Log which tools are available
-      log('debug', 'Available 7z extraction tools', {
-        '7zz': has7zz,
-        '7z': has7z,
-        'unar': hasUnar,
-        packaged7z: !!packaged7z
-      });
-      
-      if (!packaged7z && !has7zz && !has7z && !hasUnar) {
-        const detailedError = new Error([
-          'No 7z extraction tools found on your macOS system.',
-          'Vortex requires one of the following tools to extract .7z extension archives:',
-          '  • 7-Zip command-line tools (7zz or 7z)',
-          '  • The Unarchiver command-line tool (unar)',
-          '  • Bundled 7-Zip tool (included with Vortex)',
-          '',
-          'To resolve this issue, you can:',
-          '  1. Install 7-Zip using Homebrew: brew install p7zip',
-          '  2. Install The Unarchiver from the App Store (includes command-line tools)',
-          '  3. Reinstall Vortex to ensure the bundled 7-Zip tool is properly included',
-          '  4. Convert your extension archive to .zip format if possible',
-          '',
-          'If you continue to experience issues, please check the Vortex documentation',
-          'or contact support with the detailed logs from this installation attempt.'
-        ].join('\n'));
-        
-        log('error', 'No 7z extraction tools available on macOS', {
-          has7zz,
-          has7z,
-          hasUnar,
-          hasPackaged7z: !!packaged7z,
-          systemPath: process.env.PATH
-        });
-        
-        throw detailedError;
-      }
-    }
-
-    try {
-      const result = tryCommandsSync(cmds);
-      log('info', '7z extraction completed', { archivePath, destPath });
-      
-      // Add a small delay and verification to ensure files are written
-      const verifyStartTime = Date.now();
-      let verifyAttempts = 0;
-      const maxVerifyAttempts = 10;
-      
-      while (verifyAttempts < maxVerifyAttempts) {
-        try {
-          const stats = fsNode.statSync(destPath);
-          if (stats.isDirectory()) {
-            const files = fsNode.readdirSync(destPath);
-            if (files.length > 0) {
-              log('debug', 'Extraction verification successful', { 
-                destPath, 
-                fileCount: files.length,
-                duration: `${Date.now() - verifyStartTime}ms`
-              });
-              break;
-            }
-          }
-        } catch (verifyErr) {
-          // Ignore verification errors and continue waiting
-        }
-        
-        verifyAttempts++;
-        if (verifyAttempts < maxVerifyAttempts) {
-          // Wait 100ms before next verification attempt
-          const waitStart = Date.now();
-          while (Date.now() - waitStart < 100) {
-            // Busy wait (synchronous delay)
-          }
-        }
-      }
-      
-      return result;
-    } catch (err) {
-      log('error', '7z extraction failed', { 
-        archivePath, 
-        destPath, 
-        error: err.message,
-        platform: process.platform
-      });
-      
-      const help = [
-        'To resolve this issue, you can:',
-        '  • Install 7-Zip using Homebrew: brew install p7zip',
-        '  • Install The Unarchiver from the App Store',
-        '  • Reinstall Vortex to ensure the bundled 7z tool is properly included',
-        '  • Ask the extension author to provide a .zip version instead',
-        '',
-        'If you continue to experience issues, please check the Vortex documentation',
-        'or contact support with the detailed logs from this installation attempt.'
-      ].join('\n');
-      
-      const wrapped: any = new Error(`${err.message}\n\n${help}`);
-      (wrapped as any).cause = err;
-      throw wrapped;
-    }
-  } else if (ext === '.rar') {
-    const cmds: Array<{ cmd: string, args: string[] }> = [
-      { cmd: 'unar', args: ['-force-overwrite', '-o', destPath, archivePath] },
-      { cmd: 'unrar', args: ['x', '-y', archivePath, destPath] },
-    ];
-    // 7z can extract many RAR archives; include bundled 7z as a last fallback
-    if (packaged7z) {
-      cmds.push({ cmd: packaged7z, args: ['x', '-y', archivePath, `-o${destPath}`] });
-    }
-
-    if (isDarwin) {
-      const hasUnar = hasCommandSync('unar');
-      const hasUnrar = hasCommandSync('unrar');
-      
-      // Log which tools are available
-      log('debug', 'Available RAR extraction tools', {
-        'unar': hasUnar,
-        'unrar': hasUnrar,
-        packaged7z: !!packaged7z
-      });
-      
-      if (!packaged7z && !hasUnar && !hasUnrar) {
-        const detailedError = new Error([
-          'No RAR extraction tools found on your macOS system.',
-          'Vortex requires one of the following tools to extract .rar extension archives:',
-          '  • The Unarchiver command-line tool (unar)',
-          '  • Unrar command-line tool (unrar)',
-          '  • Bundled 7-Zip tool (included with Vortex)',
-          '',
-          'To resolve this issue, you can:',
-          '  1. Install The Unarchiver from the App Store (includes command-line tools)',
-          '  2. Install unrar using Homebrew: brew install unrar',
-          '  3. Reinstall Vortex to ensure the bundled 7-Zip tool is properly included',
-          '  4. Ask the extension author to provide a .zip version instead',
-          '',
-          'If you continue to experience issues, please check the Vortex documentation',
-          'or contact support with the detailed logs from this installation attempt.'
-        ].join('\n'));
-        
-        log('error', 'No RAR extraction tools available on macOS', {
-          hasUnar,
-          hasUnrar,
-          hasPackaged7z: !!packaged7z,
-          systemPath: process.env.PATH
-        });
-        
-        throw detailedError;
-      }
-    }
-
-    try {
-      const result = tryCommandsSync(cmds);
-      log('info', 'RAR extraction completed', { archivePath, destPath });
-      
-      // Add a small delay and verification to ensure files are written
-      const verifyStartTime = Date.now();
-      let verifyAttempts = 0;
-      const maxVerifyAttempts = 10;
-      
-      while (verifyAttempts < maxVerifyAttempts) {
-        try {
-          const stats = fsNode.statSync(destPath);
-          if (stats.isDirectory()) {
-            const files = fsNode.readdirSync(destPath);
-            if (files.length > 0) {
-              log('debug', 'Extraction verification successful', { 
-                destPath, 
-                fileCount: files.length,
-                duration: `${Date.now() - verifyStartTime}ms`
-              });
-              break;
-            }
-          }
-        } catch (verifyErr) {
-          // Ignore verification errors and continue waiting
-        }
-        
-        verifyAttempts++;
-        if (verifyAttempts < maxVerifyAttempts) {
-          // Wait 100ms before next verification attempt
-          const waitStart = Date.now();
-          while (Date.now() - waitStart < 100) {
-            // Busy wait (synchronous delay)
-          }
-        }
-      }
-      
-      return result;
-    } catch (err) {
-      log('error', 'RAR extraction failed', { 
-        archivePath, 
-        destPath, 
-        error: err.message,
-        platform: process.platform
-      });
-      
-      const help = [
-        'To resolve this issue, you can:',
-        '  • Install The Unarchiver from the App Store (includes command-line tools)',
-        '  • Install unrar using Homebrew: brew install unrar',
-        '  • Reinstall Vortex to ensure the bundled 7z tool is properly included',
-        '  • Ask the extension author to provide a .zip version instead',
-        '',
-        'If you continue to experience issues, please check the Vortex documentation',
-        'or contact support with the detailed logs from this installation attempt.'
-      ].join('\n');
-      
-      const wrapped: any = new Error(`${err.message}\n\n${help}`);
-      (wrapped as any).cause = err;
-      throw wrapped;
-    }
-  }
-  // Fallback: try tar for common tarballs
-  if (ext === '.tar' || ext === '.gz' || ext === '.bz2' || ext === '.xz' || archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
-    try {
-      const result = tryCommandsSync([
-        { cmd: 'tar', args: ['-xf', archivePath, '-C', destPath] },
-      ]);
-      log('info', 'TAR extraction completed', { archivePath, destPath });
-      
-      // Add a small delay and verification to ensure files are written
-      const verifyStartTime = Date.now();
-      let verifyAttempts = 0;
-      const maxVerifyAttempts = 10;
-      
-      while (verifyAttempts < maxVerifyAttempts) {
-        try {
-          const stats = fsNode.statSync(destPath);
-          if (stats.isDirectory()) {
-            const files = fsNode.readdirSync(destPath);
-            if (files.length > 0) {
-              log('debug', 'Extraction verification successful', { 
-                destPath, 
-                fileCount: files.length,
-                duration: `${Date.now() - verifyStartTime}ms`
-              });
-              break;
-            }
-          }
-        } catch (verifyErr) {
-          // Ignore verification errors and continue waiting
-        }
-        
-        verifyAttempts++;
-        if (verifyAttempts < maxVerifyAttempts) {
-          // Wait 100ms before next verification attempt
-          const waitStart = Date.now();
-          while (Date.now() - waitStart < 100) {
-            // Busy wait (synchronous delay)
-          }
-        }
-      }
-      
-      return result;
-    } catch (err) {
-      log('error', 'TAR extraction failed', { 
-        archivePath, 
-        destPath, 
-        error: err.message,
-        platform: process.platform
-      });
-      
-      const help = [
-        'Failed to extract TAR archive using the system tar command.',
-        'This may indicate:',
-        '  • Corrupted or unsupported archive format',
-        '  • Permission issues with the archive or destination',
-        '  • Missing system tar command (unusual on macOS)',
-        '',
-        'To resolve this issue, you can:',
-        '  • Ensure the archive file is not corrupted',
-        '  • Check file permissions for the archive and destination directory',
-        '  • Try extracting the archive manually to verify it\'s valid',
-        '',
-        'If you continue to experience issues, please contact support with the detailed logs.'
-      ].join('\n');
-      
-      const wrapped: any = new Error(`${err.message}\n\n${help}`);
-      (wrapped as any).cause = err;
-      throw wrapped;
-    }
-  }
-  const detailedError = new Error([
-    `Unsupported archive type: ${ext}`,
-    'Vortex supports the following archive formats:',
-    '  • .zip (ZIP archives)',
-    '  • .7z (7-Zip archives)',
-    '  • .rar (RAR archives)',
-    '  • .tar (TAR archives)',
-    '  • .tar.gz, .tgz (Gzip-compressed TAR archives)',
-    '  • .tar.bz2 (Bzip2-compressed TAR archives)',
-    '  • .tar.xz (XZ-compressed TAR archives)',
-    '',
-    'If you believe this archive format should be supported,',
-    'please contact the extension author to provide a supported format',
-    'or contact Vortex support for feature requests.'
-  ].join('\n'));
-  
-  log('error', 'Unsupported archive type detected', { 
-    archivePath, 
-    extension: ext,
-    platform: process.platform
-  });
-  
-  throw detailedError;
 }

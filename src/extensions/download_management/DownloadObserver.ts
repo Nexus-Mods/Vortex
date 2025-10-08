@@ -219,8 +219,20 @@ export class DownloadObserver {
       if (dlId !== undefined) {
         err.downloadId = dlId;
       }
+      // Remove the transient download entry; the file already exists.
       this.mApi.store.dispatch(removeDownload(id));
-      return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
+      // Do NOT treat as an unknown error. Either notify the caller via callback,
+      // or quietly resolve to avoid showing a generic error dialog.
+      if (callback !== undefined) {
+        callback(err, err['downloadId'] ?? dlId ?? id);
+      } else {
+        // Best-effort: if we know the existing download, emit a finish event to
+        // let the UI update without showing an error dialog. Otherwise, just resolve.
+        if ((dlId !== undefined) && (downloads[dlId]?.state !== 'failed')) {
+          this.mApi.events.emit('did-finish-download', dlId, downloads[dlId].state);
+        }
+      }
+      return Promise.resolve();
     } else {
       return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
     }
@@ -452,14 +464,51 @@ export class DownloadObserver {
       }
     };
 
-    // Safety: never finalize or install if there are unfinished chunks
+    // Safety: if there are unfinished chunks, resume immediately without a visible pause
     if (Array.isArray(res.unfinishedChunks) && res.unfinishedChunks.length > 0) {
-      this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
-      try { log('debug', 'deferring finalize due to unfinished chunks', { id, count: res.unfinishedChunks.length }); } catch (_) { /* noop */ }
-      // trigger a resume attempt to continue the download
-      setTimeout(() => this.attemptResumeDownload(id), 1000);
-      callback?.(null, id);
-      return onceFinished();
+      try { log('debug', 'unfinished chunks detected, resuming immediately without UI pause', { id, count: res.unfinishedChunks.length }); } catch (_) { /* noop */ }
+
+      // Keep the download in a running state to avoid flicker
+      // and resume directly using the manager.
+      const state = this.mApi.getState();
+      const currentDownload = state.persistent.downloads.files?.[id];
+      if (!currentDownload) {
+        // If the download entry is gone, fall back to a delayed resume attempt
+        setTimeout(() => this.attemptResumeDownload(id), 500);
+        callback?.(null, id);
+        return onceFinished();
+      }
+
+      const gameMode = getDownloadGames(currentDownload)[0];
+      const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
+      const fullPath = res.filePath || path.join(downloadPath, currentDownload.localPath);
+
+      // Clear any paused marker and avoid dispatching a paused state
+      this.mApi.store.dispatch(pauseDownload(id, false, undefined));
+
+      const extraInfo = this.getExtraDlOptions(currentDownload.modInfo ?? {}, 'always');
+
+      ensureDownloadsDirectory(this.mApi)
+        .then(() => this.mManager.resume(id,
+                                          fullPath,
+                                          currentDownload.urls,
+                                          currentDownload.received,
+                                          currentDownload.size,
+                                          currentDownload.startTime,
+                                          res.unfinishedChunks,
+                                          this.genProgressCB(id),
+                                          extraInfo))
+        .then(() => {
+          callback?.(null, id);
+        })
+        .catch(err => {
+          // If immediate resume fails, fall back to the existing attempt flow
+          try { log('warn', 'immediate resume failed; falling back to delayed attempt', { id, message: err.message }); } catch (_) { /* noop */ }
+          setTimeout(() => this.attemptResumeDownload(id), 500);
+          callback?.(null, id);
+        })
+        .finally(() => onceFinished());
+      return;
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
       const batched = [
         downloadProgress(id, res.size, res.size, [], undefined),
