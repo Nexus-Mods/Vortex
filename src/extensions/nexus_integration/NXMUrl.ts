@@ -24,12 +24,11 @@ class NXMUrl {
   private mView: boolean;
   private mExtraParams: { [key: string]: string } = {};
   private mPremium: boolean;
-  
 
-  constructor(input: string) {
+  constructor(input: string | URL) {
     let parsed: URL;
     try {
-      parsed = new URL(input);
+      parsed = typeof input === 'string' ? new URL(input) : input;
     } catch (err) {
       throw new DataInvalid('invalid nxm url "' + input + '"');
     }
@@ -101,6 +100,23 @@ class NXMUrl {
     } else {
       return 'mod';
     }
+  }
+
+  public get identifiers(): { type: NXMType, gameId: string, modId?: number, fileId?: number,
+    collectionId?: number, revisionId?: number, collectionSlug?: string, revisionNumber?: number } {
+      return this.type === 'mod' ? {
+        type: NXMType.Mod,
+        gameId: this.mGameId,
+        modId: this.mModId,
+        fileId: this.mFileId,
+      } : this.type === 'collection' ? {
+        type: NXMType.Collection,
+        gameId: this.mGameId,
+        collectionId: this.mCollectionId,
+        revisionId: this.mRevisionId,
+        collectionSlug: this.mCollectionSlug,
+        revisionNumber: this.mRevisionNumber
+      } : null;
   }
 
   public get gameId(): string {
