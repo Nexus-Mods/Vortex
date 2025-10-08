@@ -65,6 +65,9 @@ function isRarMagic(buf: Buffer): boolean {
 }
 
 function extractWithTar(archivePath: string, destPath: string): Promise<void> {
+  try {
+    fs.mkdirSync(destPath, { recursive: true });
+  } catch (_) { /* ignore */ }
   const lower = archivePath.toLowerCase();
   const args = ['-xf'];
   if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) {
@@ -283,6 +286,11 @@ export function extractArchive(archivePath: string, destPath: string, options?: 
 
   const attempt = async (n: number): Promise<void> => {
     try {
+      try {
+        fs.mkdirSync(destPath, { recursive: true });
+      } catch (e) {
+        log('warn', 'Failed to pre-create destination directory', { destPath, error: (e as any)?.message });
+      }
       const magic = readMagicHeader(archivePath);
       const zipByMagic = isZipMagic(magic);
       const sevenZByMagic = is7zMagic(magic);

@@ -929,7 +929,7 @@ function init(context: IExtensionContext): boolean {
         const { discovered } = store.getState().settings.gameMode;
         const discoveredGames = new Set(
           Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-        return $.gameModeManager.startQuickDiscovery(undefined, false)
+        return $.gameModeManager.startQuickDiscovery(undefined, true)
           .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
             .reduce((prev, stub) => {
               prev[stub.game.id] = stub.ext;
@@ -961,7 +961,7 @@ function init(context: IExtensionContext): boolean {
         const { discovered } = store.getState().settings.gameMode;
         const discoveredGames = new Set(
           Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-        return $.gameModeManager.startQuickDiscovery(undefined, false)
+        return $.gameModeManager.startQuickDiscovery(undefined, true)
           .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
             .reduce((prev, stub) => {
               prev[stub.game.id] = stub.ext;
@@ -999,7 +999,7 @@ function init(context: IExtensionContext): boolean {
       const discoveredGames = new Set(
         Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
 
-      $.gameModeManager.startQuickDiscovery(undefined, false)
+      $.gameModeManager.startQuickDiscovery(undefined, true)
         .then((gameIds: string[]) => {
           return removeDisappearedGames(context.api, discoveredGames)
             .then(() => {
@@ -1314,7 +1314,7 @@ function init(context: IExtensionContext): boolean {
                   const runDiscoveryWhenReady = () => {
                     if ($.gameModeManager !== undefined) {
                       log('info', 'GameModeManager now ready, running deferred discovery');
-                      $.gameModeManager.startQuickDiscovery(undefined, false)
+                      $.gameModeManager.startQuickDiscovery(undefined, true)
                         .then((gameIds) => {
                           log('info', 'Deferred discovery completed', { discoveredGames: gameIds });
                         })
@@ -1327,7 +1327,7 @@ function init(context: IExtensionContext): boolean {
                   setTimeout(runDiscoveryWhenReady, 100);
                   return Promise.resolve([] as string[]);
                 }
-                return $.gameModeManager.startQuickDiscovery(undefined, false)
+                return $.gameModeManager.startQuickDiscovery(undefined, true)
                   .then((gameIds) => {
                     log('info', 'Quick discovery completed', { discoveredGames: gameIds });
                     return gameIds;

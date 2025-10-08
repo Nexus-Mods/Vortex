@@ -43,6 +43,7 @@ export class Button extends React.PureComponent<ButtonProps, {}> {
           placement={this.props.placement || 'bottom'}
           delayShow={300}
           delayHide={150}
+          container={document.body}
         >
           <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
         </OverlayTrigger>
@@ -124,6 +125,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
           placement={this.props.placement || 'bottom'}
           delayShow={300}
           delayHide={150}
+          container={document.body}
         >
           <BootstrapButton {...buttonProps}>
             <SvgIcon name={this.props.icon} {...iconProps} />
@@ -180,6 +182,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           placement={this.props.placement || 'bottom'}
           delayShow={300}
           delayHide={150}
+          container={document.body}
         >
           <BootstrapButton {...relayProps as any}>
             {['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null}
@@ -216,6 +219,7 @@ export class NavItem extends React.Component<NavItemProps, {}> {
           placement={this.props.placement || 'bottom'}
           delayShow={300}
           delayHide={150}
+          container={document.body}
         >
           <BootstrapNavItem {...relayProps}>{this.props.children}</BootstrapNavItem>
         </OverlayTrigger>

@@ -29,6 +29,7 @@ import GameRow from './GameRow';
 import GameRowErrorBoundary from './GameRowErrorBoundary';
 import GameThumbnail from './GameThumbnail';
 import MacCompatibleButton from './MacCompatibleButton';
+import InstalledOnlyButton from './InstalledOnlyButton';
 import ShowHiddenButton from './ShowHiddenButton';
 
 import { IGameListEntry } from '@nexusmods/nexus-api';
@@ -62,7 +63,18 @@ function captureClick(evt: React.MouseEvent) {
 }
 
 function byGameName(lhs: IGameStored, rhs: IGameStored): number {
-  return lhs.name.localeCompare(rhs.name);
+  // Safely handle cases where a game may not have a name
+  const leftName = (lhs?.name ?? '').toLowerCase();
+  const rightName = (rhs?.name ?? '').toLowerCase();
+
+  // Primary comparison by name (case-insensitive)
+  const nameCmp = leftName.localeCompare(rightName);
+  if (nameCmp !== 0) {
+    return nameCmp;
+  }
+
+  // Deterministic fallback: compare by id when names are equal/empty
+  return (lhs?.id ?? '').localeCompare(rhs?.id ?? '');
 }
 
 interface IBaseProps {
@@ -96,8 +108,8 @@ interface IComponentState {
   currentFilterValue: string;
   expandManaged: boolean;
   expandUnmanaged: boolean;
-  expandDiscovered: boolean;
   showMacCompatibleOnly: boolean;
+  showInstalledOnly: boolean;
 }
 
 function nop() {
@@ -139,8 +151,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       currentFilterValue: '',
       expandManaged: true,
       expandUnmanaged: true,
-      expandDiscovered: true,
       showMacCompatibleOnly: false,
+      showInstalledOnly: false,
     });
 
     this.buttons = [
@@ -153,6 +165,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         component: MacCompatibleButton,
         props: () =>
           ({ t: this.props.t, showMacCompatibleOnly: this.state.showMacCompatibleOnly, toggleMacCompatible: this.toggleMacCompatible }),
+      },
+      {
+        component: InstalledOnlyButton,
+        props: () =>
+          ({ t: this.props.t, showInstalledOnly: this.state.showInstalledOnly, toggleInstalledOnly: this.toggleInstalledOnly }),
       },
     ];
 
@@ -169,7 +186,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     } = this.props;
     const { 
       showHidden, currentFilterValue, expandManaged, expandUnmanaged, 
-      expandDiscovered, showMacCompatibleOnly 
+      showMacCompatibleOnly, showInstalledOnly 
     } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
@@ -192,7 +209,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
-    const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue) || showMacCompatibleOnly)
+    const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue) || showMacCompatibleOnly || showInstalledOnly)
       ? knownGames
       : knownGames.filter((game: IGameStored) =>
         !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
@@ -248,69 +265,43 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    // Create a list of discovered Mac-compatible games
-    const discoveredMacGames: IGameStored[] = [];
-    if (isMacOS()) {
-      try {
-        // Get the macOS compatibility module
-        if (MACOS_GAME_FIXES) {
-          // For each discovered game, check if it has Mac compatibility
-          Object.keys(discoveredGames).forEach(gameId => {
-            const discovery = discoveredGames[gameId];
-            const knownGame = knownGames.find(game => game.id === gameId);
-            
-            // Check if this game has Mac compatibility
-            const hasMacCompatibility = MACOS_GAME_FIXES.some(fix => {
-              // Normalize the game ID for comparison
-              const normalizedGameId = gameId
-                .toLowerCase()
-                .replace(/sid meier's/g, '')
-                .replace(/civilization/g, 'civ')
-                .replace(/vortex extension/g, '')
-                .replace(/game:/g, '')
-                .replace(/[^a-z0-9]/g, '');
-              
-              const normalizedFixId = fix.gameId
-                .toLowerCase()
-                .replace(/sidmeiers/g, '')
-                .replace(/civilization/g, 'civ')
-                .replace(/[^a-z0-9]/g, '');
-              
-              // Check for matches
-              return normalizedGameId.includes(normalizedFixId) || 
-                     normalizedFixId.includes(normalizedGameId);
-            });
-            
-            // If the game has Mac compatibility and passes the current filter, add it to the list
-            if (hasMacCompatibility) {
-              const gameStored = gameFromDiscovery(gameId, discovery, knownGame);
-              if (this.applyGameFilter(gameStored)) {
-                discoveredMacGames.push(gameStored);
-              }
-            }
-          });
-        }
-      } catch (err) {
-        // Silently handle errors
-      }
-    }
 
-    const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
+    let unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
+
+    // Apply Installed-only filter: keep only games with discovered path or managed
+    if (showInstalledOnly) {
+      const isInstalled = (game: IGameStored) => {
+        const disc = getSafe(this.props.discoveredGames, [game.id], undefined);
+        return !!(disc && disc.path);
+      };
+      // Managed list already implies installed; filter unmanaged by discovery
+      unmanagedGameList = unmanagedGameList.filter(isInstalled);
+    }
 
     const filteredManaged =
       managedGameList.filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortManaged));
     const filteredUnmanaged =
         unmanagedGameList
           .filter(game => this.applyGameFilter(game)).sort(this.sortBy(sortUnmanaged));
-    const filteredDiscovered = discoveredMacGames
-      .filter(game => this.applyGameFilter(game)).sort(this.sortBy('alphabetical'));
+    const managedLabel = (showInstalledOnly && showMacCompatibleOnly)
+      ? t('Installed Managed Mac Games')
+      : (showInstalledOnly)
+        ? t('Installed Managed Games')
+        : (showMacCompatibleOnly)
+          ? t('Managed Mac Games')
+          : t('Managed');
+    const unmanagedLabel = (showInstalledOnly && showMacCompatibleOnly)
+      ? t('Installed Unmanaged Mac Games')
+      : (showInstalledOnly)
+        ? t('Installed Unmanaged Games')
+        : (showMacCompatibleOnly)
+          ? t('Unmanaged Mac Games')
+          : t('Unmanaged');
 
-    const titleManaged = t('Managed ({{filterCount}})', {
-      replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
-    const titleUnmanaged = t('Unmanaged ({{filterCount}})', {
-      replace: { filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
-    const titleDiscovered = t('Discovered Mac Games ({{filterCount}})', {
-      replace: { filterCount: this.getTabGameNumber(discoveredMacGames, filteredDiscovered) } });
+    const titleManaged = t('{{label}} ({{filterCount}})', {
+      replace: { label: managedLabel, filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
+    const titleUnmanaged = t('{{label}} ({{filterCount}})', {
+      replace: { label: unmanagedLabel, filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
 
     return (
       <MainPage domRef={this.setRef}>
@@ -341,6 +332,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 toggleMacCompatible={this.toggleMacCompatible}
               />
             )}
+            <InstalledOnlyButton
+              t={this.props.t}
+              showInstalledOnly={this.state.showInstalledOnly}
+              toggleInstalledOnly={this.toggleInstalledOnly}
+            />
             <ToggleButton
               id='gamepicker-layout-list'
               onClick={this.setLayoutList}
@@ -455,45 +451,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                       />
                     </Panel.Body>
                   </Panel>
-                  {isMacOS() && (
-                    <Panel
-                      expanded={expandDiscovered}
-                      eventKey='discovered'
-                      onToggle={nop}
-                    >
-                      <Panel.Heading onClick={this.toggleDiscovered}>
-                        <Icon name={expandDiscovered ? 'showhide-down' : 'showhide-right'} />
-                        <Panel.Title>{titleDiscovered}</Panel.Title>
-                        <div className='flex-fill' />
-                        {expandDiscovered ? (
-                          <div className='game-sort-container' onClick={captureClick} >
-                            {t('Sort by:')}
-                            <Select
-                              className='select-compact'
-                              options={[
-                                { value: 'alphabetical', label: t('Name A-Z') },
-                              ]}
-                              value={'alphabetical'}
-                              onChange={() => { /* No sorting needed for discovered games */ }}
-                              clearable={false}
-                              autosize={false}
-                              searchable={false}
-                            />
-                          </div>
-                        ) : null}
-                      </Panel.Heading>
-                      <Panel.Body collapsible>
-                        {this.renderGames(filteredDiscovered, 'discovered')}
-                        {filteredDiscovered.length === 0 && (
-                          <EmptyPlaceholder
-                            icon='game'
-                            text={t('No Mac-compatible games discovered')}
-                            subtext={t('Try running a full game discovery or installing Mac-compatible game extensions')}
-                          />
-                        )}
-                      </Panel.Body>
-                    </Panel>
-                  )}
+                  {/* Discovered Mac Games panel removed; mac compatibility now reflected in Unmanaged/Managed panes */}
                 </PanelGroup>
               </div>
             </FlexLayout.Flex>
@@ -532,11 +490,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private toggleDiscovered = (evt: React.MouseEvent<any>) => {
-    if (!evt.isDefaultPrevented()) {
-      this.nextState.expandDiscovered = !this.state.expandDiscovered;
-    }
-  }
 
   private onFilterInputChange = (input) => {
     // Use debounced filter for better performance during rapid typing
@@ -636,6 +589,12 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   private toggleMacCompatible = () => {
     this.setState(update(this.state, { 
       showMacCompatibleOnly: { $set: !this.state.showMacCompatibleOnly } 
+    }));
+  }
+
+  private toggleInstalledOnly = () => {
+    this.setState(update(this.state, { 
+      showInstalledOnly: { $set: !this.state.showInstalledOnly } 
     }));
   }
 

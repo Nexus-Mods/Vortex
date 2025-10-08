@@ -47,6 +47,7 @@ class MyOverlay extends React.Component<IProps, { placement: string }> {
         placement={placement}
         onEnter={this.onEnter}
         ref={this.props.triggerRef}
+        container={document.body}
         {...relayProps}
       >
         {this.props.children}

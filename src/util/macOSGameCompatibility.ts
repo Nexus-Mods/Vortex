@@ -2122,8 +2122,8 @@ const EXECUTABLE_NAME_MAPPINGS: ExecutableNameMapping[] = [
   },
   {
     windowsExecutable: 'Balatro.exe',
-    macOSExecutable: 'Balatro',
-    description: 'Balatro executable mapping',
+    macOSExecutable: 'run_lovely_macos.sh',
+    description: 'Balatro executable mapping (prefer Lovely launcher on macOS)',
     gameId: 'balatro'
   },
   {

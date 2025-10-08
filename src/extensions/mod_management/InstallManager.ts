@@ -456,18 +456,9 @@ class InstallManager {
     const fileList: string[] = [];
 
     return extractProm
-        .then(({ code, errors }: {code: number, errors: string[] }) => {
+        .then(() => {
           log('debug', 'extraction completed');
-          if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
-            const critical = errors.find(this.isCritical);
-            if (critical !== undefined) {
-              return Bluebird.reject(new ArchiveBrokenError(critical));
-            }
-            return this.queryContinue(api, errors, archivePath);
-          } else {
-            return Bluebird.resolve();
-          }
+          return Bluebird.resolve();
         })
         .then(() => walk(tempPath,
                          (iterPath, stats) => {
@@ -1540,7 +1531,7 @@ class InstallManager {
     }
 
     return extractProm
-        .then(({ code, errors }: {code: number, errors: string[] }) => {
+        .then(() => {
           log('debug', 'extraction completed', {
             archivePath: path.basename(archivePath),
             extractionTimeMs: Date.now() - (extractProm as any).startTime
@@ -1549,16 +1540,7 @@ class InstallManager {
           if (installContext !== undefined) {
             installContext.setProgress('Installing');
           }
-          if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
-            const critical = errors.find(this.isCritical);
-            if (critical !== undefined) {
-              return Bluebird.reject(new ArchiveBrokenError(critical));
-            }
-            return this.queryContinue(api, errors, archivePath);
-          } else {
-            return Bluebird.resolve();
-          }
+          return Bluebird.resolve();
         })
         .catch(ArchiveBrokenError, err => {
           if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {

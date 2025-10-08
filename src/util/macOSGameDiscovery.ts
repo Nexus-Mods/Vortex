@@ -10,7 +10,7 @@ import Bluebird from 'bluebird';
 import { isMacOS } from './platform';
 import { log } from './log';
 import { resolveGameExecutable, GameExecutableOptions, ExecutableCandidate } from './executableResolver';
-import { getMacOSGameFix, findMacOSAppBundle, normalizeGamePathForMacOS } from './macOSGameCompatibility';
+import { getMacOSGameFix, findMacOSAppBundle, normalizeGamePathForMacOS, mapWindowsExecutableToMacOS } from './macOSGameCompatibility';
 import { IGame } from '../types/IGame';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
@@ -138,20 +138,20 @@ export const MACOS_DISCOVERY_PRIORITIES = {
 
 /**
  * Common macOS application directories
- * Note: Excluding ~/Applications and /Applications/Utilities as they typically contain Steam shortcuts
+ * Note: Limit to `/Applications` and user apps; avoid System and Utilities which never contain games
  */
 const MACOS_APP_DIRECTORIES = [
-  '/Applications', // Main applications directory (but we'll filter out Steam shortcuts)
-  '/System/Applications',
-  '/System/Applications/Utilities'
+  '/Applications', // Main applications directory (filter out Steam shortcuts)
+  '~/Applications' // User applications folder
 ];
 
 /**
- * Directories to ignore during game discovery (contain Steam shortcuts, not actual games)
+ * Directories to ignore during game discovery (contain Steam shortcuts or irrelevant utilities)
  */
 const IGNORED_DISCOVERY_DIRECTORIES = [
-  '~/Applications', // User applications folder - typically Steam shortcuts
-  '/Applications/Utilities' // System utilities - never contains games
+  '/Applications/Utilities', // System utilities - never contains games
+  '/System/Applications',
+  '/System/Applications/Utilities'
 ];
 
 /**
@@ -546,6 +546,40 @@ async function discoverNativeApps(options: MacOSGameDiscoveryOptions): Promise<M
             directory: expandedPath,
             error: err.message
           });
+
+          // Fallback: try mapping Windows executable to macOS name
+          if (options.windowsExecutable) {
+            const mapped = mapWindowsExecutableToMacOS(options.windowsExecutable, options.gameId);
+            if (mapped && mapped !== options.macExecutable) {
+              const mappedExecPath = path.join(expandedPath, mapped);
+              try {
+                const mappedStats = await stat(mappedExecPath);
+                if (mappedStats.isFile() && (mappedStats.mode & parseInt('111', 8))) {
+                  candidates.push({
+                    path: path.dirname(mappedExecPath),
+                    executable: mappedExecPath,
+                    type: 'native',
+                    priority: MACOS_DISCOVERY_PRIORITIES.NATIVE_APP,
+                    store: 'native'
+                  });
+                  log('debug', 'Found native macOS executable via mapping fallback', {
+                    gameId: options.gameId,
+                    windowsExecutable: options.windowsExecutable,
+                    mappedExecutable: mapped,
+                    directory: expandedPath
+                  });
+                }
+              } catch (mapErr) {
+                log('debug', 'Mapped native executable not found', {
+                  gameId: options.gameId,
+                  windowsExecutable: options.windowsExecutable,
+                  mappedExecutable: mapped,
+                  directory: expandedPath,
+                  error: mapErr.message
+                });
+              }
+            }
+          }
         }
       }
     } catch (err) {
