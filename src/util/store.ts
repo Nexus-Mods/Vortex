@@ -73,11 +73,11 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   ipcMain.on('redux-action', (event, payload) => {
     try {
       const action = JSON.parse(payload);
-      /*
-      if (process.env.NODE_ENV === 'development') {
-        log('info', 'forwarded action', payload);
-      }
-      */
+      
+      // if (process.env.NODE_ENV === 'development') {
+      //   log('debug', 'forwarded action', { type: action.type, origin: action.meta?.origin });
+      // }
+      
       // TODO: this code is required for redux-batched-actions
       //   we may end up not using this for batched actions in which case this
       //   code is obsolete but not harmful

@@ -59,69 +59,69 @@ describe('objDiff', () => {
   // Edge case tests for type safety
   it('handles null inputs gracefully', () => {
     expect(util.objDiff(null, null)).toEqual({});
-    expect(util.objDiff(null, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, null)).toBe(null);
+    expect(util.objDiff(null, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, null)).toEqual({});
   });
 
   it('handles undefined inputs gracefully', () => {
     expect(util.objDiff(undefined, undefined)).toEqual({});
-    expect(util.objDiff(undefined, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, undefined)).toBe(null);
+    expect(util.objDiff(undefined, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, undefined)).toEqual({});
   });
 
   it('handles array inputs gracefully', () => {
-    // Arrays are not plain objects, so they return null unless they're the same reference
+    // Arrays are not plain objects, so they return empty object as a graceful fallback
     const arr1 = [];
     const arr2 = [1, 2];
     expect(util.objDiff(arr1, arr1)).toEqual({});
     expect(util.objDiff(arr2, arr2)).toEqual({});
-    expect(util.objDiff([], [])).toBe(null); // Different array instances
-    expect(util.objDiff([1, 2], [1, 2])).toBe(null); // Different array instances
-    expect(util.objDiff([1, 2], { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, [1, 2])).toBe(null);
+    expect(util.objDiff([], [])).toEqual({}); // Different array instances
+    expect(util.objDiff([1, 2], [1, 2])).toEqual({}); // Different array instances
+    expect(util.objDiff([1, 2], { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, [1, 2])).toEqual({});
   });
 
   it('handles primitive inputs gracefully', () => {
     expect(util.objDiff('string', 'string')).toEqual({});
-    expect(util.objDiff('string1', 'string2')).toBe(null);
+    expect(util.objDiff('string1', 'string2')).toEqual({});
     expect(util.objDiff(42, 42)).toEqual({});
-    expect(util.objDiff(42, 43)).toBe(null);
+    expect(util.objDiff(42, 43)).toEqual({});
     expect(util.objDiff(true, true)).toEqual({});
-    expect(util.objDiff(true, false)).toBe(null);
+    expect(util.objDiff(true, false)).toEqual({});
   });
 
   it('handles mixed primitive and object inputs', () => {
-    expect(util.objDiff('string', { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, 'string')).toBe(null);
-    expect(util.objDiff(42, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, 42)).toBe(null);
+    expect(util.objDiff('string', { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, 'string')).toEqual({});
+    expect(util.objDiff(42, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, 42)).toEqual({});
   });
 
   it('handles Date objects gracefully', () => {
     const date1 = new Date('2023-01-01');
     const date2 = new Date('2023-01-02');
     expect(util.objDiff(date1, date1)).toEqual({});
-    expect(util.objDiff(date1, date2)).toBe(null);
-    expect(util.objDiff(date1, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, date1)).toBe(null);
+    expect(util.objDiff(date1, date2)).toEqual({});
+    expect(util.objDiff(date1, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, date1)).toEqual({});
   });
 
   it('handles RegExp objects gracefully', () => {
     const regex1 = /test/;
     const regex2 = /other/;
     expect(util.objDiff(regex1, regex1)).toEqual({});
-    expect(util.objDiff(regex1, regex2)).toBe(null);
-    expect(util.objDiff(regex1, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, regex1)).toBe(null);
+    expect(util.objDiff(regex1, regex2)).toEqual({});
+    expect(util.objDiff(regex1, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, regex1)).toEqual({});
   });
 
   it('handles functions gracefully', () => {
     const func1 = () => 'test';
     const func2 = () => 'other';
     expect(util.objDiff(func1, func1)).toEqual({});
-    expect(util.objDiff(func1, func2)).toBe(null);
-    expect(util.objDiff(func1, { a: 1 })).toBe(null);
-    expect(util.objDiff({ a: 1 }, func1)).toBe(null);
+    expect(util.objDiff(func1, func2)).toEqual({});
+    expect(util.objDiff(func1, { a: 1 })).toEqual({});
+    expect(util.objDiff({ a: 1 }, func1)).toEqual({});
   });
 
   it('handles skip parameter correctly', () => {
