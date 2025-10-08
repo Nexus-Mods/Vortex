@@ -1528,12 +1528,7 @@ function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
 function onSkip(api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
   if (queueItem !== undefined) {
-    const parsed = new NXMUrl(queueItem.input);
-    const itemIdentifiers = {
-      ...parsed.identifiers,
-      name: queueItem.name,
-    };
-    api.events.emit('free-user-skipped-download', itemIdentifiers);
+    api.events.emit('free-user-skipped-download', queueItem.name);
     queueItem.rej(new UserCanceled(true));
   }
 }
