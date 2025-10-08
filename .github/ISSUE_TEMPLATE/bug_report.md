@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-**Your Nexus Mods id**
+**Your Nexus Mods username**
 Will help us debug your issue.
 
 **Describe the bug**
