@@ -447,7 +447,6 @@ export class DownloadObserver {
             this.mApi.events.emit('analytics-track-mixpanel-event',
               new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
           } else {
-            alert('Download completed but missing nexus mod/file id: ' + JSON.stringify(nexusIds));
             // This is a bundled mod - bye!
           }
           if ((state.settings.automation?.install && (allowInstall === true))
