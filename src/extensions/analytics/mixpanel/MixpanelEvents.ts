@@ -44,9 +44,9 @@ export class AppLaunchedEvent implements MixpanelEvent {
 
   constructor(os: string, os_version?: string, architecture?: string) {
     this.properties = {
-      $os: mapPlatformToMixpanel(os),
-      $os_version: os_version,
-      architecture,
+      $os: mapPlatformToMixpanel(os),  // Override auto-detected OS for accuracy
+      $os_version: os_version,          // Not auto-tracked by mixpanel-browser
+      architecture,                     // Custom property for CPU architecture
     };
   }
 }
