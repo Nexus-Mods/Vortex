@@ -1153,8 +1153,10 @@ function once(api: IExtensionApi) {
     gameMode: string,
     removedId: string,
     modId: string,
-    options: { willBeReplaced?: boolean, modData?: types.IMod }) => {
-    removeModToastDebouncer.schedule();
+    options: { silent?: boolean, willBeReplaced?: boolean, modData?: types.IMod }) => {
+    if (options.silent !== true && options.willBeReplaced !== true) {
+      removeModToastDebouncer.schedule();
+    }
     return Promise.resolve();
   });
 
