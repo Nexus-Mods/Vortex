@@ -1,6 +1,5 @@
-import * as semver from 'semver';
+import * as os from 'os';
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { getApplication } from '../../util/application';
 import { analyticsLog } from './utils/analyticsLog';
 import { setAnalytics } from './actions/analytics.action';
 import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
@@ -8,6 +7,7 @@ import { AppCrashedEvent, AppLaunchedEvent, MixpanelEvent, ModsInstallationCompl
 import { HELP_ARTICLE, PRIVACY_POLICY } from './constants';
 import settingsReducer from './reducers/settings.reducer';
 import SettingsAnalytics from './views/SettingsAnalytics';
+
 
 let ignoreNextAnalyticsStateChange = false;
 
@@ -113,20 +113,18 @@ function init(context: IExtensionContext): boolean {
         }
 
         const state = context.api.getState();
-        
-        // Determine if this is a stable version for analytics routing
-        const appVersion = getApplication().version;
-        const parsedVersion = semver.parse(appVersion);
-        const isStable = parsedVersion &&
-          !parsedVersion.prerelease.length &&
-          appVersion !== '0.0.1' &&
-          process.env.NODE_ENV !== 'development';
 
-        AnalyticsMixpanel.start(userInfo, isStable);
+        // Determine environment for analytics routing
+        // Development environment uses dev token, production uses prod token
+        const isProduction = process.env.NODE_ENV !== 'development';
+
+        await AnalyticsMixpanel.start(userInfo, isProduction);
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
-          process.platform
+          process.platform,
+          os.release(),      // OS version (e.g., "10.0.22000" for Windows 11)
+          process.arch       // Architecture (e.g., "x64", "arm64")
         ));
 
         analyticsLog('info', 'Analytics started');
