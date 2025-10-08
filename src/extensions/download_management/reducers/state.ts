@@ -1,4 +1,4 @@
-import { objDiff } from '../../../util/util';
+import { objDiff, flatten } from '../../../util/util';
 import { IReducerSpec, VerifierDropParent } from '../../../types/IExtensionContext';
 import { terminate } from '../../../util/errorHandling';
 import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/storeHelper';
@@ -28,7 +28,15 @@ export const stateReducer: IReducerSpec = {
       if (state.files[payload.id] != null) {
         const existing = state.files[payload.id];
         const delta = objDiff(existing, downloadObj, ['fileTime']);
-        if (Object.keys(delta).length === 0) {
+        // Flatten the delta to handle nested objects, then filter out nullish values
+        const flattenedDelta = flatten(delta);
+        const filteredDelta = Object.keys(flattenedDelta).reduce((acc, key) => {
+          if (flattenedDelta[key] != null) {
+            acc[key] = flattenedDelta[key];
+          }
+          return acc;
+        }, {});
+        if (Object.keys(filteredDelta).length === 0) {
           return state;
         }
 
