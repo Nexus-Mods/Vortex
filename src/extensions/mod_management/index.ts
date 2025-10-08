@@ -1154,7 +1154,7 @@ function once(api: IExtensionApi) {
     removedId: string,
     modId: string,
     options: { silent?: boolean, willBeReplaced?: boolean, modData?: types.IMod }) => {
-    if (options.silent !== true && options.willBeReplaced !== true) {
+    if (options?.silent !== true && options?.willBeReplaced !== true) {
       removeModToastDebouncer.schedule();
     }
     return Promise.resolve();
