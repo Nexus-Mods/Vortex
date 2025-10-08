@@ -418,8 +418,14 @@ describe('Collections End-to-End Test - Real Implementation', () => {
       return;
     }
 
-    if (NexusApi && api.state?.confidential?.account?.nexus?.APIKey) {
-      const nexusApiKey = api.state.confidential.account.nexus.APIKey;
+    // Fail early if Nexus API key is not available
+    const nexusApiKey = api.state?.confidential?.account?.nexus?.APIKey;
+    if (!nexusApiKey) {
+      throw new Error('Nexus API key is required for this test. Please set the NEXUS_API_KEY environment variable.');
+    }
+    console.log(`✅ Nexus API key loaded: ${nexusApiKey.substring(0, 8)}...${nexusApiKey.substring(nexusApiKey.length - 4)}`);
+
+    if (NexusApi && nexusApiKey) {
 
       api.registerProtocol('nxm', true, (url, name, friendlyName) => {
 
