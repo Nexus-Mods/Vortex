@@ -1,4 +1,4 @@
-import Mixpanel from 'mixpanel';
+import mixpanel from 'mixpanel-browser';
 import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from '../constants';
 import { getApplication } from '../../../util/application';
 import { IValidateKeyDataV2 } from '../../nexus_integration/types/IValidateKeyData';
@@ -7,57 +7,48 @@ import { MixpanelEvent } from './MixpanelEvents';
 
 class MixpanelAnalytics {
 
-  private mixpanel: Mixpanel.Mixpanel;
   private user: number;
-  private superProperties: Record<string, any> = {};
-  private userIp: string | null = null;
+  private isInitialized: boolean = false;
 
   /**
    * isUserSet returns if the user is set
    */
   public isUserSet(): boolean {
-    return !!this.user && !!this.mixpanel;
+    return !!this.user && this.isInitialized;
   }
 
   /**
    * Sets and Initializes the Mixpanel tracking with super properties
    */
-  public async start(userInfo: IValidateKeyDataV2, isProduction: boolean) {
+  public start(userInfo: IValidateKeyDataV2, isProduction: boolean) {
     this.user = userInfo.userId;
     const token = isProduction ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
     const environment = isProduction ? 'production' : 'development';
-    this.mixpanel = Mixpanel.init(token);
 
-    // Build and store super properties based on data team requirements
-    this.superProperties = this.buildSuperProperties(userInfo);
+    // Initialize mixpanel-browser with config
+    mixpanel.init(token, {
+      debug: false,  // Disable internal Mixpanel logging (we use our own analyticsServiceLog)
+      track_pageview: false,  // We're not a web page
+      persistence: 'localStorage',
+      api_host: 'https://api.mixpanel.com',
+      // IP and geolocation are automatically tracked by mixpanel-browser
+    });
 
-    // Fetch user's public IP for geolocation tracking
-    await this.fetchUserIp();
+    this.isInitialized = true;
+
+    // Identify the user
+    mixpanel.identify(this.user.toString());
+
+    // Build and register super properties
+    const superProperties = this.buildSuperProperties(userInfo);
+    mixpanel.register(superProperties);
 
     analyticsServiceLog('mixpanel', 'debug', `Started for ${environment}`, {
       userId: this.user,
       isProduction,
       environment,
-      userIp: this.userIp,
-      superProperties: this.superProperties
+      superProperties
     });
-  }
-
-  /**
-   * Fetch the user's public IP address for geolocation
-   */
-  private async fetchUserIp(): Promise<void> {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json', {
-        timeout: 5000,
-      } as any);
-      const data = await response.json();
-      this.userIp = data.ip;
-      analyticsServiceLog('mixpanel', 'debug', 'Fetched user IP', { ip: this.userIp });
-    } catch (error) {
-      analyticsServiceLog('mixpanel', 'warn', 'Failed to fetch user IP', { error: error.message });
-      this.userIp = null;
-    }
   }
 
   /**
@@ -114,7 +105,7 @@ class MixpanelAnalytics {
    */
   public updateSuperProperties(properties: Record<string, any>) {
     if (!this.isUserSet()) return;
-    this.superProperties = { ...this.superProperties, ...properties };
+    mixpanel.register(properties);
   }
 
   /**
@@ -122,9 +113,8 @@ class MixpanelAnalytics {
    */
   public stop() {
     this.user = null;
-    this.mixpanel = null;
-    this.superProperties = {};
-    this.userIp = null;
+    this.isInitialized = false;
+    mixpanel.reset();  // Clears user identity and super properties
   }
 
   /**
@@ -136,16 +126,15 @@ class MixpanelAnalytics {
       return;
     }
 
-    // Merge super properties with event properties
-    const eventData = {
-      distinct_id: this.user,
-      ...(this.userIp && { ip: this.userIp }), // Include user's IP for geolocation if available
-      ...this.superProperties,
-      ...event.properties,
-    };
+    // Track event with mixpanel-browser
+    // Super properties are automatically included
+    // IP address and geolocation are automatically tracked
+    mixpanel.track(event.eventName, event.properties);
 
-    analyticsServiceLog('mixpanel', 'debug', 'Event tracked', { eventName: event.eventName, eventData });
-    this.mixpanel!.track(event.eventName, eventData);
+    analyticsServiceLog('mixpanel', 'debug', 'Event tracked', {
+      eventName: event.eventName,
+      properties: event.properties
+    });
   }
 }
 

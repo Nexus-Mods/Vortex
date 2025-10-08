@@ -118,7 +118,7 @@ function init(context: IExtensionContext): boolean {
         // Development environment uses dev token, production uses prod token
         const isProduction = process.env.NODE_ENV !== 'development';
 
-        await AnalyticsMixpanel.start(userInfo, isProduction);
+        AnalyticsMixpanel.start(userInfo, isProduction);
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
