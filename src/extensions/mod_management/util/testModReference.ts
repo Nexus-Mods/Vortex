@@ -285,6 +285,44 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   return true;
 }
 
+export function testRefByIdentifiers(identifiers: { name?: string, gameId: string, modId?: number, fileId?: number }, ref: IModReference): boolean {
+  if (identifiers == null || typeof identifiers !== 'object' || Array.isArray(identifiers)) {
+    return false;
+  }
+
+  const { name, modId, fileId } = identifiers;
+
+  if (ref.repo?.modId != null && modId != null
+    && ref.repo?.fileId != null && fileId != null) {
+    if (ref.repo.modId !== modId.toString()
+      || ref.repo.fileId !== fileId.toString()) {
+      return false;
+    }
+  }
+
+  // right file?
+  if (ref.logicalFileName != null && name != null) {
+    if (!identifiers.name.includes(ref.logicalFileName) && ref.fileExpression == null) {
+      return false;
+    }
+  }
+
+  if (ref.fileExpression != null) {
+    // file expression is either an exact match against the mod name or
+    // a glob match against the archive name (without file extension)
+    if (identifiers.name == null) {
+        return false;
+    } else {
+      const baseName = sanitizeExpression(identifiers.name);
+      if ((baseName !== ref.fileExpression) &&
+          !minimatch(baseName, ref.fileExpression)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /**
  * sets the callback for when a (fuzzy) mod reference is resolved, so the cache can be updated
  */
