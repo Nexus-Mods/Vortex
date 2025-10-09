@@ -3,8 +3,10 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
 
+const TEST_NAME = 'menu-navigation';
+
 test('can open global menu and click About', async () => {
-  const { app, mainWindow, testRunDir, appProcess, pid } = await launchVortex('menu-navigation');
+  const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
   
   try {
     await mainWindow.screenshot({ path: path.join(testRunDir, '01-before-menu.png') });
@@ -35,7 +37,7 @@ test('can open global menu and click About', async () => {
     expect(aboutVisible).toBe(true);
     
   } finally {
-      await closeVortex(app, appProcess, pid);
+    await closeVortex(app, appProcess, pid, userDataDir);
     console.log(`Test completed. Results in: ${testRunDir}`);
   }
 });

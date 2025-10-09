@@ -3,6 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
 
+const TEST_NAME = 'app-launch';
+
 interface AppInfo {
   title: string;
   url: string;
@@ -13,7 +15,7 @@ interface AppInfo {
 
 test('app launches successfully', async () => {
 
-  const { app, mainWindow, testRunDir, appProcess, pid } = await launchVortex('app-launch');
+  const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
 
   try {
     await mainWindow.screenshot({ path: path.join(testRunDir, 'app-loaded.png') });
@@ -33,7 +35,7 @@ test('app launches successfully', async () => {
     expect(finalInfo.url).toContain('index.html');
 
   } finally {
-    await closeVortex(app, appProcess, pid);
+    await closeVortex(app, appProcess, pid, userDataDir);
     console.log(`Test completed. Results in: ${testRunDir}`);
   }
 });

@@ -16,12 +16,14 @@ interface VortexLaunchResult {
   testRunDir: string;
   appProcess: ChildProcess | null;
   pid: number | undefined;
+  userDataDir: string;
 }
 
 export async function closeVortex(
   app: ElectronApplication,
   appProcess: ChildProcess | null,
-  pid: number | undefined
+  pid: number | undefined,
+  userDataDir?: string
 ): Promise<void> {
   console.log(`Closing app (PID: ${pid})...`);
 
@@ -50,6 +52,20 @@ export async function closeVortex(
         console.log(`Process ${pid} killed successfully`);
       } catch (killError) {
         console.log(`Kill error: ${killError}`);
+      }
+    }
+
+    // Wait a bit for file handles to release
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Clean up user data directory if provided
+    if (userDataDir && fs.existsSync(userDataDir)) {
+      try {
+        console.log(`Cleaning up user data directory: ${userDataDir}`);
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+        console.log('User data directory cleaned up');
+      } catch (cleanupError) {
+        console.warn(`Could not clean up user data directory: ${cleanupError}`);
       }
     }
   } catch (error) {
@@ -149,14 +165,11 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
 
   fs.mkdirSync(testRunDir, { recursive: true });
 
-  // Use a shared vortex_playwright directory in appdata (like vortex_devel)
-  // This is wiped clean at the start of each test run
+  // Use a unique vortex_playwright directory per test run to avoid locked file issues
   const appdataDir = process.env.APPDATA || path.join(require('os').homedir(), 'AppData', 'Roaming');
-  const userDataDir = path.join(appdataDir, 'vortex_playwright');
+  const userDataDir = path.join(appdataDir, `vortex_playwright_${testName}_${Date.now()}`);
 
-  if (fs.existsSync(userDataDir)) {
-    fs.rmSync(userDataDir, { recursive: true, force: true });
-  }
+  console.log(`Using user data directory: ${userDataDir}`);
   fs.mkdirSync(userDataDir, { recursive: true });
 
   const electronPath = process.platform === 'win32'
@@ -187,7 +200,7 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
   const appProcess = app.process();
   const pid = appProcess?.pid;
 
-  return { app, mainWindow, testRunDir, appProcess, pid };
+  return { app, mainWindow, testRunDir, appProcess, pid, userDataDir };
 }
 
 function resetRunCounter(): void {

@@ -4,9 +4,11 @@ import { launchVortex, closeVortex } from '../src/vortex-helpers';
 import { loginToNexusMods, logoutFromNexusMods } from '../src/nexusmods-auth-helpers';
 import { constants } from '../src/constants';
 
+const TEST_NAME = 'nexusmods-login';
+
 test('can log into nexusmods.com', async ({ browser }: { browser: Browser }) => {
 
-  const { app, mainWindow, testRunDir, appProcess, pid } = await launchVortex('nexusmods-login');
+  const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
 
   const userName = constants.USER_ACCOUNTS.FREE_USER.login;
   const userPassword = constants.USER_ACCOUNTS.FREE_USER.password;
@@ -26,7 +28,7 @@ test('can log into nexusmods.com', async ({ browser }: { browser: Browser }) => 
     console.log('Login successful!');
 
   } finally {
-    await closeVortex(app, appProcess, pid);
+    await closeVortex(app, appProcess, pid, userDataDir);
     console.log(`Test completed. Results in: ${testRunDir}`);
   }
 
