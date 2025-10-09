@@ -228,9 +228,7 @@ class UI extends DelegateBase {
 
   public startDialogImmediate = (info: IInstallerInfo, callback: (err) => void) => {
     try {
-      if (!this.mUnattended) {
-        this.api.store.dispatch(startDialog(info, this.mInstanceId));
-      }
+      this.api.store.dispatch(startDialog(info, this.mInstanceId));
       callback(null);
     } catch (err) {
       log('error', 'Failed to start FOMOD dialog', {
