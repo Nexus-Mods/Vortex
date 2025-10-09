@@ -1,10 +1,10 @@
 /* eslint-disable max-lines-per-function */
 import { test, expect } from '@playwright/test';
 import path from 'path';
-import { launchVortex } from '../src/vortex-helpers';
+import { launchVortex, closeVortex } from '../src/vortex-helpers';
 
 test('can open global menu and click About', async () => {
-  const { app, mainWindow, testRunDir } = await launchVortex('menu-navigation');
+  const { app, mainWindow, testRunDir, appProcess, pid } = await launchVortex('menu-navigation');
   
   try {
     await mainWindow.screenshot({ path: path.join(testRunDir, '01-before-menu.png') });
@@ -35,7 +35,7 @@ test('can open global menu and click About', async () => {
     expect(aboutVisible).toBe(true);
     
   } finally {
-    await app.close();
+      await closeVortex(app, appProcess, pid);
     console.log(`Test completed. Results in: ${testRunDir}`);
   }
 });

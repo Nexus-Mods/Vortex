@@ -1,13 +1,13 @@
 /* eslint-disable max-lines-per-function */
 import { test, expect, Browser } from '@playwright/test';
-import { launchVortex } from '../src/vortex-helpers';
+import { launchVortex, closeVortex } from '../src/vortex-helpers';
 import path from 'path';
 import { login } from '../src/login_page';
 import { constants } from '../src/constants';
 
 test('can log into nexusmods.com', async ({ browser }: { browser: Browser }) => {
 
-  const { app, mainWindow, testRunDir } = await launchVortex('nexusmods-login');
+  const { app, mainWindow, testRunDir, appProcess, pid } = await launchVortex('nexusmods-login');
 
   const userName = constants.USER_ACCOUNTS.FREE_USER.login;
   const userPassword = constants.USER_ACCOUNTS.FREE_USER.password;
@@ -150,8 +150,7 @@ test('can log into nexusmods.com', async ({ browser }: { browser: Browser }) => 
     }
 
   } finally {
-
-    await app.close();
+    await closeVortex(app, appProcess, pid);
     console.log(`Test completed. Results in: ${testRunDir}`);
   }
 
