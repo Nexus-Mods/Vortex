@@ -230,8 +230,8 @@ export class DownloadObserver {
           this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
         })
         .then(() => {
-          const isSkipped = (err instanceof UserCanceled) && err.skipped;
-          this.mApi.store.dispatch(isSkipped ? removeDownloadSilent(id) : removeDownload(id));
+          const isSilent = (err instanceof UserCanceled);
+          this.mApi.store.dispatch(isSilent ? removeDownloadSilent(id) : removeDownload(id));
           if (callback !== undefined) {
             callback(err, id);
           } else {
