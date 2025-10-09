@@ -79,6 +79,9 @@ export const setDownloadInterrupted = safeCreateAction('SET_DOWNLOAD_INTERRUPTED
 export const removeDownload = safeCreateAction('REMOVE_DOWNLOAD',
   (id: string) => ({ id }));
 
+export const removeDownloadSilent = safeCreateAction('REMOVE_DOWNLOAD_SILENT',
+  (id: string) => ({ id }));
+
 /**
  * sets the current download speed in bytes/second
  */
