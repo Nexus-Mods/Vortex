@@ -927,6 +927,11 @@ function init(context: IExtensionContextExt): boolean {
   }, 500, true, false)
 
   context.registerActionCheck('REMOVE_DOWNLOAD', (state: IState, action: any) => {
+    // Uncomment to help debug unexpected download removal
+    // const stack = new Error().stack;
+    // if (stack !== undefined) {
+    //   log('debug', 'download removed', { id: action.payload, stack });
+    // }
     removeToastDebouncer.schedule();
     return undefined;
   });
