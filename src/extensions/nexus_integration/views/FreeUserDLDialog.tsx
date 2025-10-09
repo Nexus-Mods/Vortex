@@ -120,7 +120,9 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
   React.useEffect(() => {
     if (collectionInstallSession?.downloadedCount != null) {
-      setPositionText(`${collectionInstallSession.downloadedCount}/${collectionInstallSession.totalRequired + collectionInstallSession.totalOptional}`);
+      const position = collectionInstallSession.downloadedCount + 1;
+      const total = Math.max(collectionInstallSession.totalRequired + collectionInstallSession.totalOptional, 1);
+      setPositionText(`${position}/${total}`);
     }
   }, [collectionInstallSession]);
 
