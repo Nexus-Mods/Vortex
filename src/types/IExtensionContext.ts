@@ -368,6 +368,10 @@ export interface IRunOptions {
   // is set but in some cases (e.g. when the target process is run elevated) we don't know
   // the pid so this will be undefined.
   onSpawned?: (pid?: number) => void;
+  // when true, enforce a constrained execution context (no shell, no detach, minimal env)
+  constrained?: boolean;
+  // optional attribution for logging/reporting the caller (e.g., extension id)
+  attribution?: string;
 }
 
 /**

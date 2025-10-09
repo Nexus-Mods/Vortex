@@ -245,8 +245,22 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
       registerGameInfoProvider: (id: string, priority: number, expireMS: number, keys: string[], query: any) => {
         context.registerGameInfoProvider(id, priority, expireMS, keys, query);
       },
-      registerModType: (modType: any) => {
-        context.registerModType(modType);
+      registerModType: (...args: any[]) => {
+        // Support both legacy object-based and new arg-based signatures for downloaded extensions
+        // Object form: { id, priority, isSupported, getPath, test, options }
+        // Arg form: (id, priority, isSupported, getPath, test, options?)
+        try {
+          if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+            const mt = args[0];
+            const { id, priority, isSupported, getPath, test, options } = mt;
+            context.registerModType(id, priority, isSupported, getPath, test, options);
+          } else {
+            const [id, priority, isSupported, getPath, test, options] = args;
+            context.registerModType(id, priority, isSupported, getPath, test, options);
+          }
+        } catch (err) {
+          log('warn', 'registerModType shim failed, invalid arguments', { error: (err as Error).message, args });
+        }
       },
       registerAction: (group: string, priority: number, icon: any, options: any, title: any, action: any, condition?: any) => {
         context.registerAction(group, priority, icon, options, title, action, condition);
@@ -317,6 +331,14 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
       },
       registerOverlay: (id: string, component: any, props?: any) => {
         context.registerOverlay(id, component, props);
+      },
+      // Allow downloaded extensions (themes) to inject SCSS via standard API
+      setStylesheet: (key: string, filePath: string) => {
+        try {
+          context.setStylesheet(key, filePath);
+        } catch (err) {
+          log('warn', 'setStylesheet shim failed', { key, filePath, error: (err as Error).message });
+        }
       },
       registerToDo: (id: string, title: string, component: any, filter?: any) => {
         context.registerToDo(id, title, component, filter);
@@ -1436,8 +1458,11 @@ async function installExtension(api: IExtensionApi,
       const extractionStartTime = Date.now();
       // macOS health check wrapper to reduce transient failures
       if (process.platform === 'darwin') {
+        const state = api.getState();
+        const modsSettings = (state?.settings?.mods as any) || {};
+        const removeQuarantine = (modsSettings.macOSRemoveQuarantine !== false);
         await retryValidationOperation(
-          () => extractArchive(archivePath, tempPath, { ssc: false }),
+          () => extractArchive(archivePath, tempPath, { ssc: false, removeQuarantine }),
           3, // a few retries around the core extractor
           400, // base delay
           3000, // max delay

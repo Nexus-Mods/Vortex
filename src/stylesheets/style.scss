@@ -1,8 +1,8 @@
 @use "sass:math";
-@import "./bootstrap/bootstrap/variables";
-@import "./bootstrap/bootstrap/mixins";
-@import "./bootstrap/bootstrap/type";
-@import "./bootstrap/bootstrap/panels";
+@import "../../assets/css/bootstrap/bootstrap/variables";
+@import "../../assets/css/bootstrap/bootstrap/mixins";
+@import "../../assets/css/bootstrap/bootstrap/type";
+@import "../../assets/css/bootstrap/bootstrap/panels";
 @import "variables";
 @import "details";
 

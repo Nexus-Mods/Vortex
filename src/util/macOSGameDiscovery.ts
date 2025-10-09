@@ -1,6 +1,6 @@
 /**
  * macOS-specific game discovery utilities
- * Implements priority order: native > app store > steam > other mac stores > windows games
+ * Implements priority order: steam(manifests) > native apps > other mac stores > CrossOver/Parallels > other Windows games
  */
 
 import * as path from 'path';
@@ -20,7 +20,6 @@ interface DiscoveryCache {
   [key: string]: {
     candidates: MacOSGameCandidate[];
     timestamp: number;
-    checksum: string;
   };
 }
 
@@ -31,11 +30,7 @@ function getCacheKey(options: MacOSGameDiscoveryOptions): string {
   return `${options.gameId}-${options.gameName}-${options.windowsExecutable || ''}-${options.macExecutable || ''}`;
 }
 
-function generateChecksum(options: MacOSGameDiscoveryOptions): string {
-  // Simple checksum based on options and current time (for cache invalidation)
-  const data = JSON.stringify(options) + Date.now().toString().slice(0, -6); // Truncate to minutes
-  return Buffer.from(data).toString('base64').slice(0, 16);
-}
+// No checksum: rely on stable cache keys + TTL for invalidation
 
 function getCachedResult(options: MacOSGameDiscoveryOptions): MacOSGameCandidate[] | null {
   const key = getCacheKey(options);
@@ -45,18 +40,12 @@ function getCachedResult(options: MacOSGameDiscoveryOptions): MacOSGameCandidate
     return null;
   }
   
-  // Cache expires after 5 minutes or if checksum doesn't match
+  // Cache expires after 5 minutes
   const now = Date.now();
   const cacheAge = now - cached.timestamp;
   const maxAge = 5 * 60 * 1000; // 5 minutes
   
   if (cacheAge > maxAge) {
-    delete discoveryCache[key];
-    return null;
-  }
-  
-  const currentChecksum = generateChecksum(options);
-  if (cached.checksum !== currentChecksum) {
     delete discoveryCache[key];
     return null;
   }
@@ -70,7 +59,6 @@ function setCachedResult(options: MacOSGameDiscoveryOptions, candidates: MacOSGa
   discoveryCache[key] = {
     candidates: [...candidates], // Deep copy to avoid mutations
     timestamp: Date.now(),
-    checksum: generateChecksum(options)
   };
 }
 
@@ -151,7 +139,10 @@ const MACOS_APP_DIRECTORIES = [
 const IGNORED_DISCOVERY_DIRECTORIES = [
   '/Applications/Utilities', // System utilities - never contains games
   '/System/Applications',
-  '/System/Applications/Utilities'
+  '/System/Applications/Utilities',
+  '/System/Library/CoreServices',
+  '/Applications/Xcode.app',
+  '/Applications/Setapp'
 ];
 
 /**
@@ -200,12 +191,64 @@ async function isSteamShortcut(appPath: string): Promise<boolean> {
 }
 
 /**
- * Steam library paths on macOS
+ * Steam base paths on macOS (not the library itself). We expand to steamapps below.
  */
-const MACOS_STEAM_PATHS = [
-  '~/Library/Application Support/Steam/steamapps/common',
-  '/Applications/Steam.app/Contents/MacOS/steamapps/common'
+const MACOS_STEAM_BASE_PATHS = [
+  '~/Library/Application Support/Steam',
+  '/Library/Application Support/Steam'
 ];
+
+function expandHome(p: string): string {
+  return p.replace('~', process.env.HOME || '');
+}
+
+/**
+ * Resolve all Steam library steamapps paths including external libraries from libraryfolders.vdf
+ */
+async function getSteamAppsPaths(baseSteamPath: string): Promise<string[]> {
+  const steamApps = path.join(baseSteamPath, 'steamapps');
+  const paths: string[] = [];
+  try {
+    const stats = await stat(steamApps);
+    if (!stats.isDirectory()) {
+      return [];
+    }
+    paths.push(steamApps);
+    const libraryFoldersPath = path.join(steamApps, 'libraryfolders.vdf');
+    try {
+      const content = await fs.promises.readFile(libraryFoldersPath, 'utf8');
+      const { parse } = await import('simple-vdf');
+      const data: any = parse(content);
+      // Handle both old and new formats
+      const folders = (data.libraryfolders || data.LibraryFolders || data) as any;
+      for (const key of Object.keys(folders)) {
+        const entry = folders[key];
+        const libPath = (entry?.path || entry?.Path || (typeof entry === 'string' ? entry : null));
+        if (libPath && typeof libPath === 'string') {
+          const appsPath = path.join(libPath, 'steamapps');
+          try {
+            const s = await stat(appsPath);
+            if (s.isDirectory()) {
+              paths.push(appsPath);
+            }
+          } catch (_) {
+            // ignore missing external library
+          }
+        }
+      }
+    } catch (err) {
+      log('debug', 'libraryfolders.vdf not available; using default steamapps only', {
+        baseSteamPath,
+        error: err.message
+      });
+    }
+  } catch (err) {
+    // base steamapps not accessible
+    log('debug', 'Steam base path not accessible', { baseSteamPath, error: err.message });
+  }
+  // Ensure unique
+  return Array.from(new Set(paths));
+}
 
 /**
  * Epic Games Store paths on macOS
@@ -253,12 +296,19 @@ export function discoverMacOSGames(knownGames: IGame[],
   
   return Bluebird.map(knownGames, async (game, gameIndex) => {
     try {
+      // Use macOS compatibility fixes to improve discovery accuracy
+      const winExec = game.executable?.();
+      const fix = getMacOSGameFix(game.id);
+      const mappedMacExec = winExec ? mapWindowsExecutableToMacOS(winExec, game.id) : undefined;
+
       const options: MacOSGameDiscoveryOptions = {
         gameName: game.name,
         gameId: game.id,
-        windowsExecutable: game.executable?.(),
-        macExecutable: game.executable?.(),
-        appBundleName: game.name
+        windowsExecutable: winExec,
+        // Prefer a mapped mac executable name rather than reusing the Windows one
+        macExecutable: mappedMacExec,
+        // Prefer compatibility-provided app bundle name when available
+        appBundleName: fix?.macOSAppBundle || game.name
       };
       
       // Create progress callback for this specific game
@@ -330,15 +380,15 @@ export async function discoverMacOSGamesInternal(
   try {
     // Define discovery methods with their names for progress tracking
     const discoveryMethods = [
-      { name: 'Native Apps', method: () => discoverNativeApps(options), priority: 1 },
-      { name: 'App Store', method: () => discoverAppStoreApps(options), priority: 2 },
-      { name: 'Steam', method: () => discoverSteamGames(options), priority: 3 },
-      { name: 'Epic Games', method: () => discoverEpicGames(options), priority: 4 },
-      { name: 'GOG Galaxy', method: () => discoverGOGGames(options), priority: 5 },
-      { name: 'Other Mac Stores', method: () => discoverOtherMacStores(options), priority: 6 },
-      { name: 'CrossOver', method: () => discoverCrossOverGames(options), priority: 7 },
-      { name: 'Parallels', method: () => discoverParallelsGames(options), priority: 8 },
-      { name: 'VMware', method: () => discoverVMwareGames(options), priority: 9 }
+      { name: 'Steam', method: () => discoverSteamGames(options), priority: 1 },
+      { name: 'Native Apps', method: () => discoverNativeApps(options), priority: 2 },
+      { name: 'Epic Games', method: () => discoverEpicGames(options), priority: 3 },
+      { name: 'GOG Galaxy', method: () => discoverGOGGames(options), priority: 4 },
+      { name: 'Other Mac Stores', method: () => discoverOtherMacStores(options), priority: 5 },
+      { name: 'CrossOver', method: () => discoverCrossOverGames(options), priority: 6 },
+      { name: 'Parallels', method: () => discoverParallelsGames(options), priority: 7 },
+      { name: 'VMware', method: () => discoverVMwareGames(options), priority: 8 },
+      { name: 'Windows Volumes', method: () => discoverWindowsGamesOnMacVolumes(options), priority: 9 }
     ];
 
     // Run discovery methods in parallel with progress tracking
@@ -689,12 +739,13 @@ async function discoverSteamGames(options: MacOSGameDiscoveryOptions): Promise<M
 async function discoverSteamGamesFromManifests(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
   const candidates: MacOSGameCandidate[] = [];
   
-  for (const steamPath of MACOS_STEAM_PATHS) {
-    const expandedPath = steamPath.replace('~', process.env.HOME || '');
+  for (const baseSteamPath of MACOS_STEAM_BASE_PATHS) {
+    const expandedBase = expandHome(baseSteamPath);
+    const steamAppsPaths = await getSteamAppsPaths(expandedBase);
     
-    try {
-      const steamAppsPath = path.join(expandedPath, 'steamapps');
-      const manifestFiles = await readdir(steamAppsPath);
+    for (const steamAppsPath of steamAppsPaths) {
+      try {
+        const manifestFiles = await readdir(steamAppsPath);
       
       const appManifests = manifestFiles.filter(name => 
         name.startsWith('appmanifest_') && name.endsWith('.acf')
@@ -782,12 +833,13 @@ async function discoverSteamGamesFromManifests(options: MacOSGameDiscoveryOption
           });
         }
       }
-    } catch (err) {
-      log('debug', 'Steam library not accessible for manifest discovery', {
-        gameId: options.gameId,
-        steamPath: expandedPath,
-        error: err.message
-      });
+      } catch (err) {
+        log('debug', 'Steam library not accessible for manifest discovery', {
+          gameId: options.gameId,
+          steamPath: steamAppsPath,
+          error: err.message
+        });
+      }
     }
   }
   
@@ -800,43 +852,104 @@ async function discoverSteamGamesFromManifests(options: MacOSGameDiscoveryOption
 async function discoverSteamGamesFromDirectories(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
   const candidates: MacOSGameCandidate[] = [];
   
-  for (const steamPath of MACOS_STEAM_PATHS) {
-    const expandedPath = steamPath.replace('~', process.env.HOME || '');
+  for (const baseSteamPath of MACOS_STEAM_BASE_PATHS) {
+    const expandedBase = expandHome(baseSteamPath);
+    const steamAppsPaths = await getSteamAppsPaths(expandedBase);
     
-    try {
-      const gameDir = path.join(expandedPath, 'steamapps', 'common', options.gameName);
-      const stats = await stat(gameDir);
+    for (const steamAppsPath of steamAppsPaths) {
+      try {
+        const gameDir = path.join(steamAppsPath, 'common', options.gameName);
+        const stats = await stat(gameDir);
       
-      if (stats.isDirectory()) {
-        const execCandidates = await resolveGameExecutableWithRetry(options, gameDir);
-        const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
-        
-        if (bestExec) {
-          candidates.push({
-            path: gameDir,
-            executable: bestExec.path,
-            type: 'steam',
-            priority: MACOS_DISCOVERY_PRIORITIES.STEAM_NATIVE,
-            store: 'steam'
-          });
+        if (stats.isDirectory()) {
+          const execCandidates = await resolveGameExecutableWithRetry(options, gameDir);
+          const bestExec = execCandidates.find(c => c.type === 'native' || c.type === 'app');
           
-          log('debug', 'Found Steam game via directory search', {
-            gameId: options.gameId,
-            gameDir,
-            executable: bestExec.path,
-            steamPath: expandedPath
-          });
+          if (bestExec) {
+            candidates.push({
+              path: gameDir,
+              executable: bestExec.path,
+              type: 'steam',
+              priority: MACOS_DISCOVERY_PRIORITIES.STEAM_NATIVE,
+              store: 'steam'
+            });
+            
+            log('debug', 'Found Steam game via directory search', {
+              gameId: options.gameId,
+              gameDir,
+              executable: bestExec.path,
+              steamPath: steamAppsPath
+            });
+          }
         }
+      } catch (err) {
+        log('debug', 'Steam game not found via directory search', {
+          gameId: options.gameId,
+          steamPath: steamAppsPath,
+          error: err.message
+        });
       }
-    } catch (err) {
-      log('debug', 'Steam game not found via directory search', {
-        gameId: options.gameId,
-        steamPath: expandedPath,
-        error: err.message
-      });
     }
   }
   
+  return candidates;
+}
+
+/**
+ * Discover Windows games on mounted macOS volumes (e.g., BOOTCAMP)
+ */
+async function discoverWindowsGamesOnMacVolumes(options: MacOSGameDiscoveryOptions): Promise<MacOSGameCandidate[]> {
+  const candidates: MacOSGameCandidate[] = [];
+  if (!options.windowsExecutable) {
+    return candidates;
+  }
+  const volumesDir = '/Volumes';
+  try {
+    const volumes = await readdir(volumesDir);
+    const windowsVolumeNames = ['BOOTCAMP', 'Windows', 'WIN', 'OS', 'Untitled'];
+    for (const vol of volumes) {
+      const volPath = path.join(volumesDir, vol);
+      const stats = await stat(volPath);
+      if (!stats.isDirectory()) continue;
+      // Heuristics: only check likely Windows volumes
+      if (!windowsVolumeNames.some(name => vol.toLowerCase().includes(name.toLowerCase()))) {
+        continue;
+      }
+      const searchRoots = [
+        path.join(volPath, 'Program Files'),
+        path.join(volPath, 'Program Files (x86)'),
+        path.join(volPath, 'Games'),
+        path.join(volPath, 'Users', process.env.USER || 'Public', 'Desktop')
+      ];
+      for (const root of searchRoots) {
+        try {
+          const gameCandidate = await findWindowsGameInPath(root, options);
+          if (gameCandidate) {
+            candidates.push({
+              path: gameCandidate.path,
+              executable: gameCandidate.executable,
+              type: 'windows',
+              priority: MACOS_DISCOVERY_PRIORITIES.OTHER_WINDOWS,
+              store: 'windows',
+              manifestData: {
+                appId: options.gameId,
+                name: options.gameName,
+                installDir: gameCandidate.path,
+                manifestPath: 'windows-volume',
+                source: 'windows-volume',
+                gameId: options.gameId,
+                windowsExecutable: options.windowsExecutable
+              }
+            });
+          }
+        } catch (_) {
+          // ignore inaccessible roots
+        }
+      }
+    }
+  } catch (err) {
+    log('debug', 'Volumes directory not accessible for Windows scan', { error: err.message });
+  }
   return candidates;
 }
 

@@ -24,6 +24,7 @@ import {} from './instructions_overlay';
 import {} from './mod_load_order';
 import {} from './mod_management';
 import {} from './move_activator';
+import {} from './copy_activator';
 import {} from './news_dashlet';
 import {} from './nexus_integration';
 import {} from './null_activator';

@@ -1,12 +1,13 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import { spawn as spawnProc } from 'child_process';
 import { spawn, spawnSync } from 'child_process';
 // NOTE: node-7z can export either functions (extractFull, add)
 // or a default class with instance methods depending on platform/mocks.
 // We normalize here to a functional API and await the stream completion.
 import { log } from './log';
 
-type ExtractOptions = { ssc?: boolean, password?: string };
+type ExtractOptions = { ssc?: boolean, password?: string, allowExternalSymlinks?: boolean, removeQuarantine?: boolean };
 type AddOptions = { ssw?: boolean };
 
 function delay(ms: number) {
@@ -266,6 +267,108 @@ function extractWithPackaged7z(archivePath: string, destPath: string): Promise<v
   });
 }
 
+export function validateExtractionWithinDest(destPath: string): void {
+  const destReal = fs.realpathSync.native ? (fs.realpathSync.native as any)(destPath) : fs.realpathSync(destPath);
+  const walkDir = (dir: string) => {
+    const entries: fs.Dirent[] = fs.readdirSync(dir, { withFileTypes: true });
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      try {
+        const rp = fs.realpathSync(full);
+        if (!rp.startsWith(destReal)) {
+          // Log traversal escape instead of throwing to allow continuing
+          log('error', 'Extracted path escapes destination; skipping entry', { entryPath: full, resolvedPath: rp, destReal });
+          // If this is a symlink, remove it to prevent follow-on issues
+          try {
+            const lst = fs.lstatSync(full);
+            if (lst.isSymbolicLink()) {
+              fs.unlinkSync(full);
+            }
+          } catch (_) { /* ignore */ }
+        }
+      } catch (e) {
+        // Some entries may be broken links; log and continue
+        log('warn', 'Failed to resolve realpath for extracted entry', { entryPath: full, error: (e as any)?.message });
+      }
+      if (ent.isDirectory()) {
+        walkDir(full);
+      }
+    }
+  };
+  walkDir(destPath);
+}
+
+export function sanitizeExtractedEntries(destPath: string, options?: { allowExternalSymlinks?: boolean, allowedRoots?: string[] }): void {
+  const destReal = fs.realpathSync.native ? (fs.realpathSync.native as any)(destPath) : fs.realpathSync(destPath);
+  const allowedRootsIn = options?.allowedRoots ?? [destReal];
+  const allowedRoots: string[] = allowedRootsIn.map(r => {
+    try { return fs.realpathSync(r); } catch (_) { return path.resolve(r); }
+  });
+
+  const isAllowedTarget = (target: string): boolean => {
+    try {
+      const rp = fs.realpathSync(target);
+      return allowedRoots.some(root => rp.startsWith(root));
+    } catch (_) {
+      const abs = path.resolve(target);
+      return allowedRoots.some(root => abs.startsWith(root));
+    }
+  };
+
+  const walkDir = (dir: string) => {
+    const entries: fs.Dirent[] = fs.readdirSync(dir, { withFileTypes: true });
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      // Normalize to absolute path for comparison
+      const resolved = path.resolve(full);
+      try {
+        const lst = fs.lstatSync(full);
+        if (lst.isSymbolicLink()) {
+          let target: string = '';
+          try {
+            const link = fs.readlinkSync(full);
+            target = path.isAbsolute(link) ? link : path.resolve(path.dirname(full), link);
+          } catch (e) {
+            log('warn', 'Failed to read symlink target; removing unsafe link', { entryPath: full, error: (e as any)?.message });
+            try { fs.unlinkSync(full); } catch (_) { /* ignore */ }
+            continue;
+          }
+          const allowed = options?.allowExternalSymlinks ? true : isAllowedTarget(target);
+          if (!allowed) {
+            log('warn', 'Symlink target outside allowed roots; removing link', { entryPath: full, target });
+            try { fs.unlinkSync(full); } catch (e2) {
+              log('warn', 'Failed to remove unsafe symlink', { entryPath: full, error: (e2 as any)?.message });
+            }
+          }
+        }
+      } catch (e) {
+        log('warn', 'Failed to lstat extracted entry', { entryPath: resolved, error: (e as any)?.message });
+      }
+      if (ent.isDirectory()) {
+        walkDir(full);
+      }
+    }
+  };
+  walkDir(destPath);
+}
+
+export async function removeQuarantineRecursively(targetPath: string): Promise<void> {
+  if (process.platform !== 'darwin') {
+    return;
+  }
+  try {
+    const xattrPath = resolveToolPathSync('xattr') || 'xattr';
+    const proc = spawnProc(xattrPath, ['-r', '-d', 'com.apple.quarantine', targetPath]);
+    await new Promise<void>((resolve, reject) => {
+      proc.on('error', reject);
+      proc.on('close', code => (code === 0) ? resolve() : reject(new Error(`xattr exited ${code}`)));
+    });
+    log('info', 'Removed macOS quarantine attribute', { targetPath });
+  } catch (qe) {
+    log('warn', 'Failed to remove macOS quarantine attribute', { targetPath, error: (qe as any)?.message });
+  }
+}
+
 export function extractArchive(archivePath: string, destPath: string, options?: ExtractOptions): Promise<void> {
   const SevenZipMod = require('node-7z');
   const getExtract = () => {
@@ -432,6 +535,20 @@ export function extractArchive(archivePath: string, destPath: string, options?: 
           // If we get here, the module returned an unexpected type; fail clearly
           throw new Error('node-7z extract did not provide a promise or EventEmitter');
         }
+      }
+
+      // Sanitize symlinks and guard against path traversal within destPath
+      try {
+        sanitizeExtractedEntries(destPath, { allowExternalSymlinks: options?.allowExternalSymlinks, allowedRoots: [destPath] });
+        validateExtractionWithinDest(destPath);
+      } catch (e) {
+        // Validation now logs and continues; only unexpected errors should reach here
+        log('warn', 'Sanitization encountered issues after extraction', { destPath, error: (e as any)?.message });
+      }
+
+      // Remove macOS quarantine attribute recursively on extracted files if enabled
+      if (options?.removeQuarantine !== false) {
+        await removeQuarantineRecursively(destPath);
       }
     } catch (err) {
       if (n >= maxAttempts) {

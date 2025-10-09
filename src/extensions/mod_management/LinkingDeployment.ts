@@ -202,26 +202,51 @@ abstract class LinkingActivator implements IDeploymentMethod {
             contentChanged.splice(idx, 1);
           })))
         // then, (re-)link all files that were added
-      .then(() => Promise.map(
-        added,
-        key => this.deployFile(key, installationPath, dataPath, false, dirTags)
-          .catch(err => {
-            log('warn', 'failed to link', {
-              link: context.newDeployment[key].relPath,
-              source: context.newDeployment[key].source,
-              error: err.message,
-            });
-            if (err.code !== 'ENOENT') {
-                        // if the source file doesn't exist it must have been deleted
-                        // in the mean time. That's not really our problem.
-              ++errorCount;
-            }
-          })
-          .then(() => progress()), { concurrency: 100 }))
+      .then(async () => {
+        // Size-aware adaptive concurrency for added files
+        const addedMeta = await Promise.map(added, async (key) => {
+          const src = context.newDeployment[key]?.source;
+          let size = 0;
+          try { size = (await fs.statAsync(src)).size || 0; } catch (_) { /* ignore */ }
+          return { key, size };
+        }, { concurrency: 64 });
+
+        const small = addedMeta.filter(m => m.size <= 256 * 1024).map(m => m.key);
+        const medium = addedMeta.filter(m => m.size > 256 * 1024 && m.size <= 8 * 1024 * 1024).map(m => m.key);
+        const large = addedMeta.filter(m => m.size > 8 * 1024 * 1024).map(m => m.key);
+
+        const linkOne = async (key: string) =>
+          this.deployFile(key, installationPath, dataPath, false, dirTags)
+            .catch(err => {
+              log('warn', 'failed to link', {
+                link: context.newDeployment[key].relPath,
+                source: context.newDeployment[key].source,
+                error: err.message,
+              });
+              if (err.code !== 'ENOENT') {
+                ++errorCount;
+              }
+            })
+            .then(() => progress());
+
+        await Promise.map(small, linkOne, { concurrency: 64 });
+        await Promise.map(medium, linkOne, { concurrency: 16 });
+        await Promise.map(large, linkOne, { concurrency: 4 });
+      })
         // then update modified files
-      .then(() => Promise.map(
-        [].concat(sourceChanged, contentChanged),
-        (key: string) =>
+      .then(async () => {
+        const changed = ([] as string[]).concat(sourceChanged, contentChanged);
+        const changedMeta = await Promise.map(changed, async (key) => {
+          const src = context.newDeployment[key]?.source;
+          let size = 0;
+          try { size = (await fs.statAsync(src)).size || 0; } catch (_) { /* ignore */ }
+          return { key, size };
+        }, { concurrency: 64 });
+        const small = changedMeta.filter(m => m.size <= 256 * 1024).map(m => m.key);
+        const medium = changedMeta.filter(m => m.size > 256 * 1024 && m.size <= 8 * 1024 * 1024).map(m => m.key);
+        const large = changedMeta.filter(m => m.size > 8 * 1024 * 1024).map(m => m.key);
+
+        const linkOne = async (key: string) =>
           this.deployFile(key, installationPath, dataPath, true, dirTags)
             .catch(err => {
               log('warn', 'failed to link', {
@@ -232,7 +257,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
               if (err.code !== 'ENOENT') {
                 ++errorCount;
               }
-            }).then(() => progress()), { concurrency: 100 }))
+            })
+            .then(() => progress());
+
+        await Promise.map(small, linkOne, { concurrency: 64 });
+        await Promise.map(medium, linkOne, { concurrency: 16 });
+        await Promise.map(large, linkOne, { concurrency: 4 });
+      })
       .then(() => {
         if (errorCount > 0) {
           this.mApi.store.dispatch(addNotification({

@@ -3,6 +3,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { activeGameId } from '../../profile_management/selectors';
+import { log } from '../../../util/log';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 
@@ -82,6 +83,7 @@ export function getCurrentActivator(state: IState,
 
       const hadWarnings = [];
 
+      log('debug', 'No activator selected, resolving default', { gameId, allowDefault, types: modTypes });
       activator = activators.find(act => {
         const problems =  allTypesSupported(act, state, gameId, modTypes);
         if (problems.errors.length === 0) {
@@ -96,19 +98,35 @@ export function getCurrentActivator(state: IState,
       // prefer an activator without warnings but if there is none, use one with warnings
       if ((activator === undefined) && (hadWarnings.length > 0)) {
         activator = hadWarnings[0];
+        log('info', 'Selected default activator with warnings', { gameId, activatorId: activator.id });
+      } else if (activator !== undefined) {
+        log('info', 'Selected default activator', { gameId, activatorId: activator.id });
       }
     }
   }
 
   if (activator === undefined) {
+    log('warn', 'No supported activator found', { gameId, types, allowDefault });
+    // Emit diagnostics: list supported activators for visibility
+    const supported = getSupportedActivators(state);
+    const ids = supported?.map(a => a.id) || [];
+    log('debug', 'Supported activators snapshot', { gameId, supportedIds: ids });
     return undefined;
   }
 
-  if (allTypesSupported(activator, state, gameId, types).errors.length !== 0) {
+  const support = allTypesSupported(activator, state, gameId, types);
+  if (support.errors.length !== 0) {
     // if the selected activator is no longer supported, don't use it
+    log('warn', 'Selected activator not supported for current types', {
+      gameId,
+      activatorId: activator.id,
+      errorCount: support.errors.length,
+      warningCount: support.warnings?.length || 0,
+    });
     return undefined;
   }
 
+  log('debug', 'Using activator', { gameId, activatorId: activator.id });
   return activator;
 }
 

@@ -1,4 +1,5 @@
 import { startActivity, stopActivity } from '../../../actions/session';
+import { setPurgeSummary, setPurgeSummaryVisible } from '../actions/session';
 import { IDeployedFile, IDeploymentMethod, IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { INotification } from '../../../types/INotification';
@@ -199,6 +200,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
     onProgress(0, 'Preparing purge');
 
     let lastDeployment: { [typeId: string]: IDeployedFile[] };
+    let purgeSummary: { gameId: string, activatorId: string, byType: { [typeId: string]: any[] } };
     api.store.dispatch(startActivity('mods', 'purging'));
 
     // TODO: we really should be using the deployment specified in the manifest,
@@ -247,7 +249,22 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       .then(() => Promise.resolve())
       .tap(() => onProgress(85, 'Post purge events'))
       .finally(() => activator.postPurge())
-      .then(() => api.emitAndAwait('did-purge', profile.id));
+      .then(() => {
+        // Build summary based on previous activation data
+        purgeSummary = {
+          gameId,
+          activatorId: activator.id,
+          byType: {},
+        };
+        for (const typeId of modTypes) {
+          purgeSummary.byType[typeId] = lastDeployment?.[typeId] ?? [];
+        }
+        return api.emitAndAwait('did-purge', profile.id)
+          .then(() => {
+            api.store.dispatch(setPurgeSummary(purgeSummary));
+            api.store.dispatch(setPurgeSummaryVisible(true));
+          });
+      });
   }, true)
     .then(() => null)
     .finally(() => {
@@ -314,8 +331,13 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     // TODO: we really should be using the deployment specified in the manifest,
     //   not the current one! This only works because we force a purge when switching
     //   deployment method.
+    let lastDeployment: IDeployedFile[] = [];
+
     return activator.prePurge(stagingPath)
       .tap(() => onProgress(25, 'Removing links'))
+      // load previous deployment for this type
+      .then(() => loadActivation(api, gameId, typeId, modPath, stagingPath, activator)
+        .then(deployment => { lastDeployment = deployment; }))
       // purge the specified mod type
       .then(() => activator.purge(stagingPath, modPath, gameId))
       .tap(() => onProgress(50, 'Saving updated manifest'))
@@ -326,7 +348,18 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge())
       .tap(() => onProgress(75, 'Post purge events'))
-      .then(() => api.emitAndAwait('did-purge', profile.id));
+      .then(() => {
+        const summary = {
+          gameId,
+          activatorId: activator.id,
+          byType: { [typeId]: lastDeployment ?? [] },
+        };
+        return api.emitAndAwait('did-purge', profile.id)
+          .then(() => {
+            api.store.dispatch(setPurgeSummary(summary));
+            api.store.dispatch(setPurgeSummaryVisible(true));
+          });
+      });
   }, true)
     .then(() => null)
     .finally(() => {

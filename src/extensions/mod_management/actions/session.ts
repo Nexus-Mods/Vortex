@@ -22,6 +22,22 @@ export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
 export const setDeploymentProblem = safeCreateAction('SET_DEPLOYMENT_PROBLEM',
                                                      (errors: IDeploymentProblem[]) => errors);
 
+// Purge summary state
+export interface IPurgeSummaryData {
+  gameId: string;
+  activatorId: string;
+  byType: { [typeId: string]: any[] };
+}
+
+export const setPurgeSummary = safeCreateAction('SET_PURGE_SUMMARY',
+                                                (data: IPurgeSummaryData) => data);
+
+export const setPurgeSummaryVisible = safeCreateAction('SET_PURGE_SUMMARY_VISIBLE',
+                                                       (visible: boolean) => visible);
+
+// No payload for clearing purge summary to match reducer expectation
+export const clearPurgeSummary = safeCreateAction('CLEAR_PURGE_SUMMARY');
+
 /**
  * stores info about files that were changed outside the control of Vortex. The user
  * will be asked how to deal with them

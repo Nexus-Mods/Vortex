@@ -59,9 +59,36 @@ import ModTypeWidget from './views/ModTypeWidget';
 import PathSelectionDialog from './views/PathSelection';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
+import DiscoveryProgressFooter from './views/DiscoveryProgressFooter';
+import GameDiscoveryService from '../../services/GameDiscoveryService';
+
+// Add custom CSS for the discovery progress footer
+const discoveryProgressCSS = `
+  #main-footer .active-downloads-container {
+    padding: 8px 12px;
+    min-width: 200px;
+  }
+  
+  #main-footer .active-downloads-container span {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  
+  #main-footer .active-downloads-container .progressbar {
+    margin: 2px 0;
+  }
+  
+  #main-footer .active-downloads-container .progressbar-labels > *:first-child {
+    width: auto;
+    font-size: 10px;
+  }
+  
+  #main-footer .active-downloads-container .progressbar-labels > *:last-child {
+    font-size: 10px;
+  }
+`;
 
 import GameModeManager, { IGameStub } from './GameModeManager';
-import GameDiscoveryService from '../../services/GameDiscoveryService';
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
 import Promise from 'bluebird';
@@ -653,6 +680,14 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
 }
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(['session', 'discoveryProgress'], discoveryProgressReducer);
+  
+  // Register the discovery progress footer
+  context.registerFooter('discovery-progress-indicator', DiscoveryProgressFooter);
+  
+  // Add custom CSS
+  context.api.addCSS(discoveryProgressCSS);
+  
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
@@ -662,7 +697,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
-  context.registerReducer(['session', 'discoveryProgress'], discoveryProgressReducer);
+
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerReducer(['persistent', 'gameMode'], persistentReducer);
 
@@ -679,6 +714,8 @@ function init(context: IExtensionContext): boolean {
   context.registerFooter('discovery-progress', ProgressFooter);
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
+}
+
 
   context.registerGameStore = ((gameStore: IGameStore) => {
     if (gameStore === undefined) {
@@ -850,6 +887,7 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const onScan = (paths: string[]) => $.gameModeManager.startSearchDiscovery(paths);
+
     const onSelectPath = (basePath: string): Promise<string> =>
       Promise.resolve(context.api.selectDir({
         defaultPath: basePath,
@@ -865,8 +903,9 @@ function init(context: IExtensionContext): boolean {
     // Enhance existing games with macOS compatibility layer
     const enhanceGamesWithMacOSCompatibility = () => {
       console.log(`[Mac Enhancement Debug] Starting enhancement, available games: ${$.extensionGames.length}`);
-      console.log(`[Mac Enhancement Debug] Available game IDs:`, $.extensionGames.map(g => g.id));
-      console.log(`[Mac Enhancement Debug] Mac fixes to apply:`, MACOS_GAME_FIXES.map(f => f.gameId));
+      // Serialize arrays explicitly to avoid "[object Object]" in aggregated logs
+      console.log(`[Mac Enhancement Debug] Available game IDs: ${$.extensionGames.map(g => g.id).join(', ')}`);
+      console.log(`[Mac Enhancement Debug] Mac fixes to apply: ${MACOS_GAME_FIXES.map(f => f.gameId).join(', ')}`);
       
       MACOS_GAME_FIXES.forEach(fix => {
         // Only enhance existing bundled or community extensions, never create game stubs
@@ -891,7 +930,8 @@ function init(context: IExtensionContext): boolean {
               macOSAppBundle: fix.macOSAppBundle,
               alternativeFiles: fix.alternativeFiles
             };
-            console.log(`[Mac Enhancement Debug] Added Mac compatibility to ${existingGame.name}:`, existingGame.details.macOSCompatibility);
+            // Serialize the compatibility object to make it readable in log aggregators
+            console.log(`[Mac Enhancement Debug] Added Mac compatibility to ${existingGame.name}: ${JSON.stringify(existingGame.details.macOSCompatibility)}`);
           } else {
             console.log(`[Mac Enhancement Debug] Game ${existingGame.name} already has Mac compatibility`);
           }
@@ -932,12 +972,17 @@ function init(context: IExtensionContext): boolean {
         const { discovered } = store.getState().settings.gameMode;
         const discoveredGames = new Set(
           Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-        return $.gameModeManager.startQuickDiscovery(undefined, false)
-          .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
-            .reduce((prev, stub) => {
-              prev[stub.game.id] = stub.ext;
-              return prev;
-            }, {})));
+        return Promise.resolve($.gameModeManager.startQuickDiscovery(undefined, true))
+          .then((_ids) => Promise.resolve(
+            removeDisappearedGames(
+              context.api,
+              discoveredGames,
+              $.extensionStubs.reduce((prev, stub) => {
+                prev[stub.game.id] = stub.ext;
+                return prev;
+              }, {})
+            )
+          ));
       })
       .catch(err => {
         log('warn', 'Failed to load persistent discovered games', { error: err.message });
@@ -964,16 +1009,22 @@ function init(context: IExtensionContext): boolean {
         const { discovered } = store.getState().settings.gameMode;
         const discoveredGames = new Set(
           Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
-        return $.gameModeManager.startQuickDiscovery(undefined, false)
-          .then(() => removeDisappearedGames(context.api, discoveredGames, $.extensionStubs
-            .reduce((prev, stub) => {
-              prev[stub.game.id] = stub.ext;
-              return prev;
-            }, {})));
+        return Promise.resolve($.gameModeManager.startQuickDiscovery(undefined, true))
+          .then((_ids) => Promise.resolve(
+            removeDisappearedGames(
+              context.api,
+              discoveredGames,
+              $.extensionStubs.reduce((prev, stub) => {
+                prev[stub.game.id] = stub.ext;
+                return prev;
+              }, {})
+            )
+          ));
       });
 
     // Set up a listener to save discovered games whenever they change
     let previousDiscoveredGames = {};
+    let lastQuickDiscoveryAt = 0;
     context.api.onStateChange(['settings', 'gameMode', 'discovered'], (previous, current) => {
       // Only save if there are actual changes
       if (JSON.stringify(previousDiscoveredGames) !== JSON.stringify(current)) {
@@ -989,7 +1040,9 @@ function init(context: IExtensionContext): boolean {
       }
       const game = getGame(gameId);
       if (game !== undefined) {
-        return $.gameModeManager.startQuickDiscovery([game]);
+        // Normalize to void-typed promise for onAsync contract
+        return Promise.resolve($.gameModeManager.startQuickDiscovery([game]))
+          .then(() => undefined);
       } else {
         return Promise.resolve();
       }
@@ -998,19 +1051,30 @@ function init(context: IExtensionContext): boolean {
     // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
     //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) => {
-      const { discovered } = store.getState().settings.gameMode;
+      const state = store.getState();
+      const running = state.session?.discovery?.running;
+      const now = Date.now();
+      const { discovered } = state.settings.gameMode;
       const discoveredGames = new Set(
         Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined));
 
-      $.gameModeManager.startQuickDiscovery(undefined, false)
-        .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api, discoveredGames)
+      if (running || (now - lastQuickDiscoveryAt < 2000)) {
+        cb?.(Array.from(discoveredGames));
+        return;
+      }
+
+      lastQuickDiscoveryAt = now;
+
+      Promise.resolve($.gameModeManager.startQuickDiscovery(undefined, true))
+        .then((gameIds: string[]) => Promise.resolve(
+          removeDisappearedGames(context.api, discoveredGames)
             .then(() => {
               if (cb !== undefined) {
                 cb(gameIds);
               }
-            });
-        })
+              return undefined;
+            })
+        ))
         .catch(err => {
           err['attachLogOnReport'] = true;
           context.api.showErrorNotification('Discovery failed', err);
@@ -1022,7 +1086,8 @@ function init(context: IExtensionContext): boolean {
         // GameModeManager not initialized yet, return resolved promise
         return Promise.resolve();
       }
-      return $.gameModeManager.startToolDiscovery(gameId);
+      return Promise.resolve($.gameModeManager.startToolDiscovery(gameId))
+        .then(() => undefined);
     });
     events.on('start-discovery', () => {
       try {
@@ -1062,7 +1127,8 @@ function init(context: IExtensionContext): boolean {
         .catch(err => callback(err));
     });
 
-    events.on('refresh-game-list', (forceFullDiscovery?: boolean) => {
+    // Provide an awaitable refresh function to avoid race conditions
+    const refreshGameList = (forceFullDiscovery?: boolean): Promise<void> => {
       // Refresh the known games list when game extensions are installed
       if (forceFullDiscovery) {
         // Force a complete refresh including re-reading game extensions
@@ -1071,13 +1137,13 @@ function init(context: IExtensionContext): boolean {
           // Add a flag to prevent infinite loop
           if (isRefreshingGameList) {
             // Already refreshing, skip to prevent infinite loop
-            return;
+            return Promise.resolve();
           }
           
           // Set the flag to indicate we're refreshing
           isRefreshingGameList = true;
           
-          context.api.ext['updateExtensions'](false)
+          return context.api.ext['updateExtensions'](false)
             .then(() => {
               // After updating extensions, we need to ensure game extensions are properly registered
               // Re-initialize the extension games list to capture any newly installed game extensions
@@ -1317,9 +1383,10 @@ function init(context: IExtensionContext): boolean {
                   const runDiscoveryWhenReady = () => {
                     if ($.gameModeManager !== undefined) {
                       log('info', 'GameModeManager now ready, running deferred discovery');
-                      $.gameModeManager.startQuickDiscovery(undefined, false)
+                      Promise.resolve($.gameModeManager.startQuickDiscovery(undefined, true))
                         .then((gameIds) => {
                           log('info', 'Deferred discovery completed', { discoveredGames: gameIds });
+                          return undefined;
                         })
                         .catch(err => log('warn', 'Deferred discovery failed', { error: err.message }));
                     } else {
@@ -1328,12 +1395,14 @@ function init(context: IExtensionContext): boolean {
                     }
                   };
                   setTimeout(runDiscoveryWhenReady, 100);
-                  return Promise.resolve([] as string[]);
+                  // Defer discovery without returning a value to keep the chain void-typed
+                  return Promise.resolve();
                 }
-                return $.gameModeManager.startQuickDiscovery(undefined, false)
+                // Run quick discovery and log results; coerce to void-typed promise
+                return Promise.resolve($.gameModeManager.startQuickDiscovery(undefined, true))
                   .then((gameIds) => {
                     log('info', 'Quick discovery completed', { discoveredGames: gameIds });
-                    return gameIds;
+                    return undefined;
                   });
               }).then(() => {
                 log('debug', 'Completed game extension registration sweep');
@@ -1343,11 +1412,13 @@ function init(context: IExtensionContext): boolean {
               log('info', 'Game list fully refreshed after extension installation');
               // Clear the flag when done
               isRefreshingGameList = false;
+              return undefined;
             })
             .catch(err => {
               log('error', 'Failed to refresh game list', err.message);
               // Clear the flag on error
               isRefreshingGameList = false;
+              return undefined;
             });
         } else {
           // Fallback if the update function is not available
@@ -1373,6 +1444,7 @@ function init(context: IExtensionContext): boolean {
             );
           context.api.store.dispatch(setKnownGames(gamesStored));
           log('info', 'Game list refreshed after extension installation');
+          return Promise.resolve();
         }
       } else {
         const gamesStored: IGameStored[] = $.extensionGames
@@ -1397,6 +1469,50 @@ function init(context: IExtensionContext): boolean {
           );
         context.api.store.dispatch(setKnownGames(gamesStored));
         log('info', 'Game list refreshed after extension installation');
+        return Promise.resolve();
+      }
+    };
+
+    // Maintain existing event for backward compatibility
+    events.on('refresh-game-list', (forceFullDiscovery?: boolean) => {
+      refreshGameList(forceFullDiscovery);
+    });
+
+    // Provide an awaitable version for callers that need to chain operations
+    context.api.onAsync('refresh-game-list', (forceFullDiscovery?: boolean) => {
+      return refreshGameList(forceFullDiscovery);
+    });
+
+    // React to early identification of a game extension during install
+    // This ensures downloaded community game extensions are registered without bundling
+    events.on('game-extension-identified', (extensionName: string) => {
+      log('info', 'game-extension-identified received; forcing game list refresh', { extensionName });
+      // Force full discovery and re-processing of installed extensions
+      refreshGameList(true)
+        .catch(err => log('warn', 'refresh after game-extension-identified failed', { error: err?.message }));
+    });
+
+    // When any extension is installed, check if it looks like a game extension
+    // If so, refresh the game list to register it properly
+    events.on('extension-installed', (extName: string, extInfo: any) => {
+      try {
+        const nameLower = (extInfo?.name || extName || '').toLowerCase();
+        const isLikelyGameExtension =
+          (extInfo?.type === 'game') ||
+          nameLower.startsWith('game:') ||
+          nameLower.includes('vortex extension') ||
+          nameLower.includes('game') ||
+          nameLower.includes('mod manager') ||
+          nameLower.includes('game support') ||
+          nameLower.includes('game extension') ||
+          /\b(balatro|skyrim|fallout|witcher|stardew|factorio|rimworld|subnautica|valheim|minecraft|cyberpunk|elden|elden ring|starfield|gta|grand theft auto)\b/i.test(nameLower);
+        if (isLikelyGameExtension) {
+          log('info', 'extension-installed looks like a game; refreshing list', { extName, type: extInfo?.type });
+          refreshGameList(true)
+            .catch(err => log('warn', 'refresh after extension-installed failed', { error: err?.message }));
+        }
+      } catch (err) {
+        log('warn', 'error evaluating extension-installed for game refresh', { error: err?.message });
       }
     });
 
@@ -1556,6 +1672,7 @@ function init(context: IExtensionContext): boolean {
     discoveryService.startDiscovery(
       (progress) => {
         // Progress callback - this is handled by the Redux actions
+export default init;
       },
       (results) => {
         // Completion callback - log the results

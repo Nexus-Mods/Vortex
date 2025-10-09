@@ -26,6 +26,7 @@ import PromiseBB from 'bluebird';
 import { decode } from 'iconv-lite';
 import { dialog as dialogIn } from 'electron';
 import * as fs from 'fs-extra';
+import * as nodeFS from 'fs';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import * as net from 'net';
@@ -620,13 +621,56 @@ type CopyOptionsEx = fs.CopyOptions & {
   showDialogCallback?: () => boolean,
 };
 
+function copyFileCloneFallback(
+  src: string,
+  dest: string,
+  options: CopyOptionsEx,
+): PromiseBB<void> {
+  if (process.platform !== 'darwin') {
+    return PromiseBB.resolve(fs.copy(src, dest, options));
+  }
+  return PromiseBB.resolve(fs.stat(src))
+    .then(stat => {
+      if (!stat.isFile()) {
+        return PromiseBB.resolve(fs.copy(src, dest, options));
+      }
+      const overwrite = (options?.overwrite !== undefined) ? options.overwrite : true;
+      const ensureNotExists = overwrite
+        ? PromiseBB.resolve()
+        : PromiseBB.resolve(fs.pathExists(dest))
+            .then(exists => {
+              if (exists) {
+                const err: any = new Error('destination exists');
+                err.code = 'EEXIST';
+                throw err;
+              }
+            });
+      return ensureNotExists
+        .then(() => nodeFS.promises.copyFile(
+          src,
+          dest,
+          ((nodeFS.constants as any)?.COPYFILE_FICLONE ?? 0) as number,
+        ))
+        .then(() => undefined)
+        .catch((err: any) => {
+          // If clone is not supported (different FS, not APFS, etc.), fallback to normal copy
+          if ([ 'ENOSYS', 'ENOTSUP', 'EXDEV', 'EINVAL' ].includes(err.code)) {
+            return PromiseBB.resolve(fs.copy(src, dest, options));
+          }
+          throw err;
+        }) as any;
+    });
+}
+
 function copyInt(
   src: string,
   dest: string,
   options: CopyOptionsEx,
   stackErr: Error,
   tries: number) {
-  return simfail(() => PromiseBB.resolve(fs.copy(src, dest, options)))
+  return simfail(() => (process.platform === 'darwin'
+      ? copyFileCloneFallback(src, dest, options)
+      : PromiseBB.resolve(fs.copy(src, dest, options))))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options?.showDialogCallback,
                    { extraRetryErrors: ['EEXIST'] })

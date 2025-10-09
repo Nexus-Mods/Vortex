@@ -251,7 +251,14 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startQuickDiscovery(games?: IGame[], showProgress: boolean = true) {
+  public startQuickDiscovery(games?: IGame[], showProgress: boolean = true): Promise<string[]> {
+    // Prevent overlapping quick discovery runs
+    const state = this.mStore.getState();
+    if (state.session?.discovery?.running) {
+      log('info', 'Quick discovery already running, skipping duplicate trigger');
+      return Promise.resolve([] as string[]);
+    }
+
     const gamesToDiscover = games ?? this.mKnownGames;
     
     // Set up progress tracking only if showProgress is true
@@ -558,7 +565,15 @@ class GameModeManager {
         : [clearDiscoveredGame(gameId)];
       batchDispatch(this.mStore, batchedActions);
     } else {
+      // Ensure we're properly persisting the discovered game
       this.mStore.dispatch(addDiscoveredGame(gameId, result));
+      
+      // Log the discovery for debugging
+      log('info', 'Game discovered and added to store', { 
+        gameId, 
+        path: result.path,
+        store: result.store
+      });
     }
   }
 

@@ -86,6 +86,7 @@ import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
 import { IDuplicatesMap, IRemoveDuplicateMap } from './views/DuplicatesDialog';
 import {} from './views/FixDeploymentDialog';
+import {} from './views/PurgeSummaryDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
 import URLInput from './views/URLInput';
@@ -726,7 +727,7 @@ function genUpdateModDeployment() {
 
 function doSaveActivation(api: IExtensionApi, gameId: string, typeId: string,
                           deployPath: string, stagingPath: string,
-                          files: IDeployedFile[], activatorId: string) {
+                          files: IDeployedFile[], activatorId: string): Promise<void> {
   const state: IState = api.store.getState();
   return saveActivation(gameId, typeId, state.app.instanceId, deployPath,
                         stagingPath, files, activatorId)
@@ -1636,6 +1637,11 @@ function init(context: IExtensionContext): boolean {
                          LazyComponent(() => require('./views/ExternalChangeDialog')));
   context.registerDialog('fix-deployment',
     LazyComponent(() => require('./views/FixDeploymentDialog')), () => {
+      // nop
+    });
+
+  context.registerDialog('purge-summary',
+    LazyComponent(() => require('./views/PurgeSummaryDialog')), () => {
       // nop
     });
 

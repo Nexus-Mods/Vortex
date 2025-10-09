@@ -1,12 +1,14 @@
-import { IExtensionContext, IDeploymentMethod, IDeployedFile, IUnavailableReason } from '../../types/api';
+import { IExtensionContext, IDeploymentMethod, IDeployedFile, IUnavailableReason, IExtensionApi } from '../../types/api';
 import { IGame } from '../../types/IGame';
-import { fs, log, util } from 'vortex-api';
-import { isMacOS } from '../../util/platform';
+import { fs, log } from 'vortex-api';
+import { isMacOS, getAppDataPath } from '../../util/platform';
+import { MacOSAdminAccessManager } from '../../util/macOSAdminAccess';
 import { TFunction } from '../../util/i18n';
 import { Normalize } from '../../util/getNormalizeFunc';
 import { IFileChange } from '../mod_management/types/IDeploymentMethod';
 import * as path from 'path';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
+import { copyFileCloneAtomic } from '../../util/fsAtomic';
 
 // Interface for tracking deployed files
 interface IDeployedFileRecord {
@@ -25,6 +27,12 @@ class DeploymentMethod implements IDeploymentMethod {
   public description: string = 'Copies mod files directly to the game directory. Recommended for macOS.';
   public priority: number = isMacOS() ? 5 : 15; // Higher priority than symlink on macOS, lower on other platforms
   public isFallbackPurgeSafe: boolean = true;
+
+  private api: IExtensionApi;
+
+  constructor(api: IExtensionApi) {
+    this.api = api;
+  }
 
   public detailedDescription(t: TFunction): string {
     return t('copy_activator_description', {
@@ -48,43 +56,87 @@ class DeploymentMethod implements IDeploymentMethod {
     return undefined as any;
   }
 
-  public userGate(): Promise<void> {
-    return Promise.resolve();
+  public userGate(): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
-  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize): Promise<void> {
+  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize): Bluebird<void> {
     // Ensure the data path exists
     return fs.ensureDirAsync(dataPath);
   }
 
-  public finalize(gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+  public finalize(gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void): Bluebird<IDeployedFile[]> {
     // Return empty array as we don't need special purge handling for copied files
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
-  public activate(sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>): Promise<void> {
+  public activate(sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>): Bluebird<void> {
     const fullDeployPath = path.join(deployPath);
     
     // Initialize tracking for this mod
     deployedFiles[sourceName] = [];
     
+    // On macOS, proactively request admin access if needed for destination
+    const ensureMacAccess = async () => {
+      if (!isMacOS()) return;
+      const manager = MacOSAdminAccessManager.getInstance();
+      try {
+        const res = await manager.checkWriteAccess(fullDeployPath);
+        if (!res.hasAccess && res.canRequestAdmin) {
+          const appData = getAppDataPath();
+          const isAppSupport = fullDeployPath.startsWith(appData) || fullDeployPath.includes('/Library/Application Support');
+          const prompt = isAppSupport
+            ? 'Vortex needs access to your Library/Application Support to deploy mods.'
+            : 'Vortex needs administrator access to deploy mods to this location.';
+          const granted = await manager.requestAdminAccess(fullDeployPath, {
+            prompt,
+            reason: 'Deploying mod files requires write access to the destination.'
+          });
+          if (!granted) {
+            log('warn', 'Admin access not granted for deployment path; continuing and will attempt normal copy', { deployPath: fullDeployPath });
+          }
+        }
+      } catch (e) {
+        log('debug', 'Error while checking/requesting macOS admin access', { deployPath: fullDeployPath, error: (e as any)?.message });
+      }
+    };
+
     // Ensure target directory exists and copy all files from source to destination
-    return fs.ensureDirAsync(fullDeployPath)
-      .then(() => this.copyDirectory(sourcePath, fullDeployPath, blackList, sourceName));
+    return Bluebird.resolve()
+      .then(() => ensureMacAccess())
+      .then(() => fs.ensureDirAsync(fullDeployPath))
+      .then(() => this.copyDirectory(sourcePath, fullDeployPath, blackList, sourceName))
+      .then(async () => {
+        log('info', 'Copy activation completed', { sourceName, deployPath: fullDeployPath });
+        // Remove macOS quarantine attribute recursively on deployed files
+        if (isMacOS()) {
+          try {
+            const xattrCmd = '/usr/bin/xattr';
+            await this.api.runExecutable(xattrCmd, ['-r', '-d', 'com.apple.quarantine', fullDeployPath], {
+              constrained: true,
+              attribution: 'copy_activator',
+              expectSuccess: true,
+            });
+            log('info', 'Removed macOS quarantine from deployed files', { deployPath: fullDeployPath });
+          } catch (err) {
+            log('warn', 'Failed to remove macOS quarantine after copy deployment', { deployPath: fullDeployPath, error: (err as Error)?.message });
+          }
+        }
+      });
   }
 
-  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Bluebird<void> {
     // Remove all files that were deployed by this mod
     const modFiles = deployedFiles[sourceName] || [];
     
     if (modFiles.length === 0) {
       log('debug', 'No files to deactivate for mod', { sourceName });
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     
     log('info', 'Deactivating mod files', { sourceName, fileCount: modFiles.length });
     
-    return Promise.map(modFiles, (fileRecord) => {
+    return Bluebird.map(modFiles, (fileRecord) => {
       return fs.removeAsync(fileRecord.targetPath)
         .catch(err => {
           if (err.code === 'ENOENT') {
@@ -108,11 +160,11 @@ class DeploymentMethod implements IDeploymentMethod {
     });
   }
 
-  public prePurge(installPath: string): Promise<void> {
-    return Promise.resolve();
+  public prePurge(installPath: string): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
-  public purge(installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void): Promise<void> {
+  public purge(installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void): Bluebird<void> {
     // For copy deployment, purging means removing all copied files from all mods
     log('info', 'Purging all copy-deployed files', { dataPath });
     
@@ -123,11 +175,11 @@ class DeploymentMethod implements IDeploymentMethod {
     
     if (allFiles.length === 0) {
       log('debug', 'No files to purge');
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     
     let processed = 0;
-    return Promise.map(allFiles, (fileRecord) => {
+    return Bluebird.map(allFiles, (fileRecord) => {
       return fs.removeAsync(fileRecord.targetPath)
         .catch(err => {
           if (err.code === 'ENOENT') {
@@ -157,57 +209,102 @@ class DeploymentMethod implements IDeploymentMethod {
     });
   }
 
-  public postPurge(): Promise<void> {
-    return Promise.resolve();
+  public postPurge(): Bluebird<void> {
+    return Bluebird.resolve();
   }
 
-  public externalChanges(gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]): Promise<IFileChange[]> {
+  public externalChanges(gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]): Bluebird<IFileChange[]> {
     // Return empty array for now - detecting external changes for copied files
     // would require maintaining checksums or timestamps
-    return Promise.resolve([]);
+    return Bluebird.resolve([]);
   }
 
   public getDeployedPath(input: string): string {
     return input;
   }
 
-  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Promise<boolean> {
+  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Bluebird<boolean> {
     const deployedPath = path.join(dataPath, file.relPath);
     return fs.statAsync(deployedPath).then(() => true).catch(() => false);
   }
 
-  private copyDirectory(source: string, target: string, blackList: Set<string>, sourceName: string, basePath: string = ''): Promise<void> {
+  private copyDirectory(source: string, target: string, blackList: Set<string>, sourceName: string, basePath: string = ''): Bluebird<void> {
+    type TaskEntry = {
+      entry: string;
+      sourcePath: string;
+      targetPath: string;
+      relPath: string;
+      stat: fs.Stats;
+    };
     return fs.readdirAsync(source)
-      .then(entries => Promise.map(entries, entry => {
-        if (blackList.has(entry)) {
-          return Promise.resolve();
-        }
-        
-        const sourcePath = path.join(source, entry);
-        const targetPath = path.join(target, entry);
-        const relPath = path.join(basePath, entry);
-        
-        return fs.statAsync(sourcePath)
-          .then(stat => {
-            if (stat.isDirectory()) {
-              return fs.ensureDirAsync(targetPath)
-                .then(() => this.copyDirectory(sourcePath, targetPath, blackList, sourceName, relPath));
-            } else {
-              // Track the deployed file
-              deployedFiles[sourceName].push({
-                sourcePath,
-                targetPath,
-                relPath,
-                sourceName
-              });
-              return fs.copyAsync(sourcePath, targetPath);
-            }
+      .then(async (entries) => {
+        // Gather stats and partition into directories and files with sizes
+        const tasks = await Bluebird.map(entries, async (entry) => {
+          if (blackList.has(entry)) {
+            return null;
+          }
+          const sourcePath = path.join(source, entry);
+          const targetPath = path.join(target, entry);
+          const relPath = path.join(basePath, entry);
+          try {
+            const stat = await fs.statAsync(sourcePath);
+            return { entry, sourcePath, targetPath, relPath, stat };
+          } catch (e) {
+            log('warn', 'Failed to stat entry during copy', { sourcePath, error: (e as any)?.message });
+            return null;
+          }
+        }, { concurrency: 32 });
+
+        const isTaskEntry = (t: any): t is TaskEntry => !!t && !!t.stat;
+        const dirEntries: TaskEntry[] = tasks.filter((t): t is TaskEntry => isTaskEntry(t) && t.stat.isDirectory());
+        const fileEntries: TaskEntry[] = tasks.filter((t): t is TaskEntry => isTaskEntry(t) && !t.stat.isDirectory());
+
+        // Process directories first (depth-first)
+        await Bluebird.map(dirEntries, async (t) => {
+          await fs.ensureDirAsync(t.targetPath);
+          await this.copyDirectory(t.sourcePath, t.targetPath, blackList, sourceName, t.relPath);
+        }, { concurrency: 16 });
+
+        // Bucket files by size for adaptive concurrency
+        const small: typeof fileEntries = [];
+        const medium: typeof fileEntries = [];
+        const large: typeof fileEntries = [];
+        fileEntries.forEach(t => {
+          const size = t.stat.size || 0;
+          if (size <= 256 * 1024) {
+            small.push(t);
+          } else if (size <= 8 * 1024 * 1024) {
+            medium.push(t);
+          } else {
+            large.push(t);
+          }
+        });
+
+        const copyOne = async (t: TaskEntry) => {
+          // Track the deployed file
+          deployedFiles[sourceName].push({
+            sourcePath: t.sourcePath,
+            targetPath: t.targetPath,
+            relPath: t.relPath,
+            sourceName,
           });
-      }))
-      .then(() => undefined);
+          if (isMacOS()) {
+            // Attempt clone-aware atomic copy on macOS; fallback to regular copy
+            return copyFileCloneAtomic(t.sourcePath, t.targetPath)
+              .catch(() => fs.copyAsync(t.sourcePath, t.targetPath, { overwrite: true }));
+          }
+          return fs.copyAsync(t.sourcePath, t.targetPath, { overwrite: true });
+        };
+
+        // Copy with adaptive concurrency to reduce disk contention
+        await Bluebird.map(small, copyOne, { concurrency: 32 });
+        await Bluebird.map(medium, copyOne, { concurrency: 8 });
+        await Bluebird.map(large, copyOne, { concurrency: 2 });
+        return undefined;
+      });
   }
 
-  private removeEmptyDirectories(dataPath: string, fileRecords: IDeployedFileRecord[]): Promise<void> {
+  private removeEmptyDirectories(dataPath: string, fileRecords: IDeployedFileRecord[]): Bluebird<void> {
     // Get all unique directory paths from the file records
     const dirPaths = new Set<string>();
     fileRecords.forEach(record => {
@@ -221,7 +318,7 @@ class DeploymentMethod implements IDeploymentMethod {
     // Sort directories by depth (deepest first) to remove from bottom up
     const sortedDirs = Array.from(dirPaths).sort((a, b) => b.split(path.sep).length - a.split(path.sep).length);
 
-    return Promise.map(sortedDirs, (dirPath) => {
+    return Bluebird.map(sortedDirs, (dirPath) => {
       return fs.readdirAsync(dirPath)
         .then(entries => {
           if (entries.length === 0) {
@@ -244,7 +341,7 @@ class DeploymentMethod implements IDeploymentMethod {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDeploymentMethod(new DeploymentMethod());
+  context.registerDeploymentMethod(new DeploymentMethod(context.api));
   return true;
 }
 

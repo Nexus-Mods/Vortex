@@ -69,6 +69,7 @@ module.exports = {
             options: {
               sourceMap: true,
               sassOptions: {
+                quietDeps: true,
                 outputStyle: 'compressed',
                 includePaths: [
                   './src/stylesheets',

@@ -32,7 +32,7 @@ export class FileFound extends Error {
 }
 
 class DeploymentMethod extends LinkingDeployment {
-  public priority: number = 5;
+  public priority: number = isMacOS() ? 7 : 5;
 
   private mInstallationFiles: Set<number>;
 

@@ -289,7 +289,7 @@
   opacity: 1;
   &.mainpage-leave-active {
     opacity: 0;
-    transition: opacity floor($transition-time-half / 2) ease-out;
+    transition: opacity floor(math.div($transition-time-half, 2)) ease-out;
   }
 }
 

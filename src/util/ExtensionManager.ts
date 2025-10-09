@@ -1997,11 +1997,17 @@ class ExtensionManager {
       // I think the key is called "Path" on windows but I'm not willing to bet this is consistent
       // across all language variants and versions
       const pathEnvName = Object.keys(process.env).find(key => key.toLowerCase() === 'path');
-      const env = {
-        ...filteredEnvironment(),
-        [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
-        ...options.env,
-      };
+      const baseEnv = filteredEnvironment();
+      const env = options.constrained === true
+        ? {
+            // minimal environment for sandboxed execution
+            [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
+          }
+        : {
+            ...baseEnv,
+            [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
+            ...options.env,
+          };
 
       // TODO: we might want to be much more restrictive in what keys we allow in environment variables,
       //   based on a quick google I could only find rules for Linux which appears to not allow the equal
@@ -2021,8 +2027,8 @@ class ExtensionManager {
           const spawnOptions: SpawnOptions = {
             cwd,
             env,
-            detached: options.detach !== undefined ? options.detach : true,
-            shell: options.shell ?? false,
+            detached: options.constrained === true ? false : (options.detach !== undefined ? options.detach : true),
+            shell: options.constrained === true ? false : (options.shell ?? false),
           };
 
           try {
@@ -2033,7 +2039,7 @@ class ExtensionManager {
 
             args = args.map(arg => applyVariables(arg, vars));
 
-            const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
+            const child = spawn(runExe, (spawnOptions.shell ? args : args.map(arg => arg.replace(/"/g, ''))),
               spawnOptions);
             if (truthy(child['exitCode'])) {
               // brilliant, apparently there is no way for me to get at the stdout/stderr when running
@@ -2044,7 +2050,7 @@ class ExtensionManager {
               options.onSpawned(child.pid);
             }
 
-            if (options.detach) {
+            if (options.detach && options.constrained !== true) {
               child.unref();
             }
 
@@ -2055,6 +2061,9 @@ class ExtensionManager {
                 reject(err);
               })
               .on('close', (code) => {
+                if (options.attribution) {
+                  log('info', 'process finished', { executable, code, attribution: options.attribution });
+                }
                 const game = activeGameId(this.mApi.store.getState());
                 
                 // Handle null exit code (process was killed or terminated abnormally)

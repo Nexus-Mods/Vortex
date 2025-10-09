@@ -1,3 +1,4 @@
+@use "sass:math";
 @import "variables.scss";
 @import "mixins.scss";
 
@@ -224,7 +225,7 @@
       ul.react-datepicker__time-list {
         list-style: none;
         margin: 0;
-        height: calc(195px + (#{$datepicker__item-size} / 2));
+        height: calc(195px + #{math.div($datepicker__item-size, 2)});
         overflow-y: scroll;
         padding-right: 30px;
         width: 100%;

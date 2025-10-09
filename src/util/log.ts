@@ -17,6 +17,17 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 let loggingReady: boolean = ((process as any).type === 'renderer');
 const pendingLogs: Array<{ level: LogLevel; message: string; metadata?: any }> = [];
 
+// Set to control logging verbosity
+const LOG_LEVEL: LogLevel = 'info'; // Change to 'warn' or 'error' to reduce verbosity further
+
+// Patterns to filter out to reduce log spam
+const FILTER_PATTERNS = [
+  /Using \/ for division is deprecated/,
+  /document is not defined/,
+  /Identifier 'isWindows' has already been declared/,
+  /a promise was created in a handler/
+];
+
 export function valueReplacer() {
   const known = new Map();
 
@@ -38,7 +49,7 @@ export function valueReplacer() {
 
 function IPCTransport(options: any) {
   this.name = 'IPCTransport';
-  this.level = 'debug';
+  this.level = LOG_LEVEL;
 }
 
 let logger: typeof winston = null;
@@ -132,7 +143,7 @@ export function setLogPath(basePath: string) {
     logger.add((logger as any).transports['File'], {
       filename: path.join(basePath, 'vortex.log'),
       json: false,
-      level: 'debug',
+      level: LOG_LEVEL,
       maxsize: 1024 * 1024,
       maxFiles: 5,
       tailable: true,
@@ -167,7 +178,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     logger.add(logger.transports['File'], {
       filename: path.join(basePath, 'vortex.log'),
       json: false,
-      level: 'debug',
+      level: LOG_LEVEL,
       maxsize: 1024 * 1024,
       maxFiles: 5,
       tailable: true,
@@ -180,7 +191,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     // if we are using console (development enviorment) then add back a new console transport with better logging format
     if (useConsole) {
       logger.add(logger.transports['Console'], {
-        level: 'debug',
+        level: LOG_LEVEL,
         timestamp: () => new Date().toISOString(),
         formatter: (options: any) => {
           return `${options.timestamp()} [${(winston as any).config.colorize(options.level, options.level.toUpperCase())}] ${options.message !== undefined ? options.message : ''} ${(options.meta && Object.keys(options.meta).length) ? JSON.stringify(options.meta) : ''}`;
@@ -212,6 +223,11 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
  */
 export function log(level: LogLevel, message: string, metadata?: any) {
   try {
+    // Filter out noisy messages to reduce log spam
+    if (FILTER_PATTERNS.some(pattern => pattern.test(message))) {
+      return; // Skip logging this message
+    }
+    
     if (!loggingReady) {
       // Buffer and also emit to console to avoid losing information before setup
       pendingLogs.push({ level, message, metadata });

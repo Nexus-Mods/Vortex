@@ -393,7 +393,7 @@ export function loadActivation(api: IExtensionApi, gameId: string, modType: stri
 
 export function saveActivation(gameId: string, modType: string, instance: string,
                                gamePath: string, stagingPath: string,
-                               activation: IDeployedFile[], activatorId?: string) {
+                               activation: IDeployedFile[], activatorId?: string): Promise<void> {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const dataRaw = {
     instance,
@@ -438,9 +438,12 @@ export function saveActivation(gameId: string, modType: string, instance: string
   }
 
   return (activation.length === 0)
-    ? fs.removeAsync(tagFilePath).catch(() => undefined)
-    : writeFileAtomic(tagFilePath, dataJSON)
+    ? fs.removeAsync(tagFilePath)
+        .catch(() => undefined)
+        .then(() => undefined)
+    : Promise.resolve(writeFileAtomic(tagFilePath, dataJSON))
         // remove backup from previous Vortex versions
-      .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
-        .catch({ code: 'ENOENT' }, () => null));
+        .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
+          .catch({ code: 'ENOENT' }, () => null))
+        .then(() => undefined);
 }

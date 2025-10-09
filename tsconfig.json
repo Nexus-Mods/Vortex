@@ -12,6 +12,8 @@
     "outDir": "./out",
     "inlineSourceMap": true,
     "inlineSources": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "downlevelIteration": true,
@@ -27,6 +29,7 @@
     "src/main.ts",
     "src/index.ts",
     "src/renderer.tsx",
-    "src/extensions/index.ts"
+    "src/extensions/index.ts",
+    "src/util/macOSPathNormalization.ts"
   ]
 }

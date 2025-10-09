@@ -760,23 +760,12 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): Promise<voi
                   api.dismissNotification('installing-game-extension');
                   api.sendNotification({
                     type: 'success',
-                    message: 'Game extension installed successfully! The game is now available in the Managed Games section.',
+                    message: 'Game extension installed successfully! You can now manage this game.',
                     displayMS: 5000,
                   });
-                  // Emit refresh-game-list with forceFullDiscovery=true to ensure game extensions are properly registered
-                  log('info', 'refreshing game list after extension install', { gameId });
-                  api.events.emit('refresh-game-list', true);
-                  // Attempt discovery and proceed to manage automatically
-                  return api.emitAndAwait('discover-game', gameId)
-                    .then(() => {
-                      log('info', 'attempting to manage game after install', { gameId });
-                      return manageGame(api, gameId);
-                    })
-                    .catch(err => {
-                      // If discovery fails, let the existing manual flow handle later
-                      log('warn', 'auto-discovery after install failed', { gameId, error: err?.message });
-                      return Promise.resolve();
-                    });
+                  // Do NOT automatically discover or manage the game
+                  // This should be handled by the user clicking the "Manage" button
+                  log('info', 'game extension installed, waiting for user to manage', { gameId });
                 }
               }
               return Promise.resolve();
@@ -1033,21 +1022,107 @@ function init(context: IExtensionContext): boolean {
                              'analytics-track-event', 'Games', 'Start managing', gameId,
                            );
 
-                           context.api.emitAndAwait('discover-game', gameId)
-                             .then(() => checkOverridden(context.api, gameId))
-                             .then(() => {
-                               const state = context.api.getState();
-                               const manageFunc = (state.settings.gameMode.discovered[gameId]?.path !== undefined)
-                                 ? manageGameDiscovered
-                                 : manageGameUndiscovered;
-
-                               manageFunc(context.api, gameId);
-                             })
-                             .catch(err => {
-                               if (!(err instanceof UserCanceled)) {
-                                 context.api.showErrorNotification('Failed to manage game', err);
-                               }
+                           // Check if discovery is already running
+                           const state = context.api.getState();
+                           const isDiscovering = (state.session as any).discoveryProgress?.isDiscovering || false;
+                           
+                           if (isDiscovering) {
+                             // Show waiting notification
+                             context.api.sendNotification({
+                               id: `waiting-for-discovery-${gameId}`,
+                               type: 'info',
+                               title: 'Discovery in Progress',
+                               message: 'Please wait for game discovery to complete before managing games',
+                               displayMS: 5000
                              });
+                             
+                             // Wait for discovery to complete, then manage the game
+                             const checkDiscovery = () => {
+                               const newState = context.api.getState();
+                               const stillDiscovering = (newState.session as any).discoveryProgress?.isDiscovering || false;
+                               
+                               if (!stillDiscovering) {
+                                 // Discovery completed, now manage the game
+                                 // Check if game is already discovered before triggering discovery again
+                                 const finalState = context.api.getState();
+                                 const isAlreadyDiscovered = finalState.settings.gameMode.discovered[gameId]?.path !== undefined;
+                                 
+                                 if (isAlreadyDiscovered) {
+                                   // Game is already discovered, proceed directly to manage
+                                   checkOverridden(context.api, gameId)
+                                     .then(() => manageGameDiscovered(context.api, gameId))
+                                     .catch(err => {
+                                       if (!(err instanceof UserCanceled)) {
+                                         context.api.showErrorNotification('Failed to manage game', err);
+                                       }
+                                     });
+                                 } else {
+                                   // Game not yet discovered, trigger discovery
+                                   context.api.emitAndAwait('discover-game', gameId)
+                                     .then(() => checkOverridden(context.api, gameId))
+                                     .then(() => {
+                                       const newState = context.api.getState();
+                                       const manageFunc = (newState.settings.gameMode.discovered[gameId]?.path !== undefined)
+                                         ? manageGameDiscovered
+                                         : manageGameUndiscovered;
+
+                                       manageFunc(context.api, gameId);
+                                     })
+                                     .catch(err => {
+                                       if (!(err instanceof UserCanceled)) {
+                                         context.api.showErrorNotification('Failed to manage game', err);
+                                       }
+                                     });
+                                 }
+                               } else {
+                                 // Still discovering, check again in a moment
+                                 setTimeout(checkDiscovery, 1000);
+                               }
+                             };
+                             
+                             // Start checking for completion
+                             setTimeout(checkDiscovery, 1000);
+                           } else {
+                             // No discovery in progress, check if game is already discovered
+                             const state = context.api.getState();
+                             const isAlreadyDiscovered = state.settings.gameMode.discovered[gameId]?.path !== undefined;
+                             
+                             // Also check if the game has a valid extension path
+                             const knownGames = state.session.gameMode.known || [];
+                             const gameEntry = knownGames.find(g => g.id === gameId);
+                             const hasValidExtension = gameEntry?.extensionPath !== undefined;
+                             
+                             if (isAlreadyDiscovered && hasValidExtension) {
+                               // Game is already discovered and has a valid extension, proceed directly to manage
+                               checkOverridden(context.api, gameId)
+                                 .then(() => manageGameDiscovered(context.api, gameId))
+                                 .catch(err => {
+                                   if (!(err instanceof UserCanceled)) {
+                                     context.api.showErrorNotification('Failed to manage game', err);
+                                   }
+                                 });
+                             } else if (hasValidExtension) {
+                               // Game has extension but not discovered, trigger discovery
+                               context.api.emitAndAwait('discover-game', gameId)
+                                 .then(() => checkOverridden(context.api, gameId))
+                                 .then(() => {
+                                   const finalState = context.api.getState();
+                                   const manageFunc = (finalState.settings.gameMode.discovered[gameId]?.path !== undefined)
+                                     ? manageGameDiscovered
+                                     : manageGameUndiscovered;
+
+                                   manageFunc(context.api, gameId);
+                                 })
+                                 .catch(err => {
+                                   if (!(err instanceof UserCanceled)) {
+                                     context.api.showErrorNotification('Failed to manage game', err);
+                                   }
+                                 });
+                             } else {
+                               // Game doesn't have a valid extension, treat as undiscovered
+                               manageGameUndiscovered(context.api, gameId);
+                             }
+                           }
                          });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {

@@ -35,6 +35,7 @@ import { setTransferMods } from '../actions/transactions';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
+import allTypesSupported from '../util/allTypesSupported';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 
 import { modPathsForGame } from '../selectors';
@@ -935,6 +936,51 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </More>
           </HelpBlock>
         ) : null }
+        {(() => {
+          const state = this.context.api.store.getState();
+          const { modPaths, gameMode, activators: allActivators } = this.props as any;
+          const types = Object.keys(modPaths || {}).filter(typeId => !!modPaths[typeId]);
+          const active = (activatorIdx !== -1) ? activators[activatorIdx] : undefined;
+          const activeSupport = (active !== undefined)
+            ? allTypesSupported(active, state, gameMode, types)
+            : { errors: [], warnings: [] };
+          const unavailable = (allActivators || [])
+            .filter((act: IDeploymentMethod) => act.id !== active?.id)
+            .map((act: IDeploymentMethod) => ({ act, support: allTypesSupported(act, state, gameMode, types) }))
+            .filter(entry => entry.support.errors.length > 0);
+          const activeWarnings = activeSupport.warnings.map(r => r.description(t));
+          return (
+            <div>
+              {active !== undefined ? (
+                <HelpBlock>
+                  {t('Active deployment method')}: {t(active.name)}
+                </HelpBlock>
+              ) : null}
+              {(activeWarnings.length > 0) ? (
+                <Alert bsStyle='warning'>
+                  <div>{t('This method has potential limitations for some mod types:')}</div>
+                  <ul>
+                    {activeWarnings.map((msg, idx) => (
+                      <li key={`aw-${idx}`}>{t(msg)}</li>
+                    ))}
+                  </ul>
+                </Alert>
+              ) : null}
+              {(unavailable.length > 0) ? (
+                <HelpBlock>
+                  <div>{t('Unavailable methods for current setup')}:</div>
+                  <ul>
+                    {unavailable.map(({ act, support }) => (
+                      <li key={`um-${act.id}`}>
+                        {t(act.name)}: {support.errors.map(r => t(r.description(t))).join('; ')}
+                      </li>
+                    ))}
+                  </ul>
+                </HelpBlock>
+              ) : null}
+            </div>
+          );
+        })()}
       </FormGroup>
     );
   }

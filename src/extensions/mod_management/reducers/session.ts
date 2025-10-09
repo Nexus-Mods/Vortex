@@ -26,10 +26,18 @@ export const sessionReducer: IReducerSpec = {
     },
     [actions.setDeploymentProblem as any]: (state, payload) =>
       setSafe(state, ['deploymentProblems'], payload),
+    [actions.setPurgeSummary as any]: (state, payload) =>
+      setSafe(state, ['purgeSummary'], payload),
+    [actions.setPurgeSummaryVisible as any]: (state, payload) =>
+      setSafe(state, ['purgeSummaryVisible'], payload),
+    [actions.clearPurgeSummary as any]: (state) =>
+      setSafe(state, ['purgeSummary'], undefined),
   },
   defaults: {
     changes: [],
     updatingMods: {},
     deploymentProblems: [],
+    purgeSummary: undefined,
+    purgeSummaryVisible: false,
   },
 };

@@ -208,6 +208,28 @@ const archiveExtLookup = new Set<string>([
 // exe is a self-extracting archive and we would be able to handle it
 const FILETYPES_AVOID = ['.dll'];
 
+// Per-game content policy: allowlists/blocklists for executable/script types
+type ContentPolicy = {
+  blockedExtensions?: string[];
+  // extensions considered executable or scripts that require confirmation
+  confirmExtensions?: string[];
+};
+
+const DEFAULT_POLICY: ContentPolicy = {
+  blockedExtensions: FILETYPES_AVOID,
+  confirmExtensions: ['.exe', '.bat', '.cmd', '.ps1', '.sh'],
+};
+
+function getContentPolicy(gameId: string): ContentPolicy {
+  // Placeholder for future game-specific overrides; can be extended via settings or game config
+  switch (gameId) {
+    case 'skyrimse':
+      return { ...DEFAULT_POLICY, blockedExtensions: ['.dll'] };
+    default:
+      return DEFAULT_POLICY;
+  }
+}
+
 function nop() {
   // nop
 }
@@ -440,8 +462,10 @@ class InstallManager {
                   : Bluebird<IInstallResult> {
     // Use centralized extractor from util/archive for all platforms
     let extractProm: Bluebird<any>;
-    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
-      extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
+    const policy = getContentPolicy(gameId);
+    const archiveExt = path.extname(archivePath).toLowerCase();
+    if (policy.blockedExtensions.includes(archiveExt)) {
+      extractProm = Bluebird.reject(new ArchiveBrokenError('file type blocked by policy'));
     } else {
       extractProm = Bluebird.resolve()
         .then(() => {
@@ -1516,8 +1540,10 @@ class InstallManager {
     log('debug', 'extracting mod archive', { archivePath, tempPath });
     let extractProm: Bluebird<any>;
     const extractionStart = Date.now();
-    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
-      extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
+    const prePolicy = getContentPolicy(gameId);
+    const preArchiveExt = path.extname(archivePath).toLowerCase();
+    if (prePolicy.blockedExtensions.includes(preArchiveExt)) {
+      extractProm = Bluebird.reject(new ArchiveBrokenError('file type blocked by policy'));
     } else {
       extractProm = Bluebird.resolve()
         .then(() => {
@@ -1530,6 +1556,7 @@ class InstallManager {
       (extractProm as any).startTime = extractionStart;
     }
 
+    const policy = getContentPolicy(gameId);
     return extractProm
         .then(() => {
           log('debug', 'extraction completed', {
@@ -1591,6 +1618,45 @@ class InstallManager {
                            }
                            return Bluebird.resolve();
                          }))
+        .then(async () => {
+          // Scan for blocked or confirm-required extensions
+          const foundBlocked: string[] = [];
+          const foundExecutables: string[] = [];
+          fileList.forEach(rel => {
+            const ext = path.extname(rel).toLowerCase();
+            if (policy.blockedExtensions?.includes(ext)) {
+              foundBlocked.push(rel);
+            }
+            if (policy.confirmExtensions?.includes(ext)) {
+              foundExecutables.push(rel);
+            }
+          });
+
+          if (foundBlocked.length > 0) {
+            const title = 'Blocked content detected';
+            const bbcode = 'The archive contains blocked file types and cannot be installed.'
+              + '[br][/br][br][/br]Blocked files:'
+              + '[list]' + foundBlocked.map(f => '[*] ' + f).join('') + '[/list]';
+            await api.showDialog('error', title, { bbcode }, [ { label: 'Ok' } ]);
+            throw new ArchiveBrokenError('blocked content in archive');
+          }
+
+          if (foundExecutables.length > 0) {
+            const title = 'Executable content detected';
+            const bbcode = 'This archive contains executable or script files. '
+              + 'These may run during installation or deployment and could be unsafe.'
+              + '[br][/br][br][/br]Files:'
+              + '[list]' + foundExecutables.map(f => '[*] ' + f).join('') + '[/list]'
+              + '[br][/br]Do you want to continue installing?';
+            const result = await api.showDialog('question', title, { bbcode }, [
+              { label: 'Cancel' },
+              { label: 'Continue' },
+            ]);
+            if (result?.action === 'Cancel') {
+              throw new UserCanceled();
+            }
+          }
+        })
         .finally(() => {
           // process.noAsar = false;
         })

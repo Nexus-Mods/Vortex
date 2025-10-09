@@ -12,7 +12,7 @@ import Debouncer from '../../util/Debouncer';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import { delayed, toPromise, truthy} from '../../util/util';
+import { toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -342,44 +342,33 @@ function transformError(err: any): Error {
 //     .catch(() => Bluebird.resolve({}));
 // }
 
-function spawnAsync(command: string, args: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      spawn(command, args)
-        .on('close', () => resolve())
-        .on('error', err => reject(err));
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-function spawnRetry(api: IExtensionApi, command: string, args: string[], tries = 3): Promise<void> {
-  return spawnAsync(command, args)
+function spawnRetry(api: IExtensionApi, command: string, args: string[], tries = 3): Bluebird<void> {
+  return api.runExecutable(command, args, {
+    expectSuccess: false,
+    constrained: true,
+    attribution: 'installer_fomod',
+  })
     .catch(err => {
-      if (err.code === 'EBUSY') {
+      if (err && err.code === 'EBUSY') {
         if (tries > 0) {
-          return delayed(100)
-            .then(() => spawnRetry(api, command, args, tries - 1))
+          return Bluebird.delay(100).then(() => spawnRetry(api, command, args, tries - 1))
         } else {
           return api.showDialog('error', 'File locked', {
             text: 'The file "{{fileName}}" is locked, probably because it\'s being accessed by another process.',
-            parameters: {
-              fileName: command,
-            },
+            parameters: { fileName: command },
           }, [
             { label: 'Cancel' },
             { label: 'Retry' },
-          ])
-            .then(result => {
-              if (result.action === 'Cancel') {
-                return Promise.reject(new UserCanceled());
-              } else {
-                return spawnRetry(api, command, args);
-              }
-            });
+          ]).then(result => {
+            if (result.action === 'Cancel') {
+              return Bluebird.reject(new UserCanceled());
+            } else {
+              return spawnRetry(api, command, args);
+            }
+          });
         }
       }
+      return Bluebird.reject(err);
     });
 }
 
@@ -443,8 +432,15 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
   const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
   let stderr: string = '';
   const exitCode = await new Promise<number>((resolve) => {
-    const proc = execFile(probeExe).on('close', code => resolve(code));
-    proc.stderr.on('data', dat => stderr += dat.toString());
+    api.runExecutable(probeExe, [], { constrained: true, attribution: 'installer_fomod' })
+      .then(() => resolve(0))
+      .catch((err: any) => {
+        const code = typeof err?.exitCode === 'number' ? err.exitCode : 1;
+        if (err && typeof err?.message === 'string') {
+          stderr += err.message;
+        }
+        resolve(code);
+      });
   });
 
   

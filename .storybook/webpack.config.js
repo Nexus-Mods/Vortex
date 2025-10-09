@@ -40,6 +40,7 @@ module.exports = ({ config, mode }) => {
         loader: 'sass-loader',
         options: {
           sassOptions: {
+            quietDeps: true,
             includePaths: [
               `../assets`,
               path.join(__dirname, '..', 'node_modules'),
