@@ -518,12 +518,13 @@ describe('Collections End-to-End Test - Real Implementation', () => {
 
       // Initialize managers with proper constructor arguments
       const downloadManager = new DownloadManager(
-        api.tempDownloadPath,
+        api, // IExtensionApi
+        api.tempDownloadPath, // downloadPath
         5, // maxWorkers - reduce to avoid overwhelming the network
         8, // maxChunks per download - disable chunking to avoid stuck chunks
         function(speed) {
           const mbps = speed * 0.000008; // Convert bytes/sec to MB/s
-        },
+        }, // speedCB
         'Vortex/1.0 (Test)', // userAgent
         api.protocolHandlers, // Use registered protocol handlers (including NXM)
         function() { return 0; } // maxBandwidth function
@@ -745,5 +746,14 @@ describe('Collections End-to-End Test - Real Implementation', () => {
     if (api && api.cleanup) {
       api.cleanup();
     }
+  });
+
+  afterAll(() => {
+    // Force exit after test completion since DownloadManager creates intervals that don't cleanup
+    // This is acceptable for E2E tests where we're testing the full integration
+    setTimeout(() => {
+      console.log('⚠️  Forcing process exit after E2E test completion');
+      process.exit(0);
+    }, 1000);
   });
 });

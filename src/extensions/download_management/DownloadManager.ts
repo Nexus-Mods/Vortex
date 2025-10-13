@@ -915,7 +915,9 @@ class DownloadManager {
     });
     
     const speedCalcCB = (speed: number) => {
-      speedCB(speed);
+      if (speedCB && typeof speedCB === 'function') {
+        speedCB(speed);
+      }
     }
     setInterval(() => this.tickQueue(false), 200);
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);
