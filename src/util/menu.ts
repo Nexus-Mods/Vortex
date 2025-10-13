@@ -102,7 +102,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({
         label: 'Toggle Developer Tools',
         accelerator: isMacOS() ? 'Alt+Command+I' : 'Ctrl+Shift+I',
-        click(item, focusedWindow) {
+        click(item, focusedWindow: Electron.BrowserWindow) {
           if (focusedWindow) {
             focusedWindow.webContents.toggleDevTools();
           } else {
@@ -114,7 +114,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({
         label: 'Reload',
         accelerator: 'F5',
-        click(item, focusedWindow) {
+        click(item, focusedWindow: Electron.BrowserWindow) {
           if (focusedWindow) {
             focusedWindow.webContents.reload();
           }

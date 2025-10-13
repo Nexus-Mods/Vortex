@@ -283,8 +283,21 @@ class StyleManager {
       const statProm = () => (filePath === undefined)
         ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
-          ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
-            .then(() => null)
+          ? Promise.allSettled([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
+            .then(results => {
+              // Check if at least one of the promises fulfilled
+              if (results.some(result => result.isFulfilled())) {
+                return null;
+              } else {
+                // If both failed, throw the first error
+                const firstError = results.find(result => result.isRejected());
+                if (firstError) {
+                  // Get the reason from the rejected promise
+                  throw new Error('Both .scss and .css files not found');
+                }
+                return null;
+              }
+            })
           : fs.statAsync(filePath).then(() => null);
       this.mSetQueue = this.mSetQueue
         .then(() => statProm())
