@@ -21,6 +21,15 @@ class MixpanelAnalytics {
    * Sets and Initializes the Mixpanel tracking with super properties
    */
   public start(userInfo: IValidateKeyDataV2, isProduction: boolean) {
+    // Guard against multiple initialization
+    if (this.isInitialized) {
+      analyticsServiceLog('mixpanel', 'warn', 'start() called but already initialized', {
+        userId: this.user,
+        newUserId: userInfo.userId
+      });
+      return;
+    }
+
     this.user = userInfo.userId;
     const token = isProduction ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
     const environment = isProduction ? 'production' : 'development';
