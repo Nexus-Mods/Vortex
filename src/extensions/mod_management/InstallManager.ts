@@ -135,7 +135,7 @@ import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload
 import filterModInfo from './util/filterModInfo';
 import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
-import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual } from './util/testModReference';
+import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual, testRefByIdentifiers } from './util/testModReference';
 
 import { MAX_VARIANT_NAME, MIN_VARIANT_NAME, VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME } from './constants';
 import InstallContext from './InstallContext';
@@ -522,9 +522,9 @@ class InstallManager {
       lookupResults: [], // Will be populated if needed
       download: downloadId,
       phase: matchingRule.extra?.phase || 0,
-      patches: matchingRule.extra?.patches,
-      installerChoices: matchingRule.extra?.installerChoices,
-      fileList: matchingRule.fileList
+      patches: matchingRule.extra?.patches ?? matchingRule.reference.patches,
+      installerChoices: matchingRule.installerChoices,
+      fileList: matchingRule.fileList ?? matchingRule.reference.fileList,
     };
 
     // Ensure the phase is marked as having downloads finished
@@ -819,7 +819,7 @@ class InstallManager {
     allowAutoDeploy?: boolean,
     sourceModId?: string): void {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
-    const installId = shortid();
+    const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || 'direct-install-' + shortid();
     const installInfo: IActiveInstallation = {
       installId,
@@ -1634,9 +1634,9 @@ class InstallManager {
     const downloads = api.getState().persistent.downloads.files;
     const download = downloads[downloadId];
     const canStartNow = collectionsInstallWhileDownloading
-      ? (phaseNum === phaseState.allowedPhase)
+      ? (phaseNum <= phaseState.allowedPhase)
       : ((phaseState.allowedPhase !== undefined)
-          && (phaseNum === phaseState.allowedPhase)
+          && (phaseNum <= phaseState.allowedPhase)
           && phaseState.downloadsFinished.has(phaseNum));
 
     // Don't start installations if deployment is in progress
@@ -1651,12 +1651,16 @@ class InstallManager {
     }
   }
 
+  private generateDependencyInstallKey(sourceModId: string, downloadId: string): string {
+    return `${sourceModId}:${downloadId}`;
+  }
+
   // Starts a queued installation task and wires up phase accounting
   private startQueuedInstallation(api: IExtensionApi, dep: IDependency, downloadId: string,
     gameId: string, sourceModId: string, recommended: boolean,
     phase: number): void {
     const phaseState = this.mInstallPhaseState.get(sourceModId);
-    const installKey = `${sourceModId}:${dep.reference.tag || downloadId}_${Date.now()}`;
+    const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
     this.mPendingInstalls.set(installKey, dep);
 
     // Track active count for the phase
@@ -1697,16 +1701,11 @@ class InstallManager {
           return;
         }
 
+        const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
         // Check if mod is already installed
         const mods = api.getState().persistent.mods[gameId];
         const existingMod = findModByRef(currentDep.reference, mods);
-        if (existingMod) {
-          log('info', 'Mod already installed, skipping', { modId: existingMod.id });
-          return;
-        }
-
-        const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
-        const modId = await this.withInstructions(api,
+        const modId = existingMod != null ? existingMod.id : await this.withInstructions(api,
           modName(sourceMod),
           renderModReference(currentDep.reference),
           currentDep.reference?.tag ?? downloadId,
@@ -1746,13 +1745,12 @@ class InstallManager {
         this.mActiveInstalls.delete(installKey);
       } catch (err) {
         this.mActiveInstalls.delete(installKey);
-
         const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
         const isCanceled = (err instanceof UserCanceled) || (err instanceof ProcessCanceled);
         const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
         if (!isCanceled && hasRetriesLeft) {
+          this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
           this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
-          this.queueInstallation(api, dep, downloadId, gameId, sourceModId, recommended, phase);
         } else {
           // Max retries exceeded, clean up and show error
           this.mDependencyRetryCount.delete(installKey);
@@ -1802,10 +1800,57 @@ class InstallManager {
     }
   }
 
+  private pollAllPhasesComplete(api: IExtensionApi, sourceModId: string): Bluebird<void> {
+    const POLL_MS = 500;
+
+    return new Bluebird<void>((resolve) => {
+      const poll = () => {
+        const phaseState = this.mInstallPhaseState.get(sourceModId);
+        if (!phaseState) {
+          log('debug', 'Phase state cleared, all phases considered complete', { sourceModId });
+          return resolve();
+        }
+
+        // Check if the dependency installation has been cancelled
+        if (!this.mDependencyInstalls[sourceModId]) {
+          log('debug', 'Dependency installation cancelled', { sourceModId });
+          return resolve();
+        }
+
+        // Count total pending and active across all phases
+        let totalPending = 0;
+        let totalActive = 0;
+        phaseState.pendingByPhase.forEach(queue => totalPending += queue.length);
+        phaseState.activeByPhase.forEach(count => totalActive += count);
+
+        // Check for queued deployments
+        const deploymentPromises = phaseState.deploymentPromises || [];
+        const hasQueuedDeployments = deploymentPromises.length > 0;
+
+        if (totalPending === 0 && totalActive === 0 && !hasQueuedDeployments) {
+          // All phases are settled and no deployments queued
+          log('debug', 'All phases complete', { sourceModId });
+          return resolve();
+        } else {
+          // Continue polling until all phases are complete
+          const pendingByPhaseDetail: { [phase: number]: number } = {};
+          phaseState.pendingByPhase.forEach((queue, phase) => {
+            if (queue.length > 0) {
+              pendingByPhaseDetail[phase] = queue.length;
+            }
+          });
+
+          setTimeout(poll, POLL_MS);
+        }
+      };
+
+      poll();
+    });
+  }
+
   private pollPhaseSettlement(api: IExtensionApi, sourceModId: string, options: {
     phase?: number;           // Specific phase to poll (for deploy)
     deployOnSettle?: boolean;  // Whether to deploy when settled
-    resolveOnSettle?: boolean; // Whether to resolve promise when settled
   }): Bluebird<void> {
     const POLL_MS = 500;
 
@@ -1835,8 +1880,7 @@ class InstallManager {
         //   allowedPhase: phaseState.allowedPhase,
         //   activeInstallations: active,
         //   pendingInstallations: pending,
-        //   deployOnSettle: options.deployOnSettle,
-        //   resolveOnSettle: options.resolveOnSettle
+        //   deployOnSettle: options.deployOnSettle
         // });
 
         // Check collection completion status
@@ -1883,12 +1927,6 @@ class InstallManager {
                 }
                 resolve(); // Resolve anyway to avoid hanging
               });
-          } else if (options.resolveOnSettle) {
-            // Always try to advance phases when settled, even without deployment
-            if (phaseState) {
-              this.maybeAdvancePhase(sourceModId, api);
-            }
-            resolve();
           }
         } else if (installationsComplete && (!phaseLogicallyComplete || collectionStatus.needsRequeue || collectionStatus.downloadedCount > 0)) {
           // Requeue downloaded mods if phase is not complete and there are no active installations
@@ -1926,7 +1964,8 @@ class InstallManager {
     const allMods = Object.values(mods);
     const currentPhaseMods = getModsByPhase(allMods, phase);
 
-    const { isComplete: phaseComplete } = checkPhaseCompletion(currentPhaseMods);
+    const phaseCompletionResult = checkPhaseCompletion(currentPhaseMods);
+    const { isComplete: phaseComplete } = phaseCompletionResult;
 
     // Only count downloaded mods from the current phase being checked
     const allDownloadedMods = currentPhaseMods.filter((mod: any) => mod.status === 'downloaded');
@@ -1948,7 +1987,7 @@ class InstallManager {
       const downloadId = getReadyDownloadId(
         downloads,
         mod.rule?.reference,
-        (id) => this.hasActiveOrPendingInstallation(id)
+        (id) => this.hasActiveOrPendingInstallation(sourceModId, id)
       );
 
       if (downloadId) {
@@ -1961,11 +2000,14 @@ class InstallManager {
   }
 
   // Helper to check if an archiveId has pending or active installations
-  private hasActiveOrPendingInstallation(archiveId: string): boolean {
-    const hasPending = this.mPendingInstalls.has(archiveId);
-
+  private hasActiveOrPendingInstallation(sourceModId: string, archiveId: string): boolean {
+    let hasPending = false;
+    const installKey = this.generateDependencyInstallKey(sourceModId, archiveId);
+    if (this.mPendingInstalls.get(installKey)) {
+      hasPending = true;
+    }
     let hasActive = false;
-    for (const activeInstall of this.mActiveInstalls.values()) {
+    for (const [, activeInstall] of this.mActiveInstalls.entries()) {
       if (activeInstall.archiveId === archiveId) {
         hasActive = true;
         break;
@@ -1977,12 +2019,33 @@ class InstallManager {
   // Helper to re-queue downloaded mods
   private reQueueDownloadedMods(api: IExtensionApi, sourceModId: string, allMods: any[], currentPhase: number): void {
     const phaseState = this.mInstallPhaseState.get(sourceModId);
-    if (!phaseState) return;
+    if (!phaseState) {
+      return;
+    }
 
     const downloads = api.getState().persistent.downloads.files;
-    // Only requeue mods from the specified phase (or earlier if needed)
-    const allDownloadedMods = allMods.filter((mod: any) =>
-      mod.status === 'downloaded' && (mod.phase ?? 0) === currentPhase);
+
+    // Expand the filter to include mods that are downloaded OR have downloads available
+    // Also log detailed status information to debug the filtering
+    const allModsWithDetails = allMods.map((mod: any) => ({
+      ...mod,
+      downloadId: mod.rule?.reference ? this.findDownloadForMod(mod.rule.reference, downloads) : null
+    }));
+
+    // Look for mods that are marked as 'downloaded' and ready to install
+    // Do NOT include 'pending' mods as they are already queued for installation
+    const allDownloadedMods = allModsWithDetails.filter((mod: any) => {
+      const hasDownload = mod.downloadId !== null;
+      const modPhase = mod.phase ?? 0;
+      const isDownloaded = mod.status === 'downloaded';
+
+      // Allow mods from current phase or earlier phases that haven't been completed
+      // This prevents the deadlock where phase 1 mods can't be processed during phase 2+ cycles
+      const isEligiblePhase = modPhase <= currentPhase;
+
+      // Only requeue mods that are 'downloaded' status - pending mods are already queued
+      return isEligiblePhase && isDownloaded && hasDownload;
+    });
 
     const downloadedPhases = new Set<number>();
     let anyQueued = false;
@@ -1992,30 +2055,31 @@ class InstallManager {
       const modPhase = mod.phase ?? 0;
       downloadedPhases.add(modPhase);
 
-      // Only requeue mods that are in the current allowed phase or earlier
-      // This prevents infinite loops where future phase mods get requeued but then blocked by phase gating
-      if (modPhase !== phaseState.allowedPhase) {
-        log('debug', 'Skipping mod - phase not allowed yet', { modPhase, allowedPhase: phaseState.allowedPhase });
-        return; // Skip this mod, it will be processed when its phase is allowed
+      if (modPhase > currentPhase) {
+        return; // Skip this mod, it will be processed when its phase is active
       }
-
-      let downloadId = findDownloadByRef(mod.rule?.reference, downloads);
+      const downloadId = mod.downloadId;
       if (!downloadId) {
-        // If download can't be found and mod is optional (recommends), don't block progression
         if (mod.type === 'recommends') {
           anyMarkedSkipped = true;
         }
         return; // Skip this mod
       }
 
+      const downloadState = downloads[downloadId]?.state;
+      log('debug', 'Download state check', { downloadId, downloadState });
       if (downloads[downloadId].state === 'finished') {
-        const hasPendingOrActive = this.hasActiveOrPendingInstallation(downloadId);
+        const hasPendingOrActive = this.hasActiveOrPendingInstallation(sourceModId, downloadId);
         log('debug', 'Requeue check', { downloadId, hasPendingOrActive });
         if (!hasPendingOrActive) {
           log('info', 'Requeuing download for installation', { downloadId });
           this.handleDownloadFinished(api, downloadId);
           anyQueued = true;
+        } else {
+          log('debug', 'Download blocked by pending/active installation', { downloadId });
         }
+      } else {
+        log('debug', 'Download not in finished state', { downloadId, state: downloadState });
       }
     });
 
@@ -2076,12 +2140,20 @@ class InstallManager {
     const deploymentPromise = new Promise<void>((resolve) => {
       this.pollPhaseSettlement(api, sourceModId, {
         phase,
-        deployOnSettle: true,
-        resolveOnSettle: false
+        deployOnSettle: true
       })
-      .then(() => resolve())
       .catch(err => {
-        log('error', 'Error in phase deployment polling', { sourceModId, phase, error: err.message });
+        log('warn', 'Error during scheduled phase deployment', { sourceModId, phase, error: err?.message });
+      })
+      .finally(() => {
+        // Remove this promise from the array when it completes
+        const phaseState = this.mInstallPhaseState.get(sourceModId);
+        if (phaseState?.deploymentPromises) {
+          const index = phaseState.deploymentPromises.indexOf(deploymentPromise);
+          if (index !== -1) {
+            phaseState.deploymentPromises.splice(index, 1);
+          }
+        }
         resolve();
       });
     });
@@ -2116,6 +2188,7 @@ class InstallManager {
   private startPendingForPhase(sourceModId: string, phase: number) {
     const state = this.mInstallPhaseState.get(sourceModId);
     const tasks = state.pendingByPhase.get(phase) ?? [];
+
     if (tasks.length === 0) {
       return;
     }
@@ -2145,12 +2218,23 @@ class InstallManager {
     while (state.downloadsFinished.has(curr)
       && (state.activeByPhase.get(curr) ?? 0) === 0
       && (state.pendingByPhase.get(curr) ?? []).length === 0) {
+
+      // Check if the phase is actually complete according to collection session
+      const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, curr);
+      if (!collectionStatus.phaseComplete) {
+        this.startPendingForPhase(sourceModId, curr);
+        break;
+      }
+
       // Determine previous finished phase (by order in downloadsFinished)
       const finished = Array.from(state.downloadsFinished).sort((a, b) => a - b);
       const currIdx = finished.findIndex(p => p === curr);
       // Only advance past curr if the current phase has been deployed
       if (!state.deployedPhases.has(curr)) {
         log('debug', 'phase gating: waiting for current phase deployment', { sourceModId, currPhase: curr });
+        // Even though we can't advance past this phase, we should start any pending installations
+        // for this phase to avoid deadlocks where downloaded mods prevent deployment
+        this.startPendingForPhase(sourceModId, curr);
         break;
       }
       // Start any pending installs for this phase (if not already started)
@@ -2182,7 +2266,7 @@ class InstallManager {
               const downloadId = getReadyDownloadId(
                 downloads,
                 rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(id)
+                (id) => this.hasActiveOrPendingInstallation(sourceModId,id)
               );
 
               if (downloadId) {
@@ -3712,7 +3796,7 @@ class InstallManager {
             : 'undefined';
           if (err instanceof UserCanceled) {
             if (err.skipped) {
-              return Bluebird.resolve();
+              return Bluebird.resolve(undefined);
             } else {
               abort.abort();
               return Bluebird.reject(err);
@@ -3765,9 +3849,6 @@ class InstallManager {
         });
     }, { concurrency: 10 })
       .finally(() => {
-        delete this.mDependencyInstalls[sourceModId];
-        this.cleanupPendingInstalls(sourceModId);
-
         // Process any pending installations that were queued during dependency installation
         const phaseState = this.mInstallPhaseState.get(sourceModId);
         if (phaseState && phaseState.allowedPhase !== undefined) {
@@ -3787,7 +3868,7 @@ class InstallManager {
               const downloadId = getReadyDownloadId(
                 downloads,
                 rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(id)
+                (id) => this.hasActiveOrPendingInstallation(sourceModId, id)
               );
 
               if (downloadId) {
@@ -4305,34 +4386,11 @@ class InstallManager {
     };
 
     return Bluebird.resolve(res)
-      // After all phases have queued downloads and phase-gated installers, wait for settlement
       .then((deps: IDependency[]) => {
-        return this.pollPhaseSettlement(api, sourceModId, {
-          phase: undefined,
-          deployOnSettle: false,
-          resolveOnSettle: true
-        }).then(() => deps);
+        return this.pollAllPhasesComplete(api, sourceModId).then(() => deps);
       })
       .finally(() => {
-        // Wait for all deployment promises to complete before cleanup
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
-        const deploymentPromises = phaseState?.deploymentPromises || [];
-
-        if (deploymentPromises.length > 0) {
-          // Wait for all deployments to complete, then cleanup
-          return Promise.all(deploymentPromises)
-            .catch(err => {
-              log('warn', 'Error waiting for deployments', { sourceModId, error: err.message });
-            })
-            .finally(() => {
-              log('debug', 'All deployments complete, cleaning up phase state', { sourceModId });
-              this.mInstallPhaseState.delete(sourceModId);
-            });
-        } else {
-          // No deployments to wait for, cleanup immediately
-          log('debug', 'No deployments pending, cleaning up phase state', { sourceModId });
-          this.mInstallPhaseState.delete(sourceModId);
-        }
+        this.mInstallPhaseState.delete(sourceModId);
       });
   }
 
@@ -5003,6 +5061,86 @@ class InstallManager {
     } finally {
       log('debug', 'extraction completed', { duration: Date.now() - now, archivePath, instructions: copies.length });
     }
+  }
+
+  /**
+   * Find any download that matches the given mod reference using all available methods
+   */
+  private findDownloadForMod(reference: any, downloads: any): string | null {
+    // Try the primary lookup first
+    const downloadId = findDownloadByRef(reference, downloads);
+    if (downloadId) {
+      return downloadId;
+    }
+
+    // Try filename match
+    const targetFilename = reference?.logicalFileName;
+    if (targetFilename) {
+      const altDownloadId = Object.keys(downloads).find(dlId => {
+        const download = downloads[dlId];
+        return download.localPath && download.localPath.endsWith(targetFilename) && 
+               download.state === 'finished';
+      });
+      if (altDownloadId) {
+        return altDownloadId;
+      }
+    }
+
+    // Try modId/fileId match
+    if (reference?.repo) {
+      const { modId, fileId } = reference.repo;
+      if (modId && fileId) {
+        const altDownloadId = Object.keys(downloads).find(dlId => {
+          const download = downloads[dlId];
+          return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
+                 download.modInfo?.nexus?.fileId?.toString() === fileId.toString() &&
+                 download.state === 'finished';
+        });
+        if (altDownloadId) {
+          return altDownloadId;
+        }
+      }
+
+      // Try modId only
+      if (modId) {
+        const altDownloadId = Object.keys(downloads).find(dlId => {
+          const download = downloads[dlId];
+          return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
+                 download.state === 'finished';
+        });
+        if (altDownloadId) {
+          return altDownloadId;
+        }
+      }
+    }
+
+    // Try testRefByIdentifiers
+    if (reference) {
+      const altDownloadId = Object.keys(downloads).find(dlId => {
+        const download = downloads[dlId];
+        if (download.state !== 'finished') {
+          return false;
+        }
+        
+        const identifiers = {
+          name: download.localPath ? require('path').basename(download.localPath, require('path').extname(download.localPath)) : undefined,
+          gameId: download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
+          modId: download.modInfo?.nexus?.ids?.modId,
+          fileId: download.modInfo?.nexus?.ids?.fileId
+        };
+        
+        if (identifiers.modId && identifiers.fileId && identifiers.gameId) {
+          return testRefByIdentifiers(identifiers, reference);
+        }
+        
+        return false;
+      });
+      if (altDownloadId) {
+        return altDownloadId;
+      }
+    }
+
+    return null;
   }
 
   /**

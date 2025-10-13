@@ -18,7 +18,7 @@ import minimatch from 'minimatch';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
 import normalizeUrl from 'normalize-url';
 import * as semver from 'semver';
-import testModReference, { IModLookupInfo, isFuzzyVersion } from './testModReference';
+import testModReference, { IModLookupInfo, isFuzzyVersion, testRefByIdentifiers } from './testModReference';
 
 interface IBrowserResult {
   url: string | (() => Bluebird<string>);
@@ -292,7 +292,14 @@ export function findDownloadByRef(reference: IReference,
       if (download.state === 'failed') {
         return false;
       }
-      return testModReference(lookupFromDownload(download), reference, undefined, fuzzy);
+      const lookup = lookupFromDownload(download);
+      const identifiers = {
+        modId: parseInt(lookup?.modId, 10),
+        fileId: parseInt(lookup?.fileId, 10),
+        name: lookup?.logicalFileName || download.modInfo?.name,
+        gameId: download.game[0],
+      }
+      return testModReference(lookup, reference, undefined, fuzzy) ?? testRefByIdentifiers(identifiers, reference);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];
